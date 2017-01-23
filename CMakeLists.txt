@@ -5,7 +5,7 @@ set ( CMAKE_VERBOSE_MAKEFILE true )
 set(CMAKE_BUILD_TYPE Debug)
 #set (CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -Wno-unused-value -Wno-unused-function -Wno-reorder")
 set (CMAKE_CXX_FLAGS "-std=c++11 -O2 -Wall -Wno-unused-value -Wno-unused-function -Wno-reorder")
-option(test "Build all tests." ON) 
+option(test "Build all tests." OFF) 
 #Bring the headers, such as Student.h into the project
 include_directories(include)
 

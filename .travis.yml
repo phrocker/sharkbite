@@ -26,5 +26,5 @@ before_script:
  - ./install-thrift.sh
 script:
   - export CXX="g++-4.9"
-  - mkdir build && cd build && cmake .. && cmake --build . ; make
+  - mkdir build && cd build && cmake .. && cmake --build . 
 
