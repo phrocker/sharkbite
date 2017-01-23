@@ -1,0 +1,159 @@
+In file included from /usr/local/include/thrift/protocol/TBinaryProtocol.h:277:0,
+                 from InterConnect.h:31,
+                 from TabletServer.h:26,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+/usr/local/include/thrift/protocol/TBinaryProtocol.tcc: In member function ‘uint32_t apache::thrift::protocol::TBinaryProtocolT<Transport_>::writeI16(int16_t)’:
+/usr/local/include/thrift/protocol/TBinaryProtocol.tcc:147:35: warning: there are no arguments to ‘htons’ that depend on a template parameter, so a declaration of ‘htons’ must be available [-fpermissive]
+/usr/local/include/thrift/protocol/TBinaryProtocol.tcc: In member function ‘uint32_t apache::thrift::protocol::TBinaryProtocolT<Transport_>::writeI32(int32_t)’:
+/usr/local/include/thrift/protocol/TBinaryProtocol.tcc:154:35: warning: there are no arguments to ‘htonl’ that depend on a template parameter, so a declaration of ‘htonl’ must be available [-fpermissive]
+In file included from InterConnect.h:38:0,
+                 from TabletServer.h:26,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+/usr/local/include/thrift/transport/TSocket.h: At global scope:
+/usr/local/include/thrift/transport/TSocket.h:216:3: error: ‘sockaddr’ does not name a type
+/usr/local/include/thrift/transport/TSocket.h:237:31: error: ‘sockaddr’ does not name a type
+/usr/local/include/thrift/transport/TSocket.h:237:41: warning: ISO C++ forbids declaration of ‘addr’ with no type [-fpermissive]
+/usr/local/include/thrift/transport/TSocket.h:290:5: error: ‘sockaddr_in’ does not name a type
+/usr/local/include/thrift/transport/TSocket.h:291:5: error: ‘sockaddr_in6’ does not name a type
+In file included from InterConnect.h:55:0,
+                 from TabletServer.h:26,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+transport/BaseTransport.h:67:37: error: expected nested-name-specifier before ‘ServerTransport’
+transport/BaseTransport.h:67:37: error: expected ‘;’ before ‘ServerTransport’
+transport/BaseTransport.h:67:37: error: ‘ServerTransport’ does not name a type
+In file included from TabletServer.h:26:0,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+InterConnect.h:368:2: error: ‘pthead_mutex_t’ does not name a type
+InterConnect.h: In member function ‘void interconnect::SpiderConnector<Tr>::freeTransport(interconnect::CachedTransport<Tr>*)’:
+InterConnect.h:187:23: error: ‘cacheLock’ was not declared in this scope
+InterConnect.h:191:26: error: template argument 1 is invalid
+InterConnect.h:191:26: error: template argument 2 is invalid
+InterConnect.h:191:47: error: invalid type in declaration before ‘=’ token
+InterConnect.h:192:26: error: template argument 1 is invalid
+InterConnect.h:192:26: error: template argument 2 is invalid
+InterConnect.h:192:38: error: expected initializer before ‘cacheIter’
+InterConnect.h:198:10: error: ‘cacheIter’ was not declared in this scope
+InterConnect.h:198:42: error: request for member ‘end’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h:205:37: error: request for member ‘erase’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h:240:4: error: ‘cacheIter’ was not declared in this scope
+InterConnect.h:240:35: error: request for member ‘begin’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h:241:43: error: request for member ‘end’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h:246:37: error: request for member ‘erase’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h: In member function ‘std::pair<std::basic_string<char>, Tr> interconnect::SpiderConnector<Tr>::getTransporter(const std::vector<interconnect::ServerConnection>*, bool)’:
+InterConnect.h:263:24: error: ‘cacheLock’ was not declared in this scope
+InterConnect.h:279:28: error: type/value mismatch at argument 1 in template parameter list for ‘template<class _Tp, class _Alloc> class std::vector’
+InterConnect.h:279:28: error:   expected a type, got ‘CachedTransport’
+InterConnect.h:279:28: error: template argument 2 is invalid
+InterConnect.h:279:49: error: invalid type in declaration before ‘=’ token
+InterConnect.h:280:27: error: missing template arguments before ‘*’ token
+InterConnect.h:280:43: error: found ‘:’ in nested-name-specifier, expected ‘::’
+InterConnect.h:280:28: error: ‘cacheTransport’ has not been declared
+InterConnect.h:280:62: error: expected ‘;’ before ‘)’ token
+InterConnect.h:342:2: error: expected primary-expression at end of input
+InterConnect.h:342:2: error: expected ‘;’ at end of input
+InterConnect.h:342:2: error: expected primary-expression at end of input
+InterConnect.h:342:2: error: expected ‘)’ at end of input
+InterConnect.h:342:2: error: expected statement at end of input
+InterConnect.h:342:2: error: expected ‘}’ at end of input
+InterConnect.h:342:2: error: expected ‘}’ at end of input
+InterConnect.h:342:2: error: expected ‘}’ at end of input
+InterConnect.h:342:2: error: expected ‘}’ at end of input
+InterConnect.h: In member function ‘std::shared_ptr<_Tp> interconnect::SpiderConnector<Tr>::createNewTransport(interconnect::ServerConnection*)’:
+InterConnect.h:347:19: error: missing template arguments before ‘*’ token
+InterConnect.h:347:20: error: ‘cachedTransport’ was not declared in this scope
+InterConnect.h:347:42: error: expected type-specifier before ‘CachedTransport’
+InterConnect.h:347:42: error: expected ‘;’ before ‘CachedTransport’
+InterConnect.h:352:23: error: ‘cacheLock’ was not declared in this scope
+InterConnect.h:353:25: error: type/value mismatch at argument 1 in template parameter list for ‘template<class _Tp, class _Alloc> class std::vector’
+InterConnect.h:353:25: error:   expected a type, got ‘CachedTransport’
+InterConnect.h:353:25: error: template argument 2 is invalid
+InterConnect.h:353:46: error: invalid type in declaration before ‘=’ token
+InterConnect.h:355:22: error: request for member ‘insert’ in ‘cachedConnections->’, which is of non-class type ‘int’
+InterConnect.h: At global scope:
+InterConnect.h:376:24: error: ‘ThriftTransporter’ was not declared in this scope
+InterConnect.h:376:41: error: template argument 1 is invalid
+InterConnect.h:376:62: error: invalid type in declaration before ‘;’ token
+In file included from ../data/constructs/scanstate.h:32:0,
+                 from TabletServer.h:29,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+../data/constructs/../client/TabletLocation.h:40:23: error: enclosing class of constexpr non-static member function ‘cclient::data::KeyExtent* cclient::data::TabletLocation::getExtent() const’ is not a literal type
+../data/constructs/../client/TabletLocation.h:32:7: note: ‘cclient::data::TabletLocation’ is not literal because:
+../data/constructs/../client/TabletLocation.h:32:7: note:   ‘cclient::data::TabletLocation’ has a non-trivial destructor
+../data/constructs/../client/TabletLocation.h:45:19: error: enclosing class of constexpr non-static member function ‘std::string cclient::data::TabletLocation::getLocation() const’ is not a literal type
+In file included from TabletServer.h:29:0,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+../data/constructs/scanstate.h:110:27: error: ‘getIteratorList’ function uses ‘auto’ type specifier without trailing return type
+../data/constructs/scanstate.h:112:22: error: ‘getOptions’ function uses ‘auto’ type specifier without trailing return type
+../data/constructs/scanstate.h:138:35: error: template argument 2 is invalid
+../data/constructs/scanstate.h:138:35: error: template argument 4 is invalid
+../data/constructs/scanstate.h: In constructor ‘cclient::data::ScanState::ScanState(cclient::data::security::AuthInfo*, std::string, cclient::data::security::Authorizations*, cclient::data::Range*, std::set<cclient::data::Column*>*, uint64_t, std::vector<cclient::data::IterInfo*>*, std::map<std::basic_string<char>, std::map<std::basic_string<char>, std::basic_string<char> > >*, bool)’:
+../data/constructs/scanstate.h:66:5: error: ‘serverSideOptions’ was not declared in this scope
+In file included from TabletServer.h:32:0,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+../data/constructs/tablet/TabletType.h: In function ‘constexpr cclient::data::tserver::TabletType cclient::data::tserver::fromExtent(cclient::data::KeyExtent*)’:
+../data/constructs/tablet/TabletType.h:54:1: error: body of constexpr function ‘constexpr cclient::data::tserver::TabletType cclient::data::tserver::fromExtent(cclient::data::KeyExtent*)’ not a return-statement
+In file included from ../data/constructs/server/RangeDefinition.h:26:0,
+                 from TabletServer.h:35,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+../data/constructs/server/ServerDefinition.h: At global scope:
+../data/constructs/server/ServerDefinition.h:54:22: error: enclosing class of constexpr non-static member function ‘cclient::data::security::AuthInfo* cclient::data::tserver::ServerDefinition::getCredentials() const’ is not a literal type
+../data/constructs/server/ServerDefinition.h:38:7: note: ‘cclient::data::tserver::ServerDefinition’ is not literal because:
+../data/constructs/server/ServerDefinition.h:38:7: note:   ‘cclient::data::tserver::ServerDefinition’ has a non-trivial destructor
+../data/constructs/server/ServerDefinition.h: In member function ‘cclient::data::security::Authorizations* cclient::data::tserver::ServerDefinition::getAuthorizations() const’:
+../data/constructs/server/ServerDefinition.h:61:10: error: cannot convert ‘cclient::data::security::AuthInfo* const’ to ‘cclient::data::security::Authorizations*’ in return
+In file included from TabletServer.h:35:0,
+                 from Scan.h:28,
+                 from Scan.cpp:21:
+../data/constructs/server/RangeDefinition.h: In member function ‘std::vector<cclient::data::Range*>* cclient::data::tserver::RangeDefinition::getRanges() const’:
+../data/constructs/server/RangeDefinition.h:50:11: warning: invalid conversion from ‘const std::vector<cclient::data::Range*>*’ to ‘std::vector<cclient::data::Range*>*’ [-fpermissive]
+In file included from Scan.h:28:0,
+                 from Scan.cpp:21:
+TabletServer.h: At global scope:
+TabletServer.h:52:1: error: expected class-name before ‘{’ token
+TabletServer.h:59:48: error: ‘Configuration’ has not been declared
+TabletServer.h:60:4: error: ‘SpiderConnector’ is not a type
+TabletServer.h:104:2: error: ‘Scan’ does not name a type
+TabletServer.h:116:2: error: ‘ServerTransport’ does not name a type
+TabletServer.h: In constructor ‘interconnect::ServerInterconnect::ServerInterconnect(cclient::data::tserver::RangeDefinition&, int*, int*)’:
+TabletServer.h:64:49: error: request for member ‘getLong’ in ‘* conf’, which is of non-class type ‘int’
+TabletServer.h:72:34: error: request for member ‘getLong’ in ‘* conf’, which is of non-class type ‘int’
+TabletServer.h:80:30: error: type/value mismatch at argument 1 in template parameter list for ‘template<class _Tp> class std::shared_ptr’
+TabletServer.h:80:30: error:   expected a type, got ‘Transporter’
+TabletServer.h:80:48: error: invalid type in declaration before ‘=’ token
+TabletServer.h:81:27: error: request for member ‘createNewTransport’ in ‘* distributedConnector’, which is of non-class type ‘int’
+TabletServer.h:83:31: error: ‘setTransport’ was not declared in this scope
+TabletServer.h:85:41: error: ‘authenticate’ was not declared in this scope
+TabletServer.h:87:19: error: template argument 1 is invalid
+TabletServer.h:87:19: error: template argument 2 is invalid
+TabletServer.h:87:25: error: invalid type in declaration before ‘;’ token
+TabletServer.h:89:37: error: template argument 2 is invalid
+TabletServer.h:89:37: error: template argument 4 is invalid
+TabletServer.h:91:36: error: ‘credentials’ was not declared in this scope
+TabletServer.h:91:55: error: missing template arguments before ‘->’ token
+TabletServer.h:92:5: error: ‘auths’ was not declared in this scope
+TabletServer.h:92:12: error: ‘range’ was not declared in this scope
+TabletServer.h:92:19: error: ‘fetchedColumns’ was not declared in this scope
+TabletServer.h:92:35: error: ‘size’ was not declared in this scope
+TabletServer.h:92:52: error: missing template arguments before ‘,’ token
+TabletServer.h:94:62: error: missing template arguments before ‘)’ token
+TabletServer.h:100:3: error: ‘myTransportPool’ was not declared in this scope
+TabletServer.h:101:17: error: expected type-specifier before ‘ServerTransport’
+TabletServer.h:101:17: error: expected ‘>’ before ‘ServerTransport’
+TabletServer.h:101:17: error: expected ‘(’ before ‘ServerTransport’
+TabletServer.h:101:17: error: ‘ServerTransport’ was not declared in this scope
+TabletServer.h:101:33: error: expected primary-expression before ‘>’ token
+TabletServer.h:101:56: error: expected ‘)’ before ‘;’ token
+In file included from Scan.cpp:21:0:
+Scan.h: At global scope:
+Scan.h:64:5: error: ‘virtual interconnect::Scan::~Scan()’ cannot be overloaded
+Scan.h:47:5: error: with ‘interconnect::Scan::~Scan()’
+Scan.cpp:40:1: error: expected declaration before ‘}’ token
+make: *** [Scan.o] Error 1

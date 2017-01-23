@@ -1,0 +1,30 @@
+language: cpp
+sudo: required
+cache:
+  directories:
+   - apache-rpc-9.zip
+   - thrift-0.9.2.tar.gz
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - boost-latest
+    packages:
+    - g++-4.9
+    - libbz2-dev
+    - libboost1.55-all-dev
+    - cmake
+    - libgtest-dev
+    - libprotobuf-dev
+    - protobuf-compiler
+before_script:
+ - sudo apt-get update -qq
+ - sudo apt-get install -qq uuid-dev libgsasl7-dev
+ - ./install-gtest.sh
+ - ./install-hdfs3.sh
+ - ./install-zookeeper.sh
+ - ./install-thrift.sh
+script:
+  - export CXX="g++-4.9"
+  - mkdir build && cd build && cmake .. && cmake --build . ; make
+
