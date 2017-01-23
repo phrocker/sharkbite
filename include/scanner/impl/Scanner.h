@@ -39,7 +39,12 @@
 #include "../../interconnect/ClientInterface.h"
 #include "../../interconnect/tableOps/TableOperations.h"
 
+
+
 namespace scanners {
+  
+
+
 
 
 /**string
@@ -240,6 +245,9 @@ protected:
     // tablet locator
     cclient::impl::TabletLocator *tableLocator;
 };
+
+//typedef scanners::Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> BatchScanner;  
+using BatchScanner =scanners::Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>;
 }
 #endif /* SCANNER_H_ */
 

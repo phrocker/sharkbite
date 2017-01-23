@@ -309,7 +309,7 @@ main (int argc, char **argv)
       try{
 	std::cout << "Reading values from row a to d" << std::endl;
 
-	std::unique_ptr<scanners::Scanner> scanner = std::unique_ptr<scanners::Scanner>( dynamic_cast<scanners::Scanner*>(ops->createScanner (&auths, 10).release()));
+	std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
 
 	// range from a to d
 	cclient::data::Key *startkey = new cclient::data::Key ();
