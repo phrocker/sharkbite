@@ -199,16 +199,7 @@ enable_testing()
   add_test(NAME teststreams
 	   COMMAND teststreams)
 	   
-  file(GLOB_RECURSE TEST_ZK "test/zookeeper/testLocal.cpp")
-  add_executable(testzk ${TEST_ZK})
-  target_link_libraries (testzk ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries (testzk ${ZLIB_LIBRARIES})
-  target_link_libraries( testzk ${Boost_LIBRARIES} )
-  target_link_libraries( testzk ${Zookeeper_LIBRARIES} )
-  target_link_libraries( testzk ${HDFS3_LIBS} ${THRIFT_LIB})
-
-  target_link_libraries(testzk constructs client)
-  
+ 
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})
   target_link_libraries (testzkInstance ${CMAKE_THREAD_LIBS_INIT})
