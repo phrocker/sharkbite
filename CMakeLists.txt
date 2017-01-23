@@ -207,7 +207,7 @@ enable_testing()
   target_link_libraries( testzk ${Zookeeper_LIBRARIES} )
   target_link_libraries( testzk ${HDFS3_LIBS} ${THRIFT_LIB})
 
-  target_link_libraries(testzk client)
+  target_link_libraries(testzk constructs client)
   
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})

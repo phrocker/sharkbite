@@ -102,7 +102,7 @@ public:
 	}
 	
 
-	std::unique_ptr<writer::BatchWriter> writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	std::unique_ptr<writer::Writer> writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
 
 	std::stringstream bigString("ohhi");
 	for (int i=0; i < 1*1024; i++)
@@ -127,7 +127,7 @@ public:
 	// close will free memory for objects given to it
 	writer->close ();
 	
-	writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
 
 
 	if ( ops->flush("","z",true) ) {
@@ -161,7 +161,7 @@ public:
 	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
 	                scanner->getResultSet ();
 
-	writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));	
+	writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));	
 	
 	for (auto iter = results->begin (); iter != results->end ();
 	     iter++, counter++) {
@@ -222,7 +222,7 @@ public:
 		std::cout << "Compaction successful " << std::endl;
 	}
 	
-	writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
 	
 	
 	for (int i = 0; i < fruit_to_write; i++) {

@@ -21,7 +21,7 @@
 #include "../../../include/writer/impl/WriterHeuristic.h"
 
 namespace writer{
-BatchWriter::BatchWriter (cclient::data::Instance *instance,
+Writer::Writer (cclient::data::Instance *instance,
                     interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
                     cclient::data::security::Authorizations *auths, uint16_t threads) : tops(tops),
 	Sink<cclient::data::KeyValue> (500), mutationQueue(500*1.5)
@@ -33,7 +33,7 @@ BatchWriter::BatchWriter (cclient::data::Instance *instance,
 	writerHeuristic = new WriterHeuristic (threads);
 }
 
-BatchWriter::~BatchWriter ()
+Writer::~Writer ()
 {
 	if (writerHeuristic->close() > 0)
 	{
@@ -45,7 +45,7 @@ BatchWriter::~BatchWriter ()
 	delete writerHeuristic;
 }
 void
-BatchWriter::handleFailures(std::vector<cclient::data::Mutation*> *failures)
+Writer::handleFailures(std::vector<cclient::data::Mutation*> *failures)
 {
   std::vector<cclient::data::Mutation*> newFailures;
   
@@ -70,7 +70,7 @@ BatchWriter::handleFailures(std::vector<cclient::data::Mutation*> *failures)
 	
 }
 void
-BatchWriter::flush (bool override)
+Writer::flush (bool override)
 {
 	std::vector<cclient::data::Mutation*> failures;
 	writerHeuristic->restart_failures(&failures);

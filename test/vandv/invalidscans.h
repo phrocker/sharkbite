@@ -81,7 +81,7 @@ public:
 	}
 	
 	try{
-	std::unique_ptr<writer::BatchWriter> writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	std::unique_ptr<writer::Writer> writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
 	  return -1;
 	}
 	catch(cclient::exceptions::ClientException &ce)

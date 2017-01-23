@@ -16,6 +16,7 @@
 #define SRC_WRITER_SINK_H_
 
 
+#include "data/constructs/Mutation.h"
 #include <chrono>
 #include <thread>
 #include <boost/lockfree/queue.hpp>
@@ -79,6 +80,13 @@ public:
 	 */
 	virtual void
 	flush (bool override = false) = 0;
+	
+	
+	/**
+	Add a mutation
+	**/
+	virtual bool
+	addMutation (std::unique_ptr<cclient::data::Mutation> obj) = 0;
 
 	/**
 	 * Closes the sink

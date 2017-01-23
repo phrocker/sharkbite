@@ -35,14 +35,14 @@ namespace writer
 /*
  *
  */
-class BatchWriter : public Sink<cclient::data::KeyValue>
+class Writer : public Sink<cclient::data::KeyValue>
 {
 public:
-    BatchWriter (cclient::data::Instance *instance,
+    Writer (cclient::data::Instance *instance,
               interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
               cclient::data::security::Authorizations *auths, uint16_t threads);
     virtual
-    ~BatchWriter ();
+    ~Writer ();
 
     void
     flush (bool override = false);
@@ -109,6 +109,8 @@ protected:
     moodycamel::ConcurrentQueue<cclient::data::Mutation*> mutationQueue;
     
 };
+
+using BatchWriter = writer::Sink<cclient::data::KeyValue>;
 
 } /* namespace data */
 

@@ -187,7 +187,7 @@ public:
 
 	std::cout << "Writing " << fruit_to_write << " apples and bananas" << std::endl;
 	
-	std::unique_ptr<writer::BatchWriter> writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 25).release()));
+	std::unique_ptr<writer::Writer> writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 25).release()));
 
 	std::stringstream bigString("ohhi");
 	for (int i=0; i < 1*1024; i++)

@@ -260,7 +260,7 @@ main (int argc, char **argv)
 
 	std::cout << "Writing " << fruit_to_write << " apples and bananas" << std::endl;
 
-	std::unique_ptr<writer::BatchWriter> writer = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	std::unique_ptr<writer::BatchWriter> writer = ops->createWriter (&auths, 15);
 
 	for (int i = 0; i < fruit_to_write; i++) {
 

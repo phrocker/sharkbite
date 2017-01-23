@@ -102,7 +102,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 
 	std::cout << "Writing " << numToWrite << " apples and bananas" << std::endl;
 
-	std::unique_ptr<writer::BatchWriter> sink = std::unique_ptr<writer::BatchWriter>( dynamic_cast<writer::BatchWriter*>(ops->createWriter (&auths, 15).release()));
+	std::unique_ptr<writer::Writer> sink = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
 
 	std::map<std::string,std::string> tableOps = ops->getProperties();
 	

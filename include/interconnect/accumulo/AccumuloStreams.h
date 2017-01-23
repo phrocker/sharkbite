@@ -20,7 +20,7 @@
 
 namespace interconnect
 {
-class AccumuloStreams : public scanners::Scanner, public writer::BatchWriter
+class AccumuloStreams : public scanners::Scanner, public writer::Writer
 {
 public:
     AccumuloStreams (cclient::data::Instance *instance,
