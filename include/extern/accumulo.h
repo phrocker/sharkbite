@@ -20,6 +20,7 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "accumulo_data.h"
 
 struct Key {
 	char *row;
@@ -67,6 +68,7 @@ struct Scanner {
 	struct TableOps *tableOps;
 	// stuff you don't use
 	void *scannerPtr;
+	void *res;
 };
 struct connector {
 
@@ -95,11 +97,11 @@ int addRange(struct Scanner *scanner, Range *range);
 
 int addRanges(struct Scanner *scanner, Range **range, int size);
 
-int hasNext(struct Scanner *scanner);
+bool hasNext(struct Scanner *scanner);
 
 int next(struct Scanner *scanner, KeyValue *kv);
 
-int next(struct Scanner *scanner, KeyValue **kv, int size);
+int next(struct Scanner *scanner, KeyValueList *kvl);
 
 int closeScanner(struct Scanner *scanner);
 

@@ -18,7 +18,7 @@
 
 #include <set>
 #include <string>
-#include <boost/lockfree/queue.hpp>
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 
 
 
@@ -39,7 +39,7 @@ protected:
 
     SourceConditions *sourceConditionals;
 
-    boost::lockfree::queue<T*> *resultSet;
+    moodycamel::ConcurrentQueue<T*> *resultSet;
     
    
 
@@ -143,7 +143,7 @@ public:
     }
 
     void add(T *t) {
-        resultSet->push(t);
+        resultSet->enqueue(t);
 	
         sourceConditionals->awakeThreadsForResults();
     }
@@ -260,7 +260,7 @@ template<typename T, class BlockType>
 class Results {
 protected:
 
-    boost::lockfree::queue<T*> resultSet;
+    moodycamel::ConcurrentQueue<T*> resultSet;
 
     BlockType *iter;
 
