@@ -22,41 +22,6 @@ extern "C" {
 #include <string.h>
 #include "accumulo_data.h"
 
-struct Key {
-	char *row;
- 	uint32_t row_size;
-
-	char *cf;
-	uint32_t cf_size;
-	
-	char *cq;
-	uint32_t cq_size;
-
-	char *cv;
-	uint32_t cv_size;
-
-	uint64_t timestamp;
-};
-
-
-struct Range {
-	Key *start_key;
-	unsigned start_inclusive : 1;
-
-	Key *stop_key;
-	unsigned stop_inclusive : 1;
-};
-
-struct Value{
-	uint8_t *value;
-	uint32_t value_size;
-};
-
-struct KeyValue{
-	Key *key;
-	Value *value;
-};
-
 struct TableOps {
 	char *table_name;
 	// stuff you don't use
@@ -104,6 +69,10 @@ int next(struct Scanner *scanner, KeyValue *kv);
 int next(struct Scanner *scanner, KeyValueList *kvl);
 
 int closeScanner(struct Scanner *scanner);
+
+// writer code
+
+
 
 #ifdef __cplusplus
 }

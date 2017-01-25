@@ -99,6 +99,10 @@ extern "C"
 
     return tableOps;
   }
+
+  
+
+
   int
   free_table (struct TableOps *tableOps)
   {
@@ -126,6 +130,14 @@ extern "C"
       return 0;
   }
 
+void populateKey(Key *key, cclient::data::Key *otherKey)
+{
+}
+
+void populateKeyValue(KeyValue *kv, cclient::data::KeyValue *otherKv)
+{
+}
+
 cclient::data::Key *toKey(Key *key)
 {
   cclient::data::Key *nk = new cclient::data::Key();
@@ -143,7 +155,9 @@ cclient::data::Range *toRange(Range *range)
   cclient::data::Range *nr = new cclient::data::Range(toKey(range->start),range->startKeyInclusive,toKey(range->stop),range->stopKeyInclusive);
   return nr;
 }
-  
+
+
+
 int addRange(struct Scanner *scanner, Range *range)
 {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
@@ -169,18 +183,34 @@ bool hasNext(struct Scanner *scanner)
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   if (scanner->res == 0)
     scanner->res=bs->getResultSet();
-  return ((scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>*)scanner->res);
+  return ((scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>*)scanner->res)->hasTop();
 }
 
-int next(struct Scanner *scanner, KeyValue *kv);
+int next(struct Scanner *scanner, KeyValue *kv)
+{
+  scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* res = scanner->res;
+  std::unique_ptr<cclient::data::KeyValue> nkv = *res;
+  populateKeyValue(kv,nkv.get());
+  return 1;    
+}
 
 int next(struct Scanner *scanner, KeyValueList *kvl);
-
+{
+	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* res = scanner->res;
+	int i=0;
+	for (i =0; i < kvl->kv_size; i++)
+	{
+		std::unique_ptr<cclient::data::KeyValue> nkv = *res;
+		populateKeyValue(kvl->kvs[i],nkv.get());	
+	}
+}
 int closeScanner(struct Scanner *scanner)
 {
   delete scanner.scannerPtr;
   delete scanner;
 }
+
+
 
 }
 

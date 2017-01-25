@@ -50,6 +50,7 @@ file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
 file(GLOB_RECURSE ZK_SOURCES "src/data/zookeeper/*cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")
 file(GLOB_RECURSE EXTERN_SOURCES "src/data/extern/*cpp")
+file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
 file(GLOB_RECURSE INTERCONNECT_SOURCES "src/interconnect/*cpp")
 file(GLOB_RECURSE SCANNER_SOURCES "src/scanner/*cpp")
 file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
@@ -112,6 +113,16 @@ target_link_libraries(interconnect client)
 target_link_libraries(interconnect extern)
 target_link_libraries(interconnect writer)
 target_link_libraries(interconnect scanner)
+
+#interconnect
+add_library(cwrapper STATIC ${CWRAPPER_SOURCES})
+target_link_libraries(cwrapper ${Boost_LIBRARIES})
+target_link_libraries(cwrapper ${THRIFT_LIB})
+target_link_libraries(cwrapper client)
+target_link_libraries(cwrapper extern)
+target_link_libraries(cwrapper writer)
+target_link_libraries(cwrapper scanner)
+target_link_libraries(cwrapper interconnect)
 
 
 #ClientExample
