@@ -1,5 +1,6 @@
 language: cpp
 sudo: required
+dist: trusty
 cache:
   directories:
    - apache-rpc-9.zip
