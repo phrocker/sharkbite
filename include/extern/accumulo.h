@@ -29,12 +29,13 @@ struct TableOps {
 	void *tableOpsPtr;
 };
 
-struct Scanner {
+struct BatchScan {
 	struct TableOps *tableOps;
 	// stuff you don't use
 	void *scannerPtr;
 	void *res;
 };
+
 struct connector {
 
 	// stuff you don't use
@@ -56,19 +57,19 @@ int free_table(struct TableOps *tableOps);
 
 // scanner code
 
-struct Scanner *createScanner(struct TableOps *tableOps, short threads);
+struct BatchScan *createScanner(struct TableOps *tableOps, short threads);
 
-int addRange(struct Scanner *scanner, Range *range);
+int addRange(struct BatchScan *scanner, CRange *range);
 
-int addRanges(struct Scanner *scanner, Range **range, int size);
+int addRanges(struct BatchScan *scanner, CRange **range, int size);
 
-bool hasNext(struct Scanner *scanner);
+bool hasNext(struct BatchScan *scanner);
 
-int next(struct Scanner *scanner, KeyValue *kv);
+int next(struct BatchScan *scanner, CKeyValue *kv);
 
-int next(struct Scanner *scanner, KeyValueList *kvl);
+int nextMany(struct BatchScan *scanner, KeyValueList *kvl);
 
-int closeScanner(struct Scanner *scanner);
+int closeScanner(struct BatchScan *scanner);
 
 // writer code
 

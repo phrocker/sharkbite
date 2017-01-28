@@ -54,7 +54,7 @@ protected:
 public:
 
     ResultBlock(SourceConditions *conditionals,
-                boost::lockfree::queue<T*> *queue, bool setEnd = false) :
+                moodycamel::ConcurrentQueue<T*> *queue, bool setEnd = false) :
         isEnd(setEnd) {
         resultSet = queue;
 
@@ -80,7 +80,7 @@ public:
       return sourceConditionals;
     }
     
-    boost::lockfree::queue<T*> *getResultSet() const
+    moodycamel::ConcurrentQueue<T*> *getResultSet() const
     {
       return resultSet;
     }
@@ -94,9 +94,9 @@ public:
     inline void getNextResult() {
         do {
 	    
-            if (!resultSet->pop(current)) {
+            if (!resultSet->try_dequeue(current)) {
                 sourceConditionals->waitForResults();
-                if (resultSet->pop(current))
+                if (resultSet->try_dequeue(current))
 		{
 		    sourceConditionals->decrementCount();
                     break;
@@ -151,7 +151,7 @@ public:
     void add(std::vector<std::unique_ptr<T>> *t) {
         for (typename std::vector<std::unique_ptr<T>>::iterator it = t->begin(); it != t->end();
                 it++) {
-            resultSet->push(*it.release());
+            resultSet->enqueue(*it.release());
 	    sourceConditionals->incrementCount();
         }
 
@@ -161,7 +161,7 @@ public:
     void add(std::vector<T*> *t) {
         for (typename std::vector<T*>::iterator it = t->begin(); it != t->end();
                 it++) {
-            resultSet->push(*it);
+            resultSet->enqueue(*it);
 	    sourceConditionals->incrementCount();
         }
 
