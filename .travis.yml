@@ -19,7 +19,7 @@ addons:
     - libprotobuf-dev
     - protobuf-compiler
 before_script:
- - sudo apt-get update -qq
+ - sudo sed -i 's/us-central1.gce/us-central1.gce.clouds/' /etc/apt/sources.list && sudo apt-get update
  - sudo apt-get install -qq uuid-dev libgsasl7-dev
  - ./install-gtest.sh
  - ./install-hdfs3.sh
