@@ -248,11 +248,15 @@ public:
 
 		if (!IsEmpty(&endRow))
 			keyExtent.endRow = endRow;
+		else
+		  keyExtent.endRow="";
 
 		std::string prevEndRow = ot->getPrevEndRow();
 
 		if (!IsEmpty(&prevEndRow))
 			keyExtent.prevEndRow = prevEndRow;
+		else
+		  keyExtent.prevEndRow="";
 		
 		
 		return keyExtent;

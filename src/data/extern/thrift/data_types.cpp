@@ -272,17 +272,26 @@ uint32_t TColumn::write(::apache::thrift::protocol::TProtocol* oprot) const {
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("TColumn");
 
-  xfer += oprot->writeFieldBegin("columnFamily", ::apache::thrift::protocol::T_STRING, 1);
-  xfer += oprot->writeBinary(this->columnFamily);
-  xfer += oprot->writeFieldEnd();
+  if (this->columnFamily.length() > 0)
+  {
+    xfer += oprot->writeFieldBegin("columnFamily", ::apache::thrift::protocol::T_STRING, 1);
+    xfer += oprot->writeBinary(this->columnFamily);
+    xfer += oprot->writeFieldEnd();
+  }
 
-  xfer += oprot->writeFieldBegin("columnQualifier", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeBinary(this->columnQualifier);
-  xfer += oprot->writeFieldEnd();
+  if (this->columnQualifier.length() > 0)
+  {
+    xfer += oprot->writeFieldBegin("columnQualifier", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeBinary(this->columnQualifier);
+    xfer += oprot->writeFieldEnd();
+  }
 
-  xfer += oprot->writeFieldBegin("columnVisibility", ::apache::thrift::protocol::T_STRING, 3);
-  xfer += oprot->writeBinary(this->columnVisibility);
-  xfer += oprot->writeFieldEnd();
+  if (this->columnVisibility.length() > 0)
+  {
+    xfer += oprot->writeFieldBegin("columnVisibility", ::apache::thrift::protocol::T_STRING, 3);
+    xfer += oprot->writeBinary(this->columnVisibility);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -610,13 +619,19 @@ uint32_t TKeyExtent::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeBinary(this->table);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("endRow", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeBinary(this->endRow);
-  xfer += oprot->writeFieldEnd();
+  if (this->endRow.length() > 0)
+  {
+    xfer += oprot->writeFieldBegin("endRow", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeBinary(this->endRow);
+    xfer += oprot->writeFieldEnd();
+  }
 
-  xfer += oprot->writeFieldBegin("prevEndRow", ::apache::thrift::protocol::T_STRING, 3);
-  xfer += oprot->writeBinary(this->prevEndRow);
-  xfer += oprot->writeFieldEnd();
+  if (this->prevEndRow.length() > 0)
+  {
+    xfer += oprot->writeFieldBegin("prevEndRow", ::apache::thrift::protocol::T_STRING, 3);
+    xfer += oprot->writeBinary(this->prevEndRow);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldStop();
   xfer += oprot->writeStructEnd();
@@ -1000,6 +1015,7 @@ uint32_t TRange::write(::apache::thrift::protocol::TProtocol* oprot) const {
   ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
   xfer += oprot->writeStructBegin("TRange");
 
+  
   xfer += oprot->writeFieldBegin("start", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->start.write(oprot);
   xfer += oprot->writeFieldEnd();

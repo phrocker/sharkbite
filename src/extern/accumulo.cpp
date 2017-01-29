@@ -136,10 +136,35 @@ extern "C"
 
 void populateKey(CKey *key, cclient::data::Key *otherKey)
 {
+  std::pair<char*, size_t> row = otherKey->getRow();
+  key->row = new uint8_t[ row.second ];
+  key->rowLength = row.second;
+  memcpy(key->row,row.first,row.second);
+  
+  std::pair<char*, size_t> cf = otherKey->getColFamily();
+  key->colFamily = new uint8_t[ cf.second ];
+  key->columnFamilyLength = cf.second;
+  memcpy(key->colFamily,cf.first,cf.second);
+  
+  std::pair<char*, size_t> cq = otherKey->getColQualifier();
+  key->colQualifier = new uint8_t[ cq.second ];
+  key->colQualLen = cq.second;
+  memcpy(key->colQualifier,cq.first,cq.second);
+  
+  std::pair<char*, size_t> cv = otherKey->getColVisibility();
+  key->keyVisibility = new uint8_t[ cv.second ];
+  key->colVisSize = cv.second;
+  memcpy(key->keyVisibility,cv.first,cv.second);
+  
+  key->timestamp = otherKey->getTimeStamp();
 }
 
 void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv)
 {
+  populateKey(kv->key,otherKv->getKey());
+  cclient::data::Value *val =otherKv->getValue();
+  kv->value->value = new uint8_t[ val->size() ];
+  memcpy(kv->value->value,val->data(),val->size());
 }
 
 cclient::data::Key *toKey(CKey *key)
@@ -148,7 +173,7 @@ cclient::data::Key *toKey(CKey *key)
   nk->setRow((const char*)key->row,key->rowLength);
   nk->setColFamily((const char*)key->colFamily,key->columnFamilyLength);
   nk->setColQualifier((const char*)key->colQualifier,key->colQualLen);
-  nk->setColVisibility((const char*)key->colVisSize,key->colVisSize);
+  nk->setColVisibility((const char*)key->keyVisibility,key->colVisSize);
   nk->setTimeStamp(key->timestamp);
   nk->setDeleted(key->deleted);
   return nk;
@@ -186,36 +211,47 @@ bool hasNext(struct BatchScan *scanner)
 {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   if (scanner->res == 0)
-    scanner->res=bs->getResultSet();
-  return false;
-  //return ((scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>*)scanner->res)->hasTop();
+  {
+    scanners::ResultBlock<cclient::data::KeyValue> rs = bs->getResultSet()->begin();
+    scanner->res= new scanners::ResultIter<cclient::data::KeyValue>(rs);
+  }
+  scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::ResultBlock<cclient::data::KeyValue>*>(scanner->res);
+  return !st->isEndOfRange();
 }
 
 int next(struct BatchScan *scanner, CKeyValue *kv)
 {
-  scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* res = static_cast<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>*>(scanner->res);
-  //std::unique_ptr<cclient::data::KeyValue> nkv = *(*res);
-  //populateKeyValue(kv,nkv.get());
+  scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
+  
+  std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
+  populateKeyValue(kv,nkv.get());
   return 1;    
 }
 
 int nextMany(struct BatchScan *scanner, KeyValueList *kvl)
 {
-	/*scanne
-	 * rs::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* res = scanner->res;
-	int i=0;
-	for (i =0; i < kvl->kv_size; i++)
-	{
-		std::unique_ptr<cclient::data::KeyValue> nkv = *res;
-		populateKeyValue(kvl->kvs[i],nkv.get());	
-	}*/
-	return 0;
+  scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
+    unsigned int i=0;
+    for (i =0; i < kvl->kv_size; i++)
+    {
+	    std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
+	    populateKeyValue(kvl->kvs[i],nkv.get());	
+    }
+	return i;
 }
 int closeScanner(struct BatchScan *scanner)
 {
-  delete scanner->scannerPtr;
-  delete scanner;
+  if (0 != scanner && 0 != scanner->scannerPtr)
+  {
+    scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+    
+      delete bs;
+    delete scanner;
   return 0;
+  }
+  else	{
+    return 1;
+  }
 }
 
 

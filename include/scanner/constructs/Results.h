@@ -57,10 +57,9 @@ public:
                 moodycamel::ConcurrentQueue<T*> *queue, bool setEnd = false) :
         isEnd(setEnd) {
         resultSet = queue;
-
         sourceConditionals = conditionals;
     }
-
+   
     ResultBlock<T> begin() {
         getNextResult();
         return *this;
@@ -193,6 +192,16 @@ public:
         setEnd((end ? end : copyResultSet->isEndOfRange()));
         parent = copyResultSet;
     }
+    
+     ResultIter(ResultBlock<T> &copyResultSet, bool end = false) :
+        ResultBlock<T>(copyResultSet.getSourceConditionals(),
+                       copyResultSet.getResultSet(),
+                       (end ? end : copyResultSet.isEndOfRange()))
+
+    {
+        setEnd((end ? end : copyResultSet.isEndOfRange()));
+        parent = this;
+    }
 
     ResultIter(ResultIter<T> *copyResultSet, bool end = false) :
         ResultBlock<T>(copyResultSet->getSourceConditionals(),
@@ -202,6 +211,16 @@ public:
     {
         setEnd((end ? end : copyResultSet->isEndOfRange()));
         parent = copyResultSet;
+    }
+    
+    ResultIter(ResultIter<T> &copyResultSet, bool end = false) :
+        ResultBlock<T>(copyResultSet.getSourceConditionals(),
+                       copyResultSet.getResultSet(),
+                       (end ? end : copyResultSet.isEndOfRange()))
+
+    {
+        setEnd((end ? end : copyResultSet.isEndOfRange()));
+        parent = this;
     }
 
     ResultBlock<T> begin() {
