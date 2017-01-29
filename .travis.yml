@@ -3,7 +3,7 @@ sudo: required
 cache:
   directories:
    - apache-rpc-9.zip
-   - thrift-0.9.2.tar.gz
+   - thrift-0.9.3.tar.gz
 addons:
   apt:
     sources:

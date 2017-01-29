@@ -11,14 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/writer/impl/SinkImpl.h"
+#include "writer/impl/SinkImpl.h"
 
-#include "../../../include/writer/impl/../../data/constructs/KeyValue.h"
-#include "../../../include/writer/impl/../../data/constructs/Mutation.h"
-#include "../../../include/writer/impl/../../data/exceptions/ClientException.h"
-#include "../../../include/writer/impl/../../data/constructs/Key.h"
-#include "../../../include/writer/impl/../../data/constructs/value.h"
-#include "../../../include/writer/impl/WriterHeuristic.h"
+#include "writer/impl/../../data/constructs/KeyValue.h"
+#include "writer/impl/../../data/constructs/Mutation.h"
+#include "writer/impl/../../data/exceptions/ClientException.h"
+#include "writer/impl/../../data/constructs/Key.h"
+#include "writer/impl/../../data/constructs/value.h"
+#include "writer/impl/WriterHeuristic.h"
 
 namespace writer{
 Writer::Writer (cclient::data::Instance *instance,
@@ -162,6 +162,7 @@ Writer::flush (bool override)
 	  }
 	}catch(cclient::exceptions::ClientException ce)
 	{
+	  std::cout << "ce what" << ce.what() << endl;
 	  if (ce.getErrorCode() == NO_LOCATION_IDENTIFIED)
 	  {
 	    // should check that the table exists

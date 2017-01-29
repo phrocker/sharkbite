@@ -11,48 +11,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <iostream>
+
+  #include <iostream>
 #include <sstream>
-using namespace std;
-#include "../../include/extern/../data/constructs/KeyValue.h"
-#include "../../include/extern/../data/constructs/security/Authorizations.h"
-#include "../../include/extern/../scanner/constructs/Results.h"
-#include "../../include/extern/../scanner/impl/Scanner.h"
-#include "../../include/extern/../data/constructs/client/zookeeperinstance.h"
-#include "../../include/extern/../interconnect/Master.h"
-#include "../../include/extern/../interconnect/tableOps/TableOperations.h"
-
-#include "../../include/extern/../data/constructs/rfile/RFile.h"
-#include "../../include/extern/../data/constructs/compressor/compressor.h"
-#include "../../include/extern/../data/constructs/compressor/zlibCompressor.h"
-
-#include "../../include/extern/../data/streaming/HdfsStream.h"
-#include "../../include/extern/accumulo.h"
-
-using namespace cclient::data;
-using namespace cclient::data::compression;
+#include "data/constructs/Key.h"
+#include "data/constructs/KeyValue.h"
+#include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/Authorizations.h"
+#include "scanner/constructs/Results.h"
+#include "scanner/impl/Scanner.h"
+#include "data/constructs/configuration/Configuration.h"
+#include "data/constructs/client/zookeeperinstance.h"
+#include "interconnect/Master.h"
+#include "interconnect/tableOps/TableOperations.h"
+  
+  using namespace cclient::data;
 using namespace cclient::data::zookeeper;
 using namespace cclient::data::streams;
 using namespace interconnect;
 using namespace scanners;
 
+#include "extern/accumulo.h"
+#include "extern/accumulo_data.h"
+
+
+
 extern "C"
 {
+  
+
 
   struct connector *
   create_connector (char *instance, char *zks, char *username, char *password)
   {
-    Configuration conf;
-    conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
     ZookeeperInstance *instPtr = new ZookeeperInstance (string (instance),
-							string (zks), 1000,
-							&conf);
+							string (zks), 1000);
 
     struct connector *con = new connector ();
 
     con->zk = instPtr;
 
-    AuthInfo creds (string (username), string (password),
+    cclient::data::security::AuthInfo creds (string (username), string (password),
 		    instPtr->getInstanceId ());
 
     interconnect::MasterConnect *master = new MasterConnect (&creds, instPtr);
@@ -83,8 +82,8 @@ extern "C"
     interconnect::MasterConnect *master =
 	static_cast<interconnect::MasterConnect*> (connector->masterPtr);
 
-    TableOperations<KeyValue*, ResultBlock<KeyValue*>> *ops = master->tableOps (
-	tableName);
+    AccumuloTableOperations *ops = master->tableOps (
+	tableName).release();
 
     tableOps->tableOpsPtr = ops;
     tableOps->table_name = tableName;
@@ -104,6 +103,10 @@ extern "C"
 
     return tableOps;
   }
+
+  
+
+
   int
   free_table (struct TableOps *tableOps)
   {
@@ -111,12 +114,148 @@ extern "C"
       {
 	AccumuloTableOperations *tableOpsCpp =
 	    static_cast<AccumuloTableOperations*> (tableOps->tableOpsPtr);
-
+	    delete tableOpsCpp;
 	delete tableOps;
       }
     delete tableOps;
     return 1;
   }
+  
+  struct BatchScan *createScanner(struct TableOps *tableOps, short threads){
+    if (NULL != tableOps->tableOpsPtr)
+      {
+    AccumuloTableOperations *tableOpsCpp =
+	    static_cast<AccumuloTableOperations*> (tableOps->tableOpsPtr);
+	   struct BatchScan *scanner = new BatchScan();
+	   cclient::data::security::Authorizations auths;
+	   scanner->scannerPtr= tableOpsCpp->createScanner(&auths, threads).release();
+	   return scanner;
+      }
+      return 0;
+  }
+
+void populateKey(CKey *key, cclient::data::Key *otherKey)
+{
+  std::pair<char*, size_t> row = otherKey->getRow();
+  key->row = new uint8_t[ row.second ];
+  key->rowLength = row.second;
+  memcpy(key->row,row.first,row.second);
+  
+  std::pair<char*, size_t> cf = otherKey->getColFamily();
+  key->colFamily = new uint8_t[ cf.second ];
+  key->columnFamilyLength = cf.second;
+  memcpy(key->colFamily,cf.first,cf.second);
+  
+  std::pair<char*, size_t> cq = otherKey->getColQualifier();
+  key->colQualifier = new uint8_t[ cq.second ];
+  key->colQualLen = cq.second;
+  memcpy(key->colQualifier,cq.first,cq.second);
+  
+  std::pair<char*, size_t> cv = otherKey->getColVisibility();
+  key->keyVisibility = new uint8_t[ cv.second ];
+  key->colVisSize = cv.second;
+  memcpy(key->keyVisibility,cv.first,cv.second);
+  
+  key->timestamp = otherKey->getTimeStamp();
+}
+
+void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv)
+{
+  populateKey(kv->key,otherKv->getKey());
+  cclient::data::Value *val =otherKv->getValue();
+  kv->value->value = new uint8_t[ val->size() ];
+  memcpy(kv->value->value,val->data(),val->size());
+}
+
+cclient::data::Key *toKey(CKey *key)
+{
+  cclient::data::Key *nk = new cclient::data::Key();
+  nk->setRow((const char*)key->row,key->rowLength);
+  nk->setColFamily((const char*)key->colFamily,key->columnFamilyLength);
+  nk->setColQualifier((const char*)key->colQualifier,key->colQualLen);
+  nk->setColVisibility((const char*)key->keyVisibility,key->colVisSize);
+  nk->setTimeStamp(key->timestamp);
+  nk->setDeleted(key->deleted);
+  return nk;
+}
+
+cclient::data::Range *toRange(CRange *range)
+{
+  cclient::data::Range *nr = new cclient::data::Range(toKey(range->start),range->startKeyInclusive,toKey(range->stop),range->stopKeyInclusive);
+  return nr;
+}
+
+
+
+int addRange(struct BatchScan *scanner, CRange *range)
+{
+  scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+  cclient::data::Range *nr = toRange(range);
+  bs->addRange(std::unique_ptr<cclient::data::Range>(nr));
+  return 1;
+}
+
+int addRanges(struct BatchScan *scanner, CRange **range, int size)
+{
+  scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+  int i = 0;
+  for(i=0; i < size; i++)
+  {
+    cclient::data::Range *nr = toRange(range[i]);
+    bs->addRange(std::unique_ptr<cclient::data::Range>(nr));
+  }
+  return i;
+}
+
+bool hasNext(struct BatchScan *scanner)
+{
+  scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+  if (scanner->res == 0)
+  {
+    scanners::ResultBlock<cclient::data::KeyValue> rs = bs->getResultSet()->begin();
+    scanner->res= new scanners::ResultIter<cclient::data::KeyValue>(rs);
+  }
+  scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::ResultBlock<cclient::data::KeyValue>*>(scanner->res);
+  return !st->isEndOfRange();
+}
+
+int next(struct BatchScan *scanner, CKeyValue *kv)
+{
+  scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
+  
+  std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
+  populateKeyValue(kv,nkv.get());
+  return 1;    
+}
+
+int nextMany(struct BatchScan *scanner, KeyValueList *kvl)
+{
+  scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
+    unsigned int i=0;
+    for (i =0; i < kvl->kv_size; i++)
+    {
+	    std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
+	    populateKeyValue(kvl->kvs[i],nkv.get());	
+    }
+	return i;
+}
+int closeScanner(struct BatchScan *scanner)
+{
+  if (0 != scanner && 0 != scanner->scannerPtr)
+  {
+    scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+    
+      delete bs;
+    delete scanner;
+  return 0;
+  }
+  else	{
+    return 1;
+  }
+}
+
+
 
 }
+
 

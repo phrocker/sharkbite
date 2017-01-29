@@ -17,12 +17,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
+#include "accumulo_data.h"
 
 struct TableOps {
 	char *table_name;
 	// stuff you don't use
 	struct connector *parent;
 	void *tableOpsPtr;
+};
+
+struct BatchScan {
+	struct TableOps *tableOps;
+	// stuff you don't use
+	void *scannerPtr;
+	void *res;
 };
 
 struct connector {
@@ -43,6 +54,26 @@ struct TableOps *open_table(struct connector *connector, char *tableName);
 struct TableOps *create_table(struct connector *connector, char *tableName);
 
 int free_table(struct TableOps *tableOps);
+
+// scanner code
+
+struct BatchScan *createScanner(struct TableOps *tableOps, short threads);
+
+int addRange(struct BatchScan *scanner, CRange *range);
+
+int addRanges(struct BatchScan *scanner, CRange **range, int size);
+
+bool hasNext(struct BatchScan *scanner);
+
+int next(struct BatchScan *scanner, CKeyValue *kv);
+
+int nextMany(struct BatchScan *scanner, KeyValueList *kvl);
+
+int closeScanner(struct BatchScan *scanner);
+
+// writer code
+
+
 
 #ifdef __cplusplus
 }

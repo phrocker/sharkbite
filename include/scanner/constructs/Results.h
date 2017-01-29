@@ -18,7 +18,7 @@
 
 #include <set>
 #include <string>
-#include <boost/lockfree/queue.hpp>
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 
 
 
@@ -39,7 +39,7 @@ protected:
 
     SourceConditions *sourceConditionals;
 
-    boost::lockfree::queue<T*> *resultSet;
+    moodycamel::ConcurrentQueue<T*> *resultSet;
     
    
 
@@ -54,13 +54,12 @@ protected:
 public:
 
     ResultBlock(SourceConditions *conditionals,
-                boost::lockfree::queue<T*> *queue, bool setEnd = false) :
+                moodycamel::ConcurrentQueue<T*> *queue, bool setEnd = false) :
         isEnd(setEnd) {
         resultSet = queue;
-
         sourceConditionals = conditionals;
     }
-
+   
     ResultBlock<T> begin() {
         getNextResult();
         return *this;
@@ -80,7 +79,7 @@ public:
       return sourceConditionals;
     }
     
-    boost::lockfree::queue<T*> *getResultSet() const
+    moodycamel::ConcurrentQueue<T*> *getResultSet() const
     {
       return resultSet;
     }
@@ -94,9 +93,9 @@ public:
     inline void getNextResult() {
         do {
 	    
-            if (!resultSet->pop(current)) {
+            if (!resultSet->try_dequeue(current)) {
                 sourceConditionals->waitForResults();
-                if (resultSet->pop(current))
+                if (resultSet->try_dequeue(current))
 		{
 		    sourceConditionals->decrementCount();
                     break;
@@ -143,7 +142,7 @@ public:
     }
 
     void add(T *t) {
-        resultSet->push(t);
+        resultSet->enqueue(t);
 	
         sourceConditionals->awakeThreadsForResults();
     }
@@ -151,7 +150,7 @@ public:
     void add(std::vector<std::unique_ptr<T>> *t) {
         for (typename std::vector<std::unique_ptr<T>>::iterator it = t->begin(); it != t->end();
                 it++) {
-            resultSet->push(*it.release());
+            resultSet->enqueue(*it.release());
 	    sourceConditionals->incrementCount();
         }
 
@@ -161,7 +160,7 @@ public:
     void add(std::vector<T*> *t) {
         for (typename std::vector<T*>::iterator it = t->begin(); it != t->end();
                 it++) {
-            resultSet->push(*it);
+            resultSet->enqueue(*it);
 	    sourceConditionals->incrementCount();
         }
 
@@ -193,6 +192,16 @@ public:
         setEnd((end ? end : copyResultSet->isEndOfRange()));
         parent = copyResultSet;
     }
+    
+     ResultIter(ResultBlock<T> &copyResultSet, bool end = false) :
+        ResultBlock<T>(copyResultSet.getSourceConditionals(),
+                       copyResultSet.getResultSet(),
+                       (end ? end : copyResultSet.isEndOfRange()))
+
+    {
+        setEnd((end ? end : copyResultSet.isEndOfRange()));
+        parent = this;
+    }
 
     ResultIter(ResultIter<T> *copyResultSet, bool end = false) :
         ResultBlock<T>(copyResultSet->getSourceConditionals(),
@@ -202,6 +211,16 @@ public:
     {
         setEnd((end ? end : copyResultSet->isEndOfRange()));
         parent = copyResultSet;
+    }
+    
+    ResultIter(ResultIter<T> &copyResultSet, bool end = false) :
+        ResultBlock<T>(copyResultSet.getSourceConditionals(),
+                       copyResultSet.getResultSet(),
+                       (end ? end : copyResultSet.isEndOfRange()))
+
+    {
+        setEnd((end ? end : copyResultSet.isEndOfRange()));
+        parent = this;
     }
 
     ResultBlock<T> begin() {
@@ -260,7 +279,7 @@ template<typename T, class BlockType>
 class Results {
 protected:
 
-    boost::lockfree::queue<T*> resultSet;
+    moodycamel::ConcurrentQueue<T*> resultSet;
 
     BlockType *iter;
 

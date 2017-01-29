@@ -134,7 +134,20 @@ class TKey {
     return !(*this == rhs);
   }
 
-  bool operator < (const TKey & ) const;
+  bool operator < (const TKey & other) const
+  {
+    if (row < other.row)
+      return true;
+    if (colFamily < other.colFamily)
+      return true;
+    if (colQualifier < other.colQualifier )
+      return true;
+    if (colVisibility < other.colVisibility)
+      return true;
+    if (timestamp < other.timestamp)
+      return true;
+    return false;
+  }
 
   uint32_t read(::apache::thrift::protocol::TProtocol* iprot);
   uint32_t write(::apache::thrift::protocol::TProtocol* oprot) const;

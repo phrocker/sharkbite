@@ -14,7 +14,7 @@
 #ifndef SRC_EXTERN_ACCUMULO_DATA_H_
 #define SRC_EXTERN_ACCUMULO_DATA_H_
 
-struct Key
+struct CKey
 {
   /**
    * Row part of key
@@ -45,7 +45,13 @@ struct Key
 
 };
 
-struct Value
+struct CAuthorizations
+{
+    char **auths;
+    size_t auth_size;
+};
+
+struct CValue
 {
   // value array.
   uint8_t *value;
@@ -55,22 +61,22 @@ struct Value
   size_t valueSize;
 };
 
-struct KeyValue
+struct CKeyValue
 {
-  struct Key *key;
-  struct Value *value;
+  struct CKey *key;
+  struct CValue *value;
 };
 
 struct KeyValueList
 {
-  struct KeyValue **kvs;
+  struct CKeyValue **kvs;
   uint32_t kv_size;
 };
 
-struct Range
+struct CRange
 {
-  struct Key *start;
-  struct Key *stop;
+  struct CKey *start;
+  struct CKey *stop;
   bool startKeyInclusive;
   bool stopKeyInclusive;
   bool infiniteStartKey;
