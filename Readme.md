@@ -5,10 +5,12 @@
 
 
 Native KeyValue connector. While initial support has been built for Apache Accumulo, the design
-can and has been used to extend to other Key/Value Stores
+can and has been used to extend to other Key/Value Stores. Development began in 2014 and has 
+slowly evolved. there is no structural specificity to Accumulo despite being the base implementation.
+Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
 Currently the code is a merger of C && C++ code. V0.1 will represent a shift more toward 
-creating a C API, creating exernalized factories for the thrift code.
+creating a C API and creating exernalized factories for the thrift code.
 
 Capabilities That will be supported in V0.1  --
 
