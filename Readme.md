@@ -59,10 +59,10 @@ Accumulo -- Creating a Scanner
     // create the scanner with ten threads.
     std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
     // range from a to d
-    Key *startkey = new Key();
-    startkey->setRow("a", 1);
-    Key *stopKey = new Key();
-    stopKey->setRow("d", 1);
+    Key startkey;
+    startkey.setRow("a", 1);
+    Key stopKey;
+    stopKey.setRow("d", 1);
     Range *range = new Range(startkey, true, stopKey, true); 
     // build your range.
     scanner->addRange(range);

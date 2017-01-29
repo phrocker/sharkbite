@@ -40,6 +40,7 @@ public:
    
 
     virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
+    
 
     /**
      * Add the list of user supplied Iterators;
