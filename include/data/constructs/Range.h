@@ -40,13 +40,49 @@ public:
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
     Range(Key *startKey, bool startInclusive, Key *endKey, bool endKeyInclusive);
+    
+    /**
+     * Sets the start key and endkey with the inclusive flags.
+     * @param startKey start key
+     * @param startInclusive start key is inclusive
+     * @param endKey end key 
+     * @param endKeyInclusive return whether or not the end key is inclusive.
+     **/
+    Range(Key &startKey, bool startInclusive, Key &endKey, bool endKeyInclusive) :
+      Range(&startKey,startInclusive,&endKey,endKeyInclusive)
+    {
+    }
+    
+    /**
+     * Sets the start key and endkey with the inclusive flags.
+     * @param startKey start key
+     * @param startInclusive start key is inclusive
+     * @param endKey end key 
+     * @param endKeyInclusive return whether or not the end key is inclusive.
+     **/
+    Range(Key &endKey, bool endKeyInclusive) :
+      Range(0,false,&endKey,endKeyInclusive)
+    {
+    }
+    
+    /**
+     * Sets the start key and endkey with the inclusive flags.
+     * @param startKey start key
+     * @param startInclusive start key is inclusive
+     * @param endKey end key 
+     * @param endKeyInclusive return whether or not the end key is inclusive.
+     **/
+    Range(bool startInclusive,Key &startKey) :
+      Range(&startKey,startInclusive,0,false)
+    {
+    }
 
     /**
      * Returns the start key.
      **/
     Key *getStartKey()
     {
-        return start;
+        return &start;
     }
 
     /**
@@ -54,7 +90,7 @@ public:
      **/
     Key *getStopKey()
     {
-        return stop;
+        return &stop;
     }
 
     /**
@@ -91,8 +127,8 @@ public:
 
     virtual ~Range();
 protected:
-    Key *start;
-    Key *stop;
+    Key start;
+    Key stop;
     bool startKeyInclusive;
     bool stopKeyInclusive;
     bool infiniteStartKey;
