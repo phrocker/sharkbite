@@ -219,7 +219,7 @@ enable_testing()
   target_link_libraries( testzkInstance ${Zookeeper_LIBRARIES} )
   target_link_libraries( testzkInstance ${HDFS3_LIBS} ${THRIFT_LIB})
 
-  target_link_libraries(testzkInstance client)
+  target_link_libraries(testzkInstance errors constructs streaming scanner writer interconnect)
   
       file(GLOB_RECURSE VANDV "test/vandv/IntegrationTest.cpp")
   add_executable(integrationTest ${VANDV})

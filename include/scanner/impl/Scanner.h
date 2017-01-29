@@ -246,6 +246,9 @@ protected:
     cclient::impl::TabletLocator *tableLocator;
 };
 
+template<class T>
+using Iterator  = Results<T, ResultBlock<T>>;
+
 using BatchScanner =scanners::Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>;
 }
 #endif /* SCANNER_H_ */

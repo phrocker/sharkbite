@@ -322,7 +322,7 @@ main (int argc, char **argv)
 	
 	scanner->fetchColumn("avacado");
 
-	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
+	scanners::Iterator<cclient::data::KeyValue> *results =
 	                scanner->getResultSet ();
 
 	

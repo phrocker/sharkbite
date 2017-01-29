@@ -45,19 +45,17 @@ Building
 
 Creating a Scanner
 ```
-    Configuration conf;
-    conf.set("FILE_SYSTEM_ROOT", "/accumulo");
-    ZookeeperInstance *instance = new ZookeeperInstance(argv[1], argv[2], 1000,
-            &conf);
+    
+    ZookeeperInstance *instance = new ZookeeperInstance(argv[1], argv[2], 1000);
 
     AuthInfo creds(argv[3], argv[4], instance->getInstanceId());
 
     interconnect::MasterConnect *master = new MasterConnect(&creds, instance);
 
-    TableOperations<KeyValue*, ResultBlock<KeyValue*>> *ops = master->tableOps(
+    std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps(
             table);
     // create the scanner with ten threads.
-     std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
+    std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
     // range from a to d
     Key *startkey = new Key();
     startkey->setRow("a", 1);
@@ -67,8 +65,8 @@ Creating a Scanner
     // build your range.
     scanner->addRange(range);
 
-    Results<KeyValue*, ResultBlock<KeyValue*>> *results =
-            scanner->getResultSet();
+    scanners::Iterator<cclient::data::KeyValue> *results =
+	                scanner->getResultSet ();
 
     for (auto iter = results->begin(); iter != results->end(); iter++) {
         KeyValue *kv = *iter;
