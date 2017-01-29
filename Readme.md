@@ -45,7 +45,7 @@ Building
 	examples in the examples directory
 ```
 
-Creating a Scanner
+Accumulo -- Creating a Scanner
 ```
     
     ZookeeperInstance *instance = new ZookeeperInstance(argv[1], argv[2], 1000);
@@ -77,5 +77,12 @@ Creating a Scanner
         else
             cout << "Key is null" << endl;
     }
+```
+
+Cassandra -- Creating a Scanner
+```
+    
+    Cassandra impl is no longer checked in b/c it needs much more work. Will update
+    when it is operational again
 ```
 
