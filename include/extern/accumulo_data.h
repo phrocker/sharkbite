@@ -41,7 +41,7 @@ struct CKey
   uint32_t colVisSize;
   uint64_t timestamp;
 
-  bool deleted;
+unsigned deleted : 1;
 
 };
 
@@ -77,10 +77,10 @@ struct CRange
 {
   struct CKey *start;
   struct CKey *stop;
-  bool startKeyInclusive;
-  bool stopKeyInclusive;
-  bool infiniteStartKey;
-  bool infiniteStopKey;
+  unsigned startKeyInclusive : 1;
+  unsigned  stopKeyInclusive : 1;
+  unsigned infiniteStartKey :1;
+  unsigned infiniteStopKey : 1;
 };
 
 #endif /* SRC_EXTERN_ACCUMULO_DATA_H_ */

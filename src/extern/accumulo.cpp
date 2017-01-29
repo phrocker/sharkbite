@@ -159,7 +159,7 @@ void populateKey(CKey *key, cclient::data::Key *otherKey)
   key->timestamp = otherKey->getTimeStamp();
 }
 
-void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv)
+void populateKeyValue(struct CKeyValue *kv, cclient::data::KeyValue *otherKv)
 {
   populateKey(kv->key,otherKv->getKey());
   cclient::data::Value *val =otherKv->getValue();
@@ -167,7 +167,7 @@ void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv)
   memcpy(kv->value->value,val->data(),val->size());
 }
 
-cclient::data::Key *toKey(CKey *key)
+cclient::data::Key *toKey(struct CKey *key)
 {
   cclient::data::Key *nk = new cclient::data::Key();
   nk->setRow((const char*)key->row,key->rowLength);
@@ -179,7 +179,7 @@ cclient::data::Key *toKey(CKey *key)
   return nk;
 }
 
-cclient::data::Range *toRange(CRange *range)
+cclient::data::Range *toRange(struct CRange *range)
 {
   cclient::data::Range *nr = new cclient::data::Range(toKey(range->start),range->startKeyInclusive,toKey(range->stop),range->stopKeyInclusive);
   return nr;
@@ -187,7 +187,7 @@ cclient::data::Range *toRange(CRange *range)
 
 
 
-int addRange(struct BatchScan *scanner, CRange *range)
+int addRange(struct BatchScan *scanner, struct CRange *range)
 {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   cclient::data::Range *nr = toRange(range);
@@ -195,7 +195,7 @@ int addRange(struct BatchScan *scanner, CRange *range)
   return 1;
 }
 
-int addRanges(struct BatchScan *scanner, CRange **range, int size)
+int addRanges(struct BatchScan *scanner, struct CRange **range, int size)
 {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   int i = 0;
@@ -207,7 +207,7 @@ int addRanges(struct BatchScan *scanner, CRange **range, int size)
   return i;
 }
 
-bool hasNext(struct BatchScan *scanner)
+int hasNext(struct BatchScan *scanner)
 {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   if (scanner->res == 0)
@@ -216,10 +216,12 @@ bool hasNext(struct BatchScan *scanner)
     scanner->res= new scanners::ResultIter<cclient::data::KeyValue>(rs);
   }
   scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::ResultBlock<cclient::data::KeyValue>*>(scanner->res);
-  return !st->isEndOfRange();
+  if (!st->isEndOfRange())
+    return 1;
+  return 0;
 }
 
-int next(struct BatchScan *scanner, CKeyValue *kv)
+int next(struct BatchScan *scanner, struct CKeyValue *kv)
 {
   scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
   
@@ -228,7 +230,7 @@ int next(struct BatchScan *scanner, CKeyValue *kv)
   return 1;    
 }
 
-int nextMany(struct BatchScan *scanner, KeyValueList *kvl)
+int nextMany(struct BatchScan *scanner, struct KeyValueList *kvl)
 {
   scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::ResultIter<cclient::data::KeyValue>*>(scanner->res);
     unsigned int i=0;

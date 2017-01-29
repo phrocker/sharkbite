@@ -59,15 +59,15 @@ int free_table(struct TableOps *tableOps);
 
 struct BatchScan *createScanner(struct TableOps *tableOps, short threads);
 
-int addRange(struct BatchScan *scanner, CRange *range);
+int addRange(struct BatchScan *scanner, struct CRange *range);
 
-int addRanges(struct BatchScan *scanner, CRange **range, int size);
+int addRanges(struct BatchScan *scanner, struct CRange **range, int size);
 
-bool hasNext(struct BatchScan *scanner);
+int hasNext(struct BatchScan *scanner);
 
-int next(struct BatchScan *scanner, CKeyValue *kv);
+int next(struct BatchScan *scanner, struct CKeyValue *kv);
 
-int nextMany(struct BatchScan *scanner, KeyValueList *kvl);
+int nextMany(struct BatchScan *scanner, struct KeyValueList *kvl);
 
 int closeScanner(struct BatchScan *scanner);
 
