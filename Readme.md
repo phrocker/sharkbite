@@ -1,32 +1,24 @@
-
-***
+# Sharkbite
 
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
 
-Native KeyValue connector. While initial support has been built for Apache Accumulo, the design
-can and has been used to extend to other Key/Value Stores. Development began in 2014 and has 
+Sharkbite is a native client for key/value stores. With initial support for [Apache Accumulo][accumulo], the design
+can and has been used to support other key/value stores. Development began in 2014 and has 
 slowly evolved. there is no structural specificity to Accumulo despite being the base implementation.
 Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
 Currently the code is a merger of C && C++ code. V0.1 will represent a shift more toward 
 creating a C API and creating exernalized factories for the thrift code.
 
-Capabilities That will be supported in V0.1  --
+Capabilities That will be supported in V0.1 : 
 
-  Currently we are known to work with version 1.6.x and 1.7
+ * Work with Accumulo 1.6.x and 1.7.x
+ * **Read/Write** : Reading and writing data to Accumulo is currently supported.
+ * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
+ * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
 
-  --Table Operations--
-  Most table operations are currently supported
-  This includes the fate operations that the normal Accumulo client performs.
-  
-
-  --Security Operations--
-  Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords,
-  and remove users.
-
-
-Requirements:
+## Requirements
 
 	GNU 4+
 	cmake
@@ -35,7 +27,7 @@ Requirements:
 	zookeeper
 	libhdfs3
 
-Building
+## Building
 ```
 	run install scripts located in root directory
 
@@ -45,12 +37,20 @@ Building
 	examples in the examples directory
 ```
 
-Accumulo -- Creating a Scanner
-```
-    
-    ZookeeperInstance *instance = new ZookeeperInstance(argv[1], argv[2], 1000);
+## Example
+```C++
 
-    AuthInfo creds(argv[3], argv[4], instance->getInstanceId());
+    //This code shows an example of reading data from an Accumulo instance.
+
+    //TODO unsure about assignments below
+    string instance = argv[1]
+    string zookeepers = argv[2]
+    string username = argv[3]
+    string password = argv[4]
+
+    ZookeeperInstance *instance = new ZookeeperInstance(instance, zookeepers, 1000);
+
+    AuthInfo creds(username, password, instance->getInstanceId());
 
     interconnect::MasterConnect *master = new MasterConnect(&creds, instance);
 
@@ -78,11 +78,5 @@ Accumulo -- Creating a Scanner
             cout << "Key is null" << endl;
     }
 ```
-
-Cassandra -- Creating a Scanner
-```
-    
-    Cassandra impl is no longer checked in b/c it needs much more work. Will update
-    when it is operational again
-```
+[accumulo]: https://accumulo.apache.org
 
