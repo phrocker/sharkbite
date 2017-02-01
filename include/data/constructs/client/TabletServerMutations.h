@@ -30,13 +30,13 @@ public:
     TabletServerMutations(std::string sessionId, uint32_t fails);
     virtual ~TabletServerMutations();
 
-    void addMutation(KeyExtent *extent, Mutation* m) {
-        std::vector<Mutation*> &mutationList = (*mutations)[extent];
+    void addMutation(KeyExtent extent, Mutation* m) {
+        std::vector<Mutation*> &mutationList = mutations[extent];
         mutationList.push_back(m);
     }
 
-    std::map<KeyExtent*, std::vector<Mutation*> > *getMutations() {
-        return mutations;
+    std::map<KeyExtent, std::vector<Mutation*> > *getMutations() {
+        return &mutations;
     }
     
     void setMaxFailures(uint32_t failures)
@@ -51,7 +51,7 @@ public:
 
 protected:
     uint32_t failuresAllowed;
-    std::map<KeyExtent*, std::vector<Mutation*> > *mutations;
+    std::map<KeyExtent, std::vector<Mutation*> > mutations;
     std::string session;
 
 };

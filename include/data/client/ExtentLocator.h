@@ -98,7 +98,7 @@ public:
      * @param retry retries locations if a failure occurs
      * @returns returns the tablet location or null
      **/
-    virtual cclient::data::TabletLocation *
+    virtual cclient::data::TabletLocation 
     locateTablet (cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) = 0;
 
     
@@ -106,9 +106,9 @@ public:
      * returns a list of locations
      * @returns list of tablet locations
      **/
-    virtual std::vector<cclient::data::TabletLocation*> locations(cclient::data::security::AuthInfo *credentials)
+    virtual std::vector<cclient::data::TabletLocation> locations(cclient::data::security::AuthInfo *credentials)
     {
-      return std::vector<cclient::data::TabletLocation*>();
+      return std::vector<cclient::data::TabletLocation>();
     } 
     
     /**

@@ -72,7 +72,7 @@ ServerInterconnect::authenticate (cclient::data::security::AuthInfo *credentials
     do
       {
 	    try{
-		transport->authenticate (credentials);
+		//transport->authenticate (credentials);
 	      this->credentials = *credentials;
 	      std::string username = credentials->getUserName ();
 	      std::string password = credentials->getPassword ();

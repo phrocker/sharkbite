@@ -21,30 +21,27 @@ namespace data
 TabletServerMutations::TabletServerMutations (std::string sessionId) :
     session (sessionId), failuresAllowed(-1)
 {
-    mutations = new std::map<KeyExtent*, std::vector<Mutation*>> ();
+    
 
 }
 
 TabletServerMutations::TabletServerMutations (std::string sessionId, uint32_t fails) :
     session (sessionId), failuresAllowed(fails)
 {
-    mutations = new std::map<KeyExtent*, std::vector<Mutation*>> ();
+    
 
 }
 
 TabletServerMutations::~TabletServerMutations ()
 {
-    for (std::map<KeyExtent*, std::vector<Mutation*>>::iterator it =
-                mutations->begin (); it != mutations->end (); it++)
+    for (auto it : mutations)
     {
-        delete it->first;
-        for (auto mutation : it->second)
+
+        for (auto mutation : it.second)
         {
             delete mutation;
         }
     }
-    delete mutations;
-
 }
 
 } /* namespace data */

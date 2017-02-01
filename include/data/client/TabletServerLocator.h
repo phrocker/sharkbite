@@ -16,6 +16,7 @@
 #define TABLETSERVERLOCATOR_H_
 
 #include <map>
+#include <mutex>
 #include <sstream>
 #include "ExtentLocator.h"
 #include "../exceptions/ClientException.h"
@@ -40,7 +41,7 @@ public:
      * provides tablet locations by finding the begin and end row which are the metadata rows for this 
      * table.
      **/
-    virtual std::vector<cclient::data::TabletLocation*> locations(cclient::data::security::AuthInfo *credentials)
+    virtual std::vector<cclient::data::TabletLocation> locations(cclient::data::security::AuthInfo *credentials)
     {
       
       std::stringstream metadataRow;
@@ -48,11 +49,11 @@ public:
         metadataRow << tableId << ';';
         
         
-        cclient::data::TabletLocation *location = parent->locateTablet(credentials,
+        cclient::data::TabletLocation location = parent->locateTablet(credentials,
                                    metadataRow.str(), false, true);
 	
-	std::vector<cclient::data::TabletLocation*> locations = locator->findTablet(credentials,
-                                              location, metadataRow.str(), lastTabletRow, parent);
+	std::vector<cclient::data::TabletLocation> locations = locator->findTablet(credentials,
+                                              &location, metadataRow.str(), lastTabletRow, parent);
 	return locations;
     } 
 
@@ -63,7 +64,7 @@ public:
      * @param skipRow determines if the row can be skipped
      * @param retry determines if failures should be retried.
      **/
-    cclient::data::TabletLocation *locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow,
+    cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow,
                                  bool retry) {
 
         std::string modifiedRow;
@@ -85,32 +86,32 @@ public:
         metadataRow << tableId << ';' << modifiedRow;
         
 	retry_loop:
-        cclient::data::TabletLocation *parentLocation = parent->locateTablet(creds,
+	try{
+	  cclient::data::TabletLocation parentLocation = parent->locateTablet(creds,
                                    metadataRow.str(), false, retry);
 
-        if (NULL != parentLocation) {
-            std::vector<cclient::data::TabletLocation*> locations = locator->findTablet(creds,
-                                              parentLocation, metadataRow.str(), lastTabletRow, parent);
+        
+            std::vector<cclient::data::TabletLocation> locations = locator->findTablet(creds,
+                                              &parentLocation, metadataRow.str(), lastTabletRow, parent);
 	    
 	    cclient::data::TabletLocation *returnLocation = NULL;
             for (auto location : locations) {
 	      
-                if (location->getExtent()->getPrevEndRow().length() == 0
-                        || location->getExtent()->getPrevEndRow()
+                if (location.getExtent()->getPrevEndRow().length() == 0
+                        || location.getExtent()->getPrevEndRow()
                         < modifiedRow) {
-                    returnLocation = location;
+                    returnLocation = &location;
 		  break;
                 } else {
                 }
             }
-            for (auto loc : locations) {
-	      if (returnLocation != loc)
-	      {
-		delete loc;
-	      }
+            
+	    if (NULL != returnLocation)
+	    {
+	      std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+	      cachedLocations.insert(std::pair<std::string,cclient::data::TabletLocation>(returnLocation->getExtent()->getEndRow(),*returnLocation));
+	      return *returnLocation;	
 	    }
-	    delete parentLocation;if (NULL != returnLocation)
-	      return returnLocation;	
 	    else
 	    {
 	      if (retry)
@@ -119,14 +120,15 @@ public:
 	      throw cclient::exceptions::ClientException(NO_LOCATION_IDENTIFIED);
 	    }
 
-        } else {
+	}catch (const cclient::exceptions::ClientException &ce)
+	{
 	    if (retry)
 		goto retry_loop;
 	    else
 	      throw cclient::exceptions::ClientException(NO_LOCATION_IDENTIFIED);
         }		
 
-        return 0;
+        throw cclient::exceptions::ClientException(NO_LOCATION_IDENTIFIED);
 
     }
 
@@ -134,26 +136,30 @@ public:
                       std::map<std::string, cclient::data::TabletServerMutations*> *binnedMutations,
                       std::set<std::string> *locations, std::vector<cclient::data::Mutation*> *failures) {
         std::map<std::string, cclient::data::TabletServerMutations*>::iterator it;
+	
         for (cclient::data::Mutation *m : *mutations) {
-            cclient::data::TabletLocation *loc = locateTablet(credentials, m->getRow(), false,false);
+	  cclient::data::TabletLocation loc;
+	    
+            
+	    if (!getCachedLocation(m->getRow(),loc))
+	      loc = locateTablet(credentials, m->getRow(), false,false);
+	    
 
             cclient::data::TabletServerMutations *tsm = NULL;
-            it = binnedMutations->find(loc->getLocation());
+            it = binnedMutations->find(loc.getLocation());
             if (it != binnedMutations->end()) {
                 tsm = it->second;
             }
 
             if (NULL == tsm) {
-                locations->insert(loc->getLocation());
-                tsm = new cclient::data::TabletServerMutations(loc->getSession());
+                locations->insert(loc.getLocation());
+                tsm = new cclient::data::TabletServerMutations(loc.getSession());
                 binnedMutations->insert(
-                    std::make_pair(loc->getLocation(), tsm));
+                    std::make_pair(loc.getLocation(), tsm));
             }
 
-            tsm->addMutation(loc->getExtent(), m);
+            tsm->addMutation(*loc.getExtent(), m);
 	    
-	    loc->setExtent(0);
-	    delete loc;
         }
     }
 
@@ -163,19 +169,26 @@ public:
                              std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,
                              pointer_comparator<cclient::data::KeyExtent*> > > *binnedRanges) {
 
-        std::string startRow = "";
+      std::string startRow = "";
         std::vector<cclient::data::Range*> failures;
-        std::vector<cclient::data::TabletLocation*> tabletLocations;
+        std::vector<cclient::data::TabletLocation> tabletLocations;
         for (auto range : *ranges) {
             if (range->getStartKey() != NULL) {
                 startRow = std::string(range->getStartKey()->getRow().first,
                                   range->getStartKey()->getRow().second);
             }
 
-            cclient::data::TabletLocation *loc = locateTablet(credentials, startRow, false,
+            
+            cclient::data::TabletLocation loc;
+	    
+            
+	    try{
+	    if(!getCachedLocation(startRow,loc))
+	      loc = locateTablet(credentials, startRow, false,
                                                false);
-
-            if (NULL == loc) {
+	    }catch(const cclient::exceptions::ClientException &ce)
+	    {
+            
                 failures.push_back(range);
                 continue;
             }
@@ -185,25 +198,25 @@ public:
             if (range->getStopKey() != NULL)
                 stopKey = std::string(range->getStopKey()->getRow().first,
                                  range->getStopKey()->getRow().second);
-            std::string extentEndRow = loc->getExtent()->getEndRow();
+            std::string extentEndRow = loc.getExtent()->getEndRow();
 
             while (!range->getInfiniteStopKey() && stopKey >= extentEndRow) {
 
-                loc = locateTablet(credentials, extentEndRow, true, false);
-                if (NULL == loc) {
-                    break;
-                }
+		if(!getCachedLocation(startRow,loc))
+		  loc = locateTablet(credentials, extentEndRow, true, false);
+                
                 tabletLocations.push_back(loc);
 
-                extentEndRow = loc->getExtent()->getEndRow();
+
+		extentEndRow = loc.getExtent()->getEndRow();
 
                 if (extentEndRow.length() == 0)
                     break;
 
             }
             for (auto locs : tabletLocations) {
-                locations->insert(locs->getLocation());
-                (*binnedRanges)[locs->getLocation()][locs->getExtent()].push_back(
+                locations->insert(locs.getLocation());
+                (*binnedRanges)[locs.getLocation()][locs.getExtent()].push_back(
                     range);
             }
 
@@ -212,9 +225,13 @@ public:
     }
 
     void invalidateCache(cclient::data::KeyExtent failedExtent) {
+      std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+      cachedLocations.erase(failedExtent.getEndRow());
     }
 
     void invalidateCache() {
+      std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+      cachedLocations.clear();
     }
 
     void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) {
@@ -225,7 +242,22 @@ protected:
     std::string tableId;
     TabletLocator *parent;
     TabletLocationObtainer *locator;
+    std::map<std::string,cclient::data::TabletLocation> cachedLocations;
+    std::recursive_mutex locatorMutex;
+    
     cclient::data::Instance *instance;
+    
+    bool getCachedLocation(std::string startRow, cclient::data::TabletLocation &loc){
+      std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+      std::map<std::string,cclient::data::TabletLocation>::iterator it= cachedLocations.lower_bound(startRow);
+      if (it != cachedLocations.end())
+      {
+	loc = it->second;
+	if (loc.getExtent()->getPrevEndRow().length() > 0 || loc.getExtent()->getPrevEndRow() < startRow)
+	  return true;
+      }
+      return false;
+    }
 };
 
 } /* namespace data */

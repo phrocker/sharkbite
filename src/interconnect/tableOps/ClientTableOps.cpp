@@ -219,14 +219,13 @@ std::vector< std::string > AccumuloTableOperations::listSplits()
     cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator (
                        cclient::impl::LocatorKey (connectorInstance, tableId));
     
-      std::vector<cclient::data::TabletLocation*> locations = tabletLocator->locations(credentials);
+      std::vector<cclient::data::TabletLocation> locations = tabletLocator->locations(credentials);
       
       std::vector<std::string> tablets;
       for(auto location : locations)
       {
-	cclient::data::KeyExtent *extent = location->getExtent();
+	cclient::data::KeyExtent *extent = location.getExtent();
 	tablets.push_back( extent->getEndRow() );
-	delete location;
 	
       }
       return tablets;
@@ -245,15 +244,15 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions)
     {
       cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator (
 			cclient::impl::LocatorKey (connectorInstance, tableId));
-      cclient::data::TabletLocation *location = tabletLocator->locateTablet(credentials,partition,false,false);
+      cclient::data::TabletLocation location = tabletLocator->locateTablet(credentials,partition,false,false);
       
-      ServerConnection *connection = new ServerConnection(location->getServer(),location->getPort(),-1);
+      ServerConnection *connection = new ServerConnection(location.getServer(),location.getPort(),-1);
       
       CachedTransport<interconnect::AccumuloMasterTransporter> *cachedTransport = distributedConnector->getTransporter(connection);
       
       try{
 	
-      cachedTransport->getTransport()->splitTablet(credentials,location->getExtent(),partition);
+      cachedTransport->getTransport()->splitTablet(credentials,location.getExtent(),partition);
       success = true;
        }catch(apache::thrift::protocol::TProtocolException tpe)
 	{
@@ -270,7 +269,6 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions)
 		
       delete connection;
       
-      delete location;
       
       distributedConnector->freeTransport(cachedTransport);
       

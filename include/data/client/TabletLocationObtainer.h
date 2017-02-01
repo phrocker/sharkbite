@@ -51,7 +51,7 @@ public:
      * @param parent parent location obtainer
      * @returns a list of tablet locations for the range 
      **/
-    virtual std::vector<cclient::data::TabletLocation*> findTablet(cclient::data::security::AuthInfo *credentials, cclient::data::TabletLocation *source, std::string row,
+    virtual std::vector<cclient::data::TabletLocation> findTablet(cclient::data::security::AuthInfo *credentials, cclient::data::TabletLocation *source, std::string row,
             std::string stopRow, TabletLocator *parent) = 0;
 	    
 	/**
@@ -63,7 +63,7 @@ public:
      * @param parent parent location obtainer
      * @returns a list of tablet locations for the range 
      **/
-    virtual std::vector<cclient::data::TabletLocation*> findTablet(cclient::data::security::AuthInfo *credentials, std::string tabletserver,
+    virtual std::vector<cclient::data::TabletLocation> findTablet(cclient::data::security::AuthInfo *credentials, std::string tabletserver,
             std::map<cclient::data::KeyExtent, std::vector<cclient::data::Range> > *map, TabletLocator *parent) = 0;
 
 protected:
