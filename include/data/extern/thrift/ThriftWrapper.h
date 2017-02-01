@@ -261,6 +261,29 @@ public:
 		
 		return keyExtent;
 	}
+	
+	static org::apache::accumulo::core::data::thrift::TKeyExtent convert(
+	        const cclient::data::KeyExtent ot)
+	{
+		org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
+		keyExtent.table = ot.getTableId();
+		std::string endRow = ot.getEndRow();
+
+		if (!IsEmpty(&endRow))
+			keyExtent.endRow = endRow;
+		else
+		  keyExtent.endRow="";
+
+		std::string prevEndRow = ot.getPrevEndRow();
+
+		if (!IsEmpty(&prevEndRow))
+			keyExtent.prevEndRow = prevEndRow;
+		else
+		  keyExtent.prevEndRow="";
+		
+		
+		return keyExtent;
+	}
 
 	static std::vector<cclient::data::KeyValue*> *convert(
 	        std::vector<org::apache::accumulo::core::data::thrift::TKeyValue> tkvVec)

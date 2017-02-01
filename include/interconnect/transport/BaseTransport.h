@@ -57,11 +57,11 @@
 namespace interconnect
 {
 
-class ThriftTransporter: virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent*,
+class ThriftTransporter: virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent,
 	cclient::data::Range*, cclient::data::Mutation*>
 {
 protected:
-
+	std::map<cclient::data::security::AuthInfo*,org::apache::accumulo::core::security::thrift::TCredentials> convertedMap;
 	boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 	org::apache::accumulo::core::client::impl::thrift::ClientServiceClient *client;
 	org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient *tserverClient;
@@ -151,8 +151,9 @@ protected:
 		        request->getRangeIdentifiers()->at(0);
 		cclient::data::KeyExtent *extent = ident->getGlobalMapping().at(0);
 		cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
-		tserverClient->startScan(scan, scanId,
-		                         ThriftWrapper::convert(request->getCredentials()),
+		org::apache::accumulo::core::security::thrift::TCredentials creds = getOrSetCredentials(request->getCredentials());
+		tserverClient->startScan(scan, scanId,creds
+		                         ,
 		                         ThriftWrapper::convert(extent), ThriftWrapper::convert(range),
 		                         ThriftWrapper::convert(request->getColumns()), 1024,
 		                         ThriftWrapper::convert(iters), iterOptions,
@@ -226,11 +227,26 @@ protected:
 
 		return initialScan;
 	}
+	org::apache::accumulo::core::security::thrift::TCredentials getOrSetCredentials(cclient::data::security::AuthInfo *convert)
+	{
+	  std::map<cclient::data::security::AuthInfo*,org::apache::accumulo::core::security::thrift::TCredentials>::iterator it;
+	  it = convertedMap.find(convert);
+	  if (it != convertedMap.end())
+	  {
+	    return it->second;
+	  }
+	  
+	  org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(convert);
+	  convertedMap.insert(std::pair<cclient::data::security::AuthInfo*,org::apache::accumulo::core::security::thrift::TCredentials>(convert,creds));
+	  return creds;
+	
+	    
+	}
 
 public:
 
 	explicit ThriftTransporter(ServerConnection *conn) :
-		interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent*, cclient::data::Range*,
+		interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*,
 		cclient::data::Mutation*>(conn), client(NULL), tserverClient(NULL)
 	{
 
@@ -407,7 +423,7 @@ public:
 	}
 
 
-	void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Mutation*>> *request)
+	void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request)
 	{
 
 		org::apache::accumulo::core::trace::thrift::TInfo tinfo;
@@ -418,7 +434,7 @@ public:
 		tinfo.traceId = rand();
 		org::apache::accumulo::core::data::thrift::UpdateID upId =
 		        tserverClient->startUpdate(tinfo, creds,org::apache::accumulo::core::tabletserver::thrift::TDurability::DEFAULT);
-		for (std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Mutation*>>::iterator it = request->begin();
+		for (std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>>::iterator it = request->begin();
 		     it != request->end(); it++) {
 
 			tserverClient->applyUpdates(tinfo, upId,

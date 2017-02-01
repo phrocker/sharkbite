@@ -15,6 +15,7 @@
 #define BYTE_STREAM
 
 
+#include <vector>
 #include <typeinfo>
 #include <stdexcept>
 #include <stdint.h>
@@ -70,7 +71,8 @@ protected:
     // size of the steram.
     size_t size;
     // buffered array.
-    char *array;
+    //char *array;
+    std::vector<char> array;
     // output stream reference.
     OutputStream *output_stream_ref;
 

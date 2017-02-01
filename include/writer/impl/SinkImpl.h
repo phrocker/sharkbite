@@ -80,7 +80,7 @@ public:
     size ()
     {
 
-	    return currentSize + mutationQueue.size_approx();
+	    return sinkQueue.size_approx() + mutationQueue.size_approx();
     }
 
 protected:

@@ -153,7 +153,7 @@ public:
 
 	explicit AccumuloMasterTransporter (ServerConnection *conn) :
 		interconnect::ThriftTransporter (conn), interconnect::ServerTransport<
-		apache::thrift::transport::TTransport, cclient::data::KeyExtent*, cclient::data::Range*, cclient::data::Mutation*> (conn)
+		apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*> (conn)
 	{
 		masterClient = NULL;
 		createMasterClient();

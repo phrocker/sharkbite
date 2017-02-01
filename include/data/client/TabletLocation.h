@@ -47,14 +47,25 @@ public:
             port = atoi (tokens.at (1).c_str ());
         }
     }
-
-    KeyExtent *
-    getExtent ()
+    
+    explicit TabletLocation(TabletLocation *copy) : tablet_extent(copy->getExtent()), tablet_location(copy->getLocation()), session(copy->getSession())
     {
-        return tablet_extent;
+       std::vector<std::string> tokens = split (tablet_location, ':');
+        if (!IsEmpty (&tokens))
+        {
+            server = tokens.at (0);
+            port = atoi (tokens.at (1).c_str ());
+        }
     }
     
-    void setExtent(KeyExtent *extent)
+
+    KeyExtent 
+    *getExtent ()
+    {
+        return &tablet_extent;
+    }
+    
+    void setExtent(KeyExtent extent)
     {
       tablet_extent = extent;
     }
@@ -82,11 +93,22 @@ public:
     {
         return port;
     }
+    
+    TabletLocation &
+    operator=(const TabletLocation &te)
+    {
+      tablet_extent = te.tablet_extent;
+      tablet_location = te.tablet_location;
+      server = te.server;
+      port = te.port;
+      session = te.session;
+      return *this;
+    }
 
     virtual
     ~TabletLocation ();
 protected:
-    KeyExtent *tablet_extent;
+    KeyExtent tablet_extent;
     std::string tablet_location;
     std::string server;
     int port;
