@@ -1,5 +1,5 @@
 # Sharkbite
-
+![logo](http://www.sharkbite.io/sharkbite.jpg) 
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
 
