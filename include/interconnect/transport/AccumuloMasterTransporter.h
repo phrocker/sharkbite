@@ -292,7 +292,7 @@ public:
 		
 		
 		bout.writeShort(clazz.size());
-		bout.writeBytes((const uint8_t*)clazz.data(),clazz.size());
+		bout.writeBytes(clazz.data(),clazz.size());
 		bout.writeInt(0);
 		
 		tableArgs.push_back(std::string(bout.getByteArray(),bout.getPos()));

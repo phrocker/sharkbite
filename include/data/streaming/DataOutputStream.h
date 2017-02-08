@@ -58,6 +58,10 @@ public:
         return output_stream_ref->write(bytes, cnt);
     }
 
+    virtual uint64_t writeBytes(const char *bytes, size_t cnt) {
+            return output_stream_ref->writeBytes(bytes, cnt);
+        }
+
     virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt) {
         return output_stream_ref->writeBytes(bytes, cnt);
     }

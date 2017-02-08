@@ -76,7 +76,7 @@ public:
 
     }
 
-    ~ZooKeeper() {
+    virtual ~ZooKeeper() {
         if (NULL != zookeeperReference)
 	{
             zookeeper_close(zookeeperReference);

@@ -66,6 +66,10 @@ public:
         return DataOutputStream::writeLong(htonlw(val));
     }
 
+    uint64_t writeBytes(const char *bytes, size_t cnt) {
+    	return DataOutputStream::writeBytes(bytes,cnt);
+    }
+
 };
 }
 }

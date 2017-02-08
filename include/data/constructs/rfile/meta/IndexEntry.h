@@ -147,7 +147,7 @@ public:
             return false;
         if (compressedSize != rhs.compressedSize)
             return false;
-        if (rawSize != rawSize)
+        if (rawSize != rhs.rawSize)
             return false;
         return true;
     }
