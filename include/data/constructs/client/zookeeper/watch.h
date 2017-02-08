@@ -21,6 +21,7 @@
 #include <zookeeper/zookeeper.jute.h>
 #include <list>
 #include <sys/select.h>
+#include <thread>
 #include <pthread.h>
 
 using namespace std;
@@ -68,7 +69,7 @@ public:
     bool waitForDisconnected(zhandle_t *zh);
 
     void yield(zhandle_t *zh, int i) {
-        pthread_yield();
+        std::this_thread::yield();
     }
 
     void setState(int st) {
@@ -92,7 +93,7 @@ struct WatchFn {
     Watch *ptr;
     void *Fn;
 };
-}
+};
 }
 }
 #endif // WATCH_H

@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/data/streaming/OutputStream.h"
+#include "data/streaming/OutputStream.h"
 
 namespace cclient{
   namespace data{

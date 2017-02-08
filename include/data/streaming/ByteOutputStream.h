@@ -13,7 +13,8 @@
  */
 #ifndef BYTE_STREAM
 #define BYTE_STREAM
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 
 #include <vector>
 #include <typeinfo>
@@ -53,6 +54,11 @@ public:
     virtual uint64_t writeString(std::string s);
 
     virtual uint64_t write(const uint8_t *bytes, long cnt);
+
+    virtual uint64_t writeBytes(const char *bytes, size_t cnt)
+    {
+    	return writeBytes((const uint8_t*)bytes,cnt);
+    }
 
     virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt);
 
@@ -107,6 +113,10 @@ public:
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
         return ByteOutputStream::writeEncodedLong((int64_t) htonlw(n));
+    }
+
+    virtual uint64_t writeBytes(const char *bytes, size_t cnt) {
+    	return ByteOutputStream::writeBytes(bytes,cnt);
     }
 private:
     /**

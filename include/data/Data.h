@@ -15,6 +15,9 @@
 #ifndef SRC_DATA_CLIENT_DATA_H_
 #define SRC_DATA_CLIENT_DATA_H_
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
+
 namespace cclient {
 namespace data {
 

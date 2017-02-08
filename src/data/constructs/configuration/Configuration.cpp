@@ -11,8 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../../include/data/constructs/configuration/Configuration.h"
+#include "data/constructs/configuration/Configuration.h"
 
+#include <cstdlib>
 #include <string>
 #include <map>
 
@@ -65,7 +66,7 @@ Configuration::get (std::string name, std::string def) const
 uint32_t
 Configuration::getLong (std::string name) const 
 {
-    return atol (get (name, 0).c_str ());
+    return std::atol (get (name, 0).c_str ());
 
 }
 
