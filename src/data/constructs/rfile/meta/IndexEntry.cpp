@@ -18,9 +18,9 @@ namespace cclient{
   namespace data{
 
 IndexEntry::IndexEntry (cclient::data::streams::StreamInterface *mKey, uint32_t entryCount) :
-    entries (entryCount), key (mKey), newFormat (false), allocated (false)
+    entries (entryCount), newFormat (false), allocated (true)
 {
-
+  key = new Key(static_cast<cclient::data::Key*>(mKey));
 }
 
 IndexEntry::~IndexEntry ()

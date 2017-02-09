@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8.7)
 project (Sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
 set(CMAKE_BUILD_TYPE Debug)
-set (CMAKE_CXX_FLAGS "-std=c++11  -Wall -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare")
+set (CMAKE_CXX_FLAGS "-std=c++11 -Os -Wall -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
 option(test "Build all tests." OFF) 
 include_directories(include)
 
@@ -55,26 +55,8 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 
-#zk
-#add_library(errors SHARED ${EXCEPTION_SOURCES})
-#add_library(zkclient SHARED ${ZK_SOURCES} )
-#target_link_libraries( zkclient errors )
-#target_link_libraries (zkclient ${CMAKE_THREAD_LIBS_INIT} ${Boost_LIBRARIES} ${THRIFT_LIB} ${Zookeeper_LIBRARIES} )
-#constructs
-#add_library(constructs SHARED ${CONSTRUCT_SOURCES} )
-#target_link_libraries( constructs errors )
-#target_link_libraries( constructs ${ZLIB_LIBRARIES} )
-#target_link_libraries (constructs ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries( constructs ${Boost_LIBRARIES} )
-#target_link_libraries( constructs ${Zookeeper_LIBRARIES} )
-#target_link_libraries( constructs ${THRIFT_LIB} )
-#streaming
-#add_library(streaming SHARED ${STREAMING_SOURCES})
-#target_link_libraries( streaming ${HDFS3_LIBS} )
-#client
 
-
-add_library(client SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} )
+add_library(client STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} )
 target_link_libraries (client ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES} ${HDFS3_LIBS}  )
 
 #interconnect
