@@ -1,7 +1,7 @@
-# Sharkbite 
+# ![logo](http://www.sharkbite.io/sharkbite.jpg) Sharkbite 
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
-![logo](http://www.sharkbite.io/sharkbite.jpg) **S**harkbite is a native client for key/value stores. With 
+**S**harkbite is a native client for key/value stores. With 
 initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
 despite being the baseimplementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
