@@ -139,7 +139,7 @@ public:
       void addFailedMutation(cclient::data::TabletServerMutations *mutation)
     {
       std::lock_guard<std::mutex> lock(serverLock);
-      std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Mutation*> > *mutationMap = mutation->getMutations();
+      std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*> > *mutationMap = mutation->getMutations();
       for(auto entry : *mutationMap)
       {
 	failedMutations.insert(failedMutations.end(),entry.second.begin(),entry.second.end());

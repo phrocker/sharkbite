@@ -15,6 +15,7 @@
 #define SCAN_IDENT_H_
 
 
+#include <vector>
 #include <algorithm>
 #include <map>
 

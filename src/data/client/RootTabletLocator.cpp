@@ -50,7 +50,7 @@ RootTabletLocator::getRootTabletLocation ()
 
     std::vector<std::string> tokens = split (std::string ((char*) rootLoc), '|');
 
-    return new cclient::data::TabletLocation (new cclient::data::KeyExtent( ROOT_EXTENT), tokens.at (0), tokens.at (1));
+    return new cclient::data::TabletLocation (ROOT_EXTENT, tokens.at (0), tokens.at (1));
 
 }
 

@@ -19,7 +19,7 @@
 #include "data/constructs/Mutation.h"
 #include <chrono>
 #include <thread>
-#include <boost/lockfree/queue.hpp>
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 #include <atomic>
 namespace writer
 {
@@ -31,7 +31,7 @@ class Sink
 
 protected:
 
-	boost::lockfree::queue<T*> sinkQueue;
+	moodycamel::ConcurrentQueue<T*> sinkQueue;
 	
 
 	virtual bool
@@ -42,7 +42,6 @@ protected:
 
 	uint16_t queueSize;
 
-	std::atomic_int currentSize;
 	
 	virtual uint64_t maxWait()
 	{
@@ -57,7 +56,7 @@ protected:
 public:
 
 	Sink (uint16_t maxQueue) :
-		queueSize (maxQueue), sinkQueue( (maxQueue * 1.5) ), currentSize(0)
+		queueSize (maxQueue), sinkQueue( (maxQueue * 1.5) )
 	{
 
 
@@ -101,7 +100,7 @@ public:
 	size ()
 	{
 
-		return currentSize;
+		return sinkQueue.size_approx();
 	}
 
 };
@@ -139,9 +138,8 @@ template<typename T>
 bool
 Sink<T>::enqueue (T *obj)
 {
-	bool enqueued = sinkQueue.push(obj);
-	if (enqueued) 
-	  currentSize++;
+	bool enqueued = sinkQueue.enqueue(obj);
+	
 	return enqueued;
 
 }

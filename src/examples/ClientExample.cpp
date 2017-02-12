@@ -312,10 +312,10 @@ main (int argc, char **argv)
 	std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
 
 	// range from a to d
-	cclient::data::Key *startkey = new cclient::data::Key ();
-	startkey->setRow ("a", 1);
-	cclient::data::Key *stopKey = new cclient::data::Key ();
-	stopKey->setRow ("z", 1);
+	cclient::data::Key startkey;
+	startkey.setRow ("a", 1);
+	cclient::data::Key stopKey;
+	stopKey.setRow ("z", 1);
 	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
 
 	scanner->addRange (std::unique_ptr<cclient::data::Range>(range));

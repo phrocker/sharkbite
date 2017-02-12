@@ -13,7 +13,8 @@
  */
 #ifndef OUTPUT_STREAM
 #define OUTPUT_STREAM
-
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 
 #include <ostream>
 #include <stdint.h>

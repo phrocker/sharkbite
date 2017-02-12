@@ -38,7 +38,7 @@ public:
     explicit RootTabletLocator(cclient::data::Instance *instance);
     ~RootTabletLocator();
 
-    cclient::data::TabletLocation *locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
+    cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
         cclient::data::TabletLocation *location = getRootTabletLocation();
 
         while (retry && location == NULL) {
@@ -48,7 +48,9 @@ public:
 
         }
 
-        return location;
+        cclient::data::TabletLocation te(location);
+	delete location;
+        return te;
 
     }
 

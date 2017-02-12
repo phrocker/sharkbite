@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include <string.h> /* memset */
+#include <vector>
 #include <assert.h>
 #include <stdlib.h>
 #include "../../../include/data/streaming/ByteOutputStream.h"
@@ -30,8 +31,8 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
     offset (0), output_stream_ref (out_stream)
 {
     size = initial_size;
-    array = new char[size];
-    memset (array, 0x00, size);
+    array.resize(size);
+    std::fill(array.begin(), array.end(), 0x00);
 }
 
 /**
@@ -40,7 +41,6 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
 ByteOutputStream::~ByteOutputStream ()
 {
     flush ();
-    delete[] array;
 }
 
 /**
@@ -51,7 +51,7 @@ ByteOutputStream::flush ()
 {
     if (output_stream_ref != NULL)
     {
-        output_stream_ref->write (array, offset);
+        output_stream_ref->write (array.data(), offset);
     }
     offset = 0;
 }
@@ -80,7 +80,7 @@ ByteOutputStream::getByteArray (char *inArray, size_t inArraySize)
         throw std::runtime_error ("Sizes are unequal");
     }
     //memcpy (inArray, array, offset);
-    std::copy(array,array+offset,inArray);
+    std::copy(array.data(),array.data()+offset,inArray);
     //memcpy (inArray, array, offset);
 }
 
@@ -91,7 +91,7 @@ ByteOutputStream::getByteArray (char *inArray, size_t inArraySize)
 char *
 ByteOutputStream::getByteArray ()
 {
-    return array;
+    return array.data();
 }
 
 /**
@@ -128,10 +128,7 @@ ByteOutputStream::write (const char *bytes, long cnt)
         // we don't have space, so create
         // a new array that we can copy to
         //char *nArray = new char[size + (cnt * 2)];
-      // TODO: move to a vector that can be resized more efficiently.
-	 char *nArray = (char*)realloc(array,size + (cnt * 2));
-	 assert(nArray != NULL);
-	 array = nArray;
+	 array.resize(size+(cnt*2));
        // memcpy (nArray, array, offset);
 	//std::copy(array,array+offset,nArray);
 
@@ -140,7 +137,7 @@ ByteOutputStream::write (const char *bytes, long cnt)
         size += cnt * 2;
     }
     //memcpy (array + offset, bytes, cnt);
-    std::copy(bytes,bytes+cnt,array+offset);
+    std::copy(bytes,bytes+cnt,array.data()+offset);
     offset += cnt;
     return offset;
 }

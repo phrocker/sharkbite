@@ -14,6 +14,7 @@
 #ifndef KEYEXTENT_H_
 #define KEYEXTENT_H_
 
+#include <iostream>
 #include "inputvalidation.h"
 #include "../exceptions/ClientException.h"
 #include "../exceptions/IllegalArgumentException.h"
@@ -111,6 +112,16 @@ public:
 
     ~KeyExtent ();
 
+    
+    KeyExtent&
+    operator=(const KeyExtent& other)
+    {
+      tableId = other.tableId;
+      endRow = other.endRow;
+      prevEndRow = other.prevEndRow;
+      return *this;
+    }
+    
     bool
     operator < (const KeyExtent &rhs) const
     {
@@ -170,20 +181,20 @@ public:
         tableId = id;
     }
 
-    std::string
-    getTableId ()
+    const std::string
+    getTableId () const
     {
         return tableId;
     }
 
-    std::string
-    getEndRow ()
+    const std::string
+    getEndRow () const
     {
         return endRow;
     }
 
     std::string
-    getPrevEndRow ()
+    getPrevEndRow () const
     {
         return prevEndRow;
     }

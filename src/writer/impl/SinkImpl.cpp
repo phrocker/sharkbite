@@ -75,22 +75,11 @@ Writer::flush (bool override)
 	std::vector<cclient::data::Mutation*> failures;
 	writerHeuristic->restart_failures(&failures);
 	handleFailures(&failures);
-	while((currentSize+mutationQueue.size_approx()) > 0)
+	while((sinkQueue.size_approx()+mutationQueue.size_approx()) > 0)
 	{
 	cclient::data::KeyValue **kv = new cclient::data::KeyValue*[queueSize];
-	//size_t dequeued = sinkQueue->try_dequeue_bulk (kv, queueSize);
-	size_t dequeued = 0;
-	for(uint32_t i  = 0; i < queueSize; )
-	{
-	  if (sinkQueue.pop(kv[i]))
-	  {
-	    currentSize--;
-	    dequeued++;
-	    i++;
-	  }
-	  else
-	    break;
-	}
+	size_t dequeued = sinkQueue.try_dequeue_bulk (kv, queueSize);
+	
 	cclient::data::Mutation *prevMutation = NULL;
 	std::vector<cclient::data::Mutation*> *mutation = new std::vector<cclient::data::Mutation*> ();
 	for (uint64_t i = 0; i < dequeued; i++) {

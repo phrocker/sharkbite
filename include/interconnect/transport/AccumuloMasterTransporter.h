@@ -153,7 +153,7 @@ public:
 
 	explicit AccumuloMasterTransporter (ServerConnection *conn) :
 		interconnect::ThriftTransporter (conn), interconnect::ServerTransport<
-		apache::thrift::transport::TTransport, cclient::data::KeyExtent*, cclient::data::Range*, cclient::data::Mutation*> (conn)
+		apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*> (conn)
 	{
 		masterClient = NULL;
 		createMasterClient();
@@ -292,7 +292,7 @@ public:
 		
 		
 		bout.writeShort(clazz.size());
-		bout.writeBytes((const uint8_t*)clazz.data(),clazz.size());
+		bout.writeBytes(clazz.data(),clazz.size());
 		bout.writeInt(0);
 		
 		tableArgs.push_back(std::string(bout.getByteArray(),bout.getPos()));

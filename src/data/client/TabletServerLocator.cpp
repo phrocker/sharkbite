@@ -34,7 +34,7 @@ TabletServerLocator::TabletServerLocator (std::string tableId,
 
 TabletServerLocator::~TabletServerLocator ()
 {
-
+  invalidateCache();
 }
 
 } /* namespace data */

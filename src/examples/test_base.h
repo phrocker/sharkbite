@@ -176,9 +176,9 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 	}
 	
 	
-	
-	
 	std::cout << "Removing table" << std::endl;
+	
+	//ops->remove();
 	
 	tables = ops->listTables();
 	

@@ -37,9 +37,9 @@ public:
     /**
      move constructor.
      **/
-    IndexEntry (IndexEntry &&other) : allocated(false)
+    IndexEntry (IndexEntry &&other) : allocated(true)
     {
-        key = other.key;
+        key = new cclient::data::Key(static_cast<cclient::data::Key*>(other.key));
         entries = other.entries;
         newFormat = other.newFormat;
     }
@@ -147,7 +147,7 @@ public:
             return false;
         if (compressedSize != rhs.compressedSize)
             return false;
-        if (rawSize != rawSize)
+        if (rawSize != rhs.rawSize)
             return false;
         return true;
     }

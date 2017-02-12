@@ -19,16 +19,14 @@ namespace data
 {
 
 TabletLocation::TabletLocation () :
-    tablet_extent (NULL), tablet_location ("")
+    tablet_extent ("!0","d"), tablet_location ("")
 {
-// 	// TODO Auto-generated constructor stub
 
 }
 
 TabletLocation::~TabletLocation ()
 {
-  if (0 != tablet_extent)
-    delete tablet_extent;
+  
 }
 
 } /* namespace data */

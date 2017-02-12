@@ -45,12 +45,12 @@ MetaDataLocationObtainer::~MetaDataLocationObtainer ()
 
 }
 
-std::vector<cclient::data::TabletLocation*>
+std::vector<cclient::data::TabletLocation>
 MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credentials,
                                       cclient::data::TabletLocation *source, std::string row,
                                       std::string stopRow, TabletLocator *parent)
 {
-    std::vector<cclient::data::TabletLocation*> tabletLocations;
+    std::vector<cclient::data::TabletLocation> tabletLocations;
     cclient::data::Key startKey;
     startKey.setRow (row.c_str (), row.size ());
     cclient::data::Key endKey;
@@ -96,7 +96,6 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
     std::string location = "", session = "";
 
     cclient::data::Value *prevRow = 0;
-    cclient::data::KeyExtent *ke;
 
     for (std::map<cclient::data::Key*, cclient::data::Value*>::iterator it = results.begin ();
             it != results.end (); it++)
@@ -133,11 +132,11 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
         if (prevRow != NULL)
         {
 
-            ke = new cclient::data::KeyExtent (currentRow, prevRow);
+            cclient::data::KeyExtent ke(currentRow, prevRow);
             if (location.length () > 0)
             {
 
-                cclient::data::TabletLocation *te = new cclient::data::TabletLocation (ke, location,
+                cclient::data::TabletLocation te(&ke, location,
                         session);
 		
 

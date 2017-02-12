@@ -186,7 +186,7 @@ public:
     void
     closeBlock (StreamInterface *lastKey)
     {
-        currentLocalityGroup->addIndexEntry (IndexEntry((lastKey, entries)));
+        currentLocalityGroup->addIndexEntry (IndexEntry(lastKey, entries));
         dataBlockCnt = 0;
         entries = 0;
 

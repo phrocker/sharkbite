@@ -13,8 +13,10 @@
  */
 #ifndef BYTE_STREAM
 #define BYTE_STREAM
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wweak-vtables"
 
-
+#include <vector>
 #include <typeinfo>
 #include <stdexcept>
 #include <stdint.h>
@@ -53,6 +55,11 @@ public:
 
     virtual uint64_t write(const uint8_t *bytes, long cnt);
 
+    virtual uint64_t writeBytes(const char *bytes, size_t cnt)
+    {
+    	return writeBytes((const uint8_t*)bytes,cnt);
+    }
+
     virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt);
 
     virtual uint64_t writeByte(const uint8_t byte);
@@ -70,7 +77,8 @@ protected:
     // size of the steram.
     size_t size;
     // buffered array.
-    char *array;
+    //char *array;
+    std::vector<char> array;
     // output stream reference.
     OutputStream *output_stream_ref;
 
@@ -105,6 +113,10 @@ public:
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
         return ByteOutputStream::writeEncodedLong((int64_t) htonlw(n));
+    }
+
+    virtual uint64_t writeBytes(const char *bytes, size_t cnt) {
+    	return ByteOutputStream::writeBytes(bytes,cnt);
     }
 private:
     /**

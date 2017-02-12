@@ -114,13 +114,15 @@ HdfsStream::writeBoolean (const bool val)
     return write ((const char*) &byte, 1);
 }
 
-} /* namespace streams */
-} /* namespace data */
-} /* namespace cclient */
-
 int main(int argc, char **argv)
 {
   struct hdfsBuilder *builder = hdfsNewBuilder ();
   hdfsFreeBuilder(builder);
 }
+
+
+
+} /* namespace streams */
+} /* namespace data */
+} /* namespace cclient */
 
