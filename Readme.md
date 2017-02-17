@@ -15,6 +15,20 @@ Capabilities That will be supported in V0.1 :
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
  * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
  * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
+ 
+About the name
+
+**S**harkbite's name originated from design as a connector that abstracted components in which we tightly
+coupled and gripped interfaces of the underlying datastore. With an abstraction layer for access, and using
+cross compatible objects, the underlying interfaces are heavily coupled to each database. As a result, Sharkbite
+became a fitting name since interfaces exist to abstract the high coupling that exists within implementations of 
+the API.
+
+ * Work with Accumulo 1.6.x and 1.7.x
+ * **Read/Write** : Reading and writing data to Accumulo is currently supported.
+ * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
+ * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
+
 
 ## Requirements
 
