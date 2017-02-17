@@ -2,8 +2,9 @@ set(CMAKE_AUTOMOC ON)
 cmake_minimum_required(VERSION 2.8.7)
 project (Sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
-set(CMAKE_BUILD_TYPE Debug)
-set (CMAKE_CXX_FLAGS "-std=c++11 -Os -Wall -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
+set(CMAKE_BUILD_TYPE Release)
+set (CMAKE_CXX_FLAGS "-std=c++11 -Os -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
+#  -fsingle-precision-constant 
 option(test "Build all tests." OFF) 
 include_directories(include)
 
@@ -55,7 +56,7 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 
-add_library(client SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} )
+add_library(client STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} )
 target_link_libraries (client ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES} ${HDFS3_LIBS}  )
 
 #interconnect
