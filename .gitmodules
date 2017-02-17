@@ -7,3 +7,9 @@
 [submodule "submodules/gtest"]
 	path = submodules/gtest
 	url = https://github.com/google/googletest.git
+[submodule "submodules/thrift"]
+	path = submodules/thrift
+	url = https://github.com/apache/thrift.git
+[submodule "submodules/zookeeper"]
+	path = submodules/zookeeper
+	url = https://github.com/apache/zookeeper.git
