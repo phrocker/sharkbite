@@ -1,0 +1,6 @@
+#!/bin/sh
+./bootstrap-gtest.sh
+./bootstrap-protobuf.sh
+./bootstrap-thrift.sh
+./bootstrap-zookeeper.sh
+./bootstrap-hdfs3.sh
