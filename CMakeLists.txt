@@ -56,15 +56,8 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 
-add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} )
+add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES} ${HDFS3_LIBS}  )
-
-#interconnect
-add_library(cwrapper STATIC ${CWRAPPER_SOURCES})
-target_link_libraries(cwrapper ${Boost_LIBRARIES})
-target_link_libraries(cwrapper ${THRIFT_LIB})
-target_link_libraries(cwrapper sharkbite)
-
 
 
 #ClientExample
