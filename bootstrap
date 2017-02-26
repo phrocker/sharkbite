@@ -1,6 +1,14 @@
 #!/bin/sh
-./bootstrap-gtest.sh
-./bootstrap-protobuf.sh
-./bootstrap-thrift.sh
-./bootstrap-zookeeper.sh
-./bootstrap-hdfs3.sh
+echo -e "Building dependencies...\n"
+mkdir -p dependencies
+cp bootstrap-*.sh dependencies/
+pushd dependencies
+echo -e "Building google test...\n"
+./bootstrap-gtest.sh > depbuildLog 2>&1
+./bootstrap-protobuf.sh >> depbuildLog 2>&1
+./bootstrap-thrift.sh >> depbuildLog 2>&1
+./bootstrap-zookeeper.sh >> depbuildLog 2>&1
+./bootstrap-hdfs3.sh >> depbuildLog 2>&1
+popd dependencies
+echo -e "Building Sharkbite...\n"
+mkdir -p build && cd build && cmake .. && cmake --build .

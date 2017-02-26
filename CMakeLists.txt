@@ -12,13 +12,14 @@ include_directories(include)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(Boost_USE_MULTITHREADED ON)
+find_package(GTest REQUIRED)
 #let's get all them thar libraries
 find_package(Thrift REQUIRED)
 find_package(Zookeeper REQUIRED)
 find_package(Hdfs3 REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
 find_package(ZLIB REQUIRED) 
-find_package(GTest REQUIRED)
+
 find_package (Threads)
 
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} )

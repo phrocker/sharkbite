@@ -1,0 +1,3 @@
+[submodule "dependencies/pivotalrd-libhdfs3"]
+	path = dependencies/pivotalrd-libhdfs3
+	url = https://github.com/Pivotal-Data-Attic/pivotalrd-libhdfs3.git

@@ -1,6 +1,10 @@
 #!/bin/bash
+if [ ! -d "protobuf-3.1.0" ]; then
 rm -rf protobuf*
-wget https://github.com/google/protobuf/archive/master.zip -O protobuf-2.7.0.zip
-unzip protobuf-2.7.0.zip
-pushd protobuf-master && ./autogen.sh && ./configure --prefix=${pwd} && make
-rm protobuf-2.7.0.zip
+wget https://github.com/google/protobuf/archive/v3.1.0.zip -O protobuf.zip
+unzip protobuf.zip
+fi
+pushd protobuf-3.1.0 && ./autogen.sh && ./configure --prefix=${pwd} && make
+if [ -f "protobuf.zip" ]; then
+rm protobuf.zip
+fi
