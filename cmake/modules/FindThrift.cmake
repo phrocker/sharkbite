@@ -23,7 +23,6 @@
 # prefer the thrift version supplied in THRIFT_HOME
 message(STATUS "THRIFT_HOME: $ENV{THRIFT_HOME}")
 find_path(THRIFT_INCLUDE_DIR thrift/Thrift.h HINTS
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/thrift-0.9.3/lib/cpp/src/
   $ENV{THRIFT_HOME}/include/
   /usr/local/include/
   /opt/local/include/
@@ -36,7 +35,6 @@ find_path(THRIFT_CONTRIB_DIR share/fb303/if/fb303.thrift HINTS
 )
 
 set(THRIFT_LIB_PATHS
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/thrift-0.9.3/lib/cpp/.libs/
   $ENV{THRIFT_HOME}/lib
   /usr/local/lib
   /opt/local/lib)

@@ -9,6 +9,6 @@ echo -e "Building google test...\n"
 ./bootstrap-thrift.sh >> depbuildLog 2>&1
 ./bootstrap-zookeeper.sh >> depbuildLog 2>&1
 ./bootstrap-hdfs3.sh >> depbuildLog 2>&1
-popd dependencies
+popd
 echo -e "Building Sharkbite...\n"
 mkdir -p build && cd build && cmake .. && cmake --build .
