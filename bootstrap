@@ -1,4 +1,3 @@
-#!/bin/sh
 echo -e "Building dependencies...\n"
 mkdir -p dependencies
 cp bootstrap-*.sh dependencies/
