@@ -19,7 +19,7 @@ addons:
     - protobuf-compiler
 before_script:
  - sudo apt-get update -qq
- - sudo apt-get bootstrap -qq uuid-dev libgsasl7-dev
+ - sudo apt-get install -qq uuid-dev libgsasl7-dev
  - ./bootstrap-gtest.sh
  - ./bootstrap-zookeeper.sh
  - ./bootstrap-thrift.sh
