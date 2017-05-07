@@ -25,5 +25,5 @@ before_script:
  - ./bootstrap-thrift.sh
 script:
   - export CXX="g++-4.9"
-  - bootstrap
+  - ./bootstrap
 
