@@ -29,7 +29,6 @@
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
 
-#include "data/streaming/HdfsStream.h"
 
 #include <assert.h>
 

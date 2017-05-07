@@ -14,6 +14,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <fstream>
 
 #include "../include/data/constructs/KeyValue.h"
 #include "../include/data/constructs/security/Authorizations.h"
@@ -29,7 +30,6 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-#include "../include/data/streaming/HdfsStream.h"
 
 #include <assert.h>
 
@@ -44,38 +44,17 @@ keyCompare (cclient::data::KeyValue* a, cclient::data::KeyValue* b)
 std::pair<std::string, std::string>
 writeRfile (std::string nameNode, uint16_t port)
 {
-	struct hdfsBuilder *builder = hdfsNewBuilder ();
+
 
 	std::string dir = "/testImport/";
 	std::string fail = "/testImportFail/";
 	std::string path = dir;
 	path.append ("test.rf");
 
-	//set namenode address.
-	hdfsBuilderSetNameNode (builder, nameNode.c_str ());
 
-	//set namenode port.
-	hdfsBuilderSetNameNodePort (builder, port);
+  std::ofstream ofs ("/tmp/test.rf", std::ofstream::out);
 
-	//connect to hdfs
-	hdfsFS fs = hdfsBuilderConnect (builder);
-
-	hdfsDelete (fs, dir.c_str (), 1);
-
-	if (hdfsCreateDirectory (fs, dir.c_str ()) == -1) {
-		std::cout << "Could not create directory " << dir << std::endl;
-		exit (1);
-	}
-
-	hdfsDelete (fs, fail.c_str (), 1);
-
-	if (hdfsCreateDirectory (fs, fail.c_str ()) == -1) {
-		std::cout << "Could not create directory " << fail << std::endl;
-		exit (1);
-	}
-
-	cclient::data::streams::HdfsStream *stream = new cclient::data::streams::HdfsStream (fs, path.c_str (), O_WRONLY | O_APPEND,
-	                                     1024 * 5, 3, 1024 * 1024 * 1);
+  cclient::data::streams::OutputStream *stream = new cclient::data::streams::OutputStream(&ofs,0);
 
 	cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor (256 * 1024);
 
@@ -154,8 +133,6 @@ writeRfile (std::string nameNode, uint16_t port)
 
 
 
-	//free hdfs builder
-	hdfsFreeBuilder (builder);
 	dir = "/testImport/";
 	fail = "/testImportFail/";
 	std::stringstream nd;

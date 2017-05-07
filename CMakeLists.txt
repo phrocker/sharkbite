@@ -16,7 +16,6 @@ find_package(GTest REQUIRED)
 #let's get all them thar libraries
 find_package(Thrift REQUIRED)
 find_package(Zookeeper REQUIRED)
-find_package(Hdfs3 REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
 find_package(ZLIB REQUIRED) 
 
@@ -25,7 +24,6 @@ find_package (Threads)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 include_directories(SYSTEM ${THRIFT_INCLUDE_DIR}/thrift )
 include_directories(SYSTEM ${Zookeeper_INCLUDE_DIRS})
-include_directories(SYSTEM ${HDFS3_INCLUDE_DIRS})
 include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS})
 include_directories(SYSTEM ${GTEST_INCLUDE_DIRS})
 message(STATUS "GTest include dir :  ${GTEST_INCLUDE_DIRS}")
@@ -37,10 +35,6 @@ message(STATUS "Thrift static library: ${THRIFT_STATIC_LIB}")
 message(STATUS "Thrift compiler: ${THRIFT_COMPILER}")
 message(STATUS "ZK Include: ${Zookeeper_INCLUDE_DIRS}")
 message(STATUS "ZK Lib: ${Zookeeper_LIBRARIES}")
-
-message(STATUS "HDFS3 include dir: ${HDFS3_INCLUDE_DIR}")
-message(STATUS "HFDS3 library path: ${HDFS3_LIBS}")
-message(STATUS "HFDS3 Static library path: ${HDFS3_SHARED_LIB}")
 
 
 #However, the file(GLOB...) allows for wildcard additions:
@@ -58,7 +52,7 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES} ${HDFS3_LIBS}  )
+target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
 
 
 #ClientExample
@@ -67,8 +61,7 @@ target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (ClientExample ${ZLIB_LIBRARIES})
 target_link_libraries( ClientExample ${Boost_LIBRARIES} )
 target_link_libraries( ClientExample ${Zookeeper_LIBRARIES} )
-target_link_libraries( ClientExample ${THRIFT_LIB})
-target_link_libraries( ClientExample ${HDFS3_LIBS} sharkbite)
+target_link_libraries( ClientExample ${THRIFT_LIB} sharkbite)
 
 #ClientExample
 add_executable(InsertTest "src/examples/InsertTest.cpp")
@@ -77,7 +70,7 @@ target_link_libraries (InsertTest ${ZLIB_LIBRARIES})
 target_link_libraries( InsertTest ${Boost_LIBRARIES} )
 target_link_libraries( InsertTest ${Zookeeper_LIBRARIES} )
 target_link_libraries( InsertTest ${THRIFT_LIB})
-target_link_libraries( InsertTest ${HDFS3_LIBS} sharkbite)
+target_link_libraries( InsertTest sharkbite)
 
 
 #ClientExample
@@ -87,8 +80,7 @@ target_link_libraries (ContinuousIngest ${ZLIB_LIBRARIES})
 target_link_libraries( ContinuousIngest ${Boost_LIBRARIES} )
 target_link_libraries( ContinuousIngest ${Zookeeper_LIBRARIES} )
 target_link_libraries( ContinuousIngest ${THRIFT_LIB})
-target_link_libraries( ContinuousIngest ${HDFS3_LIBS} sharkbite)
-
+target_link_libraries( ContinuousIngest sharkbite)
 
 #TableOps
 add_executable(TableOps "src/examples/TableOps.cpp")
@@ -97,8 +89,7 @@ target_link_libraries (TableOps ${ZLIB_LIBRARIES})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${Zookeeper_LIBRARIES} )
 target_link_libraries( TableOps ${THRIFT_LIB})
-target_link_libraries( TableOps ${HDFS3_LIBS} sharkbite)
-
+target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
 target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
@@ -106,7 +97,7 @@ target_link_libraries (RfileReadExample ${ZLIB_LIBRARIES})
 target_link_libraries( RfileReadExample ${Boost_LIBRARIES} )
 target_link_libraries( RfileReadExample ${Zookeeper_LIBRARIES} )
 target_link_libraries( RfileReadExample ${THRIFT_LIB})
-target_link_libraries( RfileReadExample ${HDFS3_LIBS} sharkbite )
+target_link_libraries( RfileReadExample sharkbite)
 
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
@@ -114,7 +105,7 @@ target_link_libraries (PrintInfo ${ZLIB_LIBRARIES})
 target_link_libraries( PrintInfo ${Boost_LIBRARIES} )
 target_link_libraries( PrintInfo ${Zookeeper_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIB})
-target_link_libraries( PrintInfo ${HDFS3_LIBS} sharkbite )
+target_link_libraries( PrintInfo sharkbite)
 
 ADD_CUSTOM_TARGET(debian-package
 	COMMAND dpkg-buildpackage -us -uc -b
@@ -127,27 +118,23 @@ enable_testing()
 
   file(GLOB_RECURSE RFILE_TEST "test/constructs/rfile_test.cpp")
   add_executable(testrfile ${RFILE_TEST})
-  target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES})
+  target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} sharkbite)
 
-  target_link_libraries(testrfile ${HDFS3_LIBS} sharkbite)
   
   add_test(NAME testrfile
 	   COMMAND testrfile)
 	   
   file(GLOB_RECURSE TEST_CONSTRUCTS "test/constructs/TestConstructs.cpp")
   add_executable(testconstructs ${TEST_CONSTRUCTS})
-  target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES})
+  target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES}  sharkbite)
 
-  target_link_libraries(testconstructs ${HDFS3_LIBS} sharkbite)
   
   add_test(NAME testconstructs
 	   COMMAND testconstructs)
 	   
   file(GLOB_RECURSE TEST_STREAMS "test/constructs/TestStreams.cpp")
   add_executable(teststreams ${TEST_STREAMS})
-  target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES})
-
-  target_link_libraries(teststreams ${HDFS3_LIBS} sharkbite)
+  target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} sharkbite)
   
   add_test(NAME teststreams
 	   COMMAND teststreams)
@@ -159,7 +146,7 @@ enable_testing()
   target_link_libraries (testzkInstance ${ZLIB_LIBRARIES})
   target_link_libraries( testzkInstance ${Boost_LIBRARIES} )
   target_link_libraries( testzkInstance ${Zookeeper_LIBRARIES} )
-  target_link_libraries( testzkInstance ${HDFS3_LIBS} ${THRIFT_LIB})
+  target_link_libraries( testzkInstance ${THRIFT_LIB} sharkbite)
 
   target_link_libraries(testzkInstance sharkbite)
   
@@ -169,9 +156,8 @@ enable_testing()
   target_link_libraries (integrationTest ${ZLIB_LIBRARIES})
   target_link_libraries( integrationTest ${Boost_LIBRARIES} )
   target_link_libraries( integrationTest ${Zookeeper_LIBRARIES} )
-  target_link_libraries( integrationTest ${HDFS3_LIBS} ${THRIFT_LIB})
-
-  target_link_libraries(integrationTest  ${HDFS3_LIBS} sharkbite)
+  target_link_libraries( integrationTest  ${THRIFT_LIB})
+  target_link_libraries(integrationTest   sharkbite)
 
 
 

@@ -19,7 +19,6 @@
 #include <stdint.h>
 #include "../../include/data/constructs/compressor/compressor.h"
 #include "../../include/data/constructs/compressor/zlibCompressor.h"
-#include "../../include/data/constructs/../streaming/HdfsStream.h"
 #include "../../include/data/constructs/rfile/RFile.h"
 
 #include "../../include/data/constructs/Key.h"
@@ -27,9 +26,6 @@
 #include "../../include/data/constructs/KeyValue.h"
 #include "../../include/data/constructs/rkey.h"
 #include <sys/time.h>
-
-
-#include <hdfs/hdfs.h>
 
 
 #define CATCH_CONFIG_MAIN
@@ -53,8 +49,6 @@ std::ifstream::pos_type filesize(const char* filename)
 TEST_CASE("Create rfile", "[CreateRfile]") {
 	for (int j = 0; j < 1; j++) {
 
-
-		 struct hdfsBuilder *builder = hdfsNewBuilder ();
 
 		std::ofstream ofs ("/tmp/test.rf", std::ofstream::out);
 
@@ -139,8 +133,7 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 		delete newRFile;
 		delete stream;
 
-		//free hdfs builder
-		hdfsFreeBuilder(builder);
+
 	}
 
 }

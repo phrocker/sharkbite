@@ -45,10 +45,7 @@ using namespace cclient::data::streams;
 #define NUMBER 50000
 #include "../catch.hpp"
 
-TEST_CASE("TestMain", "[TestMain]") {
-	struct hdfsBuilder *builder = hdfsNewBuilder ();
-	  hdfsFreeBuilder(builder);
-}
+
 
 
 

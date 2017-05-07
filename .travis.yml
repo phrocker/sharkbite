@@ -21,7 +21,6 @@ before_script:
  - sudo apt-get update -qq
  - sudo apt-get install -qq uuid-dev libgsasl7-dev
  - ./install-gtest.sh
- - ./install-hdfs3.sh
  - ./install-zookeeper.sh
  - ./install-thrift.sh
 script:

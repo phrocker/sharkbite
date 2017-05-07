@@ -34,7 +34,6 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-#include "../include/data/streaming/HdfsStream.h"
 
 #include <assert.h>
 

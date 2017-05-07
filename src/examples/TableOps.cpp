@@ -28,7 +28,6 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-#include "../include/data/streaming/HdfsStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
 
@@ -43,7 +42,7 @@ int
 main (int argc, char **argv)
 {
 
-	struct hdfsBuilder *builder = hdfsNewBuilder ();
+
 	if (argc < 6) {
 		std::cout << "Arguments required: ./TableOps"
 		     << " <instance name> <zks> <user> <password>"
@@ -112,8 +111,7 @@ main (int argc, char **argv)
 	nameOps->remove("blahblah");
 	
 	assert(!nameOps->exists());
-	
-	hdfsFreeBuilder(builder);
+
 
 	return 0;
 }

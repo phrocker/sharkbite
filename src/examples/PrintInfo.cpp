@@ -27,7 +27,6 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-#include "../include/data/streaming/HdfsStream.h"
 #include "../include/data/streaming/OutputStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
@@ -44,7 +43,7 @@ std::ifstream::pos_type filesize(const char* filename)
 void
 readRfile (std::string outputFile, uint16_t port, bool dump)
 {
-    struct hdfsBuilder *builder = hdfsNewBuilder ();
+
 
     std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
 
@@ -86,8 +85,6 @@ readRfile (std::string outputFile, uint16_t port, bool dump)
     delete stream;
 
     delete newRFile;
-
-    hdfsFreeBuilder(builder);
 
 }
 int

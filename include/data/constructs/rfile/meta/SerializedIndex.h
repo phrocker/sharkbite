@@ -220,13 +220,16 @@ public:
     IndexEntry *
     previous ()
     {
+        if (!ptr)
+          return 0;
         if (!ptr->hasPrevious ())
         {
             blockParty = blockParty->getPreviousBlock ();
             currentPosition = blockParty->getCurrentPosition ();
             ptr = dynamic_cast<SerializedIndex*> (blockParty->getBlock ());
         }
-
+        if (ptr == this)
+          return 0;
         return ptr->previous ();
     }
 
@@ -236,8 +239,8 @@ public:
         return !(currentPosition == rhs.currentPosition);
     }
 
-    SerializedIndex (bool isEnd, int maxSize) :
-        currentPosition (maxSize)
+    explicit SerializedIndex (bool isEnd, int maxSize) :
+        currentPosition (maxSize), blockParty(0), dataLength(0), data(0), ptr(0),offsets(0),newFormat(false)
     {
 
     }
@@ -252,7 +255,7 @@ protected:
     SerializedIndex *ptr;
 
     std::vector<int> *offsets;
-    
+
 };
 
 }

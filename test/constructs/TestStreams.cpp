@@ -18,7 +18,6 @@ using namespace std;
 #include "../../include/data/streaming/NetworkOrderStream.h"
 #include "../../include/data/streaming/input/ByteInputStream.h"
 #include "../../include/data/streaming/input/NetworkOrderInputStream.h"
-#include <hdfs/hdfs.h>
 
 
 #define CATCH_CONFIG_MAIN
@@ -26,13 +25,6 @@ using namespace std;
 #include "../catch.hpp"
 using namespace cclient::data;
 using namespace cclient::data::streams;
-
-
-TEST_CASE("TestMain", "[TestMain]") {
-	struct hdfsBuilder *builder = hdfsNewBuilder ();
-	  hdfsFreeBuilder(builder);
-}
-
 
 
 

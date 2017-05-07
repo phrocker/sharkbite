@@ -27,7 +27,6 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-#include "../include/data/streaming/HdfsStream.h"
 #include "../include/data/streaming/OutputStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
@@ -43,8 +42,6 @@ keyCompare (cclient::data::KeyValue* a, cclient::data::KeyValue* b)
 void
 writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 {
-    struct hdfsBuilder *builder = hdfsNewBuilder ();
-
     std::ofstream ofs (outputFile.c_str(), std::ofstream::out);
 
     cclient::data::streams::OutputStream *stream = new cclient::data::streams::OutputStream(&ofs,0);
@@ -132,11 +129,6 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 
 
 
-    //free hdfs builder
-  hdfsFreeBuilder (builder);
-// dir = "/testImport/";
-    //fail = "/testImportFail/";
-    //return std::make_pair (path, fail);
 }
 
 std::ifstream::pos_type filesize(const char* filename)
@@ -149,7 +141,6 @@ std::ifstream::pos_type filesize(const char* filename)
 void
 readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 {
-    struct hdfsBuilder *builder = hdfsNewBuilder ();
 
     std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
 
@@ -193,16 +184,6 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
     delete newRFile;
 
-
-
-
-
-
-    //free hdfs builder
-  hdfsFreeBuilder (builder);
-// dir = "/testImport/";
-    //fail = "/testImportFail/";
-    //return std::make_pair (path, fail);
 }
 int
 main (int argc, char **argv)
