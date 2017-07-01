@@ -41,7 +41,7 @@ the API.
 
 ## Building
 ```
-	run install scripts located in root directory
+	run bootstrap scripts located in root directory. This will download dependencies and build the project. Alternatively, you can build with the following:
 
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
