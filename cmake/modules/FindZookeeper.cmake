@@ -49,7 +49,7 @@ if (MSVC)
     endif()
 else()
     set(Zookeeper_LIB_PATHS /usr/local/lib /opt/local/lib)
-    find_path(Zookeeper_INCLUDE_DIR zookeeper.h  /usr/local/include/zookeeper )
+    find_path(Zookeeper_INCLUDE_DIR zookeeper/zookeeper.h /usr/local/include)
     find_library(Zookeeper_LIBRARY NAMES zookeeper_mt PATHS ${Zookeeper_LIB_PATHS})
 endif()
 
@@ -64,3 +64,4 @@ find_package_handle_standard_args(Zookeeper  DEFAULT_MSG
     Zookeeper_LIBRARY Zookeeper_INCLUDE_DIR)
 
 mark_as_advanced(Zookeeper_INCLUDE_DIR Zookeeper_LIBRARY )
+
