@@ -30,7 +30,6 @@ using namespace std;
 
 #define CATCH_CONFIG_MAIN
 
-#include <hdfs/hdfs.h>
 
 
 #include "../../include/data/constructs/column.h"
