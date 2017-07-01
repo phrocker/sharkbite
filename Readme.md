@@ -6,10 +6,10 @@ initial support for [Apache Accumulo][accumulo], the design can and has been use
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
 despite being the baseimplementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
-Currently the code is a merger of C && C++ code. V0.1 will represent a shift more toward 
+Currently the code is a merger of C && C++ code. V0.3 will represent a shift more toward 
 creating a C API and creating exernalized factories for the thrift code.
 
-Capabilities That will be supported in V0.1 : 
+Capabilities That will be supported in V0.2 : 
 
  * Work with Accumulo 1.6.x and 1.7.x
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
@@ -41,7 +41,9 @@ the API.
 
 ## Building
 ```
-	run bootstrap scripts located in root directory. This will download dependencies and build the project. Alternatively, you can build with the following:
+	run bootstrap scripts located in root directory, which will download dependencies and run the build. 
+
+        Alternatively, you can build with the following:
 
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
@@ -54,7 +56,6 @@ the API.
 
     //This code shows an example of reading data from an Accumulo instance.
 
-    //TODO unsure about assignments below
     string instance = argv[1]
     string zookeepers = argv[2]
     string username = argv[3]
