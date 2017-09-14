@@ -206,16 +206,17 @@ public:
 	scan (std::vector<cclient::data::Column*> *cols,
 	      std::vector<cclient::data::IterInfo*> *serverSideIterators)
 	{
-		ScanRequest<ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*>> request (
+		ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request (
 		                        &credentials, rangeDef->getAuthorizations (), tServer);
 
 		request.addColumns (cols);
 
 		request.setIters (serverSideIterators);
 
-		for (cclient::data::KeyExtent *extent : *rangeDef->getExtents ()) {
-			ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *ident = new ScanIdentifier<
-			cclient::data::KeyExtent*, cclient::data::Range*> ();
+		for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents ()) {
+			std::cout << extent->getTableId() << " " << extent->getEndRow() << std::endl;
+  			ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = new ScanIdentifier<
+			std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> ();
 			if (rangeDef->getRanges ()->size () == 0) {
 				return NULL;
 			}

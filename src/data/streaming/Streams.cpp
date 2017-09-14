@@ -34,7 +34,7 @@ StreamInterface::~StreamInterface ()
 
 }
 
-StreamInterface*
+std::shared_ptr<StreamInterface>
 StreamInterface::getStream ()
 {
     return NULL;

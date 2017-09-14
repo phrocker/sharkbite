@@ -47,7 +47,7 @@ namespace tserver
 RangeDefinition::RangeDefinition (cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths,
                                   std::string host, uint32_t port,
                                   std::vector<Range*> *keyRange,
-                                  std::vector<KeyExtent*> *keyExt,std::vector<Column*> *inCols) :
+                                  std::vector<std::shared_ptr<KeyExtent>> *keyExt,std::vector<Column*> *inCols) :
     ServerDefinition (creds, auths, host, port)
 {
     if (NULL != keyRange)
@@ -78,7 +78,7 @@ RangeDefinition::getRanges ()
  * Returns key extents
  * @returns key extents;
  */
-std::vector<KeyExtent*> *
+std::vector<std::shared_ptr<KeyExtent>> *
 RangeDefinition::getExtents ()
 {
     return &extents;

@@ -15,6 +15,7 @@
 #include <vector>
 #include <assert.h>
 #include <stdlib.h>
+#include <iostream>
 #include "../../../include/data/streaming/ByteOutputStream.h"
 
 namespace cclient{
@@ -41,6 +42,7 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
 ByteOutputStream::~ByteOutputStream ()
 {
     flush ();
+    output_stream_ref=nullptr;
 }
 
 /**
@@ -51,6 +53,7 @@ ByteOutputStream::flush ()
 {
     if (output_stream_ref != NULL)
     {
+        if (!array.empty())
         output_stream_ref->write (array.data(), offset);
     }
     offset = 0;
@@ -163,6 +166,7 @@ uint64_t
 ByteOutputStream::writeString (std::string s)
 {
     // write size of string
+	std::cout << "write string hadoop long " << s.size() << " at " << getPos() << std::endl;
     writeHadoopLong (s.size ());
     return writeBytes ((uint8_t*) s.data (), s.size ());
 }

@@ -2,8 +2,7 @@ set(CMAKE_AUTOMOC ON)
 cmake_minimum_required(VERSION 2.8.7)
 project (Sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
-set(CMAKE_BUILD_TYPE Release)
-set (CMAKE_CXX_FLAGS "-std=c++11 -Os -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
+set (CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF) 
 include_directories(include)
@@ -52,10 +51,10 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-#add_library(sharedsharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
 target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
-#target_link_libraries (sharedsharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
+target_link_libraries (sharkbite-shared  ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
 
 
 #ClientExample
@@ -185,7 +184,7 @@ ADD_CUSTOM_COMMAND(
   )
 
 ADD_CUSTOM_TARGET(docs ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT})
-
+endif(DOXYGEN_FOUND)	
 # Install library headers
 
 include(GNUInstallDirs)
@@ -196,12 +195,16 @@ set_target_properties(sharkbite PROPERTIES PUBLIC_HEADER "${HEADERS}")
 install(TARGETS sharkbite
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION include/sharkbite
+    PUBLIC_HEADER DESTINATION include/
     COMPONENT LIBRARY ) 
+install(TARGETS sharkbite-shared
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    PUBLIC_HEADER DESTINATION include/
+    COMPONENT LIBRARY )
 INSTALL (
     DIRECTORY ${CMAKE_SOURCE_DIR}/include/
-    DESTINATION include/sharkbite
+    DESTINATION include/
     FILES_MATCHING PATTERN "*.h*")
 #install(DIRECTORY ${PROJECT_SOURCE_DIR}/include
  #       DESTINATION )
-endif(DOXYGEN_FOUND)

@@ -56,7 +56,7 @@ public:
     RangeDefinition (cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths,
                      std::string host, uint32_t port,
                      std::vector<Range*> *keyRange,
-                     std::vector<KeyExtent*> *keyExt,std::vector<Column*> *columns =NULL);
+                     std::vector<std::shared_ptr<KeyExtent>> *keyExt,std::vector<Column*> *columns =NULL);
 
     /**
      * Returns ranges
@@ -69,7 +69,7 @@ public:
      * Returns key extents
      * @returns key extents;
      */
-    std::vector<KeyExtent*> *
+    std::vector<std::shared_ptr<KeyExtent>> *
     getExtents ();
 
     /**
@@ -86,7 +86,7 @@ public:
     }
 protected:
     std::vector<Range*> ranges;
-    std::vector<KeyExtent*> extents;
+    std::vector<std::shared_ptr<KeyExtent>> extents;
     std::vector<Column*> columns;
 };
 }

@@ -40,6 +40,13 @@ namespace impl
 class LocatorKey
 {
 public:
+
+	LocatorKey() : instance(nullptr){
+
+	}
+	LocatorKey (const LocatorKey &other) : instance(other.instance), tableName(other.tableName){
+
+	}
     /**
      * Constructor
      * @param instance intance implementation
@@ -51,7 +58,11 @@ public:
     // table name
     std::string tableName;
     
-    
+    LocatorKey &operator=(const LocatorKey &other){
+    	instance = other.instance;
+    	tableName = other.tableName;
+    	return *this;
+    }
     bool
     operator== (const LocatorKey &key)
     {
@@ -62,14 +73,16 @@ public:
     bool
     operator > (const LocatorKey &key) const
     {
-
+    	if (instance == nullptr)
+    		return false;
         return instance->getInstanceId () >= key.instance->getInstanceId ()
                && tableName > key.tableName;
     }
 
     bool
     operator < (const LocatorKey &key) const
-    {
+    {if (instance == nullptr)
+		return true;
         return instance->getInstanceId () <= key.instance->getInstanceId ()
                && tableName < key.tableName;
     }
@@ -139,7 +152,7 @@ public:
         std::vector<cclient::data::Range*> *ranges,
         std::set<std::string> *locations,
         std::map<std::string,
-        std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>, pointer_comparator<cclient::data::KeyExtent*> > > *binnedRanges) = 0;
+        std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) = 0;
 
     /**
      * Invalides the cache for the failed key extent

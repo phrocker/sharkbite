@@ -17,7 +17,7 @@
 
 #include <vector>
 #include <iterator>
-
+#include <memory>
 
 #include "../compressor/compressor.h"
 #include "../../streaming/Streams.h"
@@ -100,7 +100,7 @@ public:
 
      */
     void
-    setCurrentLocalityKey (StreamInterface *key)
+    setCurrentLocalityKey (std::shared_ptr<StreamInterface> key)
     {
         if (key == NULL)
         {
@@ -110,7 +110,7 @@ public:
     }
 
     static uint32_t
-    generate_average (std::vector<StreamInterface*> *keyValues)
+    generate_average (std::vector<std::shared_ptr<StreamInterface> > *keyValues)
     {
         cclient::data::streams::ByteOutputStream outStream (1024 * 1024);
         for (int i = 0; i < 10; i++)
@@ -125,16 +125,16 @@ public:
     }
 
     bool
-    append (std::vector<StreamInterface*> *keyValues, bool isSorted = false)
+    append (std::vector<std::shared_ptr<StreamInterface> > *keyValues, bool isSorted = false)
     {
         return append (keyValues, generate_average (keyValues), isSorted);
     }
 
     bool
-    append (KeyValue *kv);
+    append (std::shared_ptr<KeyValue> kv);
 
     bool
-    append (std::vector<StreamInterface*> *keyValues, uint32_t average_recordSize,
+    append (std::vector<std::shared_ptr<StreamInterface> > *keyValues, uint32_t average_recordSize,
             bool isSorted);
 
     /**
@@ -169,7 +169,7 @@ public:
         if (currentBlockWriter != NULL)
         {
             currentBlockWriter->flush ();
-            closeBlock (lastKeyValue->getKey ());
+            closeBlock (lastKeyValue->getKey ()->getStream());
             //      currentBlockWriter->close();
 	    delete currentBlockWriter;
             currentBlockWriter = NULL;
@@ -184,11 +184,13 @@ public:
      @param lastKey last key for locality group.
      **/
     void
-    closeBlock (StreamInterface *lastKey)
+    closeBlock (std::shared_ptr<StreamInterface> lastKey)
     {
+    	std::cout << "Close block " << entries << lastKey << std::endl;
         currentLocalityGroup->addIndexEntry (IndexEntry(lastKey, entries));
         dataBlockCnt = 0;
         entries = 0;
+        currentBlockCount=0;
 
     }
 
@@ -223,13 +225,13 @@ public:
     friend inline std::ostream &
     operator << (std::ostream &out, RFile &rhs)
     {
-        std::map<std::string,MetaIndexEntry> *entries = rhs.blockWriter->getMetaIndex()->getEntries();
+        auto entries = rhs.blockWriter->getMetaIndex()->getEntries();
 
-        for (std::map<std::string, MetaIndexEntry>::iterator it = entries->begin ();
+        for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = entries->begin ();
                 it != entries->end (); it++)
         {
             out << "Meta Block	: " << (*it).first << std::endl;
-            MetaIndexEntry *entry = &((*it).second);
+            auto entry = ((*it).second);
             out << "	Raw size	:" << entry->getRegion()->getRawSize() << std::endl;
             out << "	Compressed size	:" << entry->getRegion()->getCompressedSize() << std::endl;
         }
@@ -243,11 +245,11 @@ public:
         return operator<< (out, *rhs);
     }
 
-    virtual std::pair<Key*, Value*>
+    virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>
     operator* ()
     {
 
-        return std::make_pair (currentLocalityGroupReader->getTopKey(), (Value*) NULL);
+        return std::make_pair (currentLocalityGroupReader->getTopKey(), nullptr);
     }
 
 protected:
@@ -279,7 +281,7 @@ protected:
     // number of entries in current block.
     uint32_t entries;
     uint32_t currentBlockCount;
-    KeyValue *lastKeyValue;
+    std::shared_ptr<KeyValue> lastKeyValue;
     // current data block count in locality group.
     uint16_t dataBlockCnt;
     // output stream

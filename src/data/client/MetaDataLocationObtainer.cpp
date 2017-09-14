@@ -51,11 +51,11 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
                                       std::string stopRow, TabletLocator *parent)
 {
     std::vector<cclient::data::TabletLocation> tabletLocations;
-    cclient::data::Key startKey;
-    startKey.setRow (row.c_str (), row.size ());
-    cclient::data::Key endKey;
-    endKey.setRow (stopRow.c_str (), stopRow.size ());
-    cclient::data::Range *range = new cclient::data::Range (&startKey, true, &endKey, true);
+    std::shared_ptr<cclient::data::Key> startKey = std::make_shared<cclient::data::Key>();
+    startKey->setRow (row.c_str (), row.size ());
+    std::shared_ptr<cclient::data::Key> endKey = std::make_shared<cclient::data::Key>();
+    endKey->setRow (stopRow.c_str (), stopRow.size ());
+    cclient::data::Range *range = new cclient::data::Range (startKey, true, endKey, true);
 
     std::map<cclient::data::Key, cclient::data::Value> resultSet;
 
@@ -64,7 +64,7 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
     std::vector<cclient::data::Range*> ranges;
     ranges.push_back (range);
 
-    std::vector<cclient::data::KeyExtent*> extents;
+    std::vector<std::shared_ptr<cclient::data::KeyExtent>> extents;
     extents.push_back (source->getExtent ());
     cclient::data::tserver::RangeDefinition *rangeDef = new cclient::data::tserver::RangeDefinition (credentials, &emptyAuths,
             source->getServer (),
@@ -82,22 +82,22 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
     std::vector<cclient::data::IterInfo*> iters;
     iters.push_back (&wriIter);
     interconnect::Scan *initScan = directConnect->scan (columns, &iters);
-    std::vector<cclient::data::KeyValue*> kvResults;
+    std::vector<std::shared_ptr<cclient::data::KeyValue> > kvResults;
     initScan->getNextResults (&kvResults);
 
-    std::map<cclient::data::Key*, cclient::data::Value*, pointer_comparator<cclient::data::Key*>> results = decodeResults (
+    std::map<std::shared_ptr<cclient::data::Key> , std::shared_ptr<cclient::data::Value> , pointer_comparator<std::shared_ptr<cclient::data::Key> >> results = decodeResults (
                 &kvResults);
 
-    cclient::data::Key *key = 0;
-    cclient::data::Value * value = 0;
+    std::shared_ptr<cclient::data::Key> key = 0;
+    std::shared_ptr<cclient::data::Value>  value = 0;
     std::string lastRowFromKey = "";
     std::string currentRow = "";
 
     std::string location = "", session = "";
 
-    cclient::data::Value *prevRow = 0;
+    std::shared_ptr<cclient::data::Value> prevRow = 0;
 
-    for (std::map<cclient::data::Key*, cclient::data::Value*>::iterator it = results.begin ();
+    for (std::map<std::shared_ptr<cclient::data::Key> , std::shared_ptr<cclient::data::Value> >::iterator it = results.begin ();
             it != results.end (); it++)
     {
         key = it->first;
@@ -132,11 +132,11 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
         if (prevRow != NULL)
         {
 
-            cclient::data::KeyExtent ke(currentRow, prevRow);
+            std::shared_ptr<cclient::data::KeyExtent> ke = std::make_shared<cclient::data::KeyExtent>(currentRow, prevRow);
             if (location.length () > 0)
             {
 
-                cclient::data::TabletLocation te(&ke, location,
+                cclient::data::TabletLocation te(ke, location,
                         session);
 		
 
@@ -146,12 +146,6 @@ MetaDataLocationObtainer::findTablet (cclient::data::security::AuthInfo *credent
 
     }
 
-    for (std::map<cclient::data::Key*, cclient::data::Value*>::iterator it = results.begin ();
-            it != results.end (); it++)
-    {
-        delete it->first;
-        delete it->second;
-    }
 
     delete initScan;
 

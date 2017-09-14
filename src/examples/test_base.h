@@ -128,8 +128,8 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 	try{
 	  for (int i = 0; i < numToWrite; i++) {
 
-		  cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		  cclient::data::Key *newKey = new cclient::data::Key ();
+		  std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue> ();
+		  std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key> ();
 		  std::stringstream row;
 		  row << "a" << i;
 		  newKey->setRow (row.str());
@@ -139,10 +139,9 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 		  newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		  newKey->setTimeStamp(1445105294261L);
 		  newKv->setKey (newKey,true);
-		  cclient::data::Value *v = new cclient::data::Value();
+		  std::shared_ptr<cclient::data::Value> v = std::make_shared<cclient::data::Value>();
 		  newKv->setValue (v);
-		  delete v;
-		  sink->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		  sink->push (newKv);
 	  }
 	}catch(cclient::exceptions::ClientException ce)
 	{

@@ -47,6 +47,8 @@ public:
             delete[] buffer;
         buffer=NULL;
     }
+
+    virtual Compressor *newInstance() = 0;
     /**
      Set the input.
      @param b input buffer.

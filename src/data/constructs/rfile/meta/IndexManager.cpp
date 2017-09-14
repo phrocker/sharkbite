@@ -33,7 +33,7 @@ IndexManager::read (cclient::data::streams::InputStream *in)
         size = in->readInt ();
     }
 
-    indexBlock = new IndexBlock (version);
+    indexBlock = std::make_shared< IndexBlock> (version);
     indexBlock->read (in);
 
     if (version == 3 || version == 4)

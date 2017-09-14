@@ -224,7 +224,7 @@ std::vector< std::string > AccumuloTableOperations::listSplits()
       std::vector<std::string> tablets;
       for(auto location : locations)
       {
-	cclient::data::KeyExtent *extent = location.getExtent();
+	std::shared_ptr<cclient::data::KeyExtent> extent = location.getExtent();
 	tablets.push_back( extent->getEndRow() );
 	
       }

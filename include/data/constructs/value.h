@@ -16,6 +16,7 @@
 #define VALUE_H
 
 #include <stdint.h>
+#include <memory>
 #include <cstdio>
 #include <cstring>
 #include "../streaming/Streams.h"
@@ -26,7 +27,7 @@ namespace data {
 /**
  * Value object containing byte array
  */
-class Value: public cclient::data::streams::StreamInterface {
+class Value: public cclient::data::streams::StreamInterface, public std::enable_shared_from_this<Value>{
 public:
 
     Value();
@@ -50,7 +51,7 @@ public:
 
     size_t size();
 
-    StreamInterface *getStream();
+    std::shared_ptr<StreamInterface> getStream();
 
     std::pair<uint8_t*, size_t> getValue() const;
 

@@ -34,7 +34,7 @@
 
 
 bool
-keyCompare (cclient::data::KeyValue* a, cclient::data::KeyValue* b)
+keyCompare (std::shared_ptr<cclient::data::KeyValue>  a, std::shared_ptr<cclient::data::KeyValue>  b)
 {
     return *(a->getKey ()) < *(b->getKey ());
 }
@@ -57,7 +57,7 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 //							 stream);
     cclient::data::RFile *newRFile = new cclient::data::RFile (stream, &bcFile);
 
-    std::vector<cclient::data::KeyValue*> keyValues;
+    std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 
     char rw[13], cf[4], cq[9], cv[9];
     int i = 0;
@@ -67,9 +67,9 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
     for (i = 1; i < 25; i++)
     {
 
-        cclient::data::Value *v = new cclient::data::Value (moto);
+        std::shared_ptr<cclient::data::Value> v = std::make_shared<cclient::data::Value> (moto);
 
-        cclient::data::Key *k = new cclient::data::Key ();
+        std::shared_ptr<cclient::data::Key> k = std::make_shared<cclient::data::Key> ();
 
         std::string rowSt = "2";
 
@@ -90,7 +90,7 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 
         k->setTimeStamp (1445105294261L);
 
-        cclient::data::KeyValue *kv = new cclient::data::KeyValue ();
+        std::shared_ptr<cclient::data::KeyValue> kv = std::make_shared<cclient::data::KeyValue> ();
 
         kv->setKey (k);
         kv->setValue (v);
@@ -99,7 +99,7 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
     }
     std::sort (keyValues.begin (), keyValues.end (), keyCompare);
     newRFile->addLocalityGroup ();
-    for (std::vector<cclient::data::KeyValue*>::iterator it = keyValues.begin ();
+    for (std::vector<std::shared_ptr<cclient::data::KeyValue> >::iterator it = keyValues.begin ();
             it != keyValues.end (); ++it)
     {
         newRFile->append (*it);
@@ -117,12 +117,6 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
     delete newRFile;
 
 
-    for (std::vector<cclient::data::KeyValue*>::iterator it = keyValues.begin ();
-            it != keyValues.end (); ++it)
-    {
-        delete (*it)->getKey ();
-        delete (*it);
-    }
 
 
 

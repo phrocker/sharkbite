@@ -49,7 +49,7 @@ public:
 	 * @param resultSet result set to add to this object's results
 	 * @returns result of adding. 
 	 **/
-	bool setNextResults(std::vector<cclient::data::KeyValue*> *resultSet)
+	bool setNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet)
 	{
 		results.insert(results.end(), resultSet->begin(),
 		               resultSet->end());
@@ -60,7 +60,7 @@ public:
 	 * Gets the next result and places it into resultSet
 	 * @param reference result set to add. 
 	 **/
-	bool getNextResults(std::vector<cclient::data::KeyValue*> *resultSet)
+	bool getNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet)
 	{
 		resultSet->insert(resultSet->end(), results.begin(), results.end());
 		results.clear();
@@ -105,24 +105,24 @@ public:
 		this->scanId = scanId;
 	}
 	
-	void setTopKey(cclient::data::Key *key)
+	void setTopKey(std::shared_ptr<cclient::data::Key> key)
 	{
 	  topKey = key;
 	}
 	
-	cclient::data::Key *getTopKey() const
+	std::shared_ptr<cclient::data::Key> getTopKey() const
 	{
 	  return topKey;
 	}
 
 protected:
-	cclient::data::Key *topKey;
+	std::shared_ptr<cclient::data::Key> topKey;
 	// scan id
 	int64_t scanId;
 	// has more results.
 	bool hasMore;
 	// results
-	std::vector<cclient::data::KeyValue*> results;
+	std::vector<std::shared_ptr<cclient::data::KeyValue> > results;
 };
 }
 #endif /* SCAN_H_ */

@@ -15,93 +15,85 @@
 #ifndef SRC_WRITER_SINK_H_
 #define SRC_WRITER_SINK_H_
 
-
 #include "data/constructs/Mutation.h"
 #include <chrono>
+#include <memory>
 #include <thread>
 #include "data/extern/concurrentqueue/concurrentqueue.h"
 #include <atomic>
-namespace writer
-{
-
+namespace writer {
 
 template<class T>
-class Sink
-{
+class Sink {
 
-protected:
+ protected:
 
-	moodycamel::ConcurrentQueue<T*> sinkQueue;
-	
+  moodycamel::ConcurrentQueue<std::shared_ptr<T>> sinkQueue;
 
-	virtual bool
-	exceedQueue ();
+  virtual bool
+  exceedQueue();
 
-	virtual bool
-	enqueue (T *obj);
+  virtual bool
+  enqueue(std::shared_ptr<T> obj);
 
-	uint16_t queueSize;
+  uint16_t queueSize;
 
-	
-	virtual uint64_t maxWait()
-	{
-	  return 0;
-	}
-	
-	virtual uint64_t waitingSize()
-	{
-	  return 0;
-	}
+  virtual uint64_t maxWait() {
+    return 0;
+  }
 
-public:
+  virtual uint64_t waitingSize() {
+    return 0;
+  }
 
-	Sink (uint16_t maxQueue) :
-		queueSize (maxQueue), sinkQueue( (maxQueue * 1.5) )
-	{
+ public:
 
+  Sink(uint16_t maxQueue)
+      : queueSize(maxQueue),
+        sinkQueue((maxQueue * 1.5)) {
 
-	}
+  }
 
-	virtual
-	~Sink ()
-	{
-	}
+  virtual ~Sink() {
+  }
 
-	/**
-	 * Method to put object onto the queue
-	 * @param obj incoming object to push into the sink
-	 */
-	bool
-	push (std::unique_ptr<T> obj);
+  /**
+   * Method to put object onto the queue
+   * @param obj incoming object to push into the sink
+   */
+  bool
+  push(std::unique_ptr<T> obj);
 
-	/**
-	 * Flushes the sink
-	 */
-	virtual void
-	flush (bool override = false) = 0;
-	
-	
-	/**
-	Add a mutation
-	**/
-	virtual bool
-	addMutation (std::unique_ptr<cclient::data::Mutation> obj) = 0;
+  /**
+   * Method to put object onto the queue
+   * @param obj incoming object to push into the sink
+   */
+  bool
+  push(std::shared_ptr<T> obj);
 
-	/**
-	 * Closes the sink
-	 */
-	virtual void
-	close ()
-	{
-		flush (true);
-	}
+  /**
+   * Flushes the sink
+   */
+  virtual void
+  flush(bool override = false) = 0;
 
-	inline virtual size_t
-	size ()
-	{
+  /**
+   Add a mutation
+   **/
+  virtual bool
+  addMutation(std::unique_ptr<cclient::data::Mutation> obj) = 0;
 
-		return sinkQueue.size_approx();
-	}
+  /**
+   * Closes the sink
+   */
+  virtual void close() {
+    flush(true);
+  }
+
+  inline virtual size_t size() {
+
+    return sinkQueue.size_approx();
+  }
 
 };
 
@@ -110,23 +102,33 @@ public:
  * @param obj incoming object to push into the sink
  */
 template<typename T>
-bool
-Sink<T>::push (std::unique_ptr<T> obj)
-{
-    
-	while(waitingSize() >= ((maxWait()+1)*1.5)) {
-		std::this_thread::sleep_for(std::chrono::milliseconds(25));
-	}
-	/**
-	 * If enqueue r
-	 */
-	T *ptr = obj.release();
-	if (enqueue (ptr) && exceedQueue ()) {
-		flush ();
-	}
-	
+bool Sink<T>::push(std::unique_ptr<T> obj) {
 
-	
+  while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  }
+  /**
+   * If enqueue r
+   */
+  std::shared_ptr<T> ptr = std::move(obj);
+  if (enqueue(ptr) && exceedQueue()) {
+    flush();
+  }
+
+  return true;
+}
+
+template<typename T>
+bool Sink<T>::push(std::shared_ptr<T> obj) {
+
+  while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(25));
+  }
+
+  if (enqueue(obj) && exceedQueue()) {
+    flush();
+  }
+
   return true;
 }
 
@@ -135,12 +137,10 @@ Sink<T>::push (std::unique_ptr<T> obj)
  * @param obj incoming object to push into the sink
  */
 template<typename T>
-bool
-Sink<T>::enqueue (T *obj)
-{
-	bool enqueued = sinkQueue.enqueue(obj);
-	
-	return enqueued;
+bool Sink<T>::enqueue(std::shared_ptr<T> obj) {
+  bool enqueued = sinkQueue.enqueue(obj);
+
+  return enqueued;
 
 }
 
@@ -149,14 +149,12 @@ Sink<T>::enqueue (T *obj)
  * @param obj incoming object to push into the sink
  */
 template<typename T>
-bool
-Sink<T>::exceedQueue ()
-{
-	if (size () > queueSize) {
-		return true;
-	}
+bool Sink<T>::exceedQueue() {
+  if (size() > queueSize) {
+    return true;
+  }
 
-	return false;
+  return false;
 
 }
 

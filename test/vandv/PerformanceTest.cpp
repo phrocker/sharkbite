@@ -86,9 +86,9 @@ public:
 	std::unique_ptr<scanners::Scanner> scanner = std::unique_ptr<scanners::Scanner>( dynamic_cast<scanners::Scanner*>(ops->createScanner (&auths, 1).release()));
 
 	// range from a to d
-	cclient::data::Key *startkey = new cclient::data::Key ();
+	std::shared_ptr<cclient::data::Key> startkey = std::make_shared<cclient::data::Key> ();
 	startkey->setRow ("a", 1);
-	cclient::data::Key *stopKey = new cclient::data::Key ();
+	std::shared_ptr<cclient::data::Key> stopKey = std::make_shared<cclient::data::Key> ();
 	stopKey->setRow ("z", 1);
 	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
 
@@ -103,7 +103,7 @@ public:
 	     iter++, counter++) {
 	  
 	    
-		 std::unique_ptr<cclient::data::KeyValue> kv =*iter;
+		 auto kv =*iter;
 		
 		
 	}

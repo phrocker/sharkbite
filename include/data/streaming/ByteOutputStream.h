@@ -17,6 +17,7 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
 #include <vector>
+#include <iostream>
 #include <typeinfo>
 #include <stdexcept>
 #include <stdint.h>
@@ -37,7 +38,7 @@ public:
 
     ByteOutputStream(size_t initial_size, OutputStream *out_stream = NULL);
 
-    ~ByteOutputStream();
+    virtual ~ByteOutputStream();
     void flush();
     virtual uint64_t getPos();
 
@@ -70,6 +71,10 @@ public:
     virtual uint64_t writeLong(const uint64_t val);
 
     virtual uint64_t writeBoolean(const bool val);
+
+    virtual uint64_t writeEncodedLong(const int64_t n = 0) {
+    	return OutputStream::writeEncodedLong(n);
+    }
 
 protected:
     // offset of the stream.
@@ -112,6 +117,7 @@ public:
     }
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
+    	std::cout << "writing BE encoded " << htonlw(n) << " from " << n << std::endl;
         return ByteOutputStream::writeEncodedLong((int64_t) htonlw(n));
     }
 

@@ -15,11 +15,12 @@
 #define BLOCK_COMP_STREAM_H_
 
 #include <vector>
-
+#include <iostream>
 
 #include "../../compressor/compressor.h"
 #include "../../../streaming/Streams.h"
 #include "../../../streaming/input/NetworkOrderInputStream.h"
+#include "../../../streaming/EndianTranslation.h"
 #include "BlockRegion.h"
 
 namespace cclient {
@@ -98,6 +99,13 @@ public:
         return compress;
     }
 
+
+    virtual uint64_t writeEncodedLong(const int64_t n = 0) {
+    	std::cout << "writing BE encoded  from " << n << std::endl;
+        return DataOutputStream::writeEncodedLong(n);
+    }
+
+
     /**
      * Flushes the block compressor stream.
      * should be called when finished or by xsputn
@@ -116,8 +124,10 @@ public:
         compress->setInput(&growingBuffer.at(0), 0, location);
         compress->compress(output_stream);
 
+        std::cout << "writin rawsize " << location << " offset " << compress->getStreamOffset() << " " << compress->getCompressedSize() << std::endl;
+
         associatedRegion->setOffset(compress->getStreamOffset());
-        associatedRegion->setRawSize(compress->bytesWritten());
+        associatedRegion->setRawSize(location);
         associatedRegion->setCompressedSize(compress->getCompressedSize());
         // clear the buffer and the block location so that
         // this object can be reused.

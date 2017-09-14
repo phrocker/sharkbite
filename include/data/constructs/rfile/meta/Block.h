@@ -17,167 +17,138 @@
 #include "BaseMetaBlock.h"
 #include "IndexBlock.h"
 #include "BlockLookup.h"
+#include <memory>
 #include "../../Key.h"
+#include "data/streaming/Streams.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class Block : public BaseMetaBlock
-{
+class Block: public BaseMetaBlock, public std::enable_shared_from_this<Block> {
 protected:
-    Block *parent;
-    IndexBlock *indexBlock;
-    uint32_t currentPosition;
-    BlockLookup *blockStore;
+	std::shared_ptr<Block> parent;
+	std::shared_ptr<IndexBlock> indexBlock;
+	uint32_t currentPosition;
+	BlockLookup *blockStore;
 
 public:
 
-    Block (BlockLookup *blockStore, Block *parent, IndexBlock *block) :
-        blockStore (blockStore), parent (parent), indexBlock (block), currentPosition (
-            0)
-    {
+	Block(BlockLookup *blockStore, std::shared_ptr<Block> parent,
+			std::shared_ptr<IndexBlock> block) :
+			blockStore(blockStore), parent(parent), indexBlock(block), currentPosition(
+					0) {
 
-    }
+	}
 
-    Block (BlockLookup *blockStore, IndexBlock *block) :
-        Block (blockStore, NULL, block)
-    {
+	Block(BlockLookup *blockStore, std::shared_ptr<IndexBlock> block) :
+			Block(blockStore, NULL, block) {
 
-    }
+	}
 
-    Block (Block *blockStore, IndexBlock *block) :
-        Block (blockStore->blockStore, blockStore, block)
-    {
+	Block(std::shared_ptr<Block> blockStore, std::shared_ptr<IndexBlock> block) :
+			Block(blockStore->blockStore, blockStore, block) {
 
-    }
+	}
 
-    ~Block ()
-    {
-        if (NULL != indexBlock)
-        {
-            delete indexBlock;
-        }
-    }
+	~Block() {
+	}
 
-    uint32_t
-    getCurrentPosition ()
-    {
-        return currentPosition;
-    }
+	uint32_t getCurrentPosition() {
+		return currentPosition;
+	}
 
-    IndexBlock *
-    getIndexBlock ()
-    {
-        return indexBlock;
-    }
+	std::shared_ptr<IndexBlock> getIndexBlock() {
+		return indexBlock;
+	}
 
-    cclient::data::streams::StreamInterface *
-    getBlock ()
-    {
-        return indexBlock->getIndex ();
-    }
+	std::shared_ptr<data::streams::StreamInterface> getBlock() {
+		return indexBlock->getIndex();
+	}
 
-    uint32_t
-    getOffset ()
-    {
-        return indexBlock->getOffset ();
-    }
+	uint32_t getOffset() {
+		return indexBlock->getOffset();
+	}
 
-    bool
-    hasNextKey ()
-    {
-        return indexBlock->hasNextKey ();
-    }
+	bool hasNextKey() {
+		return indexBlock->hasNextKey();
+	}
 
-    IndexBlock *
-    getIndexBlock (IndexEntry *ie)
-    {
-        return blockStore->getIndexBlock (ie);
-    }
+	std::shared_ptr<IndexBlock> getIndexBlock(std::shared_ptr<IndexEntry> ie) {
+		return blockStore->getIndexBlock(ie);
+	}
 
-    Block *
-    lookup (Key *key)
-    {
-        int64_t posCheck = indexBlock->getKeyIndex ()->binary_search (key);
-        if (posCheck < 0)
-        {
-            posCheck = (posCheck * -1) - 1;
-        }
-        uint64_t pos = posCheck;
-        if (pos == indexBlock->getIndex ()->size ())
-        {
-            if (parent != NULL)
-            {
-                throw std::runtime_error ("Illegal state");
-            }
-            currentPosition = pos;
-            return this;
-        }
+	std::shared_ptr<Block> lookup(std::shared_ptr<Key> key) {
+		int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
+		if (posCheck < 0) {
+			posCheck = (posCheck * -1) - 1;
+		}
+		uint64_t pos = posCheck;
+		if (pos == indexBlock->getIndex()->size()) {
+			if (parent != NULL) {
+				throw std::runtime_error("Illegal state");
+			}
+			currentPosition = pos;
+			return shared_from_this();
+		}
 
-        currentPosition = pos;
-        if (indexBlock->getLevel () == 0)
-        {
-            return this;
-        }
+		currentPosition = pos;
+		if (indexBlock->getLevel() == 0) {
+			return shared_from_this();
+		}
 
-        IndexEntry *ie = indexBlock->getIndex ()->get (pos);
-        Block *newChild = new Block (this, getIndexBlock (ie));
+		std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(pos);
+		std::shared_ptr<Block> newChild = std::make_shared<Block>(
+				shared_from_this(), getIndexBlock(ie));
 
-        Block *returnBlock = newChild->lookup (key);
+		std::shared_ptr<Block> returnBlock = newChild->lookup(key);
 
-        delete newChild;
-        return returnBlock;
+		return returnBlock;
 
-    }
+	}
 
-    Block *
-    getLast ()
-    {
-        currentPosition = indexBlock->getIndex ()->size () - 1;
-        if (indexBlock->getLevel () == 0)
-        {
-            return NULL;
-        }
+	std::shared_ptr<Block> getLast() {
+		currentPosition = indexBlock->getIndex()->size() - 1;
+		if (indexBlock->getLevel() == 0) {
+			return NULL;
+		}
 
-        IndexEntry *ie = indexBlock->getIndex ()->get (currentPosition);
-        Block *newChild = new Block (this, getIndexBlock (ie));
-        Block *returnBlock = newChild->getLast ();
-        if (returnBlock != NULL)
-            delete newChild;
-        else
-            returnBlock = newChild;
-        return returnBlock;
+		std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(
+				currentPosition);
+		std::shared_ptr<Block> newChild = std::make_shared<Block>(
+				shared_from_this(), getIndexBlock(ie));
+		std::shared_ptr<Block> returnBlock = newChild->getLast();
+		if (returnBlock != NULL) {
+			newChild = nullptr;
+		} else
+			returnBlock = newChild;
 
-    }
+		return returnBlock;
 
-    Block *
-    getPrevious ()
-    {
-        if (currentPosition == 0)
-        {
-            return parent->getPrevious ();
-        }
+	}
 
-        currentPosition--;
+	std::shared_ptr<BaseMetaBlock> getPrevious() {
+		if (currentPosition == 0) {
+			return parent->getPrevious();
+		}
 
-        IndexEntry *ie = indexBlock->getIndex ()->get (currentPosition);
-        Block *newChild = new Block (this, getIndexBlock (ie));
-        Block *returnBlock = newChild->getLast ();
-        if (returnBlock != NULL)
-            delete newChild;
-        else
-            returnBlock = newChild;
-        return returnBlock;
+		currentPosition--;
 
-    }
+		std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(
+				currentPosition);
+		std::shared_ptr<Block> newChild = std::make_shared<Block>(
+				shared_from_this(), getIndexBlock(ie));
+		std::shared_ptr<Block> returnBlock = newChild->getLast();
+		if (returnBlock != NULL) {
+			newChild = nullptr;
+		} else
+			returnBlock = newChild;
+		return returnBlock;
 
-    Block *
-    getPreviousBlock ()
-    {
-        return parent->getPrevious ();
-    }
+	}
+
+	std::shared_ptr<BaseMetaBlock> getPreviousBlock() {
+		return parent->getPrevious();
+	}
 
 };
 }

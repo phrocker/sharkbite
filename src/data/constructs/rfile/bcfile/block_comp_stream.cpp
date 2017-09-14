@@ -28,7 +28,7 @@ BlockCompressorStream::BlockCompressorStream (streams::OutputStream *out_stream,
     BlockStreambuffer (compressor->getBufferSize ()), cclient::data::streams::DataOutputStream (
         new streams::BigEndianOutStream (
             new OutputStream ((std::ostream*) this, out_stream->getPos ()))), compress (
-                compressor), output_stream (out_stream), std::ostream (
+                compressor->newInstance()), output_stream (out_stream), std::ostream (
                     (BlockStreambuffer*) this), std::istream(this), std::ios (0), blockLoc (0), writeStart (false), associatedRegion (
                         region)
 {
@@ -37,7 +37,7 @@ BlockCompressorStream::BlockCompressorStream (streams::OutputStream *out_stream,
 
 BlockCompressorStream::BlockCompressorStream(InputStream *in_stream,  compression::Compressor *decompressor,  BlockRegion *region) :
     BlockStreambuffer (decompressor->getBufferSize ()),cclient::data::streams::DataOutputStream (NULL),cclient::data::streams::EndianInputStream(),std::istream(this), std::ios (0), blockLoc (0), writeStart (false), associatedRegion(region),output_stream(NULL),compress (
-        decompressor)
+        decompressor->newInstance())
 {
     uint64_t prevPosition = in_stream->getPos();
 
@@ -70,8 +70,10 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream,  compressio
 
 BlockCompressorStream::~BlockCompressorStream ()
 {
-
-    compress = NULL;
+	if (compress != nullptr){
+		delete compress;
+		compress = NULL;
+	}
 }
 
   }

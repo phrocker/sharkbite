@@ -166,8 +166,8 @@ public:
     std::vector<cclient::data::Range*> binRanges(cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Range*> *ranges,
                              std::set<std::string> *locations,
                              std::map<std::string,
-                             std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,
-                             pointer_comparator<cclient::data::KeyExtent*> > > *binnedRanges) {
+                             std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>,
+                             pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
 
       std::string startRow = "";
         std::vector<cclient::data::Range*> failures;

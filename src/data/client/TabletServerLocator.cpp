@@ -27,6 +27,7 @@ TabletServerLocator::TabletServerLocator (std::string tableId,
                 cclient::data::Instance *inst) :
 	tableId (tableId), parent (parent), locator (lc), instance (inst)
 {
+	std::cout << "table id for locator is " << tableId << std::endl;
 	lastTabletRow = tableId;
 	lastTabletRow.append ("<");
 

@@ -98,8 +98,8 @@ public:
 
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
+		std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue> ();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<  cclient::data::Key> ();
 		newKey->setRow ("a", 1);
 		newKey->setColFamily ("apple", 5);
 		std::stringstream cq;
@@ -107,14 +107,14 @@ public:
 		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		newKey->setTimeStamp(1445105294261L);
 		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		newKv->setValue (std::make_shared<cclient::data::Value> ());
+		writer->push (newKv);
 	}
 	
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
+	  std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue> ();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<  cclient::data::Key> ();
 		newKey->setRow ("a", 1);
 		newKey->setColFamily ("avacado", 7);
 		std::stringstream cq;
@@ -122,8 +122,8 @@ public:
 		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		newKey->setTimeStamp(1445105294261L);
 		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ("fruit"));
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		newKv->setValue (std::make_shared< cclient::data::Value> ("fruit"));
+		writer->push (newKv);
 	}
 	
 	
@@ -163,7 +163,7 @@ public:
 	
 	for (auto iter = results->begin (); iter != results->end ();
 	     iter++, counter++) {
-		 std::unique_ptr<cclient::data::KeyValue> kv =*iter;
+		 auto kv =*iter;
 		
 		  assert(kv->getKey() != NULL);
 

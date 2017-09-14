@@ -15,7 +15,7 @@
 #include "../../../include/data/streaming/HdfsOutputStream.h"
 
 #include "../../../include/data/streaming/OutputStream.h"
-
+#include <iostream>
 
 namespace cclient{
   namespace data{
@@ -47,6 +47,7 @@ uint64_t
 HadoopDataOutputStream::writeString (std::string s)
 {
     // write size of string
+	std::cout << "write encoded long " << s.size() << " at " << getPos() << std::endl;
     output_stream_ref->writeHadoopLong (s.size ());
     return output_stream_ref->writeBytes ((uint8_t*) s.data (), s.size ());
 }

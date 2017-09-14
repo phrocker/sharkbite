@@ -39,20 +39,20 @@ TabletLocationObtainer::~TabletLocationObtainer ()
     // TODO Auto-generated destructor stub
 }
 
-std::map<cclient::data::Key*, cclient::data::Value*, pointer_comparator<cclient::data::Key*>>
-        TabletLocationObtainer::decodeResults (std::vector<cclient::data::KeyValue*> *results)
+std::map<std::shared_ptr<cclient::data::Key> , std::shared_ptr<cclient::data::Value> , pointer_comparator<std::shared_ptr<cclient::data::Key> >>
+        TabletLocationObtainer::decodeResults (std::vector<std::shared_ptr<cclient::data::KeyValue> > *results)
 {
 
-    std::map<cclient::data::Key*, cclient::data::Value*, pointer_comparator<cclient::data::Key*>> sortedMap;
+    std::map<std::shared_ptr<cclient::data::Key> , std::shared_ptr<cclient::data::Value> , pointer_comparator<std::shared_ptr<cclient::data::Key> >> sortedMap;
 
-    for (std::vector<cclient::data::KeyValue*>::iterator it = results->begin ();
+    for (std::vector<std::shared_ptr<cclient::data::KeyValue> >::iterator it = results->begin ();
             it != results->end (); it++)
     {
 
-        cclient::data::KeyValue *kv = (cclient::data::KeyValue*) (*it);
+        std::shared_ptr<cclient::data::KeyValue> kv = (std::shared_ptr<cclient::data::KeyValue> ) (*it);
 
-        cclient::data::Key *key = kv->getKey ();
-        cclient::data::Value *value = kv->getValue ();
+        std::shared_ptr<cclient::data::Key> key = kv->getKey ();
+        std::shared_ptr<cclient::data::Value> value = kv->getValue ();
         std::pair<uint8_t*, size_t> pair = value->getValue ();
 
         cclient::data::streams::EndianInputStream *byteStream = new cclient::data::streams::EndianInputStream (
@@ -68,14 +68,14 @@ std::map<cclient::data::Key*, cclient::data::Value*, pointer_comparator<cclient:
             std::pair<uint32_t, uint8_t*> createdValue = readByteArray (
                         byteStream);
 
-            cclient::data::Key *newKey = new cclient::data::Key ();
+            std::shared_ptr<cclient::data::Key> newKey = std::make_shared<  cclient::data::Key> ();
             std::pair<const char*, uint32_t> row = key->getRow ();
             newKey->setRow (row.first, row.second);
             newKey->setColFamily ((const char*) cf.second, cf.first);
             newKey->setColQualifier ((const char*) cq.second, cq.first);
             newKey->setColVisibility ((const char*) cv.second, cv.first);
             newKey->setTimeStamp (timestamp);
-            cclient::data::Value *newValue = new cclient::data::Value ();
+            std::shared_ptr<cclient::data::Value> newValue = std::make_shared<  cclient::data::Value >();
             newValue->setValue (createdValue.second, createdValue.first);
 
             sortedMap.insert (std::make_pair (newKey, newValue));
@@ -86,11 +86,6 @@ std::map<cclient::data::Key*, cclient::data::Value*, pointer_comparator<cclient:
         }
         
         delete byteStream;
-	
-        if (!kv->hasOwnerShip())
-	  delete key;
-        delete kv;
-	
 
     }
     return sortedMap;

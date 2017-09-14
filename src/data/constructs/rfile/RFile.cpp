@@ -90,7 +90,6 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
     int size = metaBlock->readInt ();
 
 
-
     localityGroups.resize (size);
     
     for (int i = 0; i < size; i++)
@@ -114,19 +113,19 @@ RFile::~RFile ()
 }
 
 bool
-RFile::append (KeyValue *kv)
+RFile::append (std::shared_ptr<KeyValue> kv)
 {
     if (dataClosed || closed)
         throw std::runtime_error ("Appending data failed, data block closed");
 
     if (currentLocalityGroup->getFirstKey () == NULL)
     {
-        StreamInterface *firstKey = kv->getKey ();
+        std::shared_ptr<StreamInterface> firstKey = kv->getKey ()->getStream();
         // set the first key for the current locality group.
         setCurrentLocalityKey (firstKey);
     }
 
-    Key *prevKey = NULL;
+    std::shared_ptr<Key> prevKey = NULL;
     if (NULL != lastKeyValue)
     {
         prevKey = lastKeyValue->getKey ();
@@ -147,9 +146,11 @@ RFile::append (KeyValue *kv)
     uint64_t position = kv->getValue ()->write (currentBlockWriter);
 
     lastKeyValue = kv;
+
     // we've written all we can write doctor.
     if (position >= maxBlockSize)
     {
+    	std::cout << "stopping at " << entries << std::endl;
         currentBlockWriter->flush ();
         closeBlock (kv);
 
@@ -164,7 +165,7 @@ RFile::append (KeyValue *kv)
 }
 
 bool
-RFile::append (std::vector<streams::StreamInterface*> *keyValues, uint32_t average_recordSize,
+RFile::append (std::vector<std::shared_ptr<streams::StreamInterface>> *keyValues, uint32_t average_recordSize,
                bool isSorted)
 {
 
@@ -176,8 +177,8 @@ RFile::append (std::vector<streams::StreamInterface*> *keyValues, uint32_t avera
 
     uint32_t recordIncrement = (maxBlockSize / average_recordSize);
 
-    streams::StreamInterface *key;
-    streams::StreamInterface *firstKey = NULL;
+    std::shared_ptr<streams::StreamInterface> key;
+    std::shared_ptr<streams::StreamInterface> firstKey = NULL;
     firstKey = keyValues->at (0)->getStream ();
     // set the first key for the current locality group.
     setCurrentLocalityKey (firstKey);

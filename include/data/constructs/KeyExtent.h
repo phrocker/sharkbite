@@ -15,6 +15,7 @@
 #define KEYEXTENT_H_
 
 #include <iostream>
+#include <memory>
 #include "inputvalidation.h"
 #include "../exceptions/ClientException.h"
 #include "../exceptions/IllegalArgumentException.h"
@@ -41,7 +42,7 @@ public:
      * @param flattenedText flattened representation of the end row and table id
      * @param prevEndRow the previous endrow so we can ensure lexicographical ordering
      **/
-    KeyExtent (std::string flattenedText, Value *prevEndRow);
+    KeyExtent (std::string flattenedText, std::shared_ptr<Value> prevEndRow);
 
     /**
      * Constructor
@@ -205,7 +206,7 @@ public:
     }
 protected:
     void
-    setPrevEndRow (Value *prevEndRow)
+    setPrevEndRow (std::shared_ptr<Value> prevEndRow)
     {
         std::pair<unsigned char *, size_t> valuePair = prevEndRow->getValue ();
         setPrevEndRow ((char*) valuePair.first, valuePair.second);

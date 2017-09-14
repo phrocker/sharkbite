@@ -68,7 +68,7 @@ public:
 
 protected:
     inline std::pair<uint32_t, uint8_t*> readByteArray(cclient::data::streams::InputStream *stream);
-    std::map<cclient::data::Key*, cclient::data::Value*,pointer_comparator<cclient::data::Key*>> decodeResults(std::vector<cclient::data::KeyValue*> *results);
+    std::map<std::shared_ptr<cclient::data::Key>, std::shared_ptr<cclient::data::Value> ,pointer_comparator<std::shared_ptr<cclient::data::Key> >> decodeResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *results);
 };
 
 } /* namespace data */

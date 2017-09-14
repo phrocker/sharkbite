@@ -30,7 +30,7 @@ protected:
     std::map<std::string, std::map<std::string, std::string> > opts;
     std::vector< cclient::data::IterInfo* > iters;
     std::vector< cclient::data::Column* > columns;
-    cclient::data::KeyExtent* keyExtent;
+    std::shared_ptr<cclient::data::KeyExtent>  keyExtent;
     vector<Range*> ranges;
 
     AuthInfo *creds;
@@ -77,7 +77,7 @@ public:
     void setColumns ( std::vector< cclient::data::Column* > cols ) {
         columns.insert( columns.end(), columns.begin(), columns.end() );
     }
-    void setExtent ( cclient::data::KeyExtent* extent ) {
+    void setExtent ( std::shared_ptr<cclient::data::KeyExtent>  extent ) {
         keyExtent = extent;
     }
 

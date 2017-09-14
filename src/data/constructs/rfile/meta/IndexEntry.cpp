@@ -17,18 +17,14 @@
 namespace cclient{
   namespace data{
 
-IndexEntry::IndexEntry (cclient::data::streams::StreamInterface *mKey, uint32_t entryCount) :
-    entries (entryCount), newFormat (false), allocated (true)
+IndexEntry::IndexEntry (std::shared_ptr<streams::StreamInterface> mKey, uint32_t entryCount) :
+    entries (entryCount), newFormat (false)
 {
-  key = new Key(static_cast<cclient::data::Key*>(mKey));
+	key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(mKey));
 }
 
 IndexEntry::~IndexEntry ()
 {
-    if (allocated && NULL != key)
-    {
-        delete key;
-    }
 }
 
   }

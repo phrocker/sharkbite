@@ -119,7 +119,7 @@ protected:
 	{
 	  
 	  cclient::data::tserver::RangeDefinition *rangeDef = server->getRangesDefinition();
-	  cclient::data::Key *lastKey = 0;
+	  std::shared_ptr<cclient::data::Key> lastKey = 0;
 	  if (NULL != scan)
 	    lastKey = scan->getTopKey();
 	  std::vector<cclient::data::Range*> *ranges = rangeDef->getRanges();
@@ -181,7 +181,7 @@ protected:
 				scan = conn->scan (source->getColumns(),source->getIters());
 
 				do {
-					std::vector<cclient::data::KeyValue*> nextResults;
+					std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
 
 					scan->getNextResults (&nextResults);
 					

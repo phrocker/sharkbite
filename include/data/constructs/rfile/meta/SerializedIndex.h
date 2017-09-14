@@ -15,7 +15,7 @@
 #define INCLUDE_DATA_CONSTRUCTS_RFILE_META_SERIALIZEDINDEX_H_
 
 #include <vector>
-
+#include <memory>
 #include "../../../streaming/OutputStream.h"
 #include "../../../streaming/input/InputStream.h"
 #include "../../../streaming/input/ByteInputStream.h"
@@ -30,7 +30,7 @@ namespace data
 {
 
 class SerializedIndex : public cclient::data::streams::StreamInterface, public std::iterator<
-    std::forward_iterator_tag, IndexEntry>
+    std::forward_iterator_tag, IndexEntry>, public std::enable_shared_from_this<SerializedIndex>
 {
 public:
     SerializedIndex (std::vector<int> offsetList, uint8_t *datums, uint32_t dataLength,
@@ -45,29 +45,24 @@ public:
         memcpy(data,datums,dataLength);
     }
 
-    SerializedIndex( BaseMetaBlock *source,BaseMetaBlock *block) :
+    SerializedIndex( std::shared_ptr<BaseMetaBlock> source, std::shared_ptr<BaseMetaBlock> block) :
         data (NULL), dataLength (0), newFormat (true), blockParty (block)
     {
 
         currentPosition = block->getCurrentPosition ();
-        ptr = dynamic_cast<SerializedIndex*> (block->getBlock ());
+        ptr = std::dynamic_pointer_cast<SerializedIndex> (block->getBlock ());
 
         offsets = new std::vector<int>();
 
-        if (source != block)
-        {
-
-            delete source;
-        }
 
     }
 
 
-    SerializedIndex (BaseMetaBlock *block) :
+    SerializedIndex (std::shared_ptr<BaseMetaBlock> block) :
         data (NULL), dataLength (0), newFormat (true), blockParty (block)
     {
         currentPosition = block->getCurrentPosition ();
-        ptr = dynamic_cast<SerializedIndex*> (block->getBlock ());
+        ptr = std::dynamic_pointer_cast<SerializedIndex> (block->getBlock ());
 
         offsets = new std::vector<int>();
 
@@ -79,10 +74,6 @@ public:
         if (NULL != data)
         {
             delete[] data;
-        }
-        if (NULL != ptr)
-        {
-            delete ptr;
         }
         delete offsets;
     }
@@ -97,7 +88,7 @@ public:
         return offsets->size ();
     }
 
-    IndexEntry *
+    std::shared_ptr<IndexEntry>
     get (uint64_t index)
     {
 
@@ -116,7 +107,7 @@ public:
           {
             len = offsets->at (index + 1) - offsets->at (index);
           }*/
-        IndexEntry *returnKey = new IndexEntry (newFormat);
+        std::shared_ptr<IndexEntry> returnKey = std::make_shared<IndexEntry> (newFormat);
 
         cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream (
             (char*) data + offsets->at (index), len);
@@ -126,25 +117,25 @@ public:
         return returnKey;
     }
 
-    IndexEntry *
+    std::shared_ptr<IndexEntry>
     get ()
     {
         return get (currentPosition);
     }
 
-    SerializedIndex*
+    std::shared_ptr<SerializedIndex>
     begin ()
     {
-        return this;
+        return shared_from_this();;
     }
 
-    SerializedIndex
+    std::shared_ptr<SerializedIndex>
     end ()
     {
-        return SerializedIndex (true, ptr->offsets->size ());
+        return std::make_shared<SerializedIndex>(true, ptr->offsets->size ());
     }
 
-    IndexEntry *
+    std::shared_ptr<IndexEntry>
     operator* ()
     {
         return get (currentPosition);
@@ -196,7 +187,7 @@ public:
             return true;
     }
 
-    IndexEntry *
+    std::shared_ptr<IndexEntry>
     getPrevious ()
     {
 	if (currentPosition == 0)
@@ -217,7 +208,7 @@ public:
         return offset + prev;
     }
 
-    IndexEntry *
+    std::shared_ptr<IndexEntry>
     previous ()
     {
         if (!ptr)
@@ -226,9 +217,9 @@ public:
         {
             blockParty = blockParty->getPreviousBlock ();
             currentPosition = blockParty->getCurrentPosition ();
-            ptr = dynamic_cast<SerializedIndex*> (blockParty->getBlock ());
+            ptr = std::dynamic_pointer_cast<SerializedIndex> (blockParty->getBlock ());
         }
-        if (ptr == this)
+        if (ptr == shared_from_this())
           return 0;
         return ptr->previous ();
     }
@@ -250,9 +241,9 @@ protected:
     uint8_t *data;
     uint32_t dataLength;
     bool newFormat;
-    BaseMetaBlock *blockParty;
+    std::shared_ptr<BaseMetaBlock> blockParty;
     uint32_t currentPosition;
-    SerializedIndex *ptr;
+    std::shared_ptr<SerializedIndex> ptr;
 
     std::vector<int> *offsets;
 

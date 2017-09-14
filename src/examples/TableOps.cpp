@@ -33,7 +33,7 @@
 
 
 bool
-keyCompare (cclient::data::KeyValue* a, cclient::data::KeyValue* b)
+keyCompare (std::shared_ptr<cclient::data::KeyValue>  a, std::shared_ptr<cclient::data::KeyValue>  b)
 {
 	return *(a->getKey ()) < *(b->getKey ());
 }

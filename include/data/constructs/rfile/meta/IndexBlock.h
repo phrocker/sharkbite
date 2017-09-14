@@ -22,172 +22,144 @@
 #include "SerializedIndex.h"
 #include "KeyIndex.h"
 
-
-     
 #include <iomanip>      // std::setfill, std::setw
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class IndexBlock : public cclient::data::streams::StreamInterface
-{
-  protected:
-    int level;
-    int offset;
-    int version;
-    bool hasNext;
+class IndexBlock : public cclient::data::streams::StreamInterface {
+ protected:
+  int level;
+  int offset;
+  int version;
+  bool hasNext;
 
-    SerializedIndex *index;
-    uint8_t *serializedIndex;
-    
-    KeyIndex *keyIndex;
+  std::shared_ptr<SerializedIndex> index;
+  uint8_t *serializedIndex;
 
-public:
-    explicit IndexBlock (int version) :
-        level (0), offset (0), version (version), hasNext (false), index (
-            NULL), serializedIndex (
-                NULL), keyIndex (NULL)
-    {
+  std::shared_ptr<KeyIndex> keyIndex;
 
+ public:
+  explicit IndexBlock(int version)
+      : level(0),
+        offset(0),
+        version(version),
+        hasNext(false),
+        index(
+        NULL),
+        serializedIndex(
+        NULL),
+        keyIndex(NULL) {
+
+  }
+
+  virtual ~IndexBlock() {
+
+    if (serializedIndex != 0) {
+      delete[] serializedIndex;
     }
 
-    virtual
-    ~IndexBlock ()
-    {
-        if (index != 0)
-        {
-            delete index;
-        }
-        if (serializedIndex != 0)
-        {
-            delete[] serializedIndex;
-        }
+  }
 
-        if (NULL != keyIndex)
-        {
-            delete keyIndex;
-        }
+  std::shared_ptr<SerializedIndex> getIndex() {
+    return index;
+  }
+
+  uint64_t read(cclient::data::streams::InputStream *in) {
+    if (version == 6 || version == 7) {
+      level = in->readInt();
+      offset = in->readInt();
+      hasNext = in->readBoolean();
+
+      int numOffsets = in->readInt();
+      std::vector<int> offsets;
+      offsets.reserve(numOffsets);
+
+      for (int i = 0; i < numOffsets; i++) {
+        offsets.push_back(in->readInt());
+      }
+
+      int indexSize = in->readInt();
+      serializedIndex = new uint8_t[indexSize];
+      in->readBytes(serializedIndex, indexSize);
+
+      index = std::make_shared<SerializedIndex>(offsets, serializedIndex,
+                                                indexSize, true);
+      keyIndex = std::make_shared<KeyIndex>(offsets, serializedIndex,
+                                            indexSize);
+    } else if (version == 3) {
+      level = 0;
+      offset = 0;
+      hasNext = false;
+      int size = in->readInt();
+
+      cclient::data::streams::ByteOutputStream *byteOutStream =
+          new cclient::data::streams::ByteOutputStream(0);
+      cclient::data::streams::DataOutputStream *outStream =
+          new cclient::data::streams::DataOutputStream(byteOutStream);
+      std::vector<int> offsetList;
+      for (int i = 0; i < size; i++) {
+        IndexEntry entry;
+        offsetList.push_back(byteOutStream->getSize());
+        entry.read(in);
+        entry.write(outStream);
+
+      }
+      serializedIndex = new uint8_t[byteOutStream->getSize()];
+      byteOutStream->getByteArray((char*) serializedIndex,
+                                  byteOutStream->getSize());
+      delete outStream;
+      delete byteOutStream;
+
+      index = std::make_shared<SerializedIndex>(offsetList, serializedIndex,
+                                                byteOutStream->getSize(),
+                                                false);
+      keyIndex = std::make_shared<KeyIndex>(offsetList, serializedIndex,
+                                            byteOutStream->getSize());
+
+    } else if (version == 4) {
+      level = 0;
+      offset = 0;
+      hasNext = false;
+
+      int numIndexEntries = in->readInt();
+
+      std::vector<int> offsets;
+      for (int i = 0; i < numIndexEntries; i++) {
+        int offset = in->readInt();
+        offsets.push_back(offset);
+      }
+
+      int size = in->readInt();
+
+      serializedIndex = new uint8_t[size];
+      in->readBytes(serializedIndex, size);
+
+      index = std::make_shared<SerializedIndex>(offsets, serializedIndex, size,
+                                                false);
+      keyIndex = std::make_shared<KeyIndex>(offsets, serializedIndex, size);
+    } else {
+      std::runtime_error("Unexpected version");
     }
 
-    SerializedIndex *
-    getIndex ()
-    {
-        return index;
-    }
+    return in->getPos();
+  }
 
-    uint64_t
-    read (cclient::data::streams::InputStream *in)
-    {
-        if (version == 6 || version == 7)
-        {
-            level = in->readInt ();
-            offset = in->readInt ();
-            hasNext = in->readBoolean ();
+  std::shared_ptr<KeyIndex>
+  getKeyIndex() {
+    return keyIndex;
+  }
 
-            int numOffsets = in->readInt ();
-            std::vector<int> offsets;
-            offsets.reserve (numOffsets);
+  int getLevel() {
+    return level;
+  }
 
-            for (int i = 0; i < numOffsets; i++)
-            {
-                offsets.push_back (in->readInt ());
-            }
+  int getOffset() {
+    return offset;
+  }
 
-            int indexSize = in->readInt ();
-            serializedIndex = new uint8_t[indexSize];
-            in->readBytes (serializedIndex, indexSize);
-
-            index = new SerializedIndex (offsets, serializedIndex, indexSize,
-                                         true);
-            keyIndex = new KeyIndex (offsets, serializedIndex, indexSize);
-        }
-        else if (version == 3)
-        {
-            level = 0;
-            offset = 0;
-            hasNext = false;
-            int size = in->readInt ();
-
-            cclient::data::streams::ByteOutputStream *byteOutStream = new cclient::data::streams::ByteOutputStream (0);
-            cclient::data::streams::DataOutputStream *outStream = new cclient::data::streams::DataOutputStream (byteOutStream);
-            std::vector<int> offsetList;
-            for (int i = 0; i < size; i++)
-            {
-                IndexEntry entry;
-                offsetList.push_back (byteOutStream->getSize ());
-                entry.read (in);
-                entry.write (outStream);
-
-            }
-            serializedIndex = new uint8_t[byteOutStream->getSize ()];
-            byteOutStream->getByteArray ((char*) serializedIndex,
-                                         byteOutStream->getSize ());
-            delete outStream;
-            delete byteOutStream;
-
-            index = new SerializedIndex (offsetList, serializedIndex,
-                                         byteOutStream->getSize (), false);
-            keyIndex = new KeyIndex (offsetList, serializedIndex,
-                                     byteOutStream->getSize ());
-
-        }
-        else if (version == 4)
-        {
-            level = 0;
-            offset = 0;
-            hasNext = false;
-
-            int numIndexEntries = in->readInt ();
-
-
-            std::vector<int> offsets;
-            for (int i = 0; i < numIndexEntries; i++)
-            {
-                int offset = in->readInt();
-                offsets.push_back (offset);
-            }
-
-            int size = in->readInt ();
-
-            serializedIndex = new uint8_t[size];
-            in->readBytes (serializedIndex, size);
-
-            index = new SerializedIndex (offsets, serializedIndex, size, false);
-            keyIndex = new KeyIndex (offsets, serializedIndex, size);
-        }
-        else
-        {
-            std::runtime_error ("Unexpected version");
-        }
-
-        return in->getPos ();
-    }
-
-    KeyIndex *
-    getKeyIndex ()
-    {
-        return keyIndex;
-    }
-
-    int
-    getLevel ()
-    {
-        return level;
-    }
-
-    int
-    getOffset ()
-    {
-        return offset;
-    }
-
-    bool
-    hasNextKey ()
-    {
-        return hasNext;
-    }
-
+  bool hasNextKey() {
+    return hasNext;
+  }
 
 }
 ;

@@ -19,6 +19,7 @@
 #include "Key.h"
 #include "value.h"
 #include "rkey.h"
+#include <memory>
 #include "../streaming/Streams.h"
 
 
@@ -43,9 +44,8 @@ public:
 	 * Key value constructor.
 	 **/
 	explicit KeyValue(KeyValue&& other){
-	  key = other.key;
-	  value = other.value;
-	  my_alloc = other.my_alloc;
+	  key = std::move(other.key);
+	  value = std::move(other.value);
 	}
 
 
@@ -54,19 +54,19 @@ public:
 	/**
 	 * Sets the key within this object.
 	 **/
-	void setKey(Key *k, bool set_ownership = false);
+	void setKey(std::shared_ptr<Key> k, bool set_ownership = false);
 
-	Key *getKey();
+	std::shared_ptr<Key> getKey();
 	
 	inline bool hasOwnerShip()
 	{
-	  return my_alloc;
+	  return false;
 	}
 
-	StreamInterface *getStream();
+	std::shared_ptr<StreamInterface> getStream();
 
-	Value *getValue();
-	void setValue(Value *v);
+	std::shared_ptr<Value> getValue();
+	void setValue(std::shared_ptr<Value> v);
 	
 	 friend inline std::ostream &
 	operator << (std::ostream &out, KeyValue &rhs)
@@ -96,9 +96,8 @@ public:
 
 
 protected:
-	Key *key;
-	Value *value;
-	bool my_alloc;
+	std::shared_ptr<Key> key;
+	std::shared_ptr<Value> value;
 
 };
 

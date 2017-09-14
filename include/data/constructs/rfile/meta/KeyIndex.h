@@ -50,7 +50,7 @@ public:
     }
 
 
-    Key *
+    std::shared_ptr<Key>
     get (uint64_t index)
     {
         uint64_t len = 0;
@@ -62,7 +62,7 @@ public:
         {
             len = offsets->at (index + 1) - offsets->at (index);
         }
-        Key *returnKey = new Key ();
+        std::shared_ptr<Key> returnKey = std::make_shared<Key> ();
 
         cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream (
             (char*) data + offsets->at (index), len);
@@ -73,13 +73,13 @@ public:
     }
 
     int
-    binary_search (Key *search_key)
+    binary_search (std::shared_ptr<Key> search_key)
     {
         return binary_search (0, offsets->size () - 1, search_key);
     }
 
     int
-    binary_search (int first, int last, Key *search_key)
+    binary_search (int first, int last, std::shared_ptr<Key> search_key)
     {
         int index;
 
@@ -90,7 +90,7 @@ public:
         {
             int mid = (first + last) / 2;
 
-            Key *midKey = get (mid);
+            std::shared_ptr<Key> midKey = get (mid);
             if (*search_key == *midKey)
                 index = mid;
             else

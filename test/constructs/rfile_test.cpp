@@ -65,9 +65,9 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 		cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024 * 1024,stream);
 		cclient::data::RFile *newRFile = new cclient::data::RFile(outStream, &bcFile);
 
-		std::set<cclient::data::KeyValue*> keyValues;
+		std::set<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 
-		cclient::data::Key *prevKey = NULL;
+		std::shared_ptr<cclient::data::Key> prevKey = NULL;
 		struct timeval start, end;
 		long mtime, seconds, useconds;
 
@@ -75,8 +75,8 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 		int i = 0;
 		for (i = 0; i < NUMBER; i++) {
 
-			cclient::data::Key *k = new cclient::data::Key();
-			cclient::data::Value v;
+			std::shared_ptr<cclient::data::Key> k = std::make_shared<cclient::data::Key>();
+			std::shared_ptr<cclient::data::Value> v = std::make_shared<cclient::data::Value>();
 			std::string rowSt = "2";
 
 			memset(rw, 0x00, 13);
@@ -94,11 +94,11 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 			k->setColQualifier((const char*)  cq, 8);
 			k->setColVisibility((const char*)  cv, 8);
 
-			cclient::data::KeyValue *kv = new cclient::data::KeyValue();
+			std::shared_ptr<cclient::data::KeyValue> kv = std::make_shared<cclient::data::KeyValue>();
 
 
 			kv->setKey(k,true);
-			kv->setValue(&v);
+			kv->setValue(v);
 
 			keyValues.insert(kv);
 			prevKey = k;
@@ -106,7 +106,7 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 		std::cout << "Time to actually insert " << i << std::endl;
 		gettimeofday(&start, NULL);
 		newRFile->addLocalityGroup();
-		for(std::set<cclient::data::KeyValue*>::iterator it = keyValues.begin(); it != keyValues.end(); ++it)
+		for(std::set<std::shared_ptr<cclient::data::KeyValue> >::iterator it = keyValues.begin(); it != keyValues.end(); ++it)
 		{
 			newRFile->append(*it);
 		}
@@ -115,10 +115,6 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 		newRFile->close();
 		
 		
-		for(std::set<cclient::data::KeyValue*>::iterator it = keyValues.begin(); it != keyValues.end(); ++it)
-		{
-			delete *it;
-		}
 		
 
 		gettimeofday(&end, NULL);

@@ -19,6 +19,7 @@
 #include "block_comp_stream.h"
 #include "../../compressor/compressor.h"
 #include "../../../streaming/Streams.h"
+#include "../../../streaming/EndianTranslation.h"
 #include "../../inputvalidation.h"
 #include "../rfile_version.h"
 
@@ -123,12 +124,20 @@ public:
         BlockCompressorStream *blockStream = new BlockCompressorStream (
             out, compressorRef, entry->getRegion ());
 
-        dataIndex.write (blockStream);
-        blockStream->flush ();
 
+
+        cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
+
+        dataIndex.write (outStream);
+        outStream->flush();
+        blockStream->flush();
+        //dataIndex.write (blockStream);
         uint64_t offsetIndexMeta = out->getPos ();
 
         // should synchronize
+
+
+        delete outStream;
 
         delete blockStream;
 

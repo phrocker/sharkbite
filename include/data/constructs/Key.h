@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include <ostream>
+#include <memory>
 #include <stdio.h>
 #include <string.h>
 
@@ -30,7 +31,7 @@ namespace data
 /**
  * Key
  */
-class Key : public cclient::data::streams::StreamInterface
+class Key : public cclient::data::streams::StreamInterface, public std::enable_shared_from_this<Key>
 {
 
 public:
@@ -40,7 +41,7 @@ public:
     /**
      * Constructor that deep copies another key. Does not subsume ownership.
      **/
-    explicit Key (Key *other) : Key()
+    explicit Key (std::shared_ptr<Key> other) : Key()
     {
         std::pair<char*, size_t> row = other->getRow ();
 
@@ -73,6 +74,7 @@ public:
     {
         setRow(row.c_str(),row.length());
     }
+
 
     std::pair<char*, size_t>
     getRow ()
@@ -173,15 +175,17 @@ public:
         deleted = isDeleted;
     }
 
-    StreamInterface *
+    std::shared_ptr<StreamInterface>
     getStream ()
     {
-        return this;
+        return shared_from_this();
     }
 
     bool
     operator <= (const Key *rhs) const
     {
+    	if (rhs == nullptr)
+    		return false;
         return *this< *rhs || *rhs==*this;
     }
     
@@ -191,6 +195,8 @@ public:
     bool
     operator < (const Key *rhs) const
     {
+    	if (rhs == nullptr)
+    		return false;
         return *this < *rhs;
     }
 
@@ -205,11 +211,13 @@ public:
     bool
     operator == (const Key *rhs) const
     {
+    	if (rhs == nullptr) return false;
         return *this == *rhs;
     }
     bool
     operator != (const Key *rhs) const
     {
+    	if (rhs == nullptr) return true;
         return !(*this == *rhs);
     }
 

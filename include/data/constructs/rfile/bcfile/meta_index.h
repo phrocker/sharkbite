@@ -15,10 +15,11 @@
 #ifndef META_INDEX_H_
 #define META_INDEX_H_
 
+#include <memory>
 #include <vector>
 #include <map>
 #include <cassert>
-
+#include <iostream>
 
 #include "BlockRegion.h"
 
@@ -108,6 +109,7 @@ public:
     write (cclient::data::streams::OutputStream *out)
     {
 
+    	std::cout << "Writing " << metaName << std::endl;
         std::string writeString = "data:";
         writeString.append (metaName);
 
@@ -193,10 +195,10 @@ public:
      * offset
      */
     void
-    addEntry (MetaIndexEntry indexEntry, cclient::data::streams::DataOutputStream *out)
+    addEntry (const std::shared_ptr<MetaIndexEntry> &indexEntry, cclient::data::streams::DataOutputStream *out)
     {
-        index[indexEntry.getMetaName ()] = indexEntry;
-        BlockRegion *region = index[indexEntry.getMetaName ()].getRegion ();
+        index[indexEntry->getMetaName ()] = indexEntry;
+        BlockRegion *region = index[indexEntry->getMetaName ()]->getRegion ();
         if (out != NULL)
         {
             region->setOffset (out->getPos ());
@@ -211,9 +213,9 @@ public:
      * that this may return null.
      */
     MetaIndexEntry *
-    getEntry (const std::string name)
+    getEntry (const std::string &name)
     {
-        return &index[name];
+        return index[name].get();
     }
 
     /**
@@ -228,9 +230,10 @@ public:
     prepareNewEntry (const std::string name, cclient::data::compression::Compressor *comp)
     {
 
-        MetaIndexEntry entry (comp);
-        entry.setName (name);
-        entry.setAlgorithm (comp->getAlgorithm ());
+    	std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(comp);
+        //MetaIndexEntry entry (comp);
+        entry->setName (name);
+        entry->setAlgorithm (comp->getAlgorithm ());
         addEntry (entry, NULL);
         return getEntry (name);
 
@@ -244,9 +247,9 @@ public:
 
         for (uint64_t i = 0; i < count; i++)
         {
-            MetaIndexEntry entry (in);
+        	std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(in);
 
-            index.insert (std::make_pair (entry.getMetaName (), entry));
+            index.insert (std::make_pair (entry->getMetaName (), entry));
         }
 
         return in->getPos ();
@@ -258,19 +261,19 @@ public:
     uint64_t
     write (cclient::data::streams::OutputStream *out)
     {
-
+    	std::cout << "writing " << index.size() << std::endl;
         out->writeEncodedLong (index.size ());
         // write out all the meta index entries
-        for (std::map<std::string, MetaIndexEntry>::iterator it = index.begin ();
+        for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = index.begin ();
                 it != index.end (); it++)
         {
 
-            (*it).second.write (out);
+            (*it).second->write (out);
         }
         return out->getPos ();
     }
 
-    std::map<std::string, MetaIndexEntry> *getEntries()
+    std::map<std::string, std::shared_ptr<MetaIndexEntry>> *getEntries()
     {
         return &index;
     }
@@ -278,7 +281,7 @@ public:
 protected:
     // meta index map. This will map the names of those
     // meta index entries to the entries.
-    std::map<std::string, MetaIndexEntry> index;
+    std::map<std::string, std::shared_ptr<MetaIndexEntry>> index;
 
 };
 }

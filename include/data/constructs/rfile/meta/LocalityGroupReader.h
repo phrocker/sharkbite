@@ -25,6 +25,7 @@
 #include "../../../exceptions/IllegalArgumentException.h"
 #include "../../../exceptions/InterationInterruptedException.h"
 #include "IndexEntry.h"
+#include <memory>
 
 #include "../bcfile/BlockCompressedFile.h"
 // constructs
@@ -53,15 +54,15 @@ protected:
     cclient::data::streams::InputStream *currentStream;
     volatile bool interrupted = false;
     Range *currentRange;
-    SerializedIndex *iiter;
-    Key *prevKey;
+    std::shared_ptr<SerializedIndex> iiter;
+    std::shared_ptr<Key>  prevKey;
     uint32_t entriesLeft;
-    IndexManager *index;
+    std::shared_ptr<IndexManager> index;
     
 
     
     int blockCount;
-    Key *firstKey;
+    std::shared_ptr<Key>  firstKey;
     int startBlock;
     
 
@@ -96,7 +97,7 @@ public:
                     NULL), entriesLeft (-1)
     {
         index = metadata->getIndexManager ();
-        firstKey = dynamic_cast<Key*> (metadata->getFirstKey ());
+        firstKey = std::dynamic_pointer_cast<Key> (metadata->getFirstKey ());
         startBlock = metadata->getStartBlock ();
         blockCount = index->getSize ();
         rKey = NULL;
@@ -105,32 +106,24 @@ public:
     virtual
     ~LocalityGroupReader ()
     {
-        if (NULL != iiter)
-            delete iiter;
-        if (NULL != firstKey)
-        {
-            delete firstKey;
-        }
-        if (NULL != prevKey)
-            delete prevKey;
     }
 
-    Key *
+    std::shared_ptr<Key>
     getFirstKey ()
     {
         return firstKey;
     }
 
-    Key *
+    std::shared_ptr<Key>
     getLastKey ()
     {
-        return dynamic_cast<Key*> (iiter->get (iiter->size () - 1)->getKey ());
+        return iiter->get (iiter->size () - 1)->getKey ();
     }
 
-    Key *
+    std::shared_ptr<Key>
     getTopKey ()
     {
-        return dynamic_cast<Key*> (rKey->getStream ());
+        return rKey->getKey();
     }
 
     bool
@@ -172,14 +165,14 @@ public:
             return;
         }
 
-        Key *startKey = NULL;
+        std::shared_ptr<Key>  startKey = NULL;
         if (NULL != currentRange->getStartKey())
         {
-            startKey = new Key(currentRange->getStartKey ());
+            startKey = std::make_shared<Key>(currentRange->getStartKey ());
 
         }
         else {
-            startKey = new Key ();
+            startKey =  std::make_shared<Key> ();
         }
 
         bool reseek = true;
@@ -210,7 +203,7 @@ public:
             {
                 while (iiter->hasPrevious ())
                 {	
-		    IndexEntry *ent = *(*iiter);
+		    std::shared_ptr<IndexEntry> ent = *(*iiter);
 		    if (*(iiter->getPrevious()) == *ent)
 		      iiter->previous ();
 		    else
@@ -219,13 +212,13 @@ public:
 
                 if (iiter->hasPrevious ())
                 {
-                    prevKey = new Key ((Key*) iiter->getPrevious ()->getKey ());
+                    prevKey = std::make_shared< Key >( iiter->getPrevious ()->getKey ());
                 }
                 else
-                    prevKey = new Key ();
+                    prevKey = std::make_shared< Key > ();
 
 
-                IndexEntry *indexEntry = iiter->get ();
+                std::shared_ptr<IndexEntry> indexEntry = iiter->get ();
                 entriesLeft = indexEntry->getNumEntries ();
 
                 if (version == 3 || version == 4)
@@ -242,20 +235,19 @@ public:
                              > indexEntry->getKey ();
                 if (!checkRange)
                     topExists = true;
-                delete indexEntry;
 
                 // don't concern outselves with block indexing
 
                 std::vector<char> valueArray;
 
-                Key *currKey = 0;
+                std::shared_ptr<Key>  currKey = 0;
 
                 SkippedRelativeKey * skipRR = new SkippedRelativeKey (
                     currentStream, startKey, &valueArray, prevKey, currKey);
 
                 if (skipRR->getPrevKey () != NULL)
                 {
-                    prevKey = new Key (skipRR->getPrevKey ());
+                    prevKey = std::make_shared< Key> (skipRR->getPrevKey ());
                 }
                 else
                     prevKey = NULL;
@@ -275,7 +267,6 @@ public:
         {
             next ();
         }
-        delete startKey;
     }
 
     virtual void
@@ -290,8 +281,8 @@ public:
 
             if (iiter->hasNext ())
             {
-                iiter++;
-                IndexEntry *indexEntry = iiter->get ();
+                (*iiter)++;
+                std::shared_ptr<IndexEntry> indexEntry = iiter->get ();
                 entriesLeft = indexEntry->getNumEntries ();
                 if (version == 3 || version == 4)
                 {
@@ -316,7 +307,7 @@ public:
                 return;
             }
         }
-        prevKey = (Key*)rKey->getStream();
+        prevKey = std::static_pointer_cast<Key>(rKey->getStream());
         rKey->read(currentStream);
         val->read(currentStream);
         entriesLeft--;

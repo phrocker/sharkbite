@@ -41,19 +41,15 @@ public:
     virtual
     ~IndexManager ()
     {
-        if (NULL != indexBlock)
-        {
-            delete indexBlock;
-        }
     }
     uint64_t
     read (cclient::data::streams::InputStream *in);
 
-    SerializedIndex *
-    lookup (Key *key)
+    std::shared_ptr<SerializedIndex>
+    lookup (std::shared_ptr<Key> key)
     {
-        Block *block = new Block (this, indexBlock);
-        SerializedIndex *index = new SerializedIndex (block,block->lookup (key));
+    	std::shared_ptr< Block> block = std::make_shared<Block >(this, indexBlock);
+    	std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex> (block,block->lookup (key));
 
         return index;
     }
@@ -64,8 +60,8 @@ public:
         return size;
     }
 
-    IndexBlock *
-    getIndexBlock (IndexEntry *ie)
+    std::shared_ptr<IndexBlock>
+    getIndexBlock (std::shared_ptr<IndexEntry > ie)
     {
 
         blockReader->seek (ie->getOffset ());
@@ -86,7 +82,7 @@ public:
 
         delete outStream;
 
-        IndexBlock *block = new IndexBlock (version);
+        std::shared_ptr<IndexBlock> block = std::make_shared<IndexBlock> (version);
         block->read (returnStream);
 
         delete returnStream;
@@ -99,7 +95,7 @@ protected:
     int version;
     cclient::data::streams::InputStream *blockReader;
     cclient::data::compression::Compressor *compressorRef;
-    IndexBlock *indexBlock;
+    std::shared_ptr<IndexBlock> indexBlock;
 
 };
 

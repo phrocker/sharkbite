@@ -17,6 +17,7 @@
 
 #include "../exceptions/IllegalArgumentException.h"
 #include "Key.h"
+#include <memory>
 namespace cclient {
 namespace data {
 
@@ -39,7 +40,8 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(Key *startKey, bool startInclusive, Key *endKey, bool endKeyInclusive);
+    Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
+    
     
     /**
      * Sets the start key and endkey with the inclusive flags.
@@ -48,8 +50,8 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(Key &startKey, bool startInclusive, Key &endKey, bool endKeyInclusive) :
-      Range(&startKey,startInclusive,&endKey,endKeyInclusive)
+    Range(std::shared_ptr<Key> endKey, bool endKeyInclusive) :
+      Range(0,false,endKey,endKeyInclusive)
     {
     }
     
@@ -60,37 +62,25 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(Key &endKey, bool endKeyInclusive) :
-      Range(0,false,&endKey,endKeyInclusive)
-    {
-    }
-    
-    /**
-     * Sets the start key and endkey with the inclusive flags.
-     * @param startKey start key
-     * @param startInclusive start key is inclusive
-     * @param endKey end key 
-     * @param endKeyInclusive return whether or not the end key is inclusive.
-     **/
-    Range(bool startInclusive,Key &startKey) :
-      Range(&startKey,startInclusive,0,false)
+    Range(bool startInclusive,std::shared_ptr<Key> startKey) :
+      Range(startKey,startInclusive,0,false)
     {
     }
 
     /**
      * Returns the start key.
      **/
-    Key *getStartKey()
+    std::shared_ptr<Key> getStartKey()
     {
-        return &start;
+        return start;
     }
 
     /**
      * Returns the end key.
      **/
-    Key *getStopKey()
+    std::shared_ptr<Key> getStopKey()
     {
-        return &stop;
+        return stop;
     }
 
     /**
@@ -127,8 +117,8 @@ public:
 
     virtual ~Range();
 protected:
-    Key start;
-    Key stop;
+    std::shared_ptr<Key> start;
+    std::shared_ptr<Key> stop;
     bool startKeyInclusive;
     bool stopKeyInclusive;
     bool infiniteStartKey;
