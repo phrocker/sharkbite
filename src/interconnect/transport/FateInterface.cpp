@@ -46,6 +46,7 @@ std::string
 				                                    tableArgs, options, !wait);
 				succeeded = true;
 			} catch (apache::thrift::transport::TTransportException &e) {
+std::cout << e.what() << std::endl;
 				recreateMasterClient();
 				succeeded = false;
 				std::this_thread::sleep_for (std::chrono::milliseconds (100));
@@ -78,11 +79,13 @@ std::string
 					break;
 
 				} catch (apache::thrift::transport::TTransportException &e) {
+					std::cout << e.what() << std::endl;
 					if (waitClient != NULL)
 					  delete waitClient;
 					std::this_thread::sleep_for (std::chrono::milliseconds (100));
 					myTransport->close ();
 				} catch (std::runtime_error &e) {
+					std::cout << e.what() << std::endl;
 				  if (waitClient != NULL)
 					  delete waitClient;
 					myTransport->close ();

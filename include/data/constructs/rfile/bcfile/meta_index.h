@@ -18,7 +18,7 @@
 #include <vector>
 #include <map>
 #include <cassert>
-
+#include <iostream>
 
 #include "BlockRegion.h"
 
@@ -258,7 +258,7 @@ public:
     uint64_t
     write (cclient::data::streams::OutputStream *out)
     {
-
+    	std::cout << "writing " << index.size() << std::endl;
         out->writeEncodedLong (index.size ());
         // write out all the meta index entries
         for (std::map<std::string, MetaIndexEntry>::iterator it = index.begin ();

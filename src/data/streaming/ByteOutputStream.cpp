@@ -15,6 +15,7 @@
 #include <vector>
 #include <assert.h>
 #include <stdlib.h>
+#include <iostream>
 #include "../../../include/data/streaming/ByteOutputStream.h"
 
 namespace cclient{
@@ -163,6 +164,7 @@ uint64_t
 ByteOutputStream::writeString (std::string s)
 {
     // write size of string
+	std::cout << "write encoded long " << s.size() << " at " << getPos() << std::endl;
     writeHadoopLong (s.size ());
     return writeBytes ((uint8_t*) s.data (), s.size ());
 }

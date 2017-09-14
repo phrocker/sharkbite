@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include "data/streaming/OutputStream.h"
+#include <iostream>
 
 namespace cclient{
   namespace data{
@@ -67,6 +68,7 @@ uint64_t
 OutputStream::writeString (std::string s)
 {
     // write size of string
+	std::cout << "write encoded long " << s.size() << " at " << getPos() << std::endl;
     writeEncodedLong (s.size ());
     return writeBytes ((uint8_t*) s.data (), s.size ());
 }

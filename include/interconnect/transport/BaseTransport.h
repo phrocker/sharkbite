@@ -89,12 +89,14 @@ protected:
 		}
 		catch( apache::thrift::transport::TTransportException te)
 		{
+			std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() <<  " " << std::endl;
 		    try
 		    {
 		      transporty->close();
 		    }
 		    catch( apache::thrift::transport::TTransportException to )
 		    {
+		    	std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() <<  " " << std::endl;
 		    }
 		    throw te;
 		}
@@ -466,7 +468,6 @@ public:
 		{
 		  // could not create the user for some reason
 		  return false;
-		  
 		}
 	}
 	
