@@ -117,7 +117,7 @@ public:
         compress->compress(output_stream);
 
         associatedRegion->setOffset(compress->getStreamOffset());
-        associatedRegion->setRawSize(compress->bytesWritten());
+        associatedRegion->setRawSize(location);
         associatedRegion->setCompressedSize(compress->getCompressedSize());
         // clear the buffer and the block location so that
         // this object can be reused.

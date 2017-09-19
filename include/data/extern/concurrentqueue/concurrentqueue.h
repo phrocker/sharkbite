@@ -27,7 +27,8 @@
 // TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 // EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
+#ifndef MY_HEADER_H
+#define MY_HEADER_H
 #pragma once
 
 #if defined(__GNUC__)
@@ -3618,4 +3619,5 @@ inline void swap(typename ConcurrentQueue<T, Traits>::ImplicitProducerKVP& a, ty
 
 #if defined(__GNUC__)
 #pragma GCC diagnostic pop
+#endif
 #endif
