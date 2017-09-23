@@ -90,7 +90,6 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
     int size = metaBlock->readInt ();
 
 
-
     localityGroups.resize (size);
     
     for (int i = 0; i < size; i++)
@@ -147,9 +146,11 @@ RFile::append (KeyValue *kv)
     uint64_t position = kv->getValue ()->write (currentBlockWriter);
 
     lastKeyValue = kv;
+
     // we've written all we can write doctor.
     if (position >= maxBlockSize)
     {
+    	std::cout << "stopping at " << entries << std::endl;
         currentBlockWriter->flush ();
         closeBlock (kv);
 

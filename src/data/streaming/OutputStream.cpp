@@ -183,6 +183,7 @@ OutputStream::writeVLong (const int64_t n)
 uint64_t
 OutputStream::writeEncodedLong (const int64_t n)
 {
+	std::cout << "write encoded long " << n << std::endl;
     if ((n < 128) && (n >= -32))
     {
 

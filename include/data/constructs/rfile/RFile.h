@@ -186,9 +186,11 @@ public:
     void
     closeBlock (StreamInterface *lastKey)
     {
+    	std::cout << "Close block " << entries << lastKey << std::endl;
         currentLocalityGroup->addIndexEntry (IndexEntry(lastKey, entries));
         dataBlockCnt = 0;
         entries = 0;
+        currentBlockCount=0;
 
     }
 

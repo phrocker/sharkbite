@@ -18,17 +18,17 @@
 
 
 
-#include "OutputStream.h"
+#include "Streams.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
-class HadoopDataOutputStream: public OutputStream {
+class HadoopDataOutputStream: public DataOutputStream {
 public:
 
 
-    HadoopDataOutputStream(OutputStream *out_stream)  : OutputStream(out_stream), output_stream_ref( out_stream )
+    HadoopDataOutputStream(OutputStream *out_stream)  : DataOutputStream(out_stream), output_stream_ref( out_stream )
     {
 
     }
@@ -46,7 +46,6 @@ public:
     virtual uint64_t writeLong(const uint64_t val);
     virtual uint64_t writeBoolean(const bool val);
     virtual uint64_t writeHadoopLong(const int64_t n);
-    OutputStream* outputStream;
 
 protected:
     // output stream reference.

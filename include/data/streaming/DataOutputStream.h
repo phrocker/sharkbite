@@ -15,6 +15,7 @@
 #define DATA_OUT_STREAM
 
 #include <cstdint>
+#include <iostream>
 #include "OutputStream.h"
 
 namespace cclient {
@@ -87,6 +88,7 @@ public:
     }
 
     virtual uint64_t writeEncodedLong(const int64_t n) {
+    	std::cout << "writing encoded long " << n << std::endl;
         return output_stream_ref->writeEncodedLong(n);
     }
 

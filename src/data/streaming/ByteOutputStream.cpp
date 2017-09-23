@@ -164,7 +164,7 @@ uint64_t
 ByteOutputStream::writeString (std::string s)
 {
     // write size of string
-	std::cout << "write encoded long " << s.size() << " at " << getPos() << std::endl;
+	std::cout << "write string hadoop long " << s.size() << " at " << getPos() << std::endl;
     writeHadoopLong (s.size ());
     return writeBytes ((uint8_t*) s.data (), s.size ());
 }

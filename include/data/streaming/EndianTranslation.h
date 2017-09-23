@@ -38,6 +38,8 @@ public:
 
     uint64_t writeLong(uint64_t val);
 
+    virtual uint64_t writeEncodedLong(const int64_t n);
+
 };
 }
 }
