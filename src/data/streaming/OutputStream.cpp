@@ -52,8 +52,10 @@ uint64_t
 OutputStream::write (const char *bytes, long cnt)
 {
 
+    if (ostream_ref != NULL){
     ostream_ref->write ((const char*) bytes, cnt);
     *position += cnt;
+    }
     return *position;
 }
 

@@ -126,31 +126,18 @@ public:
 
 
 
-        cclient::data::streams::BigEndianByteStream *byteStream =
-        			dynamic_cast<cclient::data::streams::BigEndianByteStream*>(out);
-
-        if (byteStream != nullptr){
-        	std::cout << "byteStream is be" << std::endl;
-        }
-        else{
-        	std::cout << "byteStream is le" << std::endl;
-        }
-
         cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
 
         dataIndex.write (outStream);
         //dataIndex.write (blockStream);
-
-        outStream->flush();
-        blockStream->flush ();
-
         uint64_t offsetIndexMeta = out->getPos ();
 
         // should synchronize
 
-        delete blockStream;
 
         delete outStream;
+
+        delete blockStream;
 
         metaIndex.write (out);
         out->writeLong (offsetIndexMeta);

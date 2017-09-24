@@ -42,6 +42,7 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
 ByteOutputStream::~ByteOutputStream ()
 {
     flush ();
+    output_stream_ref=nullptr;
 }
 
 /**
@@ -52,6 +53,7 @@ ByteOutputStream::flush ()
 {
     if (output_stream_ref != NULL)
     {
+        if (!array.empty())
         output_stream_ref->write (array.data(), offset);
     }
     offset = 0;

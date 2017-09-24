@@ -38,7 +38,7 @@ public:
 
     ByteOutputStream(size_t initial_size, OutputStream *out_stream = NULL);
 
-    ~ByteOutputStream();
+    virtual ~ByteOutputStream();
     void flush();
     virtual uint64_t getPos();
 

@@ -185,7 +185,7 @@ ADD_CUSTOM_COMMAND(
   )
 
 ADD_CUSTOM_TARGET(docs ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT})
-
+endif(DOXYGEN_FOUND)	
 # Install library headers
 
 include(GNUInstallDirs)
@@ -209,4 +209,3 @@ INSTALL (
     FILES_MATCHING PATTERN "*.h*")
 #install(DIRECTORY ${PROJECT_SOURCE_DIR}/include
  #       DESTINATION )
-endif(DOXYGEN_FOUND)
