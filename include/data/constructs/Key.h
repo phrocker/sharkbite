@@ -182,6 +182,8 @@ public:
     bool
     operator <= (const Key *rhs) const
     {
+    	if (rhs == nullptr)
+    		return false;
         return *this< *rhs || *rhs==*this;
     }
     
@@ -191,6 +193,8 @@ public:
     bool
     operator < (const Key *rhs) const
     {
+    	if (rhs == nullptr)
+    		return false;
         return *this < *rhs;
     }
 
@@ -205,11 +209,13 @@ public:
     bool
     operator == (const Key *rhs) const
     {
+    	if (rhs == nullptr) return false;
         return *this == *rhs;
     }
     bool
     operator != (const Key *rhs) const
     {
+    	if (rhs == nullptr) return true;
         return !(*this == *rhs);
     }
 

@@ -225,13 +225,13 @@ public:
     friend inline std::ostream &
     operator << (std::ostream &out, RFile &rhs)
     {
-        std::map<std::string,MetaIndexEntry> *entries = rhs.blockWriter->getMetaIndex()->getEntries();
+        auto entries = rhs.blockWriter->getMetaIndex()->getEntries();
 
-        for (std::map<std::string, MetaIndexEntry>::iterator it = entries->begin ();
+        for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = entries->begin ();
                 it != entries->end (); it++)
         {
             out << "Meta Block	: " << (*it).first << std::endl;
-            MetaIndexEntry *entry = &((*it).second);
+            auto entry = ((*it).second);
             out << "	Raw size	:" << entry->getRegion()->getRawSize() << std::endl;
             out << "	Compressed size	:" << entry->getRegion()->getCompressedSize() << std::endl;
         }

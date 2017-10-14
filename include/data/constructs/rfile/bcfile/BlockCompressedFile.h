@@ -129,6 +129,8 @@ public:
         cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
 
         dataIndex.write (outStream);
+        outStream->flush();
+        blockStream->flush();
         //dataIndex.write (blockStream);
         uint64_t offsetIndexMeta = out->getPos ();
 

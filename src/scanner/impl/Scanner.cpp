@@ -44,6 +44,8 @@ Scanner::Scanner (cclient::data::Instance *instance,
 {
     
     connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*> (instance);
+    if (connectorInstance == nullptr)
+    	std::cout << "connectorInstance is nptr" << std::endl;
     resultSet = NULL;
     tableLocator = cclient::impl::cachedLocators.getLocator (
                        cclient::impl::LocatorKey (connectorInstance, tops->getTableId ()));

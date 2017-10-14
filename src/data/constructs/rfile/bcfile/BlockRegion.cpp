@@ -32,7 +32,7 @@ uint64_t BlockRegion::write(streams::OutputStream *out) {
 			dynamic_cast<cclient::data::streams::BigEndianByteStream*>(out);
 	uint64_t pos = -1;
 	if (byteStream != nullptr) {
-		std::cout << "writing beendian out" << std::endl;
+		std::cout << "writing beendian out " << offset << " " << compressedSize << " " << rawSize  << std::endl;
 		byteStream->writeEncodedLong(offset);
 		byteStream->writeEncodedLong(compressedSize);
 		pos = byteStream->writeEncodedLong(rawSize);

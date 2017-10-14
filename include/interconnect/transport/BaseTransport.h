@@ -76,16 +76,19 @@ protected:
 		boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(
 		        new apache::thrift::transport::TSocket(conn->getHost(), conn->getPort()));
 		
-		serverTransport->setLinger(false,0);
-		serverTransport->setNoDelay(true);
-		serverTransport->setConnTimeout(0);
+		//serverTransport->setLinger(false,0);
+		//serverTransport->setNoDelay(false);
+		//serverTransport->setConnTimeout(0);
 
 		boost::shared_ptr<apache::thrift::transport::TTransport> transporty(
 		        new apache::thrift::transport::TFramedTransport(serverTransport));
 
 		try
 		{
+			std::cout << "attempting to connect to ! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
 		  transporty->open();
+
+		  std::cout << "connected! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
 		}
 		catch( apache::thrift::transport::TTransportException te)
 		{
