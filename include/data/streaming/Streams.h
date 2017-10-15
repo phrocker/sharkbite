@@ -15,7 +15,7 @@
 #define DATA_WRITER
 
 #include <string>
-
+#include <memory>
 #include <cstring>
 
 
