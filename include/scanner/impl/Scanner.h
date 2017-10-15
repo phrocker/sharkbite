@@ -94,6 +94,7 @@ public:
                 std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,
                 pointer_comparator<cclient::data::KeyExtent*> > > returnRanges;
             std::set<std::string> locations;
+		std::cout << "Ranges " << std::endl;
             tableLocator->binRanges(credentials, &ranges, &locations,
                                     &returnRanges);
 
@@ -112,7 +113,7 @@ public:
 		}
                 for (auto hostExtents : returnRanges.at(location)) {
                     std::vector<cclient::data::KeyExtent*> extents;
-		    
+		    std::cout << " extent is " <<  hostExtents.first->getTableId() << std::endl;
                     extents.push_back(hostExtents.first);
 		    
                     cclient::data::tserver::RangeDefinition *rangeDef = new cclient::data::tserver::RangeDefinition(credentials,

@@ -17,7 +17,7 @@
 
 #include <vector>
 #include <iterator>
-
+#include <memory>
 
 #include "../compressor/compressor.h"
 #include "../../streaming/Streams.h"

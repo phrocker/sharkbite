@@ -286,7 +286,7 @@ main (int argc, char **argv)
       try{
 	std::cout << "Reading values from row a to d" << std::endl;
 
-	std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
+	std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 1);
 
 	// range from a to d
 	cclient::data::Key startkey;

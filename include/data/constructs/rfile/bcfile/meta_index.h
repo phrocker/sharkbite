@@ -15,6 +15,7 @@
 #ifndef META_INDEX_H_
 #define META_INDEX_H_
 
+#include <memory>
 #include <vector>
 #include <map>
 #include <cassert>

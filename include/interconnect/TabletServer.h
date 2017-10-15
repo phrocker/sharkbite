@@ -214,7 +214,8 @@ public:
 		request.setIters (serverSideIterators);
 
 		for (cclient::data::KeyExtent *extent : *rangeDef->getExtents ()) {
-			ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *ident = new ScanIdentifier<
+			std::cout << extent->getTableId() << " " << extent->getEndRow() << std::endl;
+  			ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *ident = new ScanIdentifier<
 			cclient::data::KeyExtent*, cclient::data::Range*> ();
 			if (rangeDef->getRanges ()->size () == 0) {
 				return NULL;
