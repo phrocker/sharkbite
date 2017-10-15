@@ -13,20 +13,16 @@
  */
 #include "../../../include/data/client/TabletLocation.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-TabletLocation::TabletLocation () :
-    tablet_extent ("!0","d"), tablet_location ("")
-{
-
+TabletLocation::TabletLocation() :
+		tablet_location("") , port(0){
+	tablet_extent = std::make_shared<cclient::data::KeyExtent>("!0", "d");
 }
 
-TabletLocation::~TabletLocation ()
-{
-  
+TabletLocation::~TabletLocation() {
+
 }
 
 } /* namespace data */

@@ -13,7 +13,8 @@
  */
 #ifndef INCLUDE_DATA_CONSTRUCTS_RFILE_META_BASEMETABLOCK_H_
 #define INCLUDE_DATA_CONSTRUCTS_RFILE_META_BASEMETABLOCK_H_
-#include "../../../streaming/Streams.h"
+#include "data/streaming/Streams.h"
+#include <memory>
 
 namespace cclient
 {
@@ -33,10 +34,10 @@ public:
     virtual uint32_t
     getCurrentPosition () = 0;
 
-    virtual cclient::data::streams::StreamInterface*
+    virtual std::shared_ptr<data::streams::StreamInterface>
     getBlock () = 0;
 
-    virtual BaseMetaBlock *
+    virtual std::shared_ptr<BaseMetaBlock>
     getPreviousBlock () = 0;
 
     virtual uint32_t

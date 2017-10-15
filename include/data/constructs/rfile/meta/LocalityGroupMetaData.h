@@ -61,12 +61,12 @@ public:
      @param key incoming key to set.
      **/
     void
-    setFirstKey (StreamInterface *key)
+    setFirstKey (std::shared_ptr<StreamInterface> key)
     {
         firstKey = key;
     }
 
-    StreamInterface *
+    std::shared_ptr<StreamInterface> 
     getFirstKey ()
     {
         return firstKey;
@@ -124,7 +124,7 @@ public:
 
     }
 
-    IndexManager *
+    std::shared_ptr<IndexManager>
     getIndexManager ()
     {
         return indexManager;
@@ -168,7 +168,7 @@ protected:
     // start block of this meta data group.
     uint32_t startBlock;
     // first key in the locality group.
-    cclient::data::streams::StreamInterface *firstKey;
+    std::shared_ptr<StreamInterface> firstKey;
     // region of index entry offsets.
     std::vector<int> offsets;
     // column families for this locality group.
@@ -178,7 +178,7 @@ protected:
 
     cclient::data::compression::Compressor *compressorRef;
 
-    IndexManager *indexManager;
+    std::shared_ptr<IndexManager> indexManager;
     // boolean value identifying this as the default locality group.
     bool isDefaultLG;
     // name of this locality group.

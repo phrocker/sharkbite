@@ -96,8 +96,8 @@ public:
 
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
+		std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue >();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key> ();
 		newKey->setRow ("a", 1);
 		newKey->setColFamily ("apple", 5);
 		std::stringstream cq;
@@ -105,14 +105,14 @@ public:
 		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		newKey->setTimeStamp(1445105294261L);
 		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		newKv->setValue (std::make_shared<cclient::data::Value> ());
+		writer->push (newKv);
 	}
 	
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
+		std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue> ();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key> ();
 		newKey->setRow ("a", 1);
 		newKey->setColFamily ("avacado", 7);
 		std::stringstream cq;
@@ -120,8 +120,8 @@ public:
 		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		newKey->setTimeStamp(1445105294261L);
 		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		newKv->setValue (std::make_shared<cclient::data::Value> ());
+		writer->push (newKv);
 	}
 	
 	
@@ -147,9 +147,9 @@ public:
 	std::unique_ptr<scanners::Scanner> scanner = std::unique_ptr<scanners::Scanner>( dynamic_cast<scanners::Scanner*>(ops->createScanner (&auths, 1).release()));
 
 	// range from a to d
-	cclient::data::Key *startkey = new cclient::data::Key ();
+	std::shared_ptr<cclient::data::Key> startkey = std::make_shared<cclient::data::Key> ();
 	startkey->setRow ("a", 1);
-	cclient::data::Key *stopKey = new cclient::data::Key ();
+	std::shared_ptr<cclient::data::Key> stopKey = std::make_shared<cclient::data::Key> ();
 	stopKey->setRow ("z", 1);
 	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
 
@@ -164,7 +164,7 @@ public:
 	
 	for (auto iter = results->begin (); iter != results->end ();
 	     iter++, counter++) {
-		 std::unique_ptr<cclient::data::KeyValue> kv =*iter;
+		 auto kv =*iter;
 		
 		if (kv != NULL && kv->getKey () != NULL)
 			std::cout << "got -- " << kv->getKey () << std::endl;

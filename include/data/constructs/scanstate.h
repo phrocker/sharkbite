@@ -63,10 +63,10 @@ public:
         if (!IsEmpty(options))
             serverSideOptions.insert(options->begin(), options->end());
 
-        Key *startKey = range->getStartKey();
+        auto startKey = range->getStartKey();
 
-        if (IsEmpty(startKey)) {
-            startKey = new Key();
+        if (nullptr == startKey) {
+            startKey = std::make_shared<Key>();
         }
 
         std::pair<char*, size_t> row = startKey->getRow();

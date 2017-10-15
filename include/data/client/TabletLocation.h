@@ -31,13 +31,13 @@ class TabletLocation
 {
 public:
     TabletLocation ();
-    TabletLocation (KeyExtent *extent, std::string loc) :
-        tablet_extent (extent), tablet_location (loc)
+    TabletLocation (std::shared_ptr<KeyExtent> extent, std::string loc) :
+        tablet_extent (extent), tablet_location (loc), port(0)
     {
 
     }
 
-    TabletLocation (KeyExtent *extent, std::string loc, std::string sesh) :
+    TabletLocation (std::shared_ptr<KeyExtent> extent, std::string loc, std::string sesh) :
         tablet_extent (extent), tablet_location (loc), session (sesh)
     {
         std::vector<std::string> tokens = split (tablet_location, ':');
@@ -59,13 +59,13 @@ public:
     }
     
 
-    KeyExtent 
-    *getExtent ()
+    std::shared_ptr<KeyExtent>
+    getExtent ()
     {
-        return &tablet_extent;
+        return tablet_extent;
     }
     
-    void setExtent(KeyExtent extent)
+    void setExtent(const std::shared_ptr<KeyExtent> &extent)
     {
       tablet_extent = extent;
     }
@@ -108,7 +108,7 @@ public:
     virtual
     ~TabletLocation ();
 protected:
-    KeyExtent tablet_extent;
+    std::shared_ptr<KeyExtent> tablet_extent;
     std::string tablet_location;
     std::string server;
     int port;

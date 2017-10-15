@@ -37,13 +37,13 @@ namespace data
 class SkippedRelativeKey : public cclient::data::streams::StreamInterface
 {
 protected:
-    Key *prevKey;
+    std::shared_ptr<Key>  prevKey;
     RelativeKey *rkey;
     int skipped;
 
     void
-    fastSkip (cclient::data::streams::InputStream *stream, Key *seekKey, std::vector<char> *valCopy,
-              Key *prevKey, Key *currKey)
+    fastSkip (cclient::data::streams::InputStream *stream, std::shared_ptr<Key>  seekKey, std::vector<char> *valCopy,
+              std::shared_ptr<Key>  prevKey, std::shared_ptr<Key>  currKey)
     {
 
         std::vector<char> row, cf, cq, cv;
@@ -113,8 +113,8 @@ protected:
             {
                 if (row > stopRow)
                 {
-                    rkey = new RelativeKey (new Key (currKey),
-                                            new Key (currKey));
+                    rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                                            std::make_shared<Key> (currKey));
                     skipped = 0;
                     this->prevKey = prevKey;
 
@@ -125,8 +125,8 @@ protected:
                 {
                     if (cf > stopCf)
                     {
-                        rkey = new RelativeKey (new Key (currKey),
-                                                new Key (currKey));
+                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                                                std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;
 
@@ -135,8 +135,8 @@ protected:
 
                     if (cq > stopCq)
                     {
-                        rkey = new RelativeKey (new Key (currKey),
-                                                new Key (currKey));
+                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                                                std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;
 
@@ -152,7 +152,7 @@ protected:
             
             uint16_t count = 0;
 
-            Key *newPrevKey = NULL;
+            std::shared_ptr<Key>  newPrevKey = NULL;
             while (true)
             {
                 previousDeleted = (fieldsSame & RelativeKey::DELETED)
@@ -245,7 +245,7 @@ protected:
                 long returnTs =
                     (fieldsSame & RelativeKey::TS_SAME)
                     == RelativeKey::TS_SAME ? timestamp : prevTimestamp;
-                newPrevKey = new Key ();
+                newPrevKey = std::make_shared<Key> ();
                 newPrevKey->setRow (rowPtr->data (), rowPtr->size ());
                 newPrevKey->setColFamily (cfPtr->data (), cfPtr->size ());
                 newPrevKey->setColQualifier (cqPtr->data (), cqPtr->size ());
@@ -258,11 +258,11 @@ protected:
             {
                 if (currKey != NULL)
                 {
-                    newPrevKey = new Key (prevKey);
+                    newPrevKey = std::make_shared<Key> (prevKey);
                 }
                 else
                 {
-                    newPrevKey = new Key (prevKey);
+                    newPrevKey = std::make_shared<Key> (prevKey);
                 }
             }
             else
@@ -272,7 +272,7 @@ protected:
 
             prevKey = newPrevKey;
             rkey = new RelativeKey ();
-            Key *baseKey = new Key ();
+            std::shared_ptr<Key> baseKey = std::make_shared<Key> ();
             baseKey->setRow (row.data (), row.size ());
             baseKey->setColFamily (cf.data (), cf.size ());
             baseKey->setColQualifier (cq.data (), cq.size ());
@@ -280,7 +280,7 @@ protected:
             baseKey->setTimeStamp (timestamp);
             baseKey->setDeleted ((fieldsSame & RelativeKey::DELETED) != 0);
             rkey->setBase (baseKey);
-            rkey->setPrevious (new Key (baseKey));
+            rkey->setPrevious (std::make_shared<Key> (baseKey));
             skipped = count;
         }
     }
@@ -360,14 +360,14 @@ protected:
     }
 
 public:
-    SkippedRelativeKey (RelativeKey *rkey, int skipped, Key *prevKey) :
+    SkippedRelativeKey (RelativeKey *rkey, int skipped, std::shared_ptr<Key>  prevKey) :
         rkey (rkey), skipped (skipped), prevKey (prevKey)
     {
 
     }
 
-    SkippedRelativeKey (cclient::data::streams::InputStream *stream, Key *seekKey,
-                        std::vector<char> *valCopy, Key *prevKey, Key *currKey) :
+    SkippedRelativeKey (cclient::data::streams::InputStream *stream, std::shared_ptr<Key>  seekKey,
+                        std::vector<char> *valCopy, std::shared_ptr<Key>  prevKey, std::shared_ptr<Key>  currKey) :
         SkippedRelativeKey (NULL, 0, NULL)
     {
         fastSkip (stream, seekKey, valCopy, prevKey, currKey);
@@ -377,9 +377,6 @@ public:
     virtual
     ~SkippedRelativeKey ()
     {
-
-        if (NULL != prevKey)
-            delete prevKey;
     }
 
     RelativeKey *
@@ -387,7 +384,7 @@ public:
     {
         return rkey;
     }
-    Key *
+    std::shared_ptr<Key>
     getPrevKey ()
     {
         return prevKey;

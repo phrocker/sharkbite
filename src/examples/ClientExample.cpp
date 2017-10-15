@@ -36,7 +36,7 @@
 #define BOOST_IOSTREAMS_NO_LIB 1
 
 bool
-keyCompare (cclient::data::KeyValue* a, cclient::data::KeyValue* b)
+keyCompare (std::shared_ptr<cclient::data::KeyValue>  a, std::shared_ptr<cclient::data::KeyValue>  b)
 {
 	return *(a->getKey ()) < *(b->getKey ());
 }
@@ -64,9 +64,9 @@ writeRfile (std::string nameNode, uint16_t port)
 
 	cclient::data::RFile *newRFile = new cclient::data::RFile (outStream, &bcFile);
 
-	std::vector<cclient::data::KeyValue*> keyValues;
+	std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 
-	cclient::data::Key *prevKey = NULL;
+	std::shared_ptr<cclient::data::Key> prevKey = NULL;
 
 	char rw[13], cf[4], cq[8], cv[8];
 	int i = 0;
@@ -75,9 +75,9 @@ writeRfile (std::string nameNode, uint16_t port)
 	std::string vis = "00000001";
 	for (i = 1; i < 150; i++) {
 
-		cclient::data::Value *v = new cclient::data::Value (moto);
+		std::shared_ptr<cclient::data::Value> v = std::make_shared< cclient::data::Value >(moto);
 
-		cclient::data::Key *k = new cclient::data::Key ();
+		std::shared_ptr<cclient::data::Key> k = std::make_shared< cclient::data::Key> ();
 
 		std::string rowSt = "2";
 
@@ -98,7 +98,7 @@ writeRfile (std::string nameNode, uint16_t port)
 
 		k->setTimeStamp (1445105294261L);
 
-		cclient::data::KeyValue *kv = new cclient::data::KeyValue ();
+		std::shared_ptr<cclient::data::KeyValue> kv = std::make_shared< cclient::data::KeyValue> ();
 
 		kv->setKey (k);
 		kv->setValue (v);
@@ -108,7 +108,7 @@ writeRfile (std::string nameNode, uint16_t port)
 	}
 	std::sort (keyValues.begin (), keyValues.end (), keyCompare);
 	newRFile->addLocalityGroup ();
-	for (std::vector<cclient::data::KeyValue*>::iterator it = keyValues.begin ();
+	for (std::vector<std::shared_ptr<cclient::data::KeyValue> >::iterator it = keyValues.begin ();
 	     it != keyValues.end (); ++it) {
 		newRFile->append (*it);
 	}
@@ -124,13 +124,6 @@ writeRfile (std::string nameNode, uint16_t port)
 	delete stream;
 
 	delete newRFile;
-
-	for (std::vector<cclient::data::KeyValue*>::iterator it = keyValues.begin ();
-	     it != keyValues.end (); ++it) {
-		delete (*it)->getKey ();
-		delete (*it);
-	}
-
 
 
 	dir = "/testImport/";
@@ -241,8 +234,8 @@ main (int argc, char **argv)
 
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
+		std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue> ();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key> ();
 		newKey->setRow ("a", 1);
 		newKey->setColFamily ("apple", 5);
 		std::stringstream cq;
@@ -250,8 +243,8 @@ main (int argc, char **argv)
 		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
 		newKey->setTimeStamp(1445105294261L);
 		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
+		newKv->setValue (std::make_shared<cclient::data::Value> ());
+		writer->push (newKv);
 	}
 	
 	for (int i = 0; i < fruit_to_write; i++) {
@@ -289,10 +282,10 @@ main (int argc, char **argv)
 	std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 1);
 
 	// range from a to d
-	cclient::data::Key startkey;
-	startkey.setRow ("a", 1);
-	cclient::data::Key stopKey;
-	stopKey.setRow ("z", 1);
+	std::shared_ptr<cclient::data::Key> startkey = std::make_shared<cclient::data::Key>();
+	startkey->setRow ("a", 1);
+	std::shared_ptr<cclient::data::Key> stopKey= std::make_shared<cclient::data::Key>();
+	stopKey->setRow ("z", 1);
 	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
 
 	scanner->addRange (std::unique_ptr<cclient::data::Range>(range));
@@ -306,7 +299,7 @@ main (int argc, char **argv)
 	
 	for (auto iter = results->begin (); iter != results->end ();
 	     iter++, counter++) {
-		std::unique_ptr<cclient::data::KeyValue> kv = *iter;
+		auto kv = *iter;
 
 		if (kv != NULL && kv->getKey () != NULL)
 			std::cout << "got -- " << (*iter)->getKey () << std::endl;

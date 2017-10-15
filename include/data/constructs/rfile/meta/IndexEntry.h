@@ -28,7 +28,7 @@ class IndexEntry : cclient::data::streams::StreamInterface
 {
 public:
 
-    IndexEntry (cclient::data::streams::StreamInterface *mKey, uint32_t entryCount);
+    IndexEntry (std::shared_ptr<cclient::data::streams::StreamInterface> mKey, uint32_t entryCount);
 
     virtual
     ~IndexEntry ();
@@ -37,21 +37,21 @@ public:
     /**
      move constructor.
      **/
-    IndexEntry (IndexEntry &&other) : allocated(true)
+    IndexEntry (IndexEntry &&other)
     {
-        key = new cclient::data::Key(static_cast<cclient::data::Key*>(other.key));
+        key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(other.key));
         entries = other.entries;
         newFormat = other.newFormat;
     }
 
     IndexEntry () :
-        newFormat (false), allocated(false), key(NULL)
+        newFormat (false),  key(NULL)
     {
 
     }
 
     explicit IndexEntry (bool newFormat) :
-        newFormat (newFormat), allocated(false), key(NULL)
+        newFormat (newFormat),  key(NULL)
     {
 
     }
@@ -60,10 +60,10 @@ public:
      Gets the key for this index entry
      @return pointer to key.
      */
-    cclient::data::streams::StreamInterface *
+    std::shared_ptr<Key>
     getKey ()
     {
-        return key;
+        return std::static_pointer_cast<Key>(key);
     }
 
     /**
@@ -80,12 +80,7 @@ public:
     uint64_t
     read (cclient::data::streams::InputStream * in)
     {
-        if (allocated && NULL != key)
-        {
-            delete key;
-        }
-        key = new Key ();
-        allocated = true;
+        key = std::make_shared<Key> ();
         key->read (in);
         entries = in->readInt ();
 
@@ -176,10 +171,9 @@ protected:
    
     // number of entries.
     uint32_t entries;
-    cclient::data::streams::StreamInterface *key;
+    std::shared_ptr<cclient::data::streams::StreamInterface> key;
     // new format stuff
     bool newFormat;
-     bool allocated;
     // initial key
     uint64_t offset;
     uint64_t compressedSize;

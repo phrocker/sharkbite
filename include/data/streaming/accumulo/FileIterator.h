@@ -31,9 +31,9 @@ public:
     {
 
     }
-    virtual Key *
+    virtual std::shared_ptr<Key>
     getFirstKey () = 0;
-    virtual Key *
+    virtual std::shared_ptr<Key>
     getLastKey () = 0;
     void
     close ();

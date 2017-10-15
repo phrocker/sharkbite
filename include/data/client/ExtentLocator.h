@@ -152,7 +152,7 @@ public:
         std::vector<cclient::data::Range*> *ranges,
         std::set<std::string> *locations,
         std::map<std::string,
-        std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>, pointer_comparator<cclient::data::KeyExtent*> > > *binnedRanges) = 0;
+        std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) = 0;
 
     /**
      * Invalides the cache for the failed key extent

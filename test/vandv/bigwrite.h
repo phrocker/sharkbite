@@ -33,207 +33,196 @@
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
 
-
 #include <assert.h>
 
 #define BOOST_IOSTREAMS_NO_LIB 1
 
-
 #include "integration.h"
 
-class TestBigWrite : public IntegrationTest
-{
-public:
-  TestBigWrite(interconnect::MasterConnect connect) : IntegrationTest(connect)
-  {
+class TestBigWrite : public IntegrationTest {
+ public:
+  TestBigWrite(interconnect::MasterConnect connect)
+      : IntegrationTest(connect) {
   }
-  std::string testName()
-  {
+  std::string testName() {
     return "TestBigWrite";
   }
-  int run(std::string table)
-  {
-    
-	std::unique_ptr<interconnect::AccumuloTableOperations> ops = master.tableOps (
-	                        table);
-	
-	std::unique_ptr<interconnect::SecurityOperations> secOps = master.securityOps();
+  int run(std::string table) {
 
-	// create the table. no harm/no foul if it exists
-	std::cout << "Checking if " << table << " exists." << std::endl;
-	if (!ops->exists ()) {
-		std::cout << "Now, creating " << table << std::endl;
-		if (!ops->create ()) {
-			std::cout << "Could not create table " << std::endl;
-		}
-		std::this_thread::sleep_for (std::chrono::milliseconds (1000));
-	}
-	else
-	  std::cout << table << " exists" << std::endl;
+    std::unique_ptr<interconnect::AccumuloTableOperations> ops =
+        master.tableOps(table);
 
+    std::unique_ptr<interconnect::SecurityOperations> secOps = master
+        .securityOps();
 
-	cclient::data::security::Authorizations auths;
-	
-	cclient::data::security::Authorizations scanAuths;
-	scanAuths.addAuthorization("00000001");
-	
-	if (secOps->createUser("dude","thedude"))
-	{
-	
-	  // now let's drop the user
-	
-	  secOps->dropUser("dude");
-	  
-	}
-	else
-	{
-	  std::cout << "Could not create user 'dude'" << std::endl;
-	  return -1;
-	}
-	
-	secOps->grantAuthorizations(&scanAuths,"root");
+    // create the table. no harm/no foul if it exists
+    std::cout << "Checking if " << table << " exists." << std::endl;
+    if (!ops->exists()) {
+      std::cout << "Now, creating " << table << std::endl;
+      if (!ops->create()) {
+        std::cout << "Could not create table " << std::endl;
+      }
+      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    } else
+      std::cout << table << " exists" << std::endl;
 
-	int fruit_to_write = 200;
+    cclient::data::security::Authorizations auths;
 
-	std::cout << "Writing " << fruit_to_write << " apples and bananas" << std::endl;
+    cclient::data::security::Authorizations scanAuths;
+    scanAuths.addAuthorization("00000001");
 
-	std::unique_ptr<writer::Writer> writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));
+    if (secOps->createUser("dude", "thedude")) {
 
-	std::stringstream bigString("ohhi");
-	for (int i=0; i < 1*1024; i++)
-	{
-	  bigString << "blah";
-	}
-	std::string str = bigString.str();
-	for (int i = 0; i < fruit_to_write; i++) {
+      // now let's drop the user
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
-		newKey->setRow (str);
-		newKey->setColFamily (str);
-		std::stringstream cq;
-		cq << "banana" << i;
-		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
-		newKey->setTimeStamp(1445105294261L);
-		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
-	}
-	
-	for (int i = 0; i < fruit_to_write; i++) {
+      secOps->dropUser("dude");
 
-		cclient::data::KeyValue *newKv = new cclient::data::KeyValue ();
-		cclient::data::Key *newKey = new cclient::data::Key ();
-		newKey->setRow ("a", 1);
-		newKey->setColFamily ("avacado", 7);
-		std::stringstream cq;
-		cq << "banana" << i;
-		newKey->setColQualifier (cq.str ().c_str (), cq.str ().length ());
-		newKey->setTimeStamp(1445105294261L);
-		newKv->setKey (newKey);
-		newKv->setValue (new cclient::data::Value ());
-		writer->push (std::unique_ptr<cclient::data::KeyValue>(newKv));
-	}
-	
-	
+    } else {
+      std::cout << "Could not create user 'dude'" << std::endl;
+      return -1;
+    }
 
-	// close will free memory for objects given to it
-	writer->close ();
+    secOps->grantAuthorizations(&scanAuths, "root");
 
-	if ( ops->flush("a","z",true) ) {
-		std::cout << "flush successful " << std::endl;
-	}
+    int fruit_to_write = 200;
 
+    std::cout << "Writing " << fruit_to_write << " apples and bananas"
+              << std::endl;
 
-	if (ops->compact("a","z",true)) {
-		std::cout << "Compaction successful " << std::endl;
-	}
-	
+    std::unique_ptr<writer::Writer> writer = std::unique_ptr<writer::Writer>(
+        dynamic_cast<writer::Writer*>(ops->createWriter(&auths, 15).release()));
 
-      //scan with 10 threads
-      int counter = 0;
-      try{
-	std::cout << "Reading values from row a to d" << std::endl;
+    std::stringstream bigString("ohhi");
+    for (int i = 0; i < 1 * 1024; i++) {
+      bigString << "blah";
+    }
+    std::string str = bigString.str();
+    for (int i = 0; i < fruit_to_write; i++) {
 
-	std::unique_ptr<scanners::Scanner> scanner = std::unique_ptr<scanners::Scanner>( dynamic_cast<scanners::Scanner*>(ops->createScanner (&auths, 1).release()));
+      std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<
+          cclient::data::KeyValue>();
+      std::shared_ptr<cclient::data::Key> newKey = std::make_shared< cclient::data::Key>();
+      newKey->setRow(str);
+      newKey->setColFamily(str);
+      std::stringstream cq;
+      cq << "banana" << i;
+      newKey->setColQualifier(cq.str().c_str(), cq.str().length());
+      newKey->setTimeStamp(1445105294261L);
+      newKv->setKey(newKey);
+      newKv->setValue(std::make_shared< cclient::data::Value>());
+      writer->push(newKv);
+    }
 
-	// range from a to d
-	cclient::data::Key *startkey = new cclient::data::Key ();
-	startkey->setRow ("a", 1);
-	cclient::data::Key *stopKey = new cclient::data::Key ();
-	stopKey->setRow ("z", 1);
-	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
+    for (int i = 0; i < fruit_to_write; i++) {
 
-	scanner->addRange (std::unique_ptr<cclient::data::Range>(range));
-	
-	scanner->fetchColumn("avacado");
+      std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<
+          cclient::data::KeyValue>();
+      std::shared_ptr<cclient::data::Key> newKey = std::make_shared<
+          cclient::data::Key>();
+      newKey->setRow("a", 1);
+      newKey->setColFamily("avacado", 7);
+      std::stringstream cq;
+      cq << "banana" << i;
+      newKey->setColQualifier(cq.str().c_str(), cq.str().length());
+      newKey->setTimeStamp(1445105294261L);
+      newKv->setKey(newKey);
+      newKv->setValue(std::make_shared<cclient::data::Value>());
+      writer->push(newKv);
+    }
 
-	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
-	                scanner->getResultSet ();
+    // close will free memory for objects given to it
+    writer->close();
 
-	
-	
-	for (auto iter = results->begin (); iter != results->end ();
-	     iter++, counter++) {
-		 std::unique_ptr<cclient::data::KeyValue> kv =*iter;
-		
-		if (kv != NULL && kv->getKey () != NULL)
-			std::cout << "got -- " << kv->getKey () << std::endl;
-		else
-			std::cout << "Key is null" << std::endl;
-		
-	}
+    if (ops->flush("a", "z", true)) {
+      std::cout << "flush successful " << std::endl;
+    }
 
-	}catch(cclient::exceptions::ClientException ce)
-	{
-	  std::cout << "Failed message: " << ce.what() << std::endl;
-	}
+    if (ops->compact("a", "z", true)) {
+      std::cout << "Compaction successful " << std::endl;
+    }
 
+    //scan with 10 threads
+    int counter = 0;
+    try {
+      std::cout << "Reading values from row a to d" << std::endl;
 
-	
-	std::cout << "Received " << counter << " results " << std::endl;
+      std::unique_ptr<scanners::Scanner> scanner =
+          std::unique_ptr<scanners::Scanner>(
+              dynamic_cast<scanners::Scanner*>(ops->createScanner(&auths, 1)
+                  .release()));
 
-	assert(counter >= 200);
-	
-	ops->remove ();
+      // range from a to d
+      std::shared_ptr<cclient::data::Key> startkey = std::make_shared<
+          cclient::data::Key>();
+      startkey->setRow("a", 1);
+      std::shared_ptr<cclient::data::Key> stopKey = std::make_shared<
+          cclient::data::Key>();
+      stopKey->setRow("z", 1);
+      cclient::data::Range *range = new cclient::data::Range(startkey, true,
+                                                             stopKey, false);
 
+      scanner->addRange(std::unique_ptr<cclient::data::Range>(range));
 
-	std::unique_ptr<interconnect::NamespaceOperations> nameOps = master.namespaceOps();
-		
-	for(auto nm : nameOps->list())
-	{
-	  
-	  std::cout << "found namespace " << nm << std::endl;
-	}
-	
-	if (nameOps->exists("testing"))
-	  nameOps->remove("testing");
-	
-	if (nameOps->exists("blahblah"))
-	  nameOps->remove("blahblah");
-	
-	nameOps->create("testing");
-	
-	for(auto nm : nameOps->list())
-	{
-	  
-	  std::cout << "found namespace " << nm << std::endl;
-	}
-	
-	nameOps->rename("blahblah","testing");
-	
-	
-	for(auto nm : nameOps->list())
-	{
-	  assert(nm != "testing");
-	  std::cout << "Found namespace " << nm << std::endl;
-	}
-	
-	assert ( nameOps->remove("blahblah") );
-	
-	assert(!nameOps->exists());
-	
-	return 0;
+      scanner->fetchColumn("avacado");
+
+      scanners::Results<cclient::data::KeyValue,
+          scanners::ResultBlock<cclient::data::KeyValue>> *results = scanner
+          ->getResultSet();
+
+      for (auto iter = results->begin(); iter != results->end();
+          iter++, counter++) {
+        auto kv = *iter;
+
+        if (kv != NULL && kv->getKey() != NULL)
+          std::cout << "got -- " << kv->getKey() << std::endl;
+        else
+          std::cout << "Key is null" << std::endl;
+
+      }
+
+    } catch (cclient::exceptions::ClientException ce) {
+      std::cout << "Failed message: " << ce.what() << std::endl;
+    }
+
+    std::cout << "Received " << counter << " results " << std::endl;
+
+    assert(counter >= 200);
+
+    ops->remove();
+
+    std::unique_ptr<interconnect::NamespaceOperations> nameOps = master
+        .namespaceOps();
+
+    for (auto nm : nameOps->list()) {
+
+      std::cout << "found namespace " << nm << std::endl;
+    }
+
+    if (nameOps->exists("testing"))
+      nameOps->remove("testing");
+
+    if (nameOps->exists("blahblah"))
+      nameOps->remove("blahblah");
+
+    nameOps->create("testing");
+
+    for (auto nm : nameOps->list()) {
+
+      std::cout << "found namespace " << nm << std::endl;
+    }
+
+    nameOps->rename("blahblah", "testing");
+
+    for (auto nm : nameOps->list()) {
+      assert(nm != "testing");
+      std::cout << "Found namespace " << nm << std::endl;
+    }
+
+    assert(nameOps->remove("blahblah"));
+
+    assert(!nameOps->exists());
+
+    return 0;
   }
 };
 #endif

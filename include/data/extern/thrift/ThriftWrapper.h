@@ -41,9 +41,9 @@ protected:
 	}
 public:
 
-	static cclient::data::KeyExtent *convert( ::org::apache::accumulo::core::data::thrift::TKeyExtent extent)
+	static std::shared_ptr<cclient::data::KeyExtent> convert( ::org::apache::accumulo::core::data::thrift::TKeyExtent extent)
 	{
-		return new cclient::data::KeyExtent(extent.table,extent.endRow,extent.prevEndRow);
+		return std::make_shared<cclient::data::KeyExtent>(extent.table,extent.endRow,extent.prevEndRow);
 
 	}
 	static std::vector<cclient::data::Column*> convert( std::vector< ::org::apache::accumulo::core::data::thrift::TColumn> columns)
@@ -150,14 +150,14 @@ public:
 
 	static cclient::data::Range* convert(org::apache::accumulo::core::data::thrift::TRange range)
 	{
-		cclient::data::Key *startKey = convert(range.start);
-		cclient::data::Key *endKey = convert(range.stop);
+		std::shared_ptr<cclient::data::Key> startKey = convert(range.start);
+		std::shared_ptr<cclient::data::Key> endKey = convert(range.stop);
 		return new cclient::data::Range(startKey,range.startKeyInclusive,endKey,range.stopKeyInclusive);
 
 	}
 
 	static org::apache::accumulo::core::data::thrift::ScanBatch convert(
-	        std::vector<interconnect::ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *> *rangeIdentifiers)
+	        std::vector<interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> *> *rangeIdentifiers)
 	{
 	   
 		org::apache::accumulo::core::data::thrift::ScanBatch littleBatch;
@@ -165,9 +165,9 @@ public:
 		//typedef std::map<class TKeyExtent, std::std::vector<class Tcclient::data::Range> >  ScanBatch;
 		for (auto it : *rangeIdentifiers) {
 
-			interconnect::ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *identifier = it;
-			std::vector<cclient::data::KeyExtent*> extents = identifier->getGlobalMapping();
-			for (cclient::data::KeyExtent *ot : extents) {
+			interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> *identifier = it;
+			std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents = identifier->getGlobalMapping();
+			for (std::shared_ptr<cclient::data::KeyExtent> ot : extents) {
 				org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
 
 				keyExtent.table = ot->getTableId();
@@ -197,7 +197,7 @@ public:
 		return littleBatch;
 	}
 
-	static org::apache::accumulo::core::data::thrift::TKey convert(cclient::data::Key *key)
+	static org::apache::accumulo::core::data::thrift::TKey convert(std::shared_ptr<cclient::data::Key> key)
 	{
 		org::apache::accumulo::core::data::thrift::TKey newKey;
 		if (NULL != key) {
@@ -228,9 +228,9 @@ public:
 		return newKey;
 	}
 
-	static cclient::data::Key *convert(org::apache::accumulo::core::data::thrift::TKey key)
+	static std::shared_ptr<cclient::data::Key> convert(org::apache::accumulo::core::data::thrift::TKey key)
 	{
-		cclient::data::Key *newKey = new cclient::data::Key();
+		std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key>();
 		newKey->setRow(key.row);
 		newKey->setColFamily(key.colFamily);
 		newKey->setColQualifier(key.colQualifier);
@@ -240,7 +240,7 @@ public:
 	}
 
 	static org::apache::accumulo::core::data::thrift::TKeyExtent convert(
-	        cclient::data::KeyExtent *ot)
+	        std::shared_ptr<cclient::data::KeyExtent> ot)
 	{
 		if (nullptr == ot) std::cout << " ot is null!" << std::endl;
 		std::cout << "table id is " << ot->getTableId() << " " << ot->getEndRow() << " " << ot->getPrevEndRow() << std::endl;		
@@ -287,17 +287,17 @@ org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
 		return keyExtent;
 	}
 
-	static std::vector<cclient::data::KeyValue*> *convert(
+	static std::vector<std::shared_ptr<cclient::data::KeyValue> > *convert(
 	        std::vector<org::apache::accumulo::core::data::thrift::TKeyValue> tkvVec)
 	{
-		std::vector<cclient::data::KeyValue*> *newvector = new std::vector<cclient::data::KeyValue*>();
-		cclient::data::Key *prevKey = NULL;
+		std::vector<std::shared_ptr<cclient::data::KeyValue>> *newvector = new std::vector<std::shared_ptr<cclient::data::KeyValue>>();
+		std::shared_ptr<cclient::data::Key> prevKey = NULL;
 
 		for (uint32_t i = 0; i < tkvVec.size(); i++) {
 
 			org::apache::accumulo::core::data::thrift::TKeyValue tkv =
 			        tkvVec.at(i);
-			cclient::data::Key *key = new cclient::data::Key();
+			std::shared_ptr<cclient::data::Key> key = std::make_shared< cclient::data::Key>();
 			if (!IsEmpty(&(tkv.key.row))) {
 				key->setRow(tkv.key.row.c_str(), tkv.key.row.size());
 			} else {
@@ -339,7 +339,7 @@ org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
 			}
 
 			key->setTimeStamp(tkv.key.timestamp);
-			cclient::data::KeyValue *kv = new cclient::data::KeyValue();
+			std::shared_ptr<cclient::data::KeyValue> kv = std::make_shared< cclient::data::KeyValue>();
 			kv->setKey(key,true);
 			kv->setValue((uint8_t*) tkv.value.c_str(), tkv.value.size());
 

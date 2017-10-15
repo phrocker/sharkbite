@@ -26,7 +26,7 @@ namespace streams
 {
 
 
-class KeyValueIterator : public DataStream<std::pair<Key*, Value*>>
+class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>
 {
 public:
     KeyValueIterator (KeyValueIterator *source,
@@ -68,10 +68,10 @@ public:
         return this;
     }
 
-    virtual std::pair<Key*, Value*>
+    virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>
     operator* ()
     {
-        return std::make_pair ((Key*) NULL, (Value*) NULL);
+        return std::make_pair (nullptr,nullptr);
     }
 
     virtual void next()

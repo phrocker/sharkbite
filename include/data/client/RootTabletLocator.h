@@ -31,7 +31,7 @@ namespace cclient {
 namespace impl {
 
 
-static cclient::data::KeyExtent *ROOT_EXTENT = new cclient::data::KeyExtent("+r", "", "");
+static std::shared_ptr<cclient::data::KeyExtent> ROOT_EXTENT = std::make_shared<cclient::data::KeyExtent>("+r", "", "");
 
 class RootTabletLocator: public TabletLocator {
 public:
@@ -61,7 +61,7 @@ public:
 
     virtual std::vector<cclient::data::Range*> binRanges(cclient::data::security::AuthInfo *credentials,std::vector<cclient::data::Range*> *ranges,
                                      std::set<std::string> *locations,
-                                     std::map<std::string, std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,pointer_comparator<cclient::data::KeyExtent*> > > *binnedRanges) {
+                                     std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>,pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
         return std::vector<cclient::data::Range*>();
     }
 

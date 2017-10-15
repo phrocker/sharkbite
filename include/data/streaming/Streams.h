@@ -38,7 +38,7 @@ public:
     StreamInterface();
     virtual ~StreamInterface();
 
-    virtual StreamInterface *getStream();
+    virtual std::shared_ptr<StreamInterface> getStream();
 
     virtual uint64_t write (cclient::data::streams::OutputStream *out);
     virtual uint64_t read (cclient::data::streams::InputStream *in);

@@ -49,12 +49,12 @@ public:
      * @param previous_key previous key 
      * @param my_key current key.
      **/
-    RelativeKey (Key *previous_key, Key *my_key);
+    RelativeKey (std::shared_ptr<Key> previous_key, std::shared_ptr<Key> my_key);
 
     /**
      * Returns the relative key.
      **/
-    StreamInterface *
+    std::shared_ptr<StreamInterface> 
     getStream ();
 
     /**
@@ -62,7 +62,7 @@ public:
      * @param my_key key to set on the relative key.
      **/
     void
-    setBase (Key *my_key);
+    setBase (std::shared_ptr<Key> my_key);
     
 
     /**
@@ -75,7 +75,7 @@ public:
      * @param previous_key prev key.
      **/
     void
-    setPrevious (Key *previous_key);
+    setPrevious (std::shared_ptr<Key> previous_key);
 
     /**
      * write function for relative key
@@ -107,6 +107,10 @@ public:
     static const uint8_t TS_DIFF = 0x10;
 
     static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
+
+    std::shared_ptr<Key> getKey(){
+    	return key;
+    }
 protected:
 
     void readPrefix (cclient::data::streams::InputStream *stream, std::vector<char> *row, std::vector<char> *prevRow);
@@ -173,14 +177,14 @@ protected:
 
     }
 
-    Key *key;
+    std::shared_ptr<Key> key;
 
     char fieldsSame;
 
-    Key *prevKey;
+    std::shared_ptr<Key> prevKey;
 
     void
-    setKey (Key *keyToCopy, Key *keyToCopyTo);
+    setKey (std::shared_ptr<Key> keyToCopy, std::shared_ptr<Key> keyToCopyTo);
 
     bool
     isSame (std::pair<char*, size_t> a, std::pair<char*, size_t> b);

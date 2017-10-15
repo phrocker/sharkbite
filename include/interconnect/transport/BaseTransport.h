@@ -130,7 +130,7 @@ protected:
 	}
 
 	Scan *
-	singleScan(ScanRequest<ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> > *request)
+	singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> > *request)
 	{
 		Scan *initialScan = new Scan();
 
@@ -152,9 +152,9 @@ protected:
 		}
 
 
-		ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *ident =
+		ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> *ident =
 		        request->getRangeIdentifiers()->at(0);
-		cclient::data::KeyExtent *extent = ident->getGlobalMapping().at(0);
+		std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
 		cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
 		org::apache::accumulo::core::security::thrift::TCredentials creds = getOrSetCredentials(request->getCredentials());
 		tserverClient->startScan(scan, scanId,creds
@@ -169,7 +169,7 @@ protected:
 		org::apache::accumulo::core::data::thrift::ScanResult results =
 		        scan.result;
 
-		std::vector<cclient::data::KeyValue*> *kvs = ThriftWrapper::convert(results.results);
+		std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
 
 		initialScan->setHasMore(results.more);
@@ -189,7 +189,7 @@ protected:
 	}
 
 	Scan *
-	multiScan(ScanRequest<ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> > *request)
+	multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> > *request)
 	{
 		Scan *initialScan = new Scan();
 
@@ -220,7 +220,7 @@ protected:
 		org::apache::accumulo::core::data::thrift::MultiScanResult results =
 		        scan.result;
 
-		std::vector<cclient::data::KeyValue*> *kvs = ThriftWrapper::convert(results.results);
+		std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
 		initialScan->setHasMore(results.more);
 
@@ -371,15 +371,15 @@ public:
 	}
 
 	Scan *
-	beginScan(ScanRequest<ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> > *request)
+	beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> > *request)
 	{
 		Scan *initialScan = NULL;
 		if (request->getRangeIdentifiers()->size() > 1) {
 			initialScan = multiScan(request);
 		} else {
-		  ScanIdentifier<cclient::data::KeyExtent*, cclient::data::Range*> *ident =
+		  ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent> , cclient::data::Range*> *ident =
 		        request->getRangeIdentifiers()->at(0);
-			cclient::data::KeyExtent *extent = ident->getGlobalMapping().at(0);
+			std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
 			cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
 			if (range->getStartKey() == NULL && range->getStopKey() == NULL)
 			{
@@ -406,7 +406,7 @@ public:
 		tinfo.parentId = originalScan->getId();
 		tserverClient->continueScan(results,tinfo,scanId);
 
-		std::vector<cclient::data::KeyValue*> *kvs = ThriftWrapper::convert(results.results);
+		std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
 
 		if (results.more)
@@ -558,7 +558,7 @@ public:
 	}
 	
 	
-	void splitTablet(cclient::data::security::AuthInfo *auth, cclient::data::KeyExtent *extent, std::string split)
+	void splitTablet(cclient::data::security::AuthInfo *auth, std::shared_ptr<cclient::data::KeyExtent> extent, std::string split)
 	{
 	   org::apache::accumulo::core::trace::thrift::TInfo tinfo;
 		org::apache::accumulo::core::security::thrift::TCredentials creds =

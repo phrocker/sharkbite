@@ -108,10 +108,10 @@ Value::size ()
     return offset;
 }
 
-cclient::data::streams::StreamInterface *
+std::shared_ptr<streams::StreamInterface> 
 Value::getStream ()
 {
-    return this;
+    return shared_from_this();
 }
 
 std::pair<uint8_t*, size_t>

@@ -20,68 +20,48 @@ namespace data
 {
 
 KeyValue::KeyValue () :
-	key (new Key ()), value (new Value()), my_alloc (true)
+	key (std::make_shared<Key> ()), value (std::make_shared<Value>())
 {
 
 }
 
 KeyValue::~KeyValue ()
 {
-	if (my_alloc)
-	{
-		delete key;
-	}
-	if (NULL != value)
-	{
-		delete value;
-	}
 }
 
 void
-KeyValue::setKey (Key *k, bool set_ownership)
+KeyValue::setKey (std::shared_ptr<Key> k, bool set_ownership)
 {
-	if (my_alloc) {
-		delete key;
-		my_alloc = set_ownership;
-	}
 	key = k;
 }
 
-Key *
+std::shared_ptr<Key>
 KeyValue::getKey ()
 {
 	return key;
 }
 
-cclient::data::streams::StreamInterface *
+std::shared_ptr<streams::StreamInterface> 
 KeyValue::getStream ()
 {
 	return key->getStream ();
 }
 
-Value *
+std::shared_ptr<Value>
 KeyValue::getValue ()
 {
 	return value;
 }
 
 void
-KeyValue::setValue (Value *v)
+KeyValue::setValue (std::shared_ptr<Value> v)
 {
-	if (NULL != value) {
-		delete value;
-
-	}
-	value = new Value ();
 	value->setValue (v->getValue ().first, v->getValue ().second);
 }
 
 void
 KeyValue::setValue (uint8_t *b, size_t size)
 {
-	if (NULL == value) {
-		value = new Value ();
-	}
 	value->setValue (b, size);
 }
 
@@ -109,7 +89,7 @@ KeyValue::operator= (const KeyValue &other)
 bool
 KeyValue::operator < (const KeyValue &rhs) const
 {
-	return (*(Key*) key->getStream () < *(Key*) (rhs.key->getStream ()));
+	return (*(Key*) key->getStream ().get() < *(Key*) (rhs.key->getStream ().get()));
 }
 
 bool
@@ -122,7 +102,7 @@ KeyValue::operator < (const KeyValue *rhs) const
 bool
 KeyValue::operator == (const KeyValue & rhs) const
 {
-	return ((Key*) key->getStream () == (Key*) (rhs.key->getStream ()))
+	return ((Key*) key->getStream ().get() == (Key*) (rhs.key->getStream ().get()))
 	       && (value == rhs.value);
 }
 bool
@@ -146,7 +126,6 @@ KeyValue& KeyValue::operator=(KeyValue&& other)
 {
     key = other.key;
     value = other.value;
-    my_alloc = other.my_alloc;
     return *this;
 }
 

@@ -91,8 +91,8 @@ public:
             resultSet = new Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>();
 
             std::map<std::string,
-                std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,
-                pointer_comparator<cclient::data::KeyExtent*> > > returnRanges;
+                std::map<std::shared_ptr<cclient::data::KeyExtent> , std::vector<cclient::data::Range*>,
+                pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
             std::set<std::string> locations;
 		std::cout << "Ranges " << std::endl;
             tableLocator->binRanges(credentials, &ranges, &locations,
@@ -112,7 +112,7 @@ public:
 		    throw cclient::exceptions::ClientException( INVALID_SERVER_PORT);
 		}
                 for (auto hostExtents : returnRanges.at(location)) {
-                    std::vector<cclient::data::KeyExtent*> extents;
+                    std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents;
 		    std::cout << " extent is " <<  hostExtents.first->getTableId() << std::endl;
                     extents.push_back(hostExtents.first);
 		    
@@ -136,7 +136,7 @@ public:
         return resultSet;
     }
 
-    void addResults(Results<cclient::data::KeyValue*, ResultBlock<cclient::data::KeyValue*>> *results) {
+    void addResults(Results<std::shared_ptr<cclient::data::KeyValue> , ResultBlock<std::shared_ptr<cclient::data::KeyValue> >> *results) {
 
     }
 
@@ -168,8 +168,8 @@ public:
     void locateFailedTablet(std::vector<cclient::data::Range*> ranges,std::vector<cclient::data::tserver::RangeDefinition*> *locatedTablets)
 	{
 	  std::map<std::string,
-                std::map<cclient::data::KeyExtent*, std::vector<cclient::data::Range*>,
-                pointer_comparator<cclient::data::KeyExtent*> > > returnRanges;
+                std::map<std::shared_ptr<cclient::data::KeyExtent> , std::vector<cclient::data::Range*>,
+                pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
             std::set<std::string> locations;
             tableLocator->binRanges(credentials, &ranges, &locations,
                                     &returnRanges);
@@ -188,7 +188,7 @@ public:
 		    throw cclient::exceptions::ClientException( INVALID_SERVER_PORT);
 		}
                 for (auto hostExtents : returnRanges.at(location)) {
-                    std::vector<cclient::data::KeyExtent*> extents;
+                    std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents;
                     extents.push_back(hostExtents.first);
                     cclient::data::tserver::RangeDefinition *rangeDef = new cclient::data::tserver::RangeDefinition(credentials,
                             scannerAuths, locationSplit.at(0),
