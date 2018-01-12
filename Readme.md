@@ -1,4 +1,4 @@
-# ![logo](http://www.parisi.io/sharkbite.jpg) Sharkbite 
+# ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
 **S**harkbite is a native client for key/value stores. With 
