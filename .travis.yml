@@ -12,14 +12,14 @@ addons:
     packages:
     - g++-4.9
     - libbz2-dev
+    - libgsasl7-dev
+    - uuid-dev
     - libboost1.55-all-dev
     - cmake
     - libgtest-dev
     - libprotobuf-dev
     - protobuf-compiler
 before_script:
- - sudo apt-get update
- - sudo apt-get install uuid-dev libgsasl7-dev
  - ./bootstrap-gtest.sh
  - ./bootstrap-zookeeper.sh
  - ./bootstrap-thrift.sh
