@@ -1,20 +1,141 @@
 set(CMAKE_AUTOMOC ON)
-cmake_minimum_required(VERSION 2.8.7)
+cmake_minimum_required(VERSION 3.0)
 project (Sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
+
+include(CheckCXXCompilerFlag)
+
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+ message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
 set (CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-tautological-constant-out-of-range-compare -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF) 
+include(ExternalProject)
 include_directories(include)
 
+
+# Use ccache if present
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+    message("-- Found ccache: ${CCACHE_FOUND}")
+endif(CCACHE_FOUND)
+
+
+####
+
+ExternalProject_Add(
+	libressl-portable
+	GIT_REPOSITORY "https://github.com/libressl-portable/portable.git"
+	GIT_TAG "190bd346e75575b9436a2e9e14b28618f0234e1b"
+	SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libressl-src"
+	CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
+	            "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libressl-install"
+				"${BUILD_ARGS}"
+	PATCH_COMMAND ./autogen.sh
+	)
+	
+	list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/ssl")
+	add_library(crypto STATIC IMPORTED)
+	set_target_properties(crypto PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libressl-install/lib/libcrypto.a")
+	add_dependencies(crypto libressl-portable)
+	add_library(ssl STATIC IMPORTED)
+	set_target_properties(ssl PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libressl-install/lib/libssl.a")
+	set_target_properties(ssl PROPERTIES INTERFACE_LINK_LIBRARIES crypto)
+	add_dependencies(ssl libressl-portable)
+	add_library(tls STATIC IMPORTED)
+	set_target_properties(tls PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/libressl-install/lib/libtls.a")
+	set_target_properties(tls PROPERTIES INTERFACE_LINK_LIBRARIES crypto)
+	add_dependencies(tls libressl-portable)
+	
+	set(OPENSSL_FOUND "YES")
+	set(OPENSSL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libressl/include")
+	set(OPENSSL_LIBRARIES tls ssl crypto)
+
+##
+
+
+
+################# THRIFT
+if (NOT THRIFT_FOUND)
+	ExternalProject_Add(
+	  LibThrift
+	  GIT_REPOSITORY "https://github.com/phrocker/thrift.git"
+	  GIT_TAG 0.9.3
+	  BUILD_IN_SOURCE true
+	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift-src"
+	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
+	  CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
+	  )
+	
+	add_library(thrift STATIC IMPORTED)
+	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a")
+	add_dependencies(thrift LibThrift)
+	set(THRIFT_LIB  thrift)
+	
+	set(THRIFT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/include" CACHE STRING "" FORCE)
+	set(THRIFT_LIBS  thrift CACHE STRING "" FORCE)
+	include_directories(${THRIFT_INCLUDE_DIR})
+	set(THRIFT_FOUND TRUE CACHE STRING "" FORCE)
+endif()
+#################### ZOOKEEPER
+if (NOT Zookeeper_FOUND)
+	ExternalProject_Add(
+	  ZooKeeper
+	  GIT_REPOSITORY "https://github.com/phrocker/zookeeper.git"
+	  GIT_TAG sharkbite3.4.8
+	  GIT_PROGRESS ON
+	  BUILD_IN_SOURCE true
+	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper-src"
+	  #CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/zookeeper"
+	  CONFIGURE_COMMAND autoreconf -if && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper --disable-shared
+	)
+	
+	add_library(zookeeper STATIC IMPORTED)
+	set_target_properties(zookeeper PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.a")
+	add_dependencies(zookeeper ZooKeeper)
+	
+	set(Zookeeper_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/include" CACHE STRING "" FORCE)
+	set(Zookeeper_LIBRARIES  zookeeper CACHE STRING "" FORCE)
+	include_directories(${Zookeeper_INCLUDE_DIRS})
+	set(Zookeeper_FOUND TRUE CACHE STRING "" FORCE)
+endif()
+######################  PROTOBUF
+
+if (NOT PROTOBUF_FOUND)
+	ExternalProject_Add(
+	  Protobuf
+	  GIT_REPOSITORY "https://github.com/phrocker/protobuf.git"
+	  GIT_TAG v3.1.0
+	  BUILD_IN_SOURCE true
+	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
+	  #CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/protobuf"
+	  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf
+	  )
+	
+	add_library(protobuf STATIC IMPORTED)
+	set_target_properties(protobuf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" CACHE STRING "" FORCE)
+	set(PROTOBUF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/include" CACHE STRING "" FORCE)
+	add_dependencies(protobuf Protobuf)
+	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
+endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(Boost_USE_MULTITHREADED ON)
-find_package(GTest REQUIRED)
+#find_package(GTest REQUIRED)
 #let's get all them thar libraries
-find_package(Thrift REQUIRED)
-find_package(Zookeeper REQUIRED)
+#find_package(Thrift REQUIRED)
+#find_package(Zookeeper REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
 find_package(ZLIB REQUIRED) 
 
@@ -51,10 +172,8 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
 target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
-target_link_libraries (sharkbite-shared  ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
 
 
 #ClientExample
@@ -197,11 +316,6 @@ install(TARGETS sharkbite
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     PUBLIC_HEADER DESTINATION include/
     COMPONENT LIBRARY ) 
-install(TARGETS sharkbite-shared
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION include/
-    COMPONENT LIBRARY )
 INSTALL (
     DIRECTORY ${CMAKE_SOURCE_DIR}/include/
     DESTINATION include/

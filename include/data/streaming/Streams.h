@@ -14,6 +14,7 @@
 #ifndef DATA_WRITER
 #define DATA_WRITER
 
+#include <memory>
 #include <string>
 
 #include <cstring>
