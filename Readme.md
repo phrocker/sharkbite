@@ -35,9 +35,8 @@ the API.
 	GNU 4+
 	cmake
 	make
-	thrift
-	zookeeper
-	libhdfs3
+	libssl ( libssl1.0-dev )
+	libevent (libevent-dev )
 
 ## Building
 ```
@@ -92,4 +91,3 @@ the API.
     }
 ```
 [accumulo]: https://accumulo.apache.org
-
