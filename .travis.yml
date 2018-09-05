@@ -17,12 +17,10 @@ addons:
     - libboost1.55-all-dev
     - cmake
     - libgtest-dev
+    - libevent-dev
+    - libssl1.0-dev
     - libprotobuf-dev
     - protobuf-compiler
-before_script:
- - ./bootstrap-gtest.sh
- - ./bootstrap-zookeeper.sh
- - ./bootstrap-thrift.sh
 script:
   - export CXX="g++-4.9"
   - ./bootstrap-travis

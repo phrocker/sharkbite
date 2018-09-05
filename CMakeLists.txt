@@ -19,8 +19,8 @@ set (CMAKE_CXX_FLAGS "-std=c++11 -g -Wall -fomit-frame-pointer -fno-stack-protec
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF) 
 include(ExternalProject)
-include_directories(include)
-
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pybind11/include)
 
 # Use ccache if present
 find_program(CCACHE_FOUND ccache)
@@ -33,6 +33,7 @@ endif(CCACHE_FOUND)
 
 ####
 
+if (NOT OPENSSL_FOUND)
 ExternalProject_Add(
 	libressl-portable
 	GIT_REPOSITORY "https://github.com/libressl-portable/portable.git"
@@ -60,7 +61,7 @@ ExternalProject_Add(
 	set(OPENSSL_FOUND "YES")
 	set(OPENSSL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/libressl/include")
 	set(OPENSSL_LIBRARIES tls ssl crypto)
-
+endif()
 ##
 
 
@@ -80,12 +81,12 @@ if (NOT THRIFT_FOUND)
 	add_library(thrift STATIC IMPORTED)
 	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a")
 	add_dependencies(thrift LibThrift)
-	set(THRIFT_LIB  thrift)
-	
 	set(THRIFT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/include" CACHE STRING "" FORCE)
-	set(THRIFT_LIBS  thrift CACHE STRING "" FORCE)
+	set(THRIFT_LIBS  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a" CACHE STRING "" FORCE)
 	include_directories(${THRIFT_INCLUDE_DIR})
 	set(THRIFT_FOUND TRUE CACHE STRING "" FORCE)
+else()
+	include_directories(${THRIFT_INCLUDE_DIR})
 endif()
 #################### ZOOKEEPER
 if (NOT Zookeeper_FOUND)
@@ -105,9 +106,11 @@ if (NOT Zookeeper_FOUND)
 	add_dependencies(zookeeper ZooKeeper)
 	
 	set(Zookeeper_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/include" CACHE STRING "" FORCE)
-	set(Zookeeper_LIBRARIES  zookeeper CACHE STRING "" FORCE)
+	set(Zookeeper_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.a" CACHE STRING "" FORCE)
 	include_directories(${Zookeeper_INCLUDE_DIRS})
 	set(Zookeeper_FOUND TRUE CACHE STRING "" FORCE)
+else()
+	include_directories(${Zookeeper_INCLUDE_DIRS})
 endif()
 ######################  PROTOBUF
 
@@ -123,7 +126,8 @@ if (NOT PROTOBUF_FOUND)
 	  )
 	
 	add_library(protobuf STATIC IMPORTED)
-	set_target_properties(protobuf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" CACHE STRING "" FORCE)
+	set_target_properties(protobuf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" )
+	set(PROTOBUF_LIBS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" CACHE STRING "" FORCE)
 	set(PROTOBUF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/include" CACHE STRING "" FORCE)
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
@@ -133,9 +137,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(Boost_USE_MULTITHREADED ON)
 #find_package(GTest REQUIRED)
-#let's get all them thar libraries
-#find_package(Thrift REQUIRED)
-#find_package(Zookeeper REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
 find_package(ZLIB REQUIRED) 
 
@@ -149,10 +150,8 @@ include_directories(SYSTEM ${GTEST_INCLUDE_DIRS})
 message(STATUS "GTest include dir :  ${GTEST_INCLUDE_DIRS}")
 message(STATUS "GTest lib : ${GTEST_LIBRARIES}")
 message(STATUS "Thrift include dir: ${THRIFT_INCLUDE_DIR}/thrift")
-message(STATUS "Thrift contrib dir: ${THRIFT_CONTRIB_DIR}")
 message(STATUS "Thrift library path: ${THRIFT_LIBS}")
 message(STATUS "Thrift static library: ${THRIFT_STATIC_LIB}")
-message(STATUS "Thrift compiler: ${THRIFT_COMPILER}")
 message(STATUS "ZK Include: ${Zookeeper_INCLUDE_DIRS}")
 message(STATUS "ZK Lib: ${Zookeeper_LIBRARIES}")
 
@@ -172,8 +171,16 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-
-target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIB} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
+if (NOT PROTOBUF_FOUND)
+	add_dependencies(sharkbite Protobuf)
+endif()
+if (NOT Zookeeper_FOUND)
+	add_dependencies(sharkbite ZooKeeper)
+endif()
+if (NOT THRIFT_FOUND)
+	add_dependencies(sharkbite LibThrift)
+endif()
+target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Zookeeper_LIBRARIES}   ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
 
 
 #ClientExample
@@ -182,7 +189,7 @@ target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (ClientExample ${ZLIB_LIBRARIES})
 target_link_libraries( ClientExample ${Boost_LIBRARIES} )
 target_link_libraries( ClientExample ${Zookeeper_LIBRARIES} )
-target_link_libraries( ClientExample ${THRIFT_LIB} sharkbite)
+target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 
 #ClientExample
 add_executable(InsertTest "src/examples/InsertTest.cpp")
@@ -190,7 +197,7 @@ target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (InsertTest ${ZLIB_LIBRARIES})
 target_link_libraries( InsertTest ${Boost_LIBRARIES} )
 target_link_libraries( InsertTest ${Zookeeper_LIBRARIES} )
-target_link_libraries( InsertTest ${THRIFT_LIB})
+target_link_libraries( InsertTest ${THRIFT_LIBS})
 target_link_libraries( InsertTest sharkbite)
 
 
@@ -200,7 +207,7 @@ target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (ContinuousIngest ${ZLIB_LIBRARIES})
 target_link_libraries( ContinuousIngest ${Boost_LIBRARIES} )
 target_link_libraries( ContinuousIngest ${Zookeeper_LIBRARIES} )
-target_link_libraries( ContinuousIngest ${THRIFT_LIB})
+target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
 target_link_libraries( ContinuousIngest sharkbite)
 
 #TableOps
@@ -209,7 +216,7 @@ target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (TableOps ${ZLIB_LIBRARIES})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${Zookeeper_LIBRARIES} )
-target_link_libraries( TableOps ${THRIFT_LIB})
+target_link_libraries( TableOps ${THRIFT_LIBS})
 target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
@@ -217,7 +224,7 @@ target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (RfileReadExample ${ZLIB_LIBRARIES})
 target_link_libraries( RfileReadExample ${Boost_LIBRARIES} )
 target_link_libraries( RfileReadExample ${Zookeeper_LIBRARIES} )
-target_link_libraries( RfileReadExample ${THRIFT_LIB})
+target_link_libraries( RfileReadExample ${THRIFT_LIBS})
 target_link_libraries( RfileReadExample sharkbite)
 
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
@@ -225,7 +232,7 @@ target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (PrintInfo ${ZLIB_LIBRARIES})
 target_link_libraries( PrintInfo ${Boost_LIBRARIES} )
 target_link_libraries( PrintInfo ${Zookeeper_LIBRARIES} )
-target_link_libraries( PrintInfo ${THRIFT_LIB})
+target_link_libraries( PrintInfo ${THRIFT_LIBS})
 target_link_libraries( PrintInfo sharkbite)
 
 ADD_CUSTOM_TARGET(debian-package
@@ -267,7 +274,7 @@ enable_testing()
   target_link_libraries (testzkInstance ${ZLIB_LIBRARIES})
   target_link_libraries( testzkInstance ${Boost_LIBRARIES} )
   target_link_libraries( testzkInstance ${Zookeeper_LIBRARIES} )
-  target_link_libraries( testzkInstance ${THRIFT_LIB} sharkbite)
+  target_link_libraries( testzkInstance ${THRIFT_LIBS} sharkbite)
 
   target_link_libraries(testzkInstance sharkbite)
   
@@ -277,7 +284,7 @@ enable_testing()
   target_link_libraries (integrationTest ${ZLIB_LIBRARIES})
   target_link_libraries( integrationTest ${Boost_LIBRARIES} )
   target_link_libraries( integrationTest ${Zookeeper_LIBRARIES} )
-  target_link_libraries( integrationTest  ${THRIFT_LIB})
+  target_link_libraries( integrationTest  ${THRIFT_LIBS})
   target_link_libraries(integrationTest   sharkbite)
 
 

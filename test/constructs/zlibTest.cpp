@@ -22,8 +22,7 @@ using namespace std;
 
 #include "../../../../../include/data/constructs/compressor/test/../compressor.h"
 #include "../../../../../include/data/constructs/compressor/test/../zlibCompressor.h"
-#include "../../../../../include/data/constructs/compressor/test/../../../streaming/dataoutstream.h"
-#include "../../../../../include/data/constructs/compressor/test/../../../streaming/ByteOutputStream.h"
+#include <streaming/ByteOutputStream.h>
 
 using namespace cclient::data::compression;
 using namespace cclient::data::streams;

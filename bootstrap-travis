@@ -1,12 +1,2 @@
-echo -e "Building dependencies...\n"
-mkdir -p dependencies
-cp bootstrap-*.sh dependencies/
-pushd dependencies
-echo -e "Building google test...\n"
-./bootstrap-gtest.sh
-./bootstrap-protobuf.sh
-./bootstrap-thrift.sh
-./bootstrap-zookeeper.sh
-popd
 echo -e "Building Sharkbite...\n"
 mkdir -p build && cd build && cmake .. && cmake --build .
