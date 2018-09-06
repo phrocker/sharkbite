@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../../../include/data/constructs/rfile/bcfile/meta_index.h"
+#include "data/constructs/rfile/bcfile/meta_index.h"
 
 namespace cclient{
   namespace data{

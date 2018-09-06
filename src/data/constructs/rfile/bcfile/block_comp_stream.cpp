@@ -13,12 +13,12 @@
  */
 #include <fstream>
 
-#include "../../../../../include/data/constructs/rfile/bcfile/block_comp_stream.h"
-#include "../../../../../include/data/constructs/compressor/compressor.h"
-#include "../../../../../include/data/constructs/rfile/bcfile/../../../streaming/input/InputStream.h"
-#include "../../../../../include/data/constructs/rfile/bcfile/../../../streaming/DataOutputStream.h"
-#include "../../../../../include/data/constructs/rfile/bcfile/../../../streaming/input/NetworkOrderInputStream.h"
-#include "../../../../../include/data/constructs/rfile/bcfile/../../../streaming/NetworkOrderStream.h"
+#include "data/constructs/rfile/bcfile/block_comp_stream.h"
+#include "data/constructs/compressor/compressor.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/input/InputStream.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/DataOutputStream.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/input/NetworkOrderInputStream.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/NetworkOrderStream.h"
 namespace cclient {
 namespace data {
 

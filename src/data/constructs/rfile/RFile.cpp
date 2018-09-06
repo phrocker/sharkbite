@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "../../../../include/data/streaming/input/NetworkOrderInputStream.h"
-#include "../../../../include/data/constructs/rfile/RFile.h"
+#include "data/streaming/input/NetworkOrderInputStream.h"
+#include "data/constructs/rfile/RFile.h"
 
 namespace cclient{
   namespace data{

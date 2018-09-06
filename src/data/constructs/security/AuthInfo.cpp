@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../../include/data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/AuthInfo.h"
 
 namespace cclient
 {

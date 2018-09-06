@@ -11,18 +11,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../../include/data/constructs/server/RangeDefinition.h"
+#include "data/constructs/server/RangeDefinition.h"
 
 #include <string>
 #include <vector>
 
 
 
-#include "../../../../include/data/constructs/server/ServerDefinition.h"
-#include "../../../../include/data/constructs/server/../security/AuthInfo.h"
-#include "../../../../include/data/constructs/server/../Range.h"
-#include "../../../../include/data/constructs/server/../KeyExtent.h"
-#include "../../../../include/data/constructs/column.h"
+#include "data/constructs/server/ServerDefinition.h"
+#include "data/constructs/server/../security/AuthInfo.h"
+#include "data/constructs/server/../Range.h"
+#include "data/constructs/server/../KeyExtent.h"
+#include "data/constructs/column.h"
 
 namespace cclient
 {

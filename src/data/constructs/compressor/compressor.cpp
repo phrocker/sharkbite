@@ -20,7 +20,7 @@
 
 
 
-#include "../../../../include/data/constructs/compressor/compressor.h"
+#include "data/constructs/compressor/compressor.h"
 
 
 void

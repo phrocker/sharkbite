@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../../../include/data/constructs/rfile/meta/IndexManager.h"
+#include "data/constructs/rfile/meta/IndexManager.h"
 
 namespace cclient{
   namespace data{

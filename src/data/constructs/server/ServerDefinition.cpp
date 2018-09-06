@@ -11,16 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../../include/data/constructs/server/ServerDefinition.h"
+#include "data/constructs/server/ServerDefinition.h"
 
 #include <string>
 
 
 
-#include "../../../../include/data/constructs/server/../security/AuthInfo.h"
-#include "../../../../include/data/constructs/server/../security/Authorizations.h"
-#include "../../../../include/data/constructs/server/../Range.h"
-#include "../../../../include/data/constructs/server/../KeyExtent.h"
+#include "data/constructs/server/../security/AuthInfo.h"
+#include "data/constructs/server/../security/Authorizations.h"
+#include "data/constructs/server/../Range.h"
+#include "data/constructs/server/../KeyExtent.h"
 
 namespace cclient
 {

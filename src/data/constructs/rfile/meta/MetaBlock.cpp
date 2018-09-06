@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "../../../../../include/data/constructs/rfile/meta/MetaBlock.h"
-#include "../../../../../include/data/constructs/rfile/meta/LocalityGroupMetaData.h"
-#include "../../../../../include/data/constructs/rfile/meta/../../../streaming/DataOutputStream.h"
+#include "data/constructs/rfile/meta/MetaBlock.h"
+#include "data/constructs/rfile/meta/LocalityGroupMetaData.h"
+#include "data/constructs/rfile/meta/../../../streaming/DataOutputStream.h"
 
 namespace cclient{
   namespace data{

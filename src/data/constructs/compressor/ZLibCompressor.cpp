@@ -23,9 +23,9 @@
 #include <boost/iostreams/filter/zlib.hpp>
 #include <boost/iostreams/filter/gzip.hpp>
 
-#include "../../../../include/data/constructs/compressor/../../streaming/OutputStream.h"
-#include "../../../../include/data/constructs/compressor/compressor.h"
-#include "../../../../include/data/constructs/compressor/zlibCompressor.h"
+#include "data/constructs/compressor/../../streaming/OutputStream.h"
+#include "data/constructs/compressor/compressor.h"
+#include "data/constructs/compressor/zlibCompressor.h"
 
 
 namespace io = boost::iostreams; //<-- good practice

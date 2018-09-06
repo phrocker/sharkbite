@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../../include/data/constructs/security/Authorizations.h"
+#include "data/constructs/security/Authorizations.h"
 
 
 #include <string>

@@ -13,10 +13,10 @@
  */
 
 
-#include "../../../../include/data/services/accumulo/TabletServer.h"
-#include "../../../../include/data/services/accumulo/ScanSession.h"
-#include "../../../../include/data/services/Server.h"
-#include "../../../../include/data/extern/thrift/TabletClientService.h"
+#include "data/services/accumulo/TabletServer.h"
+#include "data/services/accumulo/ScanSession.h"
+#include "data/services/Server.h"
+#include "data/extern/thrift/TabletClientService.h"
 
 #include <map>
 #include <set>
@@ -44,7 +44,7 @@
 #include <sys/time.h>
 
 
-#include "../../../../include/data/extern/thrift/ThriftWrapper.h"
+#include "data/extern/thrift/ThriftWrapper.h"
 
 using namespace std;
 using namespace ::apache::thrift;
