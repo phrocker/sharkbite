@@ -72,12 +72,14 @@ open_table(struct connector *connector, char *tableName) {
 
   tableOps->tableOpsPtr = ops;
   tableOps->table_name = tableName;
+  tableOps->parent = connector;
 
   return tableOps;
 }
 
 struct TableOps *
 create_table(struct connector *connector, char *tableName) {
+  std::cout << "Create table " << std::string(tableName) << std::endl;
   struct TableOps *tableOps = open_table(connector, tableName);
 
   AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
@@ -85,6 +87,18 @@ create_table(struct connector *connector, char *tableName) {
   tableOpsCpp->create(true);
 
   return tableOps;
+}
+
+int drop_table(struct TableOps *tableOps){
+  if (NULL!= tableOps && NULL != tableOps->tableOpsPtr) {
+      AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
+      if (tableOpsCpp->exists())
+        tableOpsCpp->remove();
+      delete tableOpsCpp;
+      delete tableOps;
+    }
+    return 1;
+
 }
 
 int free_table(struct TableOps *tableOps) {

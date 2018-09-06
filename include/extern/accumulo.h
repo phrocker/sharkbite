@@ -56,6 +56,8 @@ struct TableOps *open_table(struct connector *connector, char *tableName);
 
 struct TableOps *create_table(struct connector *connector, char *tableName);
 
+int drop_table(struct TableOps *tableOps);
+
 int free_table(struct TableOps *tableOps);
 
 // scanner code
