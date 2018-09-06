@@ -14,17 +14,17 @@
 #include <vector>
 #include <memory>
 
-#include "../../../include/data/client/MetaDataLocationObtainer.h"
-#include "../../../include/data/client/../constructs/server/RangeDefinition.h"
-#include "../../../include/data/client/../constructs/StructureDefinitions.h"
-#include "../../../include/data/client/../../interconnect/TabletServer.h"
-#include "../../../include/data/client/../../interconnect/Scan.h"
-#include "../../../include/data/client/../constructs/Range.h"
-#include "../../../include/data/client/../constructs/KeyExtent.h"
-#include "../../../include/data/client/../constructs/Key.h"
-#include "../../../include/data/client/../constructs/IterInfo.h"
-#include "../../../include/data/client/../constructs/value.h"
-#include "../../../include/data/client/TabletLocation.h"
+#include "data/client/MetaDataLocationObtainer.h"
+#include "data/client/../constructs/server/RangeDefinition.h"
+#include "data/client/../constructs/StructureDefinitions.h"
+#include "data/client/../../interconnect/TabletServer.h"
+#include "data/client/../../interconnect/Scan.h"
+#include "data/client/../constructs/Range.h"
+#include "data/client/../constructs/KeyExtent.h"
+#include "data/client/../constructs/Key.h"
+#include "data/client/../constructs/IterInfo.h"
+#include "data/client/../constructs/value.h"
+#include "data/client/TabletLocation.h"
 
 namespace cclient {
 namespace impl {

@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 #include <arpa/inet.h>
-#include "../../../include/data/streaming/EndianTranslation.h"
+#include "data/streaming/EndianTranslation.h"
 
 namespace cclient {
 namespace data {

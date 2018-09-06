@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/interconnect/tableOps/TableOperations.h"
+#include "interconnect/tableOps/TableOperations.h"
 namespace interconnect
 {
 std::map<std::string,std::string> cachedTableIds;

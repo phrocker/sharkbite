@@ -14,15 +14,15 @@
 
 #include <string>
 
-#include "../../../include/interconnect/tableOps/ClientTableOps.h"
-#include "../../../include/interconnect/tableOps/TableOperations.h"
-#include "../../../include/interconnect/tableOps/../accumulo/AccumuloStreams.h"
-#include "../../../include/interconnect/tableOps/../../scanner/impl/Scanner.h"
-#include "../../../include/interconnect/tableOps/../../writer/impl/SinkImpl.h"
-#include "../../../include/interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
-#include "../../../include/interconnect/tableOps/../transport/AccumuloMasterTransporter.h"
-#include "../../../include/data/client/LocatorCache.h"
-#include "../../../include/data/client/ExtentLocator.h"
+#include "interconnect/tableOps/ClientTableOps.h"
+#include "interconnect/tableOps/TableOperations.h"
+#include "interconnect/tableOps/../accumulo/AccumuloStreams.h"
+#include "interconnect/tableOps/../../scanner/impl/Scanner.h"
+#include "interconnect/tableOps/../../writer/impl/SinkImpl.h"
+#include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
+#include "interconnect/tableOps/../transport/AccumuloMasterTransporter.h"
+#include "data/client/LocatorCache.h"
+#include "data/client/ExtentLocator.h"
 
 namespace interconnect {
 

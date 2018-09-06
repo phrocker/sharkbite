@@ -11,9 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../include/interconnect/Master.h"
-#include "../../include/interconnect/../data/constructs/security/AuthInfo.h"
-#include "../../include/interconnect/../scanner/constructs/Results.h"
+#include "interconnect/Master.h"
+#include "interconnect/../data/constructs/security/AuthInfo.h"
+#include "interconnect/../scanner/constructs/Results.h"
 #include <string>
 
 #include <protocol/TBinaryProtocol.h>
@@ -34,9 +34,9 @@
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>       /* time */
 
-#include "../../include/interconnect/../data/constructs/Mutation.h"
-#include "../../include/interconnect/TabletServer.h"
-#include "../../include/interconnect/../data/exceptions/ClientException.h"
+#include "interconnect/../data/constructs/Mutation.h"
+#include "interconnect/TabletServer.h"
+#include "interconnect/../data/exceptions/ClientException.h"
 
 namespace interconnect {
 

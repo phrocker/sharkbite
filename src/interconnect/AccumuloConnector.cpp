@@ -12,5 +12,5 @@
  * limitations under the License.
  */
 
-#include "../../include/interconnect/AccumuloConnector.h"
+#include "interconnect/AccumuloConnector.h"
 

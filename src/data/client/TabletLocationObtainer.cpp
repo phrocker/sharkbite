@@ -15,11 +15,11 @@
 #include <map>
 #include <algorithm>
 
-#include "../../../include/data/client/TabletLocationObtainer.h"
+#include "data/client/TabletLocationObtainer.h"
 
-#include "../../../include/data/client/../constructs/Key.h"
-#include "../../../include/data/client/../constructs/value.h"
-#include "../../../include/data/client/../streaming/input/NetworkOrderInputStream.h"
+#include "data/client/../constructs/Key.h"
+#include "data/client/../constructs/value.h"
+#include "data/client/../streaming/input/NetworkOrderInputStream.h"
 
 namespace cclient
 {

@@ -15,8 +15,8 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "../../include/interconnect/Scan.h"
-#include "../../include/interconnect/ClientInterface.h"
+#include "interconnect/Scan.h"
+#include "interconnect/ClientInterface.h"
 
 namespace interconnect
 {

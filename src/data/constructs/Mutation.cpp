@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/constructs/Mutation.h"
-#include "../../../include/data/constructs/../streaming/ByteOutputStream.h"
-#include "../../../include/data/constructs/../streaming/EndianTranslation.h"
+#include "data/constructs/Mutation.h"
+#include "data/constructs/../streaming/ByteOutputStream.h"
+#include "data/constructs/../streaming/EndianTranslation.h"
 namespace cclient
 {
 

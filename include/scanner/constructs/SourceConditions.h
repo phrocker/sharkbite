@@ -26,69 +26,66 @@ namespace scanners {
 
  **/
 class SourceConditions {
-public:
-    /**
-     * Constructor that initializes the conditions and mutexes.
-     **/
-    SourceConditions() {
-        alive = true;
-	num_results=0;
-    }
+ public:
+  /**
+   * Constructor that initializes the conditions and mutexes.
+   **/
+  SourceConditions() {
+    alive = true;
+    num_results = 0;
+  }
 
-    /**
-     * waits on results or the completion of the heuritic scan
-     **/
-    void waitForResults() {
+  /**
+   * waits on results or the completion of the heuritic scan
+   **/
+  void waitForResults() {
 
-         std::unique_lock<std::recursive_mutex> lock(resultMutex);
-        if (alive ) {
-	    moreResults.wait(lock, [&](){return !this->alive||this->num_results>0;});
-        }
+    std::unique_lock < std::recursive_mutex > lock(resultMutex);
+    if (alive) {
+      moreResults.wait(lock, [&]() {return !this->alive||this->num_results>0;});
     }
+  }
 
-    /**
-     * Awakes threads that are awaiting results.
-     * broadcasts to all threads waiting on the condition.
-     **/
-    void awakeThreadsForResults() {
-      std::lock_guard<std::recursive_mutex> lock(resultMutex);
-	moreResults.notify_all();
-    }
+  /**
+   * Awakes threads that are awaiting results.
+   * broadcasts to all threads waiting on the condition.
+   **/
+  void awakeThreadsForResults() {
+    std::lock_guard < std::recursive_mutex > lock(resultMutex);
+    moreResults.notify_all();
+  }
 
-    /**
-     * Determines if the source condition is still alive.
-     **/
-    bool isAlive() {
-        return alive;
-    }
+  /**
+   * Determines if the source condition is still alive.
+   **/
+  bool isAlive() {
+    return alive;
+  }
 
-    void awakeThreadsFinished() {
-      std::lock_guard<std::recursive_mutex> lock(resultMutex);
-        alive = false;
-        awakeThreadsForResults();
+  void awakeThreadsFinished() {
+    std::lock_guard < std::recursive_mutex > lock(resultMutex);
+    alive = false;
+    awakeThreadsForResults();
 
-    }
-    
-    inline void incrementCount()
-    {
-      ++num_results;
-    }
-    
-    inline void decrementCount()
-    {
-      num_results--;
-    }
-    
-    inline int size()
-    {
-      return num_results;
-    }
-    
-protected:
-    volatile bool alive;
-    std::atomic_int num_results;
-    std::condition_variable_any moreResults;
-    std::recursive_mutex resultMutex;
+  }
+
+  inline void incrementCount() {
+    ++num_results;
+  }
+
+  inline void decrementCount() {
+    num_results--;
+  }
+
+  inline int size() {
+    return num_results;
+  }
+
+ protected:
+  volatile bool alive;
+  std::atomic_int num_results;
+  std::condition_variable_any moreResults;
+  std::recursive_mutex resultMutex;
 
 };
 

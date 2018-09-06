@@ -16,7 +16,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <iostream>
-#include "../../../include/data/streaming/ByteOutputStream.h"
+#include "data/streaming/ByteOutputStream.h"
 
 namespace cclient{
   namespace data{

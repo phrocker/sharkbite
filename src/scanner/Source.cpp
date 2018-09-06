@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../include/scanner/Source.h"
+#include "scanner/Source.h"
 
 namespace scanners
 {

@@ -36,13 +36,13 @@
 #include <sys/time.h>
 
 
-#include "../../include/interconnect/../data/exceptions/ClientException.h"
-#include "../../include/interconnect/../data/exceptions/IllegalArgumentException.h"
-#include "../../include/interconnect/../data/constructs/inputvalidation.h"
-#include "../../include/interconnect/transport/BaseTransport.h"
-#include "../../include/interconnect/transport/ServerConnection.h"
-#include "../../include/interconnect/transport/CachedTransport.h"
+#include "interconnect/../data/exceptions/ClientException.h"
+#include "interconnect/../data/exceptions/IllegalArgumentException.h"
+#include "interconnect/../data/constructs/inputvalidation.h"
+#include "interconnect/transport/BaseTransport.h"
+#include "interconnect/transport/ServerConnection.h"
+#include "interconnect/transport/CachedTransport.h"
 #include <boost/concept_check.hpp>
 
-#include "../../include/interconnect/InterConnect.h"
+#include "interconnect/InterConnect.h"
 

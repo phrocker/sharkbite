@@ -14,9 +14,9 @@
 #include <string>
 
 
-#include "../../../include/data/constructs/inputvalidation.h"
+#include "data/constructs/inputvalidation.h"
 
-#include "../../../include/data/constructs/column.h"
+#include "data/constructs/column.h"
 
 namespace cclient
 {

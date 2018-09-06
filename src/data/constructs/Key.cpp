@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/constructs/Key.h"
+#include "data/constructs/Key.h"
 
 namespace cclient
 {

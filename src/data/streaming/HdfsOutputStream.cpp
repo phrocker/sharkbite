@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/streaming/HdfsOutputStream.h"
+#include "data/streaming/HdfsOutputStream.h"
 
-#include "../../../include/data/streaming/OutputStream.h"
+#include "data/streaming/OutputStream.h"
 #include <iostream>
 
 namespace cclient{

@@ -48,9 +48,7 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
 
  public:
 
-  ResultBlock(SourceConditions *conditionals,
-              moodycamel::ConcurrentQueue<std::shared_ptr<T>> *queue,
-              bool setEnd = false)
+  ResultBlock(SourceConditions *conditionals, moodycamel::ConcurrentQueue<std::shared_ptr<T>> *queue, bool setEnd = false)
       : isEnd(setEnd) {
     resultSet = queue;
     sourceConditionals = conditionals;
@@ -66,8 +64,7 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
   }
 
   ResultBlock<T> end() {
-    return static_cast<ResultBlock<T> >(ResultBlock(sourceConditionals,
-                                                    resultSet, true));
+    return static_cast<ResultBlock<T> >(ResultBlock(sourceConditionals, resultSet, true));
   }
 
   SourceConditions *getSourceConditionals() const {
@@ -138,8 +135,7 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
   }
 
   void add(std::vector<std::unique_ptr<T>> *t) {
-    for (typename std::vector<std::unique_ptr<T>>::iterator it = t->begin();
-        it != t->end(); it++) {
+    for (typename std::vector<std::unique_ptr<T>>::iterator it = t->begin(); it != t->end(); it++) {
       resultSet->enqueue(*it.release());
       sourceConditionals->incrementCount();
     }
@@ -148,8 +144,7 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
   }
 
   void add(std::vector<std::shared_ptr<T>> *t) {
-    for (typename std::vector<std::shared_ptr<T>>::iterator it = t->begin();
-        it != t->end(); it++) {
+    for (typename std::vector<std::shared_ptr<T>>::iterator it = t->begin(); it != t->end(); it++) {
       resultSet->enqueue(*it);
       sourceConditionals->incrementCount();
     }
@@ -174,9 +169,7 @@ class ResultIter : public ResultBlock<T> {
  public:
 
   ResultIter(ResultBlock<T> *copyResultSet, bool end = false)
-      : ResultBlock<T>(copyResultSet->getSourceConditionals(),
-                       copyResultSet->getResultSet(),
-                       (end ? end : copyResultSet->isEndOfRange()))
+      : ResultBlock<T>(copyResultSet->getSourceConditionals(), copyResultSet->getResultSet(), (end ? end : copyResultSet->isEndOfRange()))
 
   {
     setEnd((end ? end : copyResultSet->isEndOfRange()));
@@ -184,9 +177,7 @@ class ResultIter : public ResultBlock<T> {
   }
 
   ResultIter(ResultBlock<T> &copyResultSet, bool end = false)
-      : ResultBlock<T>(copyResultSet.getSourceConditionals(),
-                       copyResultSet.getResultSet(),
-                       (end ? end : copyResultSet.isEndOfRange()))
+      : ResultBlock<T>(copyResultSet.getSourceConditionals(), copyResultSet.getResultSet(), (end ? end : copyResultSet.isEndOfRange()))
 
   {
     setEnd((end ? end : copyResultSet.isEndOfRange()));
@@ -194,9 +185,7 @@ class ResultIter : public ResultBlock<T> {
   }
 
   ResultIter(ResultIter<T> *copyResultSet, bool end = false)
-      : ResultBlock<T>(copyResultSet->getSourceConditionals(),
-                       copyResultSet->getResultSet(),
-                       (end ? end : copyResultSet->isEndOfRange()))
+      : ResultBlock<T>(copyResultSet->getSourceConditionals(), copyResultSet->getResultSet(), (end ? end : copyResultSet->isEndOfRange()))
 
   {
     setEnd((end ? end : copyResultSet->isEndOfRange()));
@@ -204,9 +193,7 @@ class ResultIter : public ResultBlock<T> {
   }
 
   ResultIter(ResultIter<T> &copyResultSet, bool end = false)
-      : ResultBlock<T>(copyResultSet.getSourceConditionals(),
-                       copyResultSet.getResultSet(),
-                       (end ? end : copyResultSet.isEndOfRange()))
+      : ResultBlock<T>(copyResultSet.getSourceConditionals(), copyResultSet.getResultSet(), (end ? end : copyResultSet.isEndOfRange()))
 
   {
     setEnd((end ? end : copyResultSet.isEndOfRange()));

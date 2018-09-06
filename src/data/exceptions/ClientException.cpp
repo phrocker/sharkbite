@@ -11,7 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/data/exceptions/ClientException.h"
+#include "data/exceptions/ClientException.h"
 
 namespace cclient{
   namespace exceptions{

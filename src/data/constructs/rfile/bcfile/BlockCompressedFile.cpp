@@ -11,5 +11,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../../../include/data/constructs/rfile/bcfile/BlockCompressedFile.h"
+#include "data/constructs/rfile/bcfile/BlockCompressedFile.h"
 

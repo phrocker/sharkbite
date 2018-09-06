@@ -12,9 +12,9 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/client/TabletServerLocator.h"
-#include "../../../include/data/client/TabletLocationObtainer.h"
-#include "../../../include/data/client/TabletLocation.h"
+#include "data/client/TabletServerLocator.h"
+#include "data/client/TabletLocationObtainer.h"
+#include "data/client/TabletLocation.h"
 
 namespace cclient
 {

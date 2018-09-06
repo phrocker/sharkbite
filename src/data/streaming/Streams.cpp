@@ -11,12 +11,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/data/streaming/ByteOutputStream.h"
-#include "../../../include/data/streaming/OutputStream.h"
-#include "../../../include/data/streaming/Streams.h"
+#include "data/streaming/ByteOutputStream.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/Streams.h"
 
-#include "../../../include/data/streaming/input/ByteInputStream.h"
-#include "../../../include/data/streaming/input/InputStream.h"
+#include "data/streaming/input/ByteInputStream.h"
+#include "data/streaming/input/InputStream.h"
 
 /*
  */

@@ -11,9 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/interconnect/accumulo/AccumuloStreams.h"
-#include "../../../include/interconnect/accumulo/../../scanner/impl/Scanner.h"
-#include "../../../include/interconnect/accumulo/../../writer/impl/SinkImpl.h"
+#include "interconnect/accumulo/AccumuloStreams.h"
+#include "interconnect/accumulo/../../scanner/impl/Scanner.h"
+#include "interconnect/accumulo/../../writer/impl/SinkImpl.h"
 
 namespace interconnect
 {

@@ -11,4 +11,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/interconnect/scanrequest/ScanRequest.h"
+#include "interconnect/scanrequest/ScanRequest.h"

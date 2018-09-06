@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/constructs/Range.h"
+#include "data/constructs/Range.h"
 
 namespace cclient
 {

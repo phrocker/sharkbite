@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#include "../../../include/interconnect/securityOps/SecurityOperations.h"
-#include "../../../include/data/exceptions/ClientException.h"
+#include "interconnect/securityOps/SecurityOperations.h"
+#include "data/exceptions/ClientException.h"
 namespace interconnect{
 
 

@@ -19,20 +19,20 @@
 
 
 
-#include "../../../include/scanner/impl/../Source.h"
-#include "../../../include/scanner/impl/../../data/constructs/Key.h"
-#include "../../../include/scanner/impl/../../data/constructs/security/AuthInfo.h"
-#include "../../../include/scanner/impl/../../data/constructs/security/Authorizations.h"
-#include "../../../include/scanner/impl/../../data/constructs/value.h"
-#include "../../../include/scanner/impl/../constructs/Results.h"
-#include "../../../include/scanner/impl/../../data/constructs/inputvalidation.h"
-#include "../../../include/scanner/impl/../../data/client/ExtentLocator.h"
-#include "../../../include/scanner/impl/../../data/constructs/client/zookeeperinstance.h"
-#include "../../../include/scanner/impl/../../data/client/LocatorCache.h"
-#include "../../../include/scanner/impl/../constructs/ServerHeuristic.h"
-#include "../../../include/scanner/impl/../../interconnect/ClientInterface.h"
-#include "../../../include/scanner/impl/../../interconnect/tableOps/TableOperations.h"
-#include "../../../include/scanner/impl/Scanner.h"
+#include "scanner/impl/../Source.h"
+#include "scanner/impl/../../data/constructs/Key.h"
+#include "scanner/impl/../../data/constructs/security/AuthInfo.h"
+#include "scanner/impl/../../data/constructs/security/Authorizations.h"
+#include "scanner/impl/../../data/constructs/value.h"
+#include "scanner/impl/../constructs/Results.h"
+#include "scanner/impl/../../data/constructs/inputvalidation.h"
+#include "scanner/impl/../../data/client/ExtentLocator.h"
+#include "scanner/impl/../../data/constructs/client/zookeeperinstance.h"
+#include "scanner/impl/../../data/client/LocatorCache.h"
+#include "scanner/impl/../constructs/ServerHeuristic.h"
+#include "scanner/impl/../../interconnect/ClientInterface.h"
+#include "scanner/impl/../../interconnect/tableOps/TableOperations.h"
+#include "scanner/impl/Scanner.h"
 
 namespace scanners
 {

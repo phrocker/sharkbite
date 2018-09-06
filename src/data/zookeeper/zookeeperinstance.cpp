@@ -11,16 +11,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../../../include/data/constructs/client/Instance.h"
-#include "../../../include/data/constructs/client/./zookeeperinstance.h"
-#include "../../../include/data/constructs/client/./zookeeper/zookeepers.h"
-#include "../../../include/data/constructs/client/./zookeeper/zoocache.h"
-#include "../../../include/data/constructs/client/../configuration/Configuration.h"
+#include "data/constructs/client/Instance.h"
+#include "data/constructs/client/./zookeeperinstance.h"
+#include "data/constructs/client/./zookeeper/zookeepers.h"
+#include "data/constructs/client/./zookeeper/zoocache.h"
+#include "data/constructs/client/../configuration/Configuration.h"
 
-#include "../../../include/data/constructs/client/../inputvalidation.h"
-#include "../../../include/data/constructs/client/../../../interconnect/InterConnect.h"
+#include "data/constructs/client/../inputvalidation.h"
+#include "data/constructs/client/../../../interconnect/InterConnect.h"
 
-#include "../../../include/data/exceptions/ClientException.h"
+#include "data/exceptions/ClientException.h"
 
 #include <string>
 #include <sstream>

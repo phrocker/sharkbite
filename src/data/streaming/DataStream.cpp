@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/streaming/DataStream.h"
+#include "data/streaming/DataStream.h"
 
 
 namespace cclient

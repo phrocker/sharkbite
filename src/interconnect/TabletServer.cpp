@@ -18,7 +18,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "../../include/interconnect/TabletServer.h"
+#include "interconnect/TabletServer.h"
 
 namespace interconnect {
 

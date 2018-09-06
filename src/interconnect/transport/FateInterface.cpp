@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../include/interconnect/transport/FateInterface.h"
+#include "interconnect/transport/FateInterface.h"
 
 
 namespace interconnect{

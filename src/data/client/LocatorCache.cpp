@@ -13,13 +13,13 @@
  */
 #include <map>
 
-#include "../../../include/data/client/../constructs/tables/tables.h"
-#include "../../../include/data/client/../constructs/client/Instance.h"
-#include "../../../include/data/client/TabletServerLocator.h"
-#include "../../../include/data/client/MetaDataLocationObtainer.h"
-#include "../../../include/data/client/RootTabletLocator.h"
-#include "../../../include/data/client/ExtentLocator.h"
-#include "../../../include/data/client/LocatorCache.h"
+#include "data/client/../constructs/tables/tables.h"
+#include "data/client/../constructs/client/Instance.h"
+#include "data/client/TabletServerLocator.h"
+#include "data/client/MetaDataLocationObtainer.h"
+#include "data/client/RootTabletLocator.h"
+#include "data/client/ExtentLocator.h"
+#include "data/client/LocatorCache.h"
 namespace cclient
 {
 namespace impl

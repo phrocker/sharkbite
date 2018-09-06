@@ -12,7 +12,7 @@
  * limitations under the License.
  */
 
-#include "../../../include/data/constructs/client/zookeeper/watch.h"
+#include "data/constructs/client/zookeeper/watch.h"
 
 using namespace cclient::data::zookeeper;
 

@@ -17,9 +17,9 @@
 #include <string>
 #include <mutex>
 
-#include "../../../include/data/exceptions/ClientException.h"
-#include "../../../include/interconnect/namespaceOps/NamespaceOperations.h"
-#include "../../../include/interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
+#include "data/exceptions/ClientException.h"
+#include "interconnect/namespaceOps/NamespaceOperations.h"
+#include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
 
 
 namespace interconnect{

@@ -14,9 +14,9 @@
 
 #include <sstream>
 
-#include "../../../include/data/client/RootTabletLocator.h"
-#include "../../../include/data/client/../constructs/client/Instance.h"
-#include "../../../include/data/client/ExtentLocator.h"
+#include "data/client/RootTabletLocator.h"
+#include "data/client/../constructs/client/Instance.h"
+#include "data/client/ExtentLocator.h"
 namespace cclient{
   namespace impl{
 
