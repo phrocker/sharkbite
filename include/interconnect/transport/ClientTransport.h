@@ -18,13 +18,11 @@
 #include "Transport.h"
 #include "ServerConnection.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
 template<typename T>
-class ClientTransport: public Transporter<T>
-{
-public:
+class ClientTransport : public Transporter<T> {
+ public:
 
 };
 

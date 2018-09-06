@@ -34,233 +34,188 @@ using namespace scanners;
 #include "extern/accumulo.h"
 #include "extern/accumulo_data.h"
 
+extern "C" {
 
+struct connector *
+create_connector(char *instance, char *zks, char *username, char *password) {
+  ZookeeperInstance *instPtr = new ZookeeperInstance(string(instance), string(zks), 1000);
 
-extern "C"
-{
+  struct connector *con = new connector();
 
+  con->zk = instPtr;
 
+  cclient::data::security::AuthInfo creds(string(username), string(password), instPtr->getInstanceId());
 
-  struct connector *
-  create_connector (char *instance, char *zks, char *username, char *password)
-  {
-    ZookeeperInstance *instPtr = new ZookeeperInstance (string (instance),
-							string (zks), 1000);
+  interconnect::MasterConnect *master = new MasterConnect(&creds, instPtr);
 
-    struct connector *con = new connector ();
+  con->masterPtr = master;
 
-    con->zk = instPtr;
+  return con;
+}
 
-    cclient::data::security::AuthInfo creds (string (username), string (password),
-		    instPtr->getInstanceId ());
+int free_connector(struct connector *connector) {
+  ZookeeperInstance *instPtr = static_cast<ZookeeperInstance*>(connector->zk);
+  delete instPtr;
+  interconnect::MasterConnect *master = static_cast<interconnect::MasterConnect*>(connector->masterPtr);
+  delete master;
+  delete connector;
+  return 0;
+}
 
-    interconnect::MasterConnect *master = new MasterConnect (&creds, instPtr);
+TableOps *
+open_table(struct connector *connector, char *tableName) {
+  struct TableOps *tableOps = new TableOps();
 
-    con->masterPtr = master;
+  interconnect::MasterConnect *master = static_cast<interconnect::MasterConnect*>(connector->masterPtr);
 
-    return con;
-  }
+  AccumuloTableOperations *ops = master->tableOps(tableName).release();
 
-  int
-  free_connector (struct connector *connector)
-  {
-    ZookeeperInstance *instPtr = static_cast<ZookeeperInstance*> (connector->zk);
-    delete instPtr;
-    interconnect::MasterConnect *master =
-	static_cast<interconnect::MasterConnect*> (connector->masterPtr);
+  tableOps->tableOpsPtr = ops;
+  tableOps->table_name = tableName;
 
-    delete master;
-    delete connector;
-    return 0;
-  }
+  return tableOps;
+}
 
-  TableOps *
-  open_table (struct connector *connector, char *tableName)
-  {
-    struct TableOps *tableOps = new TableOps ();
+struct TableOps *
+create_table(struct connector *connector, char *tableName) {
+  struct TableOps *tableOps = open_table(connector, tableName);
 
-    interconnect::MasterConnect *master =
-	static_cast<interconnect::MasterConnect*> (connector->masterPtr);
+  AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
 
-    AccumuloTableOperations *ops = master->tableOps (
-	tableName).release();
+  tableOpsCpp->create(true);
 
-    tableOps->tableOpsPtr = ops;
-    tableOps->table_name = tableName;
+  return tableOps;
+}
 
-    return tableOps;
-  }
-
-  struct TableOps *
-  create_table (struct connector *connector, char *tableName)
-  {
-    struct TableOps *tableOps = open_table (connector, tableName);
-
-    AccumuloTableOperations *tableOpsCpp =
-	static_cast<AccumuloTableOperations*> (tableOps->tableOpsPtr);
-
-    tableOpsCpp->create (true);
-
-    return tableOps;
-  }
-
-
-
-
-  int
-  free_table (struct TableOps *tableOps)
-  {
-    if (NULL != tableOps->tableOpsPtr)
-      {
-	AccumuloTableOperations *tableOpsCpp =
-	    static_cast<AccumuloTableOperations*> (tableOps->tableOpsPtr);
-	    delete tableOpsCpp;
-	delete tableOps;
-      }
+int free_table(struct TableOps *tableOps) {
+  if (NULL != tableOps->tableOpsPtr) {
+    AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
+    delete tableOpsCpp;
     delete tableOps;
-    return 1;
   }
+  delete tableOps;
+  return 1;
+}
 
-  struct BatchScan *createScanner(struct TableOps *tableOps, short threads){
-    if (NULL != tableOps->tableOpsPtr)
-      {
-    AccumuloTableOperations *tableOpsCpp =
-	    static_cast<AccumuloTableOperations*> (tableOps->tableOpsPtr);
-	   struct BatchScan *scanner = new BatchScan();
-	   cclient::data::security::Authorizations auths;
-	   scanner->scannerPtr= tableOpsCpp->createScanner(&auths, threads).release();
-	   return scanner;
-      }
-      return 0;
+struct BatchScan *createScanner(struct TableOps *tableOps, short threads) {
+  if (NULL != tableOps->tableOpsPtr) {
+    AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
+    struct BatchScan *scanner = new BatchScan();
+    cclient::data::security::Authorizations auths;
+    scanner->scannerPtr = tableOpsCpp->createScanner(&auths, threads).release();
+    return scanner;
   }
+  return 0;
+}
 
-void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey)
-{
+void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey) {
   std::pair<char*, size_t> row = otherKey->getRow();
-  key->row = new uint8_t[ row.second ];
+  key->row = new uint8_t[row.second];
   key->rowLength = row.second;
-  memcpy(key->row,row.first,row.second);
+  memcpy(key->row, row.first, row.second);
 
   std::pair<char*, size_t> cf = otherKey->getColFamily();
-  key->colFamily = new uint8_t[ cf.second ];
+  key->colFamily = new uint8_t[cf.second];
   key->columnFamilyLength = cf.second;
-  memcpy(key->colFamily,cf.first,cf.second);
+  memcpy(key->colFamily, cf.first, cf.second);
 
   std::pair<char*, size_t> cq = otherKey->getColQualifier();
-  key->colQualifier = new uint8_t[ cq.second ];
+  key->colQualifier = new uint8_t[cq.second];
   key->colQualLen = cq.second;
-  memcpy(key->colQualifier,cq.first,cq.second);
+  memcpy(key->colQualifier, cq.first, cq.second);
 
   std::pair<char*, size_t> cv = otherKey->getColVisibility();
-  key->keyVisibility = new uint8_t[ cv.second ];
+  key->keyVisibility = new uint8_t[cv.second];
   key->colVisSize = cv.second;
-  memcpy(key->keyVisibility,cv.first,cv.second);
+  memcpy(key->keyVisibility, cv.first, cv.second);
 
   key->timestamp = otherKey->getTimeStamp();
 }
 
-void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv)
-{
-  populateKey(kv->key,otherKv->getKey());
-  cclient::data::Value *val =otherKv->getValue().get();
-  kv->value->value = new uint8_t[ val->size() ];
-  memcpy(kv->value->value,val->data(),val->size());
+void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv) {
+  populateKey(kv->key, otherKv->getKey());
+  cclient::data::Value *val = otherKv->getValue().get();
+  kv->value->value = new uint8_t[val->size()];
+  memcpy(kv->value->value, val->data(), val->size());
 }
 
-std::shared_ptr<cclient::data::Key> toKey(CKey *key)
-{
+std::shared_ptr<cclient::data::Key> toKey(CKey *key) {
   auto nk = std::make_shared<cclient::data::Key>();
-  nk->setRow((const char*)key->row,key->rowLength);
-  nk->setColFamily((const char*)key->colFamily,key->columnFamilyLength);
-  nk->setColQualifier((const char*)key->colQualifier,key->colQualLen);
-  nk->setColVisibility((const char*)key->keyVisibility,key->colVisSize);
+  nk->setRow((const char*) key->row, key->rowLength);
+  nk->setColFamily((const char*) key->colFamily, key->columnFamilyLength);
+  nk->setColQualifier((const char*) key->colQualifier, key->colQualLen);
+  nk->setColVisibility((const char*) key->keyVisibility, key->colVisSize);
   nk->setTimeStamp(key->timestamp);
   nk->setDeleted(key->deleted);
   return nk;
 }
 
-cclient::data::Range *toRange(CRange *range)
-{
-  cclient::data::Range *nr = new cclient::data::Range(toKey(range->start),range->startKeyInclusive,toKey(range->stop),range->stopKeyInclusive);
+cclient::data::Range *toRange(CRange *range) {
+  cclient::data::Range *nr = new cclient::data::Range(toKey(range->start), range->startKeyInclusive, toKey(range->stop), range->stopKeyInclusive);
   return nr;
 }
 
-
-
-int addRange(struct BatchScan *scanner, CRange *range)
-{
+int addRange(struct BatchScan *scanner, CRange *range) {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   cclient::data::Range *nr = toRange(range);
   bs->addRange(std::unique_ptr<cclient::data::Range>(nr));
   return 1;
 }
 
-int addRanges(struct BatchScan *scanner, CRange **range, int size)
-{
+int addRanges(struct BatchScan *scanner, CRange **range, int size) {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
   int i = 0;
-  for(i=0; i < size; i++)
-  {
+  for (i = 0; i < size; i++) {
     cclient::data::Range *nr = toRange(range[i]);
     bs->addRange(std::unique_ptr<cclient::data::Range>(nr));
   }
   return i;
 }
 
-bool hasNext(struct BatchScan *scanner)
-{
+bool hasNext(struct BatchScan *scanner) {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
-  if (scanner->res == 0)
-  {
-	  scanners::Iterator<cclient::data::KeyValue> *results = bs->getResultSet();
-	  scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator rs = results->begin();
-    scanner->res= &rs;
+  if (scanner->res == 0) {
+    scanners::Iterator<cclient::data::KeyValue> *results = bs->getResultSet();
+    scanners::Results<KeyValue, ResultBlock<KeyValue>>::iterator rs = results->begin();
+    scanner->res = &rs;
   }
-  scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator*>(scanner->res);
+  scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::Results<KeyValue, ResultBlock<KeyValue>>::iterator*>(scanner->res);
   return !st->isEndOfRange();
 }
 
-int next(struct BatchScan *scanner, CKeyValue *kv)
-{
-	//scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator*>(scanner->res);
-
+int next(struct BatchScan *scanner, CKeyValue *kv) {
+  //scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator*>(scanner->res);
 
   //auto nkv = *(*st);
 
   //auto ptr = nkv.get();
- // populateKeyValue(kv,ptr);
+  // populateKeyValue(kv,ptr);
   return 1;
 }
 
-int nextMany(struct BatchScan *scanner, KeyValueList *kvl)
-{
-	/*
-  scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator>(scanner->res);
-    unsigned int i=0;
-    for (i =0; i < kvl->kv_size; i++)
-    {
-	    std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
-	    populateKeyValue(kvl->kvs[i],nkv.get());
-    }
-	return i;*/
-	return 1;
+int nextMany(struct BatchScan *scanner, KeyValueList *kvl) {
+  /*
+   scanners::ResultIter<cclient::data::KeyValue>* st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator>(scanner->res);
+   unsigned int i=0;
+   for (i =0; i < kvl->kv_size; i++)
+   {
+   std::unique_ptr<cclient::data::KeyValue> nkv = *(*st);
+   populateKeyValue(kvl->kvs[i],nkv.get());
+   }
+   return i;*/
+  return 1;
 }
-int closeScanner(struct BatchScan *scanner)
-{
-  if (0 != scanner && 0 != scanner->scannerPtr)
-  {
+int closeScanner(struct BatchScan *scanner) {
+  if (0 != scanner && 0 != scanner->scannerPtr) {
     scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
 
-      delete bs;
+    delete bs;
     delete scanner;
-  return 0;
-  }
-  else	{
+    return 0;
+  } else {
     return 1;
   }
 }
-
-
 
 }
 

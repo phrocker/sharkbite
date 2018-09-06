@@ -27,8 +27,7 @@ namespace interconnect {
 template<typename T>
 class CachedTransport {
  public:
-  CachedTransport(std::shared_ptr<T> transport,
-                  std::shared_ptr<ServerConnection> key)
+  CachedTransport(std::shared_ptr<T> transport, std::shared_ptr<ServerConnection> key)
       : ioCount(0),
         lastCount(-1),
         reserved(false),

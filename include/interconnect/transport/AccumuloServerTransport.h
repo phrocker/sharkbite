@@ -15,7 +15,6 @@
 #ifndef ACCUMULOSERVERTRANSPORT_H
 #define ACCUMULOSERVERTRANSPORT_H
 
-
 #include <map>
 #include <set>
 #include <algorithm>    // std::random_shuffle
@@ -39,63 +38,51 @@
 #include <thread>
 #include <sys/time.h>
 
-
-
-#include "../../data/constructs/inputvalidation.h"
-#include "../../data/constructs/IterInfo.h"
-#include "../../data/constructs/configuration/Configuration.h"
-#include "../../data/extern/thrift/data_types.h"
-#include "../../data/constructs/scanstate.h"
-#include "../../data/exceptions/ClientException.h"
-#include "../../data/exceptions/IllegalArgumentException.h"
-#include "../../data/constructs/tablet/TabletType.h"
+#include "data/constructs/inputvalidation.h"
+#include "data/constructs/IterInfo.h"
+#include "data/constructs/configuration/Configuration.h"
+#include "data/extern/thrift/data_types.h"
+#include "data/constructs/scanstate.h"
+#include "data/exceptions/ClientException.h"
+#include "data/exceptions/IllegalArgumentException.h"
+#include "data/constructs/tablet/TabletType.h"
 #include "../scanrequest/ScanIdentifier.h"
 
 #include "Transport.h"
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
 
-#include "../../data/extern/thrift/ClientService.h"
-#include "../../data/extern/thrift/master_types.h"
-#include "../../data/extern/thrift/MasterClientService.h"
-#include "../../data/extern/thrift/ThriftWrapper.h"
-#include "../../data/constructs/security/AuthInfo.h"
-
-
-
+#include "data/extern/thrift/ClientService.h"
+#include "data/extern/thrift/master_types.h"
+#include "data/extern/thrift/MasterClientService.h"
+#include "data/extern/thrift/ThriftWrapper.h"
+#include "data/constructs/security/AuthInfo.h"
 
 #include "BaseTransport.h"
-namespace interconnect
-{
+namespace interconnect {
 
-class AccumuloServerTransport : public ThriftTransporter
-{
-protected:
+class AccumuloServerTransport : public ThriftTransporter {
+ protected:
 
-public:
-    explicit AccumuloServerTransport(std::shared_ptr<ServerConnection> conn) : ThriftTransporter(conn)
-    {
+ public:
+  explicit AccumuloServerTransport(std::shared_ptr<ServerConnection> conn)
+      : ThriftTransporter(conn) {
 
-    }
+  }
 
+  virtual void newTransporter(std::shared_ptr<ServerConnection> conn) {
 
-    virtual void newTransporter(std::shared_ptr<ServerConnection> conn) {
+  }
 
+  virtual void registerService(std::string instance, std::string clusterManagers) {
+    /* boost::shared_ptr<TProtocol> protocolPtr (
+     new TCompactProtocol (underlyingTransport));
 
-
-    }
-
-    virtual void
-    registerService (std::string instance, std::string clusterManagers)
-    {
-        /* boost::shared_ptr<TProtocol> protocolPtr (
-         new TCompactProtocol (underlyingTransport));
-
-         tserverClient =
-         new org::apache::accumulo::core::master::thrift::TabletClientServiceClient (
-             protocolPtr);
-        */
-    }
+     tserverClient =
+     new org::apache::accumulo::core::master::thrift::TabletClientServiceClient (
+     protocolPtr);
+     */
+  }
 };
 
 }

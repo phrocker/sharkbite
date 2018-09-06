@@ -13,25 +13,20 @@
  */
 #include "data/client/ExtentLocator.h"
 
-namespace cclient
-{
-namespace impl
-{
+namespace cclient {
+namespace impl {
 
-TabletLocator::TabletLocator ()
-{
+TabletLocator::TabletLocator() {
 
 }
 
-TabletLocator::~TabletLocator ()
-{
-    
-}
-LocatorKey::LocatorKey(cclient::data::Instance* instance, std::string table) :
-        instance (instance), tableName (table)
-    {
+TabletLocator::~TabletLocator() {
 
-    }
+}
+LocatorKey::LocatorKey(cclient::data::Instance* instance, std::string table)
+    : instance(instance),
+      tableName(table) {
+}
 
 } /* namespace data */
 } /* namespace cclient */

@@ -16,8 +16,8 @@
 #define SERVERCONNECTION_H_
 
 #include <iostream>
-#include "../../data/constructs/inputvalidation.h"
-#include "../../data/exceptions/IllegalArgumentException.h"
+#include "data/constructs/inputvalidation.h"
+#include "data/exceptions/IllegalArgumentException.h"
 
 namespace interconnect {
 

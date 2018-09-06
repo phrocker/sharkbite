@@ -18,7 +18,7 @@ addons:
     - cmake
     - libgtest-dev
     - libevent-dev
-    - libssl1.0-dev
+    - libssl-dev
     - libprotobuf-dev
     - protobuf-compiler
 script:
