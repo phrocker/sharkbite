@@ -40,11 +40,11 @@ class ScanRequest
 
 public:
     ScanRequest(cclient::data::security::AuthInfo *credentials, cclient::data::security::Authorizations *auths,
-                ServerConnection *server) :
+    		std::shared_ptr<ServerConnection> server) :
         creds(credentials), auths(auths), connection(server)
     {
 
-        if (IsEmpty(credentials) || IsEmpty(auths) || IsEmpty(server))
+        if (IsEmpty(credentials) || IsEmpty(auths) || IsEmpty(server.get()))
         {
             throw cclient::exceptions::IllegalArgumentException(
                 "credentials, authorizations, and server must not be empty");
@@ -113,7 +113,7 @@ protected:
     cclient::data::security::Authorizations *auths;
     std::vector<cclient::data::IterInfo*> iterators;
     std::vector<cclient::data::Column*> columns;
-    ServerConnection *connection;
+    std::shared_ptr<ServerConnection> connection;
 };
 
 } /* namespace interconnect */

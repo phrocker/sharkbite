@@ -42,7 +42,7 @@ ServerInterconnect::ServerInterconnect (
     const uint32_t timeout = conf->getLong (GENERAL_RPC_TIMEOUT_OPT,
                                             GENERAL_RPC_TIMEOUT);
 
-    tServer = new ServerConnection (
+    tServer = std::make_shared<ServerConnection >(
         conn.getAddressString (interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
         rangeDef->getPort (), timeout);
 
@@ -60,7 +60,6 @@ ServerInterconnect::ServerInterconnect (
 ServerInterconnect::~ServerInterconnect ()
 {
     myTransportPool->freeTransport(myTransport);
-    delete tServer;
     delete rangeDef;
 
 }

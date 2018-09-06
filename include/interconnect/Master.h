@@ -133,10 +133,10 @@ protected:
     cclient::data::Instance *instance;
     
     // tablet servers. 
-    std::vector<ServerConnection> tabletServers;
+    std::vector<std::shared_ptr<ServerConnection>> tabletServers;
     
     // cached transport for the master.
-    CachedTransport<interconnect::AccumuloMasterTransporter> *cachedTransport;
+    std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> cachedTransport;
 
     friend class AccumuloTableOperations;
     

@@ -49,320 +49,277 @@
 #include "../data/extern/thrift/ClientService.h"
 #include "../data/extern/thrift/TabletClientService.h"
 
-
-
-namespace interconnect
-{
-
+namespace interconnect {
 
 static TransportPool<ThriftTransporter> CLUSTER_COORDINATOR;
 
 extern void closeAllThriftConnections();
 
 class ServerInterconnect : public AccumuloConnector<
-	interconnect::ThriftTransporter>
-{
+    interconnect::ThriftTransporter> {
 
-protected:
-	ServerInterconnect (
-	        cclient::data::security::AuthInfo *creds,
-	        TransportPool<ThriftTransporter> *distributedConnector =
-	                &CLUSTER_COORDINATOR)
-	{
-		myTransportPool = distributedConnector;
-		this->credentials = *creds;
-		myTransport = NULL;
-	}
-	CachedTransport< ThriftTransporter > *myTransport;
-	
-	void recreateConnection(bool errorOcurred = false)
-	{
-	    do{
-		  myTransport->sawError(errorOcurred);   
-		  try
-		  {
-		    myTransportPool->freeTransport(myTransport);
-		  }catch(apache::thrift::transport::TTransportException te)
-		  {
-		      // close may occur on a partial write this is okay
-		      // to know
-		  }
-		    
-		
-		  try
-		  {
-		    myTransport = myTransportPool->getTransporter (tServer);
-		    setTransport (myTransport->getTransporter());
-		    break;
-		    
-		  }catch(apache::thrift::protocol::TProtocolException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    myTransportPool->freeTransport(myTransport);
-		    std::this_thread::sleep_for (std::chrono::milliseconds (50));
-		    continue;
-		  }
-		  catch(apache::thrift::transport::TTransportException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    myTransportPool->freeTransport(myTransport);
-		    std::this_thread::sleep_for (std::chrono::milliseconds (50));
-		    continue;
-		  }
-		 
-		 break;
-		}while(true);
-	}
+ protected:
+  ServerInterconnect(cclient::data::security::AuthInfo *creds,
+                     TransportPool<ThriftTransporter> *distributedConnector =
+                         &CLUSTER_COORDINATOR) {
+    myTransportPool = distributedConnector;
+    this->credentials = *creds;
+    myTransport = NULL;
+  }
+  std::shared_ptr<CachedTransport<ThriftTransporter>> myTransport;
 
-public:
+  void recreateConnection(bool errorOcurred = false) {
+    do {
+      myTransport->sawError(errorOcurred);
+      try {
+        myTransportPool->freeTransport(myTransport);
+      } catch (apache::thrift::transport::TTransportException te) {
+        // close may occur on a partial write this is okay
+        // to know
+      }
 
-	ServerInterconnect (
-	        const std::string host, const int port, const cclient::impl::Configuration *conf,
-	        TransportPool<ThriftTransporter> *distributedConnector =
-	                &CLUSTER_COORDINATOR);
+      try {
+        myTransport = myTransportPool->getTransporter(tServer);
+        setTransport(myTransport->getTransporter());
+        break;
 
-	ServerInterconnect (
-	        cclient::data::tserver::RangeDefinition *rangeDef,const cclient::impl::Configuration *conf,
-	        TransportPool<ThriftTransporter> *distributedConnector =
-	                &CLUSTER_COORDINATOR)
-	{
-		ConnectorService conn ("tserver", rangeDef->getServer (),
-		                       rangeDef->getPort ());
+      } catch (apache::thrift::protocol::TProtocolException tpe) {
+        myTransport->sawError(true);
+        myTransportPool->freeTransport(myTransport);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        continue;
+      } catch (apache::thrift::transport::TTransportException tpe) {
+        myTransport->sawError(true);
+        myTransportPool->freeTransport(myTransport);
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        continue;
+      }
+      break;
+    } while (true);
+  }
 
-		const uint16_t tserverPort = (uint16_t) conf->getLong (TSERVER_PORT_OPT,
-		                             TSERVER_DEFAULT_PORT);
+ public:
 
-		if (!isValidPort (tserverPort)) {
-			throw cclient::exceptions::IllegalArgumentException ("Invalid port");
-		}
+  ServerInterconnect(const std::string host, const int port,
+                     const cclient::impl::Configuration *conf,
+                     TransportPool<ThriftTransporter> *distributedConnector =
+                         &CLUSTER_COORDINATOR);
 
-		const uint32_t timeout = conf->getLong (GENERAL_RPC_TIMEOUT_OPT,
-		                                        GENERAL_RPC_TIMEOUT);
+  ServerInterconnect(cclient::data::tserver::RangeDefinition *rangeDef,
+                     const cclient::impl::Configuration *conf,
+                     TransportPool<ThriftTransporter> *distributedConnector =
+                         &CLUSTER_COORDINATOR) {
+    ConnectorService conn("tserver", rangeDef->getServer(),
+                          rangeDef->getPort());
 
-		tServer = new ServerConnection (
-		        conn.getAddressString (
-		                interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
-		        rangeDef->getPort (), timeout);
-		
-		int failures = 0;
-		do{
-		  
-		    try
-		    {
-			myTransport = distributedConnector->getTransporter (tServer);
-		      }catch(apache::thrift::transport::TTransportException te)
-		      {
-			std::this_thread::sleep_for (std::chrono::milliseconds (100));
-			  // close may occur on a partial write this is okay
-			  // to know
-			if (++failures > 2)
-			  throw te;
-			continue;
-		      }
-		      
-		
-		  try
-		  {
-	    
-		    setTransport (myTransport->getTransporter());		    
-		    break;
+    const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
+    TSERVER_DEFAULT_PORT);
 
-		  }catch(apache::thrift::protocol::TProtocolException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    if (++failures > 2)
-			  throw tpe;
-		    distributedConnector->freeTransport(myTransport);
-		    continue;
-		  }
-		  catch(apache::thrift::transport::TTransportException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    distributedConnector->freeTransport(myTransport);
-		    if (++failures > 2)
-			  throw tpe;
-		    continue;
-		  }
-		 
-		 break;
-		}while(true);
-		
-		
-		myTransportPool = distributedConnector;
-		
-		authenticate (rangeDef->getCredentials ());
-		
-		std::vector<cclient::data::IterInfo*> list;
+    if (!isValidPort(tserverPort)) {
+      throw cclient::exceptions::IllegalArgumentException("Invalid port");
+    }
 
-		std::map<std::string, std::map<std::string, std::string>> map;
+    const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
+    GENERAL_RPC_TIMEOUT);
 
-		this->rangeDef = rangeDef;
+    tServer = std::make_shared<ServerConnection>(
+        conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
+        rangeDef->getPort(), timeout);
 
+    int failures = 0;
+    do {
 
-		
-	}
+      try {
+        myTransport = distributedConnector->getTransporter(tServer);
+      } catch (apache::thrift::transport::TTransportException te) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // close may occur on a partial write this is okay
+        // to know
+        if (++failures > 2)
+          throw te;
+        continue;
+      }
 
-	Scan *
-	scan (std::vector<cclient::data::Column*> *cols,
-	      std::vector<cclient::data::IterInfo*> *serverSideIterators)
-	{
-		ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request (
-		                        &credentials, rangeDef->getAuthorizations (), tServer);
+      try {
 
-		request.addColumns (cols);
+        setTransport(myTransport->getTransporter());
+        break;
 
-		request.setIters (serverSideIterators);
+      } catch (apache::thrift::protocol::TProtocolException tpe) {
+        myTransport->sawError(true);
+        if (++failures > 2)
+          throw tpe;
+        distributedConnector->freeTransport(myTransport);
+        continue;
+      } catch (apache::thrift::transport::TTransportException tpe) {
+        myTransport->sawError(true);
+        distributedConnector->freeTransport(myTransport);
+        if (++failures > 2)
+          throw tpe;
+        continue;
+      }
 
-		for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents ()) {
-			std::cout << extent->getTableId() << " " << extent->getEndRow() << std::endl;
-  			ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = new ScanIdentifier<
-			std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> ();
-			if (rangeDef->getRanges ()->size () == 0) {
-				return NULL;
-			}
-			for (cclient::data::Range *range : *rangeDef->getRanges ()) {
-				ident->putIdentifier (extent, range);
-			}
+      break;
+    } while (true);
 
-			request.putIdentifier (ident);
-		}
+    myTransportPool = distributedConnector;
 
-		return transport->beginScan (&request);
+    authenticate(rangeDef->getCredentials());
 
-	}
+    std::vector<cclient::data::IterInfo*> list;
 
-	ServerInterconnect (
-	        cclient::data::tserver::ServerDefinition *rangeDef, const cclient::impl::Configuration *conf,
-	        TransportPool<ThriftTransporter> *distributedConnector =
-	                &CLUSTER_COORDINATOR)
-	{
-		ConnectorService conn ("tserver", rangeDef->getServer (),
-		                       rangeDef->getPort ());
+    std::map<std::string, std::map<std::string, std::string>> map;
 
-		const uint16_t tserverPort = (uint16_t) conf->getLong (TSERVER_PORT_OPT,
-		                             TSERVER_DEFAULT_PORT);
+    this->rangeDef = rangeDef;
 
-		if (!isValidPort (tserverPort)) {
-			throw cclient::exceptions::IllegalArgumentException ("Invalid port");
-		}
+  }
 
-		const uint32_t timeout = conf->getLong (GENERAL_RPC_TIMEOUT_OPT,
-		                                        GENERAL_RPC_TIMEOUT);
+  Scan *
+  scan(std::vector<cclient::data::Column*> *cols,
+       std::vector<cclient::data::IterInfo*> *serverSideIterators) {
+    ScanRequest<
+        ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+            cclient::data::Range*>> request(&credentials,
+                                            rangeDef->getAuthorizations(),
+                                            tServer);
 
-		tServer = new ServerConnection (
-		        conn.getAddressString (
-		                interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
-		        rangeDef->getPort (), timeout);
-		do{
-		  
-		    try
-		    {
-			myTransport = distributedConnector->getTransporter (tServer);
-		      }catch(apache::thrift::transport::TTransportException te)
-		      {
-			myTransport->sawError(true);
-			distributedConnector->freeTransport(myTransport);
-			std::this_thread::sleep_for (std::chrono::milliseconds (100));
-			  // close may occur on a partial write this is okay
-			  // to know
-			continue;
-		      }
-		      
-		
-		  try
-		  {
-	    
-		    setTransport (myTransport->getTransporter());
-		    break;
+    request.addColumns(cols);
 
-		  }catch(apache::thrift::protocol::TProtocolException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    distributedConnector->freeTransport(myTransport);
-		    continue;
-		  }
-		  catch(apache::thrift::transport::TTransportException tpe)
-		  {
-		    myTransport->sawError(true);   
-		    distributedConnector->freeTransport(myTransport);
-		    continue;
-		  }
-		 
-		 break;
-		}while(true);
-		
-		myTransportPool = distributedConnector;
-				
-		authenticate (rangeDef->getCredentials ());		    
+    request.setIters(serverSideIterators);
 
-		std::vector<cclient::data::IterInfo*> list;
-	}
+    for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef
+        ->getExtents()) {
+      std::cout << extent->getTableId() << " " << extent->getEndRow()
+                << std::endl;
+      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+          cclient::data::Range*> *ident = new ScanIdentifier<
+          std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>();
+      if (rangeDef->getRanges()->size() == 0) {
+        return NULL;
+      }
+      for (cclient::data::Range *range : *rangeDef->getRanges()) {
+        ident->putIdentifier(extent, range);
+      }
 
-	Scan *
-	scan ()
-	{
+      request.putIdentifier(ident);
+    }
 
-		std::vector<cclient::data::Column*> emptyCols;
+    return transport->beginScan(&request);
 
-		std::vector<cclient::data::IterInfo*> emptyServerSideIterators;
+  }
 
-		return scan (&emptyCols, &emptyServerSideIterators);
+  ServerInterconnect(cclient::data::tserver::ServerDefinition *rangeDef,
+                     const cclient::impl::Configuration *conf,
+                     TransportPool<ThriftTransporter> *distributedConnector =
+                         &CLUSTER_COORDINATOR) {
+    ConnectorService conn("tserver", rangeDef->getServer(),
+                          rangeDef->getPort());
 
-	}
+    const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
+    TSERVER_DEFAULT_PORT);
 
-	Scan *continueScan(Scan *scan)
-	{
-		if (scan->getHasMore()) {
-			return transport->continueScan(scan);
-		}
-		return NULL;
-	}
+    if (!isValidPort(tserverPort)) {
+      throw cclient::exceptions::IllegalArgumentException("Invalid port");
+    }
 
-	cclient::data::TabletServerMutations *
-	write (cclient::data::TabletServerMutations *mutations)
-	{
+    const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
+    GENERAL_RPC_TIMEOUT);
 
-	  
-	  bool success = false;
-	  uint32_t failures=0;
-	  do
-	  {
-		try{
-		  transport->write (&credentials, mutations->getMutations ());
-		  success = true;
-		}catch(apache::thrift::transport::TTransportException te)
-		{
-		  if (++failures > mutations->getMaxFailures())
-		    return mutations;
-		  recreateConnection(true);
-		}
-		catch(apache::thrift::protocol::TProtocolException tp)
-		{
-		  if (++failures > mutations->getMaxFailures())
-		    return mutations;
-		   recreateConnection(true);
-		}
-		
-	  }while(!success);
-	  // need to return those that could not be written or those that failed.   
-	  return NULL;
-	}
-	
-	void halt()
-	{
-	  
-	}
+    tServer = std::make_shared<ServerConnection>(
+        conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
+        rangeDef->getPort(), timeout);
+    do {
 
-	void
-	authenticate (cclient::data::security::AuthInfo *credentials);
+      try {
+        myTransport = distributedConnector->getTransporter(tServer);
+      } catch (apache::thrift::transport::TTransportException te) {
+        myTransport->sawError(true);
+        distributedConnector->freeTransport(myTransport);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // close may occur on a partial write this is okay
+        // to know
+        continue;
+      }
 
-	void
-	authenticate (std::string username, std::string password)
-	{
-	}
+      try {
 
-	virtual
-	~ServerInterconnect ();
+        setTransport(myTransport->getTransporter());
+        break;
+
+      } catch (apache::thrift::protocol::TProtocolException tpe) {
+        myTransport->sawError(true);
+        distributedConnector->freeTransport(myTransport);
+        continue;
+      } catch (apache::thrift::transport::TTransportException tpe) {
+        myTransport->sawError(true);
+        distributedConnector->freeTransport(myTransport);
+        continue;
+      }
+
+      break;
+    } while (true);
+
+    myTransportPool = distributedConnector;
+
+    authenticate(rangeDef->getCredentials());
+
+    std::vector<cclient::data::IterInfo*> list;
+  }
+
+  Scan *
+  scan() {
+
+    std::vector<cclient::data::Column*> emptyCols;
+
+    std::vector<cclient::data::IterInfo*> emptyServerSideIterators;
+
+    return scan(&emptyCols, &emptyServerSideIterators);
+
+  }
+
+  Scan *continueScan(Scan *scan) {
+    if (scan->getHasMore()) {
+      return transport->continueScan(scan);
+    }
+    return NULL;
+  }
+
+  cclient::data::TabletServerMutations *
+  write(cclient::data::TabletServerMutations *mutations) {
+
+    bool success = false;
+    uint32_t failures = 0;
+    do {
+      try {
+        transport->write(&credentials, mutations->getMutations());
+        success = true;
+      } catch (apache::thrift::transport::TTransportException te) {
+        if (++failures > mutations->getMaxFailures())
+          return mutations;
+        recreateConnection(true);
+      } catch (apache::thrift::protocol::TProtocolException tp) {
+        if (++failures > mutations->getMaxFailures())
+          return mutations;
+        recreateConnection(true);
+      }
+
+    } while (!success);
+    // need to return those that could not be written or those that failed.
+    return NULL;
+  }
+
+  void halt() {
+
+  }
+
+  void
+  authenticate(cclient::data::security::AuthInfo *credentials);
+
+  void authenticate(std::string username, std::string password) {
+  }
+
+  virtual
+  ~ServerInterconnect();
 
 };
 

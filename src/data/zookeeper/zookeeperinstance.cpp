@@ -121,13 +121,13 @@ ZookeeperInstance::getInstanceId ()
 }
 
 
-std::vector<interconnect::ServerConnection> ZookeeperInstance::getServers()
+std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::getServers()
 {
    std::string tserverPath = getRoot () + TSERVERS;
    
    std::vector<std::string> servers = myZooCache->getChildren (tserverPath);
 
-    std::vector<interconnect::ServerConnection> tabletServers;
+    std::vector<std::shared_ptr<interconnect::ServerConnection>> tabletServers;
 
     if (IsEmpty (&servers))
     {
@@ -180,7 +180,7 @@ std::vector<interconnect::ServerConnection> ZookeeperInstance::getServers()
 	      throw cclient::exceptions::ClientException( INVALID_ZK_SERVER_PORT);
 	  }
 
-	  interconnect::ServerConnection newConnection(locationAndPort.at(0),port,-1);
+	  std::shared_ptr<interconnect::ServerConnection> newConnection = std::make_shared<interconnect::ServerConnection>(locationAndPort.at(0),port,-1);
 	  tabletServers.push_back(newConnection);
 	}
     }

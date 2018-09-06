@@ -41,18 +41,21 @@ public:
 template<typename T>
 static auto IsEmpty(
     T *t) -> typename std::enable_if<has_size<T>::value ==1, bool>::type {
-    return (NULL == t || t->size() == 0);
+    return (nullptr == t || t->size() == 0);
 }
 
 template<typename T>
 static auto IsEmpty(
     T *t) -> typename std::enable_if<not has_size<T>::value , bool>::type {
-    return (NULL == t);
+    return (nullptr == t);
 }
 
-static auto IsEmpty(char *t)-> decltype(NULL !=t, bool()) {
-    return (NULL == t || strlen(t) == 0);
+
+static auto IsEmpty(char *t)-> decltype(nullptr !=t, bool()) {
+    return (nullptr == t || strlen(t) == 0);
 }
+
+
 
 template<typename ... T>
 bool IsEmpty() {

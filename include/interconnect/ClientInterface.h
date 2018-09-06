@@ -23,128 +23,108 @@
 
 #include "../data/constructs/security/AuthInfo.h"
 
-
-
-
-namespace interconnect
-{
-
+namespace interconnect {
 
 /**
  * ClientInterface is the lowest level connecting transport mechanism
  * for clients.
  **/
 template<typename Tr>
-class ClientInterface
-{
-public:
-	/**
-	 * Constructor that accepts host and port. This does not
-	 * support a connection as a transport must first be given to this instance
-	 * @param host host name we're connecting to.
-	 * @param port port for the aforementioned host name.
-	 **/
-	ClientInterface (const std::string host, const int port);
+class ClientInterface {
+ public:
+  /**
+   * Constructor that accepts host and port. This does not
+   * support a connection as a transport must first be given to this instance
+   * @param host host name we're connecting to.
+   * @param port port for the aforementioned host name.
+   **/
+  explicit ClientInterface(const std::string host, const int port);
 
-	ClientInterface ()
-	{
+  ClientInterface() {
+  }
 
-	}
+  virtual ~ClientInterface();
 
-	virtual ~ClientInterface ();
+  /**
+   * Pure virtual function that supports authenticating users
+   * against this client connection.
+   * @param username username
+   * @param password username's password.
+   **/
+  virtual void
+  authenticate(std::string username, std::string password) = 0;
 
-	/**
-	 * Pure virtual function that supports authenticating users
-	 * against this client connection.
-	 * @param username username
-	 * @param password username's password.
-	 **/
-	virtual void
-	authenticate (std::string username, std::string password) = 0;
+  /**
+   * A coupling mechanism that allows us to use cclient::data::security::AuthInfo vice the username
+   * and password authentication above.
+   * @param auth authorization info that contains the username and password.
+   **/
+  void authenticate(cclient::data::security::AuthInfo *auth) {
+    authenticate(auth->getUserName(), auth->getPassword());
+  }
 
-	/**
-	 * A coupling mechanism that allows us to use cclient::data::security::AuthInfo vice the username
-	 * and password authentication above.
-	 * @param auth authorization info that contains the username and password.
-	 **/
-	void
-	authenticate (cclient::data::security::AuthInfo *auth)
-	{
-		authenticate (auth->getUserName (), auth->getPassword ());
-	}
+  /**
+   * Sets the underlying transport within this client connection.
+   * @param transporty transporter, based on T.
+   **/
+  void setTransport(std::shared_ptr<Tr> transporty) {
 
-	/**
-	 * Sets the underlying transport within this client connection.
-	 * @param transporty transporter, based on T. 
-	 **/
-	void
-	setTransport (boost::shared_ptr<Tr> transporty)
-	{
+    transport = transporty;
+    transport->registerService(instanceId, zookeepers);
+  }
 
-		transport = transporty;
-		transport->registerService (instanceId, zookeepers);
-	}
+  /**
+   * Deprecated function to ensure authentication is only performed once.
+   * @param auth whether or not the user is authenticated.
+   **/
+  bool setAuthenticated(bool auth) {
+    authenticated = auth;
+    return auth;
+  }
 
-	/**
-	 * Deprecated function to ensure authentication is only performed once.
-	 * @param auth whether or not the user is authenticated.
-	 **/
-	bool
-	setAuthenticated (bool auth)
-	{
-		authenticated = auth;
-		return auth;
-	}
+  /**
+   * Set the user credentials without authenticating.
+   * @param user username
+   * @param password password for user.
+   **/
+  void setCredentials(std::string user, std::string password) {
+    authenticated_user = user;
+    authenticated_password = password;
 
-	/**
-	 * Set the user credentials without authenticating.
-	 * @param user username
-	 * @param password password for user.
-	 **/
-	void
-	setCredentials (std::string user, std::string password)
-	{
-		authenticated_user = user;
-		authenticated_password = password;
+  }
 
-	}
+  /**
+   * Gets the transport used within this client connection.
+   * @returns transport shared pointer.
+   **/
+  std::shared_ptr<Tr> getTransport() {
+    return transport;
+  }
 
-	/**
-	 * Gets the transport used within this client connection.
-	 * @returns transport shared pointer.
-	 **/
-	boost::shared_ptr<Tr>
-	getTransport ()
-	{
-		return transport;
-	}
+ protected:
+  std::shared_ptr<Tr> transport;
 
-protected:
-	// TODO: transition to STL smart pointers
-	boost::shared_ptr<Tr> transport;
+  std::string server_host;
+  int server_port;
+  bool authenticated;
 
-	std::string server_host;
-	int server_port;
-	bool authenticated;
-
-	std::string authenticated_user;
-	std::string authenticated_password;
-	// info abt cluster
-	std::string instanceId;
-	std::string zookeepers;
+  std::string authenticated_user;
+  std::string authenticated_password;
+  // info abt cluster
+  std::string instanceId;
+  std::string zookeepers;
 
 };
 
 template<typename Tr>
-ClientInterface<Tr>::ClientInterface (const std::string host, const int port) :
-	server_host (host), server_port (port)
-{
+ClientInterface<Tr>::ClientInterface(const std::string host, const int port)
+    : server_host(host),
+      server_port(port) {
 
 }
 
 template<typename Tr>
-ClientInterface<Tr>::~ClientInterface ()
-{
+ClientInterface<Tr>::~ClientInterface() {
 }
 
 }

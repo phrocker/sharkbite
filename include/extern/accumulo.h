@@ -14,6 +14,8 @@
 #ifndef SRC_CLIENTEXAMPLE_H_
 #define SRC_CLIENTEXAMPLE_H_
 
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,7 +23,7 @@ extern "C" {
 #include <stdio.h>
 #include <string.h>
 #include "accumulo_data.h"
-
+#include <data/constructs/Key.h>
 struct TableOps {
 	char *table_name;
 	// stuff you don't use
@@ -34,6 +36,7 @@ struct BatchScan {
 	// stuff you don't use
 	void *scannerPtr;
 	void *res;
+	void *on_next_fn;
 };
 
 struct connector {
@@ -63,7 +66,9 @@ int addRange(struct BatchScan *scanner, struct CRange *range);
 
 int addRanges(struct BatchScan *scanner, struct CRange **range, int size);
 
-int hasNext(struct BatchScan *scanner);
+bool hasNext(struct BatchScan *scanner);
+
+int onNext(struct BatchScan *scanner, struct CKeyValue *kv);
 
 int next(struct BatchScan *scanner, struct CKeyValue *kv);
 
@@ -71,12 +76,19 @@ int nextMany(struct BatchScan *scanner, struct KeyValueList *kvl);
 
 int closeScanner(struct BatchScan *scanner);
 
+
+
+
 // writer code
 
+std::shared_ptr<cclient::data::Key> toKey(CKey *key);
+
+void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey);
 
 
 #ifdef __cplusplus
 }
+
 //end extern "C"
 #endif
 

@@ -64,14 +64,14 @@ protected:
 	std::map<cclient::data::security::AuthInfo*,org::apache::accumulo::core::security::thrift::TCredentials> convertedMap;
 	boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 	org::apache::accumulo::core::client::impl::thrift::ClientServiceClient *client;
-	org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient *tserverClient;
+	std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> tserverClient;
 
-	ServerConnection *clonedConnection;
+	std::shared_ptr<ServerConnection> clonedConnection;
 
-	virtual void newTransporter(ServerConnection *conn)
+	virtual void newTransporter(std::shared_ptr<ServerConnection> conn)
 	{
 
-		clonedConnection = new ServerConnection(conn);
+		clonedConnection = conn;
 
 		boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(
 		        new apache::thrift::transport::TSocket(conn->getHost(), conn->getPort()));
@@ -250,9 +250,9 @@ protected:
 
 public:
 
-	explicit ThriftTransporter(ServerConnection *conn) :
+	explicit ThriftTransporter(std::shared_ptr<ServerConnection> conn) :
 		interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*,
-		cclient::data::Mutation*>(conn), client(NULL), tserverClient(NULL)
+		cclient::data::Mutation*>(conn), client(NULL), tserverClient(nullptr)
 	{
 
 		newTransporter(conn);
@@ -261,9 +261,6 @@ public:
 	virtual ~ThriftTransporter()
 	{
 		underlyingTransport->close();
-		delete clonedConnection;
-		if (NULL != tserverClient)
-			delete tserverClient;
 		if (NULL != client)
 			delete client;
 	}
@@ -328,15 +325,14 @@ public:
 		}
 		if (NULL != tserverClient)
 		{
-		  delete tserverClient;
 		  tserverClient = NULL;
 		}
 		client =
 		        new org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(
 		        protocolPtr);
 		tserverClient =
-		        new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(
-		        protocolPtr);
+		        std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> (new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(
+		        protocolPtr));
 	}
 	
 
@@ -354,7 +350,6 @@ public:
 		}
 		if (NULL != tserverClient)
 		{
-		  delete tserverClient;
 		  tserverClient = NULL;
 		}
 
@@ -362,8 +357,8 @@ public:
 		        new org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(
 		        protocolPtr);
 		tserverClient =
-		        new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(
-		        protocolPtr);
+				        std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> (new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(
+				        protocolPtr));
 
 
 		client->getZooKeepers(clusterManagers);
@@ -578,7 +573,6 @@ public:
 	  }
 	  if (NULL != tserverClient)
 	  {
-	    delete tserverClient;
 	    tserverClient = NULL;
 	  }
 	  underlyingTransport->close();

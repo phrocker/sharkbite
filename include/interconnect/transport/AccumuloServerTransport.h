@@ -73,13 +73,13 @@ class AccumuloServerTransport : public ThriftTransporter
 protected:
 
 public:
-    explicit AccumuloServerTransport(ServerConnection *conn) : ThriftTransporter(conn)
+    explicit AccumuloServerTransport(std::shared_ptr<ServerConnection> conn) : ThriftTransporter(conn)
     {
 
     }
 
 
-    virtual void newTransporter(ServerConnection *conn) {
+    virtual void newTransporter(std::shared_ptr<ServerConnection> conn) {
 
 
 

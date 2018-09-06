@@ -20,136 +20,117 @@
 
 #include <string>
 
-
 #include "Transport.h"
 #include "ServerConnection.h"
-namespace interconnect
-{
+namespace interconnect {
 
 template<typename T>
-class CachedTransport
-{
-public:
-    CachedTransport(T *transport, ServerConnection *key) :
-        ioCount(0), lastCount(-1), reserved(false), threadName(""), foundError(
-            false), lastReturnTime(0)
-    {
-      
-	srand (time(NULL));
-        cacheKey = new ServerConnection(key);
+class CachedTransport {
+ public:
+  CachedTransport(std::shared_ptr<T> transport,
+                  std::shared_ptr<ServerConnection> key)
+      : ioCount(0),
+        lastCount(-1),
+        reserved(false),
+        threadName(""),
+        foundError(false),
+        lastReturnTime(0) {
 
-        serverTransport = transport;
-	
-	serverTransportPtr = boost::shared_ptr<T>(serverTransport);
-    }
-    
-    ~CachedTransport()
-    {
-      delete cacheKey;
-    }
+    srand(time(NULL));
+    cacheKey = key;
 
-    void reserve(bool reserve = true)
-    {
-        reserved = reserve;
-    }
+    serverTransport = transport;
+  }
 
-    bool isReserved()
-    {
-        return reserved;
-    }
+  ~CachedTransport() {
+  }
 
-    bool open()
-    {
-        try
-        {
-            ioCount++;
-            serverTransport->open();
-        } catch (std::runtime_error &tfe)
-        {
-            foundError = true;
-            throw tfe;
-        }
+  void reserve(bool reserve = true) {
+    reserved = reserve;
+  }
 
-        ioCount++;
+  bool isReserved() {
+    return reserved;
+  }
 
-        return (foundError==false);
+  bool open() {
+    try {
+      ioCount++;
+      serverTransport->open();
+    } catch (std::runtime_error &tfe) {
+      foundError = true;
+      throw tfe;
     }
 
-    void close()
-    {
-      if (serverTransport != NULL && serverTransport->isOpen())
-	serverTransport->close();
-    }
+    ioCount++;
 
-    T *getTransport() {
-        return serverTransport;
-    }
+    return (foundError == false);
+  }
 
-    bool hasError()
-    {
-        return foundError;
-    }
+  void close() {
+    if (serverTransport != NULL && serverTransport->isOpen())
+      serverTransport->close();
+  }
 
-    ServerConnection *getCacheKey()
-    {
-        return cacheKey;
-    }
+  std::shared_ptr<T> getTransport() {
+    return serverTransport;
+  }
 
-    boost::shared_ptr<T> getTransporter()
-    {
-        return serverTransportPtr;
-    }
+  bool hasError() {
+    return foundError;
+  }
 
-    bool operator ==(const CachedTransport *rhs) const
-    {
-      return std::addressof(this) == std::addressof(rhs);
-        //return *this == *rhs;
-    }
-/*
-    bool operator==(const CachedTransport &rhs) const
-    {
-        return threadName == rhs.threadName && (*cacheKey == *(rhs.cacheKey));
-    }
-    */
+  std::shared_ptr<ServerConnection> getCacheKey() {
+    return cacheKey;
+  }
 
-    bool isOpen()
-    {
-        return serverTransport->isOpen();
-    }
+  std::shared_ptr<T> getTransporter() {
+    return serverTransport;
+  }
 
-    void registerService(std::string instance, std::string clusterManagers)
-    {
-        // no op
-    }
+  bool operator ==(const CachedTransport *rhs) const {
+    return std::addressof(this) == std::addressof(rhs);
+    //return *this == *rhs;
+  }
+  /*
+   bool operator==(const CachedTransport &rhs) const
+   {
+   return threadName == rhs.threadName && (*cacheKey == *(rhs.cacheKey));
+   }
+   */
 
-    void setReturnTime(uint64_t t)
-    {
-        lastReturnTime = t;
-    }
+  bool isOpen() {
+    return serverTransport->isOpen();
+  }
 
-    uint64_t getLastReturnTime()
-    {
-        return lastReturnTime;
-    }
-    void sawError(bool sawError)
-    {
-	foundError = true;
-    }
+  void registerService(std::string instance, std::string clusterManagers) {
+    // no op
+  }
 
-protected:
+  void setReturnTime(uint64_t t) {
+    lastReturnTime = t;
+  }
 
-    bool foundError;
-    std::string threadName;
-    volatile bool reserved;
+  uint64_t getLastReturnTime() {
+    return lastReturnTime;
+  }
+  void sawError(bool sawError) {
+    foundError = true;
+  }
 
-    std::string stuckThreadName;
+ protected:
 
-    uint16_t ioCount;
-    int16_t lastCount;
-    uint64_t lastReturnTime;
-    ServerConnection *cacheKey;
-    T *serverTransport;
-    boost::shared_ptr< T > serverTransportPtr;
+  bool foundError;
+  std::string threadName;
+  volatile bool reserved;
+
+  std::string stuckThreadName;
+
+  uint16_t ioCount;
+  int16_t lastCount;
+  uint64_t lastReturnTime;
+  std::shared_ptr<ServerConnection> cacheKey;
+  std::shared_ptr<T> serverTransport;
 };
 }
 #endif /* CACHEDTRANSPORT_H_ */

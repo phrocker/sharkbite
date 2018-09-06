@@ -76,7 +76,7 @@ protected:
     TransportPool<Tr> *myTransportPool;
     cclient::data::security::AuthInfo credentials;
     cclient::data::tserver::RangeDefinition *rangeDef;
-    ServerConnection *tServer;
+    std::shared_ptr<ServerConnection> tServer;
     cclient::data::tserver::ServerDefinition *serverDef;
 };
 

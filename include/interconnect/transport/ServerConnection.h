@@ -31,6 +31,11 @@ public:
     {
       
     }
+
+    explicit ServerConnection(std::shared_ptr<ServerConnection> other ) : host(other->host), port(other->port), timeout( other->timeout)
+        {
+
+        }
     ServerConnection(std::string loc, uint16_t port, uint64_t timeout) :
         host(loc), port(port), timeout(timeout)
     {

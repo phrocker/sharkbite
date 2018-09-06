@@ -28,7 +28,7 @@ template<class T, class K, class V, class W>
 class ServerTransport: public Transporter<T> {
 public:
 
-    explicit ServerTransport(ServerConnection *conn) :
+    explicit ServerTransport(std::shared_ptr<ServerConnection> conn) :
         Transporter<T>(conn) {
 
     }

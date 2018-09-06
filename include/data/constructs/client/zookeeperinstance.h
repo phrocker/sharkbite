@@ -166,7 +166,7 @@ public:
 	  * Returns a list of server that will do work
 	  * @return a vector of serverconnections
 	  **/
-	virtual std::vector<interconnect::ServerConnection> getServers();
+	virtual std::vector<std::shared_ptr<interconnect::ServerConnection>> getServers();
 	
 	/**
 	 * Gets the root node
