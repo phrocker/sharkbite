@@ -271,7 +271,7 @@ class Results {
 
   moodycamel::ConcurrentQueue<std::shared_ptr<T>> resultSet;
 
-  BlockType *iter;
+  std::unique_ptr<BlockType> iter;
 
   SourceConditions conditions;
 
@@ -284,7 +284,7 @@ class Results {
   Results()
       : resultSet(2000) /*-> decltype(static_cast<BlockType>(T))*/
   {
-    iter = new BlockType(&conditions, &resultSet);
+    iter = std::unique_ptr<BlockType>(new BlockType(&conditions, &resultSet));
 
     producers = 0;
   }

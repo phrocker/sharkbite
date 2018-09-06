@@ -15,160 +15,136 @@
 #ifndef SERVERCONNECTION_H_
 #define SERVERCONNECTION_H_
 
+#include <iostream>
 #include "../../data/constructs/inputvalidation.h"
 #include "../../data/exceptions/IllegalArgumentException.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
+class ServerConnection {
+ public:
 
-
-class ServerConnection
-{
-public:
-  
-    explicit ServerConnection(ServerConnection *other ) : host(other->host), port(other->port), timeout( other->timeout)
-    {
-      
+  explicit ServerConnection(std::shared_ptr<ServerConnection> other)
+      : host(other->host),
+        port(other->port),
+        timeout(other->timeout) {
+  }
+  ServerConnection(std::string loc, uint16_t port, uint64_t timeout)
+      : host(loc),
+        port(port),
+        timeout(timeout) {
+    std::cout << "loc is " << loc << std::endl;
+    if (IsEmpty(&loc)) {
+      throw cclient::exceptions::IllegalArgumentException("Invalid Input; host name is empty");
     }
 
-    explicit ServerConnection(std::shared_ptr<ServerConnection> other ) : host(other->host), port(other->port), timeout( other->timeout)
-        {
+  }
 
-        }
-    ServerConnection(std::string loc, uint16_t port, uint64_t timeout) :
-        host(loc), port(port), timeout(timeout)
-    {
-        if (IsEmpty(&loc))
-        {
-            throw cclient::exceptions::IllegalArgumentException("Invalid Input; host name is empty");
-        }
+  virtual ~ServerConnection() {
 
-    }
-    
-    virtual ~ServerConnection()
-    {
-      
-    }
+  }
 
+  std::string getHost() const {
+    return host;
+  }
 
-    std::string getHost() const
-    {
-        return host;
-    }
+  uint16_t getPort() const {
+    return port;
+  }
 
-    uint16_t getPort() const
-    {
-        return port;
-    }
+  uint64_t getTimeout() const {
+    return timeout;
+  }
 
-    uint64_t getTimeout() const
-    {
-        return timeout;
-    }
-    
-    std::ostream& operator<<(std::ostream& os)
-    {
-      return os << host << ":" << port << " " << timeout << std::endl;
-    }
+  std::ostream& operator<<(std::ostream& os) {
+    return os << host << ":" << port << " " << timeout << std::endl;
+  }
 
-    ServerConnection &operator=(const ServerConnection &rhs)
-    {
+  ServerConnection &operator=(const ServerConnection &rhs) {
 
-        host = rhs.host;
-        port = rhs.port;
-        timeout = rhs.timeout;
-        return *this;
-    }
+    host = rhs.host;
+    port = rhs.port;
+    timeout = rhs.timeout;
+    return *this;
+  }
 
-    bool operator==(const ServerConnection &rhs)
-    {
-        bool result = true;
-        result = (host == rhs.host);
-        if (!result)
-            return false;
-        result = (port == rhs.port);
-        if (!result)
-            return false;
-        result = (timeout == rhs.timeout);
-        if (!result)
-            return false;
-        else
-            return true;
-    }
-    
-    bool operator!=(const ServerConnection &rhs)
-    {
-        return !(*this==rhs);
-    }
+  bool operator==(const ServerConnection &rhs) {
+    bool result = true;
+    result = (host == rhs.host);
+    if (!result)
+      return false;
+    result = (port == rhs.port);
+    if (!result)
+      return false;
+    result = (timeout == rhs.timeout);
+    if (!result)
+      return false;
+    else
+      return true;
+  }
 
-    bool operator<(const ServerConnection &rhs) const
-    {
-        bool result = true;
-        result = (host < rhs.host);
-        if (!result)
-            return false;
-        result = (port < rhs.port);
-        if (!result)
-            return false;
-        result = (timeout < rhs.timeout);
-        if (!result)
-            return false;
-        else
-            return true;
-    }
+  bool operator!=(const ServerConnection &rhs) {
+    return !(*this == rhs);
+  }
 
-    bool operator>(const ServerConnection &rhs) const
-    {
-        bool result = true;
-        result = (host > rhs.host);
-        if (!result)
-            return false;
-        result = (port > rhs.port);
-        if (!result)
-            return false;
-        result = (timeout > rhs.timeout);
-        if (!result)
-            return false;
-        else
-            return true;
-    }
+  bool operator<(const ServerConnection &rhs) const {
+    bool result = true;
+    result = (host < rhs.host);
+    if (!result)
+      return false;
+    result = (port < rhs.port);
+    if (!result)
+      return false;
+    result = (timeout < rhs.timeout);
+    if (!result)
+      return false;
+    else
+      return true;
+  }
 
-protected:
-    std::string host;
-    uint16_t port;
-    uint64_t timeout;
+  bool operator>(const ServerConnection &rhs) const {
+    bool result = true;
+    result = (host > rhs.host);
+    if (!result)
+      return false;
+    result = (port > rhs.port);
+    if (!result)
+      return false;
+    result = (timeout > rhs.timeout);
+    if (!result)
+      return false;
+    else
+      return true;
+  }
+
+ protected:
+  std::string host;
+  uint16_t port;
+  uint64_t timeout;
 };
 
-struct Cmp_ServerConnection
-{
-    bool operator()(const ServerConnection& first,
-                    const ServerConnection& second)
-    {
-        bool less = first.getHost() < second.getHost();
+struct Cmp_ServerConnection {
+  bool operator()(const ServerConnection& first, const ServerConnection& second) {
+    bool less = first.getHost() < second.getHost();
+    if (less)
+      return true;
+    else {
+      if (first.getHost() > second.getHost())
+        return false;
+      else {
+        less = first.getPort() < second.getPort();
         if (less)
-            return true;
-        else
-        {
-            if (first.getHost() > second.getHost())
-                return false;
-            else
-            {
-                less = first.getPort() < second.getPort();
-                if (less)
-                    return true;
-                else
-                {
-                    if (first.getPort() > second.getPort())
-                        return false;
-                    else
-                    {
-                        return first.getTimeout() < second.getTimeout();
-                    }
-                }
-            }
+          return true;
+        else {
+          if (first.getPort() > second.getPort())
+            return false;
+          else {
+            return first.getTimeout() < second.getTimeout();
+          }
         }
+      }
     }
+  }
 };
 
 }

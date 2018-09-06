@@ -29,55 +29,59 @@
 #include "TransportPool.h"
 #include "../data/constructs/server/ServerDefinition.h"
 
-
 namespace interconnect {
 
-  /**
+/**
  * Accumulo Connector
  */
 template<typename Tr>
-class AccumuloConnector: virtual public ClientInterface<Tr> {
-public:
-    /**
-     * base constructor
-     **/
-    AccumuloConnector() :
-        ClientInterface<Tr>(), myTransportPool(NULL), rangeDef(NULL), tServer(NULL), serverDef(NULL) {
+class AccumuloConnector : virtual public ClientInterface<Tr> {
+ public:
+  /**
+   * base constructor
+   **/
+  AccumuloConnector()
+      : ClientInterface<Tr>(),
+        myTransportPool(NULL),
+        rangeDef(NULL),
+        tServer(NULL),
+        serverDef(NULL) {
 
-    }
-    /**
-     * Constructor accepting host and port
-     * @param host host name
-     * @param port port for Accumulo server
-     **/
-    AccumuloConnector(const std::string host, const int port) :
-        ClientInterface<Tr>(host, port), myTransportPool(NULL), rangeDef(NULL), tServer(NULL), serverDef(NULL) {
+  }
+  /**
+   * Constructor accepting host and port
+   * @param host host name
+   * @param port port for Accumulo server
+   **/
+  AccumuloConnector(const std::string host, const int port)
+      : ClientInterface<Tr>(host, port),
+        myTransportPool(NULL),
+        rangeDef(NULL),
+        tServer(NULL),
+        serverDef(NULL) {
 
-    }
-    /**
-     * Destructor with no ownership guidelines
-     **/
-    virtual ~AccumuloConnector() {
+  }
+  /**
+   * Destructor with no ownership guidelines
+   **/
+  virtual ~AccumuloConnector() {
 
-    }
+  }
 
+  cclient::data::security::AuthInfo *getCredentials() {
+    return &credentials;
+  }
 
-    
-    cclient::data::security::AuthInfo *getCredentials() {
-        return &credentials;
-    }
-    
-    cclient::data::tserver::RangeDefinition *getRangesDefinition()
-    {
-      return rangeDef;
-    }
-    
-protected:
-    TransportPool<Tr> *myTransportPool;
-    cclient::data::security::AuthInfo credentials;
-    cclient::data::tserver::RangeDefinition *rangeDef;
-    std::shared_ptr<ServerConnection> tServer;
-    cclient::data::tserver::ServerDefinition *serverDef;
+  std::shared_ptr<cclient::data::tserver::RangeDefinition> getRangesDefinition() {
+    return rangeDef;
+  }
+
+ protected:
+  TransportPool<Tr> *myTransportPool;
+  cclient::data::security::AuthInfo credentials;
+  std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef;
+  std::shared_ptr<ServerConnection> tServer;
+  std::shared_ptr<cclient::data::tserver::ServerDefinition> serverDef;
 };
 
 } /* namespace interconnect */

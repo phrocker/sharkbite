@@ -17,50 +17,34 @@
 
 #include "../../interconnect/ClientInterface.h"
 
-namespace scanners
-{
+namespace scanners {
 /**
  * Heuristic function that defines how the client will connect
  **/
 template<typename T>
-class Heuristic
-{
+class Heuristic {
 
-protected:
+ protected:
 
-	std::vector<interconnect::ClientInterface<T>*> servers;
+  std::vector<std::shared_ptr<interconnect::ClientInterface<T>>> servers;
 
-	virtual void addClientInterface(interconnect::ClientInterface<T> *ifc)
-	{
-		servers.push_back(ifc);
-	}
-	
-	
+  virtual void addClientInterface(std::shared_ptr<interconnect::ClientInterface<T>> ifc) {
+    servers.push_back(ifc);
+  }
 
+ public:
+  /**
+   * Constructor.
+   **/
+  Heuristic() {
+  }
 
-public:
-	/**
-	 * Constructor.
-	 **/
-	Heuristic()
-	{
-	}
+  /**
+   * Destructor deletes the connecting interfaces
+   **/
+  virtual ~Heuristic() {
 
-	/**
-	 * Destructor deletes the connecting interfaces
-	 **/
-	virtual ~Heuristic()
-	{
-		/**
-		 * we maintain ownership of the client interface at this point
-		 **/
-		for(auto ifc : servers) {
-			delete ifc;
-		}
-
-	}
-	
-	
+  }
 
 };
 }

@@ -14,12 +14,9 @@
 #ifndef SOURCE_H_
 #define SOURCE_H_
 
-
 #include <string>
 #include <cstdint>
 #include <vector>
-
-
 
 #include "./constructs/Results.h"
 #include "../data/constructs/client/Instance.h"
@@ -32,68 +29,55 @@ namespace scanners {
 
 template<typename T, class BlockType>
 class Source {
-public:
-    Source() {
-        iters = new std::vector<cclient::data::IterInfo*>();
-    }
-    
-   
+ public:
+  Source() {
+    iters = new std::vector<cclient::data::IterInfo*>();
+  }
 
-    virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
-    
+  virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
 
-    /**
-     * Add the list of user supplied Iterators;
-     */
-    void addIterators(std::vector<cclient::data::IterInfo*> *iterV) {
-        iters->insert(iters->end(), iterV->begin(), iterV->end());
-    }
+  /**
+   * Add the list of user supplied Iterators;
+   */
+  void addIterators(std::vector<cclient::data::IterInfo*> *iterV) {
+    iters->insert(iters->end(), iterV->begin(), iterV->end());
+  }
 
-    
-    virtual void locateFailedTablet(std::vector<cclient::data::Range*> ranges,std::vector<cclient::data::tserver::RangeDefinition*> *locatedTablets) = 0;
-    
-    virtual Results<T, BlockType> *getResultSet() = 0;
+  virtual void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;
 
-    //virtual void addResults(Results<T, BlockType> *results) = 0;
+  virtual Results<T, BlockType> *getResultSet() = 0;
 
-    virtual ~Source() {
-        for(auto iter : *iters)
-	{
-	  delete iter;
-	}
-	delete iters;
-	for(auto column : columns)
-	{
-	  delete column;
-	}
+  //virtual void addResults(Results<T, BlockType> *results) = 0;
+
+  virtual ~Source() {
+    for (auto iter : *iters) {
+      delete iter;
     }
-    
-    std::vector<cclient::data::Column*> *getColumns()
-    {
-      return &columns;
+    delete iters;
+    for (auto column : columns) {
+      delete column;
     }
-    
-    
-    std::vector<cclient::data::IterInfo*> *getIters()
-    {
-      return iters;
-    }
-    
-    
-    virtual cclient::data::Instance *getInstance() = 0;
-    
-    void fetchColumn(std::string col, std::string colqual="")
-    {
-      if (!IsEmpty(&colqual))
-      {
-	columns.push_back(new cclient::data::Column(col,colqual));
-      }
-      else
-	columns.push_back(new cclient::data::Column(col));
-    }
-protected:
-    std::vector<cclient::data::Column*> columns;
-    std::vector<cclient::data::IterInfo*> *iters;
+  }
+
+  std::vector<cclient::data::Column*> *getColumns() {
+    return &columns;
+  }
+
+  std::vector<cclient::data::IterInfo*> *getIters() {
+    return iters;
+  }
+
+  virtual cclient::data::Instance *getInstance() = 0;
+
+  void fetchColumn(std::string col, std::string colqual = "") {
+    if (!IsEmpty(&colqual)) {
+      columns.push_back(new cclient::data::Column(col, colqual));
+    } else
+      columns.push_back(new cclient::data::Column(col));
+  }
+ protected:
+  std::vector<cclient::data::Column*> columns;
+  std::vector<cclient::data::IterInfo*> *iters;
 };
 }
 #endif /* SCANNER_H_ */

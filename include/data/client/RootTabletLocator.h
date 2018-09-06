@@ -55,7 +55,7 @@ public:
     }
 
     void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Mutation*> *mutations,
-                      std::map<std::string, cclient::data::TabletServerMutations*> *binnedMutations,
+                      std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations,
                       std::set<std::string> *locations, std::vector<cclient::data::Mutation*> *failures) {
     }
 

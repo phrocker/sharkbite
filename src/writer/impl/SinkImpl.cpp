@@ -21,18 +21,13 @@
 #include "writer/impl/WriterHeuristic.h"
 
 namespace writer {
-Writer::Writer(
-    cclient::data::Instance *instance,
-    interconnect::TableOperations<cclient::data::KeyValue,
-        scanners::ResultBlock<cclient::data::KeyValue>> *tops,
-    cclient::data::security::Authorizations *auths, uint16_t threads)
+Writer::Writer(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+               cclient::data::security::Authorizations *auths, uint16_t threads)
     : tops(tops),
       Sink<cclient::data::KeyValue>(500),
       mutationQueue(500 * 1.5) {
-  connectorInstance =
-      dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*>(instance);
-  tableLocator = cclient::impl::cachedLocators.getLocator(
-      cclient::impl::LocatorKey(connectorInstance, tops->getTableId()));
+  connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*>(instance);
+  tableLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tops->getTableId()));
   credentials = tops->getCredentials();
   writerHeuristic = new WriterHeuristic(threads);
 }
@@ -49,20 +44,15 @@ Writer::~Writer() {
 void Writer::handleFailures(std::vector<cclient::data::Mutation*> *failures) {
   std::vector<cclient::data::Mutation*> newFailures;
 
-  std::map<std::string, cclient::data::TabletServerMutations*> binnedMutations;
+  std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
   std::set<std::string> locations;
 
-  tableLocator->binMutations(credentials, failures, &binnedMutations,
-                             &locations, &newFailures);
+  tableLocator->binMutations(credentials, failures, &binnedMutations, &locations, &newFailures);
   for (std::string location : locations) {
     std::vector<std::string> locationSplit = split(location, ':');
-    cclient::data::tserver::ServerDefinition *rangeDef =
-        new cclient::data::tserver::ServerDefinition(
-            credentials,
-            NULL,
-            locationSplit.at(0), atoi(locationSplit.at(1).c_str()));
-    writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(),
-                           binnedMutations.at(location));
+    std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef = std::make_shared<cclient::data::tserver::ServerDefinition>(credentials, nullptr, locationSplit.at(0),
+                                                                                                                                    atoi(locationSplit.at(1).c_str()));
+    writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
 
   }
 
@@ -86,34 +76,27 @@ void Writer::flush(bool override) {
       kv.push_back(key);
     }
 
-
-    cclient::data::Mutation *prevMutation = NULL;
-    std::vector<cclient::data::Mutation*> *mutation = new std::vector<
-        cclient::data::Mutation*>();
+    cclient::data::Mutation *prevMutation = nullptr;
+    std::vector<cclient::data::Mutation*> *mutation = new std::vector<cclient::data::Mutation*>();
     for (size_t i = 0; i < dequeued; i++) {
 
       std::shared_ptr<cclient::data::Key> key = kv.at(i)->getKey();
       std::shared_ptr<cclient::data::Value> value = kv.at(i)->getValue();
-      if (NULL != prevMutation) {
+      if (nullptr != prevMutation) {
         std::pair<char*, size_t> row = key->getRow();
         if (row.second > 0) {
           std::string rowStr = std::string(row.first, row.second);
           if (prevMutation->getRow() == rowStr) {
 
-            prevMutation->put(key->getColFamilyStr(), key->getColQualifierStr(),
-                              key->getColVisibilityStr(), key->getTimeStamp(),
-                              key->isDeleted(), value->data(), value->size());
+            prevMutation->put(key->getColFamilyStr(), key->getColQualifierStr(), key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(), value->data(), value->size());
             continue;
           }
 
         }
 
       }
-      cclient::data::Mutation *m = new cclient::data::Mutation(
-          key->getRowStr());
-      m->put(key->getColFamilyStr(), key->getColQualifierStr(),
-             key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(),
-             value->data(), value->size());
+      cclient::data::Mutation *m = new cclient::data::Mutation(key->getRowStr());
+      m->put(key->getColFamilyStr(), key->getColQualifierStr(), key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(), value->data(), value->size());
       prevMutation = m;
       mutation->push_back(m);
 
@@ -136,20 +119,16 @@ void Writer::flush(bool override) {
     delete[] mut;
     //delete kv;
 
-    binning: std::map<std::string, cclient::data::TabletServerMutations*> binnedMutations;
+    binning: std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
     std::set<std::string> locations;
     try {
-      tableLocator->binMutations(credentials, mutation, &binnedMutations,
-                                 &locations, &failures);
+      tableLocator->binMutations(credentials, mutation, &binnedMutations, &locations, &failures);
       for (std::string location : locations) {
         std::vector<std::string> locationSplit = split(location, ':');
-        cclient::data::tserver::ServerDefinition *rangeDef =
-            new cclient::data::tserver::ServerDefinition(
-                credentials,
-                NULL,
-                locationSplit.at(0), atoi(locationSplit.at(1).c_str()));
-        writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(),
-                               binnedMutations.at(location));
+        std::cout << "bin locations " << location << std::endl;
+        std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef = std::make_shared<cclient::data::tserver::ServerDefinition>(credentials, nullptr, locationSplit.at(0),
+                                                                                                                                        atoi(locationSplit.at(1).c_str()));
+        writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
 
       }
     } catch (cclient::exceptions::ClientException ce) {

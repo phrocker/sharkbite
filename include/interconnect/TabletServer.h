@@ -55,13 +55,11 @@ static TransportPool<ThriftTransporter> CLUSTER_COORDINATOR;
 
 extern void closeAllThriftConnections();
 
-class ServerInterconnect : public AccumuloConnector<
-    interconnect::ThriftTransporter> {
+class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTransporter> {
 
  protected:
-  ServerInterconnect(cclient::data::security::AuthInfo *creds,
-                     TransportPool<ThriftTransporter> *distributedConnector =
-                         &CLUSTER_COORDINATOR) {
+  ServerInterconnect(cclient::data::security::AuthInfo *creds, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR) {
+    std::cout << "huh?" << std::endl;
     myTransportPool = distributedConnector;
     this->credentials = *creds;
     myTransport = NULL;
@@ -100,17 +98,12 @@ class ServerInterconnect : public AccumuloConnector<
 
  public:
 
-  ServerInterconnect(const std::string host, const int port,
-                     const cclient::impl::Configuration *conf,
-                     TransportPool<ThriftTransporter> *distributedConnector =
-                         &CLUSTER_COORDINATOR);
+  ServerInterconnect(const std::string host, const int port, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR);
 
-  ServerInterconnect(cclient::data::tserver::RangeDefinition *rangeDef,
-                     const cclient::impl::Configuration *conf,
-                     TransportPool<ThriftTransporter> *distributedConnector =
+  ServerInterconnect(std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
                          &CLUSTER_COORDINATOR) {
-    ConnectorService conn("tserver", rangeDef->getServer(),
-                          rangeDef->getPort());
+    std::cout << rangeDef->getServer() << " server" << std::endl;
+    ConnectorService conn("tserver", rangeDef->getServer(), rangeDef->getPort());
 
     const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
     TSERVER_DEFAULT_PORT);
@@ -122,16 +115,16 @@ class ServerInterconnect : public AccumuloConnector<
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared<ServerConnection>(
-        conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
-        rangeDef->getPort(), timeout);
+    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
 
     int failures = 0;
     do {
+      std::cout << "do" << std::endl;
 
       try {
         myTransport = distributedConnector->getTransporter(tServer);
       } catch (apache::thrift::transport::TTransportException te) {
+        std::cout << "saw error" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         // close may occur on a partial write this is okay
         // to know
@@ -146,12 +139,14 @@ class ServerInterconnect : public AccumuloConnector<
         break;
 
       } catch (apache::thrift::protocol::TProtocolException tpe) {
+        std::cout << "saw error" << std::endl;
         myTransport->sawError(true);
         if (++failures > 2)
           throw tpe;
         distributedConnector->freeTransport(myTransport);
         continue;
       } catch (apache::thrift::transport::TTransportException tpe) {
+        std::cout << "saw error" << std::endl;
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         if (++failures > 2)
@@ -175,25 +170,16 @@ class ServerInterconnect : public AccumuloConnector<
   }
 
   Scan *
-  scan(std::vector<cclient::data::Column*> *cols,
-       std::vector<cclient::data::IterInfo*> *serverSideIterators) {
-    ScanRequest<
-        ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
-            cclient::data::Range*>> request(&credentials,
-                                            rangeDef->getAuthorizations(),
-                                            tServer);
+  scan(std::vector<cclient::data::Column*> *cols, std::vector<cclient::data::IterInfo*> *serverSideIterators) {
+    ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
     request.addColumns(cols);
 
     request.setIters(serverSideIterators);
 
-    for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef
-        ->getExtents()) {
-      std::cout << extent->getTableId() << " " << extent->getEndRow()
-                << std::endl;
-      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
-          cclient::data::Range*> *ident = new ScanIdentifier<
-          std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>();
+    for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents()) {
+      std::cout << extent->getTableId() << " " << extent->getEndRow() << std::endl;
+      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>();
       if (rangeDef->getRanges()->size() == 0) {
         return NULL;
       }
@@ -208,12 +194,10 @@ class ServerInterconnect : public AccumuloConnector<
 
   }
 
-  ServerInterconnect(cclient::data::tserver::ServerDefinition *rangeDef,
-                     const cclient::impl::Configuration *conf,
-                     TransportPool<ThriftTransporter> *distributedConnector =
+  ServerInterconnect(std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
                          &CLUSTER_COORDINATOR) {
-    ConnectorService conn("tserver", rangeDef->getServer(),
-                          rangeDef->getPort());
+    std::cout << rangeDef->getServer() << " server 2" << std::endl;
+    ConnectorService conn("tserver", rangeDef->getServer(), rangeDef->getPort());
 
     const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
     TSERVER_DEFAULT_PORT);
@@ -225,9 +209,7 @@ class ServerInterconnect : public AccumuloConnector<
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared<ServerConnection>(
-        conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
-        rangeDef->getPort(), timeout);
+    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
     do {
 
       try {
@@ -284,8 +266,7 @@ class ServerInterconnect : public AccumuloConnector<
     return NULL;
   }
 
-  cclient::data::TabletServerMutations *
-  write(cclient::data::TabletServerMutations *mutations) {
+  std::shared_ptr<cclient::data::TabletServerMutations> write(std::shared_ptr<cclient::data::TabletServerMutations> mutations) {
 
     bool success = false;
     uint32_t failures = 0;

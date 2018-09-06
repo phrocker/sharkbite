@@ -13,34 +13,31 @@
  */
 #include "writer/impl/WriterHeuristic.h"
 
-namespace writer
-{
+namespace writer {
 
-WriterHeuristic::WriterHeuristic (short numThreads, uint32_t queueSize) :
-    threadCount (numThreads),  started (false), queue(queueSize)
-{
-    closed = false;
- 
-    conditionals = new SinkConditions ();
-    
+WriterHeuristic::WriterHeuristic(short numThreads, uint32_t queueSize)
+    : threadCount(numThreads),
+      started(false),
+      queue(queueSize) {
+  closed = false;
+
+  conditionals = new SinkConditions();
 
 }
 
-WriterHeuristic::~WriterHeuristic ()
-{
-    close();
-    WritePair *pair = NULL;
-    while(conditionals->getMutationCount() >  0)
-    {
-	if (queue.try_dequeue(pair))
-	{
-	  conditionals->decrementMutationCount();
-	  delete pair->rangeDef;
-	  delete pair->mutations;
-	  
-	}
+WriterHeuristic::~WriterHeuristic() {
+  close();
+  /*
+  WritePair *pair = NULL;
+  while (conditionals->getMutationCount() > 0) {
+    if (queue.try_dequeue(pair)) {
+      conditionals->decrementMutationCount();
+      delete pair->rangeDef;
+      delete pair->mutations;
+
     }
-    delete conditionals;
+  }*/
+  delete conditionals;
 }
 
 } /* namespace data */

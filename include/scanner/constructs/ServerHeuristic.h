@@ -27,221 +27,178 @@
 #include <vector>
 #include <mutex>
 
-namespace scanners
-{
+namespace scanners {
 
 template<typename T>
 struct ScanPair {
-	Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *src;
-	Heuristic<T> *heuristic;
-	
-	
+  Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *src;
+  Heuristic<T> *heuristic;
+
 };
 
 /**
  * Contains base functionality to support multi scanning
  */
 
-class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter>
-{
+class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
-public:
+ public:
 
-	/**
-	 * Add a server interconnect
-	 */
-	void
-	addClientInterface (
-	        interconnect::ClientInterface<interconnect::ThriftTransporter> *serverIfc)
-	{
-		std::lock_guard<std::mutex> lock(serverLock);
-		Heuristic::addClientInterface (serverIfc);
-	}
+  /**
+   * Add a server interconnect
+   */
+  void addClientInterface(std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> serverIfc) {
+    std::lock_guard<std::mutex> lock(serverLock);
+    Heuristic::addClientInterface(serverIfc);
+  }
 
-	explicit ScannerHeuristic (short numThreads = 10) :
-		threadCount (numThreads), started (false)
-	{
-		
-	}
+  explicit ScannerHeuristic(short numThreads = 10)
+      : threadCount(numThreads),
+        started(false) {
 
-	~ScannerHeuristic ()
-	{		
-	      std::lock_guard<std::mutex> lock(serverLock);
-		
-	      if (started)
-	      {
-		    for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++)
-		    {
-			    iter->join();
-		    }
-	      }
-	      started= false;
-		  
-		 
-		
+  }
 
-	}
+  ~ScannerHeuristic() {
+    std::lock_guard<std::mutex> lock(serverLock);
 
-	uint16_t
-	scan (Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source)
-	{
-		std::lock_guard<std::mutex> lock(serverLock);
-		if (!started)
-		  started =true;
-		uint16_t scans = 0;
-		for (int i = 0; i < threadCount; i++) {
-			ScanPair<interconnect::ThriftTransporter> *pair = new ScanPair<
-			interconnect::ThriftTransporter>;
-			pair->src = source;
-			pair->heuristic = this;
- 			threads.push_back( std::thread(ScannerHeuristic::scanRoutine,pair) );
-		}
-		return scans;
-	}
+    if (started) {
+      for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++) {
+        iter->join();
+      }
+    }
+    started = false;
 
-private:
-	std::mutex serverLock;
-	std::vector<std::thread> threads;
-	uint16_t threadCount;
-protected:
+  }
 
-	
-  
-	static void
-	closeScan (Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source)
-	{
+  uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
+    std::lock_guard<std::mutex> lock(serverLock);
+    if (!started)
+      started = true;
+    uint16_t scans = 0;
+    for (int i = 0; i < threadCount; i++) {
+      ScanPair<interconnect::ThriftTransporter> *pair = new ScanPair<interconnect::ThriftTransporter>;
+      pair->src = source;
+      pair->heuristic = this;
+      threads.push_back(std::thread(ScannerHeuristic::scanRoutine, pair));
+    }
+    return scans;
+  }
 
-		source->getResultSet ()->decrementProducers ();
+ private:
+  std::mutex serverLock;
+  std::vector<std::thread> threads;
+  uint16_t threadCount;
+ protected:
 
-	}
-	
-	void addFailedScan(ScanPair<interconnect::ThriftTransporter> *scanResource,interconnect::ServerInterconnect *server,interconnect::Scan *scan)
-	{
-	  
-	  cclient::data::tserver::RangeDefinition *rangeDef = server->getRangesDefinition();
-	  std::shared_ptr<cclient::data::Key> lastKey = 0;
-	  if (NULL != scan)
-	    lastKey = scan->getTopKey();
-	  std::vector<cclient::data::Range*> *ranges = rangeDef->getRanges();
-	  std::vector<cclient::data::Range*> newRanges;
-	  for(auto range : *ranges)
-	  {
-	   if (NULL != lastKey && (range->getStopKey()) <= lastKey)
-	   {
-	     // skip entirely
-	     delete range;
-	   }
-	   else if (NULL != lastKey &&  (range->getStartKey()) <= lastKey )
-	   {
-	     cclient::data::Range *newRange = new cclient::data::Range(lastKey,false,range->getStopKey(),range->getStopKeyInclusive());
-	     
-	     // create a new range
-	     newRanges.push_back(newRange);
-	   }
-	   else{
-	     newRanges.push_back(range);
-	   }
-	  }
-	  
-	  std::vector<cclient::data::tserver::RangeDefinition*> locatedTablets;
-	  
-	  scanResource->src->locateFailedTablet(newRanges,&locatedTablets);
-	  
-	  for(auto newRangeDef : locatedTablets)
-	  {
-	    interconnect::ServerInterconnect *directConnect =
-                        new interconnect::ServerInterconnect(newRangeDef,
-                                scanResource->src->getInstance()->getConfiguration());
-			
-	    ((ScannerHeuristic*)scanResource->heuristic)->addClientInterface(directConnect);
-	  }
-	  
-	  
-	  
-	}
-	
-	
-	static void *
-	scanRoutine (ScanPair<interconnect::ThriftTransporter> *scanResource)
-	{
+  static void closeScan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
 
-		
-		Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source = scanResource->src;
+    source->getResultSet()->decrementProducers();
 
-		source->getResultSet ()->registerProducer ();
+  }
 
-		interconnect::ServerInterconnect *conn = 0;
-		do {
-			conn = ((ScannerHeuristic*) scanResource->heuristic)->next ();
-			
-			interconnect::Scan *scan = 0;
-			if (NULL != conn) {
+  void addFailedScan(ScanPair<interconnect::ThriftTransporter> *scanResource, std::shared_ptr<interconnect::ServerInterconnect> server, interconnect::Scan *scan) {
 
-			  try{
-				scan = conn->scan (source->getColumns(),source->getIters());
+    auto rangeDef = server->getRangesDefinition();
+    std::shared_ptr<cclient::data::Key> lastKey = 0;
+    if (NULL != scan)
+      lastKey = scan->getTopKey();
+    std::vector<cclient::data::Range*> *ranges = rangeDef->getRanges();
+    std::vector<cclient::data::Range*> newRanges;
+    for (auto range : *ranges) {
+      if (NULL != lastKey && (range->getStopKey()) <= lastKey) {
+        // skip entirely
+        delete range;
+      } else if (NULL != lastKey && (range->getStartKey()) <= lastKey) {
+        cclient::data::Range *newRange = new cclient::data::Range(lastKey, false, range->getStopKey(), range->getStopKeyInclusive());
 
-				do {
-					std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
+        // create a new range
+        newRanges.push_back(newRange);
+      } else {
+        newRanges.push_back(range);
+      }
+    }
 
-					scan->getNextResults (&nextResults);
-					
-					source->getResultSet ()->add_ptr (&nextResults);
-					nextResults.clear ();
-					
-					interconnect::Scan *newScan = conn->continueScan(scan);
-					
-					if (NULL == newScan)
-					{
-					  delete scan;
-					  scan = NULL;
-					}
-					else
-					  scan = newScan;
-					
-				} while( scan != NULL);
-			  }
-			  catch(org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te)
-			  {
-			    
-			    ((ScannerHeuristic*)scanResource->heuristic)->addFailedScan(scanResource,conn,scan);
-			  }
+    std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> locatedTablets;
 
+    scanResource->src->locateFailedTablet(newRanges, &locatedTablets);
 
-			} else {
-				delete scanResource;
-				break;
-			}
-		} while (NULL != conn);
+    for (auto newRangeDef : locatedTablets) {
+      auto directConnect = std::make_shared<interconnect::ServerInterconnect>(newRangeDef, scanResource->src->getInstance()->getConfiguration());
 
-		closeScan(source);
+      ((ScannerHeuristic*) scanResource->heuristic)->addClientInterface(directConnect);
+    }
 
-		return 0;
+  }
 
-	}
+  static void *
+  scanRoutine(ScanPair<interconnect::ThriftTransporter> *scanResource) {
 
-	virtual interconnect::ServerInterconnect *
-	next ()
-	{
-		interconnect::ClientInterface<interconnect::ThriftTransporter> *nextService = NULL;
+    Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source = scanResource->src;
 
-		std::lock_guard<std::mutex> lock(serverLock);
+    source->getResultSet()->registerProducer();
 
-		if (!servers.empty ()) {
-			nextService = servers.back ();
-			servers.pop_back ();
-		}
+    std::shared_ptr<interconnect::ServerInterconnect> conn = 0;
+    do {
+      conn = ((ScannerHeuristic*) scanResource->heuristic)->next();
 
-	
+      interconnect::Scan *scan = 0;
+      if (NULL != conn) {
 
-		interconnect::ServerInterconnect *connector =
-		        dynamic_cast<interconnect::ServerInterconnect*> (nextService);
+        try {
+          scan = conn->scan(source->getColumns(), source->getIters());
 
-		return connector;
+          do {
+            std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
 
-	}
+            scan->getNextResults(&nextResults);
 
-	volatile bool started;
-	std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*>::iterator it;
+            source->getResultSet()->add_ptr(&nextResults);
+            nextResults.clear();
+
+            interconnect::Scan *newScan = conn->continueScan(scan);
+
+            if (NULL == newScan) {
+              delete scan;
+              scan = NULL;
+            } else
+              scan = newScan;
+
+          } while (scan != NULL);
+        } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+
+          ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
+        }
+
+      } else {
+        delete scanResource;
+        break;
+      }
+    } while (NULL != conn);
+
+    closeScan(source);
+
+    return 0;
+
+  }
+
+  virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
+    std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> nextService = NULL;
+
+    std::lock_guard<std::mutex> lock(serverLock);
+
+    if (!servers.empty()) {
+      nextService = servers.back();
+      servers.pop_back();
+    }
+
+    std::shared_ptr<interconnect::ServerInterconnect> connector = std::dynamic_pointer_cast<interconnect::ServerInterconnect>(nextService);
+
+    return connector;
+
+  }
+
+  volatile bool started;
+  std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*>::iterator it;
 
 };
 }

@@ -29,85 +29,71 @@
 #include "interconnect/tableOps/TableOperations.h"
 #include "../Sink.h"
 #include "WriterHeuristic.h"
-namespace writer
-{
+namespace writer {
 
 /*
  *
  */
-class Writer : public Sink<cclient::data::KeyValue>
-{
-public:
-    Writer (cclient::data::Instance *instance,
-              interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
-              cclient::data::security::Authorizations *auths, uint16_t threads);
-    virtual
-    ~Writer ();
+class Writer : public Sink<cclient::data::KeyValue> {
+ public:
+  Writer(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+         cclient::data::security::Authorizations *auths, uint16_t threads);
+  virtual
+  ~Writer();
 
-    void
-    flush (bool override = false);
+  void
+  flush(bool override = false);
 
-    void
-    setHeuristic (scanners::Heuristic<interconnect::ThriftTransporter> *heuristic)
-    {
-        writerHeuristic = (WriterHeuristic*) heuristic;
-    }
-    
-    bool enqueue (cclient::data::Mutation *obj)
-    {
-	   bool enqueued = mutationQueue.enqueue (obj);
-	   return enqueued;
-    }
-    
-    bool
-    addMutation (std::unique_ptr<cclient::data::Mutation> obj)
-    {
-	      while(waitingSize() >= ((maxWait()+1)*1.5)) {
-		    std::this_thread::sleep_for(std::chrono::milliseconds(25));
-	    }
-	    
-	    cclient::data::Mutation *ptr = obj.release();
-	    bool enqueued = enqueue(ptr);
-	    if (enqueued && exceedQueue ()) {
-		    flush ();
-	    }
+  void setHeuristic(scanners::Heuristic<interconnect::ThriftTransporter> *heuristic) {
+    writerHeuristic = (WriterHeuristic*) heuristic;
+  }
 
-	    
-      return true;
-    }
-    
-    inline virtual size_t
-    size ()
-    {
+  bool enqueue(cclient::data::Mutation *obj) {
+    bool enqueued = mutationQueue.enqueue(obj);
+    return enqueued;
+  }
 
-	    return sinkQueue.size_approx() + mutationQueue.size_approx();
+  bool addMutation(std::unique_ptr<cclient::data::Mutation> obj) {
+    while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
 
-protected:
-  
+    cclient::data::Mutation *ptr = obj.release();
+    bool enqueued = enqueue(ptr);
+    if (enqueued && exceedQueue()) {
+      flush();
+    }
+
+    return true;
+  }
+
+  inline virtual size_t size() {
+
+    return sinkQueue.size_approx() + mutationQueue.size_approx();
+  }
+
+ protected:
+
   void handleFailures(std::vector<cclient::data::Mutation*> *failures);
-  
-  
-  virtual uint64_t waitingSize()
-	{
-	  // size of the heuristic is equivalent to the number of workers
-	  // currently running.
-	  return writerHeuristic->size();
-	}
-	
-	virtual uint64_t maxWait()
-	{
-	  return writerHeuristic->maxThreads();
-	}
-	
-    WriterHeuristic *writerHeuristic;
-    cclient::data::security::AuthInfo *credentials;
-    std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> servers;
-    cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
-    cclient::impl::TabletLocator *tableLocator;
-    interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops;
-    moodycamel::ConcurrentQueue<cclient::data::Mutation*> mutationQueue;
-    
+
+  virtual uint64_t waitingSize() {
+    // size of the heuristic is equivalent to the number of workers
+    // currently running.
+    return writerHeuristic->size();
+  }
+
+  virtual uint64_t maxWait() {
+    return writerHeuristic->maxThreads();
+  }
+
+  WriterHeuristic *writerHeuristic;
+  cclient::data::security::AuthInfo *credentials;
+  std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> servers;
+  cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
+  cclient::impl::TabletLocator *tableLocator;
+  interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops;
+  moodycamel::ConcurrentQueue<cclient::data::Mutation*> mutationQueue;
+
 };
 
 using BatchWriter = writer::Sink<cclient::data::KeyValue>;
