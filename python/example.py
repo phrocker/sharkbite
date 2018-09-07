@@ -21,18 +21,11 @@ args = parser.parse_args()
 
 sharkbite = cdll.LoadLibrary(args.dll_file)
 
-
+""" dll_file is the path to the shared object """
 conn = Conector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
 tabletocreate = "blahblah3".encode('utf-8')
 
-"""
-sharkbite.create_table.argtypes = [ctypes.POINTER(Connector), ctypes.c_char_p ]
-sharkbite.create_table.restype = ctypes.POINTER(TableOps)
-
-
-tableOps = sharkbite.create_table(connector, tabletocreate)
-"""
 tableOps = conn.create_table(tabletocreate)
 
 writer = conn.create_writer(tableOps,2)
