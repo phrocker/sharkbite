@@ -22,7 +22,7 @@ args = parser.parse_args()
 sharkbite = cdll.LoadLibrary(args.dll_file)
 
 
-conn = Accumulo(dll_file=args.dll_file,instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
+conn = Conector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
 tabletocreate = "blahblah3".encode('utf-8')
 
@@ -35,7 +35,14 @@ tableOps = sharkbite.create_table(connector, tabletocreate)
 """
 tableOps = conn.create_table(tabletocreate)
 
-scanner = conn.create_scanner(tableOps)
+writer = conn.create_writer(tableOps,2)
 
-conn.drop_table(tableOps) 
+mutation = writer.createMutation("blah")
 
+mutation.put("cf","cq","")
+
+mutation.put("cf2","cq","")
+
+writer.addMutation(mutation)
+
+writer.close()

@@ -15,6 +15,7 @@
 #include <iostream>
 #include <sstream>
 #include "data/constructs/Key.h"
+#include "data/constructs/Mutation.h"
 #include "data/constructs/KeyValue.h"
 #include "data/constructs/security/AuthInfo.h"
 #include "data/constructs/security/Authorizations.h"
@@ -62,8 +63,7 @@ int free_connector(struct connector *connector) {
   return 0;
 }
 
-TableOps *
-open_table(struct connector *connector, char *tableName) {
+TableOps *open_table(struct connector *connector, char *tableName) {
   struct TableOps *tableOps = new TableOps();
 
   interconnect::MasterConnect *master = static_cast<interconnect::MasterConnect*>(connector->masterPtr);
@@ -77,14 +77,13 @@ open_table(struct connector *connector, char *tableName) {
   return tableOps;
 }
 
-struct TableOps *
-create_table(struct connector *connector, char *tableName) {
+struct TableOps *create_table(struct connector *connector, char *tableName) {
   std::cout << "Create table " << std::string(tableName) << std::endl;
   struct TableOps *tableOps = open_table(connector, tableName);
 
   AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
 
-  tableOpsCpp->create(true);
+  tableOpsCpp->create(false);
 
   return tableOps;
 }
@@ -121,6 +120,58 @@ struct BatchScan *createScanner(struct TableOps *tableOps, short threads) {
   }
   return 0;
 }
+
+struct CMutation *createMutation(char *row){
+    if (row != nullptr){
+        cclient::data::Mutation *m = new cclient::data::Mutation(row);
+        struct CMutation *nm = new CMutation();
+        nm->mutationPtr = m;
+        return nm;
+    }
+    return nullptr;
+}
+
+
+void freeMutation(struct CMutation *mutation){
+    if (mutation != nullptr && mutation->mutationPtr != nullptr){
+        cclient::data::Mutation *m = static_cast<cclient::data::Mutation*>(mutation->mutationPtr);
+        delete m;
+        delete mutation;
+    }
+}
+
+void put(struct CMutation *mutation, char *cf, char *cq, char *cv){
+    if (mutation != nullptr){
+        cclient::data::Mutation *m = static_cast<cclient::data::Mutation*>(mutation->mutationPtr);
+        m->put(cf,cq,cv);
+    }
+}
+
+
+struct BatchWriter *createWriter(struct TableOps *tableOps, short threads){
+  if (NULL != tableOps->tableOpsPtr) {
+    AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
+    struct BatchWriter *writer = new BatchWriter();
+    cclient::data::security::Authorizations auths;
+    writer->writerPtr = tableOpsCpp->createWriter(&auths, threads).release();
+    return writer;
+  }
+  return 0;
+}
+
+int addMutation(struct BatchWriter *writer, struct CMutation *mutation){
+    if (nullptr != writer && nullptr != mutation){
+        writer::Sink<cclient::data::KeyValue> *client_writer = static_cast<writer::Sink<cclient::data::KeyValue>*>(writer->writerPtr);
+        cclient::data::Mutation *m = static_cast<cclient::data::Mutation*>(mutation->mutationPtr);
+        client_writer->addMutation(std::unique_ptr<cclient::data::Mutation>(m));
+        // avoid frees if user calls freeMutation
+        mutation->mutationPtr = nullptr;
+        return 0;
+    }
+    return 1;
+}
+
+
 
 void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey) {
   std::pair<char*, size_t> row = otherKey->getRow();
@@ -230,6 +281,21 @@ int closeScanner(struct BatchScan *scanner) {
     return 1;
   }
 }
+
+int closeWriter(struct BatchWriter *writer) {
+    if (0 != writer && 0 != writer->writerPtr) {
+        writer::Sink<cclient::data::KeyValue> *client_writer = static_cast<writer::Sink<cclient::data::KeyValue>*>(writer->writerPtr);
+        client_writer->close();
+
+        writer->writerPtr = nullptr;
+        delete client_writer;
+        delete writer;
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 
 }
 

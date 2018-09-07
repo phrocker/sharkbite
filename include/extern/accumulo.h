@@ -39,6 +39,15 @@ struct BatchScan {
 	void *on_next_fn;
 };
 
+struct BatchWriter {
+	// stuff you don't use
+	void *writerPtr;
+};
+
+struct CMutation {
+    void *mutationPtr;
+};
+
 struct connector {
 
 	// stuff you don't use
@@ -62,7 +71,17 @@ int free_table(struct TableOps *tableOps);
 
 // scanner code
 
+struct CMutation *createMutation(char *row);
+
+void freeMutation(struct CMutation *);
+
+void put(struct CMutation *, char *cf, char *cq, char *cv);
+
 struct BatchScan *createScanner(struct TableOps *tableOps, short threads);
+
+struct BatchWriter *createWriter(struct TableOps *tableOps, short threads);
+
+int addMutation(struct BatchWriter *writer, struct CMutation *mutation);
 
 int addRange(struct BatchScan *scanner, struct CRange *range);
 
@@ -77,6 +96,8 @@ int next(struct BatchScan *scanner, struct CKeyValue *kv);
 int nextMany(struct BatchScan *scanner, struct KeyValueList *kvl);
 
 int closeScanner(struct BatchScan *scanner);
+
+int closeWriter(struct BatchWriter *writer);
 
 
 

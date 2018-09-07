@@ -45,6 +45,7 @@ unsigned deleted : 1;
 
 };
 
+
 struct CAuthorizations
 {
     char **auths;
