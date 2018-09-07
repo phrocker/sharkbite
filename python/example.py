@@ -19,8 +19,6 @@ parser.add_argument("-p", "--password", dest="password",
                     help="DLL filename")
 args = parser.parse_args()
 
-sharkbite = cdll.LoadLibrary(args.dll_file)
-
 """ dll_file is the path to the shared object """
 conn = Conector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
