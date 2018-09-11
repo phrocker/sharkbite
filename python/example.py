@@ -46,10 +46,8 @@ scanner = conn.create_scanner(tableOps,2)
 scanner.addRange(scanRange)
 
 if scanner.hasNext():
-    print("ahhhnext")
     ck = scanner.nextKeyValue()
-    print(len(ctypes.cast(ck.key.row, ctypes.c_char_p).value))
-    print(ctypes.cast(ck.key.row, ctypes.c_char_p).value.decode('ascii'))
+    print(ck.key.row)
 
 
 
