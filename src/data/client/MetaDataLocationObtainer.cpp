@@ -113,10 +113,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
       std::shared_ptr<cclient::data::KeyExtent> ke = std::make_shared<cclient::data::KeyExtent>(currentRow, prevRow);
       if (location.length() > 0) {
-
-        std::cout << "location is " << location << std::endl;
         cclient::data::TabletLocation te(ke, location, session);
-
         tabletLocations.push_back(te);
       }
     }

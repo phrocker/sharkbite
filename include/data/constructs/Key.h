@@ -234,7 +234,8 @@ public:
         out << std::string (cf.first, cf.second) << ":"
             << std::string (cq.first, cq.second) << " [";
         std::pair<char*, size_t> viz = rhs.getColVisibility ();
-        out << std::string (viz.first, viz.second) << "] " << rhs.getTimeStamp ();
+        auto vizstring = viz.second > 1 ? std::string (viz.first, viz.second) : "";
+        out << vizstring << "] " << rhs.getTimeStamp ();
         return out;
     }
 

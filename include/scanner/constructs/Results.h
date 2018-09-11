@@ -54,6 +54,8 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
     sourceConditionals = conditionals;
   }
 
+  ResultBlock(){}
+
   ResultBlock<T> begin() {
     getNextResult();
     return *this;

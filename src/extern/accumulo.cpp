@@ -32,10 +32,13 @@ using namespace cclient::data::streams;
 using namespace interconnect;
 using namespace scanners;
 
+
+
 #include "extern/accumulo.h"
 #include "extern/accumulo_data.h"
 
 extern "C" {
+
 
 struct connector *
 create_connector(char *instance, char *zks, char *username, char *password) {
@@ -78,7 +81,6 @@ TableOps *open_table(struct connector *connector, char *tableName) {
 }
 
 struct TableOps *create_table(struct connector *connector, char *tableName) {
-  std::cout << "Create table " << std::string(tableName) << std::endl;
   struct TableOps *tableOps = open_table(connector, tableName);
 
   AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
@@ -114,8 +116,8 @@ struct BatchScan *createScanner(struct TableOps *tableOps, short threads) {
   if (NULL != tableOps->tableOpsPtr) {
     AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
     struct BatchScan *scanner = new BatchScan();
-    cclient::data::security::Authorizations auths;
-    scanner->scannerPtr = tableOpsCpp->createScanner(&auths, threads).release();
+    cclient::data::security::Authorizations *auths = new cclient::data::security::Authorizations();
+    scanner->scannerPtr = tableOpsCpp->createScanner(auths, threads).release();
     return scanner;
   }
   return 0;
@@ -175,29 +177,36 @@ int addMutation(struct BatchWriter *writer, struct CMutation *mutation){
 
 void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey) {
   std::pair<char*, size_t> row = otherKey->getRow();
-  key->row = new uint8_t[row.second];
-  key->rowLength = row.second;
-  memcpy(key->row, row.first, row.second);
+  key->row = new char[row.second];
+    //memcpy(key->row, row.first, row.second);
+  strcpy(key->row,row.first);
 
   std::pair<char*, size_t> cf = otherKey->getColFamily();
-  key->colFamily = new uint8_t[cf.second];
-  key->columnFamilyLength = cf.second;
-  memcpy(key->colFamily, cf.first, cf.second);
+  key->colFamily = new char[cf.second];
+  //memcpy(key->colFamily, cf.first, cf.second);
+    strcpy(key->colFamily,cf.first);
 
   std::pair<char*, size_t> cq = otherKey->getColQualifier();
-  key->colQualifier = new uint8_t[cq.second];
-  key->colQualLen = cq.second;
-  memcpy(key->colQualifier, cq.first, cq.second);
+  key->colQualifier = new char[cq.second];
+  if (cq.second > 0)
+      strcpy(key->colQualifier,cq.first);
+    //memcpy(key->colQualifier, cq.first, cq.second);
+  else
+      key->colQualifier[0] = 0x00;
 
   std::pair<char*, size_t> cv = otherKey->getColVisibility();
-  key->keyVisibility = new uint8_t[cv.second];
-  key->colVisSize = cv.second;
-  memcpy(key->keyVisibility, cv.first, cv.second);
+  key->keyVisibility = new char[cv.second];
+  if (cv.second > 0)
+      strcpy(key->keyVisibility,cv.first);
+  //memcpy(key->keyVisibility, cv.first, cv.second);
+  else
+      key->keyVisibility[0] = 0x00;
+
 
   key->timestamp = otherKey->getTimeStamp();
 }
 
-void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv) {
+void populateKeyValue(CKeyValue *kv, const std::shared_ptr<cclient::data::KeyValue> &otherKv) {
   populateKey(kv->key, otherKv->getKey());
   cclient::data::Value *val = otherKv->getValue().get();
   kv->value->value = new uint8_t[val->size()];
@@ -206,12 +215,17 @@ void populateKeyValue(CKeyValue *kv, cclient::data::KeyValue *otherKv) {
 
 std::shared_ptr<cclient::data::Key> toKey(CKey *key) {
   auto nk = std::make_shared<cclient::data::Key>();
-  nk->setRow((const char*) key->row, key->rowLength);
-  nk->setColFamily((const char*) key->colFamily, key->columnFamilyLength);
-  nk->setColQualifier((const char*) key->colQualifier, key->colQualLen);
-  nk->setColVisibility((const char*) key->keyVisibility, key->colVisSize);
+  if (strlen(key->row) > 0)
+    nk->setRow((const char*) key->row, strlen(key->row));
+  if (strlen(key->colFamily) > 0)
+    nk->setColFamily((const char*) key->colFamily, strlen(key->colFamily) );
+  if (strlen(key->colQualifier) > 0)
+    nk->setColQualifier((const char*) key->colQualifier, strlen(key->colQualifier));
+  if (strlen(key->keyVisibility) > 0)
+    nk->setColVisibility((const char*) key->keyVisibility, strlen(key->keyVisibility));
+
   nk->setTimeStamp(key->timestamp);
-  nk->setDeleted(key->deleted);
+  //nk->setDeleted(key->deleted);
   return nk;
 }
 
@@ -239,23 +253,32 @@ int addRanges(struct BatchScan *scanner, CRange **range, int size) {
 
 bool hasNext(struct BatchScan *scanner) {
   scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+  bool hasNext = false;
   if (scanner->res == 0) {
-    scanners::Iterator<cclient::data::KeyValue> *results = bs->getResultSet();
-    scanners::Results<KeyValue, ResultBlock<KeyValue>>::iterator rs = results->begin();
-    scanner->res = &rs;
+
+      auto res  = new ScanRes(bs);
+      hasNext = res->hasNext();
+
+              scanner->res = res;
+  }else{
+      ScanRes *res = static_cast<ScanRes*>(scanner->res);
+      hasNext= res->hasNext();
   }
-  scanners::ResultBlock<cclient::data::KeyValue>* st = static_cast<scanners::Results<KeyValue, ResultBlock<KeyValue>>::iterator*>(scanner->res);
-  return !st->isEndOfRange();
+
+  return hasNext;
 }
 
-int next(struct BatchScan *scanner, CKeyValue *kv) {
-  //scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator st = static_cast<scanners::Results<KeyValue,ResultBlock<KeyValue>>::iterator*>(scanner->res);
 
-  //auto nkv = *(*st);
+CKeyValue *next(struct BatchScan *scanner) {
+    //scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);
+    ScanRes *res = static_cast<ScanRes*>(scanner->res);
 
-  //auto ptr = nkv.get();
-  // populateKeyValue(kv,ptr);
-  return 1;
+
+    CKeyValue *kv = new CKeyValue();
+    kv->key = new CKey();
+    populateKey(kv->key,res->next());
+
+    return kv;
 }
 
 int nextMany(struct BatchScan *scanner, KeyValueList *kvl) {
@@ -270,6 +293,45 @@ int nextMany(struct BatchScan *scanner, KeyValueList *kvl) {
    return i;*/
   return 1;
 }
+
+/**
+ *
+ * @param row
+ * @param cf
+ * @param cq
+ * @param cv
+ * @param timestamp
+ * @return
+ */
+struct CKey *createKey(char *row, char *cf, char *cq, char *cv, uint64_t timestamp){
+    if (row == nullptr) {
+        return nullptr;
+    }
+
+   struct CKey *key = new CKey();
+   key-> row = new char[strlen(row)+1];
+   memcpy(key->row,row,strlen(row));
+
+   if (cf != nullptr) {
+       key->colFamily = new char[strlen(cf)+1];
+       memcpy(key->colFamily,cf,strlen(cf));
+   }
+
+   if (cq != nullptr) {
+       key->colQualifier = new char[strlen(cq)+1];
+       memcpy(key->colQualifier,cq,strlen(cq));
+   }
+
+    if (cv != nullptr) {
+        key->keyVisibility = new char[strlen(cv)+1];
+        memcpy(key->keyVisibility,cv,strlen(cv));
+    }
+
+    key->timestamp = timestamp;
+
+    return key;
+}
+
 int closeScanner(struct BatchScan *scanner) {
   if (0 != scanner && 0 != scanner->scannerPtr) {
     scanners::BatchScanner *bs = static_cast<scanners::BatchScanner*>(scanner->scannerPtr);

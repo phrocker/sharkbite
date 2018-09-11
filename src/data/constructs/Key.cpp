@@ -201,12 +201,15 @@ Key::read (cclient::data::streams::InputStream *in)
 
     colFamily = new char[colQualifierOffset - colFamilyOffset];
     in->readBytes (colFamily, colQualifierOffset - colFamilyOffset);
+    columnFamilySize = colQualifierOffset - colFamilyOffset;
 
     colQualifier = new char[colVisibilityOffset - colQualifierOffset];
     in->readBytes (colQualifier, colVisibilityOffset - colQualifierOffset);
+    colQualSize = colVisibilityOffset - colQualifierOffset;
 
     keyVisibility = new char[totalLen - colVisibilityOffset];
     in->readBytes (keyVisibility, totalLen - colVisibilityOffset);
+    colVisSize = totalLen - colVisibilityOffset;
 
     timestamp = in->readEncodedLong ();
 

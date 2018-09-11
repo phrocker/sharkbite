@@ -36,4 +36,23 @@ mutation.put("cf2","cq","")
 
 writer.addMutation(mutation)
 
+start = Key("a", "", "" , "" ,235325235 )
+stop = Key("d", "", "" , "" ,235325235 )
+
+scanRange = Range(start, stop, 0 , 0 , 1, 1)
+
+scanner = conn.create_scanner(tableOps,2)
+
+scanner.addRange(scanRange)
+
+if scanner.hasNext():
+    print("ahhhnext")
+    ck = scanner.nextKeyValue()
+    print(len(ctypes.cast(ck.key.row, ctypes.c_char_p).value))
+    print(ctypes.cast(ck.key.row, ctypes.c_char_p).value.decode('ascii'))
+
+
+
+
+
 writer.close()

@@ -19,11 +19,59 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include "data/constructs/Key.h"
+#include "data/constructs/Mutation.h"
+#include "data/constructs/KeyValue.h"
+#include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/Authorizations.h"
+#include "scanner/constructs/Results.h"
+#include "scanner/impl/Scanner.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include "accumulo_data.h"
 #include <data/constructs/Key.h>
+
+class ScanRes{
+	scanners::ResultBlock<cclient::data::KeyValue> st;
+
+	std::shared_ptr<cclient::data::KeyValue> kv_;
+
+	std::shared_ptr<cclient::data::Key> key_;
+
+	scanners::Iterator<cclient::data::KeyValue> *results;
+	scanners::BatchScanner *scan_;
+
+public:
+	ScanRes(scanners::BatchScanner *scan) : scan_(scan) {
+		results = scan_->getResultSet();
+		st =results->begin();
+	}
+
+	bool hasNext(){
+	    bool hasNext =  st != results->end();
+	    if (hasNext){
+	        st.getNextResult();
+            kv_ = *st;
+            if (kv_ == nullptr){
+                std::cout  << "kv is null" << std::endl;
+                return false;
+            }
+            key_ = kv_->getKey();
+
+	    }
+		return hasNext;
+
+	}
+
+
+	std::shared_ptr<cclient::data::Key> next(){
+        st++;
+		return key_;
+	}
+
+
+};
 struct TableOps {
 	char *table_name;
 	// stuff you don't use
@@ -55,6 +103,8 @@ struct connector {
 	void *zk;
 
 };
+
+
 
 struct connector *create_connector(char *instance, char *zks, char *username,
 		char *password);
@@ -91,7 +141,7 @@ bool hasNext(struct BatchScan *scanner);
 
 int onNext(struct BatchScan *scanner, struct CKeyValue *kv);
 
-int next(struct BatchScan *scanner, struct CKeyValue *kv);
+CKeyValue *next(struct BatchScan *scanner);
 
 int nextMany(struct BatchScan *scanner, struct KeyValueList *kvl);
 
@@ -101,13 +151,13 @@ int closeWriter(struct BatchWriter *writer);
 
 
 
+struct CKey *createKey(char *row, char *cf, char *cq, char *cv, uint64_t timestamp);
 
 // writer code
 
 std::shared_ptr<cclient::data::Key> toKey(CKey *key);
 
 void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey);
-
 
 #ifdef __cplusplus
 }

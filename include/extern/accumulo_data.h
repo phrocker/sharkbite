@@ -19,31 +19,35 @@ struct CKey
   /**
    * Row part of key
    */
-  uint8_t *row;
-  uint32_t rowMaxSize;
-  uint32_t rowLength;
+  //uint8_t *row;
+  //uint32_t rowLength;
+  char *row;
 
   /**
    * Column family
    */
-  uint32_t columnFamilyLength;
-  uint8_t *colFamily;
-  uint32_t columnFamilySize;
+  //uint32_t columnFamilyLength;
+//  uint8_t *colFamily
+    char *colFamily;
+  //uint32_t columnFamilySize;
 
   /**
    * Column qualifier.
    */
-  uint8_t *colQualifier;
-  uint32_t colQualSize;
-  uint32_t colQualLen;
+//  uint8_t *colQualifier;
+  //uint32_t colQualSize;
+  //uint32_t colQualLen;
+  char *colQualifier;
 
-  uint8_t *keyVisibility;
-  uint32_t colVisSize;
+//  uint8_t *keyVisibility;
+  ///uint32_t colVisSize;
+  char *keyVisibility;
   uint64_t timestamp;
 
 unsigned deleted : 1;
 
 };
+
 
 
 struct CAuthorizations
