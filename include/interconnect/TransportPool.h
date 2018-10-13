@@ -101,7 +101,7 @@ class TransportPool {
 
   std::recursive_mutex cacheLock;
 
-  std::map<std::shared_ptr<ServerConnection>, std::vector<std::shared_ptr<CachedTransport<Tr>>>> cache;
+  std::map<std::shared_ptr<ServerConnection>, std::vector<std::shared_ptr<CachedTransport<Tr>>>,Cmp_ServerConnectionSP> cache;
   std::map<std::shared_ptr<ServerConnection>, uint32_t> errorCount;
   std::map<std::shared_ptr<ServerConnection>, uint32_t> errorTime;
   std::set<std::shared_ptr<ServerConnection>> badServers;
@@ -127,30 +127,32 @@ TransportPool<Tr>::~TransportPool() {
 template<typename Tr>
 void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cachedTransport) {
 
-  if (nullptr == cachedTransport || closed)
+  if (nullptr == cachedTransport) {
     return;
+}
 
-  //std::vector<CachedTransport<Tr>*> *closeList =
-  //  new std::vector<CachedTransport<Tr>*>();
+
   std::vector<std::shared_ptr<CachedTransport<Tr>>> closeList;
   std::lock_guard < std::recursive_mutex > lock(cacheLock);
 
   if (closing || closed) {
-
+    cachedTransport->close();
     return;
   }
 
   auto cacheKey = cachedTransport->getCacheKey();
 
-  std::vector<std::shared_ptr<CachedTransport<Tr>>> cachedConnections = cache.at(cacheKey);
+  auto cachedConnections = cache.at(cacheKey);
   typename std::vector<std::shared_ptr<CachedTransport<Tr>>>::iterator cacheIter = cachedConnections.begin();
 
   timeval time;
   gettimeofday(&time, NULL);
   long millis = (time.tv_sec * 1000) + (time.tv_usec / 1000);
+  bool foundCacheKey = false;
   for (; cacheIter != cachedConnections.end(); cacheIter++) {
     if (std::addressof(*((*cacheIter).get())) == std::addressof(*(cachedTransport.get()))) {
       if (cachedTransport->hasError()) {
+
 
         uint32_t errors = 0;
 
@@ -172,6 +174,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
       }
       (*cacheIter)->setReturnTime(millis);
       (*cacheIter)->reserve(false);
+      foundCacheKey = true;
       break;
 
     }
@@ -190,6 +193,10 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
 
   }
 
+  if (!foundCacheKey){
+    cachedTransport->close();
+  }
+
   for (auto closer : closeList) {
     closer->close();
   }
@@ -205,16 +212,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
     std::lock_guard < std::recursive_mutex > lock(cacheLock);
 
     std::set<std::shared_ptr<ServerConnection>> serverSet(servers->begin(), servers->end());
-    /*typename std::map<ServerConnection, std::vector<CachedTransport<Tr>*>>::iterator it =
-     cache.begin();
-     for (; it != cache.end(); it++) {
-     ServerConnection conn = it->first;
-     for(auto serv : *servers)
-     {
-     if (conn == serv)
-     serverSet.insert(conn);
-     }
-     }*/
+
     if (!IsEmpty(&serverSet)) {
 
       std::vector<std::shared_ptr<ServerConnection>> connections(std::begin(serverSet), std::end(serverSet));
@@ -225,15 +223,12 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
       for (std::shared_ptr<ServerConnection> conn : connections) {
         std::vector<std::shared_ptr<CachedTransport<Tr>>> cachedConnections = cache[conn];
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
-          if (!cacheTransport->isReserved() && !cacheTransport->hasError() && cacheTransport->getCacheKey() == conn) {
+          if (!cacheTransport->isReserved() && !cacheTransport->hasError() &&  (*cacheTransport->getCacheKey().get() == *conn.get())) {
 
             cacheTransport->reserve();
             std::stringstream hostname;
             hostname << conn->getHost() << ":" << conn->getPort();
-
             return std::make_pair(hostname.str(), cacheTransport);
-          } else {
-
           }
         }
       }
@@ -256,11 +251,10 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
       std::vector<std::shared_ptr<CachedTransport<Tr>>> cachedConnections = cache[conn];
       if (!cachedConnections.empty()) {
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
-          if (!cacheTransport->isReserved() && !cacheTransport->hasError() && cacheTransport->getCacheKey() == conn) {
+          if (!cacheTransport->isReserved() && !cacheTransport->hasError() && (*cacheTransport->getCacheKey().get() == *conn.get())) {
             cacheTransport->reserve();
             std::stringstream hostname;
             hostname << conn->getHost() << ":" << conn->getPort();
-
             return std::make_pair(hostname.str(), cacheTransport);
           }
         }

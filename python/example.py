@@ -28,13 +28,16 @@ tableOps = conn.create_table(tabletocreate)
 
 writer = conn.create_writer(tableOps,2)
 
-mutation = writer.createMutation("blah")
+for num in range(1, 10000000):
+    row = '%03d'%num
+    mutation = writer.createMutation('r_%s'%row)
+    mutation.put("cf","cq","")
+    mutation.put("cf2","cq","")
+    writer.addMutation(mutation)
 
-mutation.put("cf","cq","")
 
-mutation.put("cf2","cq","")
+writer.close()
 
-writer.addMutation(mutation)
 
 start = Key("a", "", "" , "" ,235325235 )
 stop = Key("d", "", "" , "" ,235325235 )

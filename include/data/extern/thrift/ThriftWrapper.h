@@ -242,9 +242,7 @@ public:
 	static org::apache::accumulo::core::data::thrift::TKeyExtent convert(
 	        std::shared_ptr<cclient::data::KeyExtent> ot)
 	{
-		if (nullptr == ot) std::cout << " ot is null!" << std::endl;
-		std::cout << "table id is " << ot->getTableId() << " " << ot->getEndRow() << " " << ot->getPrevEndRow() << std::endl;		
-org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
+		org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
 		keyExtent.table = ot->getTableId();
 		std::string endRow = ot->getEndRow();
 

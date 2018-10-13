@@ -16,6 +16,7 @@
 #define SERVERCONNECTION_H_
 
 #include <iostream>
+#include <memory>
 #include "data/constructs/inputvalidation.h"
 #include "data/exceptions/IllegalArgumentException.h"
 
@@ -24,7 +25,7 @@ namespace interconnect {
 class ServerConnection {
  public:
 
-  explicit ServerConnection(std::shared_ptr<ServerConnection> other)
+  explicit ServerConnection(const std::shared_ptr<ServerConnection> &other)
       : host(other->host),
         port(other->port),
         timeout(other->timeout) {
@@ -33,7 +34,6 @@ class ServerConnection {
       : host(loc),
         port(port),
         timeout(timeout) {
-    std::cout << "loc is " << loc << std::endl;
     if (IsEmpty(&loc)) {
       throw cclient::exceptions::IllegalArgumentException("Invalid Input; host name is empty");
     }
@@ -56,11 +56,12 @@ class ServerConnection {
     return timeout;
   }
 
-  std::ostream& operator<<(std::ostream& os) {
-    return os << host << ":" << port << " " << timeout << std::endl;
-  }
+    std::ostream& operator<<(std::ostream& os) {
+        return os << host << ":" << port << " " << timeout << std::endl;
+    }
 
-  ServerConnection &operator=(const ServerConnection &rhs) {
+
+    ServerConnection &operator=(const ServerConnection &rhs) {
 
     host = rhs.host;
     port = rhs.port;
@@ -101,6 +102,21 @@ class ServerConnection {
     else
       return true;
   }
+
+    bool operator<(const std::shared_ptr<ServerConnection> &rhs) const {
+        bool result = true;
+        result = (host < rhs->host);
+        if (!result)
+            return false;
+        result = (port < rhs->port);
+        if (!result)
+            return false;
+        result = (timeout < rhs->timeout);
+        if (!result)
+            return false;
+        else
+            return true;
+    }
 
   bool operator>(const ServerConnection &rhs) const {
     bool result = true;
@@ -146,6 +162,13 @@ struct Cmp_ServerConnection {
     }
   }
 };
+
+struct Cmp_ServerConnectionSP {
+    bool operator()(const std::shared_ptr<ServerConnection>& first, const  std::shared_ptr<ServerConnection>& second) {
+        return *first.get() < *second.get();
+    }
+};
+
 
 }
 #endif /* SERVERCONNECTION_H_ */

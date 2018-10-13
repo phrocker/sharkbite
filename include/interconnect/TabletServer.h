@@ -59,7 +59,6 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
  protected:
   ServerInterconnect(cclient::data::security::AuthInfo *creds, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR) {
-    std::cout << "huh?" << std::endl;
     myTransportPool = distributedConnector;
     this->credentials = *creds;
     myTransport = NULL;
@@ -102,7 +101,6 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
   ServerInterconnect(std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
                          &CLUSTER_COORDINATOR) {
-    std::cout << rangeDef->getServer() << " server" << std::endl;
     ConnectorService conn("tserver", rangeDef->getServer(), rangeDef->getPort());
 
     const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
@@ -119,12 +117,10 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
     int failures = 0;
     do {
-      std::cout << "do" << std::endl;
 
       try {
         myTransport = distributedConnector->getTransporter(tServer);
       } catch (apache::thrift::transport::TTransportException te) {
-        std::cout << "saw error" << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         // close may occur on a partial write this is okay
         // to know
@@ -139,14 +135,12 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
         break;
 
       } catch (apache::thrift::protocol::TProtocolException tpe) {
-        std::cout << "saw error" << std::endl;
         myTransport->sawError(true);
         if (++failures > 2)
           throw tpe;
         distributedConnector->freeTransport(myTransport);
         continue;
       } catch (apache::thrift::transport::TTransportException tpe) {
-        std::cout << "saw error" << std::endl;
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         if (++failures > 2)
@@ -178,7 +172,6 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     request.setIters(serverSideIterators);
 
     for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents()) {
-      std::cout << extent->getTableId() << " " << extent->getEndRow() << std::endl;
       ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>();
       if (rangeDef->getRanges()->size() == 0) {
         return NULL;
@@ -196,7 +189,6 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
   ServerInterconnect(std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
                          &CLUSTER_COORDINATOR) {
-    std::cout << rangeDef->getServer() << " server 2" << std::endl;
     ConnectorService conn("tserver", rangeDef->getServer(), rangeDef->getPort());
 
     const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
