@@ -147,10 +147,10 @@ class BatchScanner(object):
 
 
 
-class Conector(object):
+class Connector(object):
     """ Proxy Connector """
     def __init__(self, dll_file, instance="localhost", zookeepers="localhost:2181", user='root', password='secret', _connect=True):
-        super(Conector, self).__init__()
+        super(Connector, self).__init__()
         self.sharkbite = cdll.LoadLibrary(dll_file)
 
         if _connect:

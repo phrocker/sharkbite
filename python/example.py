@@ -20,7 +20,7 @@ parser.add_argument("-p", "--password", dest="password",
 args = parser.parse_args()
 
 """ dll_file is the path to the shared object """
-conn = Conector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
+conn = Connector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
 tabletocreate = "blahblah3".encode('utf-8')
 
