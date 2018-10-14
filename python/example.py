@@ -52,8 +52,3 @@ if scanner.hasNext():
     ck = scanner.nextKeyValue()
     print(ck.key.row)
 
-
-
-
-
-writer.close()
