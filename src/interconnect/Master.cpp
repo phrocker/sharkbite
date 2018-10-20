@@ -45,7 +45,7 @@ namespace interconnect {
  * @param credentials incoming user credentials
  * @param instance incoming instance
  */
-MasterConnect::MasterConnect(cclient::data::security::AuthInfo credentials, cclient::data::Instance *instance)
+MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *instance)
     : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, instance),
       instance(instance) {
 
@@ -95,7 +95,7 @@ void MasterConnect::findTservers() {
  * @param table incoming table
  * @returns instance of table ops for this type of interface
  */
-std::unique_ptr<AccumuloTableOperations> MasterConnect::tableOps(std::string table) {
+std::unique_ptr<AccumuloTableOperations> MasterConnect::tableOps(const std::string &table) {
   if (IsEmpty(&table))
     throw cclient::exceptions::ClientException(TABLE_OR_NAMESPACE_EMPTY);
   auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
@@ -108,7 +108,7 @@ std::unique_ptr<AccumuloTableOperations> MasterConnect::tableOps(std::string tab
  * @param nm namespace to create. optional argument.
  * @returns Namespace Operations.
  */
-std::unique_ptr<NamespaceOperations> MasterConnect::namespaceOps(std::string nm) {
+std::unique_ptr<NamespaceOperations> MasterConnect::namespaceOps(const std::string &nm) {
   return std::unique_ptr<NamespaceOperations>(new NamespaceOperations(AccumuloConnector < interconnect::AccumuloMasterTransporter > ::getCredentials(), nm, instance, this, myTransportPool));
 }
 

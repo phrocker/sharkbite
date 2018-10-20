@@ -20,7 +20,7 @@ parser.add_argument("-p", "--password", dest="password",
 args = parser.parse_args()
 
 """ dll_file is the path to the shared object """
-conn = Connector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
+conn = AccumuloConnector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
 tabletocreate = "blahblah3".encode('utf-8')
 
@@ -28,7 +28,7 @@ tableOps = conn.create_table(tabletocreate)
 
 writer = conn.create_writer(tableOps,2)
 
-for num in range(1, 10000000):
+for num in range(1, 500):
     row = '%03d'%num
     mutation = writer.createMutation('r_%s'%row)
     mutation.put("cf","cq","")

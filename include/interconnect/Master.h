@@ -65,7 +65,7 @@ public:
      * @param credentials incoming user credentials
      * @param instance incoming instance
      */
-    MasterConnect (cclient::data::security::AuthInfo credentials,cclient::data::Instance *instance);
+    MasterConnect (cclient::data::security::AuthInfo &credentials,cclient::data::Instance *instance);
     
     /**
      * Constructor
@@ -87,14 +87,14 @@ public:
      * @returns instance of table ops for this type of interface
      */
     std::unique_ptr<AccumuloTableOperations>
-            tableOps (std::string table);
+            tableOps (const std::string &table);
 	   
     /**
      * Returns an instance of namespace  operations
      * @param nm namespace
      * @returns instance of namespace ops for this type of interface
      */    
-    std::unique_ptr<NamespaceOperations> namespaceOps(std::string nm = "");
+    std::unique_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
   
     /**
      * Returns an instance of security operations

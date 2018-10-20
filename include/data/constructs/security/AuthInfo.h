@@ -30,10 +30,12 @@ class AuthInfo
 public:
     AuthInfo (std::string user, std::string password, std::string instanceId);
 
-    AuthInfo() : user(""), password(""), instanceId("")
-    {
-      
-    }
+    AuthInfo() = default;
+
+    AuthInfo(AuthInfo &&other) = default;
+
+    AuthInfo(AuthInfo &other) = default;
+
     virtual
     ~AuthInfo ();
 
@@ -62,6 +64,8 @@ public:
       password=rhs.password;
       return *this;
     }
+
+    AuthInfo &operator=(AuthInfo &&other) = default;
 
 protected:
     std::string user;

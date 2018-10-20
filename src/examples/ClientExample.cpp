@@ -181,7 +181,7 @@ main (int argc, char **argv)
 	interconnect::MasterConnect *master = 0;
 	
 	try{
-	master = new interconnect::MasterConnect (&creds, instance);
+	master = new interconnect::MasterConnect (creds, instance);
 	}catch(cclient::exceptions::ClientException ce)
 	{
 	  std::cout << "Could not connect: " << ce.what() << std::endl;
