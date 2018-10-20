@@ -4,7 +4,7 @@
 **S**harkbite is a native client for key/value stores. With 
 initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
-despite being the baseimplementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
+despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
 Currently the code is a merger of C && C++ code. V0.3 will represent a shift more toward 
 creating a C API and creating exernalized factories for the thrift code.
@@ -37,14 +37,12 @@ the API.
 
 ## Building
 ```
-	run bootstrap scripts located in root directory, which will download dependencies and run the build. 
-
-        Alternatively, you can build with the following:
-
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
 	This will build the package and library, which you can use. It will also build
 	examples in the examples directory
+
+	Bootstrap scripts exist to bootstrap a system with shared dependencies.
 ```
 
 ## Example
