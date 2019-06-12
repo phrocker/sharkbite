@@ -30,21 +30,28 @@ if(CCACHE_FOUND)
 endif(CCACHE_FOUND)
 
 
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
+
+include(LibreSSL)
+use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ssl")
+find_package (OpenSSL REQUIRED)
 
 ################# THRIFT
 #if (NOT THRIFT_FOUND)
 	ExternalProject_Add(
 	  LibThrift
 	  GIT_REPOSITORY "https://github.com/phrocker/thrift.git"
-	  GIT_TAG 0.9.3
+	  GIT_TAG 8c4b75db00aa8f7f5fca44d14296a45030683dd8
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift-src"
 	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
-	  CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
+	  CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --with-openssl=${LIBRESSL_BIN_DIR} --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
 	  UPDATE_COMMAND ""
 	  )
 	
+	add_dependencies(LibThrift libressl-portable)
 	add_library(thrift STATIC IMPORTED)
 	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a")
 	add_dependencies(thrift LibThrift)
@@ -61,7 +68,7 @@ endif(CCACHE_FOUND)
 	ExternalProject_Add(
 	  ZooKeeper
 	  GIT_REPOSITORY "https://github.com/phrocker/zookeeper.git"
-	  GIT_TAG sharkbite3.4.8
+	  GIT_TAG sharkbite-3.4.8-d
 	  GIT_PROGRESS ON
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper-src"
@@ -104,7 +111,6 @@ endif(CCACHE_FOUND)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
 #endif()
 
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 
 set(Boost_USE_MULTITHREADED ON)
 #find_package(GTest REQUIRED)
@@ -157,9 +163,9 @@ add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMI
 	add_dependencies(sharkbite LibThrift)
 	add_dependencies(sharkbite-shared LibThrift)
 #endif()
-target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
+target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
 
-target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_SHARED_LIBRARIES}   ${THRIFT_SHARED_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES}   )
+target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_SHARED_LIBRARIES}  ${OPENSSL_LIBRARIES}  ${THRIFT_SHARED_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
 
 
 add_library(capi SHARED ${CAPI_SOURCES})
@@ -171,7 +177,7 @@ add_executable(ClientExample "src/examples/ClientExample.cpp")
 target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (ClientExample ${ZLIB_LIBRARIES})
 target_link_libraries( ClientExample ${Boost_LIBRARIES} )
-target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} )
+target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 
 #ClientExample
@@ -180,7 +186,7 @@ target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (InsertTest ${ZLIB_LIBRARIES})
 target_link_libraries( InsertTest ${Boost_LIBRARIES} )
 target_link_libraries( InsertTest ${ZOOKEEPER_LIBRARIES} )
-target_link_libraries( InsertTest ${THRIFT_LIBS})
+target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
 target_link_libraries( InsertTest sharkbite)
 
 
@@ -189,7 +195,7 @@ add_executable(ContinuousIngest "src/examples/ContinuousIngest.cpp")
 target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (ContinuousIngest ${ZLIB_LIBRARIES})
 target_link_libraries( ContinuousIngest ${Boost_LIBRARIES} )
-target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} )
+target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
 target_link_libraries( ContinuousIngest sharkbite)
 
@@ -199,14 +205,14 @@ target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (TableOps ${ZLIB_LIBRARIES})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${ZOOKEEPER_LIBRARIES} )
-target_link_libraries( TableOps ${THRIFT_LIBS})
+target_link_libraries( TableOps ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
 target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
 target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (RfileReadExample ${ZLIB_LIBRARIES})
 target_link_libraries( RfileReadExample ${Boost_LIBRARIES} )
-target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} )
+target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
 target_link_libraries( RfileReadExample sharkbite)
 
@@ -214,7 +220,7 @@ add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
 target_link_libraries (PrintInfo ${ZLIB_LIBRARIES})
 target_link_libraries( PrintInfo ${Boost_LIBRARIES} )
-target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} )
+target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIBS})
 target_link_libraries( PrintInfo sharkbite)
 
@@ -257,7 +263,7 @@ enable_testing()
   target_link_libraries (testzkInstance ${ZLIB_LIBRARIES})
   target_link_libraries( testzkInstance ${Boost_LIBRARIES} )
   target_link_libraries( testzkInstance ${ZOOKEEPER_LIBRARIES} )
-  target_link_libraries( testzkInstance ${THRIFT_LIBS} sharkbite)
+  target_link_libraries( testzkInstance ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} sharkbite)
 
   target_link_libraries(testzkInstance sharkbite)
   
@@ -267,7 +273,7 @@ enable_testing()
   target_link_libraries (integrationTest ${ZLIB_LIBRARIES})
   target_link_libraries( integrationTest ${Boost_LIBRARIES} )
   target_link_libraries( integrationTest ${ZOOKEEPER_LIBRARIES} )
-  target_link_libraries( integrationTest  ${THRIFT_LIBS})
+  target_link_libraries( integrationTest  ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
   target_link_libraries(integrationTest   sharkbite)
 
 
