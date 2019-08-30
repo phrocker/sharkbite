@@ -95,10 +95,10 @@ class BatchWriter(object):
 class Key(object):
     def __init__(self, row, cf, cq, cv, timestamp):
         super(Key, self).__init__()
-        self.row = row
-        self.cf = cf
-        self.cq = cq
-        self.cv = cv
+        self.row = row.encode('utf-8')
+        self.cf = cf.encode('utf-8')
+        self.cq = cq.encode('utf-8')
+        self.cv = cv.encode('utf-8')
         self.timestamp = timestamp
 
 
@@ -155,7 +155,7 @@ class AccumuloConnector(object):
 
         if _connect:
             self.sharkbite.create_connector.restype = ctypes.POINTER(Connector)
-            self.connector = self.sharkbite.create_connector(instance, zookeepers, user, password)
+            self.connector = self.sharkbite.create_connector(instance.encode('utf-8'), zookeepers.encode('utf-8'), user.encode('utf-8'), password.encode('utf-8'))
             self.sharkbite.create_table.argtypes = [ctypes.POINTER(Connector), ctypes.c_char_p ]
             self.sharkbite.create_table.restype = ctypes.POINTER(TableOps)
             self.sharkbite.drop_table.argtype = ctypes.POINTER(TableOps)

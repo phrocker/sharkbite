@@ -42,6 +42,7 @@ extern "C" {
 
 struct connector *
 create_connector(char *instance, char *zks, char *username, char *password) {
+  std::cout << "connector is " << instance << " " << zks << std::endl;
   ZookeeperInstance *instPtr = new ZookeeperInstance(string(instance), string(zks), 1000);
 
   struct connector *con = new connector();

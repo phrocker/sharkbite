@@ -21,7 +21,7 @@ namespace cclient
 namespace data
 {
 
-Mutation::Mutation (std::string row) :
+Mutation::Mutation (const std::string &row) :
     mut_row (row), ptr (0), entries (0)
 {
     outStream = new streams::ByteOutputStream (1024);
@@ -37,7 +37,7 @@ Mutation::~Mutation ()
 }
 
 void
-Mutation::put (std::string cf, std::string cq, std::string cv, int64_t ts, bool deleted,
+Mutation::put (const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted,
                uint8_t *value, uint64_t value_len)
 {
     baseStream->writeVLong (cf.size ());
@@ -68,7 +68,7 @@ Mutation::put (std::string cf, std::string cq, std::string cv, int64_t ts, bool 
 }
 
 void
-Mutation::put (std::string cf, std::string cq, std::string cv, int64_t ts, bool deleted)
+Mutation::put (const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted)
 {
     baseStream->writeVLong (cf.size ());
     //writeInt(cf.size());
@@ -96,7 +96,7 @@ Mutation::put (std::string cf, std::string cq, std::string cv, int64_t ts, bool 
 }
 
 void
-Mutation::put (std::string cf, std::string cq, std::string cv, unsigned long ts)
+Mutation::put (const std::string &cf, const std::string &cq, const std::string &cv, unsigned long ts)
 {
   baseStream->writeVLong (cf.size ());
     //writeInt(cf.size());

@@ -47,17 +47,25 @@ find_package (OpenSSL REQUIRED)
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift-src"
 	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
-	  CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --with-openssl=${LIBRESSL_BIN_DIR} --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
+	  			 "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+	  			 "-DWITH_BOOST_STATIC=ON"
+	  			 "-DBUILD_TESTING=OFF"
+	  			 "-DWITH_JAVA=OFF"
+	  			 "-DWITH_LIBEVENT=ON"
+	  			 "-DWITH_PYTHON=OFF"
+	  			 "-DWITH_HASKELL=OFF"
+	  			 "-DWITH_SHARED_LIB=OFF"
+	  			 "-DWITH_C_GLIB=OFF"
+#CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --with-openssl=${LIBRESSL_BIN_DIR} --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
 	  UPDATE_COMMAND ""
 	  )
 	
 	add_dependencies(LibThrift libressl-portable)
 	add_library(thrift STATIC IMPORTED)
-	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a")
+	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/thrift/lib/libthrift.a")
 	add_dependencies(thrift LibThrift)
-	set(THRIFT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/include" CACHE STRING "" FORCE)
-	set(THRIFT_LIBS  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.a" CACHE STRING "" FORCE)
-	set(THRIFT_SHARED_LIBS  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift/lib/libthrift.so" CACHE STRING "" FORCE)
+	set(THRIFT_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/thrift/include" CACHE STRING "" FORCE)
+	set(THRIFT_LIBS  "${CMAKE_CURRENT_BINARY_DIR}/thrift/lib/libthrift.a" CACHE STRING "" FORCE)
 	include_directories(${THRIFT_INCLUDE_DIR})
 	set(THRIFT_FOUND TRUE CACHE STRING "" FORCE)
 #else()#
@@ -83,7 +91,7 @@ find_package (OpenSSL REQUIRED)
 	
 	set(ZOOKEEPER_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/include" CACHE STRING "" FORCE)
 	set(ZOOKEEPER_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.a" CACHE STRING "" FORCE)
-	set(ZOOKEEPER_SHARED_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.so" CACHE STRING "" FORCE)
+	#set(ZOOKEEPER_SHARED_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.so" CACHE STRING "" FORCE)
 	include_directories(${ZOOKEEPER_INCLUDE_DIRS})
 	set(ZOOKEEPER_FOUND TRUE CACHE STRING "" FORCE)
 #else()
@@ -165,7 +173,11 @@ add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMI
 #endif()
 target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
 
-target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_SHARED_LIBRARIES}  ${OPENSSL_LIBRARIES}  ${THRIFT_SHARED_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES}  ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+
+target_link_libraries (sharkbite-shared ${ZOOKEEPER_LIBRARIES})
+
+target_link_libraries (sharkbite-shared ${THRIFT_LIBS})
 
 
 add_library(capi SHARED ${CAPI_SOURCES})

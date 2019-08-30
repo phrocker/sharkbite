@@ -201,3 +201,9 @@
    See the License for the specific language governing permissions and
    limitations under the License.
 
+
+This includes derived works from the Apache NiFi MiNiFi c++ (ALv2 Licensed ) project (https://github.com/apache/nifi):
+Copyright 2019 The Apache Software Foundation
+The derived and original works are listed below:
+    BackTrace.h
+    ThreadPool.h

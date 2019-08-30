@@ -46,15 +46,15 @@ public:
      * Constructor
      * @param row row for the mutation
      **/
-    explicit Mutation(std::string row);
+    explicit Mutation(const std::string &row);
 
-    void put(std::string cf, std::string cq, std::string cv, int64_t ts,bool deleted);
+    void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts,bool deleted);
     
-    void put(std::string cf, std::string cq, std::string cv, int64_t ts,bool deleted, uint8_t *value,
+    void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts,bool deleted, uint8_t *value,
              uint64_t value_len);
-    void put(std::string cf, std::string cq = "", std::string cv = "", unsigned long ts = 0);
+    void put(const std::string &cf, const std::string &cq = "", const std::string &cv = "", unsigned long ts = 0);
     virtual ~Mutation();
-    std::string getRow() {
+    std::string getRow() const {
         return mut_row;
     }
 
@@ -66,7 +66,7 @@ public:
         return std::make_pair((uint8_t*)outStream->getByteArray(), outStream->getPos());
     }
 
-    std::string getDataStr() {
+    std::string getDataStr() const {
         return std::string(outStream->getByteArray(), outStream->getPos());
     }
 protected:

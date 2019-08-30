@@ -20,9 +20,10 @@ parser.add_argument("-p", "--password", dest="password",
 args = parser.parse_args()
 
 """ dll_file is the path to the shared object """
+print(args.zookeepers)
 conn = AccumuloConnector(dll_file=args.dll_file, instance = args.instance, zookeepers = args.zookeepers, user = args.username, password = args.password)
 
-tabletocreate = "blahblah3".encode('utf-8')
+tabletocreate = "blahblahtable".encode('utf-8')
 
 tableOps = conn.create_table(tabletocreate)
 
