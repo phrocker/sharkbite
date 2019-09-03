@@ -31,14 +31,12 @@
 #include <transport/TBufferTransports.h>
 #include <concurrency/ThreadManager.h>
 
-
 #include "TabletServer.h"
 
 #include <string>
 #include <vector>
 #include <memory>
 #include "ClientInterface.h"
-
 
 #include <boost/shared_ptr.hpp>
 
@@ -48,99 +46,89 @@
 #include "../data/constructs/inputvalidation.h"
 #include "transport/AccumuloMasterTransporter.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
 static TransportPool<interconnect::AccumuloMasterTransporter> MASTER_COORDINATOR;
 /**
  * Provides interconnect for master.
  *
  */
-class MasterConnect : public RootInterface<
-    interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>
-{
-public:
-    /**
-     * Constructor
-     * @param credentials incoming user credentials
-     * @param instance incoming instance
-     */
-    MasterConnect (cclient::data::security::AuthInfo &credentials,cclient::data::Instance *instance);
-    
-    /**
-     * Constructor
-     * @param credentials incoming user credentials
-     * @param instance incoming instance
-     */
-    MasterConnect (cclient::data::security::AuthInfo *credentials,cclient::data::Instance *instance) : MasterConnect(*credentials,instance)
-    {
-    }
-    
-    MasterConnect()
-    {
-    }
-    
+class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
+ public:
+  /**
+   * Constructor
+   * @param credentials incoming user credentials
+   * @param instance incoming instance
+   */
+  MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *instance);
 
-    /**
-     * Returns an instance of table operations
-     * @param table incoming table
-     * @returns instance of table ops for this type of interface
-     */
-    std::unique_ptr<AccumuloTableOperations>
-            tableOps (const std::string &table);
-	   
-    /**
-     * Returns an instance of namespace  operations
-     * @param nm namespace
-     * @returns instance of namespace ops for this type of interface
-     */    
-    std::unique_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
-  
-    /**
-     * Returns an instance of security operations
-     * @returns instance of security ops for this type of interface
-     */
-    std::unique_ptr<SecurityOperations> securityOps();
+  /**
+   * Constructor
+   * @param credentials incoming user credentials
+   * @param instance incoming instance
+   */
+  MasterConnect(cclient::data::security::AuthInfo *credentials, cclient::data::Instance *instance)
+      : MasterConnect(*credentials, instance) {
+  }
 
-    virtual
-    ~MasterConnect ();
-    
-    
-    MasterConnect &operator=(const MasterConnect &other)
-    {
-      instance = other.instance;
-      tabletServers = other.tabletServers;
-      cachedTransport = other.cachedTransport;
-      setTransport(cachedTransport->getTransporter());
-      myTransportPool = other.myTransportPool;
-      credentials = other.credentials;
-      rangeDef = other.rangeDef;
-      tServer = other.tServer;
-      serverDef = other.serverDef;
-      return *this;
-    }
-    
+  MasterConnect() {
+  }
 
-    
-protected:
-  
-    /**
-     * Locates tablet servers.
-     **/
-    void findTservers();
+  /**
+   * Returns an instance of table operations
+   * @param table incoming table
+   * @returns instance of table ops for this type of interface
+   */
+  std::unique_ptr<AccumuloTableOperations> tableOps(const std::string &table);
 
-    // instance pointer.
-    cclient::data::Instance *instance;
-    
-    // tablet servers. 
-    std::vector<std::shared_ptr<ServerConnection>> tabletServers;
-    
-    // cached transport for the master.
-    std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> cachedTransport;
+  /**
+   * Returns an instance of namespace  operations
+   * @param nm namespace
+   * @returns instance of namespace ops for this type of interface
+   */
+  std::unique_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
 
-    friend class AccumuloTableOperations;
-    
-    friend class SecurityOperations;
+  /**
+   * Returns an instance of security operations
+   * @returns instance of security ops for this type of interface
+   */
+  std::unique_ptr<SecurityOperations> securityOps();
+
+  virtual
+  ~MasterConnect();
+
+  MasterConnect &operator=(const MasterConnect &other) {
+    instance = other.instance;
+    tabletServers = other.tabletServers;
+    cachedTransport = other.cachedTransport;
+    setTransport(cachedTransport->getTransporter());
+    myTransportPool = other.myTransportPool;
+    credentials = other.credentials;
+    rangeDef = other.rangeDef;
+    tServer = other.tServer;
+    serverDef = other.serverDef;
+    return *this;
+  }
+
+ protected:
+
+  /**
+   * Locates tablet servers.
+   **/
+  void findTservers();
+
+  // instance pointer.
+  cclient::data::Instance *instance;
+
+  // tablet servers.
+  std::vector<std::shared_ptr<ServerConnection>> tabletServers;
+
+  // cached transport for the master.
+  std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> cachedTransport;
+
+  friend class AccumuloTableOperations;
+
+  friend class SecurityOperations;
 
 };
 }

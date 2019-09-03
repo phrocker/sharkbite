@@ -39,7 +39,6 @@
 #include "../data/constructs/client/TabletServerMutations.h"
 #include "../interconnect/ClientInterface.h"
 
-#include <boost/shared_ptr.hpp>
 #include "transport/ServerTransport.h"
 #include "transport/BaseTransport.h"
 #include "TransportPool.h"
@@ -70,7 +69,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
       myTransport->sawError(errorOcurred);
       try {
         myTransportPool->freeTransport(myTransport);
-      } catch (apache::thrift::transport::TTransportException te) {
+      } catch (const apache::thrift::transport::TTransportException &te) {
         // close may occur on a partial write this is okay
         // to know
       }
@@ -80,12 +79,12 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
         setTransport(myTransport->getTransporter());
         break;
 
-      } catch (apache::thrift::protocol::TProtocolException tpe) {
+      } catch (const apache::thrift::protocol::TProtocolException &tpe) {
         myTransport->sawError(true);
         myTransportPool->freeTransport(myTransport);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
         continue;
-      } catch (apache::thrift::transport::TTransportException tpe) {
+      } catch (const apache::thrift::transport::TTransportException &tpe) {
         myTransport->sawError(true);
         myTransportPool->freeTransport(myTransport);
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -113,14 +112,14 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+    tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
 
     int failures = 0;
     do {
 
       try {
         myTransport = distributedConnector->getTransporter(tServer);
-      } catch (apache::thrift::transport::TTransportException te) {
+      } catch (const apache::thrift::transport::TTransportException &te) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         // close may occur on a partial write this is okay
         // to know
@@ -134,13 +133,13 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
         setTransport(myTransport->getTransporter());
         break;
 
-      } catch (apache::thrift::protocol::TProtocolException tpe) {
+      } catch (const apache::thrift::protocol::TProtocolException &tpe) {
         myTransport->sawError(true);
         if (++failures > 2)
           throw tpe;
         distributedConnector->freeTransport(myTransport);
         continue;
-      } catch (apache::thrift::transport::TTransportException tpe) {
+      } catch (const apache::thrift::transport::TTransportException &tpe) {
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         if (++failures > 2)
@@ -201,12 +200,12 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+    tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
     do {
 
       try {
         myTransport = distributedConnector->getTransporter(tServer);
-      } catch (apache::thrift::transport::TTransportException te) {
+      } catch (const apache::thrift::transport::TTransportException &te) {
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -220,11 +219,11 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
         setTransport(myTransport->getTransporter());
         break;
 
-      } catch (apache::thrift::protocol::TProtocolException tpe) {
+      } catch (const apache::thrift::protocol::TProtocolException &tpe) {
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         continue;
-      } catch (apache::thrift::transport::TTransportException tpe) {
+      } catch (const apache::thrift::transport::TTransportException &tpe) {
         myTransport->sawError(true);
         distributedConnector->freeTransport(myTransport);
         continue;
@@ -240,8 +239,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     std::vector<cclient::data::IterInfo*> list;
   }
 
-  Scan *
-  scan() {
+  Scan *scan() {
 
     std::vector<cclient::data::Column*> emptyCols;
 
@@ -266,11 +264,11 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
       try {
         transport->write(&credentials, mutations->getMutations());
         success = true;
-      } catch (apache::thrift::transport::TTransportException te) {
+      } catch (const apache::thrift::transport::TTransportException &te) {
         if (++failures > mutations->getMaxFailures())
           return mutations;
         recreateConnection(true);
-      } catch (apache::thrift::protocol::TProtocolException tp) {
+      } catch (const apache::thrift::protocol::TProtocolException &tp) {
         if (++failures > mutations->getMaxFailures())
           return mutations;
         recreateConnection(true);
@@ -288,7 +286,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   void
   authenticate(cclient::data::security::AuthInfo *credentials);
 
-  void authenticate(std::string username, std::string password) {
+  virtual void authenticate(const std::string &username, const std::string &password) override {
   }
 
   virtual

@@ -36,7 +36,7 @@ ServerInterconnect::ServerInterconnect(const std::string host, const int port, c
   const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
   GENERAL_RPC_TIMEOUT);
 
-  tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+  tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
 
   myTransport = distributedConnector->getTransporter(tServer);
   setTransport(myTransport->getTransporter());
@@ -65,11 +65,11 @@ void ServerInterconnect::authenticate(cclient::data::security::AuthInfo *credent
       setCredentials(username, password);
       setAuthenticated(true);
       success = true;
-    } catch (apache::thrift::TApplicationException ta) {
+    } catch (const apache::thrift::TApplicationException &ta) {
       recreateConnection(true);
-    } catch (apache::thrift::transport::TTransportException te) {
+    } catch (const apache::thrift::transport::TTransportException &te) {
       recreateConnection(true);
-    } catch (apache::thrift::protocol::TProtocolException tp) {
+    } catch (const apache::thrift::protocol::TProtocolException &tp) {
       recreateConnection(true);
     }
 

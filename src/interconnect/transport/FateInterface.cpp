@@ -13,93 +13,70 @@
  */
 
 #include "interconnect/transport/FateInterface.h"
+#include "data/extern/boost/SharedPointer.h"
 
+namespace interconnect {
 
-namespace interconnect{
+std::string FateInterface::doFateOperations(cclient::data::security::AuthInfo *auth, org::apache::accumulo::core::master::thrift::FateOperation::type type, const std::vector<std::string> &tableArgs,
+                                            const std::map<std::string, std::string> &options, bool wait) {
 
+  auto myMasterClient = getMasterClient();
+  org::apache::accumulo::core::trace::thrift::TInfo transId;
+  org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+  transId.parentId = 0;
+  transId.traceId = rand();
+  int64_t fateTransId = myMasterClient->beginFateOperation(transId, creds);
 
+  transId.parentId = transId.traceId;
+  transId.traceId = transId.traceId + 1;
 
-std::string
-	FateInterface::doFateOperations (
-	        cclient::data::security::AuthInfo *auth,
-	        org::apache::accumulo::core::master::thrift::FateOperation::type type,
-	        std::vector<std::string> tableArgs, std::map<std::string,std::string> options, bool wait)
-	{
-	  
-		org::apache::accumulo::core::master::thrift::MasterClientServiceClient *myMasterClient = getMasterClient();
-		org::apache::accumulo::core::trace::thrift::TInfo transId;
-		org::apache::accumulo::core::security::thrift::TCredentials creds =
-		        ThriftWrapper::convert (auth);
-		transId.parentId = 0;
-		transId.traceId = rand ();
-		int64_t fateTransId = myMasterClient->beginFateOperation (transId, creds);
+  bool succeeded = false;
+  while (!succeeded) {
 
-		transId.parentId = transId.traceId;
-		transId.traceId = transId.traceId + 1;
+    try {
+      myMasterClient->executeFateOperation(transId, creds, fateTransId, type, tableArgs, options, !wait);
+      succeeded = true;
+    } catch (apache::thrift::transport::TTransportException &e) {
+      std::cout << e.what() << std::endl;
+      recreateMasterClient();
+      succeeded = false;
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
+  }
 
-		bool succeeded = false;
-		while (!succeeded) {
+  std::string returnValue;
+  if (wait) {
+    while (true) {
+      transId.parentId = transId.traceId;
+      transId.traceId = transId.traceId + 1;
+      auto myTransport = recreateTransport();
+      try {
 
-			try {
-				myMasterClient->executeFateOperation (transId, creds, fateTransId, type,
-				                                    tableArgs, options, !wait);
-				succeeded = true;
-			} catch (apache::thrift::transport::TTransportException &e) {
-std::cout << e.what() << std::endl;
-				recreateMasterClient();
-				succeeded = false;
-				std::this_thread::sleep_for (std::chrono::milliseconds (100));
-			}
+        auto protocolPtr = std::make_shared < apache::thrift::protocol::TCompactProtocol > (boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(myTransport));
+        org::apache::accumulo::core::master::thrift::MasterClientServiceClient waitClient(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
+        waitClient.waitForFateOperation(returnValue, transId, creds, fateTransId);
 
+        break;
 
+      } catch (apache::thrift::transport::TTransportException &e) {
+        std::cout << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        myTransport->close();
+      } catch (std::runtime_error &e) {
+        std::cout << e.what() << std::endl;
+        myTransport->close();
+        throw e;
+      }
+      myTransport->close();
 
-		}
+    }
 
-
-		std::string returnValue = "";
-		if (wait) {
-			while (true) {
-				transId.parentId = transId.traceId;
-				transId.traceId = transId.traceId + 1;
-				boost::shared_ptr<apache::thrift::transport::TTransport> myTransport = recreateTransport ();
-				boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr (
-				        new apache::thrift::protocol::TCompactProtocol (myTransport));
-				org::apache::accumulo::core::master::thrift::MasterClientServiceClient *waitClient = NULL;
-				try {
-					
-
-					waitClient =
-					        new org::apache::accumulo::core::master::thrift::MasterClientServiceClient (
-					        protocolPtr);
-					waitClient->waitForFateOperation (returnValue, transId, creds,
-					                                  fateTransId);
-					delete waitClient;
-					
-					break;
-
-				} catch (apache::thrift::transport::TTransportException &e) {
-					std::cout << e.what() << std::endl;
-					if (waitClient != NULL)
-					  delete waitClient;
-					std::this_thread::sleep_for (std::chrono::milliseconds (100));
-					myTransport->close ();
-				} catch (std::runtime_error &e) {
-					std::cout << e.what() << std::endl;
-				  if (waitClient != NULL)
-					  delete waitClient;
-					myTransport->close ();
-					throw e;
-				}
-				myTransport->close ();
-
-			}
-
-			transId.parentId = transId.traceId;
-			transId.traceId = transId.traceId + 1;
-			myMasterClient->finishFateOperation (transId, creds, fateTransId);
-			recreateMasterClient();
-		}
-		return returnValue;
-	}
+    transId.parentId = transId.traceId;
+    transId.traceId = transId.traceId + 1;
+    myMasterClient->finishFateOperation(transId, creds, fateTransId);
+    recreateMasterClient();
+  }
+  return returnValue;
+}
 }

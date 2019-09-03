@@ -38,9 +38,11 @@ class ClientInterface {
    * @param host host name we're connecting to.
    * @param port port for the aforementioned host name.
    **/
-  explicit ClientInterface(const std::string host, const int port);
+  explicit ClientInterface(const std::string &host, const int port);
 
-  ClientInterface() {
+  ClientInterface()
+      : server_port(9997),
+        authenticated(false) {
   }
 
   virtual ~ClientInterface();
@@ -51,15 +53,14 @@ class ClientInterface {
    * @param username username
    * @param password username's password.
    **/
-  virtual void
-  authenticate(std::string username, std::string password) = 0;
+  virtual void authenticate(const std::string &username, const std::string &password) = 0;
 
   /**
    * A coupling mechanism that allows us to use cclient::data::security::AuthInfo vice the username
    * and password authentication above.
    * @param auth authorization info that contains the username and password.
    **/
-  void authenticate(cclient::data::security::AuthInfo *auth) {
+  void authenticate(const cclient::data::security::AuthInfo * const auth) {
     authenticate(auth->getUserName(), auth->getPassword());
   }
 
@@ -67,7 +68,7 @@ class ClientInterface {
    * Sets the underlying transport within this client connection.
    * @param transporty transporter, based on T.
    **/
-  void setTransport(std::shared_ptr<Tr> transporty) {
+  void setTransport(const std::shared_ptr<Tr> &transporty) {
 
     transport = transporty;
     transport->registerService(instanceId, zookeepers);
@@ -87,7 +88,7 @@ class ClientInterface {
    * @param user username
    * @param password password for user.
    **/
-  void setCredentials(std::string user, std::string password) {
+  void setCredentials(const std::string &user, const std::string &password) {
     authenticated_user = user;
     authenticated_password = password;
 
@@ -110,15 +111,16 @@ class ClientInterface {
 
   std::string authenticated_user;
   std::string authenticated_password;
-  // info abt cluster
+  // info aboutt cluster
   std::string instanceId;
   std::string zookeepers;
 
 };
 
 template<typename Tr>
-ClientInterface<Tr>::ClientInterface(const std::string host, const int port)
-    : server_host(host),
+ClientInterface<Tr>::ClientInterface(const std::string &host, const int port)
+    : authenticated(false),
+      server_host(host),
       server_port(port) {
 
 }

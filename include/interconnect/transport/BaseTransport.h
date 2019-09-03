@@ -40,7 +40,7 @@
 #include "Transport.h"
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
-
+#include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/TabletClientService.h"
 #include "../scanrequest/ScanRequest.h"
@@ -56,7 +56,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
  protected:
   std::map<cclient::data::security::AuthInfo*, org::apache::accumulo::core::security::thrift::TCredentials> convertedMap;
   boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
-  org::apache::accumulo::core::client::impl::thrift::ClientServiceClient *client;
+  std::unique_ptr<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient> client;
   std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> tserverClient;
 
   std::shared_ptr<ServerConnection> clonedConnection;
@@ -78,11 +78,11 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
       transporty->open();
 
       std::cout << "connected! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
-    } catch (apache::thrift::transport::TTransportException te) {
+    } catch (const apache::thrift::transport::TTransportException &te) {
       std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
       try {
         transporty->close();
-      } catch (apache::thrift::transport::TTransportException to) {
+      } catch (const apache::thrift::transport::TTransportException &to) {
         std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
       }
       throw te;
@@ -92,19 +92,22 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   }
 
-  boost::shared_ptr<apache::thrift::transport::TTransport> createTransporter() {
+  std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter() {
+    //boost::shared_ptr<apache::thrift::transport::TTransport> createTransporter() {
 
-    boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(clonedConnection->getHost(), clonedConnection->getPort()));
+//    boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(clonedConnection->getHost(), clonedConnection->getPort()));
+    auto serverTransport = std::make_shared < apache::thrift::transport::TSocket > (clonedConnection->getHost(), clonedConnection->getPort());
 
     serverTransport->setLinger(false, 0);
     serverTransport->setNoDelay(true);
     serverTransport->setConnTimeout(0);
 
-    boost::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(serverTransport));
+    //boost::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(boost::tools::from_shared_ptr(serverTransport)));
+    auto newTransport = std::make_shared < apache::thrift::transport::TFramedTransport > (boost::tools::from_shared_ptr<apache::thrift::transport::TSocket>(serverTransport));
 
-    transporty->open();
+    newTransport->open();
 
-    return transporty;
+    return newTransport;
 
   }
 
@@ -137,7 +140,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
     org::apache::accumulo::core::data::thrift::ScanResult results = scan.result;
 
-    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+    std::vector < std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
     initialScan->setHasMore(results.more);
 
@@ -179,7 +182,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
     org::apache::accumulo::core::data::thrift::MultiScanResult results = scan.result;
 
-    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+    std::vector < std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
     initialScan->setHasMore(results.more);
 
@@ -207,17 +210,16 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
  public:
 
   explicit ThriftTransporter(std::shared_ptr<ServerConnection> conn)
-      : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*>(conn),
-        client(NULL),
-        tserverClient(nullptr) {
+      : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*>(conn) {
 
     newTransporter(conn);
   }
 
   virtual ~ThriftTransporter() {
     underlyingTransport->close();
-    if (NULL != client)
-      delete client;
+    /*    if (NULL != client)
+     delete client;
+     */
   }
 
   apache::thrift::transport::TTransport getTransport() {
@@ -236,7 +238,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
       if (!client->authenticateUser(tinfo, creds, creds)) {
         throw cclient::exceptions::ClientException("Invalid username");
       }
-    } catch (org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException tse) {
+    } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
       throw cclient::exceptions::ClientException(INVALID_USERNAME_PASSWORD);
     }
   }
@@ -244,7 +246,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   void createIfClosed() {
     if (underlyingTransport.get() != NULL && !underlyingTransport->isOpen()) {
 
-      underlyingTransport = createTransporter();
+      underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
       createClientService();
     }
   }
@@ -254,7 +256,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
       underlyingTransport->close();
     }
 
-    underlyingTransport = createTransporter();
+    underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
     createClientService();
   }
 
@@ -263,32 +265,33 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
     if (NULL != client) {
-      delete client;
+//      delete client;
       client = NULL;
     }
     if (NULL != tserverClient) {
       tserverClient = NULL;
     }
-    client = new org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(protocolPtr);
-    tserverClient = std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(
-        new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(protocolPtr));
+    client = std::make_unique < org::apache::accumulo::core::client::impl::thrift::ClientServiceClient > (protocolPtr);
+    tserverClient = std::make_unique < org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient > (protocolPtr);
   }
 
   virtual void registerService(std::string instance, std::string clusterManagers) {
-    boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
+    createClientService();
+    /*
+     boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
-    if (NULL != client) {
-      delete client;
-      client = NULL;
-    }
-    if (NULL != tserverClient) {
-      tserverClient = NULL;
-    }
+     if (NULL != client) {
+     //delete client;
+     client = NULL;
+     }
+     if (NULL != tserverClient) {
+     tserverClient = NULL;
+     }
 
-    client = new org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(protocolPtr);
-    tserverClient = std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(
-        new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(protocolPtr));
-
+     client = new org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(protocolPtr);
+     tserverClient = std::unique_ptr < org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient
+     > (new org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient(protocolPtr));
+     */
     client->getZooKeepers(clusterManagers);
     client->getInstanceId(instance);
   }
@@ -322,7 +325,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     tinfo.parentId = originalScan->getId();
     tserverClient->continueScan(results, tinfo, scanId);
 
-    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+    std::vector < std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
     if (results.more)
       originalScan->setTopKey(kvs->back()->getKey());
@@ -370,7 +373,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     try {
       client->dropLocalUser(tinfo, creds, user);
       return true;
-    } catch (org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException tse) {
+    } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
       // could not create the user for some reason
       return false;
     }
@@ -386,7 +389,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     try {
       client->changeLocalUserPassword(tinfo, creds, user, password);
       return true;
-    } catch (org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException tse) {
+    } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
       // could not create the user for some reason
       return false;
 
@@ -401,7 +404,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     try {
       client->createLocalUser(tinfo, creds, user, password);
       return true;
-    } catch (org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException tse) {
+    } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
       // could not create the user for some reason
       return false;
 
@@ -415,7 +418,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
     tinfo.parentId = 0;
     tinfo.traceId = rand();
-    std::map<std::string, std::string> ret;
+    std::map < std::string, std::string > ret;
     client->getTableConfiguration(ret, tinfo, creds, table);
 
     return ret;
@@ -427,7 +430,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
     tinfo.parentId = 0;
     tinfo.traceId = rand();
-    std::vector<std::string> returnStrings;
+    std::vector < std::string > returnStrings;
     client->getUserAuthorizations(returnStrings, tinfo, creds, user);
     return new cclient::data::security::Authorizations(&returnStrings);
   }
@@ -452,7 +455,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   }
   void close() {
     if (NULL != client) {
-      delete client;
+//      delete client;
       client = NULL;
     }
     if (NULL != tserverClient) {

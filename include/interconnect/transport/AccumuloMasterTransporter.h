@@ -42,6 +42,7 @@
 #include "Transport.h"
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
+#include "data/extern/boost/SharedPointer.h"
 
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/master_types.h"
@@ -73,13 +74,13 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
  protected:
 
   // thrift master client interface.
-  org::apache::accumulo::core::master::thrift::MasterClientServiceClient *masterClient;
+  std::shared_ptr<org::apache::accumulo::core::master::thrift::MasterClientServiceClient> masterClient;
 
   /**
    * creates a new transporter
    * @return new transporter
    **/
-  virtual boost::shared_ptr<apache::thrift::transport::TTransport> recreateTransport() {
+  virtual std::shared_ptr<apache::thrift::transport::TTransport> recreateTransport() override {
     return createTransporter();
   }
 
@@ -87,7 +88,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
    * Provides a pointer to the master client. Does not provide ownership
    * @return master client interface.
    **/
-  org::apache::accumulo::core::master::thrift::MasterClientServiceClient *getMasterClient() {
+  virtual std::shared_ptr<org::apache::accumulo::core::master::thrift::MasterClientServiceClient> getMasterClient() override {
     return masterClient;
   }
 
@@ -96,26 +97,27 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
    *
    **/
   void createMasterClient() {
-    boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
-    if (NULL != masterClient) {
+    auto protocolPtr = std::make_shared < apache::thrift::protocol::TCompactProtocol > (underlyingTransport);
+    //boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
+    //if (NULL != masterClient) {
 
-      delete masterClient;
-      masterClient = NULL;
-    }
-    masterClient = new org::apache::accumulo::core::master::thrift::MasterClientServiceClient(protocolPtr);
+//      delete masterClient;
+    //    masterClient = NULL;
+//    }
+    masterClient = std::make_shared < org::apache::accumulo::core::master::thrift::MasterClientServiceClient > (boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol >(protocolPtr));
   }
 
   void recreateMasterClient() {
     underlyingTransport->close();
     underlyingTransport.reset();
-    if (NULL != masterClient) {
+    /*
+     if (NULL != masterClient) {
 
-      delete masterClient;
-      masterClient = NULL;
-    }
-    underlyingTransport = createTransporter();
+     delete masterClient;
+     masterClient = NULL;
+     }*/
+    underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
     createMasterClient();
-    //createClientService();
   }
 
  public:
@@ -136,10 +138,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool createTable(cclient::data::security::AuthInfo *auth, std::string table) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back("MILLIS");
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -156,7 +158,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool importDirectory(cclient::data::security::AuthInfo *auth, std::string table, std::string dir, std::string failure_dir, bool setTime) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
 
     tableArgs.push_back(table);
     tableArgs.push_back(dir);
@@ -166,7 +168,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     else
       tableArgs.push_back("true");
 
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_BULK_IMPORT, tableArgs, options, false);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -184,7 +186,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
   }
 
   bool compactFallBack(cclient::data::security::AuthInfo *auth, std::string table, std::string startrow, std::string endrow, bool wait) {
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
@@ -196,7 +198,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     std::string buff = strBuffer->getBufferAsString();
     tableArgs.push_back(buff);
 
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -211,7 +213,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool compact(cclient::data::security::AuthInfo *auth, std::string table, std::string startrow, std::string endrow, bool wait) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
@@ -243,7 +245,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
     tableArgs.push_back(std::string(bout.getByteArray(), bout.getPos()));
 
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -302,9 +304,9 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool removeTable(cclient::data::security::AuthInfo *auth, std::string table) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(table);
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_DELETE, tableArgs, options);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -341,10 +343,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool createNamespace(cclient::data::security::AuthInfo *auth, std::string name) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(name);
     //tableArgs.push_back ("MILLIS");
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -361,10 +363,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool deletenamespace(cclient::data::security::AuthInfo *auth, std::string name) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(name);
     //tableArgs.push_back ("MILLIS");
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_DELETE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -381,10 +383,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool renamenamespace(cclient::data::security::AuthInfo *auth, std::string oldName, std::string newName) {
 
-    std::vector<std::string> tableArgs;
+    std::vector < std::string > tableArgs;
     tableArgs.push_back(oldName);
     tableArgs.push_back(newName);
-    std::map<std::string, std::string> options;
+    std::map < std::string, std::string > options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_RENAME, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -405,7 +407,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
     tinfo.parentId = 0;
     tinfo.traceId = rand();
-    std::map<std::string, std::string> ret;
+    std::map < std::string, std::string > ret;
     client->getNamespaceConfiguration(ret, tinfo, creds, nameSpaceName);
 
     return ret;
@@ -430,8 +432,8 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
   }
 
   virtual ~AccumuloMasterTransporter() {
-    if (NULL != masterClient)
-      delete masterClient;
+    //  if (NULL != masterClient)
+//      delete masterClient;
   }
 };
 
