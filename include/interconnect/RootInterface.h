@@ -19,7 +19,6 @@
 
 #include "ClientInterface.h"
 
-
 #include <boost/shared_ptr.hpp>
 
 #include "tableOps/TableOperations.h"
@@ -29,54 +28,46 @@
 #include "../data/constructs/client/Instance.h"
 #include "../data/constructs/security/AuthInfo.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
 /**
  * Provides base connectivity to accumulo services
  */
 template<class T, class S1, class S2>
-class RootInterface : public AccumuloConnector<T>
-{
-protected:
-  
+class RootInterface : public AccumuloConnector<T> {
+ protected:
+
   /**
    * Default constructor
    **/
-  RootInterface () :
-        AccumuloConnector<T> ()
-    {
+  RootInterface()
+      : AccumuloConnector<T>() {
 
-    }
-public:
-    /**
-     * Constructor, requires credentials and base instance
-     * @param creds credential pointer
-     * @param instance pointer to the current instance
-     */
-    RootInterface (cclient::data::security::AuthInfo creds, cclient::data::Instance *instance) :
-        AccumuloConnector<T> ()
-    {
+  }
+ public:
+  /**
+   * Constructor, requires credentials and base instance
+   * @param creds credential pointer
+   * @param instance pointer to the current instance
+   */
+  RootInterface(cclient::data::security::AuthInfo creds, cclient::data::Instance *instance)
+      : AccumuloConnector<T>() {
 
-    }
+  }
 
+  virtual ~RootInterface() {
 
-    virtual
-    ~RootInterface ()
-    {
+  }
 
-    }
+  /**
+   * authenticate the user
+   * @param username username to authenticate
+   * @param password password used to authenticate username
+   **/
+  virtual void authenticate(const std::string &username, const std::string &password) override
+  {
 
-    /**
-     * authenticate the user 
-     * @param username username to authenticate
-     * @param password password used to authenticate username
-     **/
-    virtual void
-    authenticate (std::string username, std::string password)
-    {
-
-    }
+  }
 
 };
 

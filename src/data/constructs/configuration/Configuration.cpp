@@ -17,69 +17,44 @@
 #include <string>
 #include <map>
 
+namespace cclient {
+namespace impl {
 
-
-namespace cclient
-{
-namespace impl
-{
-
-Configuration::Configuration ()
-{
+Configuration::~Configuration() {
 
 }
 
-Configuration::~Configuration ()
-{
+void Configuration::set(const std::string &name, const std::string &value) {
+  configurationMap[name] = value;
 
 }
 
-void
-Configuration::set (std::string name, std::string value)
-{
-    configurationMap[name] = value;
+std::string Configuration::get(const std::string &name) const {
+  return get(name, "");
 
 }
 
-std::string
-Configuration::get (std::string name) const
-{
-    return get (name, "");
+std::string Configuration::get(const std::string &name, const std::string &def) const {
+  auto getter = configurationMap.find(name);
+  if (getter == configurationMap.end()) {
+    return def;
+  } else {
+    return getter->second;
+  }
 
 }
 
-std::string
-Configuration::get (std::string name, std::string def) const
-{
-    auto getter = configurationMap.find (name);
-    if (getter == configurationMap.end ())
-    {
-        return def;
-    }
-    else
-    {
-        return getter->second;
-    }
+uint32_t Configuration::getLong(const std::string &name) const {
+  return std::atol(get(name, 0).c_str());
 
 }
 
-uint32_t
-Configuration::getLong (std::string name) const 
-{
-    return std::atol (get (name, 0).c_str ());
-
-}
-
-uint32_t
-Configuration::getLong (std::string name, uint32_t def) const 
-{
-    auto getter = configurationMap.find (name);
-    if (getter == configurationMap.end ())
-    {
-        return def;
-    }
-    else
-        return atol (getter->second.c_str ());
+uint32_t Configuration::getLong(const std::string &name, uint32_t def) const {
+  auto getter = configurationMap.find(name);
+  if (getter == configurationMap.end()) {
+    return def;
+  } else
+    return atol(getter->second.c_str());
 
 }
 

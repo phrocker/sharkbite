@@ -15,7 +15,6 @@
 #ifndef SRC_INTERCONNECT_FATEINTERFACE_H_
 #define SRC_INTERCONNECT_FATEINTERFACE_H_
 
-
 #include <concurrency/ThreadManager.h>
 
 #include <chrono>
@@ -30,10 +29,6 @@
 #include <ctime>        // std::time
 #include <cstdlib>      // std::rand, std::srand
 
-
-
-
-
 #include "../../data/constructs/inputvalidation.h"
 #include "../../data/constructs/IterInfo.h"
 #include "../../data/constructs/configuration/Configuration.h"
@@ -46,8 +41,6 @@
 #include "../scanrequest/ScanIdentifier.h"
 
 #include "Transport.h"
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "../../data/extern/thrift/ClientService.h"
 #include "../../data/extern/thrift/master_types.h"
@@ -55,9 +48,6 @@
 #include "../../data/extern/thrift/ThriftWrapper.h"
 #include "../../data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
-
-
-
 
 //#include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
@@ -69,17 +59,19 @@
 #include <transport/TSocket.h>
 #include <transport/TTransportException.h>
 #include <transport/TBufferTransports.h>
-
+#include "interconnect/accumulo/AccumuloFacade.h"
 #include "MasterInterface.h"
-namespace interconnect
-{
+namespace interconnect {
 
 /**
  * Fate implementation class
  **/
-class FateInterface : public MasterInterface
-{
-protected:
+class FateInterface : public MasterInterface {
+ public:
+  virtual ~FateInterface() {
+
+  }
+ protected:
   /**
    * Executes fate operations. 
    * @param auth authorization info
@@ -88,12 +80,9 @@ protected:
    * @param options options for this fate operation
    * @param wait determines if we will wait on the fate operation
    * @return return value of the fate operation
-   **/ 
-  std::string
-	doFateOperations (
-	        cclient::data::security::AuthInfo *auth,
-	        org::apache::accumulo::core::master::thrift::FateOperation::type type,
-	        std::vector<std::string> tableArgs, std::map<std::string,std::string> options, bool wait = false);
+   **/
+  virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation type, const std::vector<std::string> &tableArgs,
+                                       const std::map<std::string, std::string> &options, bool wait = false) = 0;
 };
 
 }

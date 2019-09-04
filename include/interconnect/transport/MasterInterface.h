@@ -24,6 +24,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <memory>
 #include <algorithm>    // std::random_shuffle
 #include <vector>       // std::vector
 #include <ctime>        // std::time
@@ -41,8 +42,6 @@
 #include "../scanrequest/ScanIdentifier.h"
 
 #include "Transport.h"
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/master_types.h"
@@ -77,12 +76,7 @@ class MasterInterface {
    * Recreates a thrift transporter. This will usually happen upon error
    * @return a new thrift transport
    **/
-  virtual boost::shared_ptr<apache::thrift::transport::TTransport> recreateTransport() = 0;
-  /**
-   * Returns the master client
-   * @return new thrift master client
-   **/
-  virtual org::apache::accumulo::core::master::thrift::MasterClientServiceClient *getMasterClient() = 0;
+  virtual std::shared_ptr<apache::thrift::transport::TTransport> recreateTransport() = 0;
 
 };
 

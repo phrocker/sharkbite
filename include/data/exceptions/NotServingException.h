@@ -11,4 +11,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "interconnect/transport/BaseTransport.h"
+
+#pragma once
+
+#include <string>
+
+namespace cclient {
+namespace exceptions {
+
+class NotServingException : public std::exception {
+ public:
+  explicit NotServingException(std::string excp)
+      : excp_str(excp) {
+
+  }
+
+  ~NotServingException() throw () {
+
+  }
+  const char *what() {
+    return excp_str.c_str();
+  }
+ private:
+  std::string excp_str;
+};
+} /* namespace data */
+} /* namespace cclient */

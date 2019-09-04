@@ -20,23 +20,23 @@ namespace interconnect {
 
 template<typename T>
 class Transporter {
-protected:
-    virtual void newTransporter(std::shared_ptr<ServerConnection> conn) = 0;
-public:
-    explicit Transporter(std::shared_ptr<ServerConnection> conn) {
+ protected:
+  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) = 0;
+ public:
+  explicit Transporter(const std::shared_ptr<ServerConnection> &conn) {
 
-    }
+  }
 
-    virtual ~Transporter() {
+  virtual ~Transporter() {
 
-    }
+  }
 
-    virtual T getTransport() = 0;
+  virtual T getTransport() = 0;
 
-    virtual void registerService(std::string instance, std::string clusterManagers) = 0;
-    virtual bool open() = 0;
-    virtual bool isOpen() = 0;
-    virtual void close() = 0;
+  virtual void registerService(const std::string &instance, const std::string &clusterManagers) = 0;
+  virtual bool open() = 0;
+  virtual bool isOpen() = 0;
+  virtual void close() = 0;
 
 };
 

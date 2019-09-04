@@ -11,14 +11,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "interconnect/ScannerInterface.h"
 
-namespace interconnect {
 
-ScannerInterface::ScannerInterface() {
-}
-
-ScannerInterface::~ScannerInterface() {
-}
-
-}
+struct FateOperationAccumuloOne {
+  enum type {
+    TABLE_CREATE = 0,
+    TABLE_CLONE = 1,
+    TABLE_DELETE = 2,
+    TABLE_RENAME = 3,
+    TABLE_ONLINE = 4,
+    TABLE_OFFLINE = 5,
+    TABLE_MERGE = 6,
+    TABLE_DELETE_RANGE = 7,
+    TABLE_BULK_IMPORT = 8,
+    TABLE_COMPACT = 9,
+    TABLE_IMPORT = 10,
+    TABLE_EXPORT = 11,
+    TABLE_CANCEL_COMPACT = 12,
+    NAMESPACE_CREATE = 13,
+    NAMESPACE_DELETE = 14,
+    NAMESPACE_RENAME = 15
+  };
+};

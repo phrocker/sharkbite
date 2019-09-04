@@ -18,6 +18,7 @@
 #include "Heuristic.h"
 #include "../../interconnect/TabletServer.h"
 #include <thrift/TApplicationException.h>
+#include "data/exceptions/NotServingException.h"
 #include "../../data/client/ExtentLocator.h"
 #include "../../data/extern/thrift/tabletserver_types.h"
 #include "../../interconnect/Scan.h"
@@ -164,7 +165,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
               scan = newScan;
 
           } while (scan != NULL);
-        } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+        } catch (const cclient::exceptions::NotServingException &te) {
 
           ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
         }
