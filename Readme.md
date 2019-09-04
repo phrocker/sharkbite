@@ -29,8 +29,6 @@ the API.
 	GNU 4+
 	cmake
 	make
-	libssl ( libssl1.0-dev )
-	libevent (libevent-dev )
 
 ## Building
 ```
