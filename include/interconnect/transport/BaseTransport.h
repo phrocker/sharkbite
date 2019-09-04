@@ -40,6 +40,8 @@
 #include "Transport.h"
 #include <boost/concept_check.hpp>
 #include <boost/shared_ptr.hpp>
+
+#include "interconnect/accumulo/AccumuloServerFacade.h"
 #include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/TabletClientService.h"
@@ -49,146 +51,45 @@
 #include "data/extern/thrift/ThriftWrapper.h"
 #include "data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
-#include "interconnect/accumulo/AccumuloServerTransport.h"
 
 namespace interconnect {
 
 class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*> {
  protected:
-  std::map<cclient::data::security::AuthInfo*, org::apache::accumulo::core::security::thrift::TCredentials> convertedMap;
   boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
-  //std::unique_ptr<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient> client;
-  //std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> tserverClient;
 
-  AccumuloServerTransport server;
+  AccumuloServerFacade server;
 
   std::shared_ptr<ServerConnection> clonedConnection;
 
-  virtual void newTransporter(std::shared_ptr<ServerConnection> conn) {
+  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) override;
 
-    clonedConnection = conn;
+  std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter();
 
-    boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(conn->getHost(), conn->getPort()));
-
-    //serverTransport->setLinger(false,0);
-    //serverTransport->setNoDelay(false);
-    //serverTransport->setConnTimeout(0);
-
-    boost::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(serverTransport));
-
-    try {
-      std::cout << "attempting to connect to ! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
-      transporty->open();
-
-      std::cout << "connected! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
-    } catch (const apache::thrift::transport::TTransportException &te) {
-      std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
-      try {
-        transporty->close();
-      } catch (const apache::thrift::transport::TTransportException &to) {
-        std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
-      }
-      throw te;
-    }
-
-    underlyingTransport = transporty;
-
-  }
-
-  std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter() {
-    //boost::shared_ptr<apache::thrift::transport::TTransport> createTransporter() {
-
-//    boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(clonedConnection->getHost(), clonedConnection->getPort()));
-    auto serverTransport = std::make_shared<apache::thrift::transport::TSocket>(clonedConnection->getHost(), clonedConnection->getPort());
-
-    serverTransport->setLinger(false, 0);
-    serverTransport->setNoDelay(true);
-    serverTransport->setConnTimeout(0);
-
-    //boost::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(boost::tools::from_shared_ptr(serverTransport)));
-    auto newTransport = std::make_shared<apache::thrift::transport::TFramedTransport>(boost::tools::from_shared_ptr<apache::thrift::transport::TSocket>(serverTransport));
-
-    newTransport->open();
-
-    return newTransport;
-
-  }
-
-  Scan *
-  singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan *singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
     return server.singleScan(request);
   }
 
-  Scan *
-  multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan *multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
     return server.multiScan(request);
-  }
-  org::apache::accumulo::core::security::thrift::TCredentials getOrSetCredentials(cclient::data::security::AuthInfo *convert) {
-    std::map<cclient::data::security::AuthInfo*, org::apache::accumulo::core::security::thrift::TCredentials>::iterator it;
-    it = convertedMap.find(convert);
-    if (it != convertedMap.end()) {
-      return it->second;
-    }
-
-    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(convert);
-    convertedMap.insert(std::pair<cclient::data::security::AuthInfo*, org::apache::accumulo::core::security::thrift::TCredentials>(convert, creds));
-    return creds;
-
   }
 
  public:
 
-  explicit ThriftTransporter(std::shared_ptr<ServerConnection> conn)
-      : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*>(conn) {
+  explicit ThriftTransporter(const std::shared_ptr<ServerConnection> &conn);
 
-    newTransporter(conn);
-  }
+  virtual ~ThriftTransporter();
 
-  virtual ~ThriftTransporter() {
-    underlyingTransport->close();
-    /*    if (NULL != client)
-     delete client;
-     */
-  }
+  std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
 
-  std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName) {
-    return server.getNamespaceConfiguration(auth, nameSpaceName);
-  }
+  apache::thrift::transport::TTransport getTransport();
 
-  apache::thrift::transport::TTransport getTransport() {
-    return *underlyingTransport;
-  }
+  virtual void authenticate(cclient::data::security::AuthInfo *auth) override;
+  void createIfClosed();
 
-  virtual void authenticate(cclient::data::security::AuthInfo *auth) override {
-    server.authenticate(auth);
-  }
+  void closeAndCreateClient();
 
-  void createIfClosed() {
-    if (underlyingTransport.get() != NULL && !underlyingTransport->isOpen()) {
-
-      underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
-      createClientService();
-    }
-  }
-
-  void closeAndCreateClient() {
-    if (underlyingTransport.get() != NULL && underlyingTransport->isOpen()) {
-      underlyingTransport->close();
-    }
-
-    underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
-    createClientService();
-  }
-
-  void createClientService() {
-
-    boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
-
-    server.close();
-
-    server.initialize(protocolPtr);
-
-  }
+  void createClientService();
 
   virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
     createClientService();

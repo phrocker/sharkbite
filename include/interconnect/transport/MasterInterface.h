@@ -77,11 +77,6 @@ class MasterInterface {
    * @return a new thrift transport
    **/
   virtual std::shared_ptr<apache::thrift::transport::TTransport> recreateTransport() = 0;
-  /**
-   * Returns the master client
-   * @return new thrift master client
-   **/
-  virtual std::shared_ptr<org::apache::accumulo::core::master::thrift::MasterClientServiceClient> getMasterClient() = 0;
 
 };
 

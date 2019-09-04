@@ -113,7 +113,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
 
     int failures = 0;
     do {
@@ -201,7 +201,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     const uint32_t timeout = conf->getLong(GENERAL_RPC_TIMEOUT_OPT,
     GENERAL_RPC_TIMEOUT);
 
-    tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+    tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
     do {
 
       try {
@@ -251,15 +251,10 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *continueScan(Scan *scan) {
-
     if (scan->getHasMore()) {
-      try {
-        return transport->continueScan(scan);
-      } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
-        throw cclient::exceptions::NotServingException(te.what());
-      }
+      return transport->continueScan(scan);
     }
-    return NULL;
+    return nullptr;
   }
 
   std::shared_ptr<cclient::data::TabletServerMutations> write(std::shared_ptr<cclient::data::TabletServerMutations> mutations) {

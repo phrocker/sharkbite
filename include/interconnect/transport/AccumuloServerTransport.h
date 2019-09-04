@@ -59,20 +59,20 @@
 #include "BaseTransport.h"
 namespace interconnect {
 
-class AccumuloServerTransport : public ThriftTransporter {
+class AccumuloServerFacade : public ThriftTransporter {
  protected:
 
  public:
-  explicit AccumuloServerTransport(std::shared_ptr<ServerConnection> conn)
+  explicit AccumuloServerTransport(const std::shared_ptr<ServerConnection> &conn)
       : ThriftTransporter(conn) {
 
   }
 
-  virtual void newTransporter(std::shared_ptr<ServerConnection> conn) {
+  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) override {
 
   }
 
-  virtual void registerService(const std::string &instance, const std::string &clusterManagers) override{
+  virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
   }
 };
 

@@ -21,9 +21,9 @@ namespace interconnect {
 template<typename T>
 class Transporter {
  protected:
-  virtual void newTransporter(std::shared_ptr<ServerConnection> conn) = 0;
+  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) = 0;
  public:
-  explicit Transporter(std::shared_ptr<ServerConnection> conn) {
+  explicit Transporter(const std::shared_ptr<ServerConnection> &conn) {
 
   }
 

@@ -59,7 +59,7 @@
 #include <transport/TSocket.h>
 #include <transport/TTransportException.h>
 #include <transport/TBufferTransports.h>
-
+#include "interconnect/accumulo/AccumuloFacade.h"
 #include "MasterInterface.h"
 namespace interconnect {
 
@@ -67,6 +67,10 @@ namespace interconnect {
  * Fate implementation class
  **/
 class FateInterface : public MasterInterface {
+ public:
+  virtual ~FateInterface() {
+
+  }
  protected:
   /**
    * Executes fate operations. 
@@ -77,8 +81,8 @@ class FateInterface : public MasterInterface {
    * @param wait determines if we will wait on the fate operation
    * @return return value of the fate operation
    **/
-  std::string doFateOperations(cclient::data::security::AuthInfo *auth, org::apache::accumulo::core::master::thrift::FateOperation::type type, const std::vector<std::string> &tableArgs,
-                               const std::map<std::string, std::string> &options, bool wait = false);
+  virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation type, const std::vector<std::string> &tableArgs,
+                                       const std::map<std::string, std::string> &options, bool wait = false) = 0;
 };
 
 }
