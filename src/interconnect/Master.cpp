@@ -52,7 +52,7 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, ccl
   this->myTransportPool = &MASTER_COORDINATOR;
   this->credentials = credentials;
 
-  std::vector<std::string> locations = instance->getMasterLocations();
+  std::vector < std::string > locations = instance->getMasterLocations();
 
   if (locations.size() == 0) {
     throw cclient::exceptions::ClientException(NO_MASTER_FOUND);
@@ -60,7 +60,7 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, ccl
 
   std::string master = locations.at(0);
 
-  std::vector<std::string> masterSplit = split(master, ':');
+  std::vector < std::string > masterSplit = split(master, ':');
 
   uint16_t port = atoi(masterSplit.at(1).c_str());
   ConnectorService conn("master", masterSplit.at(0), port);
@@ -70,7 +70,7 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, ccl
 
   // even though we're within the accumulo master, tserver object is just
   // a reference to the connecting server
-  tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::MASTER_CLIENT), port, timeout);
+  tServer = std::make_shared < ServerConnection > (conn.getAddressString(interconnect::INTERCONNECT_TYPES::MASTER_CLIENT), port, timeout);
 
   cachedTransport = myTransportPool->getTransporter(tServer);
 
@@ -99,8 +99,8 @@ std::unique_ptr<AccumuloTableOperations> MasterConnect::tableOps(const std::stri
   if (IsEmpty(&table))
     throw cclient::exceptions::ClientException(TABLE_OR_NAMESPACE_EMPTY);
   auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
-  return std::unique_ptr<AccumuloTableOperations>(
-      new AccumuloTableOperations(AccumuloConnector < interconnect::AccumuloMasterTransporter > ::getCredentials(), instance, table, this, tserverConnection, myTransportPool));
+  return std::unique_ptr < AccumuloTableOperations
+      > (new AccumuloTableOperations(AccumuloConnector<interconnect::AccumuloMasterTransporter>::getCredentials(), instance, table, this, tserverConnection, myTransportPool));
 }
 
 /**
@@ -109,7 +109,7 @@ std::unique_ptr<AccumuloTableOperations> MasterConnect::tableOps(const std::stri
  * @returns Namespace Operations.
  */
 std::unique_ptr<NamespaceOperations> MasterConnect::namespaceOps(const std::string &nm) {
-  return std::unique_ptr<NamespaceOperations>(new NamespaceOperations(AccumuloConnector < interconnect::AccumuloMasterTransporter > ::getCredentials(), nm, instance, this, myTransportPool));
+  return std::unique_ptr < NamespaceOperations > (new NamespaceOperations(AccumuloConnector<interconnect::AccumuloMasterTransporter>::getCredentials(), nm, instance, this, myTransportPool));
 }
 
 /**
@@ -119,13 +119,12 @@ std::unique_ptr<NamespaceOperations> MasterConnect::namespaceOps(const std::stri
 std::unique_ptr<SecurityOperations> MasterConnect::securityOps() {
 
   auto ptr = myTransportPool->getTransporter(&tabletServers, true).second;
-  return std::unique_ptr<SecurityOperations>(new SecurityOperations(AccumuloConnector < interconnect::AccumuloMasterTransporter > ::getCredentials(), instance, ptr, myTransportPool));
+  return std::unique_ptr < SecurityOperations > (new SecurityOperations(AccumuloConnector<interconnect::AccumuloMasterTransporter>::getCredentials(), instance, ptr, myTransportPool));
 }
 
 /**
  * Master connect destructor.
  */
 MasterConnect::~MasterConnect() {
-// myTransportPool->closeAll();
 }
 }

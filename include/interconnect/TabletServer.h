@@ -34,6 +34,7 @@
 #include "../data/extern/thrift/data_types.h"
 #include "../data/constructs/scanstate.h"
 #include "../data/exceptions/ClientException.h"
+#include "../data/exceptions/NotServingException.h"
 #include "../data/exceptions/IllegalArgumentException.h"
 #include "../data/constructs/tablet/TabletType.h"
 #include "../data/constructs/client/TabletServerMutations.h"
@@ -250,8 +251,13 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *continueScan(Scan *scan) {
+
     if (scan->getHasMore()) {
-      return transport->continueScan(scan);
+      try {
+        return transport->continueScan(scan);
+      } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+        throw cclient::exceptions::NotServingException(te.what());
+      }
     }
     return NULL;
   }

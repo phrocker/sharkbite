@@ -49,8 +49,6 @@
 #include "../scanrequest/ScanIdentifier.h"
 
 #include "Transport.h"
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/master_types.h"
@@ -74,14 +72,7 @@ class AccumuloServerTransport : public ThriftTransporter {
 
   }
 
-  virtual void registerService(std::string instance, std::string clusterManagers) {
-    /* boost::shared_ptr<TProtocol> protocolPtr (
-     new TCompactProtocol (underlyingTransport));
-
-     tserverClient =
-     new org::apache::accumulo::core::master::thrift::TabletClientServiceClient (
-     protocolPtr);
-     */
+  virtual void registerService(const std::string &instance, const std::string &clusterManagers) override{
   }
 };
 

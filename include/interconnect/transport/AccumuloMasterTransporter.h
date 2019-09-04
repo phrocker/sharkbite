@@ -97,14 +97,14 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
    *
    **/
   void createMasterClient() {
-    auto protocolPtr = std::make_shared < apache::thrift::protocol::TCompactProtocol > (underlyingTransport);
+    auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
     //boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
     //if (NULL != masterClient) {
 
 //      delete masterClient;
     //    masterClient = NULL;
 //    }
-    masterClient = std::make_shared < org::apache::accumulo::core::master::thrift::MasterClientServiceClient > (boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol >(protocolPtr));
+    masterClient = std::make_shared<org::apache::accumulo::core::master::thrift::MasterClientServiceClient>(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
   }
 
   void recreateMasterClient() {
@@ -138,10 +138,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool createTable(cclient::data::security::AuthInfo *auth, std::string table) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back("MILLIS");
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -158,7 +158,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool importDirectory(cclient::data::security::AuthInfo *auth, std::string table, std::string dir, std::string failure_dir, bool setTime) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
 
     tableArgs.push_back(table);
     tableArgs.push_back(dir);
@@ -168,7 +168,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     else
       tableArgs.push_back("true");
 
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_BULK_IMPORT, tableArgs, options, false);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -186,7 +186,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
   }
 
   bool compactFallBack(cclient::data::security::AuthInfo *auth, std::string table, std::string startrow, std::string endrow, bool wait) {
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
@@ -198,7 +198,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     std::string buff = strBuffer->getBufferAsString();
     tableArgs.push_back(buff);
 
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -213,7 +213,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool compact(cclient::data::security::AuthInfo *auth, std::string table, std::string startrow, std::string endrow, bool wait) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
@@ -245,7 +245,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
     tableArgs.push_back(std::string(bout.getByteArray(), bout.getPos()));
 
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -304,9 +304,9 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool removeTable(cclient::data::security::AuthInfo *auth, std::string table) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(table);
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::TABLE_DELETE, tableArgs, options);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -343,10 +343,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool createNamespace(cclient::data::security::AuthInfo *auth, std::string name) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(name);
     //tableArgs.push_back ("MILLIS");
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -363,10 +363,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool deletenamespace(cclient::data::security::AuthInfo *auth, std::string name) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(name);
     //tableArgs.push_back ("MILLIS");
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_DELETE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -383,10 +383,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool renamenamespace(cclient::data::security::AuthInfo *auth, std::string oldName, std::string newName) {
 
-    std::vector < std::string > tableArgs;
+    std::vector<std::string> tableArgs;
     tableArgs.push_back(oldName);
     tableArgs.push_back(newName);
-    std::map < std::string, std::string > options;
+    std::map<std::string, std::string> options;
     try {
       std::string returnValue = doFateOperations(auth, org::apache::accumulo::core::master::thrift::FateOperation::NAMESPACE_RENAME, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
@@ -399,18 +399,6 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
     return true;
 
-  }
-
-  std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, std::string nameSpaceName) {
-    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
-    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
-
-    tinfo.parentId = 0;
-    tinfo.traceId = rand();
-    std::map < std::string, std::string > ret;
-    client->getNamespaceConfiguration(ret, tinfo, creds, nameSpaceName);
-
-    return ret;
   }
 
   void removeNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, std::string property) {

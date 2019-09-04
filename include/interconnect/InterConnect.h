@@ -23,7 +23,6 @@
 #include <ctime>        // std::time
 #include <cstdlib>      // std::rand, std::srand
 
-
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
@@ -39,7 +38,6 @@
 
 #include <sys/time.h>
 
-
 #include "../data/exceptions/ClientException.h"
 #include "../data/exceptions/IllegalArgumentException.h"
 #include "../data/constructs/inputvalidation.h"
@@ -48,9 +46,7 @@
 #include "transport/CachedTransport.h"
 #include <boost/concept_check.hpp>
 
-
-namespace interconnect
-{
+namespace interconnect {
 
 #define TSERVER_PORT_OPT "tserver.port.client"
 #define TSERVER_DEFAULT_PORT 9997
@@ -58,51 +54,46 @@ namespace interconnect
 #define GENERAL_RPC_TIMEOUT_OPT "general.rpc.timeout"
 #define GENERAL_RPC_TIMEOUT 120*1000
 
-enum INTERCONNECT_TYPES
-{
-    TSERV_CLIENT, MASTER_CLIENT, GC_CLIENT
+enum INTERCONNECT_TYPES {
+  TSERV_CLIENT,
+  MASTER_CLIENT,
+  GC_CLIENT
 };
 
 #define SERVICE_SEPARATOR ';'
 #define SEPARATOR_CHAR '='
 
 template<typename T>
-class EnumParser
-{
-protected:
-    std::map<std::string, T> enumMap;
-public:
-    EnumParser ()
-    {
-    }
+class EnumParser {
+ protected:
+  std::map<std::string, T> enumMap;
+ public:
+  EnumParser() {
+  }
 
-    T
-    ParseSomeEnum (const std::string &value)
-    {
-        auto iValue = enumMap.find (value);
-        if (iValue == enumMap.end ())
-            throw cclient::exceptions::IllegalArgumentException ("");
-        return iValue->second;
-    }
+  T ParseSomeEnum(const std::string &value) {
+    auto iValue = enumMap.find(value);
+    if (iValue == enumMap.end())
+      throw cclient::exceptions::IllegalArgumentException("");
+    return iValue->second;
+  }
 };
 
-class TYPE_PARSER : public EnumParser<INTERCONNECT_TYPES>
-{
-public:
-    TYPE_PARSER ()
-    {
-        enumMap["TSERV_CLIENT"] = INTERCONNECT_TYPES::TSERV_CLIENT;
-        enumMap["tserv_client"] = INTERCONNECT_TYPES::TSERV_CLIENT;
-        enumMap["tserver"] = INTERCONNECT_TYPES::TSERV_CLIENT;
+class TYPE_PARSER : public EnumParser<INTERCONNECT_TYPES> {
+ public:
+  TYPE_PARSER() {
+    enumMap["TSERV_CLIENT"] = INTERCONNECT_TYPES::TSERV_CLIENT;
+    enumMap["tserv_client"] = INTERCONNECT_TYPES::TSERV_CLIENT;
+    enumMap["tserver"] = INTERCONNECT_TYPES::TSERV_CLIENT;
 
-        enumMap["MASTER_CLIENT"] = INTERCONNECT_TYPES::MASTER_CLIENT;
-        enumMap["master_client"] = INTERCONNECT_TYPES::MASTER_CLIENT;
-        enumMap["master"] = INTERCONNECT_TYPES::MASTER_CLIENT;
+    enumMap["MASTER_CLIENT"] = INTERCONNECT_TYPES::MASTER_CLIENT;
+    enumMap["master_client"] = INTERCONNECT_TYPES::MASTER_CLIENT;
+    enumMap["master"] = INTERCONNECT_TYPES::MASTER_CLIENT;
 
-        enumMap["GC_CLIENT"] = INTERCONNECT_TYPES::GC_CLIENT;
-        enumMap["gc_client"] = INTERCONNECT_TYPES::GC_CLIENT;
-        enumMap["gc"] = INTERCONNECT_TYPES::GC_CLIENT;
-    }
+    enumMap["GC_CLIENT"] = INTERCONNECT_TYPES::GC_CLIENT;
+    enumMap["gc_client"] = INTERCONNECT_TYPES::GC_CLIENT;
+    enumMap["gc"] = INTERCONNECT_TYPES::GC_CLIENT;
+  }
 };
 
 /**
@@ -110,26 +101,20 @@ public:
  * Purpose: Acts as a reference within the map of known connection types
  *
  */
-class ConnectorService
-{
-public:
-    ConnectorService (std::string service, std::string server, uint16_t port)
-    {
-        serviceMap.insert (
-            std::pair<INTERCONNECT_TYPES, std::string> (parser.ParseSomeEnum (service),
-                    server));
+class ConnectorService {
+ public:
+  ConnectorService(std::string service, std::string server, uint16_t port) {
+    serviceMap.insert(std::pair<INTERCONNECT_TYPES, std::string>(parser.ParseSomeEnum(service), server));
 
-    }
+  }
 
-    std::string
-    getAddressString (INTERCONNECT_TYPES type)
-    {
-        return serviceMap[type];
-    }
+  std::string getAddressString(INTERCONNECT_TYPES type) {
+    return serviceMap[type];
+  }
 
-protected:
-    std::map<INTERCONNECT_TYPES,std::string> serviceMap;
-    TYPE_PARSER parser;
+ protected:
+  std::map<INTERCONNECT_TYPES, std::string> serviceMap;
+  TYPE_PARSER parser;
 };
 
 #define ERROR_THRESHOLD 20L

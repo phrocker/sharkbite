@@ -11,35 +11,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef TRANSPORT_H_
-#define TRANSPORT_H_
 
-#include "ServerConnection.h"
+#pragma once
 
-namespace interconnect {
+#include <string>
 
-template<typename T>
-class Transporter {
- protected:
-  virtual void newTransporter(std::shared_ptr<ServerConnection> conn) = 0;
+namespace cclient {
+namespace exceptions {
+
+class NotServingException : public std::exception {
  public:
-  explicit Transporter(std::shared_ptr<ServerConnection> conn) {
+  explicit NotServingException(std::string excp)
+      : excp_str(excp) {
 
   }
 
-  virtual ~Transporter() {
+  ~NotServingException() throw () {
 
   }
-
-  virtual T getTransport() = 0;
-
-  virtual void registerService(const std::string &instance, const std::string &clusterManagers) = 0;
-  virtual bool open() = 0;
-  virtual bool isOpen() = 0;
-  virtual void close() = 0;
-
+  const char *what() {
+    return excp_str.c_str();
+  }
+ private:
+  std::string excp_str;
 };
-
-}
-
-#endif /* TRANSPORT_H_ */
+} /* namespace data */
+} /* namespace cclient */

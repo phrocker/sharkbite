@@ -18,6 +18,7 @@
 #include "Heuristic.h"
 #include "../../interconnect/TabletServer.h"
 #include <thrift/TApplicationException.h>
+#include "data/exceptions/NotServingException.h"
 #include "../../data/client/ExtentLocator.h"
 #include "../../data/extern/thrift/tabletserver_types.h"
 #include "../../interconnect/Scan.h"
@@ -48,7 +49,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
    * Add a server interconnect
    */
   void addClientInterface(std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> serverIfc) {
-    std::lock_guard<std::mutex> lock(serverLock);
+    std::lock_guard < std::mutex > lock(serverLock);
     Heuristic::addClientInterface(serverIfc);
   }
 
@@ -59,7 +60,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   }
 
   ~ScannerHeuristic() {
-    std::lock_guard<std::mutex> lock(serverLock);
+    std::lock_guard < std::mutex > lock(serverLock);
 
     if (started) {
       for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++) {
@@ -71,7 +72,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   }
 
   uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
-    std::lock_guard<std::mutex> lock(serverLock);
+    std::lock_guard < std::mutex > lock(serverLock);
     if (!started)
       started = true;
     uint16_t scans = 0;
@@ -123,7 +124,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     scanResource->src->locateFailedTablet(newRanges, &locatedTablets);
 
     for (auto newRangeDef : locatedTablets) {
-      auto directConnect = std::make_shared<interconnect::ServerInterconnect>(newRangeDef, scanResource->src->getInstance()->getConfiguration());
+      auto directConnect = std::make_shared < interconnect::ServerInterconnect > (newRangeDef, scanResource->src->getInstance()->getConfiguration());
 
       ((ScannerHeuristic*) scanResource->heuristic)->addClientInterface(directConnect);
     }
@@ -148,7 +149,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
           scan = conn->scan(source->getColumns(), source->getIters());
 
           do {
-            std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
+            std::vector < std::shared_ptr<cclient::data::KeyValue> > nextResults;
 
             scan->getNextResults(&nextResults);
 
@@ -164,7 +165,8 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
               scan = newScan;
 
           } while (scan != NULL);
-        } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+          //} catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+        } catch (const cclient::exceptions::NotServingException &te) {
 
           ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
         }
@@ -184,14 +186,14 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
     std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> nextService = NULL;
 
-    std::lock_guard<std::mutex> lock(serverLock);
+    std::lock_guard < std::mutex > lock(serverLock);
 
     if (!servers.empty()) {
       nextService = servers.back();
       servers.pop_back();
     }
 
-    std::shared_ptr<interconnect::ServerInterconnect> connector = std::dynamic_pointer_cast<interconnect::ServerInterconnect>(nextService);
+    std::shared_ptr<interconnect::ServerInterconnect> connector = std::dynamic_pointer_cast < interconnect::ServerInterconnect > (nextService);
 
     return connector;
 

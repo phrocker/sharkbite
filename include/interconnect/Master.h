@@ -38,8 +38,6 @@
 #include <memory>
 #include "ClientInterface.h"
 
-#include <boost/shared_ptr.hpp>
-
 #include "tableOps/ClientTableOps.h"
 #include "namespaceOps/NamespaceOperations.h"
 #include "securityOps/SecurityOperations.h"
@@ -71,7 +69,8 @@ class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransport
       : MasterConnect(*credentials, instance) {
   }
 
-  MasterConnect() {
+  MasterConnect()
+      : instance(nullptr) {
   }
 
   /**
@@ -94,8 +93,7 @@ class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransport
    */
   std::unique_ptr<SecurityOperations> securityOps();
 
-  virtual
-  ~MasterConnect();
+  virtual ~MasterConnect();
 
   MasterConnect &operator=(const MasterConnect &other) {
     instance = other.instance;

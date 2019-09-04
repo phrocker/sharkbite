@@ -25,22 +25,22 @@
 namespace interconnect {
 
 template<class T, class K, class V, class W>
-class ServerTransport: public Transporter<T> {
-public:
+class ServerTransport : public Transporter<T> {
+ public:
 
-    explicit ServerTransport(std::shared_ptr<ServerConnection> conn) :
-        Transporter<T>(conn) {
+  explicit ServerTransport(std::shared_ptr<ServerConnection> conn)
+      : Transporter<T>(conn) {
 
-    }
-    virtual ~ServerTransport() {
+  }
+  virtual ~ServerTransport() {
 
-    }
+  }
 
-    virtual void authenticate(cclient::data::security::AuthInfo *auth) = 0;
+  virtual void authenticate(cclient::data::security::AuthInfo *auth) = 0;
 
-    virtual Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<K>, V> > *req) = 0;
+  virtual Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<K>, V> > *req) = 0;
 
-    virtual void *write(cclient::data::security::AuthInfo *auth, std::map<K, std::vector<W>> *request) = 0;
+  virtual void *write(cclient::data::security::AuthInfo *auth, std::map<K, std::vector<W>> *request) = 0;
 };
 
 } /* namespace interconnect */
