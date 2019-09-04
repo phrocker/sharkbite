@@ -10218,10 +10218,10 @@ void TabletClientServiceProcessor::process_getActiveLogs(int32_t seqid, ::apache
   }
 }
 
-::boost::shared_ptr< ::apache::thrift::TProcessor > TabletClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
+::std::shared_ptr< ::apache::thrift::TProcessor > TabletClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
   ::apache::thrift::ReleaseHandler< TabletClientServiceIfFactory > cleanup(handlerFactory_);
-  ::boost::shared_ptr< TabletClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > processor(new TabletClientServiceProcessor(handler));
+  ::std::shared_ptr< TabletClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > processor(new TabletClientServiceProcessor(handler));
   return processor;
 }
 

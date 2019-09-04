@@ -32,7 +32,7 @@ class ThriftTestIfFactory {
 
 class ThriftTestIfSingletonFactory : virtual public ThriftTestIfFactory {
  public:
-  ThriftTestIfSingletonFactory(const boost::shared_ptr<ThriftTestIf>& iface) : iface_(iface) {}
+  ThriftTestIfSingletonFactory(const std::shared_ptr<ThriftTestIf>& iface) : iface_(iface) {}
   virtual ~ThriftTestIfSingletonFactory() {}
 
   virtual ThriftTestIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -41,7 +41,7 @@ class ThriftTestIfSingletonFactory : virtual public ThriftTestIfFactory {
   virtual void releaseHandler(ThriftTestIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<ThriftTestIf> iface_;
+  std::shared_ptr<ThriftTestIf> iface_;
 };
 
 class ThriftTestNull : virtual public ThriftTestIf {
@@ -395,27 +395,27 @@ class ThriftTest_throwsError_presult {
 
 class ThriftTestClient : virtual public ThriftTestIf {
  public:
-  ThriftTestClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  ThriftTestClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  ThriftTestClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  ThriftTestClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   bool success();
@@ -428,15 +428,15 @@ class ThriftTestClient : virtual public ThriftTestIf {
   void send_throwsError();
   bool recv_throwsError();
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class ThriftTestProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<ThriftTestIf> iface_;
+  std::shared_ptr<ThriftTestIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (ThriftTestProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -446,7 +446,7 @@ class ThriftTestProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_fails(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_throwsError(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  ThriftTestProcessor(boost::shared_ptr<ThriftTestIf> iface) :
+  ThriftTestProcessor(std::shared_ptr<ThriftTestIf> iface) :
     iface_(iface) {
     processMap_["success"] = &ThriftTestProcessor::process_success;
     processMap_["fails"] = &ThriftTestProcessor::process_fails;
@@ -458,24 +458,24 @@ class ThriftTestProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class ThriftTestProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  ThriftTestProcessorFactory(const ::boost::shared_ptr< ThriftTestIfFactory >& handlerFactory) :
+  ThriftTestProcessorFactory(const ::std::shared_ptr< ThriftTestIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< ThriftTestIfFactory > handlerFactory_;
+  ::std::shared_ptr< ThriftTestIfFactory > handlerFactory_;
 };
 
 class ThriftTestMultiface : virtual public ThriftTestIf {
  public:
-  ThriftTestMultiface(std::vector<boost::shared_ptr<ThriftTestIf> >& ifaces) : ifaces_(ifaces) {
+  ThriftTestMultiface(std::vector<std::shared_ptr<ThriftTestIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~ThriftTestMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<ThriftTestIf> > ifaces_;
+  std::vector<std::shared_ptr<ThriftTestIf> > ifaces_;
   ThriftTestMultiface() {}
-  void add(boost::shared_ptr<ThriftTestIf> iface) {
+  void add(std::shared_ptr<ThriftTestIf> iface) {
     ifaces_.push_back(iface);
   }
  public:

@@ -56,7 +56,7 @@ void ThriftTransporter::closeAndCreateClient() {
 
 void ThriftTransporter::createClientService() {
 
-  boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
+  std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
   server.close();
 
@@ -68,9 +68,9 @@ void ThriftTransporter::newTransporter(const std::shared_ptr<ServerConnection> &
 
   clonedConnection = conn;
 
-  boost::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(conn->getHost(), conn->getPort()));
+  std::shared_ptr<apache::thrift::transport::TSocket> serverTransport(new apache::thrift::transport::TSocket(conn->getHost(), conn->getPort()));
 
-  boost::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(serverTransport));
+  std::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(serverTransport));
 
   try {
     std::cout << "attempting to connect to ! to " << conn->getHost() << " and " << conn->getPort() << std::endl;

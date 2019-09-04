@@ -30,7 +30,7 @@ class TestServiceIfFactory {
 
 class TestServiceIfSingletonFactory : virtual public TestServiceIfFactory {
  public:
-  TestServiceIfSingletonFactory(const boost::shared_ptr<TestServiceIf>& iface) : iface_(iface) {}
+  TestServiceIfSingletonFactory(const std::shared_ptr<TestServiceIf>& iface) : iface_(iface) {}
   virtual ~TestServiceIfSingletonFactory() {}
 
   virtual TestServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -39,7 +39,7 @@ class TestServiceIfSingletonFactory : virtual public TestServiceIfFactory {
   virtual void releaseHandler(TestServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<TestServiceIf> iface_;
+  std::shared_ptr<TestServiceIf> iface_;
 };
 
 class TestServiceNull : virtual public TestServiceIf {
@@ -180,42 +180,42 @@ class TestService_checkTrace_presult {
 
 class TestServiceClient : virtual public TestServiceIf {
  public:
-  TestServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  TestServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  TestServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  TestServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   bool checkTrace(const TInfo& tinfo, const std::string& message);
   void send_checkTrace(const TInfo& tinfo, const std::string& message);
   bool recv_checkTrace();
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class TestServiceProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<TestServiceIf> iface_;
+  std::shared_ptr<TestServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (TestServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -223,7 +223,7 @@ class TestServiceProcessor : public ::apache::thrift::TDispatchProcessor {
   ProcessMap processMap_;
   void process_checkTrace(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  TestServiceProcessor(boost::shared_ptr<TestServiceIf> iface) :
+  TestServiceProcessor(std::shared_ptr<TestServiceIf> iface) :
     iface_(iface) {
     processMap_["checkTrace"] = &TestServiceProcessor::process_checkTrace;
   }
@@ -233,24 +233,24 @@ class TestServiceProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class TestServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  TestServiceProcessorFactory(const ::boost::shared_ptr< TestServiceIfFactory >& handlerFactory) :
+  TestServiceProcessorFactory(const ::std::shared_ptr< TestServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< TestServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< TestServiceIfFactory > handlerFactory_;
 };
 
 class TestServiceMultiface : virtual public TestServiceIf {
  public:
-  TestServiceMultiface(std::vector<boost::shared_ptr<TestServiceIf> >& ifaces) : ifaces_(ifaces) {
+  TestServiceMultiface(std::vector<std::shared_ptr<TestServiceIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~TestServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<TestServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<TestServiceIf> > ifaces_;
   TestServiceMultiface() {}
-  void add(boost::shared_ptr<TestServiceIf> iface) {
+  void add(std::shared_ptr<TestServiceIf> iface) {
     ifaces_.push_back(iface);
   }
  public:

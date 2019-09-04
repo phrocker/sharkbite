@@ -65,7 +65,7 @@ class ClientServiceIfFactory {
 
 class ClientServiceIfSingletonFactory : virtual public ClientServiceIfFactory {
  public:
-  ClientServiceIfSingletonFactory(const boost::shared_ptr<ClientServiceIf>& iface) : iface_(iface) {}
+  ClientServiceIfSingletonFactory(const std::shared_ptr<ClientServiceIf>& iface) : iface_(iface) {}
   virtual ~ClientServiceIfSingletonFactory() {}
 
   virtual ClientServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -74,7 +74,7 @@ class ClientServiceIfSingletonFactory : virtual public ClientServiceIfFactory {
   virtual void releaseHandler(ClientServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<ClientServiceIf> iface_;
+  std::shared_ptr<ClientServiceIf> iface_;
 };
 
 class ClientServiceNull : virtual public ClientServiceIf {
@@ -3976,27 +3976,27 @@ class ClientService_checkNamespaceClass_presult {
 
 class ClientServiceClient : virtual public ClientServiceIf {
  public:
-  ClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  ClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  ClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  ClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void getRootTabletLocation(std::string& _return);
@@ -4090,15 +4090,15 @@ class ClientServiceClient : virtual public ClientServiceIf {
   void send_checkNamespaceClass(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const std::string& namespaceId, const std::string& className, const std::string& interfaceMatch);
   bool recv_checkNamespaceClass();
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class ClientServiceProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<ClientServiceIf> iface_;
+  std::shared_ptr<ClientServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (ClientServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -4135,7 +4135,7 @@ class ClientServiceProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_checkTableClass(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_checkNamespaceClass(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  ClientServiceProcessor(boost::shared_ptr<ClientServiceIf> iface) :
+  ClientServiceProcessor(std::shared_ptr<ClientServiceIf> iface) :
     iface_(iface) {
     processMap_["getRootTabletLocation"] = &ClientServiceProcessor::process_getRootTabletLocation;
     processMap_["getInstanceId"] = &ClientServiceProcessor::process_getInstanceId;
@@ -4174,24 +4174,24 @@ class ClientServiceProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class ClientServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  ClientServiceProcessorFactory(const ::boost::shared_ptr< ClientServiceIfFactory >& handlerFactory) :
+  ClientServiceProcessorFactory(const ::std::shared_ptr< ClientServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< ClientServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< ClientServiceIfFactory > handlerFactory_;
 };
 
 class ClientServiceMultiface : virtual public ClientServiceIf {
  public:
-  ClientServiceMultiface(std::vector<boost::shared_ptr<ClientServiceIf> >& ifaces) : ifaces_(ifaces) {
+  ClientServiceMultiface(std::vector<std::shared_ptr<ClientServiceIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~ClientServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<ClientServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<ClientServiceIf> > ifaces_;
   ClientServiceMultiface() {}
-  void add(boost::shared_ptr<ClientServiceIf> iface) {
+  void add(std::shared_ptr<ClientServiceIf> iface) {
     ifaces_.push_back(iface);
   }
  public:
@@ -4482,27 +4482,27 @@ class ClientServiceMultiface : virtual public ClientServiceIf {
 // only be used when you need to share a connection among multiple threads
 class ClientServiceConcurrentClient : virtual public ClientServiceIf {
  public:
-  ClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  ClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  ClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  ClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void getRootTabletLocation(std::string& _return);
@@ -4596,8 +4596,8 @@ class ClientServiceConcurrentClient : virtual public ClientServiceIf {
   int32_t send_checkNamespaceClass(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const std::string& namespaceId, const std::string& className, const std::string& interfaceMatch);
   bool recv_checkNamespaceClass(const int32_t seqid);
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
   ::apache::thrift::async::TConcurrentClientSyncInfo sync_;

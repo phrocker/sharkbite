@@ -42,8 +42,8 @@ find_package (OpenSSL REQUIRED)
 #if (NOT THRIFT_FOUND)
 	ExternalProject_Add(
 	  LibThrift
-	  GIT_REPOSITORY "https://github.com/phrocker/thrift.git"
-	  GIT_TAG 8c4b75db00aa8f7f5fca44d14296a45030683dd8
+	  GIT_REPOSITORY "https://github.com/apache/thrift.git"
+	  GIT_TAG "v0.12.0"
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift-src"
 	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
@@ -53,6 +53,7 @@ find_package (OpenSSL REQUIRED)
 	  			 "-DWITH_JAVA=OFF"
 	  			 "-DWITH_LIBEVENT=ON"
 	  			 "-DWITH_PYTHON=OFF"
+	  			 "-DOPENSSL_ROOT_DIR=${LIBRESSL_BIN_DIR}"
 	  			 "-DWITH_HASKELL=OFF"
 	  			 "-DWITH_SHARED_LIB=OFF"
 	  			 "-DWITH_C_GLIB=OFF"

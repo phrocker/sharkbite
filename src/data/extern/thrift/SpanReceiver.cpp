@@ -162,10 +162,10 @@ void SpanReceiverProcessor::process_span(int32_t, ::apache::thrift::protocol::TP
   return;
 }
 
-::boost::shared_ptr< ::apache::thrift::TProcessor > SpanReceiverProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
+::std::shared_ptr< ::apache::thrift::TProcessor > SpanReceiverProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
   ::apache::thrift::ReleaseHandler< SpanReceiverIfFactory > cleanup(handlerFactory_);
-  ::boost::shared_ptr< SpanReceiverIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > processor(new SpanReceiverProcessor(handler));
+  ::std::shared_ptr< SpanReceiverIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > processor(new SpanReceiverProcessor(handler));
   return processor;
 }
 
