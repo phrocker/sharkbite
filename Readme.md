@@ -6,18 +6,15 @@ initial support for [Apache Accumulo][accumulo], the design can and has been use
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
 despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
-Currently the code is a merger of C && C++ code. V0.3 will represent a shift more toward 
-creating a C API and creating exernalized factories for the thrift code.
+Capabilities That will be supported in V0.4 : 
 
-Capabilities That will be supported in V0.2 : 
-
- * Work with Accumulo 1.6.x and 1.7.x
+ * Work with Accumulo 1.6.x, 1.7.x, 1.8.x and 1.9.x
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
  * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
  * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
  
 Current Master progress 
-  * Work with Accumulo 1.6.x, 1.7.x -- 1.8.x and 1.9.x partially tested
+  * Development is focusing on abstracting out 2.x changes for Accumulo Proper. 
 
 About the name
 
