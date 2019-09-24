@@ -52,15 +52,5 @@ template<class T> std::shared_ptr<T> from_shared_ptr(const std::shared_ptr<T> &p
   return p;
 }
 
-/*
- template<class T> boost::shared_ptr<T> from_shared_ptr(const std::shared_ptr<T> &p) {
- typedef Replacement<boost::shared_ptr<T>> H;
- if (H * h = std::get_deleter < H > (p)) {
- return h->p;
- } else {
- return boost::shared_ptr < T > (p.get(), Replacement<std::shared_ptr<T>>(p));
- }
- }*/
-
 }
 }
