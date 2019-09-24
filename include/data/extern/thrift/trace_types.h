@@ -14,8 +14,6 @@
 #include <thrift/protocol/TProtocol.h>
 #include <thrift/transport/TTransport.h>
 
-#include <thrift/cxxfunctional.h>
-
 
 namespace org { namespace apache { namespace accumulo { namespace core { namespace trace { namespace thrift {
 

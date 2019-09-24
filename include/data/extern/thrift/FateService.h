@@ -39,7 +39,7 @@ class FateServiceIfFactory {
 
 class FateServiceIfSingletonFactory : virtual public FateServiceIfFactory {
  public:
-  FateServiceIfSingletonFactory(const boost::shared_ptr<FateServiceIf>& iface) : iface_(iface) {}
+  FateServiceIfSingletonFactory(const std::shared_ptr<FateServiceIf>& iface) : iface_(iface) {}
   virtual ~FateServiceIfSingletonFactory() {}
 
   virtual FateServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -48,7 +48,7 @@ class FateServiceIfSingletonFactory : virtual public FateServiceIfFactory {
   virtual void releaseHandler(FateServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<FateServiceIf> iface_;
+  std::shared_ptr<FateServiceIf> iface_;
 };
 
 class FateServiceNull : virtual public FateServiceIf {
@@ -596,27 +596,27 @@ class FateService_finishFateOperation_presult {
 
 class FateServiceClient : virtual public FateServiceIf {
  public:
-  FateServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  FateServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  FateServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  FateServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   int64_t beginFateOperation(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials);
@@ -632,15 +632,15 @@ class FateServiceClient : virtual public FateServiceIf {
   void send_finishFateOperation(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const int64_t opid);
   void recv_finishFateOperation();
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class FateServiceProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<FateServiceIf> iface_;
+  std::shared_ptr<FateServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (FateServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -651,7 +651,7 @@ class FateServiceProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_waitForFateOperation(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_finishFateOperation(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  FateServiceProcessor(boost::shared_ptr<FateServiceIf> iface) :
+  FateServiceProcessor(std::shared_ptr<FateServiceIf> iface) :
     iface_(iface) {
     processMap_["beginFateOperation"] = &FateServiceProcessor::process_beginFateOperation;
     processMap_["executeFateOperation"] = &FateServiceProcessor::process_executeFateOperation;
@@ -664,24 +664,24 @@ class FateServiceProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class FateServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  FateServiceProcessorFactory(const ::boost::shared_ptr< FateServiceIfFactory >& handlerFactory) :
+  FateServiceProcessorFactory(const ::std::shared_ptr< FateServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< FateServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< FateServiceIfFactory > handlerFactory_;
 };
 
 class FateServiceMultiface : virtual public FateServiceIf {
  public:
-  FateServiceMultiface(std::vector<boost::shared_ptr<FateServiceIf> >& ifaces) : ifaces_(ifaces) {
+  FateServiceMultiface(std::vector<std::shared_ptr<FateServiceIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~FateServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<FateServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<FateServiceIf> > ifaces_;
   FateServiceMultiface() {}
-  void add(boost::shared_ptr<FateServiceIf> iface) {
+  void add(std::shared_ptr<FateServiceIf> iface) {
     ifaces_.push_back(iface);
   }
  public:
@@ -729,27 +729,27 @@ class FateServiceMultiface : virtual public FateServiceIf {
 // only be used when you need to share a connection among multiple threads
 class FateServiceConcurrentClient : virtual public FateServiceIf {
  public:
-  FateServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  FateServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  FateServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  FateServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   int64_t beginFateOperation(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials);
@@ -765,8 +765,8 @@ class FateServiceConcurrentClient : virtual public FateServiceIf {
   int32_t send_finishFateOperation(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const int64_t opid);
   void recv_finishFateOperation(const int32_t seqid);
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
   ::apache::thrift::async::TConcurrentClientSyncInfo sync_;

@@ -109,7 +109,7 @@ class AccumuloServerFacade {
 
   void close();
 
-  void initialize(boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr);
+  void initialize(std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr);
 
   std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
 

@@ -1577,10 +1577,10 @@ void FateServiceProcessor::process_finishFateOperation(int32_t seqid, ::apache::
   }
 }
 
-::boost::shared_ptr< ::apache::thrift::TProcessor > FateServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
+::std::shared_ptr< ::apache::thrift::TProcessor > FateServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
   ::apache::thrift::ReleaseHandler< FateServiceIfFactory > cleanup(handlerFactory_);
-  ::boost::shared_ptr< FateServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > processor(new FateServiceProcessor(handler));
+  ::std::shared_ptr< FateServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > processor(new FateServiceProcessor(handler));
   return processor;
 }
 

@@ -56,7 +56,7 @@ namespace interconnect {
 
 class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*> {
  protected:
-  boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
+  std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 
   AccumuloServerFacade server;
 

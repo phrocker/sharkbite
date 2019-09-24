@@ -13,8 +13,6 @@
 #include <thrift/TApplicationException.h>
 #include <thrift/protocol/TProtocol.h>
 #include <thrift/transport/TTransport.h>
-
-#include <thrift/cxxfunctional.h>
 #include "data_types.h"
 #include "security_types.h"
 #include "client_types.h"

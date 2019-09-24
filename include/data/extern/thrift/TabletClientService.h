@@ -67,7 +67,7 @@ class TabletClientServiceIfFactory : virtual public  ::org::apache::accumulo::co
 
 class TabletClientServiceIfSingletonFactory : virtual public TabletClientServiceIfFactory {
  public:
-  TabletClientServiceIfSingletonFactory(const boost::shared_ptr<TabletClientServiceIf>& iface) : iface_(iface) {}
+  TabletClientServiceIfSingletonFactory(const std::shared_ptr<TabletClientServiceIf>& iface) : iface_(iface) {}
   virtual ~TabletClientServiceIfSingletonFactory() {}
 
   virtual TabletClientServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -76,7 +76,7 @@ class TabletClientServiceIfSingletonFactory : virtual public TabletClientService
   virtual void releaseHandler( ::org::apache::accumulo::core::client::impl::thrift::ClientServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<TabletClientServiceIf> iface_;
+  std::shared_ptr<TabletClientServiceIf> iface_;
 };
 
 class TabletClientServiceNull : virtual public TabletClientServiceIf , virtual public  ::org::apache::accumulo::core::client::impl::thrift::ClientServiceNull {
@@ -3537,13 +3537,13 @@ class TabletClientService_getActiveLogs_presult {
 
 class TabletClientServiceClient : virtual public TabletClientServiceIf, public  ::org::apache::accumulo::core::client::impl::thrift::ClientServiceClient {
  public:
-  TabletClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
+  TabletClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
      ::org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(prot, prot) {}
-  TabletClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :     ::org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(iprot, oprot) {}
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  TabletClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :     ::org::apache::accumulo::core::client::impl::thrift::ClientServiceClient(iprot, oprot) {}
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void startScan( ::org::apache::accumulo::core::data::thrift::InitialScan& _return, const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const  ::org::apache::accumulo::core::data::thrift::TKeyExtent& extent, const  ::org::apache::accumulo::core::data::thrift::TRange& range, const std::vector< ::org::apache::accumulo::core::data::thrift::TColumn> & columns, const int32_t batchSize, const std::vector< ::org::apache::accumulo::core::data::thrift::IterInfo> & ssiList, const std::map<std::string, std::map<std::string, std::string> > & ssio, const std::vector<std::string> & authorizations, const bool waitForWrites, const bool isolated, const int64_t readaheadThreshold);
@@ -3632,7 +3632,7 @@ class TabletClientServiceClient : virtual public TabletClientServiceIf, public  
 
 class TabletClientServiceProcessor : public  ::org::apache::accumulo::core::client::impl::thrift::ClientServiceProcessor {
  protected:
-  boost::shared_ptr<TabletClientServiceIf> iface_;
+  std::shared_ptr<TabletClientServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (TabletClientServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -3670,7 +3670,7 @@ class TabletClientServiceProcessor : public  ::org::apache::accumulo::core::clie
   void process_removeLogs(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_getActiveLogs(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  TabletClientServiceProcessor(boost::shared_ptr<TabletClientServiceIf> iface) :
+  TabletClientServiceProcessor(std::shared_ptr<TabletClientServiceIf> iface) :
      ::org::apache::accumulo::core::client::impl::thrift::ClientServiceProcessor(iface),
     iface_(iface) {
     processMap_["startScan"] = &TabletClientServiceProcessor::process_startScan;
@@ -3711,28 +3711,28 @@ class TabletClientServiceProcessor : public  ::org::apache::accumulo::core::clie
 
 class TabletClientServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  TabletClientServiceProcessorFactory(const ::boost::shared_ptr< TabletClientServiceIfFactory >& handlerFactory) :
+  TabletClientServiceProcessorFactory(const ::std::shared_ptr< TabletClientServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< TabletClientServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< TabletClientServiceIfFactory > handlerFactory_;
 };
 
 class TabletClientServiceMultiface : virtual public TabletClientServiceIf, public  ::org::apache::accumulo::core::client::impl::thrift::ClientServiceMultiface {
  public:
-  TabletClientServiceMultiface(std::vector<boost::shared_ptr<TabletClientServiceIf> >& ifaces) : ifaces_(ifaces) {
-    std::vector<boost::shared_ptr<TabletClientServiceIf> >::iterator iter;
+  TabletClientServiceMultiface(std::vector<std::shared_ptr<TabletClientServiceIf> >& ifaces) : ifaces_(ifaces) {
+    std::vector<std::shared_ptr<TabletClientServiceIf> >::iterator iter;
     for (iter = ifaces.begin(); iter != ifaces.end(); ++iter) {
        ::org::apache::accumulo::core::client::impl::thrift::ClientServiceMultiface::add(*iter);
     }
   }
   virtual ~TabletClientServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<TabletClientServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<TabletClientServiceIf> > ifaces_;
   TabletClientServiceMultiface() {}
-  void add(boost::shared_ptr<TabletClientServiceIf> iface) {
+  void add(std::shared_ptr<TabletClientServiceIf> iface) {
      ::org::apache::accumulo::core::client::impl::thrift::ClientServiceMultiface::add(iface);
     ifaces_.push_back(iface);
   }
@@ -4037,13 +4037,13 @@ class TabletClientServiceMultiface : virtual public TabletClientServiceIf, publi
 // only be used when you need to share a connection among multiple threads
 class TabletClientServiceConcurrentClient : virtual public TabletClientServiceIf, public  ::org::apache::accumulo::core::client::impl::thrift::ClientServiceConcurrentClient {
  public:
-  TabletClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
+  TabletClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
      ::org::apache::accumulo::core::client::impl::thrift::ClientServiceConcurrentClient(prot, prot) {}
-  TabletClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :     ::org::apache::accumulo::core::client::impl::thrift::ClientServiceConcurrentClient(iprot, oprot) {}
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  TabletClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :     ::org::apache::accumulo::core::client::impl::thrift::ClientServiceConcurrentClient(iprot, oprot) {}
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void startScan( ::org::apache::accumulo::core::data::thrift::InitialScan& _return, const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const  ::org::apache::accumulo::core::data::thrift::TKeyExtent& extent, const  ::org::apache::accumulo::core::data::thrift::TRange& range, const std::vector< ::org::apache::accumulo::core::data::thrift::TColumn> & columns, const int32_t batchSize, const std::vector< ::org::apache::accumulo::core::data::thrift::IterInfo> & ssiList, const std::map<std::string, std::map<std::string, std::string> > & ssio, const std::vector<std::string> & authorizations, const bool waitForWrites, const bool isolated, const int64_t readaheadThreshold);

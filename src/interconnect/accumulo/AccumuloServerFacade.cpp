@@ -148,7 +148,7 @@ void AccumuloServerFacade::v1_close() {
   }
 }
 
-void AccumuloServerFacade::initialize(boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr) {
+void AccumuloServerFacade::initialize(std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr) {
   client = std::make_unique<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient>(protocolPtr);
   tserverClient = std::make_unique<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(protocolPtr);
   accumuloVersion = ACCUMULO_ONE;

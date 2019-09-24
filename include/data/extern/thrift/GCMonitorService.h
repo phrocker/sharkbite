@@ -30,7 +30,7 @@ class GCMonitorServiceIfFactory {
 
 class GCMonitorServiceIfSingletonFactory : virtual public GCMonitorServiceIfFactory {
  public:
-  GCMonitorServiceIfSingletonFactory(const boost::shared_ptr<GCMonitorServiceIf>& iface) : iface_(iface) {}
+  GCMonitorServiceIfSingletonFactory(const std::shared_ptr<GCMonitorServiceIf>& iface) : iface_(iface) {}
   virtual ~GCMonitorServiceIfSingletonFactory() {}
 
   virtual GCMonitorServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -39,7 +39,7 @@ class GCMonitorServiceIfSingletonFactory : virtual public GCMonitorServiceIfFact
   virtual void releaseHandler(GCMonitorServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<GCMonitorServiceIf> iface_;
+  std::shared_ptr<GCMonitorServiceIf> iface_;
 };
 
 class GCMonitorServiceNull : virtual public GCMonitorServiceIf {
@@ -187,42 +187,42 @@ class GCMonitorService_getStatus_presult {
 
 class GCMonitorServiceClient : virtual public GCMonitorServiceIf {
  public:
-  GCMonitorServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  GCMonitorServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  GCMonitorServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  GCMonitorServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void getStatus(GCStatus& _return, const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials);
   void send_getStatus(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials);
   void recv_getStatus(GCStatus& _return);
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class GCMonitorServiceProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<GCMonitorServiceIf> iface_;
+  std::shared_ptr<GCMonitorServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (GCMonitorServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -230,7 +230,7 @@ class GCMonitorServiceProcessor : public ::apache::thrift::TDispatchProcessor {
   ProcessMap processMap_;
   void process_getStatus(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  GCMonitorServiceProcessor(boost::shared_ptr<GCMonitorServiceIf> iface) :
+  GCMonitorServiceProcessor(std::shared_ptr<GCMonitorServiceIf> iface) :
     iface_(iface) {
     processMap_["getStatus"] = &GCMonitorServiceProcessor::process_getStatus;
   }
@@ -240,24 +240,24 @@ class GCMonitorServiceProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class GCMonitorServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  GCMonitorServiceProcessorFactory(const ::boost::shared_ptr< GCMonitorServiceIfFactory >& handlerFactory) :
+  GCMonitorServiceProcessorFactory(const ::std::shared_ptr< GCMonitorServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< GCMonitorServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< GCMonitorServiceIfFactory > handlerFactory_;
 };
 
 class GCMonitorServiceMultiface : virtual public GCMonitorServiceIf {
  public:
-  GCMonitorServiceMultiface(std::vector<boost::shared_ptr<GCMonitorServiceIf> >& ifaces) : ifaces_(ifaces) {
+  GCMonitorServiceMultiface(std::vector<std::shared_ptr<GCMonitorServiceIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~GCMonitorServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<GCMonitorServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<GCMonitorServiceIf> > ifaces_;
   GCMonitorServiceMultiface() {}
-  void add(boost::shared_ptr<GCMonitorServiceIf> iface) {
+  void add(std::shared_ptr<GCMonitorServiceIf> iface) {
     ifaces_.push_back(iface);
   }
  public:

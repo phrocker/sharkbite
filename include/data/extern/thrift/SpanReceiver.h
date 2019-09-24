@@ -36,7 +36,7 @@ class SpanReceiverIfFactory {
 
 class SpanReceiverIfSingletonFactory : virtual public SpanReceiverIfFactory {
  public:
-  SpanReceiverIfSingletonFactory(const boost::shared_ptr<SpanReceiverIf>& iface) : iface_(iface) {}
+  SpanReceiverIfSingletonFactory(const std::shared_ptr<SpanReceiverIf>& iface) : iface_(iface) {}
   virtual ~SpanReceiverIfSingletonFactory() {}
 
   virtual SpanReceiverIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -45,7 +45,7 @@ class SpanReceiverIfSingletonFactory : virtual public SpanReceiverIfFactory {
   virtual void releaseHandler(SpanReceiverIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<SpanReceiverIf> iface_;
+  std::shared_ptr<SpanReceiverIf> iface_;
 };
 
 class SpanReceiverNull : virtual public SpanReceiverIf {
@@ -107,41 +107,41 @@ class SpanReceiver_span_pargs {
 
 class SpanReceiverClient : virtual public SpanReceiverIf {
  public:
-  SpanReceiverClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  SpanReceiverClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  SpanReceiverClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  SpanReceiverClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void span(const RemoteSpan& span);
   void send_span(const RemoteSpan& span);
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
 };
 
 class SpanReceiverProcessor : public ::apache::thrift::TDispatchProcessor {
  protected:
-  boost::shared_ptr<SpanReceiverIf> iface_;
+  std::shared_ptr<SpanReceiverIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (SpanReceiverProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -149,7 +149,7 @@ class SpanReceiverProcessor : public ::apache::thrift::TDispatchProcessor {
   ProcessMap processMap_;
   void process_span(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  SpanReceiverProcessor(boost::shared_ptr<SpanReceiverIf> iface) :
+  SpanReceiverProcessor(std::shared_ptr<SpanReceiverIf> iface) :
     iface_(iface) {
     processMap_["span"] = &SpanReceiverProcessor::process_span;
   }
@@ -159,24 +159,24 @@ class SpanReceiverProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class SpanReceiverProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  SpanReceiverProcessorFactory(const ::boost::shared_ptr< SpanReceiverIfFactory >& handlerFactory) :
+  SpanReceiverProcessorFactory(const ::std::shared_ptr< SpanReceiverIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< SpanReceiverIfFactory > handlerFactory_;
+  ::std::shared_ptr< SpanReceiverIfFactory > handlerFactory_;
 };
 
 class SpanReceiverMultiface : virtual public SpanReceiverIf {
  public:
-  SpanReceiverMultiface(std::vector<boost::shared_ptr<SpanReceiverIf> >& ifaces) : ifaces_(ifaces) {
+  SpanReceiverMultiface(std::vector<std::shared_ptr<SpanReceiverIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~SpanReceiverMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<SpanReceiverIf> > ifaces_;
+  std::vector<std::shared_ptr<SpanReceiverIf> > ifaces_;
   SpanReceiverMultiface() {}
-  void add(boost::shared_ptr<SpanReceiverIf> iface) {
+  void add(std::shared_ptr<SpanReceiverIf> iface) {
     ifaces_.push_back(iface);
   }
  public:
@@ -196,34 +196,34 @@ class SpanReceiverMultiface : virtual public SpanReceiverIf {
 // only be used when you need to share a connection among multiple threads
 class SpanReceiverConcurrentClient : virtual public SpanReceiverIf {
  public:
-  SpanReceiverConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  SpanReceiverConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
-  SpanReceiverConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  SpanReceiverConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     setProtocol(iprot,oprot);
   }
  private:
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
   setProtocol(prot,prot);
   }
-  void setProtocol(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
+  void setProtocol(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
     piprot_=iprot;
     poprot_=oprot;
     iprot_ = iprot.get();
     oprot_ = oprot.get();
   }
  public:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   void span(const RemoteSpan& span);
   void send_span(const RemoteSpan& span);
  protected:
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> piprot_;
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> poprot_;
   ::apache::thrift::protocol::TProtocol* iprot_;
   ::apache::thrift::protocol::TProtocol* oprot_;
   ::apache::thrift::async::TConcurrentClientSyncInfo sync_;

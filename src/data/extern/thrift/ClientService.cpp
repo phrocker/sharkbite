@@ -11138,10 +11138,10 @@ void ClientServiceProcessor::process_checkNamespaceClass(int32_t seqid, ::apache
   }
 }
 
-::boost::shared_ptr< ::apache::thrift::TProcessor > ClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
+::std::shared_ptr< ::apache::thrift::TProcessor > ClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
   ::apache::thrift::ReleaseHandler< ClientServiceIfFactory > cleanup(handlerFactory_);
-  ::boost::shared_ptr< ClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > processor(new ClientServiceProcessor(handler));
+  ::std::shared_ptr< ClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > processor(new ClientServiceProcessor(handler));
   return processor;
 }
 

@@ -54,7 +54,7 @@ class MasterClientServiceIfFactory : virtual public FateServiceIfFactory {
 
 class MasterClientServiceIfSingletonFactory : virtual public MasterClientServiceIfFactory {
  public:
-  MasterClientServiceIfSingletonFactory(const boost::shared_ptr<MasterClientServiceIf>& iface) : iface_(iface) {}
+  MasterClientServiceIfSingletonFactory(const std::shared_ptr<MasterClientServiceIf>& iface) : iface_(iface) {}
   virtual ~MasterClientServiceIfSingletonFactory() {}
 
   virtual MasterClientServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
@@ -63,7 +63,7 @@ class MasterClientServiceIfSingletonFactory : virtual public MasterClientService
   virtual void releaseHandler(FateServiceIf* /* handler */) {}
 
  protected:
-  boost::shared_ptr<MasterClientServiceIf> iface_;
+  std::shared_ptr<MasterClientServiceIf> iface_;
 };
 
 class MasterClientServiceNull : virtual public MasterClientServiceIf , virtual public FateServiceNull {
@@ -2289,13 +2289,13 @@ class MasterClientService_drainReplicationTable_presult {
 
 class MasterClientServiceClient : virtual public MasterClientServiceIf, public FateServiceClient {
  public:
-  MasterClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
+  MasterClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
     FateServiceClient(prot, prot) {}
-  MasterClientServiceClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :    FateServiceClient(iprot, oprot) {}
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  MasterClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :    FateServiceClient(iprot, oprot) {}
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   int64_t initiateFlush(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const std::string& tableName);
@@ -2354,7 +2354,7 @@ class MasterClientServiceClient : virtual public MasterClientServiceIf, public F
 
 class MasterClientServiceProcessor : public FateServiceProcessor {
  protected:
-  boost::shared_ptr<MasterClientServiceIf> iface_;
+  std::shared_ptr<MasterClientServiceIf> iface_;
   virtual bool dispatchCall(::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, const std::string& fname, int32_t seqid, void* callContext);
  private:
   typedef  void (MasterClientServiceProcessor::*ProcessFunction)(int32_t, ::apache::thrift::protocol::TProtocol*, ::apache::thrift::protocol::TProtocol*, void*);
@@ -2379,7 +2379,7 @@ class MasterClientServiceProcessor : public FateServiceProcessor {
   void process_getDelegationToken(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_drainReplicationTable(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  MasterClientServiceProcessor(boost::shared_ptr<MasterClientServiceIf> iface) :
+  MasterClientServiceProcessor(std::shared_ptr<MasterClientServiceIf> iface) :
     FateServiceProcessor(iface),
     iface_(iface) {
     processMap_["initiateFlush"] = &MasterClientServiceProcessor::process_initiateFlush;
@@ -2407,28 +2407,28 @@ class MasterClientServiceProcessor : public FateServiceProcessor {
 
 class MasterClientServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  MasterClientServiceProcessorFactory(const ::boost::shared_ptr< MasterClientServiceIfFactory >& handlerFactory) :
+  MasterClientServiceProcessorFactory(const ::std::shared_ptr< MasterClientServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
 
  protected:
-  ::boost::shared_ptr< MasterClientServiceIfFactory > handlerFactory_;
+  ::std::shared_ptr< MasterClientServiceIfFactory > handlerFactory_;
 };
 
 class MasterClientServiceMultiface : virtual public MasterClientServiceIf, public FateServiceMultiface {
  public:
-  MasterClientServiceMultiface(std::vector<boost::shared_ptr<MasterClientServiceIf> >& ifaces) : ifaces_(ifaces) {
-    std::vector<boost::shared_ptr<MasterClientServiceIf> >::iterator iter;
+  MasterClientServiceMultiface(std::vector<std::shared_ptr<MasterClientServiceIf> >& ifaces) : ifaces_(ifaces) {
+    std::vector<std::shared_ptr<MasterClientServiceIf> >::iterator iter;
     for (iter = ifaces.begin(); iter != ifaces.end(); ++iter) {
       FateServiceMultiface::add(*iter);
     }
   }
   virtual ~MasterClientServiceMultiface() {}
  protected:
-  std::vector<boost::shared_ptr<MasterClientServiceIf> > ifaces_;
+  std::vector<std::shared_ptr<MasterClientServiceIf> > ifaces_;
   MasterClientServiceMultiface() {}
-  void add(boost::shared_ptr<MasterClientServiceIf> iface) {
+  void add(std::shared_ptr<MasterClientServiceIf> iface) {
     FateServiceMultiface::add(iface);
     ifaces_.push_back(iface);
   }
@@ -2605,13 +2605,13 @@ class MasterClientServiceMultiface : virtual public MasterClientServiceIf, publi
 // only be used when you need to share a connection among multiple threads
 class MasterClientServiceConcurrentClient : virtual public MasterClientServiceIf, public FateServiceConcurrentClient {
  public:
-  MasterClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
+  MasterClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) :
     FateServiceConcurrentClient(prot, prot) {}
-  MasterClientServiceConcurrentClient(boost::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, boost::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :    FateServiceConcurrentClient(iprot, oprot) {}
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
+  MasterClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) :    FateServiceConcurrentClient(iprot, oprot) {}
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getInputProtocol() {
     return piprot_;
   }
-  boost::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
+  std::shared_ptr< ::apache::thrift::protocol::TProtocol> getOutputProtocol() {
     return poprot_;
   }
   int64_t initiateFlush(const  ::org::apache::accumulo::core::trace::thrift::TInfo& tinfo, const  ::org::apache::accumulo::core::security::thrift::TCredentials& credentials, const std::string& tableName);

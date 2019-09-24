@@ -6176,10 +6176,10 @@ void MasterClientServiceProcessor::process_drainReplicationTable(int32_t seqid, 
   }
 }
 
-::boost::shared_ptr< ::apache::thrift::TProcessor > MasterClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
+::std::shared_ptr< ::apache::thrift::TProcessor > MasterClientServiceProcessorFactory::getProcessor(const ::apache::thrift::TConnectionInfo& connInfo) {
   ::apache::thrift::ReleaseHandler< MasterClientServiceIfFactory > cleanup(handlerFactory_);
-  ::boost::shared_ptr< MasterClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
-  ::boost::shared_ptr< ::apache::thrift::TProcessor > processor(new MasterClientServiceProcessor(handler));
+  ::std::shared_ptr< MasterClientServiceIf > handler(handlerFactory_->getHandler(connInfo), cleanup);
+  ::std::shared_ptr< ::apache::thrift::TProcessor > processor(new MasterClientServiceProcessor(handler));
   return processor;
 }
 

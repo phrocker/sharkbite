@@ -12,7 +12,6 @@
  * limitations under the License.
  */
 
-
 #pragma once
 
 #include <memory>
@@ -42,20 +41,15 @@ template<class PtrConvert> struct Replacement {
 
 template<class T> std::shared_ptr<T> to_shared_ptr(const boost::shared_ptr<T> &p) {
   typedef Replacement<std::shared_ptr<T>> H;
-  if (H *h = boost::get_deleter < H > (p)) {
+  if (H *h = boost::get_deleter<H>(p)) {
     return h->p;
   } else {
-    return std::shared_ptr < T > (p.get(), Replacement<boost::shared_ptr<T>>(p));
+    return std::shared_ptr<T>(p.get(), Replacement<boost::shared_ptr<T>>(p));
   }
 }
 
-template<class T> boost::shared_ptr<T> from_shared_ptr(const std::shared_ptr<T> &p) {
-  typedef Replacement<boost::shared_ptr<T>> H;
-  if (H * h = std::get_deleter < H > (p)) {
-    return h->p;
-  } else {
-    return boost::shared_ptr < T > (p.get(), Replacement<std::shared_ptr<T>>(p));
-  }
+template<class T> std::shared_ptr<T> from_shared_ptr(const std::shared_ptr<T> &p) {
+  return p;
 }
 
 }

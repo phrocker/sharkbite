@@ -46,9 +46,9 @@ class AccumuloMasterFacade {
   std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> createTransport;
   std::function<void()> createMasterTransport;
 
-  void v1_createMasterClient(boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
+  void v1_createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
     auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
-    //boost::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
+    //std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
     //if (NULL != masterClient) {
 
     //      delete masterClient;
@@ -111,8 +111,8 @@ class AccumuloMasterFacade {
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
-    boost::shared_ptr<apache::thrift::transport::TMemoryBuffer> strBuffer(new apache::thrift::transport::TMemoryBuffer());
-    boost::shared_ptr<apache::thrift::protocol::TBinaryProtocol> binaryProtcol(new apache::thrift::protocol::TBinaryProtocol(strBuffer));
+    std::shared_ptr<apache::thrift::transport::TMemoryBuffer> strBuffer(new apache::thrift::transport::TMemoryBuffer());
+    std::shared_ptr<apache::thrift::protocol::TBinaryProtocol> binaryProtcol(new apache::thrift::protocol::TBinaryProtocol(strBuffer));
     org::apache::accumulo::core::tabletserver::thrift::IteratorConfig config;
     config.write(binaryProtcol.get());
 
@@ -138,14 +138,13 @@ class AccumuloMasterFacade {
     tableArgs.push_back(table);
     tableArgs.push_back(startrow);
     tableArgs.push_back(endrow);
-    boost::shared_ptr<apache::thrift::transport::TMemoryBuffer> strBuffer(new apache::thrift::transport::TMemoryBuffer());
-    boost::shared_ptr<apache::thrift::protocol::TBinaryProtocol> binaryProtcol(new apache::thrift::protocol::TBinaryProtocol(strBuffer));
+    std::shared_ptr<apache::thrift::transport::TMemoryBuffer> strBuffer(new apache::thrift::transport::TMemoryBuffer());
+    std::shared_ptr<apache::thrift::protocol::TBinaryProtocol> binaryProtcol(new apache::thrift::protocol::TBinaryProtocol(strBuffer));
     org::apache::accumulo::core::tabletserver::thrift::IteratorConfig config;
     org::apache::accumulo::core::tabletserver::thrift::TIteratorSetting setting;
     setting.name = "vers";
     setting.priority = 10;
     setting.iteratorClass = "org.apache.accumulo.core.iterators.user.VersioningIterator";
-    setting.properties.insert(std::make_pair<std::string, std::string>("maxVersions", "1"));
 
     //config.iterators.push_back(setting);
 
@@ -349,7 +348,7 @@ class AccumuloMasterFacade {
     accumuloVersion = ACCUMULO_ONE;
   }
 
-  void createMasterClient(boost::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
+  void createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
     switch (accumuloVersion) {
       case ACCUMULO_ONE:
         v1_createMasterClient(underlyingTransport);
