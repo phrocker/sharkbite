@@ -29,16 +29,28 @@ the API.
 	GNU 4+
 	cmake
 	make
+	
+### For Libthrift
+	bison 3+ 
+	automake
+	autotool
+	autoconf
+	libtool
+	libevent
 
-## Building
+## Building Linux
 ```
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
 	This will build the package and library, which you can use. It will also build
 	examples in the examples directory
 
-	Bootstrap scripts exist to bootstrap a system with shared dependencies.
 ```
+
+## Buildong on OSX
+
+Follow the same procedures as above, but you may need to force linking bison 3.x
+if you installed it via Homebrew
 
 ## Example
 ```C++
@@ -69,10 +81,9 @@ the API.
     // build your range.
     scanner->addRange(range);
 
-    scanners::Iterator<cclient::data::KeyValue> *results =
-	                scanner->getResultSet ();
+    auto results = scanner->getResultSet ();
 
-    for (auto iter = results->begin(); iter != results->end(); iter++) {
+    for (const auto &iter : results) {
         KeyValue *kv = *iter;
         if (kv != NULL && kv->getKey() != NULL)
             cout << "got -- " << (*iter)->getKey() << endl;
@@ -80,4 +91,14 @@ the API.
             cout << "Key is null" << endl;
     }
 ```
+
+
+## Python Lib
+The Python library can be installed by simply typing pip install . into the root source directory.
+Note that our previous implementation in the python directory is deprecated as of V0.5
+
+Note that python-deprecated represents the older C API library. This will be maintained until V1.0; however,
+the Python library will transition to C++ bindings via pybind11. Therefore pip install in the root folder is
+the preferred method. Examples can be found in pythonexamplepy in the root source folder.
+
 [accumulo]: https://accumulo.apache.org

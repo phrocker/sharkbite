@@ -48,18 +48,17 @@ class Writer : public Sink<cclient::data::KeyValue> {
     writerHeuristic = (WriterHeuristic*) heuristic;
   }
 
-  bool enqueue(cclient::data::Mutation *obj) {
-    bool enqueued = mutationQueue.enqueue(obj);
+  virtual bool addMutation(const std::shared_ptr<cclient::data::Mutation> &mut) {
+    bool enqueued = mutationQueue.enqueue(mut);
     return enqueued;
   }
 
-  bool addMutation(std::unique_ptr<cclient::data::Mutation> obj) {
+  virtual bool addMutation(std::unique_ptr<cclient::data::Mutation> obj) {
     while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
-
-    cclient::data::Mutation *ptr = obj.release();
-    bool enqueued = enqueue(ptr);
+    std::shared_ptr<cclient::data::Mutation> mut = std::move(obj);
+    bool enqueued = mutationQueue.enqueue(mut);
     if (enqueued && exceedQueue()) {
       flush();
     }
@@ -68,13 +67,12 @@ class Writer : public Sink<cclient::data::KeyValue> {
   }
 
   inline virtual size_t size() {
-
     return sinkQueue.size_approx() + mutationQueue.size_approx();
   }
 
  protected:
 
-  void handleFailures(std::vector<cclient::data::Mutation*> *failures);
+  void handleFailures(std::vector<std::shared_ptr<cclient::data::Mutation>> *failures);
 
   virtual uint64_t waitingSize() {
     // size of the heuristic is equivalent to the number of workers
@@ -92,7 +90,7 @@ class Writer : public Sink<cclient::data::KeyValue> {
   cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
   cclient::impl::TabletLocator *tableLocator;
   interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops;
-  moodycamel::ConcurrentQueue<cclient::data::Mutation*> mutationQueue;
+  moodycamel::ConcurrentQueue<std::shared_ptr<cclient::data::Mutation>> mutationQueue;
 
 };
 

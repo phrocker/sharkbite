@@ -81,11 +81,7 @@ public:
      * @return configuration reference
      **/
     virtual const cclient::impl::Configuration *getConfiguration() = 0;
-    /**
-     * Sets configuration object
-     * @param configuration object
-     **/
-    virtual void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf) = 0;
+
     /**
      * Destructor
      **/

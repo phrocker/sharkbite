@@ -16,7 +16,12 @@
 #define RESULTS_H_
 
 #include <set>
+#include <iterator>
+#include <iostream>
 #include <string>
+#ifdef PYTHON
+#include <pybind11/pybind11.h>
+#endif
 #include "data/extern/concurrentqueue/concurrentqueue.h"
 
 #include "SourceConditions.h"
@@ -31,7 +36,8 @@ template<typename T, class BlockType> class Results;
 
  **/
 template<typename T>
-class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
+//class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
+class ResultBlock : public std::istream_iterator<T> {
  protected:
 
   SourceConditions *sourceConditionals;
@@ -77,8 +83,12 @@ class ResultBlock : public std::iterator<std::forward_iterator_tag, T> {
     return resultSet;
   }
 
-  std::shared_ptr<T> operator*() {
 
+  std::shared_ptr<T> get(){
+	  return current;
+  }
+
+  std::shared_ptr<T> operator*() {
     return current;
   }
 
@@ -290,7 +300,15 @@ class Results {
   void add_ptr(std::vector<std::shared_ptr<T>> *t) {
     iter->add(t);
   }
-
+#ifdef PYTHON
+  std::shared_ptr<T> next(){
+	  if (iter->isEndOfRange()){
+		  throw pybind11::stop_iteration();
+	  }
+	  (*iter)++;
+	  return iter->get();
+  }
+#endif
   iterator begin() {
     return iter->begin();
   }

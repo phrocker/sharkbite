@@ -33,6 +33,7 @@ public:
     Range();
 
 
+
     /**
      * Sets the start key and endkey with the inclusive flags.
      * @param startKey start key
@@ -40,7 +41,7 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
+    explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
     
     
     /**
@@ -50,7 +51,7 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(std::shared_ptr<Key> endKey, bool endKeyInclusive) :
+    explicit Range(std::shared_ptr<Key> endKey, bool endKeyInclusive) :
       Range(0,false,endKey,endKeyInclusive)
     {
     }
@@ -62,7 +63,7 @@ public:
      * @param endKey end key 
      * @param endKeyInclusive return whether or not the end key is inclusive.
      **/
-    Range(bool startInclusive,std::shared_ptr<Key> startKey) :
+    explicit Range(bool startInclusive,std::shared_ptr<Key> startKey) :
       Range(startKey,startInclusive,0,false)
     {
     }
@@ -116,6 +117,8 @@ public:
     }
 
     virtual ~Range();
+
+
 protected:
     std::shared_ptr<Key> start;
     std::shared_ptr<Key> stop;

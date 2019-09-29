@@ -55,7 +55,7 @@ class AccumuloServerFacade {
 
   Scan *v1_continueScan(Scan *originalScan);
 
-  void *v1_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request);
+  void *v1_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request);
 
   bool v1_dropUser(cclient::data::security::AuthInfo *auth, std::string user);
 
@@ -89,7 +89,7 @@ class AccumuloServerFacade {
 
   Scan *continueScan(Scan *originalScan);
 
-  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request);
+  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request);
 
   bool dropUser(cclient::data::security::AuthInfo *auth, const std::string &user);
 

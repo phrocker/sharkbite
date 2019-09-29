@@ -118,7 +118,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   explicit AccumuloMasterTransporter(std::shared_ptr<ServerConnection> conn)
       : interconnect::ThriftTransporter(conn),
-        interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*>(conn),
+        interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
         master([&]() {
           recreateMasterClient();
         },

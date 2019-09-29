@@ -78,6 +78,11 @@ class Sink {
   flush(bool override = false) = 0;
 
   /**
+   Add a mutation, transferring ownership to this sink
+   **/
+  virtual bool addMutation(const std::shared_ptr<cclient::data::Mutation> &mut) = 0;
+
+  /**
    Add a mutation
    **/
   virtual bool

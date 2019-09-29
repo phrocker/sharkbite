@@ -30,56 +30,53 @@
 namespace cclient {
 namespace impl {
 
-
 static std::shared_ptr<cclient::data::KeyExtent> ROOT_EXTENT = std::make_shared<cclient::data::KeyExtent>("+r", "", "");
 
-class RootTabletLocator: public TabletLocator {
-public:
-    explicit RootTabletLocator(cclient::data::Instance *instance);
-    ~RootTabletLocator();
+class RootTabletLocator : public TabletLocator {
+ public:
+  explicit RootTabletLocator(cclient::data::Instance *instance);
+  ~RootTabletLocator();
 
-    cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
-        cclient::data::TabletLocation *location = getRootTabletLocation();
+  cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
+    cclient::data::TabletLocation *location = getRootTabletLocation();
 
-        while (retry && location == NULL) {
-            std::this_thread::yield();
+    while (retry && location == NULL) {
+      std::this_thread::yield();
 
-            location = getRootTabletLocation();
-
-        }
-
-        cclient::data::TabletLocation te(location);
-	delete location;
-        return te;
+      location = getRootTabletLocation();
 
     }
 
-    void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Mutation*> *mutations,
-                      std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations,
-                      std::set<std::string> *locations, std::vector<cclient::data::Mutation*> *failures) {
-    }
+    cclient::data::TabletLocation te(location);
+    delete location;
+    return te;
 
-    virtual std::vector<cclient::data::Range*> binRanges(cclient::data::security::AuthInfo *credentials,std::vector<cclient::data::Range*> *ranges,
-                                     std::set<std::string> *locations,
-                                     std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>,pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
-        return std::vector<cclient::data::Range*>();
-    }
+  }
 
-    void invalidateCache(cclient::data::KeyExtent failedExtent) {
-    }
+  void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations,
+                    std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations, std::set<std::string> *locations,
+                    std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
+  }
 
-    void invalidateCache() {
-    }
+  virtual std::vector<cclient::data::Range*> binRanges(
+      cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Range*> *ranges, std::set<std::string> *locations,
+      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
+    return std::vector<cclient::data::Range*>();
+  }
 
-    void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) {
-    }
+  void invalidateCache(cclient::data::KeyExtent failedExtent) {
+  }
 
+  void invalidateCache() {
+  }
 
+  void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) {
+  }
 
-protected:
+ protected:
 
-    cclient::data::TabletLocation *getRootTabletLocation();
-    cclient::data::zookeeper::ZookeeperInstance *myInstance;
+  cclient::data::TabletLocation *getRootTabletLocation();
+  cclient::data::zookeeper::ZookeeperInstance *myInstance;
 };
 }
 }

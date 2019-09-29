@@ -13,20 +13,13 @@
  */
 #include "interconnect/Write.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-Write::Write ()
-{
-    // TODO Auto-generated constructor stub
-
+Write::Write() {
 }
 
-Write::~Write ()
-{
-    // TODO Auto-generated destructor stub
+Write::~Write() {
 }
 
 } /* namespace data */

@@ -39,7 +39,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ssl")
 find_package (OpenSSL REQUIRED)
 
 ################# THRIFT
-#if (NOT THRIFT_FOUND)
+
 	ExternalProject_Add(
 	  LibThrift
 	  GIT_REPOSITORY "https://github.com/apache/thrift.git"
@@ -69,11 +69,9 @@ find_package (OpenSSL REQUIRED)
 	set(THRIFT_LIBS  "${CMAKE_CURRENT_BINARY_DIR}/thrift/lib/libthrift.a" CACHE STRING "" FORCE)
 	include_directories(${THRIFT_INCLUDE_DIR})
 	set(THRIFT_FOUND TRUE CACHE STRING "" FORCE)
-#else()#
-	#include_directories(${THRIFT_INCLUDE_DIR})
-#endif()
+
 #################### ZOOKEEPER
-##if (NOT ZOOKEEPER_FOUND)
+
 	ExternalProject_Add(
 	  ZooKeeper
 	  GIT_REPOSITORY "https://github.com/phrocker/zookeeper.git"
@@ -95,12 +93,10 @@ find_package (OpenSSL REQUIRED)
 	#set(ZOOKEEPER_SHARED_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.so" CACHE STRING "" FORCE)
 	include_directories(${ZOOKEEPER_INCLUDE_DIRS})
 	set(ZOOKEEPER_FOUND TRUE CACHE STRING "" FORCE)
-#else()
-#	include_directories(${ZOOKEEPER_INCLUDE_DIRS})
-#endif()
+
 ######################  PROTOBUF
 
-#if (NOT PROTOBUF_FOUND)
+
 	ExternalProject_Add(
 	  Protobuf
 	  GIT_REPOSITORY "https://github.com/phrocker/protobuf.git"
@@ -118,9 +114,25 @@ find_package (OpenSSL REQUIRED)
 	set(PROTOBUF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/include" CACHE STRING "" FORCE)
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
-#endif()
 
 
+find_package(Python COMPONENTS Interpreter Development)
+
+#ExternalProject_Add(
+	  #PyBind11
+	  #GIT_REPOSITORY "https://github.com/pybind/pybind11.git"
+	  #GIT_TAG "7ec2ddfc95f65d1e986d359466a6c254aa514ef3"
+	  #BUILD_IN_SOURCE true
+	  #SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-src"
+	  #BUILD_COMMAND ""
+	  #CMAKE_ARGS "-DPYBIND11_TEST=OFF"
+	  #			 "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install"
+	  #UPDATE_COMMAND ""
+	  #)
+
+set(PYBIND11_CPP_STANDARD -std=c++14)
+add_subdirectory(pybind11)
+include_directories(pybind11/include/)
 set(Boost_USE_MULTITHREADED ON)
 #find_package(GTest REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
@@ -151,6 +163,8 @@ file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")
 file(GLOB_RECURSE CAPI_SOURCES "src/extern/*cpp")
 file(GLOB_RECURSE EXTERN_SOURCES "src/data/extern/*cpp")
 file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
+file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
+file(GLOB_RECURSE PYBIND_SOURCES "src/python/*cpp")
 file(GLOB_RECURSE INTERCONNECT_SOURCES "src/interconnect/*cpp")
 file(GLOB_RECURSE SCANNER_SOURCES "src/scanner/*cpp")
 file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
@@ -158,21 +172,31 @@ file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
 
 add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+
+#target_link_libraries(sharkbite Python::Python)
 add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
-#if (NOT PROTOBUF_FOUND)
-	add_dependencies(sharkbite Protobuf)
-	add_dependencies(sharkbite-shared Protobuf)
-#endif()
-#if (NOT ZOOKEEPER_FOUND)
-	add_dependencies(sharkbite ZooKeeper)
-	add_dependencies(sharkbite-shared ZooKeeper)
-#endif()
-#if (NOT THRIFT_FOUND)
-	add_dependencies(sharkbite LibThrift)
-	add_dependencies(sharkbite-shared LibThrift)
-#endif()
+
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES})
+
+
+add_dependencies(sharkbite Protobuf)
+add_dependencies(pysharkbite Protobuf)
+add_dependencies(sharkbite-shared Protobuf)
+
+
+add_dependencies(sharkbite ZooKeeper)
+add_dependencies(pysharkbite ZooKeeper)
+add_dependencies(sharkbite-shared ZooKeeper)
+
+add_dependencies(sharkbite LibThrift)
+add_dependencies(pysharkbite LibThrift)
+add_dependencies(sharkbite-shared LibThrift)
+
 target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+
+target_link_libraries (pysharkbite PRIVATE ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 
 target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES}  ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
 

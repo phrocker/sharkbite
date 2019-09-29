@@ -41,31 +41,6 @@ namespace zookeeper {
 class ZookeeperInstance : public Instance {
  public:
 
-  /**
-   * ZK constructor
-   * @param in instance name
-   * @param zks zookeepers
-   * @param zkTimeoutMs timeout for zookeeper
-   * @param conf configuration object
-   **/
-  explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs, std::unique_ptr<cclient::impl::Configuration> conf)
-      : instanceName(in),
-        zookeeperList(zks),
-        timeoutMs(zkTimeoutMs),
-        myConfiguration(std::move(conf)) {
-    if (IsEmpty(&in) || IsEmpty(&zks)) {
-      throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
-    }
-
-    myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
-
-    myKeeper->init(&myWatch);
-
-    myZooCache = new ZooCache(myKeeper);
-
-    getInstanceId();
-
-  }
 
   /**
    * ZK constructor
@@ -161,7 +136,7 @@ class ZookeeperInstance : public Instance {
    * Sets configuration object
    * @param configuration object
    **/
-  void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf);
+  //void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf);
 
   /**
    * Returns a reference to zoocache

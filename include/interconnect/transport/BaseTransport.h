@@ -54,7 +54,7 @@
 
 namespace interconnect {
 
-class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*> {
+class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>> {
  protected:
   std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 
@@ -105,7 +105,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     return server.continueScan(originalScan);
   }
 
-  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request) {
+  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
     return server.write(auth, request);
   }
 

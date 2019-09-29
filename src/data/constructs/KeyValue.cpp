@@ -122,12 +122,6 @@ KeyValue::operator != (const KeyValue *rhs) const
 	return !(*this == *rhs);
 }
 
-KeyValue& KeyValue::operator=(KeyValue&& other)
-{
-    key = other.key;
-    value = other.value;
-    return *this;
-}
 
 
 } /* namespace data */

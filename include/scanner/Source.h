@@ -36,6 +36,8 @@ class Source {
 
   virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
 
+  virtual void addRange(const cclient::data::Range &range) = 0;
+
   /**
    * Add the list of user supplied Iterators;
    */

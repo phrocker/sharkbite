@@ -15,21 +15,16 @@
 #include "interconnect/accumulo/../../scanner/impl/Scanner.h"
 #include "interconnect/accumulo/../../writer/impl/SinkImpl.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
-AccumuloStreams::AccumuloStreams (
-    cclient::data::Instance *instance,
-    TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
-    cclient::data::security::Authorizations *auths, uint16_t threads) :
-    scanners::Scanner (instance, tops, auths, threads), writer::Writer (
-        instance, tops, auths, threads)
-{
+AccumuloStreams::AccumuloStreams(cclient::data::Instance *instance, TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+                                 cclient::data::security::Authorizations *auths, uint16_t threads)
+    : scanners::Scanner(instance, tops, auths, threads),
+      writer::Writer(instance, tops, auths, threads) {
 
 }
 
-AccumuloStreams::~AccumuloStreams ()
-{
+AccumuloStreams::~AccumuloStreams() {
 }
 
 } /* namespace interconnect */

@@ -54,11 +54,15 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   Scanner(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
           uint16_t threads);
 
+  virtual void addRange(const cclient::data::Range &range) override {
+    ranges.push_back(new cclient::data::Range(range));
+  }
+
   /**
    * Adds a range to the scanner
    * @param range
    **/
-  void addRange(std::unique_ptr<cclient::data::Range> range) {
+  virtual void addRange(std::unique_ptr<cclient::data::Range> range) override {
     std::lock_guard<std::mutex> lock(scannerLock);
     // we are now the owner
     ranges.push_back(range.release());
@@ -81,7 +85,6 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
 
       std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
       std::set<std::string> locations;
-      std::cout << "Ranges " << std::endl;
       tableLocator->binRanges(credentials, &ranges, &locations, &returnRanges);
 
       for (std::string location : locations) {
@@ -100,8 +103,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           std::cout << " extent is " << hostExtents.first->getTableId() << std::endl;
           extents.push_back(hostExtents.first);
 
-          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents,
-                                                                                                          &columns);
+          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, &columns);
 
           std::shared_ptr<interconnect::ServerInterconnect> directConnect = std::make_shared<interconnect::ServerInterconnect>(rangeDef, connectorInstance->getConfiguration());
           scannerHeuristic->addClientInterface(directConnect);

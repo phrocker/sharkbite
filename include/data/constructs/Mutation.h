@@ -15,7 +15,6 @@
 #ifndef MUTATION_H_
 #define MUTATION_H_
 
-
 #include <sys/types.h>
 #include <stdint.h>
 #include <vector>
@@ -36,84 +35,84 @@ namespace cclient {
 
 namespace data {
 
-
 /**
  * Key/Value Mutation
  **/
 class Mutation {
-public:
-    /**
-     * Constructor
-     * @param row row for the mutation
-     **/
-    explicit Mutation(const std::string &row);
+ public:
+  /**
+   * Constructor
+   * @param row row for the mutation
+   **/
+  explicit Mutation(const std::string &row);
 
-    void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts,bool deleted);
-    
-    void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts,bool deleted, uint8_t *value,
-             uint64_t value_len);
-    void put(const std::string &cf, const std::string &cq = "", const std::string &cv = "", unsigned long ts = 0);
-    virtual ~Mutation();
-    std::string getRow() const {
-        return mut_row;
-    }
+  void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted);
 
-    int32_t size() {
-        return entries;
-    }
+  void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len);
+  void put(const std::string &cf, const std::string &cq = "", const std::string &cv = "", unsigned long ts = 0);
+  virtual ~Mutation();
+  std::string getRow() const {
+    return mut_row;
+  }
 
-    std::pair<uint8_t*, size_t> getData() {
-        return std::make_pair((uint8_t*)outStream->getByteArray(), outStream->getPos());
-    }
+  int32_t size() {
+    return entries;
+  }
 
-    std::string getDataStr() const {
-        return std::string(outStream->getByteArray(), outStream->getPos());
-    }
-protected:
+  std::pair<uint8_t*, size_t> getData() {
+    return std::make_pair((uint8_t*) outStream->getByteArray(), outStream->getPos());
+  }
 
-    void write(const uint8_t *b, uint32_t length) {
-        reserve(length);
-        memcpy(&data.at(ptr), b, length);
-        ptr += length;
-    }
+  std::string getDataStr() const {
+    return std::string(outStream->getByteArray(), outStream->getPos());
+  }
+ protected:
 
-    void write(bool b) {
-        reserve(1);
-        if (b == true)
-            data.at(ptr) = 1;
-        else
-            data.at(ptr) = 0;
-        ptr++;
-    }
+  Mutation();
 
-    void writeLong(int64_t l) {
-        reserve(8);
+  void write(const uint8_t *b, uint32_t length) {
+    reserve(length);
+    memcpy(&data.at(ptr), b, length);
+    ptr += length;
+  }
 
-        int64_t v = BSWAP_64(l);
-        write((uint8_t*) &v, sizeof(int64_t));
-    }
+  void write(bool b) {
+    reserve(1);
+    if (b == true)
+      data.at(ptr) = 1;
+    else
+      data.at(ptr) = 0;
+    ptr++;
+  }
 
-    void writeInt(int32_t i) {
-        reserve(4);
-        int32_t v = BSWAP_32(i);
-        write((uint8_t*) &v, sizeof(int32_t));
-    }
+  void writeLong(int64_t l) {
+    reserve(8);
 
-    void reserve(uint32_t reserveSize) {
-        data.resize(data.size() + reserveSize);
-    }
+    int64_t v = BSWAP_64(l);
+    write((uint8_t*) &v, sizeof(int64_t));
+  }
 
-    cclient::data::streams::ByteOutputStream *outStream;
-    cclient::data::streams::EndianTranslationStream *endianStream;
-    cclient::data::streams::DataOutputStream *baseStream;
+  void writeInt(int32_t i) {
+    reserve(4);
+    int32_t v = BSWAP_32(i);
+    write((uint8_t*) &v, sizeof(int32_t));
+  }
 
-    std::string mut_row;
+  void reserve(uint32_t reserveSize) {
+    data.resize(data.size() + reserveSize);
+  }
 
-    uint32_t ptr;
-    std::vector<uint8_t> data;
+  std::unique_ptr<cclient::data::streams::ByteOutputStream> outStream;
+  std::unique_ptr<cclient::data::streams::EndianTranslationStream> endianStream;
+  std::unique_ptr<cclient::data::streams::DataOutputStream> baseStream;
 
-    int32_t entries;
-    std::vector<uint8_t> values;
+  std::string mut_row;
+
+  uint32_t ptr;
+  std::vector<uint8_t> data;
+
+  int32_t entries;
+  std::vector<uint8_t> values;
 
 };
 }

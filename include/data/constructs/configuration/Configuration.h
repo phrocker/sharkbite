@@ -15,6 +15,7 @@
 #ifndef CONFIGURATION_H_
 #define CONFIGURATION_H_
 
+#include <memory>
 #include <string>
 #include <map>
 
@@ -24,8 +25,10 @@ namespace impl {
 /**
  * Purpose & Design: Based on the hadoop configuration object
  */
-class Configuration {
+class Configuration : public std::enable_shared_from_this<Configuration> {
  public:
+  Configuration() {
+  }
   /**
    * Constructor
    */

@@ -113,12 +113,12 @@ class TabletServerLocator : public TabletLocator {
 
   }
 
-  inline void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Mutation*> *mutations,
+  inline void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations,
                            std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations, std::set<std::string> *locations,
-                           std::vector<cclient::data::Mutation*> *failures) {
+                           std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
     std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>>::iterator it;
 
-    for (cclient::data::Mutation *m : *mutations) {
+    for (const auto &m : *mutations) {
       cclient::data::TabletLocation loc;
 
       if (!getCachedLocation(m->getRow(), loc))

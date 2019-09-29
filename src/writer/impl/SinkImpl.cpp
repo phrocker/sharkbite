@@ -34,15 +34,15 @@ Writer::Writer(cclient::data::Instance *instance, interconnect::TableOperations<
 
 Writer::~Writer() {
   if (writerHeuristic->close() > 0) {
-    std::vector<cclient::data::Mutation*> failures;
+    std::vector<std::shared_ptr<cclient::data::Mutation>> failures;
     writerHeuristic->restart_failures(&failures);
     handleFailures(&failures);
     flush(true);
   }
   delete writerHeuristic;
 }
-void Writer::handleFailures(std::vector<cclient::data::Mutation*> *failures) {
-  std::vector<cclient::data::Mutation*> newFailures;
+void Writer::handleFailures(std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
+  std::vector<std::shared_ptr<cclient::data::Mutation>> newFailures;
 
   std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
   std::set<std::string> locations;
@@ -60,7 +60,7 @@ void Writer::handleFailures(std::vector<cclient::data::Mutation*> *failures) {
 
 }
 void Writer::flush(bool override) {
-  std::vector<cclient::data::Mutation*> failures;
+  std::vector<std::shared_ptr<cclient::data::Mutation>> failures;
   writerHeuristic->restart_failures(&failures);
   handleFailures(&failures);
   while ((sinkQueue.size_approx() + mutationQueue.size_approx()) > 0) {
@@ -76,8 +76,8 @@ void Writer::flush(bool override) {
       kv.push_back(key);
     }
 
-    cclient::data::Mutation *prevMutation = nullptr;
-    std::vector<cclient::data::Mutation*> *mutation = new std::vector<cclient::data::Mutation*>();
+    std::shared_ptr<cclient::data::Mutation> prevMutation = nullptr;
+    std::vector<std::shared_ptr<cclient::data::Mutation>> mutation;
     for (size_t i = 0; i < dequeued; i++) {
 
       std::shared_ptr<cclient::data::Key> key = kv.at(i)->getKey();
@@ -95,18 +95,20 @@ void Writer::flush(bool override) {
         }
 
       }
-      cclient::data::Mutation *m = new cclient::data::Mutation(key->getRowStr());
+      auto m = std::make_shared<cclient::data::Mutation>(key->getRowStr());
       m->put(key->getColFamilyStr(), key->getColQualifierStr(), key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(), value->data(), value->size());
       prevMutation = m;
-      mutation->push_back(m);
+      mutation.push_back(m);
 
     }
 
-    cclient::data::Mutation **mut = new cclient::data::Mutation*[queueSize];
+    //cclient::data::Mutation **mut = new std::shared_ptr<cclient::data::Mutation>[queueSize];
+    std::vector<std::shared_ptr<cclient::data::Mutation>> mut(queueSize);
+    //cclient::data::Mutation **mut = new std::shared_ptr<cclient::data::Mutation>[queueSize];
 
     dequeued = 0;
     for (uint32_t i = 0; i < queueSize;) {
-      if (mutationQueue.try_dequeue(mut[i])) {
+      if (mutationQueue.try_dequeue(mut.at(i))) {
         dequeued++;
         i++;
       } else
@@ -114,18 +116,17 @@ void Writer::flush(bool override) {
     }
 
     for (uint64_t i = 0; i < dequeued; i++) {
-      mutation->push_back(mut[i]);
+      mutation.push_back(mut.at(i));
     }
-    delete[] mut;
+
     //delete kv;
 
     binning: std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
     std::set<std::string> locations;
     try {
-      tableLocator->binMutations(credentials, mutation, &binnedMutations, &locations, &failures);
+      tableLocator->binMutations(credentials, &mutation, &binnedMutations, &locations, &failures);
       for (std::string location : locations) {
         std::vector<std::string> locationSplit = split(location, ':');
-        std::cout << "bin locations " << location << std::endl;
         std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef = std::make_shared<cclient::data::tserver::ServerDefinition>(credentials, nullptr, locationSplit.at(0),
                                                                                                                                         atoi(locationSplit.at(1).c_str()));
         writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
@@ -158,7 +159,6 @@ void Writer::flush(bool override) {
 
     }
 
-    delete mutation;
   }
 
   if (override) {
