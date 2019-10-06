@@ -30,8 +30,6 @@ matrix:
           packages:
           - flex
           - bison
-      env:
-        - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
 before_script:
   - eval "${MATRIX_EVAL}"
   # We need to use newer versions of Flex and Bison on MacOS X (the ones from Homebrew).
