@@ -14,7 +14,7 @@ matrix:
             - boost-latest
           packages:
             - g++-4.9
-	    - libbz2-dev
+            - libbz2-dev
             - libgsasl7-dev
             - uuid-dev
             - libboost-all-dev
@@ -23,7 +23,7 @@ matrix:
             - libevent-dev
             - libssl-dev
             - libprotobuf-dev
-    	    - protobuf-compiler
+            - protobuf-compiler
       env:
          - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
     - os: osx
