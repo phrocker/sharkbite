@@ -27,7 +27,7 @@ matrix:
       osx_image: xcode8
       env:
         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
-nstall:
+install:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then brew install flex bison gnu-sed && brew upgrade python; fi
 before_script:
   - eval "${MATRIX_EVAL}"
