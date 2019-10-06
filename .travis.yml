@@ -30,6 +30,12 @@ matrix:
           packages:
           - flex
           - bison
+before_install:
+  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export HOMEBREW_NO_AUTO_UPDATE=1;
+      brew install flex bison;
+      brew link --force flex bison;
+    fi
 before_script:
   - eval "${MATRIX_EVAL}"
   # We need to use newer versions of Flex and Bison on MacOS X (the ones from Homebrew).
