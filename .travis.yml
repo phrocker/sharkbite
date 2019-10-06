@@ -27,5 +27,11 @@ matrix:
       osx_image: xcode8
       env:
         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+before_script:
+  - eval "${MATRIX_EVAL}"
+  # We need to use newer versions of Flex and Bison on MacOS X (the ones from Homebrew).
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_INCLUDE_PATH="/usr/local/opt/flex/include"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_LIBRARY_PATH="/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
   - ./bootstrap-travis
