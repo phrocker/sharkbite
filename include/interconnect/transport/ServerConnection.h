@@ -163,7 +163,7 @@ struct Cmp_ServerConnection {
 };
 
 struct Cmp_ServerConnectionSP {
-  bool operator()(const std::shared_ptr<ServerConnection>& first, const std::shared_ptr<ServerConnection>& second) {
+  bool operator()(const std::shared_ptr<ServerConnection>& first, const std::shared_ptr<ServerConnection>& second) const {
     return *first.get() < *second.get();
   }
 };
