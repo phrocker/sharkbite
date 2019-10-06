@@ -1,8 +1,5 @@
 language: cpp
 sudo: required
-compiler:
-  - clang
-  - gcc
 matrix:
   include:
     # works on Precise and Trusty
