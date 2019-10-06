@@ -1,26 +1,46 @@
 language: cpp
 sudo: required
-cache:
-  directories:
-   - apache-rpc-9.zip
-   - thrift-0.9.3.tar.gz
-addons:
-  apt:
-    sources:
-    - ubuntu-toolchain-r-test
-    - boost-latest
-    packages:
-    - g++-4.9
-    - libbz2-dev
-    - libgsasl7-dev
-    - uuid-dev
-    - libboost-all-dev
-    - cmake
-    - libgtest-dev
-    - libevent-dev
-    - libssl-dev
-    - libprotobuf-dev
-    - protobuf-compiler
+matrix:
+  include:
+    # works on Precise and Trusty
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - boost-latest
+          packages:
+            - g++-4.9
+            - libbz2-dev
+            - libgsasl7-dev
+            - uuid-dev
+            - libboost-all-dev
+            - cmake
+            - libgtest-dev
+            - libevent-dev
+            - libssl-dev
+            - libprotobuf-dev
+            - protobuf-compiler
+      env:
+         - MATRIX_EVAL="CC=gcc-4.9 && CXX=g++-4.9"
+    - os: osx
+      osx_image: xcode9
+      addons:
+        homebrew:
+          packages:
+          - flex
+          - bison
+before_install:
+  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+      export HOMEBREW_NO_AUTO_UPDATE=1;
+      brew install flex bison;
+      brew link --force flex bison;
+    fi
+before_script:
+  - eval "${MATRIX_EVAL}"
+  # We need to use newer versions of Flex and Bison on MacOS X (the ones from Homebrew).
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_INCLUDE_PATH="/usr/local/opt/flex/include"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_LIBRARY_PATH="/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export LDFLAGS="-L/usr/local/opt/bison/lib" && export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
-  - export CXX="g++-4.9"
   - ./bootstrap-travis
