@@ -137,22 +137,22 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
   }
   virtual ~WriterHeuristic();
 
-  void restart_failures(std::vector<cclient::data::Mutation*> *mutations) {
+  void restart_failures(std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations) {
     std::lock_guard<std::mutex> lock(serverLock);
     mutations->insert(mutations->end(), failedMutations.begin(), failedMutations.end());
     failedMutations.clear();
   }
   void addFailedMutation(std::shared_ptr<cclient::data::TabletServerMutations> mutation) {
     std::lock_guard<std::mutex> lock(serverLock);
-    std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*> > *mutationMap = mutation->getMutations();
-    for (auto entry : *mutationMap) {
+    auto mutationMap = mutation->getMutations();
+    for (auto &entry : *mutationMap) {
       failedMutations.insert(failedMutations.end(), entry.second.begin(), entry.second.end());
       entry.second.clear();
     }
 
   }
 
-  void push_failures(std::vector<cclient::data::Mutation*> *mutations) {
+  void push_failures(std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations) {
     std::lock_guard<std::mutex> lock(serverLock);
     failedMutations.insert(failedMutations.end(), mutations->begin(), mutations->end());
   }
@@ -209,7 +209,7 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
 
     } while (conditionals->isAlive());
 
-    return std::move(pair);
+    return pair;
 
   }
 
@@ -218,7 +218,7 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
   moodycamel::ConcurrentQueue<std::shared_ptr<WritePair>> queue;
  private:
   SinkConditions *conditionals;
-  std::vector<cclient::data::Mutation*> failedMutations;
+  std::vector<std::shared_ptr<cclient::data::Mutation>> failedMutations;
   std::mutex serverLock;
   std::vector<std::thread> threads;
   uint16_t threadCount;

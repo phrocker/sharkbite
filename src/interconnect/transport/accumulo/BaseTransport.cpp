@@ -16,7 +16,7 @@
 namespace interconnect {
 
 ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn)
-    : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, cclient::data::Mutation*>(conn) {
+    : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn) {
 
   newTransporter(conn);
 }

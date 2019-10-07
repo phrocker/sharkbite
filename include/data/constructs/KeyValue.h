@@ -40,15 +40,6 @@ public:
 	 **/
 	KeyValue();
 	
-	/**
-	 * Key value constructor.
-	 **/
-	explicit KeyValue(KeyValue&& other){
-	  key = std::move(other.key);
-	  value = std::move(other.value);
-	}
-
-
 	virtual ~KeyValue();
 
 	/**
@@ -86,7 +77,6 @@ public:
 	KeyValue &operator=(const KeyValue &other);
 	bool operator <(const KeyValue &rhs) const;
 	bool operator <(const KeyValue *rhs) const;
-	KeyValue &operator=(KeyValue&& other);
 	bool operator == (const KeyValue *rhs) const;
 	bool operator == (const KeyValue & rhs) const;
 	bool operator != (const KeyValue &rhs) const;

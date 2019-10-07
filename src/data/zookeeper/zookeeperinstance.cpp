@@ -162,11 +162,11 @@ std::string ZookeeperInstance::getInstanceName() {
 const cclient::impl::Configuration *ZookeeperInstance::getConfiguration() {
   return myConfiguration.get();
 }
-
+/*
 void ZookeeperInstance::setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf) {
   myConfiguration = std::move(conf);
 }
-
+*/
 }
 }
 }

@@ -29,55 +29,53 @@ the API.
 	GNU 4+
 	cmake
 	make
+	
+### For Libthrift
+	bison 3+ 
+	automake
+	autotool
+	autoconf
+	libtool
+	libevent
 
-## Building
+## Building Linux
 ```
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
 	This will build the package and library, which you can use. It will also build
-	examples in the examples directory
-
-	Bootstrap scripts exist to bootstrap a system with shared dependencies.
+	examples in the examples directory+
+	
 ```
 
-## Example
-```C++
+## Buildong on OSX
 
-    //This code shows an example of reading data from an Accumulo instance.
+Follow the same procedures as above, but you may need to force linking bison 3.x
+if you installed it via Homebrew
 
-    string instance = argv[1]
-    string zookeepers = argv[2]
-    string username = argv[3]
-    string password = argv[4]
+## What we provide
 
-    ZookeeperInstance *instance = new ZookeeperInstance(instance, zookeepers, 1000);
+Please note that the library of sharkbite consists of C bindings to allow you to create various connectors
+via our C interfaces and a Python binding built via Pybind11. 
 
-    AuthInfo creds(username, password, instance->getInstanceId());
+## Python Lib
+The Python library can be installed by simply typing pip install . into the root source directory.
+During this process the C++ library and python bindings will be built.
 
-    interconnect::MasterConnect *master = new MasterConnect(&creds, instance);
+[A Python example](https://www.github.com/phrocker/sharkbite/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
+library. 
 
-    std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps(
-            table);
-    // create the scanner with ten threads.
-    std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
-    // range from a to d
-    Key startkey;
-    startkey.setRow("a", 1);
-    Key stopKey;
-    stopKey.setRow("d", 1);
-    Range *range = new Range(startkey, true, stopKey, true); 
-    // build your range.
-    scanner->addRange(range);
+## C Library
 
-    scanners::Iterator<cclient::data::KeyValue> *results =
-	                scanner->getResultSet ();
+The C library is a wrapper around the C++ Code. We supply a target called "capi". We have an example
+built to use [python via our C-Library using C-Types ](https://github.com/phrocker/sharkbite/c-library-examples/python/example.py].
 
-    for (auto iter = results->begin(); iter != results->end(); iter++) {
-        KeyValue *kv = *iter;
-        if (kv != NULL && kv->getKey() != NULL)
-            cout << "got -- " << (*iter)->getKey() << endl;
-        else
-            cout << "Key is null" << endl;
-    }
-```
+This python example is vestigial and only exists as an example of the C-API wrappers. Implementations can be written
+in Go, Rust, Ruby, etc. 
+
+## Examples
+
+A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/examples/CppExample.cpp) as well as in src/examples/
+
+A Python example can be found [here] (https://www.github.com/phrocker/sharkbite/examples/pythonexample.py)
+
 [accumulo]: https://accumulo.apache.org

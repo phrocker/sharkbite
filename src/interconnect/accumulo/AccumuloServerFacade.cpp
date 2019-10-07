@@ -50,7 +50,7 @@ Scan *AccumuloServerFacade::continueScan(Scan *originalScan) {
   return nullptr;
 }
 
-void *AccumuloServerFacade::write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request) {
+void *AccumuloServerFacade::write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
 
   switch (accumuloVersion) {
     case ACCUMULO_ONE:
@@ -352,7 +352,7 @@ Scan *AccumuloServerFacade::v1_continueScan(Scan *originalScan) {
   return originalScan;
 }
 
-void *AccumuloServerFacade::v1_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>> *request) {
+void *AccumuloServerFacade::v1_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
 
   org::apache::accumulo::core::trace::thrift::TInfo tinfo;
   org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
@@ -360,7 +360,7 @@ void *AccumuloServerFacade::v1_write(cclient::data::security::AuthInfo *auth, st
   tinfo.parentId = 0;
   tinfo.traceId = rand();
   org::apache::accumulo::core::data::thrift::UpdateID upId = tserverClient->startUpdate(tinfo, creds, org::apache::accumulo::core::tabletserver::thrift::TDurability::DEFAULT);
-  for (std::map<cclient::data::KeyExtent, std::vector<cclient::data::Mutation*>>::iterator it = request->begin(); it != request->end(); it++) {
+  for (auto it = request->begin(); it != request->end(); it++) {
 
     tserverClient->applyUpdates(tinfo, upId, ThriftWrapper::convert(it->first), ThriftWrapper::convert(&it->second));
   }

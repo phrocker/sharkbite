@@ -13,35 +13,20 @@
  */
 #include "data/constructs/client/TabletServerMutations.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-TabletServerMutations::TabletServerMutations (std::string sessionId) :
-    session (sessionId), failuresAllowed(-1)
-{
-    
-
+TabletServerMutations::TabletServerMutations(std::string sessionId)
+    : session(sessionId),
+      failuresAllowed(-1) {
 }
 
-TabletServerMutations::TabletServerMutations (std::string sessionId, uint32_t fails) :
-    session (sessionId), failuresAllowed(fails)
-{
-    
-
+TabletServerMutations::TabletServerMutations(std::string sessionId, uint32_t fails)
+    : session(sessionId),
+      failuresAllowed(fails) {
 }
 
-TabletServerMutations::~TabletServerMutations ()
-{
-    for (auto it : mutations)
-    {
-
-        for (auto mutation : it.second)
-        {
-            delete mutation;
-        }
-    }
+TabletServerMutations::~TabletServerMutations() {
 }
 
 } /* namespace data */
