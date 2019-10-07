@@ -61,21 +61,21 @@ via our C interfaces and a Python binding built via Pybind11.
 The Python library can be installed by simply typing pip install . into the root source directory.
 During this process the C++ library and python bindings will be built.
 
-[A Python example](https://www.github.com/phrocker/sharkbite/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
+[A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
 library. 
 
 ## C Library
 
 The C library is a wrapper around the C++ Code. We supply a target called "capi". We have an example
-built to use [python via our C-Library using C-Types ](https://github.com/phrocker/sharkbite/c-library-examples/python/example.py].
+built to use [python via our C-Library using C-Types ](https://github.com/phrocker/sharkbite/blob/master/c-library-examples/python/example.py].
 
 This python example is vestigial and only exists as an example of the C-API wrappers. Implementations can be written
 in Go, Rust, Ruby, etc. 
 
 ## Examples
 
-A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/examples/CppExample.cpp) as well as in src/examples/
+A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/blob/master/examples/CppExample.cpp) as well as in src/examples/
 
-A Python example can be found [here] (https://www.github.com/phrocker/sharkbite/examples/pythonexample.py)
+A Python example can be found [here] (https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py)
 
 [accumulo]: https://accumulo.apache.org
