@@ -24,20 +24,39 @@ import traceback
 import sys
 import time
 
-parser = ArgumentParser()
-parser.add_argument("-d", "--dll", dest="dll_file",
-                    help="DLL filename", metavar="FILE")
+
+
+"""
+
+This is an Example of using the Python connectors. The example will accept user input
+create a table writing arbitrary information to it via the BatchWriter and scanner will put the written data      
+     
+             
+"""
+
+parser = ArgumentParser(description="This is an Apache Accummulo Python connector")
+
 parser.add_argument("-i", "--instance", dest="instance",
-                    help="DLL filename")
+                    help="Apache Accumulo Instance Name", required=True)
 parser.add_argument("-z", "--zookeepers", dest="zookeepers",
-                    help="DLL filename")
+                    help="Comma Separated Zookeeper List", required=True)
 parser.add_argument("-u", "--username", dest="username",
-                    help="DLL filename")
+                    help="User to access Apache Accumulo", required=True)
 parser.add_argument("-p", "--password", dest="password",
-                    help="DLL filename")
+                    help="Password to access Apache Accumulo. May also be supplied at the command line")
+parser.add_argument("-t", "--table", dest="table",
+                    help="Table to create/update")
 args = parser.parse_args()
 
-""" dll_file is the path to the shared object """
+password = args.password
+table = args.table
+
+if not password:
+    print("Please enter your password")
+    password = input()
+    
+if not table:
+    table = "blahblahd"
 
 import pysharkbite
 
@@ -47,24 +66,32 @@ conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
 
 zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
 
-user = pysharkbite.AuthInfo("root", "secret", zk.getInstanceId()) 
+user = pysharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
 
 try:
     connector = pysharkbite.AccumuloConnector(user, zk)
 
-    tableOperations = connector.tableOps("blahblahd")
 
-    print(str(tableOperations.exists(False)))
+    tableOperations = connector.tableOps(table)
+
+    if not tableOperations.exists(False):
+        print ("Creating table " + table)
+        tableOperations.create(False)  
+    else:
+        print (table + " already exists, so not creating it")  
     
-    tableOperations.create(False)
     
     auths = pysharkbite.Authorizations()
     
+    """ Add authorizations """ 
+    """ mutation.put("cf","cq","cv",1569786960) """
+    
     writer = tableOperations.createWriter(auths, 10)
     
-    mutation = pysharkbite.Mutation("row2");
+    mutation = pysharkbite.Mutation("row2");    
     
-    mutation.put("cf","cq","cv",1569786960)
+    mutation.put("cf","cq","",1569786960)
+    mutation.put("cf2","cq2","",1569786960)
     
     writer.addMutation( mutation )
     
@@ -72,7 +99,7 @@ try:
     
     time.sleep(2)
     
-    auths.addAuthorization("cv")
+    """ auths.addAuthorization("cv") """
     
     scanner = tableOperations.createScanner(auths, 2)
     
@@ -94,9 +121,9 @@ try:
         key = keyvalue.getKey()
         print(key.getRow() + ":" + key.getColumnFamily() + ":" +  key.getColumnQualifier() + " [" + key.getColumnVisibility() + "]")
     
-    print(str(tableOperations.exists(False)))
-    
-    """ tableOperations.remove()"""
+    """ delete your table if user did not create temp """
+    if not args.table:
+        tableOperations.remove()
     
 except RuntimeError as e:
      traceback.print_exc()

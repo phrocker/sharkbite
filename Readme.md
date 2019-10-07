@@ -43,8 +43,8 @@ the API.
 	mkdir build && cd build && cmake .. && cmake --build . ; make test
 
 	This will build the package and library, which you can use. It will also build
-	examples in the examples directory
-
+	examples in the examples directory+
+	
 ```
 
 ## Buildong on OSX
@@ -52,53 +52,30 @@ the API.
 Follow the same procedures as above, but you may need to force linking bison 3.x
 if you installed it via Homebrew
 
-## Example
-```C++
+## What we provide
 
-    //This code shows an example of reading data from an Accumulo instance.
-
-    string instance = argv[1]
-    string zookeepers = argv[2]
-    string username = argv[3]
-    string password = argv[4]
-
-    ZookeeperInstance *instance = new ZookeeperInstance(instance, zookeepers, 1000);
-
-    AuthInfo creds(username, password, instance->getInstanceId());
-
-    interconnect::MasterConnect *master = new MasterConnect(&creds, instance);
-
-    std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps(
-            table);
-    // create the scanner with ten threads.
-    std::unique_ptr<scanners::BatchScanner> scanner = ops->createScanner (&auths, 10);
-    // range from a to d
-    Key startkey;
-    startkey.setRow("a", 1);
-    Key stopKey;
-    stopKey.setRow("d", 1);
-    Range *range = new Range(startkey, true, stopKey, true); 
-    // build your range.
-    scanner->addRange(range);
-
-    auto results = scanner->getResultSet ();
-
-    for (const auto &iter : results) {
-        KeyValue *kv = *iter;
-        if (kv != NULL && kv->getKey() != NULL)
-            cout << "got -- " << (*iter)->getKey() << endl;
-        else
-            cout << "Key is null" << endl;
-    }
-```
-
+Please note that the library of sharkbite consists of C bindings to allow you to create various connectors
+via our C interfaces and a Python binding built via Pybind11. 
 
 ## Python Lib
 The Python library can be installed by simply typing pip install . into the root source directory.
-Note that our previous implementation in the python directory is deprecated as of V0.5
+During this process the C++ library and python bindings will be built.
 
-Note that python-deprecated represents the older C API library. This will be maintained until V1.0; however,
-the Python library will transition to C++ bindings via pybind11. Therefore pip install in the root folder is
-the preferred method. Examples can be found in pythonexamplepy in the root source folder.
+[A Python example](https://www.github.com/phrocker/sharkbite/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
+library. 
+
+## C Library
+
+The C library is a wrapper around the C++ Code. We supply a target called "capi". We have an example
+built to use [python via our C-Library using C-Types ](https://github.com/phrocker/sharkbite/c-library-examples/python/example.py].
+
+This python example is vestigial and only exists as an example of the C-API wrappers. Implementations can be written
+in Go, Rust, Ruby, etc. 
+
+## Examples
+
+A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/examples/CppExample.cpp) as well as in src/examples/
+
+A Python example can be found [here] (https://www.github.com/phrocker/sharkbite/examples/pythonexample.py)
 
 [accumulo]: https://accumulo.apache.org

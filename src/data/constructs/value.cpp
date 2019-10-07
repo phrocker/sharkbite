@@ -14,145 +14,117 @@
 
 #include <utility>
 
-
-
 #include "data/constructs/value.h"
 
+namespace cclient {
+namespace data {
 
-namespace cclient{
-  namespace data{
-
-
-Value::Value () :
-    valueSize (0)
-{
-    value = new uint8_t[0];
-    offset = 0;
+Value::Value() :
+		valueSize(0) {
+	value = new uint8_t[0];
+	offset = 0;
 }
 
-Value::~Value ()
-{
-    if (value != NULL)
-        delete[] value;
+Value::~Value() {
+	if (value != NULL)
+		delete[] value;
 }
 
 /**
  * Sets the value using the value and the corresponding size and offset.
  */
-void
-Value::setValue (uint8_t *val, size_t size, uint32_t ptrOff)
-{
+void Value::setValue(uint8_t *val, size_t size, uint32_t ptrOff) {
 
-    if ((size + ptrOff) > valueSize)
-    {
-        uint8_t *oldVal = value;
-        value = new uint8_t[size + ptrOff];
-        if (oldVal != NULL)
-        {
-            memcpy (value, oldVal, ptrOff);
-            delete[] oldVal;
-        }
-        valueSize = size + ptrOff;
-    }
+	if ((size + ptrOff) > valueSize) {
+		uint8_t *oldVal = value;
+		value = new uint8_t[size + ptrOff];
+		if (oldVal != NULL) {
+			memcpy(value, oldVal, ptrOff);
+			delete[] oldVal;
+		}
+		valueSize = size + ptrOff;
+	}
 
-    memcpy (value + ptrOff, val, size);
+	memcpy(value + ptrOff, val, size);
 
-    offset = size;
+	offset = size;
 
 }
 
 /**
  * Appends val to the current value.
  */
-void
-Value::append (uint8_t *val, size_t size)
-{
-    if ((size + offset) > valueSize)
-    {
-        uint8_t *oldVal = value;
-        value = new uint8_t[size + offset];
-        memcpy (value, oldVal, offset);
-        delete[] oldVal;
-        valueSize = size + offset;
-    }
+void Value::append(uint8_t *val, size_t size) {
+	if ((size + offset) > valueSize) {
+		uint8_t *oldVal = value;
+		value = new uint8_t[size + offset];
+		memcpy(value, oldVal, offset);
+		delete[] oldVal;
+		valueSize = size + offset;
+	}
 
-    memcpy (value + offset, val, size);
+	memcpy(value + offset, val, size);
 
-    offset += size;
+	offset += size;
 }
 
 /**
  * Deep copies the object.
  */
-void
-Value::deepCopy (Value *v)
-{
+void Value::deepCopy(Value *v) {
 
-    v->value = value;
-    v->valueSize = valueSize;
-    v->offset = offset;
-    value = NULL;
-    offset = 0;
-    valueSize = 0;
+	v->value = value;
+	v->valueSize = valueSize;
+	v->offset = offset;
+	value = NULL;
+	offset = 0;
+	valueSize = 0;
 }
 
 uint8_t *
-Value::data ()
-{
-    return value;
+Value::data() {
+	return value;
 }
 
-size_t
-Value::size ()
-{
-    return offset;
+size_t Value::size() {
+	return offset;
 }
 
-std::shared_ptr<streams::StreamInterface> 
-Value::getStream ()
-{
-    return shared_from_this();
+std::shared_ptr<streams::StreamInterface> Value::getStream() {
+	return shared_from_this();
 }
 
-std::pair<uint8_t*, size_t>
-Value::getValue () const
-{
-    return std::make_pair (value, offset);
+std::pair<uint8_t*, size_t> Value::getValue() const {
+	return std::make_pair(value, offset);
 }
 
-uint64_t
-Value::write (cclient::data::streams::OutputStream *outStream)
-{
-    outStream->writeInt (offset);
-    return outStream->writeBytes (value, offset);
+std::string Value::getValueAsString() const {
+	return std::string((char*)(value), offset);
 }
 
-uint64_t
-Value::read(cclient::data::streams::InputStream *in)
-{
-    if (value != NULL)
-        delete[] value;
-
-    uint32_t size = in->readInt();
-    value = new uint8_t[ size ];
-    return in->readBytes(value, size );
+uint64_t Value::write(cclient::data::streams::OutputStream *outStream) {
+	outStream->writeInt(offset);
+	return outStream->writeBytes(value, offset);
 }
 
-bool
-Value::operator == (const Value & rhs) const
-{
-    if (valueSize == rhs.valueSize && offset == rhs.offset)
-    {
-        return (memcmp (value, rhs.value, valueSize) == 0);
-    }
-    else
-        return false;
+uint64_t Value::read(cclient::data::streams::InputStream *in) {
+	if (value != NULL)
+		delete[] value;
+
+	uint32_t size = in->readInt();
+	value = new uint8_t[size];
+	return in->readBytes(value, size);
 }
 
-bool
-Value::operator != (const Value &rhs) const
-{
-    return !(*this == rhs);
+bool Value::operator ==(const Value & rhs) const {
+	if (valueSize == rhs.valueSize && offset == rhs.offset) {
+		return (memcmp(value, rhs.value, valueSize) == 0);
+	} else
+		return false;
 }
-  }
+
+bool Value::operator !=(const Value &rhs) const {
+	return !(*this == rhs);
+}
+}
 }

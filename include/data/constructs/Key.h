@@ -81,7 +81,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   void
   setColFamily(const char *r, uint32_t size);
 
-  void setColFamily(std::string st) {
+  void setColFamily(const std::string &st) {
     setColFamily(st.c_str(), st.size());
   }
 
@@ -96,7 +96,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   void
   setColQualifier(const char *r, uint32_t size, uint32_t offset = 0);
 
-  void setColQualifier(std::string st) {
+  void setColQualifier(const std::string &st) {
     setColQualifier(st.c_str(), st.size(), 0);
   }
 
@@ -111,7 +111,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   void
   setColVisibility(const char *r, uint32_t size);
 
-  void setColVisibility(std::string st) {
+  void setColVisibility(const std::string &st) {
     setColVisibility(st.c_str(), st.size());
   }
 

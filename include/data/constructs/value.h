@@ -55,6 +55,8 @@ public:
 
     std::pair<uint8_t*, size_t> getValue() const;
 
+    std::string getValueAsString() const;
+
     uint64_t write (cclient::data::streams::OutputStream *outStream);
 
     uint64_t read (cclient::data::streams::InputStream *in);
