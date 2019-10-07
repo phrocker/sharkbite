@@ -33,6 +33,8 @@ endif(CCACHE_FOUND)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
 
+include(DownloadProject)
+
 include(LibreSSL)
 use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ssl")
@@ -118,21 +120,13 @@ find_package (OpenSSL REQUIRED)
 
 find_package(Python COMPONENTS Interpreter Development)
 
-#ExternalProject_Add(
-	  #PyBind11
-	  #GIT_REPOSITORY "https://github.com/pybind/pybind11.git"
-	  #GIT_TAG "7ec2ddfc95f65d1e986d359466a6c254aa514ef3"
-	  #BUILD_IN_SOURCE true
-	  #SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-src"
-	  #BUILD_COMMAND ""
-	  #CMAKE_ARGS "-DPYBIND11_TEST=OFF"
-	  #			 "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install"
-	  #UPDATE_COMMAND ""
-	  #)
+download_project(PROJ pybind11 
+				 GIT_REPOSITORY "https://github.com/pybind/pybind11.git" 
+				 GIT_TAG "7ec2ddfc95f65d1e986d359466a6c254aa514ef3" )
 
 set(PYBIND11_CPP_STANDARD -std=c++14)
-add_subdirectory(pybind11)
-include_directories(pybind11/include/)
+add_subdirectory(${pybind11_SOURCE_DIR})
+include_directories("${pybind11_SOURCE_DIR}/include/")
 set(Boost_USE_MULTITHREADED ON)
 #find_package(GTest REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
