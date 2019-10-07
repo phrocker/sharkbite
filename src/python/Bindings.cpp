@@ -14,6 +14,7 @@
 #include <python/bindings.h>
 
 #include "data/constructs/KeyValue.h"
+#include "data/constructs/Mutation.h"
 #include "data/constructs/security/Authorizations.h"
 #include "scanner/constructs/Results.h"
 #include "scanner/impl/Scanner.h"
@@ -101,7 +102,7 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
         .def(pybind11::init<std::string>())
-        .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, unsigned long  ) ) &cclient::data::Mutation::put, "Adds a mutation");
+        .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, unsigned long, const std::string & ) ) &cclient::data::Mutation::put, "Adds a mutation");
 
 
   pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(s, "Results")

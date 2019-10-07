@@ -85,7 +85,7 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
 
 }
 
-void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, unsigned long ts) {
+void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, unsigned long ts, const std::string &value) {
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 
@@ -105,7 +105,16 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
   //writeLong(ts);
   baseStream->writeBoolean(false);
   //write(false);
-  baseStream->writeVLong(0);
+
+
+  if (!value.empty()){
+	  baseStream->writeVLong(value.size());
+	  baseStream->write( (uint8_t*)value.data(),value.size());
+  }
+  else{
+	  baseStream->writeVLong(0);
+  }
+
   entries++;
 }
 

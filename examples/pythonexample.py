@@ -90,8 +90,10 @@ try:
     
     mutation = pysharkbite.Mutation("row2");    
     
-    mutation.put("cf","cq","",1569786960)
-    mutation.put("cf2","cq2","",1569786960)
+    mutation.put("cf","cq","",1569786960, "value")
+    mutation.put("cf2","cq2","",1569786960, "value2")
+    """ no value """
+    mutation.put("cf3","cq3","",1569786960, "") 
     
     writer.addMutation( mutation )
     
@@ -119,7 +121,8 @@ try:
     
     for keyvalue in resultset:
         key = keyvalue.getKey()
-        print(key.getRow() + ":" + key.getColumnFamily() + ":" +  key.getColumnQualifier() + " [" + key.getColumnVisibility() + "]")
+        value = keyvalue.getValue()
+        print(key.getRow() + ":" + key.getColumnFamily() + ":" +  key.getColumnQualifier() + " [" + key.getColumnVisibility() + "] -- " + value.get())
     
     """ delete your table if user did not create temp """
     if not args.table:
