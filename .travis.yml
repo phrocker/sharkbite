@@ -4,6 +4,10 @@ matrix:
   include:
     # works on Precise and Trusty
     - os: linux
+      before_install:
+       - pyenv global $(pyenv whence 2to3)  # activate all python versions
+       - PY_CMD=python3
+       - $PY_CMD -m pip install --user --upgrade pip wheel
       addons:
         apt:
           sources:
