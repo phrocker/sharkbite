@@ -47,7 +47,7 @@ the API.
 	
 ```
 
-## Buildong on OSX
+## Building on OSX
 
 Follow the same procedures as above, but you may need to force linking bison 3.x
 if you installed it via Homebrew
