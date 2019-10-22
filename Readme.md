@@ -37,7 +37,8 @@ the API.
 	autotool
 	autoconf
 	libtool
-	libevent
+	libevent-dev
+	unzip
 
 ## Building Linux
 ```
