@@ -22,11 +22,14 @@
 #include <boost/shared_ptr.hpp>
 #include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thrift/ClientService.h"
+#include "data/extern/thriftv2/ClientService.h"
 #include "data/exceptions/NotServingException.h"
 #include "data/extern/thrift/TabletClientService.h"
+#include "data/extern/thriftv2/TabletClientService.h"
 #include "../scanrequest/ScanRequest.h"
 #include "../scanrequest/ScanIdentifier.h"
 #include "data/extern/thrift/ThriftWrapper.h"
+#include "data/extern/thriftv2/ThriftV2Wrapper.h"
 #include "data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
 
@@ -35,6 +38,8 @@ namespace interconnect {
 class AccumuloServerFacade {
 
  private:
+
+	std::map<cclient::data::security::AuthInfo*, org::apache::accumulov2::core::securityImpl::thrift::TCredentials> convertedMap_V2;
 
   std::map<cclient::data::security::AuthInfo*, org::apache::accumulo::core::security::thrift::TCredentials> convertedMap;
   std::mutex mutex;
@@ -47,11 +52,14 @@ class AccumuloServerFacade {
 
   Scan *v1_multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
 
+  Scan *v1_beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
+
+
+
   org::apache::accumulo::core::security::thrift::TCredentials getOrSetCredentials(cclient::data::security::AuthInfo *convert);
 
   void v1_registerService(std::string instance, std::string clusterManagers);
 
-  Scan *v1_beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
 
   Scan *v1_continueScan(Scan *originalScan);
 
@@ -73,10 +81,52 @@ class AccumuloServerFacade {
 
   void v1_close();
 
+  /***
+   *
+   * v2
+   */
+
+  void v2_authenticate(cclient::data::security::AuthInfo *auth);
+
+  Scan *v2_singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
+
+  Scan *v2_multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
+
+  Scan *v2_beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request);
+
+  void v2_registerService(std::string instance, std::string clusterManagers);
+
+  org::apache::accumulov2::core::securityImpl::thrift::TCredentials getOrSetCredentialsV2(cclient::data::security::AuthInfo *convert);
+
+  std::map<std::string, std::string> v2_getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
+
+  Scan *v2_continueScan(Scan *originalScan);
+
+  void *v2_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request);
+
+  bool v2_dropUser(cclient::data::security::AuthInfo *auth, std::string user);
+
+  bool v2_changeUserPassword(cclient::data::security::AuthInfo *auth, std::string user, std::string password);
+
+  bool v2_createUser(cclient::data::security::AuthInfo *auth, std::string user, std::string password);
+
+  std::map<std::string, std::string> v2_getTableConfiguration(cclient::data::security::AuthInfo *auth, std::string table);
+
+  cclient::data::security::Authorizations *v2_getUserAuths(cclient::data::security::AuthInfo *auth, std::string user);
+
+  void v2_changeUserAuths(cclient::data::security::AuthInfo *auth, std::string user, cclient::data::security::Authorizations *auths);
+
+  void v2_splitTablet(cclient::data::security::AuthInfo *auth, std::shared_ptr<cclient::data::KeyExtent> extent, std::string split);
+
+  void v2_close();
+
   uint8_t accumuloVersion;
 
   std::unique_ptr<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient> client;
   std::unique_ptr<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient> tserverClient;
+
+  std::unique_ptr<org::apache::accumulov2::core::clientImpl::thrift::ClientServiceClient> client_V2;
+  std::unique_ptr<org::apache::accumulov2::core::tabletserver::thrift::TabletClientServiceClient> tserverClient_V2;
  public:
 
   AccumuloServerFacade();

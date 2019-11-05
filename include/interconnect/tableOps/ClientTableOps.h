@@ -105,7 +105,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * Returns the table ID
    * @return table ID
    **/
-  std::string getTableId();
+  std::string getTableId() override;
 
   /**
    * Sets a table property
@@ -155,7 +155,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads current threads
    * @return new scanner
    **/
-  std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads);
+  std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads) override;
 
   /**
    * Creates a writer for the current table
@@ -163,7 +163,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads);
+  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
 
  protected:
 

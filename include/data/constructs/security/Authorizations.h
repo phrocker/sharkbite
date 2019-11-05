@@ -78,19 +78,19 @@ protected:
         }
     }
     static int buildDefaultAuths() {
-        for (uint8_t i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; i++) {
             validAuthChars[i] = false;
         }
 
-        for (uint8_t i = 'a'; i <= 'z'; i++) {
+        for (int i = 'a'; i <= 'z'; i++) {
             validAuthChars[i] = true;
         }
 
-        for (uint8_t i = 'A'; i <= 'Z'; i++) {
+        for (int i = 'A'; i <= 'Z'; i++) {
             validAuthChars[i] = true;
         }
 
-        for (uint8_t i = '0'; i <= '9'; i++) {
+        for (int i = '0'; i <= '9'; i++) {
             validAuthChars[i] = true;
         }
 

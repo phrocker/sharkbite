@@ -90,7 +90,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     master.createMasterClient(underlyingTransport);
   }
 
-  void recreateMasterClient() {
+  void recreateMasterClient() override{
     underlyingTransport->close();
     underlyingTransport.reset();
     /*

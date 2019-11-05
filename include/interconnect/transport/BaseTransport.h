@@ -82,7 +82,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
 
-  apache::thrift::transport::TTransport getTransport();
+  apache::thrift::transport::TTransport getTransport() override;
 
   virtual void authenticate(cclient::data::security::AuthInfo *auth) override;
   void createIfClosed();
@@ -96,7 +96,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     server.registerService(instance, clusterManagers);
   }
 
-  Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) override{
     return server.beginScan(request);
 
   }
@@ -105,7 +105,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     return server.continueScan(originalScan);
   }
 
-  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
+  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) override{
     return server.write(auth, request);
   }
 
@@ -137,7 +137,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   void splitTablet(cclient::data::security::AuthInfo *auth, std::shared_ptr<cclient::data::KeyExtent> extent, const std::string &split) {
     server.splitTablet(auth, extent, split);
   }
-  void close() {
+  void close() override{
     server.close();
 
     underlyingTransport->close();
@@ -146,11 +146,11 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   void close(Scan *scan) {
   }
 
-  bool open() {
+  bool open() override{
     return underlyingTransport->isOpen();
   }
 
-  bool isOpen() {
+  bool isOpen() override{
     return underlyingTransport->isOpen();
   }
 
