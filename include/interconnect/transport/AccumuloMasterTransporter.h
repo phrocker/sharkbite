@@ -113,7 +113,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   virtual void registerService(std::string instance, std::string clusterManagers) {
     createMasterClient();
-    createClientService(false);
+    createClientService(true);
 
   }
 
@@ -128,7 +128,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
                }) {
 
     createMasterClient();
-    createClientService(false);
+    createClientService(true);
   }
 
   bool createTable(cclient::data::security::AuthInfo *auth, const std::string &table) {

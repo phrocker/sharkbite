@@ -59,7 +59,7 @@ class ThriftV2Wrapper {
 
     return convertedIters;
   }
-  static cclient::data::security::AuthInfo *convert(org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds) {
+  static cclient::data::security::AuthInfo *convert(org::apache::accumulov2::core::securityImpl::thrift::TCredentials &creds) {
     cclient::data::streams::EndianInputStream inputStream((char*) creds.token.c_str(), creds.token.length());
     int compressedLength = inputStream.readInt();
     char *array = new char[compressedLength];

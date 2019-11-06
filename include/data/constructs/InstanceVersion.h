@@ -18,55 +18,50 @@
 #include <map>
 #include <mutex>
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
+class InstanceVersion {
 
-class InstanceVersion{
+ public:
 
-public:
+  static int getVersion(const std::string &instance) {
+    const InstanceVersion *mapper = getInstance();
+    return mapper->getHostVersion(instance);
+  }
 
-	static int getVersion(const std::string &instance){
-		const InstanceVersion *mapper = getInstance();
-		return mapper->getVersion(instance);
-	}
+  static void setVersion(const std::string &instance, int version) {
+    InstanceVersion *mapper = getInstance();
+    mapper->setHostVersion(instance, version);
+  }
 
-	static void setVersion(const std::string &instance, int version){
-		InstanceVersion *mapper = getInstance();
-		mapper->setVersion(instance,version);
-	}
+ private:
 
-private:
+  static InstanceVersion *getInstance() {
+    static InstanceVersion vers;
+    return &vers;
+  }
 
-	static InstanceVersion *getInstance(){
-		InstanceVersion vers;
-		return &vers;
-	}
+  InstanceVersion() {
+  }
 
-	InstanceVersion(){
-	}
+  void setHostVersion(const std::string &instance, int version) {
+    std::lock_guard<std::mutex> lock(mtx);
+    version_map_.insert(std::make_pair(instance, version));
+  }
 
-	void setVersion(const std::string &instance, int version){
-		std::lock_guard<std::mutex> lock(mtx);
-		version_map_.insert(std::make_pair(instance,version));
-	}
+  int getHostVersion(const std::string &instance) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto vmap = version_map_.find(instance);
+    if (vmap != std::end(version_map_)) {
+      return vmap->second;
+    } else {
+      return 0;
+    }
+  }
 
-	int getVersion(const std::string &instance) const{
-		std::lock_guard<std::mutex> lock(mtx);
-		auto vmap = version_map_.find(instance);
-		if (vmap != std::end(version_map_)){
-			return vmap->second;
-		}
-		else{
-			return 0;
-		}
-	}
-
-
-	std::mutex mtx;
-	std::map<std::string,int> version_map_;
+  mutable std::mutex mtx;
+  std::map<std::string, int> version_map_;
 };
 
 } /* namespace data */

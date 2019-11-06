@@ -152,7 +152,6 @@ void AccumuloServerFacade::registerService(std::string instance, std::string clu
       client->getInstanceId(instance);
       break;
     case ACCUMULO_TWO:
-
         client_V2->getInstanceId(instance);
         client_V2->getZooKeepers(clusterManagers);
         break;
@@ -191,7 +190,7 @@ void AccumuloServerFacade::v1_close() {
 void AccumuloServerFacade::initialize(std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr, bool callRegistration) {
 
 	  std::string zk,cm;
-
+/*
   try{
 	  client = std::make_unique<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient>(protocolPtr);
 	  tserverClient = std::make_unique<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(protocolPtr);
@@ -199,16 +198,16 @@ void AccumuloServerFacade::initialize(std::shared_ptr<apache::thrift::protocol::
 	  if (callRegistration)
 		  registerService(zk,cm);
   }
-  catch(...){
+  catch(...){*/
 	  client = nullptr;
 	  tserverClient = nullptr;
 	  client_V2 = std::make_unique<org::apache::accumulov2::core::clientImpl::thrift::ClientServiceClient>(protocolPtr);
 	  tserverClient_V2 = std::make_unique<org::apache::accumulov2::core::tabletserver::thrift::TabletClientServiceClient>(protocolPtr);
 	  accumuloVersion = ACCUMULO_TWO;
-	  if (callRegistration)
-		  registerService(zk,cm);
+	//  if (callRegistration)
+//		  registerService(zk,cm);
 	//  }
-  }
+  //}
 
 }
 

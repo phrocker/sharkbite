@@ -27,9 +27,9 @@
 #include "../scanrequest/ScanIdentifier.h"
 #include "data/extern/thrift/master_types.h"
 #include "data/extern/thrift/MasterClientService.h"
-#include "data/extern/thriftV2/MasterClientService.h"
+#include "data/extern/thriftv2/MasterClientService.h"
 #include "data/extern/thrift/ThriftWrapper.h"
-#include "data/extern/thriftV2/ThriftV2Wrapper.h"
+#include "data/extern/thriftv2/ThriftV2Wrapper.h"
 #include "data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
 
@@ -50,14 +50,13 @@ class AccumuloMasterFacade {
 
   void v1_createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
     auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
-    //std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
-    //if (NULL != masterClient) {
-
-    //      delete masterClient;
-    //    masterClient = NULL;
-    //    }
     masterClient = std::make_shared<org::apache::accumulo::core::master::thrift::MasterClientServiceClient>(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
   }
+
+  void v2_createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
+     auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
+     masterClientV2 = std::make_shared<org::apache::accumulov2::core::master::thrift::MasterClientServiceClient>(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
+   }
 
   bool v1_createTable(cclient::data::security::AuthInfo *auth, const std::string &table) {
 
@@ -479,13 +478,13 @@ class AccumuloMasterFacade {
 
     bool v2_flush(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &startrow, const std::string &endrow, bool wait) {
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::TCredentials creds = ThriftV2Wrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
       int64_t flushId = 0;
       try {
-        flushId = masterClient->initiateFlush(transId, creds, table);
+        flushId = masterClientV2->initiateFlush(transId, creds, table);
 
       } catch (const org::apache::accumulov2::core::clientImpl::thrift::ThriftTableOperationException &e) {
         recreateMasterTransport();
@@ -505,7 +504,7 @@ class AccumuloMasterFacade {
           transId.parentId = transId.traceId;
           transId.traceId++;
           recreateMasterTransport();
-          masterClient->waitForFlush(transId, creds, table, startrow, endrow, flushId, maxLoops);
+          masterClientV2->waitForFlush(transId, creds, table, startrow, endrow, flushId, maxLoops);
           break;
         } catch (const apache::thrift::transport::TTransportException &e) {
           recreateMasterTransport();
@@ -543,20 +542,20 @@ class AccumuloMasterFacade {
 
     void v2_removeTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property) {
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::TCredentials creds = ThriftV2Wrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
-      masterClient->removeTableProperty(transId, creds, table, property);
+      masterClientV2->removeTableProperty(transId, creds, table, property);
     }
 
     void v2_setTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property, const std::string &value) {
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::TCredentials creds = ThriftV2Wrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
-      masterClient->setTableProperty(transId, creds, table, property, value);
+      masterClientV2->setTableProperty(transId, creds, table, property, value);
     }
 
     /**namespace operations**/
@@ -623,20 +622,20 @@ class AccumuloMasterFacade {
 
     void v2_removeNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property) {
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::TCredentials creds = ThriftV2Wrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
-      masterClient->removeNamespaceProperty(transId, creds, nameSpaceName, property);
+      masterClientV2->removeNamespaceProperty(transId, creds, nameSpaceName, property);
     }
 
     void v2_setNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property, const std::string &value) {
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::TCredentials creds = ThriftV2Wrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
-      masterClient->setNamespaceProperty(transId, creds, nameSpaceName, property, value);
+      masterClientV2->setNamespaceProperty(transId, creds, nameSpaceName, property, value);
     }
 
  public:
@@ -645,16 +644,19 @@ class AccumuloMasterFacade {
       : createMasterTransport(fx),
         createTransport(tfx),
 		host(host),
-        accumuloVersion(ACCUMULO_UNKNOWN) {
-    accumuloVersion = cclient::data::InstanceVersion::getVersion(host);
+        accumuloVersion(ACCUMULO_TWO) {
+    //accumuloVersion = cclient::data::InstanceVersion::getVersion(host);
   }
 
   void createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
+    v2_createMasterClient(underlyingTransport);
+    /*
     switch (accumuloVersion) {
       case ACCUMULO_ONE:
-        v1_createMasterClient(underlyingTransport);
+        //v1_createMasterClient(underlyingTransport);
         break;
-    }
+      case ACCUMULO_TWO:
+    }*/
   }
 
   void recreateMasterTransport() {
@@ -668,69 +670,72 @@ class AccumuloMasterFacade {
       case ACCUMULO_ONE:
         ret = v1_doFateOperations(auth, mytype, tableArgs, options, wait);
         break;
+      case ACCUMULO_TWO:
+              ret = v2_doFateOperations(auth, mytype, tableArgs, options, wait);
+              break;
     }
     return ret;
   }
 
   std::string v2_doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs, const std::map<std::string, std::string> &options,
                                     bool wait = false) {
-      auto myMasterClient = masterClient;
+      auto myMasterClient = masterClientV2;
 
-      org::apache::accumulov2::core::master::FateOperation::type type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_CREATE;
+      org::apache::accumulov2::core::master::thrift::FateOperation::type type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_CREATE;
       switch (mytype) {
         case TABLE_CREATE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_CREATE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_CREATE;
           break;
         case TABLE_CLONE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_CLONE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_CLONE;
           break;
         case TABLE_DELETE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_DELETE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_DELETE;
           break;
         case TABLE_RENAME:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_RENAME;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_RENAME;
           break;
         case TABLE_ONLINE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_ONLINE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_ONLINE;
           break;
         case TABLE_OFFLINE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_OFFLINE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_OFFLINE;
           break;
         case TABLE_MERGE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_MERGE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_MERGE;
           break;
         case TABLE_DELETE_RANGE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_DELETE_RANGE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_DELETE_RANGE;
           break;
         case TABLE_BULK_IMPORT:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_BULK_IMPORT;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_BULK_IMPORT;
           break;
         case TABLE_COMPACT:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_COMPACT;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_COMPACT;
           break;
         case TABLE_IMPORT:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_IMPORT;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_IMPORT;
           break;
         case TABLE_EXPORT:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_EXPORT;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_EXPORT;
           break;
         case TABLE_CANCEL_COMPACT:
-          type = org::apache::accumulov2::core::master::FateOperation::type::TABLE_CANCEL_COMPACT;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::TABLE_CANCEL_COMPACT;
           break;
         case NAMESPACE_CREATE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::NAMESPACE_CREATE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::NAMESPACE_CREATE;
           break;
         case NAMESPACE_DELETE:
-          type = org::apache::accumulov2::core::master::FateOperation::type::NAMESPACE_DELETE;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::NAMESPACE_DELETE;
           break;
         case NAMESPACE_RENAME:
-          type = org::apache::accumulov2::core::master::FateOperation::type::NAMESPACE_RENAME;
+          type = org::apache::accumulov2::core::master::thrift::FateOperation::type::NAMESPACE_RENAME;
           break;
         default:
           return "";
       };
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
       int64_t fateTransId = myMasterClient->beginFateOperation(transId, creds);
@@ -762,7 +767,7 @@ class AccumuloMasterFacade {
           try {
 
             auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(myTransport));
-            org::apache::accumulov2::core::master::MasterClientServiceClient waitClient(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
+            org::apache::accumulov2::core::master::thrift::MasterClientServiceClient waitClient(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
             waitClient.waitForFateOperation(returnValue, transId, creds, fateTransId);
 
             break;
@@ -846,7 +851,7 @@ class AccumuloMasterFacade {
         return "";
     };
     org::apache::accumulo::core::trace::thrift::TInfo transId;
-    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
     transId.parentId = 0;
     transId.traceId = rand();
     int64_t fateTransId = myMasterClient->beginFateOperation(transId, creds);
@@ -909,6 +914,9 @@ class AccumuloMasterFacade {
       case ACCUMULO_ONE:
         return v1_createTable(auth, table);
         break;
+      case ACCUMULO_TWO:
+              return v2_createTable(auth, table);
+              break;
     }
     return false;
   }
