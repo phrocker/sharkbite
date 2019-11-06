@@ -89,7 +89,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   void closeAndCreateClient();
 
-  void createClientService();
+  void createClientService(bool callRegistration=true);
 
   virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
     createClientService();

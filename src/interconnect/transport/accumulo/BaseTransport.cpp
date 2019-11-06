@@ -54,13 +54,13 @@ void ThriftTransporter::closeAndCreateClient() {
   createClientService();
 }
 
-void ThriftTransporter::createClientService() {
+void ThriftTransporter::createClientService(bool callRegistration) {
 
   std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
   server.close();
 
-  server.initialize(protocolPtr);
+  server.initialize(protocolPtr,callRegistration);
 
 }
 

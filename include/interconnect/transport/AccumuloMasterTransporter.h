@@ -50,6 +50,7 @@
 #include "BaseTransport.h"
 #include "FateInterface.h"
 #include "interconnect/accumulo/AccumuloMasterFacade.h"
+#include "data/constructs/InstanceVersion.h"
 
 namespace interconnect {
 #include <protocol/TCompactProtocol.h>
@@ -112,21 +113,22 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   virtual void registerService(std::string instance, std::string clusterManagers) {
     createMasterClient();
-    createClientService();
+    createClientService(false);
 
   }
 
   explicit AccumuloMasterTransporter(std::shared_ptr<ServerConnection> conn)
       : interconnect::ThriftTransporter(conn),
         interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
-        master([&]() {
+        master(conn->getHost(),[&]() {
           recreateMasterClient();
         },
                [&]() ->std::shared_ptr<apache::thrift::transport::TTransport> {
                  return createTransporter();
                }) {
+
     createMasterClient();
-    createClientService();
+    createClientService(false);
   }
 
   bool createTable(cclient::data::security::AuthInfo *auth, const std::string &table) {
