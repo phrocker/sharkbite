@@ -22,6 +22,8 @@
 #include "../exceptions/ClientException.h"
 #include "../constructs/client/Instance.h"
 #include "TabletLocationObtainer.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace cclient {
 namespace impl {
@@ -84,7 +86,9 @@ class TabletServerLocator : public TabletLocator {
       std::vector<cclient::data::TabletLocation> locations = locator->findTablet(creds, &parentLocation, metadataRow.str(), lastTabletRow, parent);
 
       cclient::data::TabletLocation returnLocation;
+      logging::LOG_DEBUG(logger) << "Received " << locations.size() << " locations";
       for (auto location : locations) {
+        logging::LOG_DEBUG(logger) << "Received " << location.getExtent() << " " << location.getLocation();
         if (location.getExtent()->getPrevEndRow().length() == 0 || location.getExtent()->getPrevEndRow() < modifiedRow) {
           returnLocation = location;
           break;
@@ -225,6 +229,9 @@ class TabletServerLocator : public TabletLocator {
     }
     return false;
   }
+
+ private:
+  std::shared_ptr<logging::Logger> logger;
 };
 
 } /* namespace data */

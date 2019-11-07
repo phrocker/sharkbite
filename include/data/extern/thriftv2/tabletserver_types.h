@@ -855,6 +855,10 @@ class TSamplerConfiguration : public virtual ::apache::thrift::TBase {
 
   void __set_options(const std::map<std::string, std::string> & val);
 
+  bool empty() const {
+    return className.empty();
+  }
+
   bool operator == (const TSamplerConfiguration & rhs) const
   {
     if (!(className == rhs.className))

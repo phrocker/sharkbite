@@ -207,3 +207,8 @@ Copyright 2019 The Apache Software Foundation
 The derived and original works are listed below:
     BackTrace.h
     ThreadPool.h
+    Properties.h/Properties.cpp
+    Logger.h
+    LoggerConfiguration.h/LoggerConfiguration.cpp
+    StringUtils.h/StringUtils.cpp
+    ClassUtils.h/ClassUtils.cpp

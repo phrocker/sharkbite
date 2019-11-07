@@ -350,9 +350,11 @@ uint32_t TabletClientService_startScan_args::write(::apache::thrift::protocol::T
   xfer += oprot->writeI64(this->readaheadThreshold);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 13);
-  xfer += this->samplerConfig.write(oprot);
-  xfer += oprot->writeFieldEnd();
+  if (!this->samplerConfig.className.empty()){
+    xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 13);
+    xfer += this->samplerConfig.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldBegin("batchTimeOut", ::apache::thrift::protocol::T_I64, 14);
   xfer += oprot->writeI64(this->batchTimeOut);
@@ -480,9 +482,11 @@ uint32_t TabletClientService_startScan_pargs::write(::apache::thrift::protocol::
   xfer += oprot->writeI64((*(this->readaheadThreshold)));
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 13);
-  xfer += (*(this->samplerConfig)).write(oprot);
-  xfer += oprot->writeFieldEnd();
+  if (! (*(this->samplerConfig)).empty()){
+    xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 13);
+    xfer += (*(this->samplerConfig)).write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldBegin("batchTimeOut", ::apache::thrift::protocol::T_I64, 14);
   xfer += oprot->writeI64((*(this->batchTimeOut)));
@@ -1414,9 +1418,11 @@ uint32_t TabletClientService_startMultiScan_args::write(::apache::thrift::protoc
   xfer += this->tinfo.write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 9);
-  xfer += this->samplerConfig.write(oprot);
-  xfer += oprot->writeFieldEnd();
+  if (!this->samplerConfig.empty()){
+    xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 9);
+    xfer += this->samplerConfig.write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldBegin("batchTimeOut", ::apache::thrift::protocol::T_I64, 10);
   xfer += oprot->writeI64(this->batchTimeOut);
@@ -1545,9 +1551,11 @@ uint32_t TabletClientService_startMultiScan_pargs::write(::apache::thrift::proto
   xfer += (*(this->tinfo)).write(oprot);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 9);
-  xfer += (*(this->samplerConfig)).write(oprot);
-  xfer += oprot->writeFieldEnd();
+  if (!(*(this->samplerConfig)).empty()){
+    xfer += oprot->writeFieldBegin("samplerConfig", ::apache::thrift::protocol::T_STRUCT, 9);
+    xfer += (*(this->samplerConfig)).write(oprot);
+    xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldBegin("batchTimeOut", ::apache::thrift::protocol::T_I64, 10);
   xfer += oprot->writeI64((*(this->batchTimeOut)));

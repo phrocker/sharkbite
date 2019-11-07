@@ -24,6 +24,8 @@
 #include "../transport/AccumuloMasterTransporter.h"
 #include "../RootInterface.h"
 #include "../../writer/Sink.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace interconnect {
 
@@ -43,7 +45,8 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
       : TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
         clientInterface(interface),
         tserverConn(tserverConn),
-        distributedConnector(distributedConnector) {
+        distributedConnector(distributedConnector),
+        logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()){
     loadTableOps();
     getTableId();
 
@@ -174,6 +177,9 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
   RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
 
   void loadTableOps(bool force = false);
+
+ private:
+  std::shared_ptr<logging::Logger> logger;
 };
 
 extern std::map<std::string, std::string> nameSpaceIds;

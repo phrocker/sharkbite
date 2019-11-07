@@ -100,8 +100,7 @@ class TabletLocator {
    * @param retry retries locations if a failure occurs
    * @returns returns the tablet location or null
    **/
-  virtual cclient::data::TabletLocation
-  locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) = 0;
+  virtual cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) = 0;
 
   /**
    * returns a list of locations

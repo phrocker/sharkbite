@@ -63,9 +63,7 @@ class AccumuloServerFacade : public ThriftTransporter {
  protected:
 
  public:
-  explicit AccumuloServerTransport(const std::shared_ptr<ServerConnection> &conn)
-      : ThriftTransporter(conn) {
-
+  explicit AccumuloServerFacade(const std::shared_ptr<ServerConnection> &conn) : ThriftTransporter(conn) {
   }
 
   virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) override {

@@ -133,6 +133,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 
   // close will free memory for objects given to it
   sink->close();
+
   std::cout << "initiate flush " << std::endl;
 
   if (ops->flush("a", "z", true)) {
@@ -156,7 +157,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 
   std::cout << "Removing table" << std::endl;
 
-  //ops->remove();
+  ops->remove();
 
   tables = ops->listTables();
 

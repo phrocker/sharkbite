@@ -29,7 +29,7 @@ class has_size {
     typedef char one;
     typedef long two;
 
-    template<typename C> static one test(decltype(&C::size));
+    template<typename C> static one test(decltype(&C::empty));
     template<typename C> static two test(...);
 
 public:
@@ -41,7 +41,7 @@ public:
 template<typename T>
 static auto IsEmpty(
     T *t) -> typename std::enable_if<has_size<T>::value ==1, bool>::type {
-    return (nullptr == t || t->size() == 0);
+    return (nullptr == t || t->empty());
 }
 
 template<typename T>

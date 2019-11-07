@@ -40,6 +40,7 @@ MetaDataLocationObtainer::~MetaDataLocationObtainer() {
 
 std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(cclient::data::security::AuthInfo *credentials, cclient::data::TabletLocation *source, std::string row,
                                                                                 std::string stopRow, TabletLocator *parent) {
+  logging::LOG_TRACE(logger) << "FindTablet " << row << " end:" << stopRow;
   std::vector<cclient::data::TabletLocation> tabletLocations;
   std::shared_ptr<cclient::data::Key> startKey = std::make_shared<cclient::data::Key>();
   startKey->setRow(row.c_str(), row.size());
@@ -66,6 +67,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
   std::vector<cclient::data::IterInfo*> iters;
   iters.push_back(&wriIter);
+  logging::LOG_TRACE(logger) << "Performing scan  of " << row << " end:" << stopRow << " against " << source->getServer() << ":" << source->getPort() << " on " << source->getExtent();
   interconnect::Scan *initScan = directConnect.scan(columns, &iters);
   std::vector<std::shared_ptr<cclient::data::KeyValue> > kvResults;
   initScan->getNextResults(&kvResults);
@@ -83,6 +85,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
   for (std::map<std::shared_ptr<cclient::data::Key>, std::shared_ptr<cclient::data::Value> >::iterator it = results.begin(); it != results.end(); it++) {
     key = it->first;
+    logging::LOG_DEBUG(logger) << "FindTablet received" << key;
     currentRow = std::string(key->getRow().first, key->getRow().second);
     if (currentRow != lastRowFromKey) {
       prevRow = 0;
@@ -103,8 +106,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
       location = std::string ((char*) valBytes.first, valBytes.second);
       session = cq;
     }
-    else if (cf == METADATA_TABLET_COLUMN_FAMILY
-    && cq == METADATA_PREV_ROW_COLUMN_CQ)
+    else if (cf == METADATA_TABLET_COLUMN_FAMILY && cq == METADATA_PREV_ROW_COLUMN_CQ)
     {
       prevRow = value;
     }
@@ -119,6 +121,8 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
     }
 
   }
+
+  logging::LOG_DEBUG(logger) << "Finished FindTablet received";
 
   delete initScan;
 

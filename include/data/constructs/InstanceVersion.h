@@ -56,7 +56,7 @@ class InstanceVersion {
     if (vmap != std::end(version_map_)) {
       return vmap->second;
     } else {
-      return 0;
+      return 1;
     }
   }
 

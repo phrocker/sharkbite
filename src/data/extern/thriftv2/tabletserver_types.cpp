@@ -2353,28 +2353,31 @@ uint32_t TSamplerConfiguration::read(::apache::thrift::protocol::TProtocol* ipro
 
 uint32_t TSamplerConfiguration::write(::apache::thrift::protocol::TProtocol* oprot) const {
   uint32_t xfer = 0;
-  ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
-  xfer += oprot->writeStructBegin("TSamplerConfiguration");
+  // don't write unless we have a sampler
+  if (!this->className.empty()){
+    ::apache::thrift::protocol::TOutputRecursionTracker tracker(*oprot);
+    xfer += oprot->writeStructBegin("TSamplerConfiguration");
 
-  xfer += oprot->writeFieldBegin("className", ::apache::thrift::protocol::T_STRING, 1);
-  xfer += oprot->writeString(this->className);
-  xfer += oprot->writeFieldEnd();
+    xfer += oprot->writeFieldBegin("className", ::apache::thrift::protocol::T_STRING, 1);
+    xfer += oprot->writeString(this->className);
+    xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("options", ::apache::thrift::protocol::T_MAP, 2);
-  {
-    xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->options.size()));
-    std::map<std::string, std::string> ::const_iterator _iter115;
-    for (_iter115 = this->options.begin(); _iter115 != this->options.end(); ++_iter115)
+    xfer += oprot->writeFieldBegin("options", ::apache::thrift::protocol::T_MAP, 2);
     {
-      xfer += oprot->writeString(_iter115->first);
-      xfer += oprot->writeString(_iter115->second);
+      xfer += oprot->writeMapBegin(::apache::thrift::protocol::T_STRING, ::apache::thrift::protocol::T_STRING, static_cast<uint32_t>(this->options.size()));
+      std::map<std::string, std::string> ::const_iterator _iter115;
+      for (_iter115 = this->options.begin(); _iter115 != this->options.end(); ++_iter115)
+      {
+        xfer += oprot->writeString(_iter115->first);
+        xfer += oprot->writeString(_iter115->second);
+      }
+      xfer += oprot->writeMapEnd();
     }
-    xfer += oprot->writeMapEnd();
-  }
-  xfer += oprot->writeFieldEnd();
+    xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldStop();
-  xfer += oprot->writeStructEnd();
+    xfer += oprot->writeFieldStop();
+    xfer += oprot->writeStructEnd();
+  }
   return xfer;
 }
 

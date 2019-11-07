@@ -29,7 +29,8 @@
 #include "../include/data/constructs/rfile/RFile.h"
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
-
+#include "../include/logging/Logger.h"
+#include "../include/logging/LoggerConfiguration.h"
 
 #include <assert.h>
 
@@ -44,6 +45,14 @@
 int
 main (int argc, char **argv)
 {
+/**
+ * std::shared_ptr<logging::LoggerProperties> log_properties = std::make_shared<logging::LoggerProperties>();
+  log_properties->setHome(minifiHome);
+  log_properties->loadConfigureFile(DEFAULT_LOG_PROPERTIES_FILE);
+  logging::LoggerConfiguration::getConfiguration().initialize(log_properties);
+ */
+
+  logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
 
 	if (argc < 5) {
 		std::cout << "Arguments required: ./InsertTest"
