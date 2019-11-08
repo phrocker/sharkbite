@@ -207,9 +207,10 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
   for (std::string partition : partitions) {
     bool success = false;
     while (!success) {
+      logging::LOG_DEBUG(logger) << "Adding split " << partition << " for table id " << tableId;
       cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId));
       cclient::data::TabletLocation location = tabletLocator->locateTablet(credentials, partition, false, false);
-
+      logging::LOG_DEBUG(logger) << "Located server for " << partition << " " << location.getServer() << ":" << location.getPort();
       std::shared_ptr<ServerConnection> connection = std::make_shared<ServerConnection>(location.getServer(), location.getPort(), -1);
 
       auto cachedTransport = distributedConnector->getTransporter(connection);
@@ -219,10 +220,12 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
         cachedTransport->getTransport()->splitTablet(credentials, location.getExtent(), partition);
         success = true;
       } catch (const apache::thrift::protocol::TProtocolException &tpe) {
+        logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " " << tpe.what();
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
         success = false;
       } catch (const apache::thrift::transport::TTransportException &tpe) {
+        logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " " << tpe.what();
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
         success = false;

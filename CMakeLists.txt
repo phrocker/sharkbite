@@ -29,15 +29,25 @@ if(CCACHE_FOUND)
     message("-- Found ccache: ${CCACHE_FOUND}")
 endif(CCACHE_FOUND)
 
+if(NOT APPLE)
+  if(NOT WIN32)
+  	set(WHOLE_ARCHIVE "-Wl,--whole-archive")
+    set(NO_WHOLE_ARCHIVE "-Wl,--no-whole-archive")
+  endif()
+endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
 
+include(Compression)
 include(DownloadProject)
-
 include(LibreSSL)
+
+use_bundled_zlib(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
+find_package(ZLIB REQUIRED)
+
 use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/ssl")
 find_package (OpenSSL REQUIRED)
 
 ################# THRIFT
@@ -48,13 +58,22 @@ find_package (OpenSSL REQUIRED)
 	  GIT_TAG "v0.12.0"
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift-src"
-	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
+	  	  CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thrift"
 	  			 "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
 	  			 "-DWITH_BOOST_STATIC=ON"
 	  			 "-DBUILD_TESTING=OFF"
+	  			 "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
 	  			 "-DWITH_JAVA=OFF"
 	  			 "-DWITH_LIBEVENT=ON"
 	  			 "-DWITH_PYTHON=OFF"
+	  			 "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
+                		"-DLIBRESSL_SRC_DIR=${LIBRESSL_BIN_DIR}"
+	        	        "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
+        	        	"-DBYPRODUCT_SUFFIX=${BYPRODUCT_SUFFIX}"
+	                	"-DZLIB_BYPRODUCT_INCLUDE=${ZLIB_BYPRODUCT_INCLUDE}"
+        		        "-DZLIB_BYPRODUCT=${ZLIB_BYPRODUCT}"
+		                "-DZLIB_LIBRARY=${ZLIB_LIBRARY}"
+                		"-DZLIB_LIBRARIES=${ZLIB_LIBRARIES}"
 	  			 "-DOPENSSL_ROOT_DIR=${LIBRESSL_BIN_DIR}"
 	  			 "-DWITH_HASKELL=OFF"
 	  			 "-DWITH_SHARED_LIB=OFF"
@@ -62,7 +81,8 @@ find_package (OpenSSL REQUIRED)
 #CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --with-openssl=${LIBRESSL_BIN_DIR} --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
 	  UPDATE_COMMAND ""
 	  )
-	
+
+	add_dependencies(LibThrift zlib-external)	
 	add_dependencies(LibThrift libressl-portable)
 	add_library(thrift STATIC IMPORTED)
 	set_target_properties(thrift PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/thrift/lib/libthrift.a")
@@ -129,8 +149,8 @@ add_subdirectory(${pybind11_SOURCE_DIR})
 include_directories("${pybind11_SOURCE_DIR}/include/")
 set(Boost_USE_MULTITHREADED ON)
 #find_package(GTest REQUIRED)
-find_package(Boost 1.55 REQUIRED COMPONENTS system thread iostreams serialization)
-find_package(ZLIB REQUIRED) 
+find_package(Boost 1.55 REQUIRED COMPONENTS system thread serialization)
+ 
 
 find_package (Threads)
 
@@ -155,7 +175,10 @@ file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
 file(GLOB_RECURSE ZK_SOURCES "src/data/zookeeper/*cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")
 file(GLOB_RECURSE CAPI_SOURCES "src/extern/*cpp")
-file(GLOB_RECURSE EXTERN_SOURCES "src/data/extern/*cpp")
+file(GLOB_RECURSE UTIL_SOURCES "src/utils/*cpp")
+file(GLOB_RECURSE LOGGING_SOURCES "src/logging/*cpp")
+file(GLOB_RECURSE THRIFT_SOURCES "src/data/extern/thrift/*cpp")
+file(GLOB_RECURSE THRIFTV2_SOURCES "src/data/extern/thriftv2/*cpp")
 file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
 file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
 file(GLOB_RECURSE PYBIND_SOURCES "src/python/*cpp")
@@ -163,15 +186,16 @@ file(GLOB_RECURSE INTERCONNECT_SOURCES "src/interconnect/*cpp")
 file(GLOB_RECURSE SCANNER_SOURCES "src/scanner/*cpp")
 file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
 
+include_directories("thirdparty/spdlog-20170710/include/")
+include_directories("thirdparty/gzip-hpp/")
 
 
-add_library(sharkbite STATIC ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
-#target_link_libraries(sharkbite Python::Python)
-add_library(sharkbite-shared SHARED ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${EXTERN_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES})
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES})
 
 
 add_dependencies(sharkbite Protobuf)
@@ -187,14 +211,30 @@ add_dependencies(sharkbite LibThrift)
 add_dependencies(pysharkbite LibThrift)
 add_dependencies(sharkbite-shared LibThrift)
 
-target_link_libraries (sharkbite ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${Boost_LIBRARIES})
 
-target_link_libraries (pysharkbite PRIVATE ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+
+target_link_libraries(sharkbite 
+  ${WHOLE_ARCHIVE}
+  ${ZLIB_LIBRARY}
+  ${NO_WHOLE_ARCHIVE}
+)
+
+target_link_libraries (pysharkbite PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${Boost_LIBRARIES})
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
+target_link_libraries(pysharkbite  PRIVATE
+  ${WHOLE_ARCHIVE}
+  ${ZLIB_LIBRARY}
+  ${NO_WHOLE_ARCHIVE}
+)
 
-target_link_libraries (sharkbite-shared ${ZLIB_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES}  ${ZLIB_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
 
 target_link_libraries (sharkbite-shared ${ZOOKEEPER_LIBRARIES})
+
+target_link_libraries(sharkbite-shared ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE}
+)
+
 
 target_link_libraries (sharkbite-shared ${THRIFT_LIBS})
 
@@ -206,7 +246,7 @@ target_link_libraries(capi PRIVATE sharkbite-shared)
 #ClientExample
 add_executable(ClientExample "src/examples/ClientExample.cpp")
 target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (ClientExample ${ZLIB_LIBRARIES})
+#target_link_libraries (ClientExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ClientExample ${Boost_LIBRARIES} )
 target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
@@ -214,7 +254,7 @@ target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 #ClientExample
 add_executable(InsertTest "src/examples/InsertTest.cpp")
 target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (InsertTest ${ZLIB_LIBRARIES})
+#target_link_libraries (InsertTest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( InsertTest ${Boost_LIBRARIES} )
 target_link_libraries( InsertTest ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
@@ -224,7 +264,7 @@ target_link_libraries( InsertTest sharkbite)
 #ClientExample
 add_executable(ContinuousIngest "src/examples/ContinuousIngest.cpp")
 target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (ContinuousIngest ${ZLIB_LIBRARIES})
+#target_link_libraries (ContinuousIngest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ContinuousIngest ${Boost_LIBRARIES} )
 target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
@@ -233,7 +273,7 @@ target_link_libraries( ContinuousIngest sharkbite)
 #TableOps
 add_executable(TableOps "src/examples/TableOps.cpp")
 target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (TableOps ${ZLIB_LIBRARIES})
+#target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( TableOps ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
@@ -241,7 +281,7 @@ target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
 target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (RfileReadExample ${ZLIB_LIBRARIES})
+#target_link_libraries (RfileReadExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( RfileReadExample ${Boost_LIBRARIES} )
 target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
@@ -249,7 +289,7 @@ target_link_libraries( RfileReadExample sharkbite)
 
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (PrintInfo ${ZLIB_LIBRARIES})
+#target_link_libraries (PrintInfo ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( PrintInfo ${Boost_LIBRARIES} )
 target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIBS})
@@ -266,7 +306,7 @@ enable_testing()
 
   file(GLOB_RECURSE RFILE_TEST "test/constructs/rfile_test.cpp")
   add_executable(testrfile ${RFILE_TEST})
-  target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} sharkbite)
+  target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
 
   
   add_test(NAME testrfile
@@ -274,7 +314,7 @@ enable_testing()
 	   
   file(GLOB_RECURSE TEST_CONSTRUCTS "test/constructs/TestConstructs.cpp")
   add_executable(testconstructs ${TEST_CONSTRUCTS})
-  target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES}  sharkbite)
+  target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
 
   
   add_test(NAME testconstructs
@@ -282,7 +322,7 @@ enable_testing()
 	   
   file(GLOB_RECURSE TEST_STREAMS "test/constructs/TestStreams.cpp")
   add_executable(teststreams ${TEST_STREAMS})
-  target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} sharkbite)
+  target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
   
   add_test(NAME teststreams
 	   COMMAND teststreams)
@@ -291,7 +331,6 @@ enable_testing()
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})
   target_link_libraries (testzkInstance ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries (testzkInstance ${ZLIB_LIBRARIES})
   target_link_libraries( testzkInstance ${Boost_LIBRARIES} )
   target_link_libraries( testzkInstance ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( testzkInstance ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} sharkbite)
@@ -301,7 +340,6 @@ enable_testing()
       file(GLOB_RECURSE VANDV "test/vandv/IntegrationTest.cpp")
   add_executable(integrationTest ${VANDV})
   target_link_libraries (integrationTest ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries (integrationTest ${ZLIB_LIBRARIES})
   target_link_libraries( integrationTest ${Boost_LIBRARIES} )
   target_link_libraries( integrationTest ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( integrationTest  ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})

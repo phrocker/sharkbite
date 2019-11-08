@@ -16,23 +16,20 @@
 #include "data/client/TabletLocationObtainer.h"
 #include "data/client/TabletLocation.h"
 
-namespace cclient
-{
-namespace impl
-{
+namespace cclient {
+namespace impl {
 
-TabletServerLocator::TabletServerLocator (std::string tableId,
-                TabletLocator *parent,
-                TabletLocationObtainer *lc,
-                cclient::data::Instance *inst) :
-	tableId (tableId), parent (parent), locator (lc), instance (inst)
-{
-	lastTabletRow = tableId;
-	lastTabletRow.append ("<");
+TabletServerLocator::TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *lc, cclient::data::Instance *inst)
+    : tableId(tableId),
+      parent(parent),
+      locator(lc),
+      instance(inst),
+      logger(logging::LoggerFactory<TabletServerLocator>::getLogger()){
+  lastTabletRow = tableId;
+  lastTabletRow.append("<");
 }
 
-TabletServerLocator::~TabletServerLocator ()
-{
+TabletServerLocator::~TabletServerLocator() {
   invalidateCache();
 }
 

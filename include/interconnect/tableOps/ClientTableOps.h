@@ -24,6 +24,8 @@
 #include "../transport/AccumuloMasterTransporter.h"
 #include "../RootInterface.h"
 #include "../../writer/Sink.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace interconnect {
 
@@ -43,7 +45,8 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
       : TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
         clientInterface(interface),
         tserverConn(tserverConn),
-        distributedConnector(distributedConnector) {
+        distributedConnector(distributedConnector),
+        logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()){
     loadTableOps();
     getTableId();
 
@@ -105,7 +108,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * Returns the table ID
    * @return table ID
    **/
-  std::string getTableId();
+  std::string getTableId() override;
 
   /**
    * Sets a table property
@@ -155,7 +158,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads current threads
    * @return new scanner
    **/
-  std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads);
+  std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads) override;
 
   /**
    * Creates a writer for the current table
@@ -163,7 +166,7 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads);
+  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
 
  protected:
 
@@ -174,6 +177,9 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
   RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
 
   void loadTableOps(bool force = false);
+
+ private:
+  std::shared_ptr<logging::Logger> logger;
 };
 
 extern std::map<std::string, std::string> nameSpaceIds;

@@ -12,12 +12,22 @@
  * limitations under the License.
  */
 #include "interconnect/transport/BaseTransport.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace interconnect {
 
 ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn)
-    : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn) {
-
+    : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
+      logger(logging::LoggerFactory<ThriftTransporter>::getLogger()) {
+  switch (cclient::data::InstanceVersion::getVersion(conn->getHost())) {
+    case 1:
+      server = std::make_unique<AccumuloServerFacadeV1>();
+      break;
+    case 2:
+      server = std::make_unique<AccumuloServerFacadeV2>();
+      break;
+  }
   newTransporter(conn);
 }
 
@@ -26,7 +36,7 @@ ThriftTransporter::~ThriftTransporter() {
 }
 
 std::map<std::string, std::string> ThriftTransporter::getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName) {
-  return server.getNamespaceConfiguration(auth, nameSpaceName);
+  return server->getNamespaceConfiguration(auth, nameSpaceName);
 }
 
 apache::thrift::transport::TTransport ThriftTransporter::getTransport() {
@@ -34,7 +44,7 @@ apache::thrift::transport::TTransport ThriftTransporter::getTransport() {
 }
 
 void ThriftTransporter::authenticate(cclient::data::security::AuthInfo *auth) {
-  server.authenticate(auth);
+  server->authenticate(auth);
 }
 
 void ThriftTransporter::createIfClosed() {
@@ -54,13 +64,32 @@ void ThriftTransporter::closeAndCreateClient() {
   createClientService();
 }
 
-void ThriftTransporter::createClientService() {
+void ThriftTransporter::createClientService(bool callRegistration) {
 
   std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
-  server.close();
+  try{
+    server->close();
 
-  server.initialize(protocolPtr);
+    server->initialize(protocolPtr, callRegistration);
+  }catch(...){
+
+    auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->getHost()) + 1;
+    logging::LOG_DEBUG(logger) << "Attempting API version " << suspectedVersion;
+    switch (suspectedVersion) {
+        case 1:
+          server = std::make_unique<AccumuloServerFacadeV1>();
+          break;
+        case 2:
+          server = std::make_unique<AccumuloServerFacadeV2>();
+          break;
+      }
+    server->initialize(protocolPtr, callRegistration);
+    // if successful, we'll update the map
+    cclient::data::InstanceVersion::setVersion(getConnection()->getHost(),suspectedVersion);
+    switchInterconnect();
+    logging::LOG_DEBUG(logger) << "Successfully switch to API version " << suspectedVersion;
+  }
 
 }
 
@@ -73,16 +102,16 @@ void ThriftTransporter::newTransporter(const std::shared_ptr<ServerConnection> &
   std::shared_ptr<apache::thrift::transport::TTransport> transporty(new apache::thrift::transport::TFramedTransport(serverTransport));
 
   try {
-    std::cout << "attempting to connect to ! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
+    logging::LOG_TRACE(logger) << "attempting to connect to " << conn->getHost() << " and " << conn->getPort();
     transporty->open();
 
-    std::cout << "connected! to " << conn->getHost() << " and " << conn->getPort() << std::endl;
+    logging::LOG_TRACE(logger) << "connected! to " << conn->getHost() << " and " << conn->getPort();
   } catch (const apache::thrift::transport::TTransportException &te) {
-    std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
+    logging::LOG_TRACE(logger) << conn->getHost() << " host-port " << conn->getPort() << te.what() << " ";
     try {
       transporty->close();
     } catch (const apache::thrift::transport::TTransportException &to) {
-      std::cout << conn->getHost() << " host-port " << conn->getPort() << te.what() << " " << std::endl;
+      logging::LOG_TRACE(logger) << conn->getHost() << " host-port " << conn->getPort() << te.what() << " ";
     }
     throw te;
   }

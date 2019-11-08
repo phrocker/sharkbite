@@ -22,10 +22,22 @@
 #include "../exceptions/ClientException.h"
 #include "../constructs/client/Instance.h"
 #include "TabletLocationObtainer.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace cclient {
 namespace impl {
 
+struct locationComparator
+{
+  bool operator()(const std::string &left, const std::string &right) const{
+    if (left.empty())
+      return false;
+    if (right.empty())
+      return true;
+    return left < right;
+  }
+};
 /**
  * Mechanism to locate tablet servers.
  * Design: Implements tablet locator, which is a pure virtual class.
@@ -84,16 +96,23 @@ class TabletServerLocator : public TabletLocator {
       std::vector<cclient::data::TabletLocation> locations = locator->findTablet(creds, &parentLocation, metadataRow.str(), lastTabletRow, parent);
 
       cclient::data::TabletLocation returnLocation;
+      logging::LOG_DEBUG(logger) << tableId << " Received " << locations.size() << " locations";
       for (auto location : locations) {
+        logging::LOG_DEBUG(logger) << tableId << " Received " << location.getLocation() << " " << location.getExtent();
         if (location.getExtent()->getPrevEndRow().length() == 0 || location.getExtent()->getPrevEndRow() < modifiedRow) {
           returnLocation = location;
+          logging::LOG_DEBUG(logger) << tableId << " Received " << returnLocation.getLocation() << " " << returnLocation.getExtent();
           break;
         }
       }
 
       if (returnLocation != nullptr) {
+        auto cachedRow = returnLocation.getExtent()->getEndRow();
+
         std::lock_guard<std::recursive_mutex> lock(locatorMutex);
-        cachedLocations.insert(std::pair<std::string, cclient::data::TabletLocation>(returnLocation.getExtent()->getEndRow(), returnLocation));
+        logging::LOG_DEBUG(logger) << tableId << " : " << "Caching " << cachedRow << " in the cache ";
+        cachedLocations.insert(std::pair<std::string, cclient::data::TabletLocation>(cachedRow, returnLocation));
+
         return returnLocation;
       } else {
         if (retry)
@@ -193,12 +212,14 @@ class TabletServerLocator : public TabletLocator {
   }
 
   void invalidateCache(cclient::data::KeyExtent failedExtent) {
+    logging::LOG_DEBUG(logger) << "Invalidating " << failedExtent.getEndRow();
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);
     cachedLocations.erase(failedExtent.getEndRow());
   }
 
   void invalidateCache() {
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+    logging::LOG_DEBUG(logger) << "Invalidating the cache";
     cachedLocations.clear();
   }
 
@@ -210,7 +231,7 @@ class TabletServerLocator : public TabletLocator {
   std::string tableId;
   TabletLocator *parent;
   TabletLocationObtainer *locator;
-  std::map<std::string, cclient::data::TabletLocation> cachedLocations;
+  std::map<std::string, cclient::data::TabletLocation, locationComparator> cachedLocations;
   std::recursive_mutex locatorMutex;
 
   cclient::data::Instance *instance;
@@ -223,8 +244,13 @@ class TabletServerLocator : public TabletLocator {
       if (loc.getExtent()->getPrevEndRow().length() > 0 || loc.getExtent()->getPrevEndRow() < startRow)
         return true;
     }
+
+    logging::LOG_DEBUG(logger) << tableId  << " : " << startRow << " is not cached out of  " << cachedLocations.size();
     return false;
   }
+
+ private:
+  std::shared_ptr<logging::Logger> logger;
 };
 
 } /* namespace data */

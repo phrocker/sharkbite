@@ -73,7 +73,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
    * Returns a result set.
    * @return results iterator.
    **/
-  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *getResultSet() {
+  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *getResultSet() override {
     std::lock_guard<std::mutex> lock(scannerLock);
 
     if (IsEmpty(&ranges)) {
@@ -140,11 +140,11 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     }
   }
 
-  cclient::data::Instance *getInstance() {
+  cclient::data::Instance *getInstance() override {
     return connectorInstance;
   }
 
-  void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) {
+  void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) override {
     std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
     std::set<std::string> locations;
     tableLocator->binRanges(credentials, &ranges, &locations, &returnRanges);

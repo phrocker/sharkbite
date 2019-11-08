@@ -15,9 +15,7 @@
 #ifndef SRC_DATA_CONSTRUCTS_TABLES_TABLES_H_
 #define SRC_DATA_CONSTRUCTS_TABLES_TABLES_H_
 
-
 #include "rootTable.h"
 #include "metadataTable.h"
-
 
 #endif /* SRC_DATA_CONSTRUCTS_TABLES_TABLES_H_ */

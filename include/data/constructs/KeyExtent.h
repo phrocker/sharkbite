@@ -153,7 +153,7 @@ class KeyExtent {
   friend inline std::ostream &
   operator <<(std::ostream &out, KeyExtent *rhs) {
 
-    out << "tableId:" << rhs->tableId << " end:" << rhs->endRow << " prev:" << rhs->prevEndRow << " " << std::endl;
+    out << "tableId:" << rhs->tableId << " end:" << ( IsEmpty(&rhs->endRow) ? "<" : rhs->endRow )<< " prev:" << ( IsEmpty(&rhs->prevEndRow) ? "<" : rhs->prevEndRow ) << " " << std::endl;
     return out;
   }
   void setTableId(std::string id) {

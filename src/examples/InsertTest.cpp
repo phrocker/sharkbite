@@ -29,7 +29,8 @@
 #include "../include/data/constructs/rfile/RFile.h"
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
-
+#include "../include/logging/Logger.h"
+#include "../include/logging/LoggerConfiguration.h"
 
 #include <assert.h>
 
@@ -44,6 +45,7 @@
 int
 main (int argc, char **argv)
 {
+//  logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
 
 	if (argc < 5) {
 		std::cout << "Arguments required: ./InsertTest"

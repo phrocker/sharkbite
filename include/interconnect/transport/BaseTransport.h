@@ -42,6 +42,8 @@
 #include <boost/shared_ptr.hpp>
 
 #include "interconnect/accumulo/AccumuloServerFacade.h"
+#include "interconnect/accumulo/AccumuloServerOne.h"
+#include "interconnect/accumulo/AccumuloServerTwo.h"
 #include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/TabletClientService.h"
@@ -51,6 +53,9 @@
 #include "data/extern/thrift/ThriftWrapper.h"
 #include "data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
+#include "data/constructs/InstanceVersion.h"
 
 namespace interconnect {
 
@@ -58,7 +63,9 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
  protected:
   std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 
-  AccumuloServerFacade server;
+  std::shared_ptr<logging::Logger> logger;
+
+  std::unique_ptr<AccumuloServerFacade> server;
 
   std::shared_ptr<ServerConnection> clonedConnection;
 
@@ -67,11 +74,21 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter();
 
   Scan *singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-    return server.singleScan(request);
+    return server->singleScan(request);
   }
 
   Scan *multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-    return server.multiScan(request);
+    return server->multiScan(request);
+  }
+
+  std::shared_ptr<ServerConnection> getConnection() const {
+    return clonedConnection;
+  }
+
+  /**
+   * Self healing function to switch the interconnect if a failure occurs.
+   */
+  virtual void switchInterconnect() {
   }
 
  public:
@@ -82,63 +99,63 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
 
-  apache::thrift::transport::TTransport getTransport();
+  apache::thrift::transport::TTransport getTransport() override;
 
   virtual void authenticate(cclient::data::security::AuthInfo *auth) override;
   void createIfClosed();
 
   void closeAndCreateClient();
 
-  void createClientService();
+  void createClientService(bool callRegistration = false);
 
   virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
     createClientService();
-    server.registerService(instance, clusterManagers);
+    server->registerService(instance, clusterManagers);
   }
 
-  Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-    return server.beginScan(request);
+  Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) override {
+    return server->beginScan(request);
 
   }
 
   Scan * continueScan(Scan *originalScan) {
-    return server.continueScan(originalScan);
+    return server->continueScan(originalScan);
   }
 
-  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
-    return server.write(auth, request);
+  void *write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) override {
+    return server->write(auth, request);
   }
 
   bool dropUser(cclient::data::security::AuthInfo *auth, const std::string &user) {
-    return server.dropUser(auth, user);
+    return server->dropUser(auth, user);
   }
 
   bool changeUserPassword(cclient::data::security::AuthInfo *auth, const std::string &user, const std::string &password) {
-    return server.changeUserPassword(auth, user, password);
+    return server->changeUserPassword(auth, user, password);
 
   }
 
   bool createUser(cclient::data::security::AuthInfo *auth, const std::string &user, const std::string &password) {
-    return server.createUser(auth, user, password);
+    return server->createUser(auth, user, password);
   }
 
   std::map<std::string, std::string> getTableConfiguration(cclient::data::security::AuthInfo *auth, const std::string &table) {
-    return server.getTableConfiguration(auth, table);
+    return server->getTableConfiguration(auth, table);
   }
 
   cclient::data::security::Authorizations *getUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user) {
-    return server.getUserAuths(auth, user);
+    return server->getUserAuths(auth, user);
   }
 
   void changeUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::security::Authorizations *auths) {
-    server.changeUserAuths(auth, user, auths);
+    server->changeUserAuths(auth, user, auths);
   }
 
   void splitTablet(cclient::data::security::AuthInfo *auth, std::shared_ptr<cclient::data::KeyExtent> extent, const std::string &split) {
-    server.splitTablet(auth, extent, split);
+    server->splitTablet(auth, extent, split);
   }
-  void close() {
-    server.close();
+  void close() override {
+    server->close();
 
     underlyingTransport->close();
   }
@@ -146,11 +163,11 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   void close(Scan *scan) {
   }
 
-  bool open() {
+  bool open() override {
     return underlyingTransport->isOpen();
   }
 
-  bool isOpen() {
+  bool isOpen() override {
     return underlyingTransport->isOpen();
   }
 
