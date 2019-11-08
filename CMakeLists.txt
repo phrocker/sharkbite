@@ -29,21 +29,25 @@ if(CCACHE_FOUND)
     message("-- Found ccache: ${CCACHE_FOUND}")
 endif(CCACHE_FOUND)
 
+if(NOT APPLE)
+  if(NOT WIN32)
+  	set(WHOLE_ARCHIVE "-Wl,--whole-archive")
+    set(NO_WHOLE_ARCHIVE "-Wl,--no-whole-archive")
+  endif()
+endif()
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
 
 include(Compression)
 include(DownloadProject)
+include(LibreSSL)
 
 use_bundled_zlib(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
 find_package(ZLIB REQUIRED)
 
-include(LibreSSL)
-
 use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
 find_package (OpenSSL REQUIRED)
 
 ################# THRIFT
@@ -63,13 +67,13 @@ find_package (OpenSSL REQUIRED)
 	  			 "-DWITH_LIBEVENT=ON"
 	  			 "-DWITH_PYTHON=OFF"
 	  			 "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
-                "-DLIBRESSL_SRC_DIR=${LIBRESSL_SRC_DIR}"
-                "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
-                "-DBYPRODUCT_SUFFIX=${BYPRODUCT_SUFFIX}"
-                "-DZLIB_BYPRODUCT_INCLUDE=${ZLIB_BYPRODUCT_INCLUDE}"
-                "-DZLIB_BYPRODUCT=${ZLIB_BYPRODUCT}"
-                "-DZLIB_LIBRARY=${ZLIB_LIBRARY}"
-                "-DZLIB_LIBRARIES=${ZLIB_LIBRARIES}"
+                		"-DLIBRESSL_SRC_DIR=${LIBRESSL_BIN_DIR}"
+	        	        "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
+        	        	"-DBYPRODUCT_SUFFIX=${BYPRODUCT_SUFFIX}"
+	                	"-DZLIB_BYPRODUCT_INCLUDE=${ZLIB_BYPRODUCT_INCLUDE}"
+        		        "-DZLIB_BYPRODUCT=${ZLIB_BYPRODUCT}"
+		                "-DZLIB_LIBRARY=${ZLIB_LIBRARY}"
+                		"-DZLIB_LIBRARIES=${ZLIB_LIBRARIES}"
 	  			 "-DOPENSSL_ROOT_DIR=${LIBRESSL_BIN_DIR}"
 	  			 "-DWITH_HASKELL=OFF"
 	  			 "-DWITH_SHARED_LIB=OFF"
@@ -211,24 +215,24 @@ target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES
 
 
 target_link_libraries(sharkbite 
-  -Wl,--whole-archive
+  ${WHOLE_ARCHIVE}
   ${ZLIB_LIBRARY}
-  -Wl,--no-whole-archive
+  ${NO_WHOLE_ARCHIVE}
 )
 
 target_link_libraries (pysharkbite PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${Boost_LIBRARIES})
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_link_libraries(pysharkbite  PRIVATE
-  -Wl,--whole-archive
+  ${WHOLE_ARCHIVE}
   ${ZLIB_LIBRARY}
-  -Wl,--no-whole-archive
+  ${NO_WHOLE_ARCHIVE}
 )
 
 target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
 
 target_link_libraries (sharkbite-shared ${ZOOKEEPER_LIBRARIES})
 
-target_link_libraries(sharkbite-shared -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive
+target_link_libraries(sharkbite-shared ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE}
 )
 
 
@@ -242,7 +246,7 @@ target_link_libraries(capi PRIVATE sharkbite-shared)
 #ClientExample
 add_executable(ClientExample "src/examples/ClientExample.cpp")
 target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (ClientExample -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+#target_link_libraries (ClientExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ClientExample ${Boost_LIBRARIES} )
 target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
@@ -250,7 +254,7 @@ target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 #ClientExample
 add_executable(InsertTest "src/examples/InsertTest.cpp")
 target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (InsertTest -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+#target_link_libraries (InsertTest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( InsertTest ${Boost_LIBRARIES} )
 target_link_libraries( InsertTest ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
@@ -260,7 +264,7 @@ target_link_libraries( InsertTest sharkbite)
 #ClientExample
 add_executable(ContinuousIngest "src/examples/ContinuousIngest.cpp")
 target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (ContinuousIngest -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+#target_link_libraries (ContinuousIngest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ContinuousIngest ${Boost_LIBRARIES} )
 target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
@@ -269,7 +273,7 @@ target_link_libraries( ContinuousIngest sharkbite)
 #TableOps
 add_executable(TableOps "src/examples/TableOps.cpp")
 target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (TableOps -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( TableOps ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
@@ -277,7 +281,7 @@ target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
 target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (RfileReadExample -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+#target_link_libraries (RfileReadExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( RfileReadExample ${Boost_LIBRARIES} )
 target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
@@ -285,7 +289,7 @@ target_link_libraries( RfileReadExample sharkbite)
 
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (PrintInfo -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
+#target_link_libraries (PrintInfo ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( PrintInfo ${Boost_LIBRARIES} )
 target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIBS})

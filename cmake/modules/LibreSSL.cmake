@@ -54,11 +54,11 @@ function(use_libre_ssl SOURCE_DIR BINARY_DIR)
 	set_target_properties(tls PROPERTIES INTERFACE_LINK_LIBRARIES crypto)
 	add_dependencies(tls libressl-portable)
 	
-	set(LIBRESSL_SRC_DIR "${SOURCE_DIR}/dependencies/libressl/" CACHE STRING "" FORCE)
-	set(LIBRESSL_BIN_DIR "${BINARY_DIR}/dependencies/libressl-install/" CACHE STRING "" FORCE)
+	set(LIBRESSL_SRC_DIR "${SOURCE_DIR}/dependencies/libressl" CACHE STRING "" FORCE)
+	set(LIBRESSL_BIN_DIR "${BINARY_DIR}/dependencies/libressl-install" CACHE STRING "" FORCE)
 
 	set(OPENSSL_FOUND "YES" CACHE STRING "" FORCE)
-	set(OPENSSL_INCLUDE_DIR "${SOURCE_DIR}/dependencies/libressl/include" CACHE STRING "" FORCE)
+	set(OPENSSL_INCLUDE_DIR "${LIBRESSL_BIN_DIR}/include" CACHE STRING "" FORCE)
 	set(OPENSSL_LIBRARIES "${BINARY_DIR}/dependencies/libressl-install/lib/${BYPRODUCT_PREFIX}tls${BYPRODUCT_SUFFIX}" "${BINARY_DIR}/dependencies/libressl-install/lib/${BYPRODUCT_PREFIX}ssl${BYPRODUCT_SUFFIX}" "${BINARY_DIR}/dependencies/libressl-install/lib/${BYPRODUCT_PREFIX}crypto${BYPRODUCT_SUFFIX}" CACHE STRING "" FORCE)
 	
 endfunction(use_libre_ssl) 
