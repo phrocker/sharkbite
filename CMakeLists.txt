@@ -273,7 +273,7 @@ target_link_libraries( ContinuousIngest sharkbite)
 #TableOps
 add_executable(TableOps "src/examples/TableOps.cpp")
 target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
-target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
+#target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( TableOps ${Boost_LIBRARIES} )
 target_link_libraries( TableOps ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( TableOps ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
