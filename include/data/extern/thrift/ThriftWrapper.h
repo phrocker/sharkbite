@@ -69,7 +69,7 @@ class ThriftWrapper {
     std::string compressedString;
     {
       auto uncompressedPassword = authInfo->getPassword();
-      compressedString =  gzip::decompress(uncompressedPassword.data(), uncompressedPassword.size());
+      compressedString =  gzip::compress(uncompressedPassword.data(), uncompressedPassword.size());
       /*
       boost::iostreams::filtering_ostream compressingStream;
       compressingStream.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression)));

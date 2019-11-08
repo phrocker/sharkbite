@@ -70,7 +70,7 @@ class ThriftV2Wrapper {
     std::string compressedString;
     {
       auto uncompressedPassword = authInfo->getPassword();
-      compressedString =  gzip::decompress(uncompressedPassword.data(), uncompressedPassword.size());
+      compressedString =  gzip::compress(uncompressedPassword.data(), uncompressedPassword.size());
     }
 
     cclient::data::streams::BigEndianByteStream writeStream(0);
