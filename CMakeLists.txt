@@ -302,7 +302,7 @@ enable_testing()
 
   file(GLOB_RECURSE RFILE_TEST "test/constructs/rfile_test.cpp")
   add_executable(testrfile ${RFILE_TEST})
-  #target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive sharkbite)
+  target_link_libraries(testrfile  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
 
   
   add_test(NAME testrfile
@@ -310,7 +310,7 @@ enable_testing()
 	   
   file(GLOB_RECURSE TEST_CONSTRUCTS "test/constructs/TestConstructs.cpp")
   add_executable(testconstructs ${TEST_CONSTRUCTS})
-  #target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive  sharkbite)
+  target_link_libraries(testconstructs  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
 
   
   add_test(NAME testconstructs
@@ -318,7 +318,7 @@ enable_testing()
 	   
   file(GLOB_RECURSE TEST_STREAMS "test/constructs/TestStreams.cpp")
   add_executable(teststreams ${TEST_STREAMS})
-  #target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive sharkbite)
+  target_link_libraries(teststreams  ${CMAKE_THREAD_LIBS_INIT} sharkbite)
   
   add_test(NAME teststreams
 	   COMMAND teststreams)
@@ -327,7 +327,6 @@ enable_testing()
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})
   target_link_libraries (testzkInstance ${CMAKE_THREAD_LIBS_INIT})
-  #target_link_libraries (testzkInstance -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
   target_link_libraries( testzkInstance ${Boost_LIBRARIES} )
   target_link_libraries( testzkInstance ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( testzkInstance ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} sharkbite)
@@ -337,7 +336,6 @@ enable_testing()
       file(GLOB_RECURSE VANDV "test/vandv/IntegrationTest.cpp")
   add_executable(integrationTest ${VANDV})
   target_link_libraries (integrationTest ${CMAKE_THREAD_LIBS_INIT})
-  #target_link_libraries (integrationTest -Wl,--whole-archive ${ZLIB_LIBRARY} -Wl,--no-whole-archive)
   target_link_libraries( integrationTest ${Boost_LIBRARIES} )
   target_link_libraries( integrationTest ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( integrationTest  ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
