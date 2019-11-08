@@ -11,8 +11,11 @@
 #include "../../constructs/Mutation.h"
 #include "../../constructs/KeyExtent.h"
 #include "../../constructs/column.h"
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
+#include "gzip/compress.hpp"
+#include "gzip/config.hpp"
+#include "gzip/decompress.hpp"
+#include "gzip/utils.hpp"
+#include "gzip/version.hpp"
 
 #include "../../streaming/ByteOutputStream.h"
 #include "../../streaming/NetworkOrderStream.h"
@@ -23,17 +26,9 @@ namespace interconnect {
 
 class ThriftV2Wrapper {
  protected:
+ protected:
   static std::string decompress(const char *compressed, uint32_t size) {
-    std::string decompressed;
-
-    boost::iostreams::filtering_ostream os;
-
-    os.push(boost::iostreams::gzip_decompressor());
-    os.push(boost::iostreams::back_inserter(decompressed));
-
-    boost::iostreams::write(os, compressed, size);
-
-    return decompressed;
+    return gzip::decompress(compressed, size);
   }
  public:
 
@@ -74,11 +69,8 @@ class ThriftV2Wrapper {
 
     std::string compressedString;
     {
-      boost::iostreams::filtering_ostream compressingStream;
-      compressingStream.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression)));
-      compressingStream.push(boost::iostreams::back_inserter(compressedString));
-      compressingStream << authInfo->getPassword();
-      boost::iostreams::close(compressingStream);
+      auto uncompressedPassword = authInfo->getPassword();
+      compressedString =  gzip::decompress(uncompressedPassword.data(), uncompressedPassword.size());
     }
 
     cclient::data::streams::BigEndianByteStream writeStream(0);
