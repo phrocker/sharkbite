@@ -23,10 +23,11 @@ namespace interconnect
 
 
 
-Scan::Scan () : topKey(0)
+Scan::Scan (std::atomic<bool> *isRunning) : topKey(0)
 {
     srand (time (NULL));
     scanId = rand ();
+    this->isRunning = isRunning;
     hasMore = false;
 }
 

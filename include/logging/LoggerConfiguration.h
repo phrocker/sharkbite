@@ -89,6 +89,10 @@ class LoggerConfiguration {
     return logger_configuration;
   }
 
+  static void enableLogger(){
+    getConfiguration().enableLogging();
+  }
+
   static std::unique_ptr<LoggerConfiguration> newInstance() {
     return std::unique_ptr<LoggerConfiguration>(new LoggerConfiguration());
   }

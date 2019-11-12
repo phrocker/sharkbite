@@ -40,12 +40,14 @@ namespace scanners
 Scanner::Scanner (cclient::data::Instance *instance,
                   interconnect::TableOperations<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *tops,
                   cclient::data::security::Authorizations *auths, uint16_t threads) :
-    scannerAuths (auths)
+    scannerAuths (auths),  logger(logging::LoggerFactory<Scanner>::getLogger())
 {
     
     connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*> (instance);
-    if (connectorInstance == nullptr)
-    	std::cout << "connectorInstance is nptr" << std::endl;
+    if (connectorInstance == nullptr){
+    	logging::LOG_ERROR(logger) << "Connector instance is an unexpected type";
+    	throw std::runtime_error("Connector instance is an unexpected type");
+    }
     resultSet = NULL;
     tableLocator = cclient::impl::cachedLocators.getLocator (
                        cclient::impl::LocatorKey (connectorInstance, tops->getTableId ()));

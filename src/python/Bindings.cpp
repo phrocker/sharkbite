@@ -27,6 +27,9 @@
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
+#include "../include/logging/Logger.h"
+#include "../include/logging/LoggerConfiguration.h"
+
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
@@ -41,7 +44,9 @@ PYBIND11_MODULE(pysharkbite, s){
      .def("getLong", (uint32_t (cclient::impl::Configuration::*)(const std::string &, uint32_t) const) &cclient::impl::Configuration::getLong, "Get the integer value of a configuration item");
 
   pybind11::class_<cclient::data::Instance>(s, "Instance");
-
+//logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
+  pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")
+    .def_static("enableLogging",&logging::LoggerConfiguration::enableLogger);
 
   pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, cclient::data::Instance>(s, "ZookeeperInstance")
 	  .def(pybind11::init<std::string, std::string,uint32_t, const std::shared_ptr<cclient::impl::Configuration>&>())
@@ -113,7 +118,8 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
 		.def("getResultSet",  &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)
-        .def("addRange",(void (scanners::BatchScanner::*)(const cclient::data::Range &) ) &scanners::BatchScanner::addRange, "Adds a range");
+		.def("fetchColumn", &scanners::BatchScanner::fetchColumn)
+    .def("addRange",(void (scanners::BatchScanner::*)(const cclient::data::Range &) ) &scanners::BatchScanner::addRange, "Adds a range");
 
   pybind11::class_<cclient::data::security::Authorizations>(s, "Authorizations")
         .def(pybind11::init<>())

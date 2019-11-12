@@ -36,6 +36,8 @@
 #include "../constructs/ServerHeuristic.h"
 #include "../../interconnect/ClientInterface.h"
 #include "../../interconnect/tableOps/TableOperations.h"
+#include "logging/LoggerConfiguration.h"
+#include "logging/Logger.h"
 
 namespace scanners {
 
@@ -100,7 +102,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
         }
         for (auto hostExtents : returnRanges.at(location)) {
           std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents;
-          std::cout << " extent is " << hostExtents.first->getTableId() << std::endl;
+          logging::LOG_DEBUG(logger) << " extent is " << hostExtents.first->getTableId();
           extents.push_back(hostExtents.first);
 
           auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, &columns);
@@ -212,6 +214,9 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   ScannerHeuristic *scannerHeuristic;
   // tablet locator
   cclient::impl::TabletLocator *tableLocator;
+
+ private:
+  std::shared_ptr<logging::Logger> logger;
 };
 
 template<class T>

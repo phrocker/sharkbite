@@ -68,7 +68,8 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
   std::vector<cclient::data::IterInfo*> iters;
   iters.push_back(&wriIter);
   logging::LOG_TRACE(logger) << "Performing scan  of " << row << " end:" << stopRow << " against " << source->getServer() << ":" << source->getPort() << " on " << source->getExtent();
-  interconnect::Scan *initScan = directConnect.scan(columns, &iters);
+  std::atomic<bool> isrunning(true);
+  interconnect::Scan *initScan = directConnect.scan(&isrunning,columns, &iters);
   std::vector<std::shared_ptr<cclient::data::KeyValue> > kvResults;
   initScan->getNextResults(&kvResults);
 

@@ -38,7 +38,7 @@ class ServerTransport : public Transporter<T> {
 
   virtual void authenticate(cclient::data::security::AuthInfo *auth) = 0;
 
-  virtual Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<K>, V> > *req) = 0;
+  virtual Scan *beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<K>, V> > *req) = 0;
 
   virtual void *write(cclient::data::security::AuthInfo *auth, std::map<K, std::vector<W>> *request) = 0;
 };

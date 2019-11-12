@@ -73,12 +73,12 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter();
 
-  Scan *singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-    return server->singleScan(request);
+  Scan *singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+    return server->singleScan(isRunning,request);
   }
 
-  Scan *multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-    return server->multiScan(request);
+  Scan *multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+    return server->multiScan(isRunning,request);
   }
 
   std::shared_ptr<ServerConnection> getConnection() const {
@@ -113,8 +113,8 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     server->registerService(instance, clusterManagers);
   }
 
-  Scan *beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) override {
-    return server->beginScan(request);
+  Scan *beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) override {
+    return server->beginScan(isRunning,request);
 
   }
 

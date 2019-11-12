@@ -164,7 +164,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *
-  scan(std::vector<cclient::data::Column*> *cols, std::vector<cclient::data::IterInfo*> *serverSideIterators) {
+  scan(std::atomic<bool> *isRunning,std::vector<cclient::data::Column*> *cols, std::vector<cclient::data::IterInfo*> *serverSideIterators) {
     ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
     request.addColumns(cols);
@@ -183,7 +183,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
       request.putIdentifier(ident);
     }
 
-    return transport->beginScan(&request);
+    return transport->beginScan(isRunning,&request);
 
   }
 
@@ -240,18 +240,18 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     std::vector<cclient::data::IterInfo*> list;
   }
 
-  Scan *scan() {
+  Scan *scan(std::atomic<bool> *isRunning) {
 
     std::vector<cclient::data::Column*> emptyCols;
 
     std::vector<cclient::data::IterInfo*> emptyServerSideIterators;
 
-    return scan(&emptyCols, &emptyServerSideIterators);
+    return scan(isRunning, &emptyCols, &emptyServerSideIterators);
 
   }
 
   Scan *continueScan(Scan *scan) {
-    if (scan->getHasMore()) {
+    if (scan->getHasMore() && !scan->isClientRunning()) {
       return transport->continueScan(scan);
     }
     return nullptr;

@@ -175,10 +175,11 @@ class TabletServerLocator : public TabletLocator {
       cclient::data::TabletLocation loc;
 
       try {
-        if (!getCachedLocation(startRow, loc))
+        if (!getCachedLocation(startRow, loc)){
           loc = locateTablet(credentials, startRow, false, false);
+          logging::LOG_DEBUG(logger) << "Received un-cached location " << loc.getLocation() << " " << loc.getExtent();
+        }
       } catch (const cclient::exceptions::ClientException &ce) {
-
         failures.push_back(range);
         continue;
       }
@@ -191,8 +192,14 @@ class TabletServerLocator : public TabletLocator {
 
       while (!range->getInfiniteStopKey() && stopKey >= extentEndRow) {
 
-        if (!getCachedLocation(startRow, loc))
+        bool isCached = getCachedLocation(startRow, loc);
+        if (!isCached){
+          logging::LOG_DEBUG(logger) << "Received un-cached location " << loc.getLocation() << " " << loc.getExtent()<< " iscached? " << (isCached==true);
           loc = locateTablet(credentials, extentEndRow, true, false);
+        }else{
+          logging::LOG_DEBUG(logger) << "Received cached location " << loc.getLocation() << " " << loc.getExtent() << " iscached? " << (isCached==true);
+        }
+
 
         tabletLocations.push_back(loc);
 
@@ -201,6 +208,13 @@ class TabletServerLocator : public TabletLocator {
         if (extentEndRow.length() == 0)
           break;
 
+        char *backing = new char[extentEndRow.length() + 1];
+        memset(backing, 0x01, extentEndRow.length() + 1);
+        memcpy(backing, extentEndRow.c_str(), extentEndRow.length());
+        startRow = std::string(backing);
+        delete [] backing;
+
+        logging::LOG_DEBUG(logger) << "Changing start row to " << startRow;
       }
       for (auto locs : tabletLocations) {
         locations->insert(locs.getLocation());
@@ -212,7 +226,7 @@ class TabletServerLocator : public TabletLocator {
   }
 
   void invalidateCache(cclient::data::KeyExtent failedExtent) {
-    logging::LOG_DEBUG(logger) << "Invalidating " << failedExtent.getEndRow();
+
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);
     cachedLocations.erase(failedExtent.getEndRow());
   }
@@ -241,11 +255,14 @@ class TabletServerLocator : public TabletLocator {
     std::map<std::string, cclient::data::TabletLocation>::iterator it = cachedLocations.lower_bound(startRow);
     if (it != cachedLocations.end()) {
       loc = it->second;
-      if (loc.getExtent()->getPrevEndRow().length() > 0 || loc.getExtent()->getPrevEndRow() < startRow)
+
+      if (loc.getExtent()->getPrevEndRow().length() == 0 || loc.getExtent()->getPrevEndRow() < startRow) {
+        logging::LOG_DEBUG(logger) << tableId  << " : " << startRow  << " , pendrow: " << loc.getExtent()->getPrevEndRow() << " endrow: " << loc.getExtent()->getEndRow() << " is cached out of  " << cachedLocations.size();
         return true;
+      }
     }
 
-    logging::LOG_DEBUG(logger) << tableId  << " : " << startRow << " is not cached out of  " << cachedLocations.size();
+    logging::LOG_DEBUG(logger) << tableId  << " : " << startRow << " is not cached out of  " << cachedLocations.size() << " returning false";
     return false;
   }
 

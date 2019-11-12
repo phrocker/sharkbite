@@ -22,15 +22,15 @@ AccumuloServerFacadeV2::AccumuloServerFacadeV2()
       logger(logging::LoggerFactory<AccumuloServerFacadeV2>::getLogger()) {
 }
 
-Scan *AccumuloServerFacadeV2::multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_multiScan(request);
+Scan *AccumuloServerFacadeV2::multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  return v2_multiScan(isRunning,request);
 }
 
-Scan *AccumuloServerFacadeV2::AccumuloServerFacadeV2::singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_singleScan(request);
+Scan *AccumuloServerFacadeV2::AccumuloServerFacadeV2::singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  return v2_singleScan(isRunning,request);
 }
-Scan *AccumuloServerFacadeV2::beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_beginScan(request);
+Scan *AccumuloServerFacadeV2::beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  return v2_beginScan(isRunning,request);
 }
 
 Scan *AccumuloServerFacadeV2::continueScan(Scan *originalScan) {
@@ -133,8 +133,8 @@ std::map<std::string, std::string> AccumuloServerFacadeV2::v2_getNamespaceConfig
   return ret;
 }
 
-Scan * AccumuloServerFacadeV2::v2_singleScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  Scan *initialScan = new Scan();
+Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan *initialScan = new Scan(isRunning);
 
   org::apache::accumulov2::core::dataImpl::thrift::InitialScan scan;
 
@@ -198,8 +198,8 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(ScanRequest<ScanIdentifier<std::sha
   return initialScan;
 }
 
-Scan * AccumuloServerFacadeV2::v2_multiScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  Scan *initialScan = new Scan();
+Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan *initialScan = new Scan(isRunning);
 
   org::apache::accumulov2::core::dataImpl::thrift::InitialMultiScan scan;
 
@@ -270,18 +270,18 @@ void AccumuloServerFacadeV2::v2_registerService(std::string instance, std::strin
   client_V2->getInstanceId(instance);
 }
 
-Scan * AccumuloServerFacadeV2::v2_beginScan(ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan * AccumuloServerFacadeV2::v2_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
   Scan *initialScan = NULL;
   if (request->getRangeIdentifiers()->size() > 1) {
-    initialScan = multiScan(request);
+    initialScan = multiScan(isRunning,request);
   } else {
     ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
     std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
     cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
     if (range->getStartKey() == NULL && range->getStopKey() == NULL) {
-      initialScan = v2_multiScan(request);
+      initialScan = v2_multiScan(isRunning,request);
     } else
-      initialScan = v2_singleScan(request);
+      initialScan = v2_singleScan(isRunning,request);
 
   }
   return initialScan;
@@ -307,9 +307,10 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
 
     originalScan->setNextResults(kvs);
 
-    if (!results.more) {
+    if (!results.more || !originalScan->isClientRunning()) {
       tinfo.traceId++;
       tserverClient_V2->closeScan(tinfo, originalScan->getId());
+      results.more=false;
     }
 
     delete kvs;

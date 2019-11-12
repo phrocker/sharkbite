@@ -17,6 +17,7 @@
 
 
 #include <vector>
+#include <atomic>
 #include <stdio.h>      /* printf, scanf, puts, NULL */
 #include <stdlib.h>     /* srand, rand */
 #include <time.h>
@@ -40,7 +41,7 @@ class Scan
 {
 public:
 
-	Scan();
+	explicit Scan(std::atomic<bool> *isRunning);
 
 	~Scan();
 
@@ -54,6 +55,10 @@ public:
 		results.insert(results.end(), resultSet->begin(),
 		               resultSet->end());
 		return true;
+	}
+
+	bool isClientRunning(){
+	  return isRunning->load();
 	}
 
 	/**
@@ -116,6 +121,9 @@ public:
 	}
 
 protected:
+
+	std::atomic<bool> *isRunning;
+
 	std::shared_ptr<cclient::data::Key> topKey;
 	// scan id
 	int64_t scanId;
