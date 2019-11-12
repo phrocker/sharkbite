@@ -76,7 +76,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
     acquireLock();
-    std::lock_guard<std::timed_mutex> lock(serverLock,std::adopt_lock);
+    std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
     if (!started) {
       started = true;
       running = true;
@@ -98,8 +98,8 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   uint16_t threadCount;
  protected:
 
-  inline bool acquireLock(){
-    auto now=std::chrono::steady_clock::now();
+  inline bool acquireLock() {
+    auto now = std::chrono::steady_clock::now();
     return serverLock.try_lock_until(now + std::chrono::seconds(2));
   }
 
@@ -159,7 +159,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
         try {
 
-          scan = conn->scan(scanResource->runningFlag,source->getColumns(), source->getIters());
+          scan = conn->scan(scanResource->runningFlag, source->getColumns(), source->getIters());
 
           do {
             std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
@@ -169,14 +169,16 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
             source->getResultSet()->add_ptr(&nextResults);
             nextResults.clear();
 
-            if (!scanResource->runningFlag->load())
+            if (!scanResource->runningFlag->load()) {
               break;
+            }
+
 
             interconnect::Scan *newScan = conn->continueScan(scan);
 
-            if (!scanResource->runningFlag->load())
-                         break;
-
+            if (!scanResource->runningFlag->load()) {
+              break;
+            }
 
             if (NULL == newScan) {
               delete scan;
@@ -185,8 +187,8 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
               scan = newScan;
 
           } while (scan != NULL);
-        }catch( const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te){
-          if (scanResource->runningFlag->load()){
+        } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
+          if (scanResource->runningFlag->load()) {
             throw te;
           }
         } catch (const cclient::exceptions::NotServingException &te) {
@@ -209,12 +211,12 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
     std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> nextService = NULL;
 
-    while( !acquireLock() ){
-      if (!running){
+    while (!acquireLock()) {
+      if (!running) {
         return nullptr;
       }
     }
-    std::lock_guard<std::timed_mutex> lock(serverLock,std::adopt_lock);
+    std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
 
     if (!servers.empty()) {
       nextService = servers.back();

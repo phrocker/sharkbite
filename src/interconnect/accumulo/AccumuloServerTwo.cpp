@@ -174,12 +174,16 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
   org::apache::accumulov2::core::tabletserver::thrift::TSamplerConfiguration config;
   std::map<std::string, std::string> executionHints;
 
-  logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns()->size();
+
 
   tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
                               ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 1024 * 5, "", executionHints);
 
+
+
   org::apache::accumulov2::core::dataImpl::thrift::ScanResult results = scan.result;
+
+  logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns()->size() << " has more? " << (results.more);
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
 
@@ -245,7 +249,9 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
 
   initialScan->setNextResults(kvs);
 
-  tserverClient_V2->closeMultiScan(scanId, scan.scanID);
+  if (!results.more) {
+    tserverClient_V2->closeMultiScan(scanId, scan.scanID);
+  }
 
   delete kvs;
 
@@ -306,7 +312,6 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
     originalScan->setHasMore(results.more);
 
     originalScan->setNextResults(kvs);
-
     if (!results.more || !originalScan->isClientRunning()) {
       tinfo.traceId++;
       tserverClient_V2->closeScan(tinfo, originalScan->getId());

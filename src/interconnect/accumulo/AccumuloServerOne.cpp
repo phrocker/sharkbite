@@ -219,7 +219,9 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
 
   initialScan->setNextResults(kvs);
 
-  tserverClient->closeMultiScan(scanId, scan.scanID);
+  if (!results.more) {
+    tserverClient->closeMultiScan(scanId, scan.scanID);
+  }
 
   delete kvs;
 

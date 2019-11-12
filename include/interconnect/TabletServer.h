@@ -251,7 +251,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *continueScan(Scan *scan) {
-    if (scan->getHasMore() && !scan->isClientRunning()) {
+    if (scan->getHasMore() && scan->isClientRunning()) {
       return transport->continueScan(scan);
     }
     return nullptr;
