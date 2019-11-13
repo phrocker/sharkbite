@@ -59,14 +59,32 @@ class CMakeBuild(build_ext):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args, cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args, cwd=self.build_temp)
 
+def readme():
+  with open("README.md", "r") as fh:
+    return fh.read()
+
+def operatingsystem():
+  if (platform.platform().find("Darwin") >= 0):
+    return "Operating System :: MacOS"
+  else:   
+    return "Operating System :: POSIX :: Linux"
+
 setup(
     name='pysharkbite',
-    version='0.1.0',
+    version='0.4.1',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
+    url='https://www.github.com/phrocker/sharkbite',
     description='Python bindings for sharkbite, the native Accumulo Key/Value Connector',
-    long_description='',
+    long_description=readme(),
+    long_description_content_type="text/markdown",
     ext_modules=[CMakeExtension('pysharkbite')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
+    classifiers=[
+        "Programming Language :: C++",
+        "License :: OSI Approved :: Apache Software License",
+        operatingsystem(),
+    ],
+    python_requires='>=3.6',
 )
