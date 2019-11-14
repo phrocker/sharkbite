@@ -77,7 +77,7 @@ setup(
     url='https://www.github.com/phrocker/sharkbite',
     description='Python bindings for sharkbite, the native Accumulo Key/Value Connector',
     long_description=readme(),
-    long_description_content_type="text/markdown",
+    long_description_content_type='text/markdown',
     ext_modules=[CMakeExtension('pysharkbite')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
