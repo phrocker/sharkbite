@@ -220,13 +220,14 @@ target_link_libraries(sharkbite
   ${NO_WHOLE_ARCHIVE}
 )
 
-target_link_libraries (pysharkbite PRIVATE ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${Boost_LIBRARIES})
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  -static-libgcc -static-libstdc++  Threads::Threads )
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_link_libraries(pysharkbite  PRIVATE
   ${WHOLE_ARCHIVE}
   ${ZLIB_LIBRARY}
   ${NO_WHOLE_ARCHIVE}
 )
+target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
 
 target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES} ${Boost_LIBRARIES})
 
