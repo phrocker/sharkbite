@@ -1,4 +1,3 @@
-set(CMAKE_AUTOMOC ON)
 cmake_minimum_required(VERSION 3.0)
 project (Sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
@@ -14,6 +13,7 @@ elseif(COMPILER_SUPPORTS_CXX0X)
 else()
  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 endif()
+
 
 set (CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
@@ -220,7 +220,11 @@ target_link_libraries(sharkbite
   ${NO_WHOLE_ARCHIVE}
 )
 
-target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  -static-libgcc -static-libstdc++  Threads::Threads )
+
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
+if (NOT APPLE)
+	target_link_libraries (pysharkbite PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
+endif()
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_link_libraries(pysharkbite  PRIVATE
   ${WHOLE_ARCHIVE}
