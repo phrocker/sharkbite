@@ -82,12 +82,6 @@ void TabletServer::startScan ( ::org::apache::accumulo::core::data::thrift::Init
     scan->setIteratorOptions(ssio);
     scan->setAuthorizations( authorizations );
 
-    boost::shared_future<ReturnType*> ret = executor->submit( scan );
-
-    scan.setFuture( &ret );
-
-
-    boost::future_status status = ret.wait_for(std::chrono::seconds(2));
 
     return;
 }

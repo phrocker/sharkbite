@@ -19,7 +19,6 @@
 
 #include "ClientInterface.h"
 
-#include <boost/shared_ptr.hpp>
 
 #include "tableOps/TableOperations.h"
 #include "AccumuloConnector.h"

@@ -19,9 +19,6 @@
 #include "data/extern/thrift/TabletClientService.h"
 #include <mutex>
 
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
-#include "data/extern/boost/SharedPointer.h"
 #include "data/constructs/InstanceVersion.h"
 #include "../scanrequest/ScanRequest.h"
 #include "../scanrequest/ScanIdentifier.h"

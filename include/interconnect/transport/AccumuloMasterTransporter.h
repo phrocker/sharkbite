@@ -40,9 +40,6 @@
 #include "../scanrequest/ScanIdentifier.h"
 
 #include "Transport.h"
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
-#include "data/extern/boost/SharedPointer.h"
 
 #include "data/constructs/security/AuthInfo.h"
 #include "../Scan.h"
@@ -93,10 +90,10 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     master->createMasterClient(underlyingTransport);
   }
 
-  void recreateMasterClient() override{
+  void recreateMasterClient() override {
     underlyingTransport->close();
     underlyingTransport.reset();
-    underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
+    underlyingTransport = createTransporter();
     createMasterClient();
   }
 

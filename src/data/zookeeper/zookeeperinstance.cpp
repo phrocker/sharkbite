@@ -27,8 +27,6 @@
 #include <vector>
 #include <algorithm>
 
-#include <boost/iterator/iterator_concepts.hpp>
-
 namespace cclient {
 namespace data {
 namespace zookeeper {
@@ -57,11 +55,11 @@ std::string ZookeeperInstance::getRoot() {
 std::vector<std::string> ZookeeperInstance::getMasterLocations() {
   std::string masterLockPath = getRoot() + ZMASTER_LOCK;
 
-  std::vector < std::string > lockData = myZooCache->getChildren(masterLockPath);
+  std::vector<std::string> lockData = myZooCache->getChildren(masterLockPath);
 
-  std::vector < std::string > masters;
+  std::vector<std::string> masters;
 
-  if (IsEmpty (&lockData)) {
+  if (IsEmpty(&lockData)) {
     return masters;
   }
 
@@ -72,7 +70,7 @@ std::vector<std::string> ZookeeperInstance::getMasterLocations() {
   std::stringstream ss;
   ss << masterLockPath << "/" << masters.at(0);
 
-  std::vector < std::string > firstMaster;
+  std::vector<std::string> firstMaster;
 
   std::string str = std::string((const char*) myZooCache->getData(ss.str()));
   firstMaster.push_back(str);
@@ -104,11 +102,11 @@ std::string ZookeeperInstance::getInstanceId() {
 std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::getServers() {
   std::string tserverPath = getRoot() + TSERVERS;
 
-  std::vector < std::string > servers = myZooCache->getChildren(tserverPath);
+  std::vector<std::string> servers = myZooCache->getChildren(tserverPath);
 
   std::vector<std::shared_ptr<interconnect::ServerConnection>> tabletServers;
 
-  if (IsEmpty (&servers)) {
+  if (IsEmpty(&servers)) {
     return tabletServers;
   }
 
@@ -117,14 +115,14 @@ std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::
     ss << tserverPath << "/" << server;
     std::string data = std::string((const char*) myZooCache->getData(ss.str()));
 
-    std::vector < std::string > addresses = split(data, ';');
+    std::vector<std::string> addresses = split(data, ';');
     if (addresses.size() == 0 && IsEmpty(&data)) {
       addresses.push_back(server);
     } else if (addresses.size() == 0) {
       addresses.push_back(data);
     }
     for (auto address : addresses) {
-      std::vector < std::string > addressSplit = split(address, '=');
+      std::vector<std::string> addressSplit = split(address, '=');
       std::string location = "";
       if (addressSplit.size() != 2) {
         if (addressSplit.size() == 0)
@@ -135,7 +133,7 @@ std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::
         location = addressSplit.at(1);
       }
 
-      std::vector < std::string > locationAndPort = split(location, ':');
+      std::vector<std::string> locationAndPort = split(location, ':');
       if (locationAndPort.size() != 2) {
         throw cclient::exceptions::ClientException( INVALID_ZK_SERVER_DATA);
       }
@@ -146,7 +144,7 @@ std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::
         throw cclient::exceptions::ClientException( INVALID_ZK_SERVER_PORT);
       }
 
-      std::shared_ptr<interconnect::ServerConnection> newConnection = std::make_shared < interconnect::ServerConnection > (locationAndPort.at(0), port, -1);
+      std::shared_ptr<interconnect::ServerConnection> newConnection = std::make_shared<interconnect::ServerConnection>(locationAndPort.at(0), port, -1);
       tabletServers.push_back(newConnection);
     }
   }
@@ -159,14 +157,14 @@ std::string ZookeeperInstance::getInstanceName() {
   return instanceName;
 }
 
-const cclient::impl::Configuration *ZookeeperInstance::getConfiguration() {
+const cclient::impl::Configuration* ZookeeperInstance::getConfiguration() {
   return myConfiguration.get();
 }
 /*
-void ZookeeperInstance::setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf) {
-  myConfiguration = std::move(conf);
-}
-*/
+ void ZookeeperInstance::setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf) {
+ myConfiguration = std::move(conf);
+ }
+ */
 }
 }
 }

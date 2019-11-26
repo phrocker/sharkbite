@@ -38,13 +38,10 @@
 #include <sys/time.h>
 
 #include "Transport.h"
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
 
 #include "interconnect/accumulo/AccumuloServerFacade.h"
 #include "interconnect/accumulo/AccumuloServerOne.h"
 #include "interconnect/accumulo/AccumuloServerTwo.h"
-#include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/TabletClientService.h"
 #include "../scanrequest/ScanRequest.h"

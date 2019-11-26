@@ -44,7 +44,6 @@
 #include "transport/BaseTransport.h"
 #include "transport/ServerConnection.h"
 #include "transport/CachedTransport.h"
-#include <boost/concept_check.hpp>
 
 namespace interconnect {
 

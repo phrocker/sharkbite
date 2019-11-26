@@ -42,7 +42,6 @@
 #include "interconnect/transport/BaseTransport.h"
 #include "interconnect/transport/ServerConnection.h"
 #include "interconnect/transport/CachedTransport.h"
-#include <boost/concept_check.hpp>
 
 #include "interconnect/InterConnect.h"
 

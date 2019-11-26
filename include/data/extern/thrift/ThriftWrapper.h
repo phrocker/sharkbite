@@ -70,13 +70,6 @@ class ThriftWrapper {
     {
       auto uncompressedPassword = authInfo->getPassword();
       compressedString =  gzip::compress(uncompressedPassword.data(), uncompressedPassword.size());
-      /*
-      boost::iostreams::filtering_ostream compressingStream;
-      compressingStream.push(boost::iostreams::gzip_compressor(boost::iostreams::gzip_params(boost::iostreams::gzip::best_compression)));
-      compressingStream.push(boost::iostreams::back_inserter(compressedString));
-      compressingStream << authInfo->getPassword();
-      boost::iostreams::close(compressingStream);
-      */
     }
 
     cclient::data::streams::BigEndianByteStream writeStream(0);

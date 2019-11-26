@@ -18,9 +18,6 @@
 #include "data/extern/thrift/TabletClientService.h"
 #include <mutex>
 
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
-#include "data/extern/boost/SharedPointer.h"
 #include "data/extern/thriftv2/ClientService.h"
 #include "data/exceptions/NotServingException.h"
 #include "data/extern/thriftv2/TabletClientService.h"
