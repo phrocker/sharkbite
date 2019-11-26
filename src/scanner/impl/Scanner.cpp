@@ -51,7 +51,7 @@ Scanner::Scanner (cclient::data::Instance *instance,
     resultSet = NULL;
     tableLocator = cclient::impl::cachedLocators.getLocator (
                        cclient::impl::LocatorKey (connectorInstance, tops->getTableId ()));
-    scannerHeuristic = new ScannerHeuristic (threads);
+    scannerHeuristic = std::make_unique<ScannerHeuristic>(threads);
     credentials = tops->getCredentials ();
 }
 

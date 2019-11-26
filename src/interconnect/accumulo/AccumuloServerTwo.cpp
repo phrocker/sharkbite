@@ -177,7 +177,7 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
 
 
   tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
-                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 1024 * 5, "", executionHints);
+                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 512, "", executionHints);
 
 
 
@@ -239,7 +239,7 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
 
   tserverClient_V2->startMultiScan(scan, scanId, ThriftV2Wrapper::convert(request->getCredentials()), ThriftV2Wrapper::convert(request->getRangeIdentifiers()),
                                    ThriftV2Wrapper::convert(request->getColumns()), ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, config,
-                                   1024 * 5, "", executionHints);
+                                   512, "", executionHints);
 
   org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results = scan.result;
 
