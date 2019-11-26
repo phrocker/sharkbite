@@ -61,6 +61,10 @@ class Source {
     }
   }
 
+  virtual void close(){
+
+  }
+
   std::vector<cclient::data::Column*> *getColumns() {
     return &columns;
   }

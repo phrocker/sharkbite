@@ -164,7 +164,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     }
   }
 
-  void close(){
+  void close() override{
     scannerHeuristic->close();
   }
 
