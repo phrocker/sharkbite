@@ -62,6 +62,10 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   }
 
   ~ScannerHeuristic() {
+    close();
+  }
+
+  void close() {
     running = false;
     std::lock_guard<std::timed_mutex> lock(serverLock);
 
@@ -71,7 +75,6 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
       }
     }
     started = false;
-
   }
 
   uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
@@ -100,7 +103,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   inline bool acquireLock() {
     auto now = std::chrono::steady_clock::now();
-    return serverLock.try_lock_until(now + std::chrono::seconds(2));
+    return serverLock.try_lock_until(now + std::chrono::seconds(1));
   }
 
   static void closeScan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
@@ -172,7 +175,6 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
             if (!scanResource->runningFlag->load()) {
               break;
             }
-
 
             interconnect::Scan *newScan = conn->continueScan(scan);
 

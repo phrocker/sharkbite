@@ -18,9 +18,10 @@
 #include <sstream>
 #include <map>
 #include <cstdint>
-#include <boost/ptr_container/ptr_vector.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <vector>
+#include <cstring>
+#include <chrono>
+#include <thread>
 #include <sys/select.h>
 
 #include "watch.h"
@@ -44,7 +45,7 @@ namespace zookeeper {
 
 static std::mutex syncBarrier;
 
-static void watcher_function(zhandle_t *, int type, int state, const char *path, void*v) {
+static void watcher_function(zhandle_t*, int type, int state, const char *path, void *v) {
 
   Watch *ctx = ((WatchFn*) v)->ptr;
 
@@ -67,11 +68,12 @@ static void watcher_function(zhandle_t *, int type, int state, const char *path,
 class ZooKeeper {
  public:
   explicit ZooKeeper(const char *hostPorts, uint32_t timeout)
-      : hostPorts((char*) hostPorts),
-        timeout(timeout),
-        zookeeperReference(0),
-        initWatchFp(0),
-        myWatch(nullptr) {
+      :
+      hostPorts((char*) hostPorts),
+      timeout(timeout),
+      zookeeperReference(0),
+      initWatchFp(0),
+      myWatch(nullptr) {
 
   }
 
@@ -106,7 +108,7 @@ class ZooKeeper {
     return !stat_empty(&stat);
   }
 
-  char *getData(std::string path, watcher_fn fn, WatchFn *ptr = NULL) {
+  char* getData(std::string path, watcher_fn fn, WatchFn *ptr = NULL) {
     Stat stat = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // watcher will execute our function pointer
@@ -131,7 +133,7 @@ class ZooKeeper {
     return buffer;
   }
 
-  std::vector<std::string> *getChildren(std::string path, watcher_fn fn, WatchFn *ptr = NULL) {
+  std::vector<std::string>* getChildren(std::string path, watcher_fn fn, WatchFn *ptr = NULL) {
     struct String_vector str_vec = { 0, 0 };
 
     // watcher will execute our function pointer
@@ -145,7 +147,7 @@ class ZooKeeper {
     zoo_wget_children(zookeeperReference, path.c_str(), fn, ptr, &str_vec);
 
     // add the children paths iff we have results
-    std::vector < std::string > *newList = 0;
+    std::vector<std::string> *newList = 0;
 
     if (str_vec.count > 0) {
       newList = new std::vector<std::string>();
@@ -172,13 +174,13 @@ class ZooKeeper {
 
  protected:
 
-  inline static bool stat_empty(struct Stat* a) {
+  inline static bool stat_empty(struct Stat *a) {
     Stat statB = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
     return (stat_eq(a, &statB) == 1);
   }
 
-  inline static int stat_eq(struct Stat* a, struct Stat* b) {
+  inline static int stat_eq(struct Stat *a, struct Stat *b) {
     if (a->czxid != b->czxid)
       return 0;
     if (a->mzxid != b->mzxid)
@@ -215,19 +217,21 @@ class ZooKeeper {
 class ZooSession {
  public:
   ZooSession(ZooKeeper *keeper, Watch *watcher)
-      : zooKeeper(keeper) {
+      :
+      zooKeeper(keeper) {
 
     keeper->init(watcher);
 
   }
 
   ZooSession(ZooKeeper *keeper)
-      : zooKeeper(keeper) {
+      :
+      zooKeeper(keeper) {
     // already initialized session
 
   }
 
-  ZooKeeper *getZooKeeper() {
+  ZooKeeper* getZooKeeper() {
     return zooKeeper;
   }
 
@@ -246,8 +250,8 @@ class ZooKeepers {
     return ss.str();
   }
 
-  static ZooSession *getSession(std::string zookeepers, uint16_t timeout, std::string auth) {
-    std::lock_guard < std::mutex > lock(syncBarrier);
+  static ZooSession* getSession(std::string zookeepers, uint16_t timeout, std::string auth) {
+    std::lock_guard<std::mutex> lock(syncBarrier);
     std::string sessionKey = ZooKeepers::sessionKey(zookeepers, timeout, auth);
     std::string readOnlyKey = ZooKeepers::sessionKey(zookeepers, timeout, "");
 
@@ -278,7 +282,7 @@ class ZooKeepers {
     return zsi;
   }
 
-  static ZooKeeper *connect(std::string &hosts, uint32_t timeout, std::string auth, Watch *watcher) {
+  static ZooKeeper* connect(std::string &hosts, uint32_t timeout, std::string auth, Watch *watcher) {
     bool tryAgain = true;
     ZooKeeper *zk = NULL;
     do {
@@ -294,7 +298,7 @@ class ZooKeepers {
             tryAgain = false;
           } else {
             // sleep
-            sleep(1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
           }
         }
       }

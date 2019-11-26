@@ -119,6 +119,7 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
 		.def("getResultSet",  &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)
 		.def("fetchColumn", &scanners::BatchScanner::fetchColumn)
+		.def("close", &scanners::BatchScanner::close)
     .def("addRange",(void (scanners::BatchScanner::*)(const cclient::data::Range &) ) &scanners::BatchScanner::addRange, "Adds a range");
 
   pybind11::class_<cclient::data::security::Authorizations>(s, "Authorizations")

@@ -15,7 +15,6 @@
 #ifndef CLIENTINTERFACE_H_
 #define CLIENTINTERFACE_H_
 
-#include <boost/shared_ptr.hpp>
 #include <type_traits>
 #include <string>
 

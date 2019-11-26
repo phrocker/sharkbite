@@ -16,9 +16,6 @@
 #include "AccumuloFacade.h"
 #include <mutex>
 
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
-#include "data/extern/boost/SharedPointer.h"
 #include "../scanrequest/ScanRequest.h"
 #include "../scanrequest/ScanIdentifier.h"
 #include "data/extern/thrift/ThriftWrapper.h"

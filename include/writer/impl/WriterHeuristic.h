@@ -214,7 +214,6 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
   }
 
   volatile bool started;
-  //boost::lockfree::queue<WritePair*, boost::lockfree::fixed_sized<false>> queue;
   moodycamel::ConcurrentQueue<std::shared_ptr<WritePair>> queue;
  private:
   SinkConditions *conditionals;

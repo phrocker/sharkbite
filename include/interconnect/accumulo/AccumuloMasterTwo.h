@@ -19,9 +19,6 @@
 #include "data/extern/thrift/TabletClientService.h"
 #include <mutex>
 
-#include <boost/concept_check.hpp>
-#include <boost/shared_ptr.hpp>
-#include "data/extern/boost/SharedPointer.h"
 #include "data/constructs/InstanceVersion.h"
 #include "../scanrequest/ScanRequest.h"
 #include "../scanrequest/ScanIdentifier.h"
@@ -330,7 +327,7 @@ class AccumuloMasterFacadeV2 : public AccumuloMasterFacade {
 
   void v2_createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
     auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
-    masterClientV2 = std::make_shared<org::apache::accumulov2::core::master::thrift::MasterClientServiceClient>(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
+    masterClientV2 = std::make_shared<org::apache::accumulov2::core::master::thrift::MasterClientServiceClient>(protocolPtr);
   }
 
  public:
@@ -440,8 +437,8 @@ class AccumuloMasterFacadeV2 : public AccumuloMasterFacade {
         auto myTransport = createTransport();
         try {
 
-          auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(myTransport));
-          org::apache::accumulov2::core::master::thrift::MasterClientServiceClient waitClient(boost::tools::from_shared_ptr<apache::thrift::protocol::TCompactProtocol>(protocolPtr));
+          auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(myTransport);
+          org::apache::accumulov2::core::master::thrift::MasterClientServiceClient waitClient(protocolPtr);
           waitClient.waitForFateOperation(returnValue, transId, creds, fateTransId);
 
           break;

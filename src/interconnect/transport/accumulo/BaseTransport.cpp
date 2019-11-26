@@ -50,7 +50,7 @@ void ThriftTransporter::authenticate(cclient::data::security::AuthInfo *auth) {
 void ThriftTransporter::createIfClosed() {
   if (underlyingTransport.get() != NULL && !underlyingTransport->isOpen()) {
 
-    underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
+    underlyingTransport = createTransporter();
     createClientService();
   }
 }
@@ -60,7 +60,7 @@ void ThriftTransporter::closeAndCreateClient() {
     underlyingTransport->close();
   }
 
-  underlyingTransport = boost::tools::from_shared_ptr<apache::thrift::transport::TTransport>(createTransporter());
+  underlyingTransport = createTransporter();
   createClientService();
 }
 
@@ -127,7 +127,7 @@ std::shared_ptr<apache::thrift::transport::TFramedTransport> ThriftTransporter::
   serverTransport->setNoDelay(true);
   serverTransport->setConnTimeout(0);
 
-  auto newTransport = std::make_shared<apache::thrift::transport::TFramedTransport>(boost::tools::from_shared_ptr<apache::thrift::transport::TSocket>(serverTransport));
+  auto newTransport = std::make_shared<apache::thrift::transport::TFramedTransport>(serverTransport);
 
   newTransport->open();
 

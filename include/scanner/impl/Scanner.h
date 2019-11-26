@@ -124,19 +124,11 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
 
   }
 
-  /**
-   * Sets the heuristic for this scanner
-   * @param heuristic scanner heuristic
-   */
-  void setHeuristic(ScannerHeuristic *heuristic) {
-    scannerHeuristic = heuristic;
-  }
 
   virtual ~Scanner() {
     for (cclient::data::Range *range : ranges) {
       delete range;
     }
-    delete scannerHeuristic;
     if (!IsEmpty(resultSet)) {
       delete resultSet;
     }
@@ -170,6 +162,10 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
         locatedTablets->push_back(rangeDef);
       }
     }
+  }
+
+  void close(){
+    scannerHeuristic->close();
   }
 
  protected:
@@ -211,7 +207,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   // zookeeper instance
   cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
   // scanner heuristic to control server access
-  ScannerHeuristic *scannerHeuristic;
+  std::unique_ptr<ScannerHeuristic> scannerHeuristic;
   // tablet locator
   cclient::impl::TabletLocator *tableLocator;
 
