@@ -43,11 +43,13 @@ class InstanceVersion {
   }
 
   InstanceVersion() {
+    version = 1;
   }
 
   void setHostVersion(const std::string &instance, int version) {
     std::lock_guard<std::mutex> lock(mtx);
     version_map_.insert(std::make_pair(instance, version));
+    this->version = version;
   }
 
   int getHostVersion(const std::string &instance) const {
@@ -56,11 +58,13 @@ class InstanceVersion {
     if (vmap != std::end(version_map_)) {
       return vmap->second;
     } else {
-      return 1;
+      return version;
     }
   }
 
   mutable std::mutex mtx;
+  int version;
+  // eventually we will support multi modal access
   std::map<std::string, int> version_map_;
 };
 

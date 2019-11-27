@@ -20,7 +20,9 @@ namespace interconnect {
 ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn)
     : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
       logger(logging::LoggerFactory<ThriftTransporter>::getLogger()) {
-  switch (cclient::data::InstanceVersion::getVersion(conn->getHost())) {
+  auto suspectedVersion = cclient::data::InstanceVersion::getVersion(conn->getHost());
+  logging::LOG_DEBUG(logger) << "Attempting API version " << suspectedVersion;
+  switch (suspectedVersion) {
     case 1:
       server = std::make_unique<AccumuloServerFacadeV1>();
       break;

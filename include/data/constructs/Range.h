@@ -21,111 +21,135 @@
 namespace cclient {
 namespace data {
 
-
 /**
  * Range object that contains a start and end key for connecting to accumulo 
  **/
 class Range {
-public:
-    /**
-     * Constructor that sets a null start and end key. ( -inf , +inf )
-     **/
-    Range();
+ public:
+  /**
+   * Constructor that sets a null start and end key. ( -inf , +inf )
+   **/
+  Range();
 
+  /**
+   * Sets the start key and endkey with the inclusive flags.
+   * @param startKey start key
+   * @param startInclusive start key is inclusive
+   * @param endKey end key
+   * @param endKeyInclusive return whether or not the end key is inclusive.
+   **/
+  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
 
+  /**
+   * Sets the start key and endkey with the inclusive flags.
+   * @param startKey start key
+   * @param startInclusive start key is inclusive
+   * @param endKey end key
+   * @param endKeyInclusive return whether or not the end key is inclusive.
+   **/
+  explicit Range(std::shared_ptr<Key> endKey, bool endKeyInclusive)
+      :
+      Range(0, false, endKey, endKeyInclusive) {
+  }
 
-    /**
-     * Sets the start key and endkey with the inclusive flags.
-     * @param startKey start key
-     * @param startInclusive start key is inclusive
-     * @param endKey end key 
-     * @param endKeyInclusive return whether or not the end key is inclusive.
-     **/
-    explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
-    
-    
-    /**
-     * Sets the start key and endkey with the inclusive flags.
-     * @param startKey start key
-     * @param startInclusive start key is inclusive
-     * @param endKey end key 
-     * @param endKeyInclusive return whether or not the end key is inclusive.
-     **/
-    explicit Range(std::shared_ptr<Key> endKey, bool endKeyInclusive) :
-      Range(0,false,endKey,endKeyInclusive)
-    {
+  /**
+   * Sets the start key and endkey with the inclusive flags.
+   * @param startKey start key
+   * @param startInclusive start key is inclusive
+   * @param endKey end key
+   * @param endKeyInclusive return whether or not the end key is inclusive.
+   **/
+  explicit Range(bool startInclusive, std::shared_ptr<Key> startKey)
+      :
+      Range(startKey, startInclusive, 0, false) {
+  }
+
+  /**
+   * Returns the start key.
+   **/
+  std::shared_ptr<Key> getStartKey() {
+    return start;
+  }
+
+  /**
+   * Returns the end key.
+   **/
+  std::shared_ptr<Key> getStopKey() {
+    return stop;
+  }
+
+  /**
+   * returns start key inclusive flag.
+   **/
+  bool getStartKeyInclusive() {
+    return startKeyInclusive;
+  }
+
+  /**
+   * returns end key inclusive flag.
+   **/
+  bool getStopKeyInclusive() {
+    return stopKeyInclusive;
+  }
+
+  /**
+   * Returns whether or not the start key is infinite.
+   **/
+  bool getInfiniteStartKey() {
+    return infiniteStartKey;
+  }
+
+  /**
+   * Returns whether or not the end key is infinite.
+   **/
+  bool getInfiniteStopKey() {
+    return infiniteStopKey;
+  }
+
+  bool afterEndKey(std::shared_ptr<Key> key) const {
+    if (infiniteStartKey)
+      return false;
+
+    if (stopKeyInclusive){
+      return stop < key;
     }
-    
-    /**
-     * Sets the start key and endkey with the inclusive flags.
-     * @param startKey start key
-     * @param startInclusive start key is inclusive
-     * @param endKey end key 
-     * @param endKeyInclusive return whether or not the end key is inclusive.
-     **/
-    explicit Range(bool startInclusive,std::shared_ptr<Key> startKey) :
-      Range(startKey,startInclusive,0,false)
-    {
+
+    return stop <= key;
+
+  }
+
+  virtual ~Range();
+
+  friend inline std::ostream&
+  operator <<(std::ostream &out, Range &rhs) {
+    out << "Range ";
+    if (rhs.infiniteStartKey) {
+      out << "(-inf";
+    } else {
+      out << (rhs.startKeyInclusive ? "[" : "(") << rhs.start;
+    }
+    out << ",";
+    if (rhs.infiniteStopKey) {
+      out << "+inf) ";
+    } else {
+      out << rhs.stop << rhs.stopKeyInclusive ? "] " : ") ";
     }
 
-    /**
-     * Returns the start key.
-     **/
-    std::shared_ptr<Key> getStartKey()
-    {
-        return start;
-    }
+    return out;
+  }
 
-    /**
-     * Returns the end key.
-     **/
-    std::shared_ptr<Key> getStopKey()
-    {
-        return stop;
-    }
+  friend inline std::ostream&
+  operator <<(std::ostream &out, Range *rhs) {
+    return operator<<(out, *rhs);
+  }
 
-    /**
-     * returns start key inclusive flag.
-     **/
-    bool getStartKeyInclusive()
-    {
-        return startKeyInclusive;
-    }
-
-    /**
-     * returns end key inclusive flag.
-     **/
-    bool getStopKeyInclusive()
-    {
-        return stopKeyInclusive;
-    }
-
-    /**
-     * Returns whether or not the start key is infinite.
-     **/
-    bool getInfiniteStartKey()
-    {
-        return infiniteStartKey;
-    }
-
-    /**
-     * Returns whether or not the end key is infinite.
-     **/
-    bool getInfiniteStopKey()
-    {
-        return infiniteStopKey;
-    }
-
-    virtual ~Range();
-
-
-protected:
-    std::shared_ptr<Key> start;
-    std::shared_ptr<Key> stop;
-    bool startKeyInclusive;
-    bool stopKeyInclusive;
-    bool infiniteStartKey;
-    bool infiniteStopKey;
+ protected:
+  std::shared_ptr<Key> start;
+  std::shared_ptr<Key> stop;
+  bool startKeyInclusive;
+  bool stopKeyInclusive;
+  bool infiniteStartKey;
+  bool infiniteStopKey;
 };
 
 } /* namespace data */

@@ -146,8 +146,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   }
 
-  static void*
-  scanRoutine(ScanPair<interconnect::ThriftTransporter> *scanResource) {
+  static void* scanRoutine(ScanPair<interconnect::ThriftTransporter> *scanResource) {
 
     Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source = scanResource->src;
 
@@ -165,12 +164,19 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
           scan = conn->scan(scanResource->runningFlag, source->getColumns(), source->getIters());
 
           do {
+
+            if (!scanResource->runningFlag->load()) {
+              break;
+            }
+
             std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
 
             scan->getNextResults(&nextResults);
 
-            source->getResultSet()->add_ptr(&nextResults);
-            nextResults.clear();
+            if (!nextResults.empty()) {
+              source->getResultSet()->add_ptr(&nextResults);
+              nextResults.clear();
+            }
 
             if (!scanResource->runningFlag->load()) {
               break;
@@ -189,6 +195,11 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
               scan = newScan;
 
           } while (scan != NULL);
+        } catch (const apache::thrift::TApplicationException &te) {
+          if (scanResource->runningFlag->load()) {
+                      throw te;
+                    }
+          ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
         } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
           if (scanResource->runningFlag->load()) {
             throw te;

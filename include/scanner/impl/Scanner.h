@@ -75,7 +75,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
    * Returns a result set.
    * @return results iterator.
    **/
-  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *getResultSet() override {
+  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>* getResultSet() override {
     std::lock_guard<std::mutex> lock(scannerLock);
 
     if (IsEmpty(&ranges)) {
@@ -90,6 +90,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
       tableLocator->binRanges(credentials, &ranges, &locations, &returnRanges);
 
       for (std::string location : locations) {
+        logging::LOG_TRACE(logger) << " Evaluating ranges for " << location;
         std::vector<std::string> locationSplit = split(location, ':');
         if (locationSplit.size() != 2) {
 
@@ -102,7 +103,11 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
         }
         for (auto hostExtents : returnRanges.at(location)) {
           std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents;
-          logging::LOG_DEBUG(logger) << " extent is " << hostExtents.first->getTableId();
+          for (const auto &rng : hostExtents.second) {
+            logging::LOG_DEBUG(logger) << " extent is " << hostExtents.first;
+            if (!rng->getInfiniteStartKey())
+              logging::LOG_DEBUG(logger) << " extent is " << rng->getStartKey()->getRowStr();
+          }
           extents.push_back(hostExtents.first);
 
           auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, &columns);
@@ -124,7 +129,6 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
 
   }
 
-
   virtual ~Scanner() {
     for (cclient::data::Range *range : ranges) {
       delete range;
@@ -134,7 +138,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     }
   }
 
-  cclient::data::Instance *getInstance() override {
+  cclient::data::Instance* getInstance() override {
     return connectorInstance;
   }
 
@@ -164,7 +168,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     }
   }
 
-  void close() override{
+  void close() override {
     scannerHeuristic->close();
   }
 

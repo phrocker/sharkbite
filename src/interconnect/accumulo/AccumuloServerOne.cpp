@@ -276,7 +276,7 @@ interconnect::Scan *AccumuloServerFacadeV1::v1_continueScan(Scan *originalScan) 
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
-    if (results.more)
+    if (results.more && !kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);

@@ -97,22 +97,24 @@ class TabletServerLocator : public TabletLocator {
 
       cclient::data::TabletLocation returnLocation;
       logging::LOG_DEBUG(logger) << tableId << " Received " << locations.size() << " locations";
+      std::lock_guard<std::recursive_mutex> lock(locatorMutex);
       for (auto location : locations) {
         logging::LOG_DEBUG(logger) << tableId << " Received " << location.getLocation() << " " << location.getExtent();
-        if (location.getExtent()->getPrevEndRow().length() == 0 || location.getExtent()->getPrevEndRow() < modifiedRow) {
+        auto cachedRow = location.getExtent()->getEndRow();
+
+        logging::LOG_DEBUG(logger) << tableId << " : " << "Caching " << cachedRow << " in the cache ";
+        cachedLocations.insert(std::pair<std::string, cclient::data::TabletLocation>(cachedRow, location));
+
+
+        /*if (location.getExtent()->getPrevEndRow().length() == 0 || location.getExtent()->getPrevEndRow() < modifiedRow) {
           returnLocation = location;
           logging::LOG_DEBUG(logger) << tableId << " Received " << returnLocation.getLocation() << " " << returnLocation.getExtent();
           break;
         }
+        */
       }
 
-      if (returnLocation != nullptr) {
-        auto cachedRow = returnLocation.getExtent()->getEndRow();
-
-        std::lock_guard<std::recursive_mutex> lock(locatorMutex);
-        logging::LOG_DEBUG(logger) << tableId << " : " << "Caching " << cachedRow << " in the cache ";
-        cachedLocations.insert(std::pair<std::string, cclient::data::TabletLocation>(cachedRow, returnLocation));
-
+      if (getCachedLocation(modifiedRow,returnLocation)) {
         return returnLocation;
       } else {
         if (retry)
@@ -166,8 +168,9 @@ class TabletServerLocator : public TabletLocator {
 
     std::string startRow = "";
     std::vector<cclient::data::Range*> failures;
-    std::vector<cclient::data::TabletLocation> tabletLocations;
+
     for (auto range : *ranges) {
+      std::vector<cclient::data::TabletLocation> tabletLocations;
       if (range->getStartKey() != NULL) {
         startRow = std::string(range->getStartKey()->getRow().first, range->getStartKey()->getRow().second);
       }
@@ -177,27 +180,36 @@ class TabletServerLocator : public TabletLocator {
       try {
         if (!getCachedLocation(startRow, loc)){
           loc = locateTablet(credentials, startRow, false, false);
-          logging::LOG_DEBUG(logger) << "Received un-cached location " << loc.getLocation() << " " << loc.getExtent();
+
         }
       } catch (const cclient::exceptions::ClientException &ce) {
         failures.push_back(range);
         continue;
       }
 
+      logging::LOG_DEBUG(logger) << startRow << "Received location " << loc.getLocation() << " " << loc.getExtent();
       tabletLocations.push_back(loc);
       std::string stopKey = "";
       if (range->getStopKey() != NULL)
         stopKey = std::string(range->getStopKey()->getRow().first, range->getStopKey()->getRow().second);
       std::string extentEndRow = loc.getExtent()->getEndRow();
 
-      while (!range->getInfiniteStopKey() && stopKey >= extentEndRow) {
+      std::string lookupRow = extentEndRow;
 
-        bool isCached = getCachedLocation(startRow, loc);
+      auto test = extentEndRow;
+      test.append(1,0x01);
+      auto testKey = std::make_shared<cclient::data::Key>();
+      testKey->setRow(test);
+      while (!range->getInfiniteStopKey() && test.compare(stopKey) <= 0) {
+        logging::LOG_DEBUG(logger) << "start loop " << stopKey;
+        logging::LOG_DEBUG(logger) << "start loop " << " " << test;
+        lookupRow.append(1,0x01);
+        bool isCached = getCachedLocation(lookupRow, loc);
         if (!isCached){
-          logging::LOG_DEBUG(logger) << "Received un-cached location " << loc.getLocation() << " " << loc.getExtent()<< " iscached? " << (isCached==true);
+          logging::LOG_DEBUG(logger) << lookupRow << "Received un-cached location, will locate " << loc.getLocation() << " " << loc.getExtent()<< " " << extentEndRow << " iscached? " << (isCached==true);
           loc = locateTablet(credentials, extentEndRow, true, false);
         }else{
-          logging::LOG_DEBUG(logger) << "Received cached location " << loc.getLocation() << " " << loc.getExtent() << " iscached? " << (isCached==true);
+          logging::LOG_DEBUG(logger) << lookupRow << "Received cached location " << loc.getLocation() << " " << loc.getExtent() << " " << extentEndRow <<" iscached? " << (isCached==true);
         }
 
 
@@ -208,13 +220,14 @@ class TabletServerLocator : public TabletLocator {
         if (extentEndRow.length() == 0)
           break;
 
-        char *backing = new char[extentEndRow.length() + 1];
-        memset(backing, 0x01, extentEndRow.length() + 1);
-        memcpy(backing, extentEndRow.c_str(), extentEndRow.length());
-        startRow = std::string(backing);
-        delete [] backing;
+        lookupRow = extentEndRow;
 
-        logging::LOG_DEBUG(logger) << "Changing start row to " << startRow;
+        test = extentEndRow;
+        test.append(1,0x01);
+        testKey = std::make_shared<cclient::data::Key>();
+        testKey->setRow(test);
+
+        logging::LOG_DEBUG(logger) << "Changing start row to " << startRow << " from " << extentEndRow;
       }
       for (auto locs : tabletLocations) {
         locations->insert(locs.getLocation());

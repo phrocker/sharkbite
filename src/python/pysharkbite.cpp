@@ -46,7 +46,9 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<cclient::data::Instance>(s, "Instance");
 //logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
   pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")
-    .def_static("enableLogging",&logging::LoggerConfiguration::enableLogger);
+    .def_static("enableLogging",&logging::LoggerConfiguration::enableLogger)
+    .def_static("enableTraceLogger",&logging::LoggerConfiguration::enableTraceLogger);
+
 
   pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, cclient::data::Instance>(s, "ZookeeperInstance")
 	  .def(pybind11::init<std::string, std::string,uint32_t, const std::shared_ptr<cclient::impl::Configuration>&>())

@@ -175,9 +175,15 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
   std::map<std::string, std::string> executionHints;
 
 
+  logging::LOG_DEBUG(logger) << "extent is " << extent << " and range is " << range;
 
-  tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
-                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 512, "", executionHints);
+  try{
+    tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
+                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 1024 * 5, "", executionHints);
+  } catch (const apache::thrift::TApplicationException &te) {
+    logging::LOG_DEBUG(logger) << "Error on extent" << extent << " and range is " << range;
+    throw te;
+  }
 
 
 
@@ -237,9 +243,24 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
   org::apache::accumulov2::core::tabletserver::thrift::TSamplerConfiguration config;
   std::map<std::string, std::string> executionHints;
 
+  try{
   tserverClient_V2->startMultiScan(scan, scanId, ThriftV2Wrapper::convert(request->getCredentials()), ThriftV2Wrapper::convert(request->getRangeIdentifiers()),
                                    ThriftV2Wrapper::convert(request->getColumns()), ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, config,
-                                   512, "", executionHints);
+                                   1024 * 5, "", executionHints);
+  } catch (const apache::thrift::TApplicationException &te) {
+      auto batch =ThriftV2Wrapper::convert(request->getRangeIdentifiers());
+      for(auto d : batch){
+        std::stringstream st;
+        d.first.printTo(st);
+        for(auto rng : d.second){
+          std::stringstream str;
+          rng.printTo(str);
+
+          logging::LOG_DEBUG(logger) << "extent is " << st.str() << " range is " << str.str();
+        }
+      }
+      throw te;
+    }
 
   org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results = scan.result;
 
@@ -278,7 +299,11 @@ void AccumuloServerFacadeV2::v2_registerService(std::string instance, std::strin
 
 Scan * AccumuloServerFacadeV2::v2_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
   Scan *initialScan = NULL;
-  if (request->getRangeIdentifiers()->size() > 1) {
+  size_t size = 0;
+  for(auto sz : *request->getRangeIdentifiers()){
+    size += sz->size();
+  }
+  if (size > 1) {
     initialScan = multiScan(isRunning,request);
   } else {
     ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
@@ -306,7 +331,7 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
 
-    if (results.more)
+    if (results.more && !kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);

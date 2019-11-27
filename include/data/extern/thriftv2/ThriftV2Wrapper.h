@@ -170,8 +170,9 @@ class ThriftV2Wrapper {
       newKey.row = std::string(rowPair.first, rowPair.second);
 
       std::pair<char*, size_t> cfPair = key->getColFamily();
-      if (cfPair.second > 0)
+      if (cfPair.second > 0){
         newKey.colFamily = std::string(cfPair.first, cfPair.second);
+      }
 
       std::pair<char*, size_t> cqPair = key->getColQualifier();
       if (cqPair.second > 0)

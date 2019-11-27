@@ -14,19 +14,16 @@
 #ifndef SCAN_IDENT_H_
 #define SCAN_IDENT_H_
 
-
 #include <vector>
 #include <algorithm>
 #include <map>
 
-
-
 namespace interconnect {
 struct CopyKey {
-    template<typename T>
-    typename T::first_type operator()(T keyValuePair) const {
-        return keyValuePair.first;
-    }
+  template<typename T>
+  typename T::first_type operator()(T keyValuePair) const {
+    return keyValuePair.first;
+  }
 };
 
 /**
@@ -36,42 +33,48 @@ struct CopyKey {
  **/
 template<typename M, typename V>
 class ScanIdentifier {
-protected:
-    std::map<M, std::vector<V> > globalIdentifierMapping;
+ protected:
+  std::map<M, std::vector<V> > globalIdentifierMapping;
+  size_t identSize;
+ public:
+  ScanIdentifier()
+      :
+      identSize(0) {
 
-public:
-    ScanIdentifier() {
+  }
 
-    }
+  size_t size() const {
+    return identSize;
+  }
 
-    /**
-     * Returns global identifiers for identifying scans
-     * @param m key
-     * @returns global identifiers for the provided key, m
-     **/
-    std::vector<V> getIdentifiers(M m) {
-        return globalIdentifierMapping[m];
-    }
+  /**
+   * Returns global identifiers for identifying scans
+   * @param m key
+   * @returns global identifiers for the provided key, m
+   **/
+  std::vector<V> getIdentifiers(M m) {
+    return globalIdentifierMapping[m];
+  }
 
-    /**
-     * Puts an identifier into the associated global map
-     * @param m map key
-     * @param v map key's value
-     **/
-    void putIdentifier(M m, V v) {
-        globalIdentifierMapping[m].push_back(v);
-    }
+  /**
+   * Puts an identifier into the associated global map
+   * @param m map key
+   * @param v map key's value
+   **/
+  void putIdentifier(M m, V v) {
+    globalIdentifierMapping[m].push_back(v);
+    identSize++;
+  }
 
-    /**
-     * Returns a copy of all global mappings
-     * @returns copied vector.
-     **/
-    std::vector<M> getGlobalMapping() {
-        std::vector<M> keys;
-        std::transform(globalIdentifierMapping.begin(),
-                  globalIdentifierMapping.end(), std::back_inserter(keys), CopyKey());
-        return keys;
-    }
+  /**
+   * Returns a copy of all global mappings
+   * @returns copied vector.
+   **/
+  std::vector<M> getGlobalMapping() {
+    std::vector<M> keys;
+    std::transform(globalIdentifierMapping.begin(), globalIdentifierMapping.end(), std::back_inserter(keys), CopyKey());
+    return keys;
+  }
 };
 }
 #endif

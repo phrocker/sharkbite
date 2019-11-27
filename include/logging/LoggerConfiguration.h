@@ -93,6 +93,10 @@ class LoggerConfiguration {
     getConfiguration().enableLogging();
   }
 
+  static void enableTraceLogger(){
+      getConfiguration().enableLogging(LOG_LEVEL::trace);
+    }
+
   static std::unique_ptr<LoggerConfiguration> newInstance() {
     return std::unique_ptr<LoggerConfiguration>(new LoggerConfiguration());
   }

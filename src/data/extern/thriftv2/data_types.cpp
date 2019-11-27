@@ -150,17 +150,22 @@ uint32_t TKey::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeBinary(this->row);
   xfer += oprot->writeFieldEnd();
 
-  xfer += oprot->writeFieldBegin("colFamily", ::apache::thrift::protocol::T_STRING, 2);
-  xfer += oprot->writeBinary(this->colFamily);
-  xfer += oprot->writeFieldEnd();
+  //if (!this->colFamily.empty()){
+    xfer += oprot->writeFieldBegin("colFamily", ::apache::thrift::protocol::T_STRING, 2);
+    xfer += oprot->writeBinary(this->colFamily);
+    xfer += oprot->writeFieldEnd();
+  //}
+  //if (!this->colQualifier.empty()){
+    xfer += oprot->writeFieldBegin("colQualifier", ::apache::thrift::protocol::T_STRING, 3);
+    xfer += oprot->writeBinary(this->colQualifier);
+    xfer += oprot->writeFieldEnd();
+  //}
 
-  xfer += oprot->writeFieldBegin("colQualifier", ::apache::thrift::protocol::T_STRING, 3);
-  xfer += oprot->writeBinary(this->colQualifier);
-  xfer += oprot->writeFieldEnd();
-
-  xfer += oprot->writeFieldBegin("colVisibility", ::apache::thrift::protocol::T_STRING, 4);
-  xfer += oprot->writeBinary(this->colVisibility);
-  xfer += oprot->writeFieldEnd();
+  //if (!this->colVisibility.empty()){
+    xfer += oprot->writeFieldBegin("colVisibility", ::apache::thrift::protocol::T_STRING, 4);
+    xfer += oprot->writeBinary(this->colVisibility);
+    xfer += oprot->writeFieldEnd();
+  //}
 
   xfer += oprot->writeFieldBegin("timestamp", ::apache::thrift::protocol::T_I64, 5);
   xfer += oprot->writeI64(this->timestamp);
