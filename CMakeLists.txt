@@ -49,7 +49,8 @@ find_package(ZLIB REQUIRED)
 
 use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 find_package (OpenSSL REQUIRED)
-
+find_package(Boost 1.55 REQUIRED COMPONENTS system thread serialization)
+include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 ################# THRIFT
 
 	ExternalProject_Add(
