@@ -32,6 +32,21 @@ class Range {
   Range();
 
   /**
+     * Sets the range to a single row
+     * @param row
+     **/
+  explicit Range(const std::string &row);
+
+  /**
+     * Sets the start key and endkey with the inclusive flags.
+     * @param startKey start key
+     * @param startInclusive start key is inclusive
+     * @param endKey end key
+     * @param endKeyInclusive return whether or not the end key is inclusive.
+     **/
+    explicit Range(const std::string & startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive);
+
+  /**
    * Sets the start key and endkey with the inclusive flags.
    * @param startKey start key
    * @param startInclusive start key is inclusive

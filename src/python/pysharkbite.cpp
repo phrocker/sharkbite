@@ -105,6 +105,7 @@ PYBIND11_MODULE(pysharkbite, s){
 
 
   pybind11::class_<cclient::data::Range>(s, "Range")
+        .def(pybind11::init<const std::string&>())
         .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool>());
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")

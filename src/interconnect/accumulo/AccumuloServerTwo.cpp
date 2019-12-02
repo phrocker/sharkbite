@@ -346,6 +346,9 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
     delete kvs;
   } catch (org::apache::accumulov2::core::tabletserver::thrift::NotServingTabletException &te) {
     throw cclient::exceptions::NotServingException(te.what());
+  } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
+    logging::LOG_DEBUG(logger) << "Continue Scan halted. No Such Scan ID, so setting no more results";
+    originalScan->setHasMore(false);
   }
   return originalScan;
 }

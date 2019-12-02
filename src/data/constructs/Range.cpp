@@ -14,45 +14,73 @@
 
 #include "data/constructs/Range.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-Range::~Range ()
-{
+Range::~Range() {
 
 }
 
-Range::Range() :
-    start(NULL), stop(NULL), startKeyInclusive(true), stopKeyInclusive(
-        false) {
-    infiniteStartKey = true;
-    infiniteStopKey = true;
+Range::Range()
+    :
+    start(NULL),
+    stop(NULL),
+    startKeyInclusive(true),
+    stopKeyInclusive(false) {
+  infiniteStartKey = true;
+  infiniteStopKey = true;
 }
 
-Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive) :
-    start(startKey), startKeyInclusive(startInclusive), stop(endKey), stopKeyInclusive(
-        endKeyInclusive) {
-    infiniteStartKey = startKey == NULL;
-    infiniteStopKey = stop == NULL;
-
-    if (stopKeyInclusive)
-    {
-        std::pair<char*, size_t> row = stop->getRow();
-        char *newRow = new char[row.second+1];
-        memset(newRow,0x00,row.second+1);
-        memcpy(newRow,row.first,row.second);
-        stop->setRow(newRow,row.second+1);
-        delete [] newRow;
-    }
-    if (!infiniteStartKey && !infiniteStopKey && (*stop < *start))
-    {
-        throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");
-    }
+Range::Range(const std::string &row)
+    :
+    Range(row, true, row, true) {
 }
 
+Range::Range(const std::string &startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive)
+    :startKeyInclusive(startInclusive),
+    stopKeyInclusive(endKeyInclusive) {
 
+  start = std::make_shared<cclient::data::Key>();
+  stop = std::make_shared<cclient::data::Key>();
+  start->setRow(startRow);
+  stop->setRow(endRow);
+  infiniteStartKey = startRow.empty();
+  infiniteStopKey = endRow.empty();
+
+  if (stopKeyInclusive) {
+    std::pair<char*, size_t> row = stop->getRow();
+    char *newRow = new char[row.second + 1];
+    memset(newRow, 0x00, row.second + 1);
+    memcpy(newRow, row.first, row.second);
+    stop->setRow(newRow, row.second + 1);
+    delete[] newRow;
+  }
+  if (!infiniteStartKey && !infiniteStopKey && (*stop < *start)) {
+    throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");
+  }
+}
+
+Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive)
+    :
+    start(startKey),
+    startKeyInclusive(startInclusive),
+    stop(endKey),
+    stopKeyInclusive(endKeyInclusive) {
+  infiniteStartKey = startKey == NULL;
+  infiniteStopKey = stop == NULL;
+
+  if (stopKeyInclusive) {
+    std::pair<char*, size_t> row = stop->getRow();
+    char *newRow = new char[row.second + 1];
+    memset(newRow, 0x00, row.second + 1);
+    memcpy(newRow, row.first, row.second);
+    stop->setRow(newRow, row.second + 1);
+    delete[] newRow;
+  }
+  if (!infiniteStartKey && !infiniteStopKey && (*stop < *start)) {
+    throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");
+  }
+}
 
 } /* namespace data */
 } /* namespace cclient */
