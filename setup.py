@@ -31,7 +31,7 @@ def operatingsystem():
     return "Operating System :: POSIX :: Linux"
 
 setup(
-    name='pysharkbite',
+    name='sharkbite',
     version='0.5.0.9',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
