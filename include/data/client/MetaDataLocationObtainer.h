@@ -42,13 +42,13 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
    * @param instance instance
    **/
   explicit MetaDataLocationObtainer(cclient::data::Instance *instance)
-      : instance(instance),
-        logger(logging::LoggerFactory<MetaDataLocationObtainer>::getLogger()) {
-    columns = new std::vector<cclient::data::Column*>();
-    columns->push_back(new cclient::data::Column(METADATA_CURRENT_LOCATION_COLUMN_FAMILY));
-    columns->push_back(new cclient::data::Column(METADATA_TABLET_COLUMN_FAMILY,
+      :
+      instance(instance),
+      logger(logging::LoggerFactory<MetaDataLocationObtainer>::getLogger()) {
+    columns.emplace_back(cclient::data::Column(METADATA_CURRENT_LOCATION_COLUMN_FAMILY));
+    columns.emplace_back(cclient::data::Column(METADATA_TABLET_COLUMN_FAMILY,
     METADATA_PREV_ROW_COLUMN_CQ));
-    std::sort(columns->begin(), columns->end());
+    std::sort(columns.begin(), columns.end());
 
   }
 
@@ -80,7 +80,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
   }
  protected:
   // columns to locate
-  std::vector<cclient::data::Column*> *columns;
+  std::vector<cclient::data::Column> columns;
   // instance
   cclient::data::Instance *instance;
  private:

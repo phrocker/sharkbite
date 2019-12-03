@@ -110,7 +110,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           }
           extents.push_back(hostExtents.first);
 
-          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, &columns);
+          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, columns);
 
           std::shared_ptr<interconnect::ServerInterconnect> directConnect = std::make_shared<interconnect::ServerInterconnect>(rangeDef, connectorInstance->getConfiguration());
           scannerHeuristic->addClientInterface(directConnect);
@@ -161,7 +161,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
       for (auto hostExtents : returnRanges.at(location)) {
         std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents;
         extents.push_back(hostExtents.first);
-        auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, &columns);
+        auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, columns);
 
         locatedTablets->push_back(rangeDef);
       }

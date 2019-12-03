@@ -39,7 +39,7 @@ public:
      * Constructor
      * @param columFam column family.
      **/
-    explicit Column(std::string columFam) :
+    explicit Column(const std::string &columFam) :
         Column(&columFam, NULL, NULL) {
 
     }
@@ -49,7 +49,7 @@ public:
      * @param columFam column family.
      * @param columnQual column qualifier
      **/
-    Column(std::string columFam,std::string columnQual) :
+    explicit Column(const std::string &columFam,const std::string &columnQual) :
         Column(&columFam, &columnQual, NULL) {
 
     }
@@ -61,7 +61,7 @@ public:
      * @param columnQual column qualifier
      * @param columnVis column visibility
      **/
-    Column(std::string columFam, std::string columnQual, std::string columnVis) :
+    explicit Column(const std::string &columFam, const std::string &columnQual, const std::string &columnVis) :
         Column(&columFam, &columnQual, &columnVis) {
 
     }
@@ -71,8 +71,8 @@ public:
      * @param columFam column family.
      * @param columnQual column qualifier
      **/
-    Column(std::string *columFam, std::string *columnQual = NULL,
-           std::string *columnVis = NULL);
+    explicit Column(const std::string *columFam, const std::string *columnQual = NULL,
+           const std::string *columnVis = NULL);
 
     /**
      * Destructor
@@ -89,19 +89,19 @@ public:
 
     void setColFamily(const char *r, uint32_t size);
 
-    std::pair<char*, size_t> getColFamily() {
+    std::pair<char*, size_t> getColFamily() const {
         return std::make_pair(columnFamily, columnFamilyLen);
     }
 
     void setColQualifier(const char *r, uint32_t size);
 
-    std::pair<char*, size_t> getColQualifier() {
+    std::pair<char*, size_t> getColQualifier() const {
         return std::make_pair(columnQualifier, columnQualifierLen);
     }
 
     void setColVisibility(const char *r, uint32_t size);
 
-    std::pair<char*, size_t> getColVisibility() {
+    std::pair<char*, size_t> getColVisibility() const {
         return std::make_pair(columnVisibility, columnVisibilityLen);
     }
 

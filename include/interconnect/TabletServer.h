@@ -28,6 +28,7 @@
 #include <string>
 #include "InterConnect.h"
 #include "TransportPool.h"
+#include "interconnect/scanrequest/ScanRequest.h"
 #include "../data/constructs/inputvalidation.h"
 #include "../data/constructs/IterInfo.h"
 #include "../data/constructs/configuration/Configuration.h"
@@ -164,7 +165,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *
-  scan(std::atomic<bool> *isRunning,std::vector<cclient::data::Column*> *cols, std::vector<cclient::data::IterInfo*> *serverSideIterators) {
+  scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators) {
     ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
     request.addColumns(cols);
@@ -242,11 +243,11 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
   Scan *scan(std::atomic<bool> *isRunning) {
 
-    std::vector<cclient::data::Column*> emptyCols;
+    std::vector<cclient::data::Column> emptyCols;
 
-    std::vector<cclient::data::IterInfo*> emptyServerSideIterators;
+    std::vector<cclient::data::IterInfo> emptyServerSideIterators;
 
-    return scan(isRunning, &emptyCols, &emptyServerSideIterators);
+    return scan(isRunning, emptyCols, emptyServerSideIterators);
 
   }
 

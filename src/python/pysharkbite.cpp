@@ -13,6 +13,7 @@
  */
 #include <python/bindings.h>
 
+#include "data/constructs/IterInfo.h"
 #include "data/constructs/KeyValue.h"
 #include "data/constructs/Mutation.h"
 #include "data/constructs/security/Authorizations.h"
@@ -61,6 +62,12 @@ PYBIND11_MODULE(pysharkbite, s){
       .def("getUserName",&cclient::data::security::AuthInfo::getUserName)
       .def("getPassword", &cclient::data::security::AuthInfo::getPassword)
       .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId);
+
+  pybind11::class_<cclient::data::IterInfo>(s, "IterInfo")
+      .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
+      .def("getPriority",&cclient::data::IterInfo::getPriority)
+      .def("getName",&cclient::data::IterInfo::getName)
+      .def("getClass",&cclient::data::IterInfo::getClass);
 
   pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector")
       .def(pybind11::init<cclient::data::security::AuthInfo&, cclient::data::Instance*>())

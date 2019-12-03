@@ -17,7 +17,6 @@
 
 #include <vector>
 
-
 #include "../../data/constructs/IterInfo.h"
 #include "../../data/constructs/column.h"
 
@@ -28,92 +27,81 @@
 #include "../transport/ServerConnection.h"
 #include "ScanIdentifier.h"
 
-namespace interconnect
-{
+namespace interconnect {
 /**
  * Represents a scan request
  */
 
 template<typename I>
-class ScanRequest
-{
+class ScanRequest {
 
-public:
-    ScanRequest(cclient::data::security::AuthInfo *credentials, cclient::data::security::Authorizations *auths,
-    		std::shared_ptr<ServerConnection> server) :
-        creds(credentials), auths(auths), connection(server)
-    {
+ public:
+  ScanRequest(cclient::data::security::AuthInfo *credentials, cclient::data::security::Authorizations *auths, std::shared_ptr<ServerConnection> server)
+      :
+      creds(credentials),
+      auths(auths),
+      connection(server) {
 
-        if (IsEmpty(credentials) || IsEmpty(auths) || IsEmpty(server.get()))
-        {
-            throw cclient::exceptions::IllegalArgumentException(
-                "credentials, authorizations, and server must not be empty");
-        }
-
+    if (IsEmpty(credentials) || IsEmpty(auths) || IsEmpty(server.get())) {
+      throw cclient::exceptions::IllegalArgumentException("credentials, authorizations, and server must not be empty");
     }
 
-    virtual ~ScanRequest()
-    {
-        for(auto it : identifiers)
-        {
-            delete it;
-        }
+  }
+
+  virtual ~ScanRequest() {
+    for (auto it : identifiers) {
+      delete it;
     }
+  }
 
-    virtual void setIters(std::vector<cclient::data::IterInfo*> *iters)
-    {
-        iterators.insert(iterators.end(), iters->begin(), iters->end());
-    }
+  virtual void setIters(const std::vector<cclient::data::IterInfo> &iters) {
+    iterators.insert(iterators.end(), iters.begin(), iters.end());
+  }
 
-    void addColumn(cclient::data::Column *col)
-    {
-        columns.push_back(col);
-    }
+  void addColumn(cclient::data::Column *col) {
+    columns.push_back(*col);
+  }
 
-    void addColumns(std::vector<cclient::data::Column*> *cols)
-    {
-        columns.insert(columns.end(), cols->begin(), cols->end());
-    }
+  void addColumn(const cclient::data::Column &col) {
+    columns.push_back(col);
+  }
 
-    std::vector<cclient::data::Column*> *getColumns()
-    {
-        return &columns;
-    }
+  void addColumns(const std::vector<cclient::data::Column> &cols) {
+    columns.insert(columns.end(), cols.begin(), cols.end());
+  }
 
-    cclient::data::security::AuthInfo *getCredentials() const
-    {
-        return creds;
-    }
+  std::vector<cclient::data::Column> getColumns() const {
+    return columns;
+  }
 
-    cclient::data::security::Authorizations *getAuthorizations() const
-    {
-        return auths;
-    }
+  cclient::data::security::AuthInfo* getCredentials() const {
+    return creds;
+  }
 
-    std::vector<cclient::data::IterInfo*> *getIterators()
-    {
-        return &iterators;
-    }
+  cclient::data::security::Authorizations* getAuthorizations() const {
+    return auths;
+  }
 
-    void putIdentifier(I *ident)
-    {
-        identifiers.push_back(ident);
-    }
+  std::vector<cclient::data::IterInfo> getIterators() {
+    return iterators;
+  }
 
+  void putIdentifier(I *ident) {
+    identifiers.push_back(ident);
+  }
 
-    std::vector<I*> *getRangeIdentifiers()
-    {
-        return &identifiers;
-    }
+  std::vector<I*>* getRangeIdentifiers() {
+    return &identifiers;
+  }
 
-protected:
+ protected:
 
-    std::vector<I*> identifiers;
-    cclient::data::security::AuthInfo *creds;
-    cclient::data::security::Authorizations *auths;
-    std::vector<cclient::data::IterInfo*> iterators;
-    std::vector<cclient::data::Column*> columns;
-    std::shared_ptr<ServerConnection> connection;
+  std::vector<I*> identifiers;
+  cclient::data::security::AuthInfo *creds;
+  cclient::data::security::Authorizations *auths;
+  std::vector<cclient::data::IterInfo> iterators;
+  std::vector<cclient::data::Column> columns;
+  std::shared_ptr<ServerConnection> connection;
 };
 
 } /* namespace interconnect */

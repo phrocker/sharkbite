@@ -31,7 +31,6 @@ template<typename T, class BlockType>
 class Source {
  public:
   Source() {
-    iters = new std::vector<cclient::data::IterInfo*>();
   }
 
   virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
@@ -41,49 +40,45 @@ class Source {
   /**
    * Add the list of user supplied Iterators;
    */
-  void addIterators(std::vector<cclient::data::IterInfo*> *iterV) {
-    iters->insert(iters->end(), iterV->begin(), iterV->end());
+  void addIterators(const std::vector<cclient::data::IterInfo> &iterV) {
+    iters.insert(iters.end(), iterV.begin(), iterV.end());
+  }
+
+  void addIterator(const cclient::data::IterInfo &iterV) {
+    iters.emplace_back(iterV);
   }
 
   virtual void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;
 
-  virtual Results<T, BlockType> *getResultSet() = 0;
+  virtual Results<T, BlockType>* getResultSet() = 0;
 
   //virtual void addResults(Results<T, BlockType> *results) = 0;
 
   virtual ~Source() {
-    for (auto iter : *iters) {
-      delete iter;
-    }
-    delete iters;
-    for (auto column : columns) {
-      delete column;
-    }
   }
 
-  virtual void close(){
-
+  virtual void close() {
   }
 
-  std::vector<cclient::data::Column*> *getColumns() {
-    return &columns;
+  std::vector<cclient::data::Column> getColumns() const {
+    return columns;
   }
 
-  std::vector<cclient::data::IterInfo*> *getIters() {
+  std::vector<cclient::data::IterInfo> getIters() const {
     return iters;
   }
 
-  virtual cclient::data::Instance *getInstance() = 0;
+  virtual cclient::data::Instance* getInstance() = 0;
 
   void fetchColumn(std::string col, std::string colqual = "") {
     if (!IsEmpty(&colqual)) {
-      columns.push_back(new cclient::data::Column(col, colqual));
+      columns.emplace_back(cclient::data::Column(col, colqual));
     } else
-      columns.push_back(new cclient::data::Column(col));
+      columns.emplace_back(cclient::data::Column(col));
   }
  protected:
-  std::vector<cclient::data::Column*> columns;
-  std::vector<cclient::data::IterInfo*> *iters;
+  std::vector<cclient::data::Column> columns;
+  std::vector<cclient::data::IterInfo> iters;
 };
 }
 #endif /* SCANNER_H_ */

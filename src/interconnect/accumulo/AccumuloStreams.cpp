@@ -19,8 +19,9 @@ namespace interconnect {
 
 AccumuloStreams::AccumuloStreams(cclient::data::Instance *instance, TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
                                  cclient::data::security::Authorizations *auths, uint16_t threads)
-    : scanners::Scanner(instance, tops, auths, threads),
-      writer::Writer(instance, tops, auths, threads) {
+    :
+    scanners::Scanner(instance, tops, auths, threads),
+    writer::Writer(instance, tops, auths, threads) {
 
 }
 

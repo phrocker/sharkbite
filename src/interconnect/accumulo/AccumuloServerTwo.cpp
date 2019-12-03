@@ -143,12 +143,12 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
   scanId.parentId = 0;
   scanId.traceId = rand();
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
   std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
+  for (auto it = iters.begin(); it != iters.end(); it++) {
+    auto myOptions = (*it).getOptions();
     for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+      iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
     }
   }
 
@@ -189,7 +189,7 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
 
   org::apache::accumulov2::core::dataImpl::thrift::ScanResult results = scan.result;
 
-  logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns()->size() << " has more? " << (results.more);
+  logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns().size() << " has more? " << (results.more);
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
 
@@ -218,12 +218,12 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
   scanId.traceId = scan.scanID;
   scanId.parentId = scan.scanID;
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
   std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
+  for (auto it = iters.begin(); it != iters.end(); it++) {
+    auto myOptions = (*it).getOptions();
     for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+      iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
     }
   }
 

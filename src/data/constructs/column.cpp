@@ -23,7 +23,7 @@ namespace cclient
 namespace data
 {
 
-Column::Column (std::string *columFam, std::string *columnQual, std::string *columnVis)
+Column::Column (const std::string *columFam, const std::string *columnQual, const std::string *columnVis)
 {
     if (!IsEmpty (columFam))
     {

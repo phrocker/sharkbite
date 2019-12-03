@@ -16,22 +16,17 @@
 #include <string>
 #include <vector>
 
-
-
 #include "data/constructs/server/ServerDefinition.h"
 #include "data/constructs/server/../security/AuthInfo.h"
 #include "data/constructs/server/../Range.h"
 #include "data/constructs/server/../KeyExtent.h"
 #include "data/constructs/column.h"
 
-namespace cclient
-{
+namespace cclient {
 
-namespace data
-{
+namespace data {
 
-namespace tserver
-{
+namespace tserver {
 
 /**
  * Constructor
@@ -44,44 +39,44 @@ namespace tserver
  * @param inCols incoming columns
  *
  */
-RangeDefinition::RangeDefinition (cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths,
-                                  std::string host, uint32_t port,
-                                  std::vector<Range*> *keyRange,
-                                  std::vector<std::shared_ptr<KeyExtent>> *keyExt,std::vector<Column*> *inCols) :
-    ServerDefinition (creds, auths, host, port)
-{
-    if (NULL != keyRange)
-    {
+RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
+                                 std::vector<std::shared_ptr<KeyExtent>> *keyExt, const std::vector<Column> &inCols)
+    :
+    ServerDefinition(creds, auths, host, port) {
+  if (NULL != keyRange) {
 
-        ranges.insert (ranges.end (), keyRange->begin (), keyRange->end ());
-    }
+    ranges.insert(ranges.end(), keyRange->begin(), keyRange->end());
+  }
 
-    if (NULL != keyExt)
-        extents.insert (extents.end (), keyExt->begin (), keyExt->end ());
-    
-    if (NULL != inCols)
-        columns.insert (columns.end (), inCols->begin (), inCols->end ());
+  if (NULL != keyExt)
+    extents.insert(extents.end(), keyExt->begin(), keyExt->end());
 
+  columns.insert(columns.end(), inCols.begin(), inCols.end());
+
+}
+
+RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
+                                 std::vector<std::shared_ptr<KeyExtent>> *keyExt)
+    :
+    RangeDefinition(creds, auths, host, port, keyRange, keyExt, std::vector<Column>()) {
 }
 
 /**
  * Returns ranges
  * @returns ranges
  */
-std::vector<Range*> *
-RangeDefinition::getRanges ()
-{
-    return &ranges;
+std::vector<Range*>*
+RangeDefinition::getRanges() {
+  return &ranges;
 }
 
 /**
  * Returns key extents
  * @returns key extents;
  */
-std::vector<std::shared_ptr<KeyExtent>> *
-RangeDefinition::getExtents ()
-{
-    return &extents;
+std::vector<std::shared_ptr<KeyExtent>>*
+RangeDefinition::getExtents() {
+  return &extents;
 }
 }
 }

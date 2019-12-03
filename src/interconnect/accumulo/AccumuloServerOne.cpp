@@ -154,15 +154,14 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
   scanId.parentId = 0;
   scanId.traceId = rand();
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
   std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
+  for (auto it = iters.begin(); it != iters.end(); it++) {
+    auto myOptions = (*it).getOptions();
     for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+      iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
     }
   }
-
   ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
   std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
   cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
@@ -199,14 +198,14 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
   scanId.traceId = scan.scanID;
   scanId.parentId = scan.scanID;
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
-  std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
-    for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
+    std::map<std::string, std::map<std::string, std::string> > iterOptions;
+    for (auto it = iters.begin(); it != iters.end(); it++) {
+      auto myOptions = (*it).getOptions();
+      for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
+        iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
+      }
     }
-  }
 
   tserverClient->startMultiScan(scan, scanId, ThriftWrapper::convert(request->getCredentials()), ThriftWrapper::convert(request->getRangeIdentifiers()), ThriftWrapper::convert(request->getColumns()),
                                 ThriftWrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true);
