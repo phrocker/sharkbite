@@ -32,7 +32,7 @@ def operatingsystem():
 
 setup(
     name='sharkbite',
-    version='0.5.0.9',
+    version='0.5.0.10',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
     url='https://www.github.com/phrocker/sharkbite',
