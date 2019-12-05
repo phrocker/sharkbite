@@ -318,14 +318,9 @@ class ThriftWrapper {
     if (!columns.empty()) {
       for( const auto &col : columns){
         org::apache::accumulo::core::data::thrift::TColumn column;
-        std::pair<char*, size_t> cf = col.getColFamily();
-        column.columnFamily = std::string(cf.first, cf.second);
-        std::pair<char*, size_t> cq = col.getColQualifier();
-        if (cq.second > 0)
-          column.columnQualifier = std::string(cq.first, cq.second);
-        std::pair<char*, size_t> cv = col.getColVisibility();
-        if (cv.second > 0)
-          column.columnVisibility = std::string(cv.first, cv.second);
+        column.columnFamily = col.getColFamily();
+        column.columnQualifier = col.getColQualifier();
+        column.columnVisibility = col.getColVisibility();
 
         convertedColumns.push_back(column);
       }

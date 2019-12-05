@@ -70,6 +70,14 @@ class IterInfo {
       priority(pri) {
 
   }
+
+  explicit IterInfo(const std::string &dsl, uint32_t pri)
+      :
+      iterName("NativeDSLIterator"),
+      iterClass("org.poma.accumulo.NativeDSLIterator"),
+      priority(pri) {
+
+  }
   /**
    * Destructor
    **/

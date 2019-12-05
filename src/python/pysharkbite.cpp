@@ -65,6 +65,7 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<cclient::data::IterInfo>(s, "IterInfo")
       .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
+      .def(pybind11::init<const std::string &,uint32_t>())
       .def("getPriority",&cclient::data::IterInfo::getPriority)
       .def("getName",&cclient::data::IterInfo::getName)
       .def("getClass",&cclient::data::IterInfo::getClass);
@@ -129,6 +130,7 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
 		.def("getResultSet",  &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)
 		.def("fetchColumn", &scanners::BatchScanner::fetchColumn)
+		.def("addIterator", &scanners::BatchScanner::addIterator)
 		.def("close", &scanners::BatchScanner::close)
     .def("addRange",(void (scanners::BatchScanner::*)(const cclient::data::Range &) ) &scanners::BatchScanner::addRange, "Adds a range");
 

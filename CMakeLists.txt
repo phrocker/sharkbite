@@ -183,6 +183,19 @@ file(GLOB_RECURSE PYBIND_SOURCES "src/python/*cpp")
 file(GLOB_RECURSE INTERCONNECT_SOURCES "src/interconnect/*cpp")
 file(GLOB_RECURSE SCANNER_SOURCES "src/scanner/*cpp")
 file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
+if (BUILD_JAR)
+	find_package(JNI REQUIRED)
+	find_package(Java REQUIRED)
+	find_package(Maven REQUIRED)
+	
+	include_directories(${JNI_INCLUDE_DIRS})
+	
+	include_directories(${JNI_INCLUDE_DIRS})
+	file(GLOB_RECURSE JNI_SOURCES "src/jni/*cpp")
+else()
+set(JNI_SOURCES "")	
+	
+endif(BUILD_JAR)
 
 include_directories("thirdparty/spdlog-20170710/include/")
 include_directories("thirdparty/gzip-hpp/")
@@ -193,7 +206,11 @@ add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} $
 add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES})
+
+
+
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
+
 
 
 add_dependencies(sharkbite Protobuf)
@@ -219,7 +236,12 @@ target_link_libraries(sharkbite
 )
 
 
-target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} pybind11::embed)
+
+if (BUILD_JAR)
+	target_link_libraries (pysharkbite PRIVATE  pybind11::embed ${JAVA_JVM_LIBRARY})	
+endif(BUILD_JAR)
+
 if (NOT APPLE)
 	target_link_libraries (pysharkbite PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
 endif()
@@ -354,10 +376,30 @@ add_subdirectory(test/services)
 
 add_subdirectory(include/interconnect/securityOps)
 
+### JAR building
+if (BUILD_JAR)
+	message(STATUS "MAVEN: ${MAVEN_EXECUTABLE}")
+	include_directories(${JNI_INCLUDE_DIRS})
+	
+	set(JNI_FRAMEWORK_JAR_SOURCE "${CMAKE_SOURCE_DIR}/native-iterators-jni")
+	set(JNI_FRAMEWORK_JAR_BIN "${CMAKE_CURRENT_BINARY_DIR}/" )
+	
+	#file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
+	
+	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources)
+	
+	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
+	
+	
+	
+endif(BUILD_JAR)
+
+###
+
 FIND_PACKAGE(Doxygen)
 if(DOXYGEN_FOUND)
  
-MESSAGE(Creating API Documentation)
+MESSAGE("Creating API Documentation")
 SET(DOXYGEN_INPUT "../docs/Doxyfile")
 SET(DOXYGEN_OUTPUT "../docs")
 

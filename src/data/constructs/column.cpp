@@ -13,205 +13,97 @@
  */
 #include <string>
 
-
 #include "data/constructs/inputvalidation.h"
 
 #include "data/constructs/column.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-Column::Column (const std::string *columFam, const std::string *columnQual, const std::string *columnVis)
-{
-    if (!IsEmpty (columFam))
-    {
-        columnFamily = new char[columFam->size () + 1];
-        memcpy (columnFamily, columFam->c_str (), columFam->size ());
-        columnFamilyLen = columFam->size ();
-    }
-    else
-    {
-        columnFamily = new char[0];
-        columnFamilyLen = 0;
-    }
-
-    if (!IsEmpty (columnQual))
-    {
-        columnQualifier = new char[columnQual->size () + 1];
-        memcpy (columnQualifier, columnQual->c_str (), columnQual->size ());
-        columnQualifierLen = columnQual->size ();
-    }
-    else
-    {
-        columnQualifier = new char[0];
-        columnQualifierLen = 0;
-    }
-
-    if (!IsEmpty (columnVis))
-    {
-        columnVisibility = new char[columnVis->size () + 1];
-        memcpy (columnVisibility, columnVis->c_str (), columnVis->size ());
-        columnVisibilityLen = columnVis->size ();
-    }
-    else
-    {
-        columnVisibility = new char[0];
-        columnVisibilityLen = 0;
-    }
+void Column::setColFamily(const char *r, uint32_t size) {
+  columnFamily = std::string(r, size);
 }
 
-void
-Column::setColFamily (const char *r, uint32_t size)
-{
+void Column::setColQualifier(const char *r, uint32_t size) {
+  columnQualifier = std::string(r, size);
+}
 
-    if (columnFamilyLen > 0)
-    {
-        delete[] columnFamily;
-        columnFamily = new char[size];
-        columnFamilyLen = size;
-    }
-
-    memcpy (columnFamily, r, size);
-    columnFamilyLen = size;
+void Column::setColVisibility(const char *r, uint32_t size) {
+  columnVisibility = std::string(r, size);
 
 }
 
-void
-Column::setColQualifier (const char *r, uint32_t size)
-{
-    if (columnQualifierLen > 0)
-    {
-        delete[] columnQualifier;
-        columnQualifier = new char[size];
-        columnQualifierLen = size;
-    }
-
-    memcpy (columnQualifier, r, size);
-    columnQualifierLen = size;
-
+Column::~Column() {
 }
 
-void
-Column::setColVisibility (const char *r, uint32_t size)
-{
-    if (columnVisibilityLen > 0)
-    {
-        delete[] columnVisibility;
-        columnVisibility = new char[size];
-        columnVisibilityLen = size;
-    }
+bool Column::operator <(const Column &rhs) const {
 
-    memcpy (columnVisibility, r, size);
-    columnVisibilityLen = size;
+  int compare = compareBytes(columnFamily.data(), 0, columnFamily.size(), rhs.columnFamily.data(), 0, rhs.columnFamily.size());
 
-}
+  if (compare < 0)
+    return true;
+  else if (compare > 0)
+    return false;
+  ;
 
-Column::~Column ()
-{
-    delete[] columnFamily;
-    delete[] columnQualifier;
-    delete[] columnVisibility;
-}
+  compare = compareBytes(columnQualifier.data(), 0, columnQualifier.size(), rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
 
-Column&
-Column::operator= (const Column& other)
-{
-    setColFamily(other.columnFamily,other.columnFamilyLen);
-    setColQualifier(other.columnQualifier,other.columnQualifierLen);
-    setColVisibility(other.columnVisibility,other.columnVisibilityLen);
-    return *this;
-}
-
-bool
-Column::operator < (const Column &rhs) const
-{
-
-    int compare = compareBytes (columnFamily, 0, columnFamilyLen,
-                                rhs.columnFamily, 0, rhs.columnFamilyLen);
-
-    if (compare < 0)
-        return true;
-    else if (compare > 0)
-        return false;;
-
-    compare = compareBytes (columnQualifier, 0, columnQualifierLen,
-                            rhs.columnQualifier, 0, rhs.columnQualifierLen);
-
-    if (compare < 0)
-        return true;
-    else if (compare > 0)
-        return false;
-
-    compare = compareBytes (columnVisibility, 0, columnVisibilityLen,
-                            rhs.columnVisibility, 0, rhs.columnVisibilityLen);
-
-    if (compare < 0)
-        return true;
-
+  if (compare < 0)
+    return true;
+  else if (compare > 0)
     return false;
 
-}
+  compare = compareBytes(columnVisibility.data(), 0, columnVisibility.size(), rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
 
-bool
-Column::operator == (const Column & rhs) const
-{
-    int compare = compareBytes (columnFamily, 0, columnFamilyLen,
-                                rhs.columnFamily, 0, rhs.columnFamilyLen);
+  if (compare < 0)
+    return true;
 
-    if (compare != 0)
-        return false;
-
-    compare = compareBytes (columnQualifier, 0, columnQualifierLen,
-                            rhs.columnQualifier, 0, rhs.columnQualifierLen);
-
-    if (compare != 0)
-        return false;
-
-    compare = compareBytes (columnVisibility, 0, columnVisibilityLen,
-                            rhs.columnVisibility, 0, rhs.columnVisibilityLen);
-
-    if (compare != 0)
-        return false;
-    else
-        return true;
+  return false;
 
 }
 
-uint64_t
-Column::write (cclient::data::streams::OutputStream *outStream)
-{
+bool Column::operator ==(const Column &rhs) const {
+  int compare = compareBytes(columnFamily.data(), 0, columnFamily.size(), rhs.columnFamily.data(), 0, rhs.columnFamily.size());
 
-    if (IsEmpty (columnFamily))
-    {
-        outStream->writeBoolean (false);
-    }
-    else
-    {
-        outStream->writeBoolean (true);
-        outStream->writeBytes (columnFamily, columnFamilyLen);
-    }
+  if (compare != 0)
+    return false;
 
-    if (IsEmpty (columnQualifier))
-    {
-        outStream->writeBoolean (false);
-    }
-    else
-    {
-        outStream->writeBoolean (true);
-        outStream->writeBytes (columnQualifier, columnQualifierLen);
-    }
+  compare = compareBytes(columnQualifier.data(), 0, columnQualifier.size(), rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
 
-    if (IsEmpty (columnVisibility))
-    {
-        return outStream->writeBoolean (false);
-    }
-    else
-    {
-        outStream->writeBoolean (true);
-        return outStream->writeBytes (columnVisibility, columnVisibilityLen);
-    }
+  if (compare != 0)
+    return false;
+
+  compare = compareBytes(columnVisibility.data(), 0, columnVisibility.size(), rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
+
+  if (compare != 0)
+    return false;
+  else
+    return true;
+
+}
+
+uint64_t Column::write(cclient::data::streams::OutputStream *outStream) {
+
+  if (columnFamily.empty()) {
+    outStream->writeBoolean(false);
+  } else {
+    outStream->writeBoolean(true);
+    outStream->writeBytes(columnFamily.data(), columnFamily.size());
+  }
+
+  if (columnQualifier.empty()) {
+    outStream->writeBoolean(false);
+  } else {
+    outStream->writeBoolean(true);
+    outStream->writeBytes(columnQualifier.data(), columnQualifier.size());
+  }
+
+  if (columnVisibility.empty()) {
+    return outStream->writeBoolean(false);
+  } else {
+    outStream->writeBoolean(true);
+    return outStream->writeBytes(columnVisibility.data(), columnVisibility.size());
+  }
 
 }
 
