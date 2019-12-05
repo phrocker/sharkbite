@@ -35,7 +35,7 @@ public class JNILoader {
     private static boolean extractResourceFiles(String dbrNativeLibraryPath, String libraryname,
                                                 String tempFolder) throws IOException {
         String[] filenames = null;
-        filenames = new String[] {"pysharkbite.cpython-37m-x86_64-linux-gnu.so"};
+        filenames = new String[] {"pysharkbite-iterators.cpython-37m-x86_64-linux-gnu.so"};
 
         boolean ret = true;
 
@@ -53,7 +53,7 @@ public class JNILoader {
     public static boolean load() throws Exception {
 
         //System.loadLibrary("python");
-        String libraryname = "pysharkbite.cpython-37m-x86_64-linux-gnu.so";
+        String libraryname = "pysharkbite-iterators.cpython-37m-x86_64-linux-gnu.so";
 
         ///org/poma/accumulo/native/linux
         String dbrNativeLibraryPath = "";

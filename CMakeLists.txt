@@ -209,8 +209,10 @@ add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOUR
 
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
-
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+if (BUILD_JAR)
+	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
+endif()
 
 
 add_dependencies(sharkbite Protobuf)
@@ -236,22 +238,37 @@ target_link_libraries(sharkbite
 )
 
 
-target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} pybind11::embed)
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
 
 if (BUILD_JAR)
-	target_link_libraries (pysharkbite PRIVATE  pybind11::embed ${JAVA_JVM_LIBRARY})	
+	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
+	target_link_libraries (pysharkbite-iterators PRIVATE  pybind11::embed ${JAVA_JVM_LIBRARY})	
 endif(BUILD_JAR)
 
 if (NOT APPLE)
 	target_link_libraries (pysharkbite PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
+	target_link_libraries (pysharkbite-iterators PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
 endif()
+target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_link_libraries(pysharkbite  PRIVATE
   ${WHOLE_ARCHIVE}
   ${ZLIB_LIBRARY}
   ${NO_WHOLE_ARCHIVE}
 )
+
+
 target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
+
+if (BUILD_JAR)
+target_link_libraries(pysharkbite-iterators  PRIVATE
+  ${WHOLE_ARCHIVE}
+  ${ZLIB_LIBRARY}
+  ${NO_WHOLE_ARCHIVE}
+)
+target_compile_options(pysharkbite-iterators INTERFACE -fvisibility=hidden)
+endif()
+
 
 target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${OPENSSL_LIBRARIES})
 
@@ -386,9 +403,9 @@ if (BUILD_JAR)
 	
 	#file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
 	
-	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources)
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite-iterators> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources)
 	
-	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
 	
 	
 	
