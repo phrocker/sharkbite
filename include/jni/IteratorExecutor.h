@@ -84,29 +84,10 @@ class IteratorPythonExecutor {
    * @return
    */
   template<typename ... Args>
-  void call(const std::string &fn_name, Args &&...args) {
-    py::gil_scoped_acquire gil { };
-    try {
-      if ((*bindings_).contains(fn_name.c_str()))
-        (*bindings_)[fn_name.c_str()](convert(args)...);
-    } catch (const std::exception &e) {
-      throw JavaException(e.what());
-    }
-  }
+  void call(const std::string &fn_name, Args &&...args);
 
-  template<typename T,typename ... Args>
-    T callWithReturn(const std::string &fn_name, Args &&...args) {
-      py::gil_scoped_acquire gil { };
-      try {
-        if ((*bindings_).contains(fn_name.c_str())){
-          pybind11::object result = (*bindings_)[fn_name.c_str()](convert(args)...);
-          return result.cast<T>();
-        }
-        throw JavaException("No defined function");
-      } catch (const std::exception &e) {
-        throw JavaException(e.what());
-      }
-    }
+  template<typename T, typename ... Args>
+  T callWithReturn(const std::string &fn_name, Args &&...args);
 
   /**
    * Calls the given function, forwarding arbitrary provided parameters.
@@ -125,12 +106,16 @@ class IteratorPythonExecutor {
     call("next", iter);
   }
 
-  std::shared_ptr<cclient::data::Key> callGetTopKey(cclient::jni::DSLIterator *iter) {
-    return callWithReturn<std::shared_ptr<cclient::data::Key>>("getTopKey", iter);
+  bool callHasTop() {
+      return callWithReturn<bool>("hasTop");
+    }
+
+  std::shared_ptr<cclient::data::Key> callGetTopKey() {
+    return callWithReturn<std::shared_ptr<cclient::data::Key>>("getTopKey");
   }
 
-  std::shared_ptr<cclient::data::Value> callGetTopValue(cclient::jni::DSLIterator *iter) {
-    return callWithReturn<std::shared_ptr<cclient::data::Value>>("getTopValue", iter);
+  std::shared_ptr<cclient::data::Value> callGetTopValue() {
+    return callWithReturn<std::shared_ptr<cclient::data::Value>>("getTopValue");
   }
 
   /**

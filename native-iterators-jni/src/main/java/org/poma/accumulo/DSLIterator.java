@@ -38,8 +38,10 @@ public class DSLIterator {
     public void next( SortedKeyValueIterator<Key, Value> iter)throws IOException{
         Map.Entry<Key,Value> kv = getNextKey(iter);
         if (null != kv){
+
             nextKey = kv.getKey();
             nextValue = kv.getValue();
+            System.out.println(nextKey);
         }
         else{
             System.out.println("oh done");

@@ -54,6 +54,40 @@ void IteratorPythonExecutor::initialize() {
   auto intepreter = getInterpreter();
 }
 
+
+/**
+ * Calls the given function, forwarding arbitrary provided parameters.
+ *
+ * @return
+ */
+template<typename ... Args>
+void IteratorPythonExecutor::call(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  try {
+    if ((*bindings_).contains(fn_name.c_str()))
+      (*bindings_)[fn_name.c_str()](convert(args)...);
+  } catch (const std::exception &e) {
+    throw JavaException(e.what());
+  }
+
+}
+
+template<typename T, typename ... Args>
+T IteratorPythonExecutor::callWithReturn(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  try {
+    if ((*bindings_).contains(fn_name.c_str())) {
+      pybind11::object result = (*bindings_)[fn_name.c_str()](convert(args)...);
+//      if (std::is_pointer<T>() && result.is_none())
+  //      return nullptr;
+      return result.cast<T>();
+    }
+    throw JavaException("No defined function");
+  } catch (const std::exception &e) {
+    throw JavaException(e.what());
+  }
+}
+
 } /* namespace python */
 } /* namespace jni */
 } /* namespace cclient */

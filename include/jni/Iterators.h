@@ -147,6 +147,7 @@ class AccumuloKey {
 
 };
 
+
 class AccumuloIterator {
   jobject iter;
   JNIEnv *env;
@@ -193,7 +194,7 @@ class AccumuloIterator {
       auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
 
       AccumuloKey keyTransfer(env, jkey);
-
+      std::cout << "oh mang have top?!" << std::endl;
       key = std::make_shared<cclient::data::Key>();
       key->setRow(keyTransfer.getRow());
       key->setColFamily(keyTransfer.getCf());
@@ -201,6 +202,7 @@ class AccumuloIterator {
       key->setColVisibility(keyTransfer.getCv());
       key->setTimeStamp(keyTransfer.getTimeStamp());
       auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
+      std::cout << "oh mang have top?!" << std::endl;
       // do value later;
       value = std::make_shared<cclient::data::Value>();
     }
@@ -222,6 +224,7 @@ class AccumuloIterator {
   }
 
   std::shared_ptr<cclient::data::Key> getTopKey() {
+    std::cout << "get top key " << key << std::endl;
     return key;
   }
   std::shared_ptr<cclient::data::Value> getTopValue() {
@@ -244,9 +247,11 @@ class DSLIterator {
 
   virtual void callNext() = 0;
 
+  virtual bool callHasTop() = 0;
+
   virtual void callGetTopKey() = 0;
 
-  virtual void callgetTopValue() = 0;
+  virtual void callGetTopValue() = 0;
 
   virtual void setIter(AccumuloIterator *iter) {
     this->iter = iter;
@@ -267,7 +272,9 @@ class DSLIterator {
     return iter->getTopValue();;
   }
 
-  virtual bool hasTop() {
+  virtual bool hasTop() = 0;
+
+  virtual bool iteratorHasTop() {
     return iter->hasTop();
   }
 

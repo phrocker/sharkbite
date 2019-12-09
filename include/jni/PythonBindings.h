@@ -57,7 +57,7 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_native_iterator, m) { // NOLINT
    pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(m, "Key")
      .def(pybind11::init<>())
      .def("setRow",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setRow, "Sets the row")
-     .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setColFamily, "Sets the column fmaily")
+     .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setColFamily, "Sets the column family")
      .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setColQualifier, "Sets the column qualifier")
      .def("getRow", &cclient::data::Key::getRowStr, "Gets the row")
      .def("getColumnFamily", &cclient::data::Key::getColFamilyStr, "Gets the Column Family")
@@ -68,7 +68,7 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_native_iterator, m) { // NOLINT
    pybind11::class_<cclient::jni::python::PythonIterator>(m, "PythonIterator")
       .def(pybind11::init<>())
       .def("next", &cclient::jni::python::PythonIterator::next)
-      .def("hasTop", &cclient::jni::python::PythonIterator::hasTop)
+      .def("hasTop", &cclient::jni::python::PythonIterator::iteratorHasTop)
       .def("getTopKey", &cclient::jni::python::PythonIterator::getIteratorTopKey)
       .def("getTopValue", &cclient::jni::python::PythonIterator::getIteratorTopValue);
 

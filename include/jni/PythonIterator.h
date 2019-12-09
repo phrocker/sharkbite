@@ -28,6 +28,7 @@ namespace cclient {
 namespace jni {
 namespace python {
 
+
 class PythonIterator : public cclient::jni::DSLIterator {
 
   std::shared_ptr<cclient::data::Key> topKey;
@@ -49,18 +50,27 @@ class PythonIterator : public cclient::jni::DSLIterator {
     iter.callNext(this);
   }
 
-  virtual void callGetTopKey() override {
-    topKey = iter.callGetTopKey(this);
+  virtual bool callHasTop() override {
+    return iter.callHasTop();
   }
 
-  virtual void callgetTopValue() override {
-    topValue = iter.callGetTopValue(this);
+
+  virtual void callGetTopKey() override {
+    topKey = iter.callGetTopKey();
+   // std::cout << "get top key " << topKey << std::endl;
+  }
+
+  virtual void callGetTopValue() override {
+    topValue = iter.callGetTopValue();
   }
 
   virtual std::shared_ptr<cclient::data::Key> getTopKey() override {
     return topKey;
   }
   virtual std::shared_ptr<cclient::data::Value> getTopValue() override {
+    if (nullptr == topValue){
+      topValue = std::make_shared<cclient::data::Value>();
+    }
    return topValue;
   }
 
@@ -72,6 +82,7 @@ class PythonIterator : public cclient::jni::DSLIterator {
   IteratorPythonExecutor iter;
 
 };
+
 
 } /* namespace python */
 } /* namespace jni */
