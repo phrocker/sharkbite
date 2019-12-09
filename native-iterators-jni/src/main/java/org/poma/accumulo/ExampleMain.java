@@ -63,6 +63,9 @@ public class ExampleMain {
 
         iter.next();
 
+        if (iter.hasTop()){
+            System.out.println("Key is " + iter.getTopKey());
+        }
 
     }
 }

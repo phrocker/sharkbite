@@ -1,6 +1,8 @@
 package org.poma.accumulo;
 
 
+import org.apache.commons.io.FilenameUtils;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -8,10 +10,19 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.security.CodeSource;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 public class JNILoader {
 
@@ -35,37 +46,57 @@ public class JNILoader {
     private static boolean extractResourceFiles(String dbrNativeLibraryPath, String libraryname,
                                                 String tempFolder) throws IOException {
         String[] filenames = null;
-        filenames = new String[] {"pysharkbite-iterators.cpython-37m-x86_64-linux-gnu.so"};
+        filenames = new String[] {"pysharkbite-iterators"};
 
         boolean ret = true;
 
         for (String file : filenames) {
-            ret &= extractAndLoadLibraryFile(dbrNativeLibraryPath, file, tempFolder);
+            ret &= extractAndLoadLibraryFile(dbrNativeLibraryPath, file,libraryname, tempFolder);
         }
 
         return ret;
     }
 
+private static Collection<String> getNativeObjects(List<String> extensions) throws IOException {
+    CodeSource src = DSLIterator.class.getProtectionDomain().getCodeSource();
+    List<String> dynObjects = new ArrayList<String>();
+
+    if( src != null ) {
+        URL jar = src.getLocation();
+        ZipInputStream zip = new ZipInputStream( jar.openStream());
+        ZipEntry ze = null;
+
+        while( ( ze = zip.getNextEntry() ) != null ) {
+            final String entryName = ze.getName();
+            final String extension = FilenameUtils.getExtension(entryName);
+            if( extensions.contains(extension)) {
+                dynObjects.add( entryName  );
+            }
+        }
+
+    }
+    return dynObjects;
+}
     public static boolean isLoaded(){
         return loaded.get();
     }
 
     public static boolean load() throws Exception {
-
-        //System.loadLibrary("python");
-        String libraryname = "pysharkbite-iterators.cpython-37m-x86_64-linux-gnu.so";
-
-        ///org/poma/accumulo/native/linux
         String dbrNativeLibraryPath = "";
 
-        if (DSLIterator.class.getResource(dbrNativeLibraryPath + "/" + libraryname) == null) {
-            throw new Exception("Error loading native library: " + dbrNativeLibraryPath + "/" + libraryname);
-        }
+        List<String> extensions = new ArrayList<>();
+        extensions.add("so");
+        extensions.add("dylib");
+        Collection<String> sos = getNativeObjects(extensions);
+
 
         // Temporary library folder
         String tempFolder = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
 
-        loaded.set(extractResourceFiles(dbrNativeLibraryPath, libraryname, tempFolder));
+        for(String lib : sos) {
+            System.out.println("Attempting to load " + lib);
+            loaded.set(extractResourceFiles(dbrNativeLibraryPath, lib, tempFolder));
+        }
         // Extract resource files
         return loaded.get();
     }
@@ -74,14 +105,14 @@ public class JNILoader {
         BufferedInputStream in = new BufferedInputStream(input);
 
         try {
-            MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = java.security.MessageDigest.getInstance("SHA-512");
             DigestInputStream digestInputStream = new DigestInputStream(in, digest);
             for (; digestInputStream.read() >= 0;) {
 
             }
-            ByteArrayOutputStream md5out = new ByteArrayOutputStream();
-            md5out.write(digest.digest());
-            return md5out.toString();
+            ByteArrayOutputStream shasum = new ByteArrayOutputStream();
+            shasum.write(digest.digest());
+            return shasum.toString();
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException("MD5 algorithm is not available: " + e);
         } finally {
@@ -89,8 +120,10 @@ public class JNILoader {
         }
     }
 
-    private static boolean extractAndLoadLibraryFile(String libFolderForCurrentOS, String libraryFileName,
+    private static boolean extractAndLoadLibraryFile(String libFolderForCurrentOS, String prefix,String libraryFileName,
                                                      String targetFolder) {
+        if (!libraryFileName.startsWith(prefix))
+            return false;
         String nativeLibraryFilePath = libFolderForCurrentOS + "/" + libraryFileName;
 
         String extractedLibFileName = libraryFileName;

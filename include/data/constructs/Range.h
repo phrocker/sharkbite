@@ -147,7 +147,7 @@ class Range {
     if (rhs.infiniteStopKey) {
       out << "+inf) ";
     } else {
-      out << rhs.stop << rhs.stopKeyInclusive ? "] " : ") ";
+      out << rhs.stop << (rhs.stopKeyInclusive ? "] " : ") ");
     }
 
     return out;

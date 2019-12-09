@@ -82,7 +82,7 @@ T IteratorPythonExecutor::callWithReturn(const std::string &fn_name, Args &&...a
   //      return nullptr;
       return result.cast<T>();
     }
-    throw JavaException("No defined function");
+    throw JavaException("No defined function for " + fn_name);
   } catch (const std::exception &e) {
     throw JavaException(e.what());
   }

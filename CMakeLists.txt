@@ -403,9 +403,11 @@ if (BUILD_JAR)
 	set(JNI_FRAMEWORK_JAR_SOURCE "${CMAKE_SOURCE_DIR}/native-iterators-jni")
 	set(JNI_FRAMEWORK_JAR_BIN "${CMAKE_CURRENT_BINARY_DIR}/" )
 	
-	#file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
+	file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
 	
-	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite-iterators> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources)
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite-iterators> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources/)
+	
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E file WRITE ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources/SHAREDOBJECTS.obj "$<TARGET_NAME:pysharkbite-iterators>")
 	
 	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
 	
