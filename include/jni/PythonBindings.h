@@ -65,8 +65,14 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_native_iterator, m) { // NOLINT
      .def("getTimestamp", &cclient::data::Key::getTimeStamp, "Gets the key timestamp")
      .def("getColumnQualifier", &cclient::data::Key::getColQualifierStr, "Gets the Column Qualifier");
 
+   pybind11::class_<cclient::data::Range,std::shared_ptr<cclient::data::Range>>(m, "Range")
+           .def(pybind11::init<const std::string&>())
+           .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool>());
+
+
    pybind11::class_<cclient::jni::python::PythonIterator>(m, "PythonIterator")
       .def(pybind11::init<>())
+      .def("seek",&cclient::jni::python::PythonIterator::seek)
       .def("next", &cclient::jni::python::PythonIterator::next)
       .def("hasTop", &cclient::jni::python::PythonIterator::iteratorHasTop)
       .def("getTopKey", &cclient::jni::python::PythonIterator::getIteratorTopKey)

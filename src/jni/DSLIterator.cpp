@@ -15,15 +15,44 @@
 #include "jni/DSLIterator.h"
 #include "jni/Iterators.h"
 #include "jni/PythonIterator.h"
+#include "jni/AccumuloRange.h"
 #include "jni/JVMLoader.h"
 #include "jni/JNIUtil.h"
 #include <pybind11/embed.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void rethrow_cpp_exception_as_java_exception(JNIEnv *env)
+{
+  try
+  {
+    throw; // This allows to determine the type of the exception
+  }
+  catch (const std::bad_alloc& e) {
+    jclass jc = env->FindClass("java/lang/OutOfMemoryError");
+    if(jc) env->ThrowNew (jc, e.what());
+  }
+  catch (const std::ios_base::failure& e) {
+    jclass jc = env->FindClass("java/io/IOException");
+    if(jc) env->ThrowNew (jc, e.what());
+  }
+  catch (const std::exception& e) {
+    /* unknown exception (may derive from std::exception) */
+    jclass jc = env->FindClass("java/lang/Error");
+    if(jc) env->ThrowNew (jc, e.what());
+  }
+  catch (...) {
+    /* Oops I missed identifying this exception! */
+    jclass jc = env->FindClass("java/lang/Error");
+    if(jc) env->ThrowNew (jc, "Unidentified exception => "
+      "Improve rethrow_cpp_exception_as_java_exception()" );
+  }
+}
 
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setType(JNIEnv *env, jobject me, jstring type) {
   auto typestr = JniStringToUTF(env, type);
@@ -46,7 +75,32 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_init(JNIEnv *env, jobj
 
 }
 
-JNIEXPORT jobject JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env, jobject me, jobject skvi) {
+JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_seek(JNIEnv *env, jobject me, jobject skvi, jobject range) {
+cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
+THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
+
+try {
+  cclient::jni::AccumuloIterator acciter(env, skvi);
+  itr->setIter(&acciter);
+  cclient::jni::AccumuloRange rng(env,range);
+  THROW_IF( !rng.init(env) , env, "Range is null");
+  itr->callSeek(rng.getRange());
+
+  if (itr->callHasTop()) {
+        itr->callGetTopKey();
+
+        acciter.setTopKey(env,me);
+
+      } else {
+
+      }
+} catch(...) {
+    rethrow_cpp_exception_as_java_exception(env);
+  }
+
+}
+
+JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env, jobject me, jobject skvi) {
 
   cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
   THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
@@ -56,41 +110,24 @@ JNIEXPORT jobject JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *
   try {
     cclient::jni::AccumuloIterator acciter(env, skvi);
     itr->setIter(&acciter);
-    std::cout << "a" << std::endl;
     itr->callNext();
-    std::cout << "b" << std::endl;
 
     if (itr->callHasTop()) {
       itr->callGetTopKey();
-      itr->callGetTopValue();
-      std::cout << "c" << std::endl;
-      std::cout << "dd" << std::endl;
-      auto key = itr->getTopKey();
-      auto value = itr->getTopValue();
-      std::cout << "e" << std::endl;
+      //itr->callGetTopValue();
+      acciter.setTopKey(env,me);
+      //itr->setTopKey(env);
+      //auto key = itr->getTopKey();
+      //auto v
+
+
     } else {
-      std::cout << "d" << std::endl;
-      return nullptr;
+
+
     }
-  } catch (pybind11::error_already_set &ex) {
-    std::cout << ex.what() << std::endl;
-
-    return nullptr;
-  } catch (const pybind11::key_error &ex) {
-    std::cout << ex.what() << std::endl;
-
-    return nullptr;
-  } catch (const std::bad_cast &ex) {
-    std::cout << ex.what() << std::endl;
-
-    return nullptr;
-  } catch (const cclient::jni::JavaException &ex) {
-    std::cout << ex.what() << std::endl;
-      return nullptr;
-  } catch (...) {
-    std::cout << "oh jeez" << std::endl;
-  }
-
+  } catch(...) {
+      rethrow_cpp_exception_as_java_exception(env);
+    }
 }
 
 #ifdef __cplusplus

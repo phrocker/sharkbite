@@ -66,6 +66,9 @@ void IteratorPythonExecutor::call(const std::string &fn_name, Args &&...args) {
   try {
     if ((*bindings_).contains(fn_name.c_str()))
       (*bindings_)[fn_name.c_str()](convert(args)...);
+  } catch (const std::bad_cast &ex) {
+    std::cout << "dang fail " << fn_name << ex.what() << std::endl;
+    throw ex;
   } catch (const std::exception &e) {
     throw JavaException(e.what());
   }
@@ -83,6 +86,9 @@ T IteratorPythonExecutor::callWithReturn(const std::string &fn_name, Args &&...a
       return result.cast<T>();
     }
     throw JavaException("No defined function for " + fn_name);
+  } catch (const std::bad_cast &ex) {
+      std::cout << "dang fail " << fn_name << ex.what() << std::endl;
+      throw ex;
   } catch (const std::exception &e) {
     throw JavaException(e.what());
   }

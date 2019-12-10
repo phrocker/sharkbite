@@ -61,10 +61,9 @@ public class ExampleMain {
         Collection<ByteSequence> sequences = Collections.emptyList();
         iter.seek(new Range(), sequences,true);
 
-        iter.next();
-
-        if (iter.hasTop()){
+        while (iter.hasTop()){
             System.out.println("Key is " + iter.getTopKey());
+            iter.next();
         }
 
     }

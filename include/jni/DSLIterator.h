@@ -25,13 +25,18 @@
 extern "C" {
 #endif
 
+void rethrow_cpp_exception_as_java_exception(JNIEnv *);
+
+
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setType(JNIEnv *, jobject, jstring);
 
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *, jobject, jstring);
 
+JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_seek(JNIEnv *, jobject, jobject, jobject);
+
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_init(JNIEnv *, jobject, jobject);
 
-JNIEXPORT jobject JNICALL org_poma_accumulo_DSLIterator_getNextKey(JNIEnv*, jobject, jobject);
+JNIEXPORT void JNICALL org_poma_accumulo_DSLIterator_getNextKey(JNIEnv*, jobject, jobject);
 
 #ifdef __cplusplus
 }

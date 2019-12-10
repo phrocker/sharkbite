@@ -47,7 +47,7 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
   infiniteStartKey = startRow.empty();
   infiniteStopKey = endRow.empty();
 
-  if (stopKeyInclusive) {
+  if (stopKeyInclusive  && stop != nullptr) {
     std::pair<char*, size_t> row = stop->getRow();
     char *newRow = new char[row.second + 1];
     memset(newRow, 0x00, row.second + 1);
@@ -69,7 +69,7 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
   infiniteStartKey = startKey == NULL;
   infiniteStopKey = stop == NULL;
 
-  if (stopKeyInclusive) {
+  if (stopKeyInclusive && stop != nullptr) {
     std::pair<char*, size_t> row = stop->getRow();
     char *newRow = new char[row.second + 1];
     memset(newRow, 0x00, row.second + 1);

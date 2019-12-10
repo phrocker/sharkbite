@@ -96,6 +96,8 @@ private static Collection<String> getNativeObjects(List<String> extensions) thro
         for(String lib : sos) {
             System.out.println("Attempting to load " + lib);
             loaded.set(extractResourceFiles(dbrNativeLibraryPath, lib, tempFolder));
+            if (loaded.get())
+                break;
         }
         // Extract resource files
         return loaded.get();

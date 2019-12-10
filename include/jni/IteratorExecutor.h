@@ -106,6 +106,10 @@ class IteratorPythonExecutor {
     call("next", iter);
   }
 
+  void callSeek(cclient::jni::DSLIterator *iter,const std::shared_ptr<cclient::data::Range> &range) {
+      call("seek", iter,range);
+    }
+
   bool callHasTop() {
       return callWithReturn<bool>("hasTop");
     }

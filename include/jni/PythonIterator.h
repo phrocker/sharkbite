@@ -50,6 +50,10 @@ class PythonIterator : public cclient::jni::DSLIterator {
     iter.callNext(this);
   }
 
+  virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) override {
+      iter.callSeek(this,range);
+    }
+
   virtual bool callHasTop() override {
     return iter.callHasTop();
   }

@@ -19,133 +19,14 @@
 #include "data/constructs/Key.h"
 #include "data/constructs/value.h"
 #include "JNIUtil.h"
+#include "AccumuloRange.h"
+#include "AccumuloKey.h"
+#include "JavaException.h"
 
 namespace cclient {
 namespace jni {
 
-class AccumuloKey {
-  jobject key;
-  JNIEnv *env;
-  jclass keyClass;
 
-  std::string row, cf, cq, cv;
-  jlong ts = 0;
-  bool deleted = false;
- public:
-  AccumuloKey(JNIEnv *env, jobject key)
-      :
-      env(env),
-      key(key) {
-    keyClass = env->GetObjectClass(key);
-
-    /**
-     * load compoonent parts
-     */
-
-    auto textClass = env->FindClass("org/apache/hadoop/io/Text");
-
-    auto getRow = env->GetMethodID(keyClass, "getRow", "()Lorg/apache/hadoop/io/Text;");
-    auto getColumnFamily = env->GetMethodID(keyClass, "getColumnFamily", "()Lorg/apache/hadoop/io/Text;");
-    auto getColumnQualifier = env->GetMethodID(keyClass, "getColumnQualifier", "()Lorg/apache/hadoop/io/Text;");
-    auto getColumnVisibility = env->GetMethodID(keyClass, "getColumnVisibility", "()Lorg/apache/hadoop/io/Text;");
-    auto getTimestamp = env->GetMethodID(keyClass, "getTimestamp", "()J");
-
-    auto jrow = env->CallObjectMethod(key, getRow);
-    auto jcf = env->CallObjectMethod(key, getColumnFamily);
-    auto jcq = env->CallObjectMethod(key, getColumnQualifier);
-    auto jcv = env->CallObjectMethod(key, getColumnVisibility);
-    ts = env->CallLongMethod(key, getTimestamp);
-
-    auto textToString = env->GetMethodID(textClass, "toString", "()Ljava/lang/String;");
-
-    auto jrowstr = (jstring) env->CallObjectMethod(jrow, textToString);
-    auto jcfstr = (jstring) env->CallObjectMethod(jcf, textToString);
-    auto jcqstr = (jstring) env->CallObjectMethod(jcq, textToString);
-    auto jcvstr = (jstring) env->CallObjectMethod(jcv, textToString);
-
-    row = JniStringToUTF(env, jrowstr);
-    cf = JniStringToUTF(env, jcfstr);
-    cq = JniStringToUTF(env, jcqstr);
-    cv = JniStringToUTF(env, jcvstr);
-
-  }
-
-  AccumuloKey(const std::shared_ptr<cclient::data::Key> &key)
-      :
-      env(nullptr),
-      key(nullptr) {
-
-    row = key->getRowStr();
-    cf = key->getColFamilyStr();
-    cq = key->getColQualifierStr();
-    cv = key->getColVisibilityStr();
-    ts = key->getTimeStamp();
-
-    keyClass = env->FindClass("org/apache/accumulo/core/data/Key");
-
-  }
-
-  jobject getAccumuloKey(JNIEnv *env) const {
-
-    auto constructor = env->GetMethodID(keyClass, "<init>", "([B[B[B[BJ)V");
-
-    auto jrow = toByteArray(env, row);
-    auto jcf = toByteArray(env, cf);
-    auto jcq = toByteArray(env, cq);
-    auto jcv = toByteArray(env, cv);
-    jlong timeStamp = ts;
-    auto jkey = env->NewObject(keyClass, constructor, jrow, jcf, jcq, jcv, timeStamp);
-
-    env->DeleteLocalRef(jrow);
-    env->DeleteLocalRef(jcf);
-    env->DeleteLocalRef(jcq);
-    env->DeleteLocalRef(jcv);
-
-    return jkey;
-
-    /**
-     *  auto ff = ptr->get();
-     jclass mapClass = env->FindClass("java/util/HashMap");
-     if (mapClass == nullptr) {
-     return nullptr;
-     }
-
-     jsize map_len = ff->getAttributes().size();
-
-     jmethodID init = env->GetMethodID(mapClass, "<init>", "(I)V");
-     jobject hashMap = env->NewObject(mapClass, init, map_len);
-
-     jmethodID put = env->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-
-     for (auto kf : ff->getAttributes()) {
-     env->CallObjectMethod(hashMap, put, env->NewStringUTF(kf.first.c_str()), env->NewStringUTF(kf.second.c_str()));
-     minifi::jni::ThrowIf(env);
-     }
-     */
-    //public Key(byte[] row, byte[] cf, byte[] cq, byte[] cv, long ts, boolean deleted, boolean copy) {
-  }
-
-  std::string getRow() const {
-    return row;
-  }
-
-  std::string getCf() const {
-    return cf;
-  }
-
-  std::string getCq() const {
-    return cq;
-  }
-
-  std::string getCv() const {
-    return cv;
-  }
-
-  long getTimeStamp() const {
-    return ts;
-  }
-
-};
 
 
 class AccumuloIterator {
@@ -156,6 +37,10 @@ class AccumuloIterator {
   jmethodID hasTopMethod;
   jmethodID getTopKeyMethod;
   jmethodID getTopValueMethod;
+  jmethodID seekMethod;
+
+  //jmethodID setTopKeyMethod;
+  //jmethodID setTopValueMethod;
   std::shared_ptr<cclient::data::Key> key;
   std::shared_ptr<cclient::data::Value> value;
  public:
@@ -163,38 +48,43 @@ class AccumuloIterator {
       :
       env(env),
       iter(itr) {
-    std::cout << "oh hai" << std::endl;
     iterClass = env->GetObjectClass(iter);
-    std::cout << "oh hai" << std::endl;
     nextMethod = env->GetMethodID(iterClass, "next", "()V");
-    std::cout << "oh hai" << std::endl;
     hasTopMethod = env->GetMethodID(iterClass, "hasTop", "()Z");
-    std::cout << "oh hai" << std::endl;
     getTopKeyMethod = env->GetMethodID(iterClass, "getTopKey", "()Lorg/apache/accumulo/core/data/Key;");
-    std::cout << "oh hai" << std::endl;
+
+    ///setTopValueMethod = env->GetMethodID(iterClass, "setTopValue", "(Lorg/apache/accumulo/core/data/Value;)V");
     getTopValueMethod = env->GetMethodID(iterClass, "getTopValue", "()Lorg/apache/accumulo/core/data/Value;");
-    std::cout << "oh hai" << std::endl;
+    seekMethod = env->GetMethodID(iterClass, "seek", "(Lorg/apache/accumulo/core/data/Range;)V");
   }
 
   bool hasTop() {
     auto jbool = env->CallBooleanMethod(iter, hasTopMethod);
+    if (env->ExceptionCheck()) {
+      return false;
+    }
     return (jbool == JNI_TRUE);
   }
 
   void next() {
-    std::cout << "lolwut" << std::endl;
     key = nullptr;
     value = nullptr;
     /**
      * Call next on the underlying iterator.
      */
     env->CallVoidMethod(iter, nextMethod);
+    if (env->ExceptionCheck()) {
+      return;
+    }
     if (hasTop()) {
-      std::cout << "oh mang have top?!" << std::endl;
       auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
-
+      if (env->ExceptionCheck()) {
+        return;
+      }
       AccumuloKey keyTransfer(env, jkey);
-      std::cout << "oh mang have top?!" << std::endl;
+      if (!keyTransfer.init(env)){
+        return;
+      }
       key = std::make_shared<cclient::data::Key>();
       key->setRow(keyTransfer.getRow());
       key->setColFamily(keyTransfer.getCf());
@@ -202,7 +92,12 @@ class AccumuloIterator {
       key->setColVisibility(keyTransfer.getCv());
       key->setTimeStamp(keyTransfer.getTimeStamp());
       auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
-      std::cout << "oh mang have top?!" << std::endl;
+      if (env->ExceptionCheck()) {
+        return;
+      }
+
+
+
       // do value later;
       value = std::make_shared<cclient::data::Value>();
     }
@@ -223,13 +118,93 @@ class AccumuloIterator {
      */
   }
 
-  std::shared_ptr<cclient::data::Key> getTopKey() {
-    std::cout << "get top key " << key << std::endl;
+  void seek(const std::shared_ptr<cclient::data::Range> &rng) {
+
+      key = nullptr;
+      value = nullptr;
+      /**
+       * Call next on the underlying iterator.
+       */
+      AccumuloRange range(rng);
+      env->CallVoidMethod(iter, seekMethod, range.getAccumuloRange(env));
+      if (env->ExceptionCheck()) {
+              return;
+            }
+
+      if (hasTop()) {
+
+            auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
+            if (env->ExceptionCheck()) {
+              return;
+            }
+            AccumuloKey keyTransfer(env, jkey);
+            if (!keyTransfer.init(env)){
+
+              return;
+            }
+            key = std::make_shared<cclient::data::Key>();
+            key->setRow(keyTransfer.getRow());
+            key->setColFamily(keyTransfer.getCf());
+            key->setColQualifier(keyTransfer.getCq());
+            key->setColVisibility(keyTransfer.getCv());
+            key->setTimeStamp(keyTransfer.getTimeStamp());
+            auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
+            if (env->ExceptionCheck()) {
+              return;
+            }
+
+
+            // do value later;
+            value = std::make_shared<cclient::data::Value>();
+          }
+
+      /*
+       class arraylist = env->FindClass("java/util/ArrayList");
+       jmethodID init_method = env->GetMethodID(arraylist, "<init>", "(I)V");
+       jmethodID add_method = env->GetMethodID(arraylist, "add", "(Ljava/lang/Object;)Z");
+       jobject result = env->NewObject(arraylist, init_method, keys.size());
+       for (const auto &s : keys) {
+       if (s.second.isTransient()) {
+       jstring element = env->NewStringUTF(s.first.c_str());
+       env->CallBooleanMethod(result, add_method, element);
+       minifi::jni::ThrowIf(env);
+       env->DeleteLocalRef(element);
+       }
+       }
+       */
+    }
+
+
+  std::shared_ptr<cclient::data::Key> getTopKey(){
     return key;
   }
-  std::shared_ptr<cclient::data::Value> getTopValue() {
-    return value;
+   std::shared_ptr<cclient::data::Value> getTopValue(){
+     return value;
+   }
+  bool setTopKey(JNIEnv *env,jobject itr) {
+    auto clz= env->GetObjectClass(itr);
+    auto setTopKeyMethod = env->GetMethodID(clz, "setTopKey", "(Lorg/apache/accumulo/core/data/Key;)V");
+
+    if (!key)
+      return false;
+    //return key;
+    AccumuloKey keyTransfer(key);
+        env->CallVoidMethod(itr, setTopKeyMethod,keyTransfer.getAccumuloKey(env));
+          if (env->ExceptionCheck()) {
+
+            return false;
+          }
+          return true;
   }
+  /*
+  bool setTopValue(JNIEnv *env) {
+    //return value;
+     env->CallVoidMethod(iter, setTopValueMethod,nullptr);
+     if (env->ExceptionCheck()) {
+                 return false;
+               }
+     return true;
+  }*/
 
 };
 
@@ -252,6 +227,12 @@ class DSLIterator {
   virtual void callGetTopKey() = 0;
 
   virtual void callGetTopValue() = 0;
+
+  virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) = 0;
+
+  virtual void seek(const std::shared_ptr<cclient::data::Range> &range){
+    iter->seek(range);
+  }
 
   virtual void setIter(AccumuloIterator *iter) {
     this->iter = iter;
