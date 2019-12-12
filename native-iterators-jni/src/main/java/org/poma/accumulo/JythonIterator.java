@@ -47,8 +47,6 @@ public class JythonIterator extends WrappingIterator{
     @Override
     public void next() throws IOException {
         pyObj.invoke("next",Py.java2py(super.getSource()));
-
-        //dslIterator.next(super.getSource());
     }
 
     @Override

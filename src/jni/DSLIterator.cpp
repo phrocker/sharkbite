@@ -67,7 +67,11 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *env, jo
   const std::string dslStr = JniStringToUTF(env, dsl);
   cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
   if (nullptr != itr) {
-    itr->setDSL(dslStr);
+    try{
+      itr->setDSL(dslStr);
+    } catch(...) {
+        rethrow_cpp_exception_as_java_exception(env);
+      }
   }
 }
 
@@ -87,9 +91,8 @@ try {
   itr->callSeek(rng.getRange());
 
   if (itr->callHasTop()) {
-        itr->callGetTopKey();
-
-        acciter.setTopKey(env,me);
+        auto top = itr->getTopKey();
+        acciter.setTopKey(env,me,top);
 
       } else {
 
@@ -113,9 +116,8 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env
     itr->callNext();
 
     if (itr->callHasTop()) {
-      itr->callGetTopKey();
-      //itr->callGetTopValue();
-      acciter.setTopKey(env,me);
+      auto top = itr->getTopKey();
+      acciter.setTopKey(env,me,top);;
       //itr->setTopKey(env);
       //auto key = itr->getTopKey();
       //auto v

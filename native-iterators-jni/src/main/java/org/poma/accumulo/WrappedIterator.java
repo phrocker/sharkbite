@@ -22,7 +22,7 @@ public class WrappedIterator extends WrappingIterator {
     }
     public void seek(Range range) throws IOException {
         Collection<ByteSequence> families = Collections.EMPTY_LIST;
-        sortedKeyValueIterator.seek(range,families,true);
+        sortedKeyValueIterator.seek(range,families,false);
     }
 
     /***

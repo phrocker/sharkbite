@@ -19,6 +19,7 @@
 #include <map>
 #include "inputvalidation.h"
 
+
 namespace cclient {
 namespace data {
 
@@ -71,12 +72,14 @@ class IterInfo {
 
   }
 
-  explicit IterInfo(const std::string &dsl, uint32_t pri)
+  explicit IterInfo(const std::string &name, const std::string &dsl, uint32_t pri,const std::string &type)
       :
       iterName("NativeDSLIterator"),
       iterClass("org.poma.accumulo.NativeDSLIterator"),
       priority(pri) {
-
+    addOption("DSL_TYPE",type);
+    addOption("DSL_VALUE",dsl);
+    addOption("DSL_NAME",name);
   }
   /**
    * Destructor
@@ -115,8 +118,8 @@ class IterInfo {
    * @param option value
    * @returns result
    **/
-  bool addOption(std::string optionName, std::string optionValue) {
-    if (!IsEmpty(&optionName) || !IsEmpty(&optionValue)) {
+  virtual bool addOption(std::string optionName, std::string optionValue) {
+    if (optionName.empty()) {
       return false;
     }
     options[optionName] = optionValue;
@@ -127,7 +130,7 @@ class IterInfo {
    * Returns options
    * @returns options for this iterator
    **/
-  const std::map<std::string, std::string> getOptions() const {
+  virtual const std::map<std::string, std::string> getOptions() const {
     return options;
   }
  protected:

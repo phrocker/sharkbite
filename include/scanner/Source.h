@@ -23,6 +23,7 @@
 #include "../data/constructs/server/ServerDefinition.h"
 #include "../data/constructs/server/RangeDefinition.h"
 #include "../data/constructs/IterInfo.h"
+#include "data/constructs/PythonIterInfo.h"
 #include "../data/constructs/column.h"
 
 namespace scanners {
@@ -47,6 +48,10 @@ class Source {
   void addIterator(const cclient::data::IterInfo &iterV) {
     iters.emplace_back(iterV);
   }
+
+  void addPythonIterator(const cclient::data::python::PythonIterInfo &iterV) {
+      iters.emplace_back(iterV);
+    }
 
 
   virtual void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;

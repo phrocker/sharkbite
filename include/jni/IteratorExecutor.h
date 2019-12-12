@@ -86,6 +86,9 @@ class IteratorPythonExecutor {
   template<typename ... Args>
   void call(const std::string &fn_name, Args &&...args);
 
+  template<typename ... Args>
+  bool callOptional(const std::string &fn_name, Args &&...args);
+
   template<typename T, typename ... Args>
   T callWithReturn(const std::string &fn_name, Args &&...args);
 
@@ -102,12 +105,12 @@ class IteratorPythonExecutor {
     (*bindings_)[fn_name.c_str()](convert(args)...);
   }
 
-  void callNext(cclient::jni::DSLIterator *iter) {
-    call("next", iter);
+  std::shared_ptr<cclient::data::KeyValue> callNext(cclient::jni::DSLIterator *iter) {
+    return callWithReturn<std::shared_ptr<cclient::data::KeyValue>>("onNext", iter);
   }
 
-  void callSeek(cclient::jni::DSLIterator *iter,const std::shared_ptr<cclient::data::Range> &range) {
-      call("seek", iter,range);
+  bool callSeek(cclient::jni::DSLIterator *iter,const std::shared_ptr<cclient::data::Range> &range) {
+      return callOptional("seek", iter,range);
     }
 
   bool callHasTop() {

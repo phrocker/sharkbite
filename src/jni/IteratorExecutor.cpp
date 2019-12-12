@@ -35,7 +35,7 @@ Interpreter* getInterpreter() {
 IteratorPythonExecutor::IteratorPythonExecutor() {
   auto intepreter = getInterpreter();
   py::gil_scoped_acquire gil { };
-  py::module::import("sharkbite_native_iterator");
+  py::module::import("sharkbite_iterator");
   bindings_.reset(new py::dict());
   (*bindings_) = py::globals().attr("copy")();
 }
@@ -46,7 +46,7 @@ void IteratorPythonExecutor::eval(const std::string &script) {
   if (script[0] == '\n') {
     py::eval<py::eval_statements>(py::module::import("textwrap").attr("dedent")(script), *bindings_, *bindings_);
   } else {
-    py::eval<py::eval_statements>(script, *bindings_, *bindings_);
+    py::eval<py::eval_statements>(script,*bindings_, *bindings_);
   }
 }
 
@@ -66,13 +66,23 @@ void IteratorPythonExecutor::call(const std::string &fn_name, Args &&...args) {
   try {
     if ((*bindings_).contains(fn_name.c_str()))
       (*bindings_)[fn_name.c_str()](convert(args)...);
-  } catch (const std::bad_cast &ex) {
-    std::cout << "dang fail " << fn_name << ex.what() << std::endl;
-    throw ex;
   } catch (const std::exception &e) {
     throw JavaException(e.what());
   }
 
+}
+
+template<typename ... Args>
+bool IteratorPythonExecutor::callOptional(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  if (!(*bindings_).contains(fn_name.c_str()))
+    return false; // safe
+  try {
+      (*bindings_)[fn_name.c_str()](convert(args)...);
+      return true;
+  } catch (const std::exception &e) {
+    throw JavaException(e.what());
+  }
 }
 
 template<typename T, typename ... Args>
@@ -86,9 +96,6 @@ T IteratorPythonExecutor::callWithReturn(const std::string &fn_name, Args &&...a
       return result.cast<T>();
     }
     throw JavaException("No defined function for " + fn_name);
-  } catch (const std::bad_cast &ex) {
-      std::cout << "dang fail " << fn_name << ex.what() << std::endl;
-      throw ex;
   } catch (const std::exception &e) {
     throw JavaException(e.what());
   }

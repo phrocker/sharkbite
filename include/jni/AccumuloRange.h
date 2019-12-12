@@ -10,6 +10,7 @@
 
 #include "AccumuloKey.h"
 #include "data/constructs/Range.h"
+#include "JavaException.h"
 namespace cclient {
 namespace jni {
 
@@ -19,8 +20,6 @@ class AccumuloRange {
   JNIEnv *env;
   mutable jclass rangeClass;
 
-  //std::shared_ptr<cclient::data::Key> startKey;
-//  std::shared_ptr<cclient::data::Key> endKey;
 
  public:
   AccumuloRange(JNIEnv *env, jobject range)
@@ -79,8 +78,6 @@ class AccumuloRange {
       if (!start.init(env))
         return false;
       keyA = start.toKey();
-    }else{
-      std::cout << "start is null" << std::endl;
     }
 
     if (stopkey != nullptr) {
@@ -89,11 +86,9 @@ class AccumuloRange {
       if (!stop.init(env))
         return false;
       keyB = stop.toKey();
-    }else{
-      std::cout << "stop is null" << std::endl;
     }
 
-    rangeRef = std::make_shared<cclient::data::Range>(keyA, isStartKeyInclusive, keyB, isStopKeyInclusive);
+    rangeRef = std::make_shared<cclient::data::Range>(keyA, isStartKeyInclusive, keyB, isStopKeyInclusive, false);
     return true;
   }
 
@@ -106,42 +101,56 @@ class AccumuloRange {
   }
 
   jobject getAccumuloRange(JNIEnv *env) const {
+    if (env->ExceptionOccurred()) // check if an exception occurred
+        {
+            env->ExceptionDescribe(); // print the stack trace
+            return nullptr;
+        }
     rangeClass = env->FindClass("org/apache/accumulo/core/data/Range");
+
     if (rangeRef->getInfiniteStartKey())  // assume both inifinite
     {
+
       auto constructor = env->GetMethodID(rangeClass, "<init>", "()V");
       return env->NewObject(rangeClass, constructor);
     } else {
-      auto constructor = env->GetMethodID(rangeClass, "<init>", "([Lorg/apache/accumulo/core/data/Key;ZLorg/apache/accumulo/core/data/Key;Z)V");
-      std::cout << "ahhf1" << std::endl;
+      auto constructor = env->GetMethodID(rangeClass, "<init>", "(Lorg/apache/accumulo/core/data/Key;ZLorg/apache/accumulo/core/data/Key;Z)V");
+
       AccumuloKey start(rangeRef->getStartKey());
+
       AccumuloKey stop(rangeRef->getStopKey());
+
       jboolean startInclusive = rangeRef->getStartKeyInclusive() ? JNI_TRUE : JNI_FALSE;
       jboolean stopInclusive = rangeRef->getStopKeyInclusive() ? JNI_TRUE : JNI_FALSE;
 
-      return env->NewObject(rangeClass, constructor, start.getAccumuloKey(env), startInclusive, stop.getAccumuloKey(env), stopInclusive);
+      if (env->ExceptionOccurred()) // check if an exception occurred
+                    {
+                        env->ExceptionDescribe(); // print the stack trace
+                        return nullptr;
+                    }
+      auto stk = start.getAccumuloKey(env);
+
+      if (stk == nullptr){
+        cclient::jni::JavaException("Coould not create key");
+      }
+      if (env->ExceptionOccurred()) // check if an exception occurred
+              {
+                  env->ExceptionDescribe(); // print the stack trace
+                  return nullptr;
+              }
+      auto stok = stop.getAccumuloKey(env);
+      if (stok == nullptr){
+              cclient::jni::JavaException("Coould not create key");
+            }
+      if (env->ExceptionOccurred()) // check if an exception occurred
+              {
+                  env->ExceptionDescribe(); // print the stack trace
+                  return nullptr;
+              }
+      return env->NewObject(rangeClass, constructor, stk, startInclusive, stok, stopInclusive);
     }
 
-    /**
-     *  auto ff = ptr->get();
-     jclass mapClass = env->FindClass("java/util/HashMap");
-     if (mapClass == nullptr) {
-     return nullptr;
-     }
 
-     jsize map_len = ff->getAttributes().size();
-
-     jmethodID init = env->GetMethodID(mapClass, "<init>", "(I)V");
-     jobject hashMap = env->NewObject(mapClass, init, map_len);
-
-     jmethodID put = env->GetMethodID(mapClass, "put", "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-
-     for (auto kf : ff->getAttributes()) {
-     env->CallObjectMethod(hashMap, put, env->NewStringUTF(kf.first.c_str()), env->NewStringUTF(kf.second.c_str()));
-     minifi::jni::ThrowIf(env);
-     }
-     */
-    //public Key(byte[] row, byte[] cf, byte[] cq, byte[] cv, long ts, boolean deleted, boolean copy) {
   }
 
   std::shared_ptr<cclient::data::Range> getRange() const {

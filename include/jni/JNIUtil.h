@@ -23,11 +23,11 @@
 #include <jni.h>
 
 static inline std::string JniStringToUTF(JNIEnv *env, const jstring &jstr) {
-  if(!jstr && !env) {
+  if (!jstr && !env) {
     return "";
   }
-  const char * c_str = env->GetStringUTFChars(jstr, NULL);
-  if(c_str == NULL) {
+  const char *c_str = env->GetStringUTFChars(jstr, NULL);
+  if (c_str == NULL) {
     return "";
   }
   std::string str = c_str;
@@ -35,12 +35,19 @@ static inline std::string JniStringToUTF(JNIEnv *env, const jstring &jstr) {
   return str;
 }
 
-static inline jbyteArray toByteArray(JNIEnv *env,const std::string &str) {
-    jbyteArray array = env->NewByteArray (str.length());
-    env->SetByteArrayRegion (array, 0, str.length(), reinterpret_cast<jbyte*>(const_cast<char*>(str.data())));
-    return array;
+static inline jbyteArray toByteArray(JNIEnv *env, const std::string &str) {
+  jbyteArray array = env->NewByteArray(str.length());
+  if (env->ExceptionOccurred())  // check if an exception occurred
+  {
+    throw std::runtime_error("Error while creating byte array");
+  }
+  env->SetByteArrayRegion(array, 0, str.length(), reinterpret_cast<jbyte*>(const_cast<char*>(str.data())));
+  if (env->ExceptionOccurred())  // check if an exception occurred
+  {
+    throw std::runtime_error("Error while creating byte array");
+  }
+  return array;
 }
-
 
 // various likely/unlikely pragmas I've carried over the years.
 // you'll see this in many projects
@@ -51,6 +58,5 @@ static inline jbyteArray toByteArray(JNIEnv *env,const std::string &str) {
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
-
 
 #endif //_JNIUTIL_H

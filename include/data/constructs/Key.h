@@ -34,11 +34,21 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   Key();
 
+  explicit Key(const std::string &row, const std::string &cf = "", const std::string &cq = "", const std::string &cv = "", int64_t ts = 9223372036854775807L) : Key(){
+    setRow(row);
+    setColFamily(cf);
+    setColQualifier(cq);
+    setColVisibility(cv);
+    timestamp = ts;
+    deleted = false;
+  }
+
   /**
    * Constructor that deep copies another key. Does not subsume ownership.
    **/
   explicit Key(std::shared_ptr<Key> other)
-      : Key() {
+      :
+      Key() {
     std::pair<char*, size_t> row = other->getRow();
 
     setRow(row.first, row.second);
@@ -123,11 +133,11 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return std::string(keyVisibility, colVisSize);
   }
 
-  uint64_t getTimeStamp() {
+  int64_t getTimeStamp() {
     return timestamp;
   }
 
-  void setTimeStamp(const uint64_t ts) {
+  void setTimeStamp(const int64_t ts) {
     timestamp = ts;
   }
 
@@ -159,7 +169,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   bool
-  operator ==(const Key & rhs) const;
+  operator ==(const Key &rhs) const;
   bool operator !=(const Key &rhs) const {
     return !(*this == rhs);
   }
@@ -178,7 +188,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 //	friend ostream &operator<<(ostream&os,const Key *rhs);
   //friend ostream &operator<<(ostream&os,const Key &rhs);
 
-  friend inline std::ostream &
+  friend inline std::ostream&
   operator <<(std::ostream &out, Key &rhs) {
     std::pair<char*, size_t> row = rhs.getRow();
     out << std::string(row.first, row.second) << " ";
@@ -191,7 +201,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return out;
   }
 
-  friend inline std::ostream &
+  friend inline std::ostream&
   operator <<(std::ostream &out, Key *rhs) {
     return operator<<(out, *rhs);
   }
@@ -225,7 +235,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   uint32_t colQualLen;
   char *keyVisibility;
   uint32_t colVisSize;
-  uint64_t timestamp;
+  int64_t timestamp;
   bool deleted;
 
   /**

@@ -25,46 +25,87 @@ public class ExampleMain {
         String path = args[0];
         long ts = System.currentTimeMillis();
         NativeDSLIterator iter = new NativeDSLIterator();
-        System.out.println("Time taken " + (System.currentTimeMillis()-ts));
+        System.out.println("Time taken " + (System.currentTimeMillis() - ts));
 
         ts = System.currentTimeMillis();
-        iter = new NativeDSLIterator();
-        System.out.println("Time taken " + (System.currentTimeMillis()-ts));
+
+        System.out.println("Time taken " + (System.currentTimeMillis() - ts));
+
+        {
+            iter = new NativeDSLIterator();
+            SortedMap<Key, Value> map = new TreeMap<>();
+
+            map.put(new Key("arow"), new Value());
+            map.put(new Key("bbrow"), new Value());
+            map.put(new Key("c"), new Value());
+
+            SortedMapIterator smi = new SortedMapIterator(map);
+
+            Map<String, String> options = new HashMap<>();
 
 
-        SortedMap<Key, Value> map = new TreeMap<>();
-
-        map.put(new Key("arow"),new Value());
-        map.put(new Key("bbrow"),new Value());
-        map.put(new Key("c"),new Value());
-
-        SortedMapIterator smi = new SortedMapIterator(map);
-
-        Map<String,String> options =  new HashMap<>();
+            String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
 
 
-        String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
+            options.put(NativeDSLIterator.DSL_TYPE, "Python");
+            options.put(NativeDSLIterator.DSL_VALUE, content);
 
+            System.out.println("Script is " + content);
 
-        options.put(NativeDSLIterator.DSL_TYPE,"Python");
-        options.put(NativeDSLIterator.DSL_VALUE,content);
+            iter.init(smi, options, new IteratorEnvironment() {
+                @Override
+                public SortedKeyValueIterator<Key, Value> reserveMapFileReader(String mapFileName) throws IOException {
+                    return null;
+                }
+            });
 
-        System.out.println("Script is " + content);
+            Collection<ByteSequence> sequences = Collections.emptyList();
+            iter.seek(new Range(), sequences, true);
 
-        iter.init(smi, options, new IteratorEnvironment() {
-            @Override
-            public SortedKeyValueIterator<Key, Value> reserveMapFileReader(String mapFileName) throws IOException {
-                return null;
+            while (iter.hasTop()) {
+                System.out.println("Key is " + iter.getTopKey());
+                iter.next();
             }
-        });
-
-        Collection<ByteSequence> sequences = Collections.emptyList();
-        iter.seek(new Range(), sequences,true);
-
-        while (iter.hasTop()){
-            System.out.println("Key is " + iter.getTopKey());
-            iter.next();
         }
+
+
+        {
+            iter = new NativeDSLIterator();
+            SortedMap<Key, Value> map = new TreeMap<>();
+
+            map.put(new Key("a","b"), new Value());
+            map.put(new Key("a","c"), new Value());
+            map.put(new Key("a","d"), new Value());
+
+            SortedMapIterator smi = new SortedMapIterator(map);
+
+            Map<String, String> options = new HashMap<>();
+
+
+            String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
+
+
+            options.put(NativeDSLIterator.DSL_TYPE, "Python");
+            options.put(NativeDSLIterator.DSL_VALUE, content);
+
+            System.out.println("Script is " + content);
+
+            iter.init(smi, options, new IteratorEnvironment() {
+                @Override
+                public SortedKeyValueIterator<Key, Value> reserveMapFileReader(String mapFileName) throws IOException {
+                    return null;
+                }
+            });
+
+            Collection<ByteSequence> sequences = Collections.emptyList();
+            iter.seek(new Range("a"), sequences, true);
+
+            while (iter.hasTop()) {
+                System.out.println("Key is " + iter.getTopKey());
+                iter.next();
+            }
+        }
+
 
     }
 }

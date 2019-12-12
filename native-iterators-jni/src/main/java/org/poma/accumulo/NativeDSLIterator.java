@@ -31,11 +31,15 @@ public class NativeDSLIterator extends WrappingIterator{
             }
     }
 
+    public NativeDSLIterator(){
+
+    }
+
     private WrappedIterator wrappedIterator=null;
 
     @Override
     public void init(SortedKeyValueIterator<Key, Value> sortedKeyValueIterator, Map<String, String> options, IteratorEnvironment iteratorEnvironment) throws IOException {
-        if (!JNILoader.isLoaded()){
+        if (!JNILoader.isLoaded() && !JNILoader.isLoading()){
             throw new RuntimeException("Could not load JNI library");
         }
         super.init(sortedKeyValueIterator,options,iteratorEnvironment);
@@ -44,6 +48,16 @@ public class NativeDSLIterator extends WrappingIterator{
         dslIterator.init(options);
         String dslType = options.get(DSL_TYPE);
         String dsl = options.get(DSL_VALUE);
+        if (JNILoader.isLoading()){
+            try {
+                Thread.sleep(1000);
+                if (!JNILoader.isLoaded() && !JNILoader.isLoading()){
+                    throw new RuntimeException("Could not load JNI library");
+                }
+            } catch (InterruptedException e) {
+            }
+
+        }
         dslIterator.setType(dslType);
         dslIterator.setDSL(dsl);
         wrappedIterator = new WrappedIterator(super.getSource());

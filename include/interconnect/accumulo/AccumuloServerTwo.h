@@ -54,6 +54,8 @@ class AccumuloServerFacadeV2 : public AccumuloServerFacade {
 
   std::map<std::string, std::string> v2_getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
 
+  Scan *v2_continueMultiScan(Scan *originalScan);
+
   Scan *v2_continueScan(Scan *originalScan);
 
   void *v2_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request);

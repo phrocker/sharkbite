@@ -21,11 +21,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import java.util.zip.Adler32;
+import java.util.zip.CheckedInputStream;
+import java.util.zip.Checksum;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class JNILoader {
 
+    private static AtomicBoolean loading = new AtomicBoolean(false);
     private static AtomicBoolean loaded = new AtomicBoolean(false);
 
     private static synchronized boolean loadNativeLibrary(String path, String name) {
@@ -81,7 +85,12 @@ private static Collection<String> getNativeObjects(List<String> extensions) thro
         return loaded.get();
     }
 
+    public static boolean isLoading(){
+        return loading.get();
+    }
+
     public static boolean load() throws Exception {
+        loading.set(true);
         String dbrNativeLibraryPath = "";
 
         List<String> extensions = new ArrayList<>();
@@ -94,12 +103,12 @@ private static Collection<String> getNativeObjects(List<String> extensions) thro
         String tempFolder = new File(System.getProperty("java.io.tmpdir")).getAbsolutePath();
 
         for(String lib : sos) {
-            System.out.println("Attempting to load " + lib);
             loaded.set(extractResourceFiles(dbrNativeLibraryPath, lib, tempFolder));
             if (loaded.get())
                 break;
         }
         // Extract resource files
+        loading.set(false);
         return loaded.get();
     }
 
@@ -133,11 +142,14 @@ private static Collection<String> getNativeObjects(List<String> extensions) thro
 
         try {
             if (extractedLibFile.exists()) {
-                // test shasum value
-                String shasum1 = shasum(DSLIterator.class.getResourceAsStream(nativeLibraryFilePath));
-                String shasum2 = shasum(new FileInputStream(extractedLibFile));
+                Adler32 adlerChecksum = new Adler32();
+                final long localsum = new CheckedInputStream(
+                        DSLIterator.class.getResourceAsStream(nativeLibraryFilePath),
+                        adlerChecksum).getChecksum().getValue();
+                final long existingFileSum =
+                        new CheckedInputStream(new FileInputStream(extractedLibFile),adlerChecksum).getChecksum().getValue();
 
-                if (shasum1.equals(shasum2)) {
+                if (existingFileSum  != localsum) {
                     return loadNativeLibrary(targetFolder, extractedLibFileName);
                 } else {
                     // remove old native library file

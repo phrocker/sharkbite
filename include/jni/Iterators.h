@@ -26,9 +26,6 @@
 namespace cclient {
 namespace jni {
 
-
-
-
 class AccumuloIterator {
   jobject iter;
   JNIEnv *env;
@@ -82,7 +79,7 @@ class AccumuloIterator {
         return;
       }
       AccumuloKey keyTransfer(env, jkey);
-      if (!keyTransfer.init(env)){
+      if (!keyTransfer.init(env)) {
         return;
       }
       key = std::make_shared<cclient::data::Key>();
@@ -95,8 +92,6 @@ class AccumuloIterator {
       if (env->ExceptionCheck()) {
         return;
       }
-
-
 
       // do value later;
       value = std::make_shared<cclient::data::Value>();
@@ -120,100 +115,124 @@ class AccumuloIterator {
 
   void seek(const std::shared_ptr<cclient::data::Range> &rng) {
 
-      key = nullptr;
-      value = nullptr;
-      /**
-       * Call next on the underlying iterator.
-       */
-      AccumuloRange range(rng);
-      env->CallVoidMethod(iter, seekMethod, range.getAccumuloRange(env));
-      if (env->ExceptionCheck()) {
-              return;
-            }
-
-      if (hasTop()) {
-
-            auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
-            if (env->ExceptionCheck()) {
-              return;
-            }
-            AccumuloKey keyTransfer(env, jkey);
-            if (!keyTransfer.init(env)){
-
-              return;
-            }
-            key = std::make_shared<cclient::data::Key>();
-            key->setRow(keyTransfer.getRow());
-            key->setColFamily(keyTransfer.getCf());
-            key->setColQualifier(keyTransfer.getCq());
-            key->setColVisibility(keyTransfer.getCv());
-            key->setTimeStamp(keyTransfer.getTimeStamp());
-            auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
-            if (env->ExceptionCheck()) {
-              return;
-            }
-
-
-            // do value later;
-            value = std::make_shared<cclient::data::Value>();
-          }
-
-      /*
-       class arraylist = env->FindClass("java/util/ArrayList");
-       jmethodID init_method = env->GetMethodID(arraylist, "<init>", "(I)V");
-       jmethodID add_method = env->GetMethodID(arraylist, "add", "(Ljava/lang/Object;)Z");
-       jobject result = env->NewObject(arraylist, init_method, keys.size());
-       for (const auto &s : keys) {
-       if (s.second.isTransient()) {
-       jstring element = env->NewStringUTF(s.first.c_str());
-       env->CallBooleanMethod(result, add_method, element);
-       minifi::jni::ThrowIf(env);
-       env->DeleteLocalRef(element);
-       }
-       }
-       */
+    key = nullptr;
+    value = nullptr;
+    /**
+     * Call next on the underlying iterator.
+     */
+    AccumuloRange range(rng);
+    env->CallVoidMethod(iter, seekMethod, range.getAccumuloRange(env));
+    if (env->ExceptionCheck()) {
+      return;
     }
 
+    if (hasTop()) {
 
-  std::shared_ptr<cclient::data::Key> getTopKey(){
+
+      auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
+      if (env->ExceptionCheck()) {
+        return;
+      }
+      AccumuloKey keyTransfer(env, jkey);
+      if (!keyTransfer.init(env)) {
+
+        return;
+      }
+      key = std::make_shared<cclient::data::Key>();
+      key->setRow(keyTransfer.getRow());
+      key->setColFamily(keyTransfer.getCf());
+      key->setColQualifier(keyTransfer.getCq());
+      key->setColVisibility(keyTransfer.getCv());
+      key->setTimeStamp(keyTransfer.getTimeStamp());
+      auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
+      if (env->ExceptionCheck()) {
+        return;
+      }
+
+      // do value later;
+      value = std::make_shared<cclient::data::Value>();
+    }
+
+    /*
+     class arraylist = env->FindClass("java/util/ArrayList");
+     jmethodID init_method = env->GetMethodID(arraylist, "<init>", "(I)V");
+     jmethodID add_method = env->GetMethodID(arraylist, "add", "(Ljava/lang/Object;)Z");
+     jobject result = env->NewObject(arraylist, init_method, keys.size());
+     for (const auto &s : keys) {
+     if (s.second.isTransient()) {
+     jstring element = env->NewStringUTF(s.first.c_str());
+     env->CallBooleanMethod(result, add_method, element);
+     minifi::jni::ThrowIf(env);
+     env->DeleteLocalRef(element);
+     }
+     }
+     */
+  }
+
+  std::shared_ptr<cclient::data::Key> getTopKey() {
+    if (nullptr == key && hasTop()) { // may have been torn down
+      auto jkey = env->CallObjectMethod(iter, getTopKeyMethod);
+      if (env->ExceptionCheck()) {
+        return nullptr;
+      }
+      AccumuloKey keyTransfer(env, jkey);
+      if (!keyTransfer.init(env)) {
+
+        return nullptr;
+      }
+      key = std::make_shared<cclient::data::Key>();
+      key->setRow(keyTransfer.getRow());
+      key->setColFamily(keyTransfer.getCf());
+      key->setColQualifier(keyTransfer.getCq());
+      key->setColVisibility(keyTransfer.getCv());
+      key->setTimeStamp(keyTransfer.getTimeStamp());
+      auto jvalue = env->CallObjectMethod(iter, getTopValueMethod);
+      if (env->ExceptionCheck()) {
+        return nullptr;
+      }
+
+      // do value later;
+      value = std::make_shared<cclient::data::Value>();
+    }
     return key;
   }
-   std::shared_ptr<cclient::data::Value> getTopValue(){
-     return value;
-   }
-  bool setTopKey(JNIEnv *env,jobject itr) {
-    auto clz= env->GetObjectClass(itr);
+  std::shared_ptr<cclient::data::Value> getTopValue() {
+    return value;
+  }
+  bool setTopKey(JNIEnv *env, jobject itr, const std::shared_ptr<cclient::data::Key> &passedKey = nullptr) {
+    auto clz = env->GetObjectClass(itr);
     auto setTopKeyMethod = env->GetMethodID(clz, "setTopKey", "(Lorg/apache/accumulo/core/data/Key;)V");
-
-    if (!key)
+    auto keyToSet = passedKey == nullptr ? key : passedKey;
+    if (!keyToSet)
       return false;
     //return key;
-    AccumuloKey keyTransfer(key);
-        env->CallVoidMethod(itr, setTopKeyMethod,keyTransfer.getAccumuloKey(env));
-          if (env->ExceptionCheck()) {
+    AccumuloKey keyTransfer(keyToSet);
+    env->CallVoidMethod(itr, setTopKeyMethod, keyTransfer.getAccumuloKey(env));
+    if (env->ExceptionCheck()) {
 
-            return false;
-          }
-          return true;
+      return false;
+    }
+    return true;
   }
   /*
-  bool setTopValue(JNIEnv *env) {
-    //return value;
-     env->CallVoidMethod(iter, setTopValueMethod,nullptr);
-     if (env->ExceptionCheck()) {
-                 return false;
-               }
-     return true;
-  }*/
+   bool setTopValue(JNIEnv *env) {
+   //return value;
+   env->CallVoidMethod(iter, setTopValueMethod,nullptr);
+   if (env->ExceptionCheck()) {
+   return false;
+   }
+   return true;
+   }*/
 
 };
 
 class DSLIterator {
-  AccumuloIterator *iter;
+ protected:
+  AccumuloIterator *accIter;
  public:
   DSLIterator()
       :
-      iter(nullptr) {
+      accIter(nullptr) {
 
   }
   virtual ~DSLIterator() {
@@ -230,12 +249,12 @@ class DSLIterator {
 
   virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) = 0;
 
-  virtual void seek(const std::shared_ptr<cclient::data::Range> &range){
-    iter->seek(range);
+  virtual void seek(const std::shared_ptr<cclient::data::Range> &range) {
+    accIter->seek(range);
   }
 
-  virtual void setIter(AccumuloIterator *iter) {
-    this->iter = iter;
+  virtual void setIter(AccumuloIterator *accIter) {
+    this->accIter = accIter;
   }
   virtual void setDSL(const std::string &dsl) = 0;
 
@@ -247,20 +266,20 @@ class DSLIterator {
   }
 
   virtual std::shared_ptr<cclient::data::Key> getIteratorTopKey() {
-    return iter->getTopKey();
+    return accIter->getTopKey();
   }
   virtual std::shared_ptr<cclient::data::Value> getIteratorTopValue() {
-    return iter->getTopValue();;
+    return accIter->getTopValue();;
   }
 
   virtual bool hasTop() = 0;
 
   virtual bool iteratorHasTop() {
-    return iter->hasTop();
+    return accIter->hasTop();
   }
 
   virtual void next() {
-    iter->next();
+    accIter->next();
   }
 };
 

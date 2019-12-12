@@ -211,11 +211,13 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
 Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
   Scan *initialScan = new Scan(isRunning);
 
+  initialScan->setMultiScan(true);
+
   org::apache::accumulov2::core::dataImpl::thrift::InitialMultiScan scan;
 
   org::apache::accumulov2::core::trace::thrift::TInfo scanId;
 
-  scanId.traceId = scan.scanID;
+  scanId.traceId = rand();
   scanId.parentId = scan.scanID;
 
   const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
@@ -243,10 +245,13 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
   org::apache::accumulov2::core::tabletserver::thrift::TSamplerConfiguration config;
   std::map<std::string, std::string> executionHints;
 
+  logging::LOG_DEBUG(logger) << "multiscan extent is scan id " << scanId;
+
   try{
   tserverClient_V2->startMultiScan(scan, scanId, ThriftV2Wrapper::convert(request->getCredentials()), ThriftV2Wrapper::convert(request->getRangeIdentifiers()),
                                    ThriftV2Wrapper::convert(request->getColumns()), ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, config,
                                    1024 * 5, "", executionHints);
+
   } catch (const apache::thrift::TApplicationException &te) {
       auto batch =ThriftV2Wrapper::convert(request->getRangeIdentifiers());
       for(auto d : batch){
@@ -256,7 +261,7 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
           std::stringstream str;
           rng.printTo(str);
 
-          logging::LOG_DEBUG(logger) << "extent is " << st.str() << " range is " << str.str();
+          logging::LOG_DEBUG(logger) << "failed scan on extent is " << st.str() << " range is " << str.str();
         }
       }
       throw te;
@@ -269,6 +274,10 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
   initialScan->setHasMore(results.more);
 
   initialScan->setNextResults(kvs);
+
+  initialScan->setScanId(scan.scanID);
+
+  logging::LOG_DEBUG(logger) << "multiscan return " << scan.scanID << " result set size is " << ( kvs != nullptr ? kvs->size() : 0 );
 
   if (!results.more) {
     tserverClient_V2->closeMultiScan(scanId, scan.scanID);
@@ -318,7 +327,48 @@ Scan * AccumuloServerFacadeV2::v2_beginScan(std::atomic<bool> *isRunning,ScanReq
   return initialScan;
 }
 
+Scan * AccumuloServerFacadeV2::v2_continueMultiScan(Scan * originalScan) {
+
+  org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results;
+  org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
+
+  org::apache::accumulov2::core::dataImpl::thrift::ScanID scanId = originalScan->getId();
+
+  tinfo.traceId = originalScan->getId() + 1;
+  tinfo.parentId = originalScan->getId();
+  try {
+
+      tserverClient_V2->continueMultiScan(results, tinfo, scanId);
+
+
+    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
+
+    if (results.more && !kvs->empty())
+      originalScan->setTopKey(kvs->back()->getKey());
+
+    originalScan->setHasMore(results.more);
+
+    originalScan->setNextResults(kvs);
+    if (!results.more || !originalScan->isClientRunning()) {
+      tinfo.traceId++;
+      tserverClient_V2->closeScan(tinfo, originalScan->getId());
+      results.more=false;
+    }
+
+    delete kvs;
+  } catch (org::apache::accumulov2::core::tabletserver::thrift::NotServingTabletException &te) {
+    throw cclient::exceptions::NotServingException(te.what());
+  } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
+    logging::LOG_DEBUG(logger) << "Continue Scan halted. No Such Scan ID, so setting no more results";
+    originalScan->setHasMore(false);
+  }
+  return originalScan;
+}
+
 Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
+  if (originalScan->isMultiScan()){
+      return v2_continueMultiScan(originalScan);
+    }
   org::apache::accumulov2::core::dataImpl::thrift::ScanResult results;
   org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
 

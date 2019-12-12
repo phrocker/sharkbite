@@ -1,14 +1,10 @@
 package org.poma.accumulo;
 
-import org.apache.accumulo.core.data.ByteSequence;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -58,13 +54,14 @@ public class DSLIterator {
 
     private native void seek(WrappedIterator iter,Range range);
 
-    //public native void seek(Range range, Collection<String> families, boolean inclusive) throws IOException;
-
     public Key getTopKey(){
         return nextKey;
     }
 
     public Value getTopValue(){
+        if (nextValue == null){
+            nextValue = new Value();
+        }
         return nextValue;
     }
 
