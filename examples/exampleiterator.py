@@ -1,24 +1,17 @@
-key = None
-def getTopKey():
-  return key
-def getTopValue():
-  return None
+import sharkbite_iterator
+
 def seek(iterator,soughtRange):
-    iterator.seek(soughtRange)
+    range = sharkbite_iterator.Range("a")
+    iterator.seek(range)
+
+
+def onNext(iterator):
     if (iterator.hasTop()):
-        key = iterator.getTopKey()
-        if key is None:
-            print("oh empty")
-        else:
-            print(key.getRow())
-def hasTop():
-    return key is None
-def getTopValue():
-  return None
-def next(iterator):
-    iterator.next()
-    if (iterator.hasTop()):
-        key = iterator.getTopKey()
-        key.setColumnFamily("ohhh")
-    else:
-        key = None
+       kv = sharkbite_iterator.KeyValue()
+       key = iterator.getTopKey()
+       cf = key.getColumnFamily()
+       key.setColumnFamily("oh changed " + cf)
+       kv.setKey(key,True)
+       return kv
+    else: 
+       return None

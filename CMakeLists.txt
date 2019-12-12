@@ -4,6 +4,9 @@ set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
 
+option(PYTHON_ITERATOR_SUPPORT "Builds python iterator support." OFF)
+option(BUILD_JAR "Builds python iterator support. Deprecated by PYTHON_ITERATOR_SUPPORT" OFF)
+
 CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX14)
@@ -183,7 +186,7 @@ file(GLOB_RECURSE PYBIND_SOURCES "src/python/*cpp")
 file(GLOB_RECURSE INTERCONNECT_SOURCES "src/interconnect/*cpp")
 file(GLOB_RECURSE SCANNER_SOURCES "src/scanner/*cpp")
 file(GLOB_RECURSE WRITER_SOURCES "src/writer/*cpp")
-if (BUILD_JAR)
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	find_package(JNI REQUIRED)
 	find_package(Java REQUIRED)
 	find_package(Maven REQUIRED)
@@ -195,7 +198,7 @@ if (BUILD_JAR)
 else()
 set(JNI_SOURCES "")	
 	
-endif(BUILD_JAR)
+endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 
 include_directories("thirdparty/spdlog-20170710/include/")
 include_directories("thirdparty/gzip-hpp/")
@@ -210,7 +213,7 @@ add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOUR
 
 
 pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-if (BUILD_JAR)
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
 endif()
 
@@ -240,16 +243,16 @@ target_link_libraries(sharkbite
 
 target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
 
-if (BUILD_JAR)
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
 	target_link_libraries (pysharkbite-iterators PRIVATE  pybind11::embed ${JAVA_JVM_LIBRARY})	
-endif(BUILD_JAR)
+endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 
 if (NOT APPLE)
 	target_link_libraries (pysharkbite PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
-	if (BUILD_JAR)
+	if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 		target_link_libraries (pysharkbite-iterators PRIVATE -static-libgcc -static-libstdc++  Threads::Threads )
-	endif(BUILD_JAR)
+	endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 endif()
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
 target_compile_definitions( pysharkbite PRIVATE -DPYTHON=1)
@@ -262,7 +265,7 @@ target_link_libraries(pysharkbite  PRIVATE
 
 target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
 
-if (BUILD_JAR)
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 target_link_libraries(pysharkbite-iterators  PRIVATE
   ${WHOLE_ARCHIVE}
   ${ZLIB_LIBRARY}
@@ -396,7 +399,7 @@ add_subdirectory(test/services)
 add_subdirectory(include/interconnect/securityOps)
 
 ### JAR building
-if (BUILD_JAR)
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	message(STATUS "MAVEN: ${MAVEN_EXECUTABLE}")
 	include_directories(${JNI_INCLUDE_DIRS})
 	
@@ -409,7 +412,7 @@ if (BUILD_JAR)
 	
 	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
 	
-endif(BUILD_JAR)
+endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 
 ###
 
