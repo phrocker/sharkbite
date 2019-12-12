@@ -195,7 +195,7 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
 
   org::apache::accumulo::core::trace::thrift::TInfo scanId;
 
-  scanId.traceId = scan.scanID;
+  scanId.traceId = rand();
   scanId.parentId = scan.scanID;
 
   const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
@@ -215,6 +215,10 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
   initialScan->setHasMore(results.more);
+
+  initialScan->setMultiScan(true);
+
+  initialScan->setScanId(scan.scanID);
 
   initialScan->setNextResults(kvs);
 
@@ -262,7 +266,48 @@ Scan *AccumuloServerFacadeV1::v1_beginScan(std::atomic<bool> *isRunning,ScanRequ
   return initialScan;
 }
 
+Scan * AccumuloServerFacadeV1::v1_continueMultiScan(Scan * originalScan) {
+
+  org::apache::accumulo::core::data::thrift::MultiScanResult results;
+  org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+
+  org::apache::accumulo::core::data::thrift::ScanID scanId = originalScan->getId();
+
+  tinfo.traceId = originalScan->getId() + 1;
+  tinfo.parentId = originalScan->getId();
+  try {
+
+    tserverClient->continueMultiScan(results, tinfo, scanId);
+
+
+    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+
+    if (results.more && !kvs->empty())
+      originalScan->setTopKey(kvs->back()->getKey());
+
+    originalScan->setHasMore(results.more);
+
+    originalScan->setNextResults(kvs);
+    if (!results.more || !originalScan->isClientRunning()) {
+      tinfo.traceId++;
+      tserverClient->closeScan(tinfo, originalScan->getId());
+      results.more=false;
+    }
+
+    delete kvs;
+  } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+    throw cclient::exceptions::NotServingException(te.what());
+  } catch (const org::apache::accumulo::core::tabletserver::thrift::NoSuchScanIDException &te) {
+    logging::LOG_DEBUG(logger) << "Continue Scan halted. No Such Scan ID, so setting no more results";
+    originalScan->setHasMore(false);
+  }
+  return originalScan;
+}
+
 interconnect::Scan *AccumuloServerFacadeV1::v1_continueScan(Scan *originalScan) {
+  if (originalScan->isMultiScan()){
+        return v1_continueMultiScan(originalScan);
+      }
   org::apache::accumulo::core::data::thrift::ScanResult results;
   org::apache::accumulo::core::trace::thrift::TInfo tinfo;
 

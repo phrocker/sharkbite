@@ -59,6 +59,7 @@ class AccumuloServerFacadeV1 : public AccumuloServerFacade {
   void v1_registerService(std::string instance, std::string clusterManagers);
 
   Scan *v1_continueScan(Scan *originalScan);
+  Scan *v1_continueMultiScan(Scan *originalScan);
 
   void *v1_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request);
 
