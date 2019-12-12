@@ -43,11 +43,10 @@ the API.
 
 ## Building Linux
 ```
-	mkdir build && cd build && cmake .. && cmake --build . ; make test
+mkdir build && cd build && cmake .. && cmake --build . ; make test
 
-	This will build the package and library, which you can use. It will also build
-	examples in the examples directory+
-	
+This will build the package and library, which you can use. It will also build
+examples in the examples directory+	
 ```
 
 ## Building on OSX
@@ -80,44 +79,42 @@ iterator.next() after or the infrastructure will do that for you.
 import sharkbite_iterator
 
 def seek(iterator,soughtRange):
-    range = sharkbite_iterator.Range("a")
-    iterator.seek(range)
+  range = sharkbite_iterator.Range("a")
+  iterator.seek(range)
 
 
 def onNext(iterator):
-    if (iterator.hasTop()):
-       kv = sharkbite_iterator.KeyValue()
-       key = iterator.getTopKey()
-       cf = key.getColumnFamily()
-       key.setColumnFamily("oh changed " + cf)
-       kv.setKey(key,True)
-       return kv
-    else: 
-       return None
+  if (iterator.hasTop()):
+  	kv = sharkbite_iterator.KeyValue()
+  	key = iterator.getTopKey()
+  	cf = key.getColumnFamily()
+  	key.setColumnFamily("oh changed " + cf)
+  	kv.setKey(key,True)
+  	return kv
+  else: 
+    return None
 
 ```
 
 If this is defined in a separate file, you may use it with the following code snippet
 
 ```
-	with open('test.iter', 'r') as file:
-        iterator = file.read()
-    ## name, iterator text, priority
-    iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
-    scanner.addIterator(iterator)
- 
-    
+with open('test.iter', 'r') as file:
+  iterator = file.read()
+## name, iterator text, priority
+iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
+scanner.addIterator(iterator)    
 ```
 
 Alternative you may use lambdas. The lambda you provide will be passed the key. A partial code example of setting it up is below:
 
 ```
-  	## define only the name and priority 
-    iterator = pysharkbite.PythonIterator("PythonIterator",100)
-    ## define a lambda to ajust the column family.
-    iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), 'new cf', x.getColumnQualifier()) ")
+## define only the name and priority 
+iterator = pysharkbite.PythonIterator("PythonIterator",100)
+## define a lambda to ajust the column family.
+iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), 'new cf', x.getColumnQualifier()) ")
 
-    scanner.addIterator(iterator)
+scanner.addIterator(iterator)
 ```
 
 You may either define a python iterator as a text implementation or a lambda. Both cannot be used simulaneously. 
