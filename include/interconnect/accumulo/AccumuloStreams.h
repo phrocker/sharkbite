@@ -18,16 +18,13 @@
 #include "../../scanner/impl/Scanner.h"
 #include "../../writer/impl/SinkImpl.h"
 
-namespace interconnect
-{
-class AccumuloStreams : public scanners::Scanner, public writer::Writer
-{
-public:
-    AccumuloStreams (cclient::data::Instance *instance,
-                     TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
-                     cclient::data::security::Authorizations *auths, uint16_t threads);
-    virtual
-    ~AccumuloStreams ();
+namespace interconnect {
+class AccumuloStreams : public scanners::Scanner, public writer::Writer {
+ public:
+  AccumuloStreams(cclient::data::Instance *instance, TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
+                  uint16_t threads);
+  virtual
+  ~AccumuloStreams();
 
 };
 

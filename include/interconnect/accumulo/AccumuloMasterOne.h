@@ -19,6 +19,7 @@
 #include "data/extern/thrift/TabletClientService.h"
 #include <mutex>
 
+#include "../exceptions/APIException.h"
 #include "data/constructs/InstanceVersion.h"
 #include "../scanrequest/ScanRequest.h"
 #include "../scanrequest/ScanIdentifier.h"
@@ -56,6 +57,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::TABLE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::EXISTS:
         default:
           return false;
@@ -83,6 +88,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::TABLE_BULK_IMPORT, tableArgs, options, false);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::EXISTS:
         default:
           return false;
@@ -112,6 +121,15 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     try {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
+      switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::EXISTS:
+        default:
+          return false;
+      }
       return false;
     } catch (apache::thrift::TApplicationException &e) {
       return false;
@@ -158,6 +176,15 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     try {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::TABLE_COMPACT, tableArgs, options, wait);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
+      switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::EXISTS:
+        default:
+          return false;
+      }
       return false;
     } catch (const apache::thrift::TApplicationException &e) {
       return compactFallBack(auth, table, startrow, endrow, wait);
@@ -177,6 +204,11 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       flushId = masterClient->initiateFlush(transId, creds, table);
 
     } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
+      switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+      }
       recreateMasterTransport();
       return false;
     } catch (const apache::thrift::TApplicationException &e) {
@@ -200,6 +232,11 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
         recreateMasterTransport();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
+        switch (e.type) {
+          case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+            if (e.description.find("arguments") != std::string::npos)
+              throw APIException();
+        }
         recreateMasterTransport();
         return false;
       } catch (const apache::thrift::TApplicationException &e) {
@@ -220,6 +257,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::TABLE_DELETE, tableArgs, options);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::EXISTS:
         default:
           return false;
@@ -260,6 +301,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::NAMESPACE_CREATE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::NAMESPACE_NOTFOUND:
         default:
           return false;
@@ -280,6 +325,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::NAMESPACE_DELETE, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::NAMESPACE_NOTFOUND:
         default:
           return false;
@@ -300,6 +349,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       std::string returnValue = doFateOperations(auth, AccumuloFateOperation::NAMESPACE_RENAME, tableArgs, options, true);
     } catch (org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
+        case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::OTHER:
+          if (e.description.find("arguments") != std::string::npos)
+            throw APIException();
+          return false;
         case org::apache::accumulo::core::client::impl::thrift::TableOperationExceptionType::NAMESPACE_NOTFOUND:
         default:
           return false;
@@ -331,8 +384,9 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
  public:
 
   AccumuloMasterFacadeV1(const std::string &host, std::function<void()> fx, std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> tfx)
-      : AccumuloMasterFacade(host, ACCUMULO_ONE, fx, tfx),
-        logger(logging::LoggerFactory<AccumuloMasterFacadeV1>::getLogger()) {
+      :
+      AccumuloMasterFacade(host, ACCUMULO_ONE, fx, tfx),
+      logger(logging::LoggerFactory<AccumuloMasterFacadeV1>::getLogger()) {
   }
 
   void createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) override {

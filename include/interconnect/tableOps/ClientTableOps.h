@@ -42,11 +42,12 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
   AccumuloTableOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance, std::string table,
                           RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
                           std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> tserverConn, TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
-      : TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
-        clientInterface(interface),
-        tserverConn(tserverConn),
-        distributedConnector(distributedConnector),
-        logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()){
+      :
+      TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
+      clientInterface(interface),
+      tserverConn(tserverConn),
+      distributedConnector(distributedConnector),
+      logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()) {
     loadTableOps();
     getTableId();
 

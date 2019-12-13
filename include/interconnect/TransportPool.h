@@ -221,9 +221,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
           if (!cacheTransport->isReserved() && !cacheTransport->hasError() && (*cacheTransport->getCacheKey().get() == *conn.get())) {
 
             cacheTransport->reserve();
-            std::stringstream hostname;
-            hostname << conn->getHost() << ":" << conn->getPort();
-            return std::make_pair(hostname.str(), cacheTransport);
+            return std::make_pair(conn->toString(), cacheTransport);
           }
         }
       }
@@ -248,9 +246,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
           if (!cacheTransport->isReserved() && !cacheTransport->hasError() && (*cacheTransport->getCacheKey().get() == *conn.get())) {
             cacheTransport->reserve();
-            std::stringstream hostname;
-            hostname << conn->getHost() << ":" << conn->getPort();
-            return std::make_pair(hostname.str(), cacheTransport);
+            return std::make_pair(conn->toString(), cacheTransport);
           }
         }
       }
@@ -258,9 +254,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
     }
 
     try {
-      std::stringstream hostname;
-      hostname << conn->getHost() << ":" << conn->getPort();
-      std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> pair = std::make_pair(hostname.str(), createNewTransport(conn));
+      std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> pair = std::make_pair(conn->toString(), createNewTransport(conn));
 
       return pair;
     } catch (std::runtime_error &tfe) {

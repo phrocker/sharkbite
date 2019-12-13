@@ -20,7 +20,7 @@ namespace data
 {
 
 Key::Key () :
-    deleted (false), timestamp ((uint64_t) -1), colVisSize (0), rowMaxSize (
+    deleted (false), timestamp (9223372036854775807L), colVisSize (0), rowMaxSize (
         0), columnFamilySize (0), colQualSize (0), rowLength (0), columnFamilyLength (
             0), colQualLen (0)
 {

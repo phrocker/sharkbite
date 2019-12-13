@@ -99,7 +99,8 @@ void AccumuloServerFacadeV1::initialize(std::shared_ptr<apache::thrift::protocol
 	  std::string zk,cm;
 	  client = std::make_unique<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient>(protocolPtr);
     tserverClient = std::make_unique<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(protocolPtr);
-    registerService(zk,cm);
+    if(callRegistration)
+      registerService(zk,cm);
 }
 
 
@@ -154,15 +155,14 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
   scanId.parentId = 0;
   scanId.traceId = rand();
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
   std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
+  for (auto it = iters.begin(); it != iters.end(); it++) {
+    auto myOptions = (*it).getOptions();
     for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+      iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
     }
   }
-
   ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
   std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
   cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
@@ -196,17 +196,17 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
 
   org::apache::accumulo::core::trace::thrift::TInfo scanId;
 
-  scanId.traceId = scan.scanID;
+  scanId.traceId = rand();
   scanId.parentId = scan.scanID;
 
-  std::vector<cclient::data::IterInfo*> *iters = request->getIterators();
-  std::map<std::string, std::map<std::string, std::string> > iterOptions;
-  for (auto it = iters->begin(); it != iters->end(); it++) {
-    auto myOptions = (*it)->getOptions();
-    for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
-      iterOptions[(*it)->getName()][(*optIt).first] = (*optIt).second;
+  const std::vector<cclient::data::IterInfo> &iters = request->getIterators();
+    std::map<std::string, std::map<std::string, std::string> > iterOptions;
+    for (auto it = iters.begin(); it != iters.end(); it++) {
+      auto myOptions = (*it).getOptions();
+      for (auto optIt = myOptions.begin(); optIt != myOptions.end(); optIt++) {
+        iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
+      }
     }
-  }
 
   tserverClient->startMultiScan(scan, scanId, ThriftWrapper::convert(request->getCredentials()), ThriftWrapper::convert(request->getRangeIdentifiers()), ThriftWrapper::convert(request->getColumns()),
                                 ThriftWrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true);
@@ -216,6 +216,10 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
   initialScan->setHasMore(results.more);
+
+  initialScan->setMultiScan(true);
+
+  initialScan->setScanId(scan.scanID);
 
   initialScan->setNextResults(kvs);
 
@@ -263,7 +267,48 @@ Scan *AccumuloServerFacadeV1::v1_beginScan(std::atomic<bool> *isRunning,ScanRequ
   return initialScan;
 }
 
+Scan * AccumuloServerFacadeV1::v1_continueMultiScan(Scan * originalScan) {
+
+  org::apache::accumulo::core::data::thrift::MultiScanResult results;
+  org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+
+  org::apache::accumulo::core::data::thrift::ScanID scanId = originalScan->getId();
+
+  tinfo.traceId = originalScan->getId() + 1;
+  tinfo.parentId = originalScan->getId();
+  try {
+
+    tserverClient->continueMultiScan(results, tinfo, scanId);
+
+
+    std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+
+    if (results.more && !kvs->empty())
+      originalScan->setTopKey(kvs->back()->getKey());
+
+    originalScan->setHasMore(results.more);
+
+    originalScan->setNextResults(kvs);
+    if (!results.more || !originalScan->isClientRunning()) {
+      tinfo.traceId++;
+      tserverClient->closeScan(tinfo, originalScan->getId());
+      results.more=false;
+    }
+
+    delete kvs;
+  } catch (org::apache::accumulo::core::tabletserver::thrift::NotServingTabletException &te) {
+    throw cclient::exceptions::NotServingException(te.what());
+  } catch (const org::apache::accumulo::core::tabletserver::thrift::NoSuchScanIDException &te) {
+    logging::LOG_DEBUG(logger) << "Continue Scan halted. No Such Scan ID, so setting no more results";
+    originalScan->setHasMore(false);
+  }
+  return originalScan;
+}
+
 interconnect::Scan *AccumuloServerFacadeV1::v1_continueScan(Scan *originalScan) {
+  if (originalScan->isMultiScan()){
+        return v1_continueMultiScan(originalScan);
+      }
   org::apache::accumulo::core::data::thrift::ScanResult results;
   org::apache::accumulo::core::trace::thrift::TInfo tinfo;
 

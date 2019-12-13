@@ -53,7 +53,7 @@ class Range {
    * @param endKey end key
    * @param endKeyInclusive return whether or not the end key is inclusive.
    **/
-  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive);
+  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update=true);
 
   /**
    * Sets the start key and endkey with the inclusive flags.
@@ -147,7 +147,7 @@ class Range {
     if (rhs.infiniteStopKey) {
       out << "+inf) ";
     } else {
-      out << rhs.stop << rhs.stopKeyInclusive ? "] " : ") ";
+      out << rhs.stop << (rhs.stopKeyInclusive ? "] " : ") ");
     }
 
     return out;

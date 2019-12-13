@@ -18,21 +18,16 @@
 #include <string>
 #include <vector>
 
-
-
 #include "ServerDefinition.h"
 #include "../security/AuthInfo.h"
 #include "../Range.h"
 #include "../column.h"
 #include "../KeyExtent.h"
 
-namespace cclient
-{
+namespace cclient {
 
-namespace data
-{
-namespace tserver
-{
+namespace data {
+namespace tserver {
 
 /**
  * Range definition is a server definition that contains the key extent and
@@ -40,54 +35,49 @@ namespace tserver
  *
  * Design: extends Server definition
  */
-class RangeDefinition : public ServerDefinition
-{
-public:
-    /**
-     * Constructor
-     * @param creds ptr to credentials
-     * @param auths pointer to auths used in range definition
-     * @param host host name we're connecting to
-     * @param port port connecting to
-     * @param keyRange range
-     * @param keyExt key extent
-     *
-     */
-    RangeDefinition (cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths,
-                     std::string host, uint32_t port,
-                     std::vector<Range*> *keyRange,
-                     std::vector<std::shared_ptr<KeyExtent>> *keyExt,std::vector<Column*> *columns =NULL);
+class RangeDefinition : public ServerDefinition {
+ public:
+  /**
+   * Constructor
+   * @param creds ptr to credentials
+   * @param auths pointer to auths used in range definition
+   * @param host host name we're connecting to
+   * @param port port connecting to
+   * @param keyRange range
+   * @param keyExt key extent
+   *
+   */
+  RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
+                  std::vector<std::shared_ptr<KeyExtent>> *keyExt, const std::vector<Column> &columns);
 
-    /**
-     * Returns ranges
-     * @returns ranges
-     */
-    std::vector<Range*> *
-    getRanges ();
+  RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
+                  std::vector<std::shared_ptr<KeyExtent>> *keyExt);
 
-    /**
-     * Returns key extents
-     * @returns key extents;
-     */
-    std::vector<std::shared_ptr<KeyExtent>> *
-    getExtents ();
+  /**
+   * Returns ranges
+   * @returns ranges
+   */
+  std::vector<Range*>* getRanges();
 
-    /**
-     * Returns a pointer to the columns created in this server definition.
-     **/
-    std::vector<Column*> *getColumn()
-    {
-      return &columns;
-    }
-    virtual
-    ~RangeDefinition ()
-    {
+  /**
+   * Returns key extents
+   * @returns key extents;
+   */
+  std::vector<std::shared_ptr<KeyExtent>>* getExtents();
 
-    }
-protected:
-    std::vector<Range*> ranges;
-    std::vector<std::shared_ptr<KeyExtent>> extents;
-    std::vector<Column*> columns;
+  /**
+   * Returns a pointer to the columns created in this server definition.
+   **/
+  std::vector<Column> getColumn() const {
+    return columns;
+  }
+  virtual ~RangeDefinition() {
+
+  }
+ protected:
+  std::vector<Range*> ranges;
+  std::vector<std::shared_ptr<KeyExtent>> extents;
+  std::vector<Column> columns;
 };
 }
 }

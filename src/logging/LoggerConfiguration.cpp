@@ -131,7 +131,7 @@ std::shared_ptr<internal::LoggerNamespace> LoggerConfiguration::initialize_names
     } else if ("rollingappender" == appender_type || "rolling appender" == appender_type || "rolling" == appender_type) {
       std::string file_name = "";
       if (!logger_properties->get(appender_key + ".file_name", file_name)) {
-        file_name = "minifi-app.log";
+        file_name = "sharkbite.log";
       }
       std::string directory = "";
       directory = logger_properties->getHome();

@@ -211,3 +211,11 @@ The derived and original works are listed below:
     LoggerConfiguration.h/LoggerConfiguration.cpp
     StringUtils.h/StringUtils.cpp
     ClassUtils.h/ClassUtils.cpp
+    JavaClass.h
+    JavaDefs.h
+    JavaException.h
+    JniMethod.h
+    JNIUtil.h
+    JVMLoader.h
+    ScriptException.h/cpp
+    

@@ -35,20 +35,19 @@ class ThriftWrapper {
     return std::make_shared<cclient::data::KeyExtent>(extent.table, extent.endRow, extent.prevEndRow);
 
   }
-  static std::vector<cclient::data::Column*> convert(std::vector<::org::apache::accumulo::core::data::thrift::TColumn> columns) {
-    std::vector<cclient::data::Column*> cols;
+  static std::vector<cclient::data::Column> convert(std::vector<::org::apache::accumulo::core::data::thrift::TColumn> columns) {
+    std::vector<cclient::data::Column> cols;
     for (auto it = columns.begin(); it != columns.end(); it++) {
-      cols.push_back(new cclient::data::Column((*it).columnFamily, (*it).columnQualifier, (*it).columnVisibility));
+      cols.emplace_back(cclient::data::Column((*it).columnFamily, (*it).columnQualifier, (*it).columnVisibility));
     }
 
     return cols;
   }
 
-  static std::vector<cclient::data::IterInfo*> convert(std::vector<::org::apache::accumulo::core::data::thrift::IterInfo> iters) {
-    std::vector<cclient::data::IterInfo*> convertedIters;
+  static std::vector<cclient::data::IterInfo> convert(std::vector<::org::apache::accumulo::core::data::thrift::IterInfo> iters) {
+    std::vector<cclient::data::IterInfo> convertedIters;
     for (auto it = iters.begin(); it != iters.end(); it++) {
-      cclient::data::IterInfo *iterInfo = new cclient::data::IterInfo((*it).iterName, (*it).className, (*it).priority);
-      convertedIters.push_back(iterInfo);
+      convertedIters.emplace_back(cclient::data::IterInfo((*it).iterName, (*it).className, (*it).priority));
     }
 
     return convertedIters;
@@ -83,15 +82,15 @@ class ThriftWrapper {
     return stackAuthInfo;
   }
 
-  static std::vector<org::apache::accumulo::core::data::thrift::IterInfo> convert(std::vector<cclient::data::IterInfo*> *iters) {
+  static std::vector<org::apache::accumulo::core::data::thrift::IterInfo> convert(const std::vector<cclient::data::IterInfo> &iters) {
 
     std::vector<org::apache::accumulo::core::data::thrift::IterInfo> convertedIters;
-    if (!IsEmpty(iters)) {
-      for (auto it = iters->begin(); it != iters->end(); it++) {
+    if (!iters.empty()) {
+      for( const auto &iter : iters){
         org::apache::accumulo::core::data::thrift::IterInfo iterInfo;
-        iterInfo.className = (*it)->getClass();
-        iterInfo.iterName = (*it)->getName();
-        iterInfo.priority = (*it)->getPriority();
+        iterInfo.className = iter.getClass();
+        iterInfo.iterName = iter.getName();
+        iterInfo.priority = iter.getPriority();
         convertedIters.push_back(iterInfo);
       }
     }
@@ -312,21 +311,16 @@ class ThriftWrapper {
     return newRange;
   }
 
-  static std::vector<org::apache::accumulo::core::data::thrift::TColumn> convert(std::vector<cclient::data::Column*> *columns) {
+  static std::vector<org::apache::accumulo::core::data::thrift::TColumn> convert(const std::vector<cclient::data::Column> &columns) {
 
     std::vector<org::apache::accumulo::core::data::thrift::TColumn> convertedColumns;
 
-    if (!IsEmpty(columns)) {
-      for (auto it = columns->begin(); it != columns->end(); it++) {
+    if (!columns.empty()) {
+      for( const auto &col : columns){
         org::apache::accumulo::core::data::thrift::TColumn column;
-        std::pair<char*, size_t> cf = (*it)->getColFamily();
-        column.columnFamily = std::string(cf.first, cf.second);
-        std::pair<char*, size_t> cq = (*it)->getColQualifier();
-        if (cq.second > 0)
-          column.columnQualifier = std::string(cq.first, cq.second);
-        std::pair<char*, size_t> cv = (*it)->getColVisibility();
-        if (cv.second > 0)
-          column.columnVisibility = std::string(cv.first, cv.second);
+        column.columnFamily = col.getColFamily();
+        column.columnQualifier = col.getColQualifier();
+        column.columnVisibility = col.getColVisibility();
 
         convertedColumns.push_back(column);
       }

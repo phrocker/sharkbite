@@ -13,6 +13,8 @@
  */
 #include <python/bindings.h>
 
+#include "data/constructs/PythonIterInfo.h"
+#include "data/constructs/IterInfo.h"
 #include "data/constructs/KeyValue.h"
 #include "data/constructs/Mutation.h"
 #include "data/constructs/security/Authorizations.h"
@@ -31,6 +33,8 @@
 #include "../include/logging/LoggerConfiguration.h"
 
 
+using namespace pybind11::literals;
+
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
 PYBIND11_MODULE(pysharkbite, s){
@@ -46,7 +50,7 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<cclient::data::Instance>(s, "Instance");
 //logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
   pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")
-    .def_static("enableLogging",&logging::LoggerConfiguration::enableLogger)
+    .def_static("enableDebugLogger",&logging::LoggerConfiguration::enableLogger)
     .def_static("enableTraceLogger",&logging::LoggerConfiguration::enableTraceLogger);
 
 
@@ -61,6 +65,22 @@ PYBIND11_MODULE(pysharkbite, s){
       .def("getUserName",&cclient::data::security::AuthInfo::getUserName)
       .def("getPassword", &cclient::data::security::AuthInfo::getPassword)
       .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId);
+
+  pybind11::class_<cclient::data::IterInfo>(s, "IterInfo")
+      .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
+      .def(pybind11::init<const std::string &,const std::string &,uint32_t,const std::string &>(),
+           "script"_a, "iteratorName"_a,"priority"_a,"type"_a="Python")
+      .def("getPriority",&cclient::data::IterInfo::getPriority)
+      .def("getName",&cclient::data::IterInfo::getName)
+      .def("getClass",&cclient::data::IterInfo::getClass);
+
+  pybind11::class_<cclient::data::python::PythonIterInfo>(s, "PythonIterator")
+      .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
+      .def(pybind11::init<const std::string &,uint32_t>())
+      .def("getPriority",&cclient::data::python::PythonIterInfo::getPriority)
+      .def("getName",&cclient::data::python::PythonIterInfo::getName)
+      .def("onNext",&cclient::data::python::PythonIterInfo::onNext)
+      .def("getClass",&cclient::data::python::PythonIterInfo::getClass);
 
   pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector")
       .def(pybind11::init<cclient::data::security::AuthInfo&, cclient::data::Instance*>())
@@ -88,6 +108,8 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(s, "Key")
 		.def(pybind11::init<>())
+		.def(pybind11::init<const std::string &,const std::string &, const std::string &, const std::string &, int64_t>(),
+		           "row"_a, "columnfamily"_a="","columnqualifier"_a="","columnvisibility"_a="","timestamp"_a=9223372036854775807L)
 		.def("setRow",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setRow, "Sets the row")
 		.def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setColFamily, "Sets the column fmaily")
 		.def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setColQualifier, "Sets the column qualifier")
@@ -122,6 +144,8 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
 		.def("getResultSet",  &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)
 		.def("fetchColumn", &scanners::BatchScanner::fetchColumn)
+		.def("addIterator", (void (scanners::BatchScanner::*)(const cclient::data::IterInfo &) ) &scanners::BatchScanner::addIterator)
+		.def("addIterator",(void (scanners::BatchScanner::*)(const cclient::data::python::PythonIterInfo &) ) &scanners::BatchScanner::addPythonIterator)
 		.def("close", &scanners::BatchScanner::close)
     .def("addRange",(void (scanners::BatchScanner::*)(const cclient::data::Range &) ) &scanners::BatchScanner::addRange, "Adds a range");
 

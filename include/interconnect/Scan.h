@@ -101,6 +101,14 @@ public:
 
 	}
 
+	void setMultiScan(bool isMulti){
+	  this->isMulti = isMulti;
+	}
+
+	bool isMultiScan() const {
+	  return isMulti;
+	}
+
 	/**
 	 * Sets the scan id
 	 * @param scanId scan identifier
@@ -121,6 +129,8 @@ public:
 	}
 
 protected:
+
+	bool isMulti;
 
 	std::atomic<bool> *isRunning;
 

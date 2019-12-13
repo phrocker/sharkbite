@@ -132,15 +132,14 @@ void Writer::flush(bool override) {
         writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
 
       }
-    } catch (cclient::exceptions::ClientException ce) {
-      std::cout << "ce what" << ce.what() << endl;
+    } catch (const cclient::exceptions::ClientException &ce) {
       if (ce.getErrorCode() == NO_LOCATION_IDENTIFIED) {
         // should check that the table exists
         bool exists = false;
         try {
           exists = tops->exists();
 
-        } catch (cclient::exceptions::ClientException ce) {
+        } catch (const cclient::exceptions::ClientException &ce) {
           throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
         }
 
@@ -153,7 +152,7 @@ void Writer::flush(bool override) {
       } else
         throw ce;
 
-    } catch (apache::thrift::transport::TTransportException tpe) {
+    } catch (const apache::thrift::transport::TTransportException &tpe) {
 
       flush(override);
 

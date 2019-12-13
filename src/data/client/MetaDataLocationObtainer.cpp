@@ -30,12 +30,6 @@ namespace cclient {
 namespace impl {
 
 MetaDataLocationObtainer::~MetaDataLocationObtainer() {
-  for (std::vector<cclient::data::Column*>::iterator locIt = columns->begin(); locIt != columns->end(); locIt++) {
-    delete (*locIt);
-  }
-
-  delete columns;
-
 }
 
 std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(cclient::data::security::AuthInfo *credentials, cclient::data::TabletLocation *source, std::string row,
@@ -63,13 +57,11 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
   Configuration conf;
   interconnect::ServerInterconnect directConnect(rangeDef, &conf);
 
-  cclient::data::IterInfo wriIter("WRI", "org.apache.accumulo.core.iterators.user.WholeRowIterator", 10000);
-
-  std::vector<cclient::data::IterInfo*> iters;
-  iters.push_back(&wriIter);
+  std::vector<cclient::data::IterInfo> iters;
+  iters.emplace_back(cclient::data::IterInfo("WRI", "org.apache.accumulo.core.iterators.user.WholeRowIterator", 10000));
   logging::LOG_TRACE(logger) << "Performing scan  of " << row << " end:" << stopRow << " against " << source->getServer() << ":" << source->getPort() << " on " << source->getExtent();
   std::atomic<bool> isrunning(true);
-  interconnect::Scan *initScan = directConnect.scan(&isrunning,columns, &iters);
+  interconnect::Scan *initScan = directConnect.scan(&isrunning, columns, iters);
   std::vector<std::shared_ptr<cclient::data::KeyValue> > kvResults;
   initScan->getNextResults(&kvResults);
 
@@ -102,13 +94,10 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
     value = it->second;
     std::pair<uint8_t*, size_t> valBytes = value->getValue();
-    if (cf == METADATA_CURRENT_LOCATION_COLUMN_FAMILY|| cf == METADATA_FUTURE_LOCATION_COLUMN_FAMILY)
-    {
-      location = std::string ((char*) valBytes.first, valBytes.second);
+    if (cf == METADATA_CURRENT_LOCATION_COLUMN_FAMILY || cf == METADATA_FUTURE_LOCATION_COLUMN_FAMILY) {
+      location = std::string((char*) valBytes.first, valBytes.second);
       session = cq;
-    }
-    else if (cf == METADATA_TABLET_COLUMN_FAMILY && cq == METADATA_PREV_ROW_COLUMN_CQ)
-    {
+    } else if (cf == METADATA_TABLET_COLUMN_FAMILY && cq == METADATA_PREV_ROW_COLUMN_CQ) {
       prevRow = value;
     }
 
