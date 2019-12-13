@@ -25,6 +25,11 @@ class InstanceVersion {
 
  public:
 
+  static bool isDefined(const std::string &instance) {
+    const InstanceVersion *mapper = getInstance();
+    return mapper->isHostDefined(instance);
+  }
+
   static int getVersion(const std::string &instance) {
     const InstanceVersion *mapper = getInstance();
     return mapper->getHostVersion(instance);
@@ -37,7 +42,7 @@ class InstanceVersion {
 
  private:
 
-  static InstanceVersion *getInstance() {
+  static InstanceVersion* getInstance() {
     static InstanceVersion vers;
     return &vers;
   }
@@ -50,6 +55,12 @@ class InstanceVersion {
     std::lock_guard<std::mutex> lock(mtx);
     version_map_.insert(std::make_pair(instance, version));
     this->version = version;
+  }
+
+  bool isHostDefined(const std::string &instance) const {
+    std::lock_guard<std::mutex> lock(mtx);
+    auto vmap = version_map_.find(instance);
+    return vmap != std::end(version_map_);
   }
 
   int getHostVersion(const std::string &instance) const {

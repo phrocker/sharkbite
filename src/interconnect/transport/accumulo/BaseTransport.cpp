@@ -17,12 +17,21 @@
 
 namespace interconnect {
 
-ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn)
-    : interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
-      logger(logging::LoggerFactory<ThriftTransporter>::getLogger()) {
-  auto suspectedVersion = cclient::data::InstanceVersion::getVersion(conn->getHost());
-  logging::LOG_DEBUG(logger) << "Attempting API version " << suspectedVersion;
+ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn, bool reg)
+    :
+    interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
+    logger(logging::LoggerFactory < ThriftTransporter > ::getLogger()) {
+  auto suspectedVersion = cclient::data::InstanceVersion::getVersion(conn->toString());
+  logging::LOG_DEBUG(logger) << "Attempting API version " << (suspectedVersion == -1 ? 1 : suspectedVersion) << " for " << conn->toString();
   switch (suspectedVersion) {
+    case -1: {
+      if (reg) {
+        createClientService(true);
+      } else {
+        server = std::make_unique<AccumuloServerFacadeV1>();
+      }
+      break;
+    }
     case 1:
       server = std::make_unique<AccumuloServerFacadeV1>();
       break;
@@ -70,29 +79,46 @@ void ThriftTransporter::createClientService(bool callRegistration) {
 
   std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
-  try{
+  logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << cclient::data::InstanceVersion::getVersion(getConnection()->toString())
+                             << " attempting reg ? " << (callRegistration == true);
+  // need to get instance information if the host is not cached
+  if (cclient::data::InstanceVersion::isDefined(getConnection()->toString()) && callRegistration)
+    callRegistration = false;
+  try {
     server->close();
-
+    logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << cclient::data::InstanceVersion::getVersion(getConnection()->toString())
+                               << " attempting reg ? " << (callRegistration == true);
     server->initialize(protocolPtr, callRegistration);
-  }catch(...){
-
-    auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->getHost()) + 1;
-    logging::LOG_DEBUG(logger) << "Attempting API version " << suspectedVersion;
+    if (callRegistration) {
+      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->toString());
+      cclient::data::InstanceVersion::setVersion(getConnection()->toString(), suspectedVersion);
+    }
+  } catch (...) {
+    auto eptr = std::current_exception();  // capture
+    auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->toString()) + 1;
+    std::stringstream msg;
+    msg << clonedConnection->getHost() << ":" << clonedConnection->getPort();
+    printUncaughtException(eptr, msg.str());
+    logging::LOG_DEBUG(logger) << (suspectedVersion - 1) << " did not work, attempting API version " << suspectedVersion;
     switch (suspectedVersion) {
-        case 1:
-          server = std::make_unique<AccumuloServerFacadeV1>();
-          break;
-        case 2:
-          server = std::make_unique<AccumuloServerFacadeV2>();
-          break;
-      }
+      case -1:
+      case 1:
+        server = std::make_unique<AccumuloServerFacadeV1>();
+        suspectedVersion = 1;
+        break;
+      case 2:
+        server = std::make_unique<AccumuloServerFacadeV2>();
+        break;
+    }
     server->initialize(protocolPtr, callRegistration);
     // if successful, we'll update the map
-    cclient::data::InstanceVersion::setVersion(getConnection()->getHost(),suspectedVersion);
+    if (callRegistration)
+      cclient::data::InstanceVersion::setVersion(getConnection()->toString(), suspectedVersion);
     switchInterconnect();
     logging::LOG_DEBUG(logger) << "Successfully switch to API version " << suspectedVersion;
   }
 
+  logging::LOG_DEBUG(logger) << getConnection()->toString() << " with version " << cclient::data::InstanceVersion::getVersion(getConnection()->toString());
 }
 
 void ThriftTransporter::newTransporter(const std::shared_ptr<ServerConnection> &conn) {

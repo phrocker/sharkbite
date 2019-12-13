@@ -17,6 +17,7 @@
 
 #include <iostream>
 #include <memory>
+#include <string>
 #include "data/constructs/inputvalidation.h"
 #include "data/exceptions/IllegalArgumentException.h"
 
@@ -29,6 +30,7 @@ class ServerConnection {
       : host(other->host),
         port(other->port),
         timeout(other->timeout) {
+    hostAndPort = host + ":" + std::to_string(port);
   }
   ServerConnection(std::string loc, uint16_t port, uint64_t timeout)
       : host(loc),
@@ -37,7 +39,7 @@ class ServerConnection {
     if (IsEmpty(&loc)) {
       throw cclient::exceptions::IllegalArgumentException("Invalid Input; host name is empty");
     }
-
+    hostAndPort = host + ":" + std::to_string(port);
   }
 
   virtual ~ServerConnection() {
@@ -60,11 +62,16 @@ class ServerConnection {
     return os << host << ":" << port << " " << timeout << std::endl;
   }
 
+  std::string toString() const {
+    return hostAndPort;
+  }
+
   ServerConnection &operator=(const ServerConnection &rhs) {
 
     host = rhs.host;
     port = rhs.port;
     timeout = rhs.timeout;
+    hostAndPort = rhs.hostAndPort;
     return *this;
   }
 
@@ -133,6 +140,7 @@ class ServerConnection {
   }
 
  protected:
+  std::string hostAndPort;
   std::string host;
   uint16_t port;
   uint64_t timeout;

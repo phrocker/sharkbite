@@ -66,7 +66,7 @@ During this process the C++ library and python bindings will be built.
 [A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
 library.
 
-## Python Iterators 
+## Python Iterators (! BETA )
 
 We now support a beta version of python iterators. By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators
 

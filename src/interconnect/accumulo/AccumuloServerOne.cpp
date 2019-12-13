@@ -99,7 +99,8 @@ void AccumuloServerFacadeV1::initialize(std::shared_ptr<apache::thrift::protocol
 	  std::string zk,cm;
 	  client = std::make_unique<org::apache::accumulo::core::client::impl::thrift::ClientServiceClient>(protocolPtr);
     tserverClient = std::make_unique<org::apache::accumulo::core::tabletserver::thrift::TabletClientServiceClient>(protocolPtr);
-    registerService(zk,cm);
+    if(callRegistration)
+      registerService(zk,cm);
 }
 
 

@@ -18,7 +18,7 @@ else()
 endif()
 
 
-set (CMAKE_CXX_FLAGS "-std=c++14 -g -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
+set (CMAKE_CXX_FLAGS "-std=c++14 -g -Wno-switch -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF) 
 include(ExternalProject)

@@ -19,9 +19,6 @@
 
 #include <map>
 
-
-
-
 #define INVALID_ZK_DATA 0
 #define INVALID_ZK_SERVER_DATA 1
 #define INVALID_ZK_SERVER_PORT 2
@@ -36,45 +33,40 @@
 #define TABLE_OR_NAMESPACE_EMPTY 11
 #define ARGUMENT_CANNOT_BE_NULL 12
 
-
-
-
 namespace cclient {
 namespace exceptions {
 
-extern const std::map<uint16_t,std::string> CLIENT_ERROR_CODES;  
+extern const std::map<uint16_t, std::string> CLIENT_ERROR_CODES;
 
+class ClientException : public std::exception {
+ public:
+  explicit ClientException(std::string excp)
+      :
+      errorCode(-1),
+      excp_str(excp) {
 
-class ClientException: public std::exception {
-public:
-    explicit ClientException(std::string excp) : errorCode(-1),
-        excp_str(excp) {
+  }
 
-    }
-    
-    ClientException(const uint16_t errorCode) :errorCode(errorCode)
-    {
-    }
-    
-    
-    ~ClientException() throw () {
+  ClientException(const uint16_t errorCode)
+      :
+      errorCode(errorCode) {
+  }
 
-    }
-    const char *what() {
-	if (errorCode != -1) 
-	{	
-	  return CLIENT_ERROR_CODES.at(errorCode).c_str();
-	}
-	else
-        return excp_str.c_str();
-    }
-    const int getErrorCode()
-    {
-	return errorCode;
-    }
-private:
-    int16_t errorCode;
-    std::string excp_str;
+  ~ClientException() throw () {
+
+  }
+  const char* what() const throw (){
+    if (errorCode != -1) {
+      return CLIENT_ERROR_CODES.at(errorCode).c_str();
+    } else
+      return excp_str.c_str();
+  }
+  const int getErrorCode() const {
+    return errorCode;
+  }
+ private:
+  int16_t errorCode;
+  std::string excp_str;
 };
 } /* namespace data */
 } /* namespace cclient */
