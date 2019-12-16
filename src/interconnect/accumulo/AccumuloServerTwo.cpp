@@ -179,7 +179,7 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
 
   try{
     tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
-                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024, config, 1024 * 5, "", executionHints);
+                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, request->getBuffersize(), config, 1024 * 5, "", executionHints);
   } catch (const apache::thrift::TApplicationException &te) {
     logging::LOG_DEBUG(logger) << "Error on extent" << extent << " and range is " << range;
     throw te;

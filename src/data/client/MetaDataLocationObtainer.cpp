@@ -61,7 +61,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
   iters.emplace_back(cclient::data::IterInfo("WRI", "org.apache.accumulo.core.iterators.user.WholeRowIterator", 10000));
   logging::LOG_TRACE(logger) << "Performing scan  of " << row << " end:" << stopRow << " against " << source->getServer() << ":" << source->getPort() << " on " << source->getExtent();
   std::atomic<bool> isrunning(true);
-  interconnect::Scan *initScan = directConnect.scan(&isrunning, columns, iters);
+  interconnect::Scan *initScan = directConnect.scan(&isrunning, columns, iters,100);
   std::vector<std::shared_ptr<cclient::data::KeyValue> > kvResults;
   initScan->getNextResults(&kvResults);
 

@@ -165,8 +165,10 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   }
 
   Scan *
-  scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators) {
+  scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize=1000) {
     ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request(&credentials, rangeDef->getAuthorizations(), tServer);
+
+    request.setBufferSize(batchSize);
 
     request.addColumns(cols);
 
