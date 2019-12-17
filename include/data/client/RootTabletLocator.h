@@ -46,10 +46,14 @@ class RootTabletLocator : public TabletLocator {
       location = getRootTabletLocation();
 
     }
-
-    cclient::data::TabletLocation te(location);
-    delete location;
-    return te;
+    if (location){
+      cclient::data::TabletLocation te(location);
+      delete location;
+      return te;
+    }
+    else {
+	    throw std::runtime_error("Could not locate root tablet");
+    }
 
   }
 

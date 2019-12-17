@@ -32,7 +32,7 @@ public:
 
     Value();
 
-    explicit Value(std::string val) {
+    explicit Value(const std::string &val) {
         value=NULL;
         valueSize =0;
         offset=0;
@@ -42,6 +42,8 @@ public:
     virtual ~Value();
 
     void setValue(uint8_t *val, size_t size, uint32_t ptrOff = 0);
+
+    void setValue(const std::string &);
 
     void append(uint8_t *val, size_t size);
 

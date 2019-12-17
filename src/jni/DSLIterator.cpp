@@ -27,30 +27,28 @@
 extern "C" {
 #endif
 
-void rethrow_cpp_exception_as_java_exception(JNIEnv *env)
-{
-  try
-  {
-    throw; // This allows to determine the type of the exception
-  }
-  catch (const std::bad_alloc& e) {
+void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
+  try {
+    throw;  // This allows to determine the type of the exception
+  } catch (const std::bad_alloc &e) {
     jclass jc = env->FindClass("java/lang/OutOfMemoryError");
-    if(jc) env->ThrowNew (jc, e.what());
-  }
-  catch (const std::ios_base::failure& e) {
+    if (jc)
+      env->ThrowNew(jc, e.what());
+  } catch (const std::ios_base::failure &e) {
     jclass jc = env->FindClass("java/io/IOException");
-    if(jc) env->ThrowNew (jc, e.what());
-  }
-  catch (const std::exception& e) {
+    if (jc)
+      env->ThrowNew(jc, e.what());
+  } catch (const std::exception &e) {
     /* unknown exception (may derive from std::exception) */
     jclass jc = env->FindClass("java/lang/Error");
-    if(jc) env->ThrowNew (jc, e.what());
-  }
-  catch (...) {
+    if (jc)
+      env->ThrowNew(jc, e.what());
+  } catch (...) {
     /* Oops I missed identifying this exception! */
     jclass jc = env->FindClass("java/lang/Error");
-    if(jc) env->ThrowNew (jc, "Unidentified exception => "
-      "Improve rethrow_cpp_exception_as_java_exception()" );
+    if (jc)
+      env->ThrowNew(jc, "Unidentified exception => "
+                    "Improve rethrow_cpp_exception_as_java_exception()");
   }
 }
 
@@ -67,11 +65,11 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *env, jo
   const std::string dslStr = JniStringToUTF(env, dsl);
   cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
   if (nullptr != itr) {
-    try{
+    try {
       itr->setDSL(dslStr);
     } catch(...) {
-        rethrow_cpp_exception_as_java_exception(env);
-      }
+      rethrow_cpp_exception_as_java_exception(env);
+    }
   }
 }
 
@@ -80,24 +78,26 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_init(JNIEnv *env, jobj
 }
 
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_seek(JNIEnv *env, jobject me, jobject skvi, jobject range) {
-cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
-THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
+  cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
+  THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
 
-try {
-  cclient::jni::AccumuloIterator acciter(env, skvi);
-  itr->setIter(&acciter);
-  cclient::jni::AccumuloRange rng(env,range);
-  THROW_IF( !rng.init(env) , env, "Range is null");
-  itr->callSeek(rng.getRange());
+  try {
+    cclient::jni::AccumuloIterator acciter(env, skvi);
+    itr->setIter(&acciter);
+    cclient::jni::AccumuloRange rng(env,range);
+    THROW_IF( !rng.init(env) , env, "Range is null");
+    itr->callSeek(rng.getRange());
 
-  if (itr->callHasTop()) {
-        auto top = itr->getTopKey();
-        acciter.setTopKey(env,me,top);
-
-      } else {
-
+    if (itr->callHasTop()) {
+      auto top = itr->getTopKey();
+      acciter.setTopKey(env,me,top);
+      auto topv = itr->getTopValue();
+      if ( !acciter.setTopValue(env,me,topv) ) {
+        throw std::runtime_error("cannot set top value");
       }
-} catch(...) {
+    }
+
+  } catch(...) {
     rethrow_cpp_exception_as_java_exception(env);
   }
 
@@ -117,19 +117,15 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env
 
     if (itr->callHasTop()) {
       auto top = itr->getTopKey();
-      acciter.setTopKey(env,me,top);;
-      //itr->setTopKey(env);
-      //auto key = itr->getTopKey();
-      //auto v
-
-
-    } else {
-
-
+      acciter.setTopKey(env,me,top);
+      auto topv = itr->getTopValue();
+      if ( !acciter.setTopValue(env,me,topv) ) {
+        throw std::runtime_error("cannot set top value");
+      }
     }
   } catch(...) {
-      rethrow_cpp_exception_as_java_exception(env);
-    }
+    rethrow_cpp_exception_as_java_exception(env);
+  }
 }
 
 #ifdef __cplusplus

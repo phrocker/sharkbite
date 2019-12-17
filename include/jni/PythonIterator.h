@@ -56,8 +56,10 @@ class PythonIterator : public cclient::jni::DSLIterator {
     topKeyValue = iter.callNext(this);
     if (nullptr != topKeyValue) {
       topKey = topKeyValue->getKey();
+      topValue = topKeyValue->getValue();
     } else {
       topKey = nullptr;
+      topValue = nullptr;
       calledNext = true;
       return;
     }

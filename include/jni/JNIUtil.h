@@ -22,18 +22,27 @@
 #include <string>
 #include <jni.h>
 
-static inline std::string JniStringToUTF(JNIEnv *env, const jstring &jstr) {
-  if (!jstr && !env) {
+static inline std::string JniStringToUTF(JNIEnv *env, jstring jStr) {
+  if (!jStr)
+    return "";
+
+  const jclass stringClass = env->GetObjectClass(jStr);
+  const jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
+  const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, env->NewStringUTF("UTF-8"));
+  if (env->ExceptionCheck()) {
     return "";
   }
-  const char *c_str = env->GetStringUTFChars(jstr, NULL);
-  if (c_str == NULL) {
-    return "";
-  }
-  std::string str = c_str;
-  env->ReleaseStringUTFChars(jstr, c_str);
-  return str;
+  size_t length = (size_t) env->GetArrayLength(stringJbytes);
+  jbyte *pBytes = env->GetByteArrayElements(stringJbytes, NULL);
+
+  std::string ret = std::string((char*) pBytes, length);
+  env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
+
+  env->DeleteLocalRef(stringJbytes);
+  env->DeleteLocalRef(stringClass);
+  return ret;
 }
+
 
 static inline jbyteArray toByteArray(JNIEnv *env, const std::string &str) {
   jbyteArray array = env->NewByteArray(str.length());

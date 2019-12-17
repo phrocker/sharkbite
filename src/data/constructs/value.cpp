@@ -51,6 +51,10 @@ void Value::setValue(uint8_t *val, size_t size, uint32_t ptrOff) {
 
 }
 
+void Value::setValue(const std::string &val){
+  setValue((uint8_t*) val.c_str(), val.size());
+}
+
 /**
  * Appends val to the current value.
  */

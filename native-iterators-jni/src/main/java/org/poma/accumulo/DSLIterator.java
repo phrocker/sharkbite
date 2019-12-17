@@ -46,7 +46,6 @@ public class DSLIterator {
         nextKey = null;
         nextValue = null;
         getNextKey(iter);
-        nextValue = new Value();
     }
 
 

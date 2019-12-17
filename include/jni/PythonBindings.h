@@ -55,7 +55,9 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_iterator, m) { // NOLINT
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(m, "Value")
      .def(pybind11::init<>())
-     .def("get", &cclient::data::Value::getValueAsString, "Returns the value as a UTF-8 string");
+     .def(pybind11::init<const std::string&>())
+     .def("get", &cclient::data::Value::getValueAsString, "Returns the value as a UTF-8 string")
+     .def("set",(void (cclient::data::Value::*)(const std::string &) )  &cclient::data::Value::setValue, "Sets the byte array value");
 
    pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(m, "Key")
      .def(pybind11::init<>())
