@@ -129,6 +129,11 @@ class TKey : public virtual ::apache::thrift::TBase {
 
   void __set_timestamp(const int64_t val);
 
+  bool isInfinite() const{
+    return row.empty() && colFamily.empty() && colQualifier.empty() && colVisibility.empty();
+  }
+
+
   bool operator == (const TKey & rhs) const
   {
     if (!(row == rhs.row))

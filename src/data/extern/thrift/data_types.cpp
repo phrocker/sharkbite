@@ -1016,13 +1016,17 @@ uint32_t TRange::write(::apache::thrift::protocol::TProtocol* oprot) const {
   xfer += oprot->writeStructBegin("TRange");
 
   
+  if (!this->start.isInfinite()){
   xfer += oprot->writeFieldBegin("start", ::apache::thrift::protocol::T_STRUCT, 1);
   xfer += this->start.write(oprot);
   xfer += oprot->writeFieldEnd();
+  }
 
+  if (!this->stop.isInfinite()){
   xfer += oprot->writeFieldBegin("stop", ::apache::thrift::protocol::T_STRUCT, 2);
   xfer += this->stop.write(oprot);
   xfer += oprot->writeFieldEnd();
+  }
 
   xfer += oprot->writeFieldBegin("startKeyInclusive", ::apache::thrift::protocol::T_BOOL, 3);
   xfer += oprot->writeBool(this->startKeyInclusive);

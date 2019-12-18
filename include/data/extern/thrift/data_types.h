@@ -133,6 +133,10 @@ class TKey {
     return !(*this == rhs);
   }
 
+  bool isInfinite() const{
+    return row.empty() && colFamily.empty() && colQualifier.empty() && colVisibility.empty();
+  }
+
   bool operator < (const TKey & other) const
   {
     if (row < other.row)
@@ -519,6 +523,7 @@ class TRange {
       return false;
     return true;
   }
+
   bool operator != (const TRange &rhs) const {
     return !(*this == rhs);
   }
