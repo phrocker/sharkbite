@@ -115,6 +115,32 @@ class TestWrites(TestRunner):
 			sys.exit(1)
 			
 		
+		# test infinite range
+		range = pysharkbite.Range("",False,"row3",True)
+		
+		scanner = tableOperations.createScanner(auths, 2)
+		
+		scanner.addRange( range )
+		
+		resultset = scanner.getResultSet()
+		
+		count =0
+		for keyvalue in resultset:
+			key = keyvalue.getKey()
+			assert( "row2" == key.getRow() )
+			value = keyvalue.getValue()
+			if "cf" == key.getColumnFamily():
+				assert( "value"  == value.get() )
+			if ("cf2" == key.getColumnFamily() ):
+				assert( "value2" == value.get() )
+			if ("cf3" == key.getColumnFamily() ):
+				print("Unexpected column cf3")
+				sys.exit(1)
+			count=count+1
+		if count <= 0:
+			print("Expected results")
+			sys.exit(1)
+		
 		""" delete your table if user did not create temp """
 		
 		tableOperations.remove()
