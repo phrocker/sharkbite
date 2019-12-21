@@ -20,7 +20,9 @@ endif()
 
 set (CMAKE_CXX_FLAGS "-std=c++14 -g -Wno-switch -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
-option(test "Build all tests." OFF) 
+option(test "Build all tests." OFF)
+option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)  
+option(BUILD_TESTS "Build all tests." ON)
 include(ExternalProject)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -298,7 +300,8 @@ target_link_libraries( ClientExample )
 target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 
-#ClientExample
+if (BUILD_TESTS)
+enable_testing()
 add_executable(InsertTest "src/examples/InsertTest.cpp")
 target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
 #target_link_libraries (InsertTest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
@@ -308,7 +311,7 @@ target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
 target_link_libraries( InsertTest sharkbite)
 
 
-#ClientExample
+
 add_executable(ContinuousIngest "src/examples/ContinuousIngest.cpp")
 target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
 #target_link_libraries (ContinuousIngest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
@@ -317,7 +320,6 @@ target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARI
 target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
 target_link_libraries( ContinuousIngest sharkbite)
 
-#TableOps
 add_executable(TableOps "src/examples/TableOps.cpp")
 target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
 #target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
@@ -342,6 +344,7 @@ target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIBS})
 target_link_libraries( PrintInfo sharkbite)
 
+
 ADD_CUSTOM_TARGET(debian-package
 	COMMAND dpkg-buildpackage -us -uc -b
 	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
@@ -349,7 +352,7 @@ ADD_CUSTOM_TARGET(debian-package
 )
 
 
-enable_testing()
+
 
   file(GLOB_RECURSE RFILE_TEST "test/constructs/rfile_test.cpp")
   add_executable(testrfile ${RFILE_TEST})
@@ -393,8 +396,50 @@ enable_testing()
   target_link_libraries(integrationTest   sharkbite)
 
 
+if (BUILD_PYTHON_TESTS)
 
-add_subdirectory(test/services)
+	set(PYTHON_TEST_SOURCE "${CMAKE_SOURCE_DIR}/test/python")
+	set(PYTHON_TEST_DEST "${CMAKE_CURRENT_BINARY_DIR}/test/" )
+		
+	file(COPY ${PYTHON_TEST_SOURCE} DESTINATION ${PYTHON_TEST_DEST})
+	
+	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite> ${PYTHON_TEST_DEST}/python/)
+	
+	add_subdirectory(test/services)
+	
+	include_directories(${JNI_INCLUDE_DIRS})
+		
+	set(MAC19X "${CMAKE_SOURCE_DIR}/test/19x/")
+	set(MAX19XBIN "${CMAKE_CURRENT_BINARY_DIR}/test" )
+		
+	file(COPY ${MAC19X} DESTINATION ${MAX19XBIN})
+	find_package(Java)
+	find_package(Maven )
+	
+	if (MAVEN_FOUND)
+		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAC19X}/standalone-mac)
+	
+	
+	#mrthesegfault /usr/bin/python3.7 ~/dev/sharkbite/test/python/ ~/dev/sharkbite/build/pysharkbite.cpython-37m-x86_64-linux-gnu.so 
+	
+	cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
+	
+	set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
+	add_test(
+	    NAME RunPythonTests 
+	    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ})
+	
+	
+	else()
+	message(STATUS "Maven not found, so not building java tests")
+	
+	
+	
+	endif(MAVEN_FOUND)
+
+endif(BUILD_PYTHON_TESTS)
+
+endif(BUILD_TESTS)
 
 add_subdirectory(include/interconnect/securityOps)
 

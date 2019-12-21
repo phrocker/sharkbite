@@ -79,14 +79,14 @@ void ThriftTransporter::createClientService(bool callRegistration) {
 
   std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
-  logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << cclient::data::InstanceVersion::getVersion(getConnection()->toString())
+  logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << std::to_string(cclient::data::InstanceVersion::getVersion(getConnection()->toString()))
                              << " attempting reg ? " << (callRegistration == true);
   // need to get instance information if the host is not cached
   if (cclient::data::InstanceVersion::isDefined(getConnection()->toString()) && callRegistration)
     callRegistration = false;
   try {
     server->close();
-    logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << cclient::data::InstanceVersion::getVersion(getConnection()->toString())
+    logging::LOG_DEBUG(logger) << "Attempting registration on " << getConnection()->toString() << " with version " << std::to_string(cclient::data::InstanceVersion::getVersion(getConnection()->toString()))
                                << " attempting reg ? " << (callRegistration == true);
     server->initialize(protocolPtr, callRegistration);
     if (callRegistration) {

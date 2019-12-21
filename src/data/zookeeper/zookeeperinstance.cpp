@@ -89,7 +89,7 @@ std::string ZookeeperInstance::getInstanceId() {
     uint8_t *zkInstanceId = myZooCache->getData(instancePath.str());
 
     if (IsEmpty(zkInstanceId)) {
-      throw cclient::exceptions::ClientException("Instance Id does not exist within zookeeper");
+      throw cclient::exceptions::ClientException("Instance Id does not exist within zookeeper at path  " + instancePath.str());
     }
 
     instanceId.insert(0, (char*) zkInstanceId);

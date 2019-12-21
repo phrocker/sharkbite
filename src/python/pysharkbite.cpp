@@ -84,6 +84,7 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector")
       .def(pybind11::init<cclient::data::security::AuthInfo&, cclient::data::Instance*>())
+	  .def("securityOps",&interconnect::MasterConnect::securityOps)
       .def("tableOps",&interconnect::MasterConnect::tableOps);
 
   pybind11::class_<interconnect::AccumuloTableOperations>(s, "AccumuloTableOperations")
@@ -99,6 +100,9 @@ PYBIND11_MODULE(pysharkbite, s){
       .def("createScanner", &interconnect::AccumuloTableOperations::createScanner)
       .def("createWriter", &interconnect::AccumuloTableOperations::createWriter)
       .def("create",&interconnect::AccumuloTableOperations::create);
+
+  pybind11::class_<interconnect::SecurityOperations>(s, "SecurityOperations")
+        .def("grantAuthorizations",&interconnect::SecurityOperations::grantAuthorizations);
 
 
 

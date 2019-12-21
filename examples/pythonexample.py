@@ -122,7 +122,7 @@ try:
     for keyvalue in resultset:
         key = keyvalue.getKey()
         value = keyvalue.getValue()
-        print(key.getRow() + ":" + key.getColumnFamily() + ":" +  key.getColumnQualifier() + " [" + key.getColumnVisibility() + "] -- " + value.get())
+        
     
     """ delete your table if user did not create temp """
     if not args.table:
