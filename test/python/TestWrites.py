@@ -25,9 +25,10 @@ class TestWrites(TestRunner):
 		""" Add authorizations """ 
 		""" mutation.put("cf","cq","cv",1569786960) """
 		
+		
 		writer = tableOperations.createWriter(auths, 10)
 		
-		mutation = pysharkbite.Mutation("row2");    
+		mutation = pysharkbite.Mutation("sow2");    
 		
 		mutation.put("cf","cq","",1569786960, "value")
 		mutation.put("cf2","cq2","",1569786960, "value2")
@@ -36,6 +37,17 @@ class TestWrites(TestRunner):
 		
 		writer.addMutation( mutation )
 		
+		writer.close()
+		
+		writer = tableOperations.createWriter(auths, 10)
+		
+		rng = range(0,1000)
+		for i in rng:
+			row = ("row%i" % (i+5))
+			mutation = pysharkbite.Mutation(row);    
+			mutation.put("cf","cq","",1569786960, "value")
+			writer.addMutation(mutation)
+			
 		writer.close()
 		
 		print("written")
@@ -48,19 +60,19 @@ class TestWrites(TestRunner):
 		
 		endKey = pysharkbite.Key()
 		
-		startKey.setRow("row")
+		startKey.setRow("sow")
 		
-		endKey.setRow("row3")
+		endKey.setRow("sow3")
 		
-		range = pysharkbite.Range(startKey,True,endKey,False)
+		accumuloRange = pysharkbite.Range(startKey,True,endKey,False)
 		
-		scanner.addRange( range )
+		scanner.addRange( accumuloRange )
 		
 		resultset = scanner.getResultSet()
 		
 		for keyvalue in resultset:
 			key = keyvalue.getKey()
-			assert( "row2" == key.getRow() )
+			assert( "sow2" == key.getRow() )
 			value = keyvalue.getValue()
 			if "cf" == key.getColumnFamily():
 				assert( "value"  == value.get() )
@@ -69,7 +81,20 @@ class TestWrites(TestRunner):
 			if ("cf3" == key.getColumnFamily() ):
 				assert( "" == value.get() )
 		    
-		    
+		  
+		scanner = tableOperations.createScanner(auths, 2)   
+		
+		accumuloRange = pysharkbite.Range("row",True,"row9999999",False)
+		
+		scanner.addRange( accumuloRange )
+		
+		resultset = scanner.getResultSet()
+		count=0
+		for keyvalue in resultset:
+			key = keyvalue.getKey()
+			count=count+1
+		print("count is ", count) 
+		assert(count==1000)
 		
 		""" delete your table if user did not create temp """
 		
