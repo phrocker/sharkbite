@@ -84,7 +84,7 @@ class TestWrites(TestRunner):
 		  
 		scanner = tableOperations.createScanner(auths, 2)   
 		
-		accumuloRange = pysharkbite.Range("row",True,"row9999999",False)
+		accumuloRange = pysharkbite.Range("row",True,"",False)
 		
 		scanner.addRange( accumuloRange )
 		
@@ -94,7 +94,7 @@ class TestWrites(TestRunner):
 			key = keyvalue.getKey()
 			count=count+1
 		print("count is ", count) 
-		assert(count==1000)
+		assert(count==1003) # all rows + sows
 		
 		""" delete your table if user did not create temp """
 		
