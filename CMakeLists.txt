@@ -417,7 +417,7 @@ if (BUILD_PYTHON_TESTS)
 	find_package(Maven )
 	
 	if (MAVEN_FOUND)
-		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAC19X}/standalone-mac)
+		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac)
 	
 	
 	#mrthesegfault /usr/bin/python3.7 ~/dev/sharkbite/test/python/ ~/dev/sharkbite/build/pysharkbite.cpython-37m-x86_64-linux-gnu.so 
