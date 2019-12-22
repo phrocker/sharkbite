@@ -417,17 +417,17 @@ if (BUILD_PYTHON_TESTS)
 	find_package(Maven )
 	
 	if (MAVEN_FOUND)
-		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac)
+		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac/)
 	
 	
 	#mrthesegfault /usr/bin/python3.7 ~/dev/sharkbite/test/python/ ~/dev/sharkbite/build/pysharkbite.cpython-37m-x86_64-linux-gnu.so 
 	
-	cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
-	
-	set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
-	add_test(
-	    NAME RunPythonTests 
-	    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ})
+		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
+		
+		set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
+		add_test(
+		    NAME RunPythonTests 
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ})
 	
 	
 	else()
