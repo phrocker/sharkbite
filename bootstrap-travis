@@ -1,2 +1,2 @@
 echo -e "Building Sharkbite...\n"
-mkdir -p build && cd build && cmake .. && cmake --build .
+mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON .. && cmake --build . && ctest
