@@ -316,6 +316,8 @@ if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	
 	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Dacc.version=1.9.3" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
 	
+	add_dependencies(pysharkbite-iterators sharkbite)
+	
 endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 
 if (BUILD_TESTS)
