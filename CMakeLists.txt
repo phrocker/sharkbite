@@ -428,15 +428,12 @@ if (BUILD_PYTHON_TESTS)
 	set(MAC19X "${CMAKE_SOURCE_DIR}/test/19x/")
 	set(MAX19XBIN "${CMAKE_CURRENT_BINARY_DIR}/test" )
 		
-	file(COPY ${MAC19X} DESTINATION ${MAX19XBIN})
+	file(COPY ${MAC19X} DESTINATION "${MAX19XBIN}/")
 	find_package(Java)
 	find_package(Maven )
 	
 	if (MAVEN_FOUND)
-		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac/)
-	
-	
-	#mrthesegfault /usr/bin/python3.7 ~/dev/sharkbite/test/python/ ~/dev/sharkbite/build/pysharkbite.cpython-37m-x86_64-linux-gnu.so 
+		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac/) 
 	
 		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 		
