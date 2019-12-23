@@ -33,6 +33,7 @@ matrix:
         homebrew:
           packages:
           - flex
+          - python
           - bison
 before_install:
   if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
