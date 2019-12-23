@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+    <!-- Since the process are started with ProcessBuilder, just log to console and let
+         process builder handle naming.  You could use a FileAppender here, but will run
+         into issues running multiple tservers.  Startup scripts set a system property named
+         accumulo.service.instance which is used to name log files.  That doesn't exist with
+         MiniAccumulo, so multiple tservers will end up writing to the same log file.
+
+         Just use this to control log levels and get back to work.
+
+         Also, since there is only 1 appender, the default additivity of true is fine.
+    -->
+    <appender name="console" class="org.apache.log4j.ConsoleAppender">
+      <param name="Target" value="System.out"/>
+      <layout class="org.apache.log4j.PatternLayout">
+        <!-- same as in generic logger so the format is familiar -->
+        <param name="ConversionPattern" value="%d{ISO8601} [%-8c{2}] %-5p: %m%n"/>
+      </layout>
+    </appender>
+
+    <logger name="org.apache.accumulo">
+      <level value="DEBUG"/>
+    </logger>
+
+    <!-- turn down chatty logs -->
+
+    <logger name="org.apache.hadoop">
+      <level value="INFO"/>
+    </logger>
+
+    <logger name="org.apache.zookeeper">
+        <level value="ERROR"/>
+    </logger>
+    
+    <logger name="org.apache.accumulo.core.file.rfile.bcfile">
+      <level value="INFO"/>
+    </logger>
+
+    <logger name="org.apache.accumulo.gc">
+      <level value="INFO"/>
+    </logger>
+
+    <logger name="org.apache.hadoop.fs.TrashPolicyDefault">
+      <level value="WARN"/>
+    </logger>
+
+    <logger name="org.mortbay.log">
+      <level value="WARN"/>
+    </logger>
+
+    <root>
+      <priority value="debug"/>
+      <appender-ref ref="console"/>
+    </root>
+
+</log4j:configuration>
