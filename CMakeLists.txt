@@ -437,7 +437,7 @@ if (BUILD_PYTHON_TESTS)
 	message(STATUS "Copying ${MAC19X} to ${MAX19XBIN}")
 	
 	if (MAVEN_FOUND)
-		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac/) 
+		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/st/) 
 	
 		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 		
@@ -449,7 +449,7 @@ if (BUILD_PYTHON_TESTS)
 		
 		add_test(
 		    NAME RunPythonTests 
-		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
 	
 	
 	else()
