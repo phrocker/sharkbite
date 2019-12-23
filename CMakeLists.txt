@@ -434,20 +434,22 @@ if (BUILD_PYTHON_TESTS)
 	find_package(Java)
 	find_package(Maven )
 	
+	message(STATUS "Copying ${MAC19X} to ${MAX19XBIN}")
+	
 	if (MAVEN_FOUND)
 		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/standalone-mac/) 
 	
 		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 		
 		set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
-		
+		set(ITERPATH_193 "")
 		if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-			set(ITERPATH $<TARGET_FILE:pysharkbite-iterators>)
+			set(ITERPATH_193 "${CMAKE_CURRENT_BINARY_DIR}/native-iterators-jni/target/native-iterators-jni-1.9.3-jar-with-dependencies.jar")
 		endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 		
 		add_test(
 		    NAME RunPythonTests 
-		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH})
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
 	
 	
 	else()
