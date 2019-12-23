@@ -70,6 +70,14 @@ class TestWrites(TestRunner):
 		except (RuntimeError, TypeError, NameError):
 			print("Caught expected error")
 			# this is okay
+			
+		try:
+			writer = tableOperations.createWriter(None, 10)
+			print("Expected error passing None")
+			sys.exit(1)
+		except (RuntimeError, TypeError, NameError):
+			print("Caught expected error")
+			# this is okay
 		
 		tableOperations.remove()
 
