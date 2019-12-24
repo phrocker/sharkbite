@@ -450,7 +450,7 @@ if (BUILD_PYTHON_TESTS)
 		
 		add_test(
 		    NAME RunPythonTests 
-		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar "localhost" ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar "localhost" "${Python_EXECUTABLE}" ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
 	
 	
 	else()

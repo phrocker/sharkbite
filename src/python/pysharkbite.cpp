@@ -62,47 +62,47 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<cclient::data::security::AuthInfo>(s, "AuthInfo")
       .def(pybind11::init<std::string, std::string,std::string>())
-      .def("getUserName",&cclient::data::security::AuthInfo::getUserName)
-      .def("getPassword", &cclient::data::security::AuthInfo::getPassword)
-      .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId);
+      .def("getUserName",&cclient::data::security::AuthInfo::getUserName, "Get the username")
+      .def("getPassword", &cclient::data::security::AuthInfo::getPassword, "Get the user's password")
+      .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId, "Get the instance ID");
 
   pybind11::class_<cclient::data::IterInfo>(s, "IterInfo")
       .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
       .def(pybind11::init<const std::string &,const std::string &,uint32_t,const std::string &>(),
            "script"_a, "iteratorName"_a,"priority"_a,"type"_a="Python")
-      .def("getPriority",&cclient::data::IterInfo::getPriority)
-      .def("getName",&cclient::data::IterInfo::getName)
-      .def("getClass",&cclient::data::IterInfo::getClass);
+      .def("getPriority",&cclient::data::IterInfo::getPriority, "Get the priority for this iterator")
+      .def("getName",&cclient::data::IterInfo::getName, "Get the name of this iterator")
+      .def("getClass",&cclient::data::IterInfo::getClass, "Get the class for this iterator");
 
   pybind11::class_<cclient::data::python::PythonIterInfo>(s, "PythonIterator")
       .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
       .def(pybind11::init<const std::string &,uint32_t>())
-      .def("getPriority",&cclient::data::python::PythonIterInfo::getPriority)
-      .def("getName",&cclient::data::python::PythonIterInfo::getName)
-      .def("onNext",&cclient::data::python::PythonIterInfo::onNext)
-      .def("getClass",&cclient::data::python::PythonIterInfo::getClass);
+      .def("getPriority",&cclient::data::python::PythonIterInfo::getPriority,"Get the priority for this iterator")
+      .def("getName",&cclient::data::python::PythonIterInfo::getName,"Get the name of this iterator")
+      .def("onNext",&cclient::data::python::PythonIterInfo::onNext, "Lambda that is provided the accumulo key")
+      .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
   pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector")
       .def(pybind11::init<cclient::data::security::AuthInfo&, cclient::data::Instance*>())
-	  .def("securityOps",&interconnect::MasterConnect::securityOps)
-      .def("tableOps",&interconnect::MasterConnect::tableOps);
+	  .def("securityOps",&interconnect::MasterConnect::securityOps, "Return the security operations object")
+      .def("tableOps",&interconnect::MasterConnect::tableOps, "Return the table operations object");
 
   pybind11::class_<interconnect::AccumuloTableOperations>(s, "AccumuloTableOperations")
-      .def("remove",&interconnect::AccumuloTableOperations::remove)
-      .def("exists",&interconnect::AccumuloTableOperations::exists)
-      .def("import",&interconnect::AccumuloTableOperations::import)
-      .def("flush",&interconnect::AccumuloTableOperations::flush)
-      .def("compact", &interconnect::AccumuloTableOperations::compact)
-	  .def("setProperty", &interconnect::AccumuloTableOperations::setProperty)
-      .def("removeProperty", &interconnect::AccumuloTableOperations::removeProperty)
-      .def("addSplits", &interconnect::AccumuloTableOperations::addSplits)
-      .def("addConstraint", &interconnect::AccumuloTableOperations::addConstraint)
-      .def("createScanner", &interconnect::AccumuloTableOperations::createScanner)
-      .def("createWriter", &interconnect::AccumuloTableOperations::createWriter)
-      .def("create",&interconnect::AccumuloTableOperations::create);
+      .def("remove",&interconnect::AccumuloTableOperations::remove, "remove the table")
+      .def("exists",&interconnect::AccumuloTableOperations::exists, "Returns true if the table exists")
+      .def("import",&interconnect::AccumuloTableOperations::import, "import data into this directory")
+      .def("flush",&interconnect::AccumuloTableOperations::flush, "flush the table")
+      .def("compact", &interconnect::AccumuloTableOperations::compact, "compact the table")
+	  .def("setProperty", &interconnect::AccumuloTableOperations::setProperty, "Set table property")
+      .def("removeProperty", &interconnect::AccumuloTableOperations::removeProperty, "Remove the table property")
+      .def("addSplits", &interconnect::AccumuloTableOperations::addSplits, "Add splits for a table")
+      .def("addConstraint", &interconnect::AccumuloTableOperations::addConstraint, "Add table constraint")
+      .def("createScanner", &interconnect::AccumuloTableOperations::createScanner, "Create scanner")
+      .def("createWriter", &interconnect::AccumuloTableOperations::createWriter, "Create writer for table")
+      .def("create",&interconnect::AccumuloTableOperations::create, "Create the table");
 
   pybind11::class_<interconnect::SecurityOperations>(s, "SecurityOperations")
-        .def("grantAuthorizations",&interconnect::SecurityOperations::grantAuthorizations);
+        .def("grantAuthorizations",&interconnect::SecurityOperations::grantAuthorizations, "Get user authorizations");
 
 
 
