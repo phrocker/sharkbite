@@ -49,8 +49,7 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_LIBRARY_PATH="/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export LDFLAGS="-L/usr/local/opt/bison/lib" && export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
-      mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON .. && cmake --build . && ctest --debug;
-    else
-      mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && cmake --build . && ctest --debug;
+  if [[ "$TRAVIS_OS_NAME" == "osx" ]]; 
+    then mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON .. && cmake --build . && ctest --debug;
+    else mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && cmake --build . && ctest --debug;
     fi
