@@ -300,6 +300,26 @@ target_link_libraries( ClientExample )
 target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
 
+
+if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
+	message(STATUS "MAVEN: ${MAVEN_EXECUTABLE}")
+	include_directories(${JNI_INCLUDE_DIRS})
+	
+	set(JNI_FRAMEWORK_JAR_SOURCE "${CMAKE_SOURCE_DIR}/native-iterators-jni")
+	set(JNI_FRAMEWORK_JAR_BIN "${CMAKE_CURRENT_BINARY_DIR}/" )
+	
+	file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
+	
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite-iterators> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources/)
+	
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
+	
+	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Dacc.version=1.9.3" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
+	
+	add_dependencies(pysharkbite-iterators sharkbite)
+	
+endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
+
 if (BUILD_TESTS)
 enable_testing()
 add_executable(InsertTest "src/examples/InsertTest.cpp")
@@ -412,26 +432,29 @@ if (BUILD_PYTHON_TESTS)
 	set(MAC19X "${CMAKE_SOURCE_DIR}/test/19x/")
 	set(MAX19XBIN "${CMAKE_CURRENT_BINARY_DIR}/test" )
 		
-	file(COPY ${MAC19X} DESTINATION ${MAX19XBIN})
+	file(COPY "${MAC19X}" DESTINATION "${MAX19XBIN}/")
 	find_package(Java)
 	find_package(Maven )
 	
+	message(STATUS "Copying ${MAC19X} to ${MAX19XBIN}")
+	
 	if (MAVEN_FOUND)
-		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAC19X}/standalone-mac)
-	
-	
-	#mrthesegfault /usr/bin/python3.7 ~/dev/sharkbite/test/python/ ~/dev/sharkbite/build/pysharkbite.cpython-37m-x86_64-linux-gnu.so 
-	
-	cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
-	
-	set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
-	add_test(
-	    NAME RunPythonTests 
-	    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/standalone-mac/target/standalone-mac-shaded-193.3.jar ${_host_name} ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ})
+		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/st/) 
+		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
+		
+		set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
+		set(ITERPATH_193 "")
+		if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
+			set(ITERPATH_193 "${CMAKE_CURRENT_BINARY_DIR}/native-iterators-jni/target/native-iterators-jni-1.9.3-jar-with-dependencies.jar")
+		endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
+		
+		add_test(
+		    NAME RunPythonTests 
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar "localhost" ${Python_EXECUTABLE} ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
 	
 	
 	else()
-	message(STATUS "Maven not found, so not building java tests")
+		message(STATUS "Maven not found, so not building java tests")
 	
 	
 	
@@ -444,20 +467,7 @@ endif(BUILD_TESTS)
 add_subdirectory(include/interconnect/securityOps)
 
 ### JAR building
-if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-	message(STATUS "MAVEN: ${MAVEN_EXECUTABLE}")
-	include_directories(${JNI_INCLUDE_DIRS})
-	
-	set(JNI_FRAMEWORK_JAR_SOURCE "${CMAKE_SOURCE_DIR}/native-iterators-jni")
-	set(JNI_FRAMEWORK_JAR_BIN "${CMAKE_CURRENT_BINARY_DIR}/" )
-	
-	file(COPY ${JNI_FRAMEWORK_JAR_SOURCE} DESTINATION ${JNI_FRAMEWORK_JAR_BIN})
-	
-	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite-iterators> ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni/src/main/resources/)
-	
-	add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${JNI_FRAMEWORK_JAR_BIN}/native-iterators-jni)
-	
-endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
+
 
 ###
 

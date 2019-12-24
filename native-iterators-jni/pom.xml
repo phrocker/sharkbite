@@ -16,14 +16,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.poma.accumulo</groupId>
-  <version>2.0.0</version>
+  <version>${acc.version}</version>
   <artifactId>native-iterators-jni</artifactId>
   <packaging>jar</packaging>
   <dependencies>
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-core</artifactId>
-      <version>${project.version}</version>
+      <version>${acc.version}</version>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -77,6 +77,7 @@
 		</plugins>
 	</build>
   <properties>
+    <acc.version>2.0.0</acc.version>
     <org.slf4j.version>1.7.25</org.slf4j.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>

@@ -33,11 +33,13 @@ matrix:
         homebrew:
           packages:
           - flex
+          - python
           - bison
 before_install:
   if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
       export HOMEBREW_NO_AUTO_UPDATE=1;
       brew install flex bison;
+      brew install python3;
       brew link --force flex bison;
     fi
 before_script:
@@ -47,4 +49,7 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export CMAKE_LIBRARY_PATH="/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export LDFLAGS="-L/usr/local/opt/bison/lib" && export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
-  - ./bootstrap-travis
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; 
+    then mkdir -p build && cd build && cmake .. && cmake --build . && ctest --debug;
+    else mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && cmake --build . && ctest --debug;
+    fi

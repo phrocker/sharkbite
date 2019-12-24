@@ -63,6 +63,21 @@ class TestWrites(TestRunner):
 			print("Table successfully removed")
 			# this is okay
 		
+		try:
+			testzk = pysharkbite.ZookeeperInstance(None, None, 1000, None)
+			print("Table not removed")
+			sys.exit(1)
+		except (RuntimeError, TypeError, NameError):
+			print("Caught expected error")
+			# this is okay
+			
+		try:
+			writer = tableOperations.createWriter(None, 10)
+			print("Expected error passing None")
+			sys.exit(1)
+		except (RuntimeError, TypeError, NameError):
+			print("Caught expected error")
+			# this is okay
 		
 		tableOperations.remove()
 

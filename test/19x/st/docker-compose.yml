@@ -1,0 +1,33 @@
+version: "3.3"
+services:
+  zookeeper:
+    image: zookeeper:3.4
+    environment:
+      - ZOO_LOG4J_PROP=WARN,ROLLINGFILE
+    networks:
+      - backend
+    ports:
+      - "21811:2181"
+
+  accumulo:
+    hostname: accumulo # Use this form if you only want to expose it inside the network
+#    hostname: $HOSTNAME # Use this form if you want to expose to clients not on the docker network
+    image: mjwall/smac-docker-single:193.3.1
+    networks:
+      - backend
+    environment:
+      - EXISTING_ZOOKEEPERS=zookeeper:2181
+      - ACCUMULO_INSTANCE=mine
+      - ACCUMULO_ROOT_PASS=password
+      - TSERV_CLIENTPORT=9997-9998
+      - ACCUMULO_NUM_TSERVERS=2
+      - ACCUMULO_MONITOR_PORT=9995
+    depends_on:
+      - "zookeeper"
+    ports:
+      - "9995:9995"
+      - "9997:9997"
+      - "9998:9998"
+
+networks:
+  backend:
