@@ -439,8 +439,9 @@ if (BUILD_PYTHON_TESTS)
 	message(STATUS "Copying ${MAC19X} to ${MAX19XBIN}")
 	
 	if (MAVEN_FOUND)
+		if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 		add_custom_command(TARGET pysharkbite-iterators POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/st/) 
-	
+		endif()
 		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 		
 		set(SHARED_OBJ ${PYTHON_TEST_DEST}/python/$<TARGET_FILE_NAME:pysharkbite>)
