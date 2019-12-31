@@ -46,7 +46,7 @@ public class StandaloneTestMAC {
     String pythonTestDir = null;
     String shardObjectPath = null;
     String extraJar = null;
-	if (args.length() > 1){
+	if (args.length > 1){
     pythonExe = args[1];
     pythonTestDir = args[2];
     shardObjectPath = args[3];
