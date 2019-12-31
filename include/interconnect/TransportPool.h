@@ -30,6 +30,8 @@
 #include <set>
 #include <mutex>
 #include <arpa/inet.h>
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace interconnect {
 /**
@@ -37,6 +39,8 @@ namespace interconnect {
  **/
 template<typename Tr>
 class TransportPool {
+private:
+ std::shared_ptr<logging::Logger> logger;
  public:
   TransportPool();
 
@@ -107,7 +111,7 @@ class TransportPool {
 template<typename Tr>
 TransportPool<Tr>::TransportPool()
     : closed(false),
-      closing(false) {
+      closing(false), logger(logging::LoggerFactory < ThriftTransporter > ::getLogger()){
   //cache = new std::map<std::shared_ptr<ServerConnection>, std::vector<CachedTransport<Tr>*>>();
 }
 
@@ -124,9 +128,15 @@ TransportPool<Tr>::~TransportPool() {
 template<typename Tr>
 void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cachedTransport) {
 
+
+
   if (nullptr == cachedTransport) {
     return;
   }
+
+  auto cacheKey = cachedTransport->getCacheKey();
+
+  logging::LOG_TRACE(logger) << "Freeing transport" << cacheKey;
 
   std::vector<std::shared_ptr<CachedTransport<Tr>> > closeList;
   std::lock_guard<std::recursive_mutex> lock(cacheLock);
@@ -136,7 +146,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
     return;
   }
 
-  auto cacheKey = cachedTransport->getCacheKey();
+
 
   auto cachedConnections = cache.at(cacheKey);
   typename std::vector<std::shared_ptr<CachedTransport<Tr>>>::iterator cacheIter = cachedConnections.begin();
@@ -189,6 +199,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
   }
 
   if (!foundCacheKey) {
+	  logging::LOG_TRACE(logger) << "Closing transport" << cacheKey;
     cachedTransport->close();
   }
 
@@ -215,6 +226,9 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
 
       std::shuffle(connections.begin(), connections.end(), engine);
 
+      logging::LOG_TRACE(logger) << "Searching for cached connection " << connections.size() << " " << cache.size();
+
+
       for (std::shared_ptr<ServerConnection> conn : connections) {
         std::vector<std::shared_ptr<CachedTransport<Tr>> > cachedConnections = cache[conn];
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
@@ -236,6 +250,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
 
   std::shared_ptr<ServerConnection> conn;
   while (serverPool.size() > 0 && retryCount < 10) {
+	  logging::LOG_TRACE(logger) << "Server pool is " << serverPool.size() << " " << retryCount;
     int index = std::rand() % serverPool.size();
     conn = serverPool.at(index);
     if (preferCachedConnection) {

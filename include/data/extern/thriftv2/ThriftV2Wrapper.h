@@ -118,21 +118,21 @@ class ThriftV2Wrapper {
 
   }
 
-  static cclient::data::Range* convert(org::apache::accumulov2::core::dataImpl::thrift::TRange range) {
+  static std::shared_ptr<cclient::data::Range> convert(org::apache::accumulov2::core::dataImpl::thrift::TRange range) {
     std::shared_ptr<cclient::data::Key> startKey = convert(range.start);
     std::shared_ptr<cclient::data::Key> endKey = convert(range.stop);
-    return new cclient::data::Range(startKey, range.startKeyInclusive, endKey, range.stopKeyInclusive);
+    return std::make_shared<cclient::data::Range>(startKey, range.startKeyInclusive, endKey, range.stopKeyInclusive);
 
   }
 
-  static org::apache::accumulov2::core::dataImpl::thrift::ScanBatch convert(std::vector<interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *> *rangeIdentifiers) {
+  static org::apache::accumulov2::core::dataImpl::thrift::ScanBatch convert(std::vector<interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *> *rangeIdentifiers) {
 
     org::apache::accumulov2::core::dataImpl::thrift::ScanBatch littleBatch;
 
     //typedef std::map<class TKeyExtent, std::std::vector<class Tcclient::data::Range> >  ScanBatch;
     for (auto it : *rangeIdentifiers) {
 
-      interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *identifier = it;
+      interconnect::ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *identifier = it;
       std::vector<std::shared_ptr<cclient::data::KeyExtent> > extents = identifier->getGlobalMapping();
       for (std::shared_ptr<cclient::data::KeyExtent> ot : extents) {
         org::apache::accumulov2::core::dataImpl::thrift::TKeyExtent keyExtent;
@@ -147,9 +147,8 @@ class ThriftV2Wrapper {
           keyExtent.prevEndRow = ot->getPrevEndRow();
 
         std::vector<org::apache::accumulov2::core::dataImpl::thrift::TRange> thriftRanges;
-        std::vector<cclient::data::Range*> ranges = identifier->getIdentifiers(ot);
-        for (cclient::data::Range *rt : ranges) {
-
+        auto ranges = identifier->getIdentifiers(ot);
+        for (const auto rt : ranges) {
           org::apache::accumulov2::core::dataImpl::thrift::TRange range = convert(rt);
           thriftRanges.push_back(range);
 
@@ -298,7 +297,7 @@ class ThriftV2Wrapper {
     return newvector;
   }
 
-  static org::apache::accumulov2::core::dataImpl::thrift::TRange convert(cclient::data::Range *range) {
+  static org::apache::accumulov2::core::dataImpl::thrift::TRange convert(const std::shared_ptr<cclient::data::Range> &range) {
     org::apache::accumulov2::core::dataImpl::thrift::TRange newRange;
     if (!range->getInfiniteStartKey() && NULL != range->getStartKey())
       newRange.start = convert(range->getStartKey());

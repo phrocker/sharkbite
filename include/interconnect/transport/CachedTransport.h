@@ -42,6 +42,7 @@ class CachedTransport {
   }
 
   ~CachedTransport() {
+	  close();
   }
 
   void reserve(bool reserve = true) {

@@ -79,7 +79,7 @@ std::vector<std::string> ZookeeperInstance::getMasterLocations() {
 
 }
 //
-std::string ZookeeperInstance::getInstanceId() {
+std::string ZookeeperInstance::getInstanceId(bool retry) {
   if (IsEmpty(&instanceId)) {
 
     std::stringstream instancePath;
@@ -89,7 +89,10 @@ std::string ZookeeperInstance::getInstanceId() {
     uint8_t *zkInstanceId = myZooCache->getData(instancePath.str());
 
     if (IsEmpty(zkInstanceId)) {
-      throw cclient::exceptions::ClientException("Instance Id does not exist within zookeeper at path  " + instancePath.str());
+      if (!retry)
+        throw cclient::exceptions::ClientException("Instance Id does not exist within zookeeper at path  " + instancePath.str());
+      else
+        return "";
     }
 
     instanceId.insert(0, (char*) zkInstanceId);

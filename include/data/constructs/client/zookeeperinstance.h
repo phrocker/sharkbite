@@ -18,7 +18,8 @@
 #include <memory>
 #include "Instance.h"
 #include <sstream>
-
+#include <chrono>
+#include <thread>
 #include <string>
 #include "./zookeeper/zookeepers.h"
 #include "./zookeeper/zoocache.h"
@@ -39,8 +40,16 @@ namespace zookeeper {
  * Design: Simply inherits Instance, which is a purely virtual class.
  **/
 class ZookeeperInstance : public Instance {
+ private:
+  void clear() {
+    if (NULL != myZooCache)
+      delete myZooCache;
+    if (NULL != myKeeper)
+      delete myKeeper;
+    myZooCache = nullptr;
+    myKeeper = nullptr;
+  }
  public:
-
 
   /**
    * ZK constructor
@@ -50,10 +59,11 @@ class ZookeeperInstance : public Instance {
    * @param conf configuration object
    **/
   explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs, const std::shared_ptr<cclient::impl::Configuration> &conf)
-      : instanceName(in),
-        zookeeperList(zks),
-        timeoutMs(zkTimeoutMs),
-        myConfiguration(conf) {
+      :
+      instanceName(in),
+      zookeeperList(zks),
+      timeoutMs(zkTimeoutMs),
+      myConfiguration(conf) {
     if (IsEmpty(&in) || IsEmpty(&zks)) {
       throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
     }
@@ -64,7 +74,21 @@ class ZookeeperInstance : public Instance {
 
     myZooCache = new ZooCache(myKeeper);
 
-    getInstanceId();
+    if (getInstanceId(true).empty()) {
+
+      clear();
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(zkTimeoutMs));
+
+      myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+
+      myKeeper->init(&myWatch);
+
+      myZooCache = new ZooCache(myKeeper);
+
+      getInstanceId();
+
+    }
 
   }
 
@@ -75,9 +99,10 @@ class ZookeeperInstance : public Instance {
    * @param zkTimeoutMs timeout for zookeeper
    **/
   explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs)
-      : instanceName(in),
-        zookeeperList(zks),
-        timeoutMs(zkTimeoutMs) {
+      :
+      instanceName(in),
+      zookeeperList(zks),
+      timeoutMs(zkTimeoutMs) {
     myConfiguration->set("FILE_SYSTEM_ROOT", "/accumulo");
 
     if (IsEmpty(&in) || IsEmpty(&zks)) {
@@ -90,7 +115,21 @@ class ZookeeperInstance : public Instance {
 
     myZooCache = new ZooCache(myKeeper);
 
-    getInstanceId();
+    if (getInstanceId(true).empty()) {
+
+      clear();
+
+      std::this_thread::sleep_for(std::chrono::milliseconds(zkTimeoutMs));
+
+      myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+
+      myKeeper->init(&myWatch);
+
+      myZooCache = new ZooCache(myKeeper);
+
+      getInstanceId();
+
+    }
 
   }
 
@@ -121,7 +160,7 @@ class ZookeeperInstance : public Instance {
    * return instance ID
    * @return instance ID
    **/
-  std::string getInstanceId();
+  std::string getInstanceId(bool retry = false);
   /**
    * Return instance namespace
    * @return instance name
@@ -131,18 +170,17 @@ class ZookeeperInstance : public Instance {
    * Returns configuration
    * @return configuration reference
    **/
-  const cclient::impl::Configuration *getConfiguration();
+  const cclient::impl::Configuration* getConfiguration();
   /**
    * Sets configuration object
    * @param configuration object
    **/
   //void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf);
-
   /**
    * Returns a reference to zoocache
    * @return zoo cache ptr
    **/
-  ZooCache *getZooCache() {
+  ZooCache* getZooCache() {
     return myZooCache;
   }
 
@@ -150,7 +188,7 @@ class ZookeeperInstance : public Instance {
    * Return link to instance instance cache
    * @return instance cache
    **/
-  InstanceCache *getInstanceCache() {
+  InstanceCache* getInstanceCache() {
     return myZooCache;
   }
 

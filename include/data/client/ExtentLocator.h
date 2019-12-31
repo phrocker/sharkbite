@@ -131,12 +131,12 @@ class TabletLocator {
    * @param locations servers hosting the data
    * @param failures failed binned locations
    **/
-  virtual std::vector<cclient::data::Range*>
+  virtual std::vector<std::shared_ptr<cclient::data::Range>>
   binRanges(
       cclient::data::security::AuthInfo *credentials,
-      std::vector<cclient::data::Range*> *ranges,
+      std::vector<std::shared_ptr<cclient::data::Range>> *ranges,
       std::set<std::string> *locations,
-      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) = 0;
+      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) = 0;
 
   /**
    * Invalides the cache for the failed key extent

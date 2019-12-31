@@ -19,7 +19,7 @@ namespace interconnect {
 
 ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &conn, bool reg)
     :
-    interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>>(conn),
+    interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, std::shared_ptr<cclient::data::Range>, std::shared_ptr<cclient::data::Mutation>>(conn),
     logger(logging::LoggerFactory < ThriftTransporter > ::getLogger()) {
   auto suspectedVersion = cclient::data::InstanceVersion::getVersion(conn->toString());
   logging::LOG_DEBUG(logger) << "Attempting API version " << (suspectedVersion == -1 ? 1 : suspectedVersion) << " for " << conn->toString();
@@ -43,7 +43,9 @@ ThriftTransporter::ThriftTransporter(const std::shared_ptr<ServerConnection> &co
 }
 
 ThriftTransporter::~ThriftTransporter() {
-  underlyingTransport->close();
+	if (underlyingTransport.get() != NULL && underlyingTransport->isOpen()) {
+		underlyingTransport->close();
+	}
 }
 
 std::map<std::string, std::string> ThriftTransporter::getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName) {

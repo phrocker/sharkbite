@@ -29,9 +29,8 @@
 namespace cclient {
 namespace impl {
 
-struct locationComparator
-{
-  bool operator()(const std::string &left, const std::string &right) const{
+struct locationComparator {
+  bool operator()(const std::string &left, const std::string &right) const {
     if (left.empty())
       return false;
     if (right.empty())
@@ -104,16 +103,15 @@ class TabletServerLocator : public TabletLocator {
       for (auto location : locations) {
         logging::LOG_DEBUG(logger) << tableId << " locateTablet Received " << location.getLocation() << " " << location.getExtent();
         auto cachedRow = location.getExtent()->getEndRow();
-        if (cachedRow.empty()){
+        if (cachedRow.empty()) {
           cachedRow = "\uffff\uffff\uffff";
         }
         logging::LOG_DEBUG(logger) << tableId << " : " << "Caching " << cachedRow << " in the cache ";
         cachedLocations.insert(std::pair<std::string, cclient::data::TabletLocation>(cachedRow, location));
 
-
       }
 
-      if (getCachedLocation(modifiedRow,returnLocation)) {
+      if (getCachedLocation(modifiedRow, returnLocation)) {
         return returnLocation;
       } else {
         if (retry)
@@ -161,33 +159,32 @@ class TabletServerLocator : public TabletLocator {
     }
   }
 
-  std::vector<cclient::data::Range*> binRanges(
-      cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Range*> *ranges, std::set<std::string> *locations,
-      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
+  std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
+      cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Range>> *ranges, std::set<std::string> *locations,
+      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
 
     std::string startRow = "";
-    std::vector<cclient::data::Range*> failures;
+    std::vector<std::shared_ptr<cclient::data::Range>> failures;
 
     for (auto range : *ranges) {
 
-	std::string stopKey = "";
+      std::string stopKey = "";
       std::vector<cclient::data::TabletLocation> tabletLocations;
       if (range->getStartKey() != NULL) {
         startRow = std::string(range->getStartKey()->getRow().first, range->getStartKey()->getRow().second);
       }
       if (range->getStopKey() != NULL)
-              stopKey = std::string(range->getStopKey()->getRow().first, range->getStopKey()->getRow().second);
+        stopKey = std::string(range->getStopKey()->getRow().first, range->getStopKey()->getRow().second);
 
       logging::LOG_DEBUG(logger) << startRow << " and stop " << stopKey;
       cclient::data::TabletLocation loc;
 
       try {
-        if (!getCachedLocation(startRow, loc)){
+        if (!getCachedLocation(startRow, loc)) {
           loc = locateTablet(credentials, startRow, false, false);
 
         }
       } catch (const cclient::exceptions::ClientException &ce) {
-        std::cout << "oh error" << std::endl;
         failures.push_back(range);
         continue;
       }
@@ -195,13 +192,12 @@ class TabletServerLocator : public TabletLocator {
       logging::LOG_DEBUG(logger) << startRow << " binRanges Received location " << loc.getLocation() << " " << loc.getExtent();
       tabletLocations.push_back(loc);
 
-
       std::string extentEndRow = loc.getExtent()->getEndRow();
 
       std::string lookupRow = extentEndRow;
 
       auto test = extentEndRow;
-      test.append(1,0x01);
+      test.append(1, 0x01);
       auto testKey = std::make_shared<cclient::data::Key>();
       testKey->setRow(test);
       uint32_t iterations = 0;
@@ -209,15 +205,16 @@ class TabletServerLocator : public TabletLocator {
         iterations++;
         logging::LOG_DEBUG(logger) << "start loop " << stopKey << " and start " << startRow;
         logging::LOG_DEBUG(logger) << "start loop " << " " << test;
-        lookupRow.append(1,0x01);
+        lookupRow.append(1, 0x01);
         bool isCached = getCachedLocation(lookupRow, loc);
-        if (!isCached){
-          logging::LOG_DEBUG(logger) << lookupRow << "binRanges Received un-cached location, will locate " << loc.getLocation() << " " << loc.getExtent()<< " " << extentEndRow << " iscached? " << (isCached==true);
+        if (!isCached) {
+          logging::LOG_DEBUG(logger) << lookupRow << "binRanges Received un-cached location, will locate " << loc.getLocation() << " " << loc.getExtent() << " " << extentEndRow << " iscached? "
+                                     << (isCached == true);
           loc = locateTablet(credentials, extentEndRow, true, false);
-        }else{
-          logging::LOG_DEBUG(logger) << lookupRow << " binRanges Received cached location " << loc.getLocation() << " " << loc.getExtent() << " " << extentEndRow <<" iscached? " << (isCached==true);
+        } else {
+          logging::LOG_DEBUG(logger) << lookupRow << " binRanges Received cached location " << loc.getLocation() << " " << loc.getExtent() << " " << extentEndRow << " iscached? "
+                                     << (isCached == true);
         }
-
 
         tabletLocations.push_back(loc);
 
@@ -229,7 +226,7 @@ class TabletServerLocator : public TabletLocator {
         lookupRow = extentEndRow;
 
         test = extentEndRow;
-        test.append(1,0x01);
+        test.append(1, 0x01);
         testKey = std::make_shared<cclient::data::Key>();
         testKey->setRow(test);
 
@@ -275,17 +272,18 @@ class TabletServerLocator : public TabletLocator {
     std::map<std::string, cclient::data::TabletLocation>::iterator it = startRow.empty() ? cachedLocations.begin() : cachedLocations.lower_bound(startRow);
     if (it != cachedLocations.end()) {
       loc = it->second;
-      logging::LOG_DEBUG(logger) << "Checking " << tableId  << " : " << startRow  << " , pendrow: " << loc.getExtent()->getPrevEndRow() << " endrow: " << loc.getExtent()->getEndRow() << " is cached out of  " << cachedLocations.size();
+      logging::LOG_DEBUG(logger) << "Checking " << tableId << " : " << startRow << " , pendrow: " << loc.getExtent()->getPrevEndRow() << " endrow: " << loc.getExtent()->getEndRow()
+                                 << " is cached out of  " << cachedLocations.size();
       if (loc.getExtent()->getPrevEndRow().length() == 0 || loc.getExtent()->getPrevEndRow() < startRow) {
-        logging::LOG_DEBUG(logger) << tableId  << " : " << startRow  << " , pendrow: " << loc.getExtent()->getPrevEndRow() << " endrow: " << loc.getExtent()->getEndRow() << " is cached out of  " << cachedLocations.size();
+        logging::LOG_DEBUG(logger) << tableId << " : " << startRow << " , pendrow: " << loc.getExtent()->getPrevEndRow() << " endrow: " << loc.getExtent()->getEndRow() << " is cached out of  "
+                                   << cachedLocations.size();
         return true;
       }
-    }
-    else{
+    } else {
       logging::LOG_DEBUG(logger) << "Nothing found for " << utils::StringUtils::hex_ascii(startRow);
     }
 
-    logging::LOG_DEBUG(logger) << tableId  << " : " << startRow << " is not cached out of  " << cachedLocations.size() << " returning false";
+    logging::LOG_DEBUG(logger) << tableId << " : " << startRow << " is not cached out of  " << cachedLocations.size() << " returning false";
     return false;
   }
 

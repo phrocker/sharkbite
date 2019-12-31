@@ -23,7 +23,7 @@
 namespace interconnect {
 
 ServerInterconnect::ServerInterconnect(const std::string host, const int port, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector)
-    : AccumuloConnector<interconnect::ThriftTransporter>(host, port) {
+    : logger(logging::LoggerFactory < ServerInterconnect > ::getLogger()), AccumuloConnector<interconnect::ThriftTransporter>(host, port) {
   ConnectorService conn("tserver", host, port);
 
   const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,

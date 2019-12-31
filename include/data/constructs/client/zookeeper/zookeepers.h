@@ -167,7 +167,6 @@ class ZooKeeper {
     initWatchFp = new WatchFn();
     initWatchFp->ptr = myWatch;
     zookeeperReference = zookeeper_init(hostPorts, watcher_function, timeout, 0, initWatchFp, 0);
-
     myWatch->setHandle(zookeeperReference);
 
   }

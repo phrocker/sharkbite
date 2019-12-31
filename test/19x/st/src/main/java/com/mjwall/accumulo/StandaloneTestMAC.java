@@ -9,8 +9,8 @@ import org.apache.accumulo.core.util.MonitorUtil;
 import org.apache.accumulo.minicluster.impl.MiniAccumuloClusterImpl;
 import org.apache.accumulo.minicluster.impl.MiniAccumuloConfigImpl;
 import org.apache.accumulo.monitor.Monitor;
-import org.apache.zookeeper.KeeperException;
 import org.apache.commons.io.FileUtils;
+import org.apache.zookeeper.KeeperException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -42,10 +42,17 @@ public class StandaloneTestMAC {
   public static void main(String[] args) {
 
     String host = args[0];
-    String pythonExe = args[1];
-    String pythonTestDir = args[2];
-    String shardObjectPath = args[3];
-    String extraJar = args[4];
+    String pythonExe =null;
+    String pythonTestDir = null;
+    String shardObjectPath = null;
+    String extraJar = null;
+	if (args.length() > 1){
+    pythonExe = args[1];
+    pythonTestDir = args[2];
+    shardObjectPath = args[3];
+    extraJar = args[4];
+    }
+
     // tests expected to accept the following arument
     // -i instance -z zookeeper -u user -p password -t table -s so path
 
@@ -119,10 +126,9 @@ public class StandaloneTestMAC {
 
       cluster = new MiniAccumuloClusterImpl(config);
 
-	  if (null != extraJar){
-      	FileUtils.copyFileToDirectory(new File(extraJar),new File(config.getDir(),"lib"));
-  	  }
-
+      if (extraJar != null) {
+        FileUtils.copyFileToDirectory(new File(extraJar), new File(config.getDir(), "lib"));
+      }
       String log4jConfig = System.getProperty("log4jConfig", null);
       // no check on file exists for log4j.configuration
       String origLog4jConfiguration = System.getProperty("log4j.configuration", null);
@@ -174,7 +180,7 @@ public class StandaloneTestMAC {
       if (monitorLocation == null) {
         System.err.println("Monitor:        not started");
       } else {
-        monitorUrl = "http://" + host + ":" + monitorLocation.split(":")[1];
+        monitorUrl = "http://mrthesegfault:" + monitorLocation.split(":")[1];
       }
       String initScript = System.getProperty("initScript", null);
       boolean startShell = false;
@@ -227,39 +233,45 @@ public class StandaloneTestMAC {
         }
       });
 
-      System.out.println("Running tests.....");
+      if (null != pythonExe) {
+        System.out.println("Running tests.....");
 
-      File folder = new File(pythonTestDir);
+        File folder = new File(pythonTestDir);
 
-      File[] files = folder.listFiles();
+        File[] files = folder.listFiles();
 
-      int statusCode = 0;
-      for (File file : files) {
-        if (file.getName().endsWith(".py")) {
-          final String table = UUID.randomUUID().toString().replaceAll("-", "");
-          System.out.println("Running " + pythonExe + " " + file.getAbsolutePath() + " -i " + instanceName + " -z " + host + ":" + zookeeperPort
-              + " -u root -p secret -t " + table + " -s " + shardObjectPath);
-          Process p = Runtime.getRuntime().exec(
-              pythonExe + " " + file.getAbsolutePath() + " -i smac -z " + host + ":" + zookeeperPort + " -u root -p secret -t " + table + " -s "
-                  + shardObjectPath);
+        int statusCode = 0;
+        for (File file : files) {
+          if (file.getName().endsWith(".py")) {
+            final String table = UUID.randomUUID().toString().replaceAll("-", "");
+            System.out.println("Running " + pythonExe + " " + file.getAbsolutePath() + " -i " + instanceName + " -z mrthesegfault:" + zookeeperPort
+                    + " -u root -p secret -t " + table + " -s " + shardObjectPath);
+            Process p = Runtime.getRuntime().exec(
+                    pythonExe + " " + file.getAbsolutePath() + " -i smac -z mrthesegfault:" + zookeeperPort + " -u root -p secret -t " + table + " -s "
+                            + shardObjectPath);
 
-          BufferedReader input = new BufferedReader(new InputStreamReader(p.getErrorStream()));
-          String line;
-          while ((line = input.readLine()) != null) {
-            System.out.println(line);
+            BufferedReader input = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+            String line;
+            while ((line = input.readLine()) != null) {
+              System.out.println(line);
+            }
+            input.close();
+            input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            while ((line = input.readLine()) != null) {
+              System.out.println(line);
+            }
+            input.close();
+            statusCode |= p.waitFor();
+            p.destroy();
+            System.out.println("status code " + statusCode);
+            if (statusCode > 0) {
+              System.exit(statusCode);
+            }
           }
-          input.close();
-          input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-          while ((line = input.readLine()) != null) {
-            System.out.println(line);
-          }
-          input.close();
-          statusCode |= p.waitFor();
-          p.destroy();
-          System.out.println("status code " + statusCode);
-          if (statusCode > 0) {
-            System.exit(statusCode);
-          }
+        }
+      }else{
+        try (ServerSocket shutdownServer = new ServerSocket(shutdownPort)) {
+          shutdownServer.accept().close();
         }
       }
 
