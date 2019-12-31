@@ -180,7 +180,7 @@ public class StandaloneTestMAC {
       if (monitorLocation == null) {
         System.err.println("Monitor:        not started");
       } else {
-        monitorUrl = "http://mrthesegfault:" + monitorLocation.split(":")[1];
+        monitorUrl = "http://localhost:" + monitorLocation.split(":")[1];
       }
       String initScript = System.getProperty("initScript", null);
       boolean startShell = false;
@@ -244,10 +244,10 @@ public class StandaloneTestMAC {
         for (File file : files) {
           if (file.getName().endsWith(".py")) {
             final String table = UUID.randomUUID().toString().replaceAll("-", "");
-            System.out.println("Running " + pythonExe + " " + file.getAbsolutePath() + " -i " + instanceName + " -z mrthesegfault:" + zookeeperPort
+            System.out.println("Running " + pythonExe + " " + file.getAbsolutePath() + " -i " + instanceName + " -z localhost:" + zookeeperPort
                     + " -u root -p secret -t " + table + " -s " + shardObjectPath);
             Process p = Runtime.getRuntime().exec(
-                    pythonExe + " " + file.getAbsolutePath() + " -i smac -z mrthesegfault:" + zookeeperPort + " -u root -p secret -t " + table + " -s "
+                    pythonExe + " " + file.getAbsolutePath() + " -i smac -z localhost:" + zookeeperPort + " -u root -p secret -t " + table + " -s "
                             + shardObjectPath);
 
             BufferedReader input = new BufferedReader(new InputStreamReader(p.getErrorStream()));
