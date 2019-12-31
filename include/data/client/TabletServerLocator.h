@@ -201,7 +201,7 @@ class TabletServerLocator : public TabletLocator {
       auto testKey = std::make_shared<cclient::data::Key>();
       testKey->setRow(test);
       uint32_t iterations = 0;
-      while (!(loc.getExtent()->getEndRow() == "<" || loc.getExtent()->getEndRow().empty()) && test.compare(stopKey) <= 0) {
+      while (!(loc.getExtent()->getEndRow() == "<" || loc.getExtent()->getEndRow().empty()) && (stopKey.empty() || test.compare(stopKey) <= 0)) {
         iterations++;
         logging::LOG_DEBUG(logger) << "start loop " << stopKey << " and start " << startRow;
         logging::LOG_DEBUG(logger) << "start loop " << " " << test;
@@ -232,7 +232,7 @@ class TabletServerLocator : public TabletLocator {
 
         logging::LOG_DEBUG(logger) << "Changing start row to " << test << " from " << extentEndRow;
       }
-      logging::LOG_DEBUG(logger) << "Executed " << iterations << " iterations of the loop, resulting in " << tabletLocations.size() << " locations";
+      logging::LOG_DEBUG(logger) << "Executed " << std::to_string(iterations) << " iterations of the loop, resulting in " << std::to_string(tabletLocations.size()) << " locations";
       for (auto locs : tabletLocations) {
         locations->insert(locs.getLocation());
         (*binnedRanges)[locs.getLocation()][locs.getExtent()].push_back(range);

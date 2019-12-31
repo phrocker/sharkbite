@@ -31,6 +31,8 @@ class Range {
    **/
   Range();
 
+  explicit Range(const Range &range) = delete;
+
   /**
    * Sets the range to a single row
    * @param row
@@ -133,13 +135,13 @@ class Range {
   friend inline std::ostream&
   operator <<(std::ostream &out, const Range &rhs) {
     out << "Range ";
-    if (rhs.infiniteStartKey) {
+    if (rhs.infiniteStartKey || rhs.start == nullptr) {
       out << "(-inf";
     } else {
       out << (rhs.startKeyInclusive ? "[" : "(") << rhs.start;
     }
     out << ",";
-    if (rhs.infiniteStopKey) {
+    if (rhs.infiniteStopKey || rhs.stop == nullptr) {
       out << "+inf) ";
     } else {
       out << rhs.stop << (rhs.stopKeyInclusive ? "] " : ") ");

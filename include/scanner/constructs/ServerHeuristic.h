@@ -261,7 +261,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     }
     std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
 
-    logging::LOG_TRACE(logger) << " addUniqueConnection Called, servers.size is " << servers.size();
+    logging::LOG_TRACE(logger) << " addUniqueConnection Called, servers.size is " << std::to_string(servers.size());
     for (const auto &rd : servers) {
       logging::LOG_TRACE(logger) << "Testing range defs";
       if (*rangeDef->getRangesDefinition().get() == *std::dynamic_pointer_cast<interconnect::ServerInterconnect>(rd)->getRangesDefinition().get()) {
@@ -271,7 +271,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
       }
     }
     servers.push_back(rangeDef);
-    logging::LOG_TRACE(logger) << "addUniqueConnection Called, servers.size is " << servers.size();
+    logging::LOG_TRACE(logger) << "addUniqueConnection Called, servers.size is " << std::to_string(servers.size());
   }
 
   virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
@@ -285,12 +285,12 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     }
     std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
 
-    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << servers.size();
+    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << std::to_string(servers.size());
     if (!servers.empty()) {
       nextService = servers.back();
       servers.pop_back();
     }
-    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << servers.size();
+    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << std::to_string(servers.size());
 
     std::shared_ptr<interconnect::ServerInterconnect> connector = std::dynamic_pointer_cast<interconnect::ServerInterconnect>(nextService);
 
