@@ -18,26 +18,28 @@
 namespace interconnect {
 
 AccumuloServerFacadeV2::AccumuloServerFacadeV2()
-    : AccumuloServerFacade(ACCUMULO_TWO),
-      logger(logging::LoggerFactory<AccumuloServerFacadeV2>::getLogger()) {
+    :
+    AccumuloServerFacade(ACCUMULO_TWO),
+    logger(logging::LoggerFactory < AccumuloServerFacadeV2 > ::getLogger()) {
 }
 
-Scan *AccumuloServerFacadeV2::multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_multiScan(isRunning,request);
+Scan* AccumuloServerFacadeV2::multiScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
+  return v2_multiScan(isRunning, request);
 }
 
-Scan *AccumuloServerFacadeV2::AccumuloServerFacadeV2::singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_singleScan(isRunning,request);
+Scan* AccumuloServerFacadeV2::AccumuloServerFacadeV2::singleScan(std::atomic<bool> *isRunning,
+                                                                 ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
+  return v2_singleScan(isRunning, request);
 }
-Scan *AccumuloServerFacadeV2::beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
-  return v2_beginScan(isRunning,request);
+Scan* AccumuloServerFacadeV2::beginScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
+  return v2_beginScan(isRunning, request);
 }
 
-Scan *AccumuloServerFacadeV2::continueScan(Scan *originalScan) {
+Scan* AccumuloServerFacadeV2::continueScan(Scan *originalScan) {
   return v2_continueScan(originalScan);
 }
 
-void *AccumuloServerFacadeV2::write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
+void* AccumuloServerFacadeV2::write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
   return v2_write(auth, request);
 
 }
@@ -63,7 +65,7 @@ std::map<std::string, std::string> AccumuloServerFacadeV2::getTableConfiguration
   return ret;
 }
 
-cclient::data::security::Authorizations *AccumuloServerFacadeV2::getUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user) {
+cclient::data::security::Authorizations* AccumuloServerFacadeV2::getUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user) {
   return v2_getUserAuths(auth, user);
 }
 
@@ -133,7 +135,7 @@ std::map<std::string, std::string> AccumuloServerFacadeV2::v2_getNamespaceConfig
   return ret;
 }
 
-Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan* AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = new Scan(isRunning);
 
   org::apache::accumulov2::core::dataImpl::thrift::InitialScan scan;
@@ -152,9 +154,9 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
     }
   }
 
-  ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
+  ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request->getRangeIdentifiers()->at(0);
   std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
-  cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
+  auto range = ident->getIdentifiers(extent).at(0);
   org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = getOrSetCredentialsV2(request->getCredentials());
   /**
    * void startScan( ::org::apache::accumulov2::core::dataImpl::thrift::InitialScan& _return,
@@ -174,24 +176,28 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
   org::apache::accumulov2::core::tabletserver::thrift::TSamplerConfiguration config;
   std::map<std::string, std::string> executionHints;
 
-
   logging::LOG_DEBUG(logger) << "extent is " << extent << " and range is " << range;
 
-  try{
+  try {
     tserverClient_V2->startScan(scan, scanId, creds, ThriftV2Wrapper::convert(extent), ThriftV2Wrapper::convert(range), ThriftV2Wrapper::convert(request->getColumns()), 1024,
-                              ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, request->getBuffersize(), config, 1024 * 5, "", executionHints);
+                                ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, request->getBuffersize(), config, 1024 * 5, "",
+                                executionHints);
+  } catch (const org::apache::accumulov2::core::tabletserver::thrift::NotServingTabletException &te) {
+    throw cclient::exceptions::NotServingException("Not serving exception");
+
   } catch (const apache::thrift::TApplicationException &te) {
     logging::LOG_DEBUG(logger) << "Error on extent" << extent << " and range is " << range;
     throw te;
   }
-
-
 
   org::apache::accumulov2::core::dataImpl::thrift::ScanResult results = scan.result;
 
   logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns().size() << " has more? " << (results.more);
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
+
+  if (!kvs->empty())
+    initialScan->setTopKey(kvs->back()->getKey());
 
   initialScan->setHasMore(results.more);
 
@@ -208,7 +214,7 @@ Scan * AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning,ScanRe
   return initialScan;
 }
 
-Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan* AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = new Scan(isRunning);
 
   initialScan->setMultiScan(true);
@@ -229,47 +235,37 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
     }
   }
 
-  /**
-   * void startMultiScan( ::org::apache::accumulov2::core::dataImpl::thrift::InitialMultiScan& _return,
-   * const  ::org::apache::accumulov2::core::trace::thrift::TInfo& tinfo,
-   * const  ::org::apache::accumulov2::core::securityImpl::thrift::TCredentials& credentials,
-   * const  ::org::apache::accumulov2::core::dataImpl::thrift::ScanBatch& batch,
-   * const std::vector< ::org::apache::accumulov2::core::dataImpl::thrift::TColumn> & columns,
-   * const std::vector< ::org::apache::accumulov2::core::dataImpl::thrift::IterInfo> & ssiList,
-   * const std::map<std::string, std::map<std::string, std::string> > & ssio,
-   const std::vector<std::string> & authorizations, const bool waitForWrites,
-   const TSamplerConfiguration& samplerConfig, const int64_t batchTimeOut,
-   const std::string& classLoaderContext, const std::map<std::string, std::string> & executionHints);
-   */
-
   org::apache::accumulov2::core::tabletserver::thrift::TSamplerConfiguration config;
   std::map<std::string, std::string> executionHints;
 
   logging::LOG_DEBUG(logger) << "multiscan extent is scan id " << scanId;
 
-  try{
-  tserverClient_V2->startMultiScan(scan, scanId, ThriftV2Wrapper::convert(request->getCredentials()), ThriftV2Wrapper::convert(request->getRangeIdentifiers()),
-                                   ThriftV2Wrapper::convert(request->getColumns()), ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, config,
-                                   1024 * 5, "", executionHints);
+  try {
+    tserverClient_V2->startMultiScan(scan, scanId, ThriftV2Wrapper::convert(request->getCredentials()), ThriftV2Wrapper::convert(request->getRangeIdentifiers()),
+                                     ThriftV2Wrapper::convert(request->getColumns()), ThriftV2Wrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true, config,
+                                     1024 * 5, "", executionHints);
 
   } catch (const apache::thrift::TApplicationException &te) {
-      auto batch =ThriftV2Wrapper::convert(request->getRangeIdentifiers());
-      for(auto d : batch){
-        std::stringstream st;
-        d.first.printTo(st);
-        for(auto rng : d.second){
-          std::stringstream str;
-          rng.printTo(str);
+    auto batch = ThriftV2Wrapper::convert(request->getRangeIdentifiers());
+    for (auto d : batch) {
+      std::stringstream st;
+      d.first.printTo(st);
+      for (auto rng : d.second) {
+        std::stringstream str;
+        rng.printTo(str);
 
-          logging::LOG_DEBUG(logger) << "failed scan on extent is " << st.str() << " range is " << str.str();
-        }
+        logging::LOG_DEBUG(logger) << "failed scan on extent is " << st.str() << " range is " << str.str();
       }
-      throw te;
     }
+    throw te;
+  }
 
   org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results = scan.result;
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
+
+  if (!kvs->empty())
+    initialScan->setTopKey(kvs->back()->getKey());
 
   initialScan->setHasMore(results.more);
 
@@ -277,7 +273,7 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
 
   initialScan->setScanId(scan.scanID);
 
-  logging::LOG_DEBUG(logger) << "multiscan return " << scan.scanID << " result set size is " << ( kvs != nullptr ? kvs->size() : 0 );
+  logging::LOG_DEBUG(logger) << "multiscan return " << scan.scanID << " result set size is " << (kvs != nullptr ? kvs->size() : 0);
 
   if (!results.more) {
     tserverClient_V2->closeMultiScan(scanId, scan.scanID);
@@ -287,7 +283,7 @@ Scan * AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning,ScanReq
 
   return initialScan;
 }
-org::apache::accumulov2::core::securityImpl::thrift::TCredentials AccumuloServerFacadeV2::getOrSetCredentialsV2(cclient::data::security::AuthInfo * convert) {
+org::apache::accumulov2::core::securityImpl::thrift::TCredentials AccumuloServerFacadeV2::getOrSetCredentialsV2(cclient::data::security::AuthInfo *convert) {
   std::lock_guard<std::mutex> lock(mutex);
   std::map<cclient::data::security::AuthInfo*, org::apache::accumulov2::core::securityImpl::thrift::TCredentials>::iterator it;
   it = convertedMap_V2.find(convert);
@@ -306,28 +302,28 @@ void AccumuloServerFacadeV2::v2_registerService(std::string instance, std::strin
   client_V2->getInstanceId(instance);
 }
 
-Scan * AccumuloServerFacadeV2::v2_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan* AccumuloServerFacadeV2::v2_beginScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = NULL;
   size_t size = 0;
-  for(auto sz : *request->getRangeIdentifiers()){
+  for (auto sz : *request->getRangeIdentifiers()) {
     size += sz->size();
   }
   if (size > 1) {
-    initialScan = multiScan(isRunning,request);
+    initialScan = multiScan(isRunning, request);
   } else {
-    ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
+    ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request->getRangeIdentifiers()->at(0);
     std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
-    cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
+    auto range = ident->getIdentifiers(extent).at(0);
     if (range->getStartKey() == NULL && range->getStopKey() == NULL) {
-      initialScan = v2_multiScan(isRunning,request);
+      initialScan = v2_multiScan(isRunning, request);
     } else
-      initialScan = v2_singleScan(isRunning,request);
+      initialScan = v2_singleScan(isRunning, request);
 
   }
   return initialScan;
 }
 
-Scan * AccumuloServerFacadeV2::v2_continueMultiScan(Scan * originalScan) {
+Scan* AccumuloServerFacadeV2::v2_continueMultiScan(Scan *originalScan) {
 
   org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results;
   org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
@@ -338,12 +334,12 @@ Scan * AccumuloServerFacadeV2::v2_continueMultiScan(Scan * originalScan) {
   tinfo.parentId = originalScan->getId();
   try {
 
-      tserverClient_V2->continueMultiScan(results, tinfo, scanId);
-
+    tserverClient_V2->continueMultiScan(results, tinfo, scanId);
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
 
-    if (results.more && !kvs->empty())
+    //if (results.more && !kvs->empty())
+    if (!kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);
@@ -352,7 +348,7 @@ Scan * AccumuloServerFacadeV2::v2_continueMultiScan(Scan * originalScan) {
     if (!results.more || !originalScan->isClientRunning()) {
       tinfo.traceId++;
       tserverClient_V2->closeScan(tinfo, originalScan->getId());
-      results.more=false;
+      results.more = false;
     }
 
     delete kvs;
@@ -365,10 +361,10 @@ Scan * AccumuloServerFacadeV2::v2_continueMultiScan(Scan * originalScan) {
   return originalScan;
 }
 
-Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
-  if (originalScan->isMultiScan()){
-      return v2_continueMultiScan(originalScan);
-    }
+Scan* AccumuloServerFacadeV2::v2_continueScan(Scan *originalScan) {
+  if (originalScan->isMultiScan()) {
+    return v2_continueMultiScan(originalScan);
+  }
   org::apache::accumulov2::core::dataImpl::thrift::ScanResult results;
   org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
 
@@ -381,7 +377,8 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftV2Wrapper::convert(results.results);
 
-    if (results.more && !kvs->empty())
+    //if (results.more && !kvs->empty())
+    if (!kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);
@@ -390,7 +387,7 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
     if (!results.more || !originalScan->isClientRunning()) {
       tinfo.traceId++;
       tserverClient_V2->closeScan(tinfo, originalScan->getId());
-      results.more=false;
+      results.more = false;
     }
 
     delete kvs;
@@ -403,7 +400,7 @@ Scan * AccumuloServerFacadeV2::v2_continueScan(Scan * originalScan) {
   return originalScan;
 }
 
-void *AccumuloServerFacadeV2::v2_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
+void* AccumuloServerFacadeV2::v2_write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) {
 
   org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
   org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
@@ -483,7 +480,7 @@ std::map<std::string, std::string> AccumuloServerFacadeV2::v2_getTableConfigurat
   return ret;
 }
 
-cclient::data::security::Authorizations *AccumuloServerFacadeV2::v2_getUserAuths(cclient::data::security::AuthInfo *auth, std::string user) {
+cclient::data::security::Authorizations* AccumuloServerFacadeV2::v2_getUserAuths(cclient::data::security::AuthInfo *auth, std::string user) {
   org::apache::accumulov2::core::trace::thrift::TInfo tinfo;
   org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
 

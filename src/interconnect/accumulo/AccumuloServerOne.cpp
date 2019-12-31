@@ -21,14 +21,14 @@ AccumuloServerFacadeV1::AccumuloServerFacadeV1()
     : AccumuloServerFacade(ACCUMULO_ONE),logger(logging::LoggerFactory<AccumuloServerFacadeV1>::getLogger()) {
 }
 
-Scan *AccumuloServerFacadeV1::multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   return v1_multiScan(isRunning,request);
 }
 
-Scan *AccumuloServerFacadeV1::AccumuloServerFacadeV1::singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::AccumuloServerFacadeV1::singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   return v1_singleScan(isRunning,request);
 }
-Scan *AccumuloServerFacadeV1::beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   return v1_beginScan(isRunning,request);
 }
 
@@ -145,7 +145,7 @@ std::map<std::string, std::string> AccumuloServerFacadeV1::v1_getNamespaceConfig
   return ret;
 }
 
-Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = new Scan(isRunning);
 
   org::apache::accumulo::core::data::thrift::InitialScan scan;
@@ -163,9 +163,9 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
       iterOptions[(*it).getName()][(*optIt).first] = (*optIt).second;
     }
   }
-  ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
+  ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request->getRangeIdentifiers()->at(0);
   std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
-  cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
+  auto range = ident->getIdentifiers(extent).at(0);
   org::apache::accumulo::core::security::thrift::TCredentials creds = getOrSetCredentials(request->getCredentials());
   tserverClient->startScan(scan, scanId, creds, ThriftWrapper::convert(extent), ThriftWrapper::convert(range), ThriftWrapper::convert(request->getColumns()), 1024, ThriftWrapper::convert(iters),
                            iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024);
@@ -173,6 +173,9 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
   org::apache::accumulo::core::data::thrift::ScanResult results = scan.result;
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+
+  if (!kvs->empty())
+  	  initialScan->setTopKey(kvs->back()->getKey());
 
   initialScan->setHasMore(results.more);
 
@@ -189,7 +192,7 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
   return initialScan;
 }
 
-Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = new Scan(isRunning);
 
   org::apache::accumulo::core::data::thrift::InitialMultiScan scan;
@@ -214,6 +217,9 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
   org::apache::accumulo::core::data::thrift::MultiScanResult results = scan.result;
 
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
+
+  if (!kvs->empty())
+  	  initialScan->setTopKey(kvs->back()->getKey());
 
   initialScan->setHasMore(results.more);
 
@@ -250,14 +256,14 @@ void AccumuloServerFacadeV1::v1_registerService(std::string instance, std::strin
   client->getInstanceId(instance);
 }
 
-Scan *AccumuloServerFacadeV1::v1_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+Scan *AccumuloServerFacadeV1::v1_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = NULL;
   if (request->getRangeIdentifiers()->size() > 1) {
     initialScan = multiScan(isRunning,request);
   } else {
-    ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = request->getRangeIdentifiers()->at(0);
+    ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request->getRangeIdentifiers()->at(0);
     std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
-    cclient::data::Range *range = ident->getIdentifiers(extent).at(0);
+    auto range = ident->getIdentifiers(extent).at(0);
     if (range->getStartKey() == NULL && range->getStopKey() == NULL) {
       initialScan = v1_multiScan(isRunning,request);
     } else
@@ -283,7 +289,8 @@ Scan * AccumuloServerFacadeV1::v1_continueMultiScan(Scan * originalScan) {
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
-    if (results.more && !kvs->empty())
+    //if (results.more && !kvs->empty())
+    if (!kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);
@@ -321,7 +328,8 @@ interconnect::Scan *AccumuloServerFacadeV1::v1_continueScan(Scan *originalScan) 
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
-    if (results.more && !kvs->empty())
+    //if (results.more && !kvs->empty())
+    if (!kvs->empty())
       originalScan->setTopKey(kvs->back()->getKey());
 
     originalScan->setHasMore(results.more);

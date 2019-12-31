@@ -57,7 +57,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           uint16_t threads);
 
   virtual void addRange(const cclient::data::Range &range) override {
-    ranges.push_back(new cclient::data::Range(range));
+    ranges.push_back(std::make_shared<cclient::data::Range>(range));
   }
 
   /**
@@ -67,7 +67,8 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   virtual void addRange(std::unique_ptr<cclient::data::Range> range) override {
     std::lock_guard<std::mutex> lock(scannerLock);
     // we are now the owner
-    ranges.push_back(range.release());
+    std::shared_ptr<cclient::data::Range> sharedRange = std::move(range);
+    ranges.push_back(sharedRange);
 
   }
 
@@ -85,7 +86,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
 
       resultSet = new Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>();
 
-      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
+      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
       std::set<std::string> locations;
       tableLocator->binRanges(credentials, &ranges, &locations, &returnRanges);
 
@@ -110,7 +111,20 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           }
           extents.push_back(hostExtents.first);
 
-          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &hostExtents.second, &extents, columns);
+          auto extentRange = hostExtents.first->toRange();
+          // clip the ranges into the extents
+          std::vector<std::shared_ptr<cclient::data::Range>> clippedRanges;
+          for(const auto &range : hostExtents.second){
+            auto rng = extentRange->intersect(range);
+            if (nullptr == rng){
+              logging::LOG_DEBUG(logger) << " clipped range is null " << *range.get() << " " << *extentRange.get();
+              clippedRanges.push_back(range);
+            }
+            else
+              clippedRanges.push_back( rng );
+          }
+
+          auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &clippedRanges, &extents, columns);
 
           std::shared_ptr<interconnect::ServerInterconnect> directConnect = std::make_shared<interconnect::ServerInterconnect>(rangeDef, connectorInstance->getConfiguration());
           scannerHeuristic->addClientInterface(directConnect);
@@ -130,9 +144,6 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   }
 
   virtual ~Scanner() {
-    for (cclient::data::Range *range : ranges) {
-      delete range;
-    }
     if (!IsEmpty(resultSet)) {
       delete resultSet;
     }
@@ -142,9 +153,10 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     return connectorInstance;
   }
 
-  void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) override {
-    std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
+  void locateFailedTablet(std::vector<std::shared_ptr<cclient::data::Range>> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) override {
+    std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent> > > > returnRanges;
     std::set<std::string> locations;
+    tableLocator->invalidateCache();
     tableLocator->binRanges(credentials, &ranges, &locations, &returnRanges);
 
     for (std::string location : locations) {
@@ -199,7 +211,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   // scanner
   std::mutex scannerLock;
   // vector of ranges to interrogate.
-  std::vector<cclient::data::Range*> ranges;
+  std::vector<std::shared_ptr<cclient::data::Range>> ranges;
   // result set iterator
   Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *resultSet;
   // credentials

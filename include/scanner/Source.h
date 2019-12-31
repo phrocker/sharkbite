@@ -50,11 +50,10 @@ class Source {
   }
 
   void addPythonIterator(const cclient::data::python::PythonIterInfo &iterV) {
-      iters.emplace_back(iterV);
-    }
+    iters.emplace_back(iterV);
+  }
 
-
-  virtual void locateFailedTablet(std::vector<cclient::data::Range*> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;
+  virtual void locateFailedTablet(std::vector<std::shared_ptr<cclient::data::Range>> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;
 
   virtual Results<T, BlockType>* getResultSet() = 0;
 

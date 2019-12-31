@@ -32,19 +32,10 @@ class Range {
   Range();
 
   /**
-     * Sets the range to a single row
-     * @param row
-     **/
+   * Sets the range to a single row
+   * @param row
+   **/
   explicit Range(const std::string &row);
-
-  /**
-     * Sets the start key and endkey with the inclusive flags.
-     * @param startKey start key
-     * @param startInclusive start key is inclusive
-     * @param endKey end key
-     * @param endKeyInclusive return whether or not the end key is inclusive.
-     **/
-    explicit Range(const std::string & startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive);
 
   /**
    * Sets the start key and endkey with the inclusive flags.
@@ -53,7 +44,16 @@ class Range {
    * @param endKey end key
    * @param endKeyInclusive return whether or not the end key is inclusive.
    **/
-  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update=true);
+  explicit Range(const std::string &startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive, bool update = true);
+
+  /**
+   * Sets the start key and endkey with the inclusive flags.
+   * @param startKey start key
+   * @param startInclusive start key is inclusive
+   * @param endKey end key
+   * @param endKeyInclusive return whether or not the end key is inclusive.
+   **/
+  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update = true);
 
   /**
    * Sets the start key and endkey with the inclusive flags.
@@ -82,61 +82,56 @@ class Range {
   /**
    * Returns the start key.
    **/
-  std::shared_ptr<Key> getStartKey() {
+  std::shared_ptr<Key> getStartKey() const{
     return start;
   }
 
   /**
    * Returns the end key.
    **/
-  std::shared_ptr<Key> getStopKey() {
+  std::shared_ptr<Key> getStopKey() const{
     return stop;
   }
 
   /**
    * returns start key inclusive flag.
    **/
-  bool getStartKeyInclusive() {
+  bool getStartKeyInclusive() const{
     return startKeyInclusive;
   }
 
   /**
    * returns end key inclusive flag.
    **/
-  bool getStopKeyInclusive() {
+  bool getStopKeyInclusive() const{
     return stopKeyInclusive;
   }
 
   /**
    * Returns whether or not the start key is infinite.
    **/
-  bool getInfiniteStartKey() {
+  bool getInfiniteStartKey() const{
     return infiniteStartKey;
   }
 
   /**
    * Returns whether or not the end key is infinite.
    **/
-  bool getInfiniteStopKey() {
+  bool getInfiniteStopKey() const{
     return infiniteStopKey;
   }
 
-  bool afterEndKey(std::shared_ptr<Key> key) const {
-    if (infiniteStartKey)
-      return false;
+  bool afterEndKey(const std::shared_ptr<Key> &key) const;
 
-    if (stopKeyInclusive){
-      return stop < key;
-    }
+  bool beforeStartKey(const std::shared_ptr<Key> &key) const;
 
-    return stop <= key;
 
-  }
+  std::shared_ptr<Range> intersect(const std::shared_ptr<Range> &range) const;
 
   virtual ~Range();
 
   friend inline std::ostream&
-  operator <<(std::ostream &out, Range &rhs) {
+  operator <<(std::ostream &out, const Range &rhs) {
     out << "Range ";
     if (rhs.infiniteStartKey) {
       out << "(-inf";
@@ -155,7 +150,14 @@ class Range {
 
   friend inline std::ostream&
   operator <<(std::ostream &out, Range *rhs) {
+    if (nullptr == rhs)
+      return out;
     return operator<<(out, *rhs);
+  }
+
+  bool operator==(const Range &other) {
+    return start == other.start && stop == other.stop && startKeyInclusive == other.startKeyInclusive && stopKeyInclusive == other.stopKeyInclusive && infiniteStartKey == other.infiniteStartKey
+        && infiniteStopKey == other.infiniteStopKey;
   }
 
  protected:

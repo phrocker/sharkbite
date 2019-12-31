@@ -23,7 +23,8 @@
 #include "../../data/extern/thrift/tabletserver_types.h"
 #include "../../interconnect/Scan.h"
 #include "../Source.h"
-
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 #include <thread>
 #include <vector>
 #include <chrono>
@@ -43,6 +44,8 @@ struct ScanPair {
  */
 
 class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
+ private:
+  std::shared_ptr<logging::Logger> logger;
 
  public:
 
@@ -56,6 +59,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   explicit ScannerHeuristic(short numThreads = 10)
       :
+      logger(logging::LoggerFactory<ScannerHeuristic>::getLogger()),
       threadCount(numThreads),
       started(false) {
 
@@ -101,6 +105,10 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
   uint16_t threadCount;
  protected:
 
+  std::shared_ptr<logging::Logger> getLogger() {
+    return logger;
+  }
+
   inline bool acquireLock() {
     auto now = std::chrono::steady_clock::now();
     return serverLock.try_lock_until(now + std::chrono::seconds(1));
@@ -112,24 +120,29 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   }
 
-  void addFailedScan(ScanPair<interconnect::ThriftTransporter> *scanResource, std::shared_ptr<interconnect::ServerInterconnect> server, interconnect::Scan *scan) {
+  void addFailedScan(ScanPair<interconnect::ThriftTransporter> *scanResource, const std::shared_ptr<interconnect::ServerInterconnect> &server, interconnect::Scan *scan) {
 
     auto rangeDef = server->getRangesDefinition();
+    logging::LOG_TRACE(logger) << "Adding failed scan";
     std::shared_ptr<cclient::data::Key> lastKey = 0;
     if (NULL != scan)
       lastKey = scan->getTopKey();
-    std::vector<cclient::data::Range*> *ranges = rangeDef->getRanges();
-    std::vector<cclient::data::Range*> newRanges;
+    auto ranges = rangeDef->getRanges();
+    std::vector<std::shared_ptr<cclient::data::Range>> newRanges;
+    if (NULL != lastKey) {
+      logging::LOG_TRACE(logger) << "Have last key " << lastKey;
+    }
     for (auto range : *ranges) {
       if (NULL != lastKey && (range->getStopKey()) <= lastKey) {
         // skip entirely
-        delete range;
-      } else if (NULL != lastKey && (range->getStartKey()) <= lastKey) {
-        cclient::data::Range *newRange = new cclient::data::Range(lastKey, false, range->getStopKey(), range->getStopKeyInclusive());
 
+      } else if (NULL != lastKey && (range->getStartKey()) <= lastKey) {
+        auto newRange = std::make_shared<cclient::data::Range>(lastKey, false, range->getStopKey(), range->getStopKeyInclusive());
+        logging::LOG_TRACE(logger) << "Creating range " << newRange;
         // create a new range
         newRanges.push_back(newRange);
       } else {
+        logging::LOG_TRACE(logger) << "Adding range " << range;
         newRanges.push_back(range);
       }
     }
@@ -138,10 +151,12 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
     scanResource->src->locateFailedTablet(newRanges, &locatedTablets);
 
+    logging::LOG_TRACE(logger) << "Adding failed scan " << locatedTablets.size();
     for (auto newRangeDef : locatedTablets) {
       auto directConnect = std::make_shared<interconnect::ServerInterconnect>(newRangeDef, scanResource->src->getInstance()->getConfiguration());
 
-      ((ScannerHeuristic*) scanResource->heuristic)->addClientInterface(directConnect);
+      addUniqueConnection(directConnect);
+      //((ScannerHeuristic*) scanResource->heuristic)->addClientInterface(directConnect);
     }
 
   }
@@ -153,9 +168,12 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     source->getResultSet()->registerProducer();
 
     std::shared_ptr<interconnect::ServerInterconnect> conn = 0;
+
+    bool failed = false;
     do {
       conn = ((ScannerHeuristic*) scanResource->heuristic)->next();
 
+      failed = false;
       interconnect::Scan *scan = 0;
       if (NULL != conn) {
 
@@ -191,29 +209,40 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
             if (NULL == newScan) {
               delete scan;
               scan = NULL;
-            } else
+            } else {
+              if (newScan->getTopKey() == nullptr && scan->getTopKey()) {
+                newScan->setTopKey(scan->getTopKey());
+              }
               scan = newScan;
+            }
 
           } while (scan != NULL);
         } catch (const apache::thrift::TApplicationException &te) {
           if (scanResource->runningFlag->load()) {
-                      throw te;
-                    }
+            throw te;
+          }
           ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
         } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
           if (scanResource->runningFlag->load()) {
             throw te;
           }
         } catch (const cclient::exceptions::NotServingException &te) {
-
+          logging::LOG_TRACE(((ScannerHeuristic*) scanResource->heuristic)->getLogger()) << "Not serving " << te.what();
           ((ScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
+
+          conn.reset();
+
+          failed = true;
+
+          continue;
         }
 
       } else {
+        logging::LOG_TRACE(((ScannerHeuristic*) scanResource->heuristic)->getLogger()) << "connection is null";
         delete scanResource;
         break;
       }
-    } while (NULL != conn && scanResource->runningFlag);
+    } while (failed || (NULL != conn && scanResource->runningFlag->load()));
 
     closeScan(source);
 
@@ -221,20 +250,47 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
 
   }
 
-  virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
+  void addUniqueConnection(const std::shared_ptr<interconnect::ServerInterconnect> &rangeDef) {
     std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> nextService = NULL;
-
+    logging::LOG_TRACE(logger) << "addUniqueConnection Called";
     while (!acquireLock()) {
       if (!running) {
+        logging::LOG_TRACE(logger) << "addUniqueConnection Called, but not running, returning";
+        return;
+      }
+    }
+    std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
+
+    logging::LOG_TRACE(logger) << " addUniqueConnection Called, servers.size is " << servers.size();
+    for (const auto &rd : servers) {
+      logging::LOG_TRACE(logger) << "Testing range defs";
+      if (*rangeDef->getRangesDefinition().get() == *std::dynamic_pointer_cast<interconnect::ServerInterconnect>(rd)->getRangesDefinition().get()) {
+        logging::LOG_TRACE(logger) << "Range def already in server set. returning";
+        return;
+
+      }
+    }
+    servers.push_back(rangeDef);
+    logging::LOG_TRACE(logger) << "addUniqueConnection Called, servers.size is " << servers.size();
+  }
+
+  virtual std::shared_ptr<interconnect::ServerInterconnect> next() {
+    std::shared_ptr<interconnect::ClientInterface<interconnect::ThriftTransporter>> nextService = NULL;
+    logging::LOG_TRACE(logger) << "Next Called";
+    while (!acquireLock()) {
+      if (!running) {
+        logging::LOG_TRACE(logger) << "Next Called, but not running, returning nullptr";
         return nullptr;
       }
     }
     std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
 
+    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << servers.size();
     if (!servers.empty()) {
       nextService = servers.back();
       servers.pop_back();
     }
+    logging::LOG_TRACE(logger) << "Next Called, servers.size is " << servers.size();
 
     std::shared_ptr<interconnect::ServerInterconnect> connector = std::dynamic_pointer_cast<interconnect::ServerInterconnect>(nextService);
 

@@ -39,8 +39,9 @@ namespace tserver {
  * @param inCols incoming columns
  *
  */
-RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
-                                 std::vector<std::shared_ptr<KeyExtent>> *keyExt, const std::vector<Column> &inCols)
+
+RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port,
+                                 std::vector<std::shared_ptr<cclient::data::Range>> *keyRange, std::vector<std::shared_ptr<KeyExtent>> *keyExt, const std::vector<Column> &inCols)
     :
     ServerDefinition(creds, auths, host, port) {
   if (NULL != keyRange) {
@@ -55,8 +56,8 @@ RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclie
 
 }
 
-RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port, std::vector<Range*> *keyRange,
-                                 std::vector<std::shared_ptr<KeyExtent>> *keyExt)
+RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port,
+                                 std::vector<std::shared_ptr<cclient::data::Range>> *keyRange, std::vector<std::shared_ptr<KeyExtent>> *keyExt)
     :
     RangeDefinition(creds, auths, host, port, keyRange, keyExt, std::vector<Column>()) {
 }
@@ -65,7 +66,7 @@ RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclie
  * Returns ranges
  * @returns ranges
  */
-std::vector<Range*>*
+std::vector<std::shared_ptr<Range>>*
 RangeDefinition::getRanges() {
   return &ranges;
 }
@@ -78,6 +79,65 @@ std::vector<std::shared_ptr<KeyExtent>>*
 RangeDefinition::getExtents() {
   return &extents;
 }
+
+bool RangeDefinition::operator==(const RangeDefinition *rhs) const {
+  if (rhs == nullptr)
+    return false;
+  return *this == *rhs;
+}
+
+bool RangeDefinition::operator==(const RangeDefinition &other) const {
+  if (other.ranges.size() != ranges.size()) {
+    return false;
+  }
+  for (const auto &range : ranges) {
+    bool found = false;
+    for (const auto &otherRange : other.ranges) {
+      if (*range == *otherRange) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+  if (other.extents.size() != extents.size()) {
+    return false;
+  }
+
+  for (const auto &extent : extents) {
+    bool found = false;
+    for (const auto &otherExtent : other.extents) {
+      if (*extent == *otherExtent) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+
+  if (other.columns.size() != columns.size()) {
+    return false;
+  }
+
+  for (const auto &column : columns) {
+    bool found = false;
+    for (const auto &otherColumn : other.columns) {
+      if (column == otherColumn) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      return false;
+    }
+  }
+  return true;
+}
+
 }
 }
 }

@@ -36,8 +36,9 @@ Range::Range(const std::string &row)
     Range(row, true, row, true) {
 }
 
-Range::Range(const std::string &startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive)
-    :startKeyInclusive(startInclusive),
+Range::Range(const std::string &startRow, bool startInclusive, const std::string &endRow, bool endKeyInclusive, bool update)
+    :
+    startKeyInclusive(startInclusive),
     stopKeyInclusive(endKeyInclusive) {
 
   start = std::make_shared<cclient::data::Key>();
@@ -47,7 +48,15 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
   infiniteStartKey = startRow.empty();
   infiniteStopKey = endRow.empty();
 
-  if (stopKeyInclusive  && stop != nullptr) {
+  if (infiniteStopKey){
+    stop = nullptr;
+  }
+
+  if (infiniteStartKey){
+    start = nullptr;
+  }
+
+  if (stopKeyInclusive && stop != nullptr && update) {
     std::pair<char*, size_t> row = stop->getRow();
     char *newRow = new char[row.second + 1];
     memset(newRow, 0x00, row.second + 1);
@@ -55,7 +64,7 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
     stop->setRow(newRow, row.second + 1);
     delete[] newRow;
   }
-  if (!infiniteStartKey && !infiniteStopKey && (*stop < *start)) {
+  if (!infiniteStartKey && !infiniteStopKey && (stop != nullptr && *stop.get() < start.get())) {
     throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");
   }
 }
@@ -77,9 +86,63 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
     stop->setRow(newRow, row.second + 1);
     delete[] newRow;
   }
-  if (!infiniteStartKey && !infiniteStopKey && (*stop < *start)) {
+  if (!infiniteStartKey && !infiniteStopKey && (stop != nullptr && *stop.get() < start.get())) {
     throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");
   }
+}
+
+bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
+  if (infiniteStartKey)
+    return false;
+
+  if (stopKeyInclusive) {
+    return *stop.get() < key.get();
+  }
+
+  return *stop.get() <= key.get();
+
+}
+
+bool Range::beforeStartKey(const std::shared_ptr<Key> &key) const {
+  if (infiniteStartKey) {
+    return false;
+  }
+
+  if (startKeyInclusive)
+    return *key.get() < start.get();
+  return *key.get() <= start.get();
+}
+
+std::shared_ptr<Range> Range::intersect(const std::shared_ptr<Range> &range) const {
+  auto sk = range->getStartKey();
+  bool ski = range->getStartKeyInclusive();
+
+  auto ek = range->getStopKey();
+  bool eki = range->getStopKeyInclusive();
+
+  if (range->getStartKey() == nullptr) {
+    if (getStartKey() != nullptr) {
+      sk = getStartKey();
+      ski = getStartKeyInclusive();
+    }
+  } else if (afterEndKey(range->getStartKey()) || (getStopKey() != nullptr && *range->getStartKey().get() == *getStopKey().get() && !(range->getStartKeyInclusive() && getStopKeyInclusive()))) {
+    return nullptr;
+  } else if (beforeStartKey(range->getStartKey())) {
+    sk = getStartKey();
+    ski = getStartKeyInclusive();
+  }
+  if (range->getStopKey() == nullptr) {
+    if (getStopKey() != nullptr) {
+      ek = getStopKey();
+      eki = getStopKeyInclusive();
+    }
+  } else if (beforeStartKey(range->getStopKey()) || (getStartKey() != nullptr && *range->getStopKey().get() == *getStartKey().get() && !(range->getStopKeyInclusive() && getStartKeyInclusive()))) {
+    return nullptr;
+  } else if (afterEndKey(range->getStopKey())) {
+    ek = getStopKey();
+    eki = getStopKeyInclusive();
+  }
+  return std::make_shared<Range>(sk, ski, ek, eki, false);
 }
 
 } /* namespace data */

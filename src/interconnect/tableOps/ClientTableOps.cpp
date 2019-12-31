@@ -208,9 +208,16 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
     bool success = false;
     while (!success) {
       logging::LOG_DEBUG(logger) << "Adding split " << partition << " for table id " << tableId;
+      cclient::data::TabletLocation location;
+      try{
       cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId));
-      cclient::data::TabletLocation location = tabletLocator->locateTablet(credentials, partition, false, false);
+
+      location = tabletLocator->locateTablet(credentials, partition, false, false);
       logging::LOG_DEBUG(logger) << "Located server for " << partition << " " << location.getServer() << ":" << location.getPort();
+      }
+      catch(...){
+    	  continue;
+      }
       std::shared_ptr<ServerConnection> connection = std::make_shared<ServerConnection>(location.getServer(), location.getPort(), -1);
 
       auto cachedTransport = distributedConnector->getTransporter(connection);
@@ -229,10 +236,17 @@ void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
         success = false;
+      } catch (...) {
+    	  logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " ";
+		  cachedTransport->sawError(true);
+		  distributedConnector->freeTransport(cachedTransport);
+		  cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))->invalidateCache();
+		  continue;
       }
 
       distributedConnector->freeTransport(cachedTransport);
 
+      cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))->invalidateCache();
     }
   }
 }

@@ -29,7 +29,7 @@ class NotServingException : public std::exception {
   ~NotServingException() throw () {
 
   }
-  const char *what() {
+  const char *what() const noexcept{
     return excp_str.c_str();
   }
  private:

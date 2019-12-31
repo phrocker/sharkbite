@@ -40,13 +40,13 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
   startKey->setRow(row.c_str(), row.size());
   std::shared_ptr<cclient::data::Key> endKey = std::make_shared<cclient::data::Key>();
   endKey->setRow(stopRow.c_str(), stopRow.size());
-  cclient::data::Range *range = new cclient::data::Range(startKey, true, endKey, true);
+  auto range = std::make_shared<cclient::data::Range>(startKey, true, endKey, true);
 
   std::map<cclient::data::Key, cclient::data::Value> resultSet;
 
   cclient::data::security::Authorizations emptyAuths;
 
-  std::vector<cclient::data::Range*> ranges;
+  std::vector<std::shared_ptr<cclient::data::Range>> ranges;
   ranges.push_back(range);
 
   std::vector<std::shared_ptr<cclient::data::KeyExtent>> extents;

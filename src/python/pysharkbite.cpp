@@ -57,7 +57,7 @@ PYBIND11_MODULE(pysharkbite, s){
   pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, cclient::data::Instance>(s, "ZookeeperInstance")
 	  .def(pybind11::init<std::string, std::string,uint32_t, const std::shared_ptr<cclient::impl::Configuration>&>())
 	  .def("getInstanceName", &cclient::data::zookeeper::ZookeeperInstance::getInstanceName)
-	  .def("getInstanceId", &cclient::data::zookeeper::ZookeeperInstance::getInstanceId);
+	  .def("getInstanceId", &cclient::data::zookeeper::ZookeeperInstance::getInstanceId,"retry"_a=false);
 
 
   pybind11::class_<cclient::data::security::AuthInfo>(s, "AuthInfo")
@@ -131,9 +131,11 @@ PYBIND11_MODULE(pysharkbite, s){
 
   pybind11::class_<cclient::data::Range>(s, "Range")
         .def(pybind11::init<const std::string&>())
-        .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool>())
+        .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool,bool>(),
+             "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false)
 	.def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool>())
-	.def(pybind11::init<const std::string&,bool,const std::string&,bool>());
+	.def(pybind11::init<const std::string&,bool,const std::string&,bool,bool>(),
+      "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false);
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
         .def(pybind11::init<std::string>())

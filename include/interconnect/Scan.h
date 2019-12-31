@@ -54,6 +54,8 @@ public:
 	{
 		results.insert(results.end(), resultSet->begin(),
 		               resultSet->end());
+		if (!resultSet->empty())
+		  topKey = resultSet->back()->getKey();
 		return true;
 	}
 

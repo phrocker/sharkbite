@@ -111,6 +111,7 @@ Key::operator < (const Key &rhs) const
 {
     int compare = compareBytes (row, 0, rowLength, rhs.row, 0, rhs.rowLength);
 
+
     if (compare < 0)
         return true;
     else if (compare > 0)
@@ -143,11 +144,13 @@ Key::operator == (const Key & rhs) const
     compare = compareBytes (colFamily, 0, columnFamilyLength, rhs.colFamily,
                             0, rhs.columnFamilyLength);
 
+
     if (compare != 0)
         return false;
 
     compare = compareBytes (colQualifier, 0, colQualLen, rhs.colQualifier, 0,
                             rhs.colQualLen);
+
 
     if (compare != 0)
         return false;

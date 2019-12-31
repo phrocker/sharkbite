@@ -21,6 +21,7 @@
 #include "../exceptions/IllegalArgumentException.h"
 #include "StructureDefinitions.h"
 #include <string>
+#include "Range.h"
 
 #include "value.h"
 
@@ -45,7 +46,8 @@ class KeyExtent {
    * @param endRowIn end row for the tablet
    **/
   KeyExtent(std::string tableIdIn, std::string endRowIn)
-      : KeyExtent(tableIdIn, endRowIn, "") {
+      :
+      KeyExtent(tableIdIn, endRowIn, "") {
 
   }
 
@@ -54,9 +56,10 @@ class KeyExtent {
    @param copy key extent to copy
    **/
   explicit KeyExtent(KeyExtent *copy)
-      : tableId(copy->getTableId()),
-        endRow(copy->getEndRow()),
-        prevEndRow(copy->getPrevEndRow()) {
+      :
+      tableId(copy->getTableId()),
+      endRow(copy->getEndRow()),
+      prevEndRow(copy->getPrevEndRow()) {
   }
 
   /**
@@ -101,7 +104,7 @@ class KeyExtent {
   ~KeyExtent();
 
   KeyExtent&
-  operator=(const KeyExtent& other) {
+  operator=(const KeyExtent &other) {
     tableId = other.tableId;
     endRow = other.endRow;
     prevEndRow = other.prevEndRow;
@@ -150,10 +153,10 @@ class KeyExtent {
     return true;
   }
 
-  friend inline std::ostream &
+  friend inline std::ostream&
   operator <<(std::ostream &out, KeyExtent *rhs) {
 
-    out << "tableId:" << rhs->tableId << " end:" << ( IsEmpty(&rhs->endRow) ? "<" : rhs->endRow )<< " prev:" << ( IsEmpty(&rhs->prevEndRow) ? "<" : rhs->prevEndRow ) << " " << std::endl;
+    out << "tableId:" << rhs->tableId << " end:" << (IsEmpty(&rhs->endRow) ? "<" : rhs->endRow) << " prev:" << (IsEmpty(&rhs->prevEndRow) ? "<" : rhs->prevEndRow) << " " << std::endl;
     return out;
   }
   void setTableId(std::string id) {
@@ -172,12 +175,16 @@ class KeyExtent {
     return prevEndRow;
   }
 
+  std::shared_ptr<cclient::data::Range> toRange() const {
+    return std::make_shared<cclient::data::Range>(prevEndRow, false, endRow, true);
+  }
+
   void setPrevEndRow(std::string prev) {
     prevEndRow = prev;
   }
  protected:
   void setPrevEndRow(std::shared_ptr<Value> prevEndRow) {
-    std::pair<unsigned char *, size_t> valuePair = prevEndRow->getValue();
+    std::pair<unsigned char*, size_t> valuePair = prevEndRow->getValue();
     setPrevEndRow((char*) valuePair.first, valuePair.second);
 
   }
@@ -230,7 +237,7 @@ class KeyExtent {
 // static variable for the root tablet key extent.
 static const KeyExtent ROOT_TABLET_EXTENT(
 METADATA_TABLE_ID,
-KeyExtent::createMetadataEntry (METADATA_TABLE_ID, ""));
+                                          KeyExtent::createMetadataEntry(METADATA_TABLE_ID, ""));
 
 }
 /* namespace data */

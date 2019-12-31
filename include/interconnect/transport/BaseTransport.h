@@ -56,7 +56,7 @@
 
 namespace interconnect {
 
-class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, cclient::data::Range*, std::shared_ptr<cclient::data::Mutation>> {
+class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent,std::shared_ptr<cclient::data::Range>, std::shared_ptr<cclient::data::Mutation>> {
  private:
   std::shared_ptr<logging::Logger> logger;
  protected:
@@ -70,11 +70,11 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter();
 
-  Scan* singleScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan* singleScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
     return server->singleScan(isRunning, request);
   }
 
-  Scan* multiScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) {
+  Scan* multiScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
     return server->multiScan(isRunning, request);
   }
 
@@ -177,7 +177,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     server->registerService(instance, clusterManagers);
   }
 
-  Scan* beginScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> > *request) override {
+  Scan* beginScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) override {
     return callTabletServerApiWithReturn<Scan*>([&]() -> Scan* {
       return server->beginScan(isRunning, request);
     });

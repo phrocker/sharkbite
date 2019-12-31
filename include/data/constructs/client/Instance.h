@@ -65,7 +65,7 @@ public:
       * return instance ID
       * @return instance ID
       **/
-    virtual std::string getInstanceId() = 0;
+    virtual std::string getInstanceId(bool retry = false) = 0;
     /**
      * Return instance namespace
      * @return instance name

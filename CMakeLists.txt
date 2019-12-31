@@ -425,6 +425,15 @@ if (BUILD_PYTHON_TESTS)
 	
 	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite> ${PYTHON_TEST_DEST}/python/)
 	
+
+	set(PERFORMANCE_TEST_SOURCE "${CMAKE_SOURCE_DIR}/test/performance")
+		
+	file(COPY ${PERFORMANCE_TEST_SOURCE} DESTINATION ${PYTHON_TEST_DEST})
+	
+	add_custom_command(TARGET pysharkbite POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pysharkbite> ${PYTHON_TEST_DEST}/performance/)
+
+
+
 	add_subdirectory(test/services)
 	
 	include_directories(${JNI_INCLUDE_DIRS})
@@ -451,6 +460,11 @@ if (BUILD_PYTHON_TESTS)
 		add_test(
 		    NAME RunPythonTests 
 		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar "localhost" "${Python_EXECUTABLE}" ${PYTHON_TEST_DEST}/python ${SHARED_OBJ} ${ITERPATH_193})
+		    
+		    
+		add_test(
+		    NAME PerformanceTests 
+		    COMMAND ${Java_JAVA_EXECUTABLE} -jar ${MAX19XBIN}/st/target/standalone-mac-shaded-193.3.jar "localhost" "${Python_EXECUTABLE}" ${PYTHON_TEST_DEST}/performance ${SHARED_OBJ} ${ITERPATH_193})
 	
 	
 	else()

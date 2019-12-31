@@ -62,10 +62,10 @@ class RootTabletLocator : public TabletLocator {
                     std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
   }
 
-  virtual std::vector<cclient::data::Range*> binRanges(
-      cclient::data::security::AuthInfo *credentials, std::vector<cclient::data::Range*> *ranges, std::set<std::string> *locations,
-      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<cclient::data::Range*>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
-    return std::vector<cclient::data::Range*>();
+  virtual std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
+      cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Range>> *ranges, std::set<std::string> *locations,
+      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
+    return std::vector<std::shared_ptr<cclient::data::Range>>();
   }
 
   void invalidateCache(cclient::data::KeyExtent failedExtent) {

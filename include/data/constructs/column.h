@@ -28,105 +28,109 @@ namespace data {
 /**
  * Column representation
  **/
-class Column : public cclient::data::streams::StreamInterface {
+class Column: public cclient::data::streams::StreamInterface {
 
- public:
+public:
 
-  /**
-   * Constructor
-   * @param columFam column family.
-   **/
-  explicit Column(const std::string &columFam)
-      :
-      Column(columFam, std::string(), std::string()) {
+	/**
+	 * Constructor
+	 * @param columFam column family.
+	 **/
+	explicit Column(const std::string &columFam) :
+			Column(columFam, std::string(), std::string()) {
 
-  }
+	}
 
-  /**
-   * Constructor
-   * @param columFam column family.
-   * @param columnQual column qualifier
-   **/
-  explicit Column(const std::string &columFam, const std::string &columnQual)
-      :
-      Column(columFam, columnQual, std::string()) {
+	/**
+	 * Constructor
+	 * @param columFam column family.
+	 * @param columnQual column qualifier
+	 **/
+	explicit Column(const std::string &columFam, const std::string &columnQual) :
+			Column(columFam, columnQual, std::string()) {
 
-  }
+	}
 
-  /**
-   * Constructor
-   * @param columFam column family.
-   * @param columnQual column qualifier
-   * @param columnVis column visibility
-   **/
-  explicit Column(const std::string &columnFam, const std::string &columnQual, const std::string &columnVis)
-      :
-      columnFamily(columnFam),
-      columnQualifier(columnQual),
-      columnVisibility(columnVis) {
+	/**
+	 * Constructor
+	 * @param columFam column family.
+	 * @param columnQual column qualifier
+	 * @param columnVis column visibility
+	 **/
+	explicit Column(const std::string &columnFam, const std::string &columnQual,
+			const std::string &columnVis) :
+			columnFamily(columnFam), columnQualifier(columnQual), columnVisibility(
+					columnVis) {
 
-  }
+	}
 
-  /**
-   * Destructor
-   **/
-  virtual ~Column();
-  virtual bool operator==(const Column &other) const;
-  bool operator <(const Column &rhs) const;
+	/**
+	 * Destructor
+	 **/
+	virtual ~Column();
+	virtual bool operator==(const Column &other) const;
+	bool operator <(const Column &rhs) const;
 
-  bool operator <(const Column *rhs) const {
-    return *this < *rhs;
-  }
-  uint64_t write(cclient::data::streams::OutputStream *outStream);
+	bool operator <(const Column *rhs) const {
+		return *this < *rhs;
+	}
+	uint64_t write(cclient::data::streams::OutputStream *outStream);
 
-  void setColFamily(const char *r, uint32_t size);
+	void setColFamily(const char *r, uint32_t size);
 
-  std::string getColFamily() const {
-    return columnFamily;
-  }
+	std::string getColFamily() const {
+		return columnFamily;
+	}
 
-  void setColQualifier(const char *r, uint32_t size);
+	void setColQualifier(const char *r, uint32_t size);
 
-  std::string getColQualifier() const {
-    return columnQualifier;
-  }
+	std::string getColQualifier() const {
+		return columnQualifier;
+	}
 
-  void setColVisibility(const char *r, uint32_t size);
+	void setColVisibility(const char *r, uint32_t size);
 
-  std::string getColVisibility() const {
-    return columnVisibility;
-  }
+	std::string getColVisibility() const {
+		return columnVisibility;
+	}
 
- private:
+	bool operator==(const Column &other) {
+		return columnFamily == other.columnFamily
+				&& columnQualifier == other.columnQualifier
+				&& columnVisibility == other.columnVisibility;
+	}
 
-  std::string columnFamily;
-  std::string columnQualifier;
-  std::string columnVisibility;
-  /*
-   char *columnFamily;
-   uint16_t columnFamilyLen;
+private:
 
-   char *columnQualifier;
-   uint16_t columnQualifierLen;
+	std::string columnFamily;
+	std::string columnQualifier;
+	std::string columnVisibility;
+	/*
+	 char *columnFamily;
+	 uint16_t columnFamilyLen;
 
-   char *columnVisibility;
-   uint16_t columnVisibilityLen;
-   */
-  /**
-   * copied from writable comparable utils
-   */
-  static int compareBytes(const char *b1, int s1, int l1, const char *b2, int s2, int l2) {
-    int end1 = s1 + l1;
-    int end2 = s2 + l2;
-    for (int i = s1, j = s2; i < end1 && j < end2; i++, j++) {
-      int a = (b1[i] & 0xff);
-      int b = (b2[j] & 0xff);
-      if (a != b) {
-        return a - b;
-      }
-    }
-    return l1 - l2;
-  }
+	 char *columnQualifier;
+	 uint16_t columnQualifierLen;
+
+	 char *columnVisibility;
+	 uint16_t columnVisibilityLen;
+	 */
+	/**
+	 * copied from writable comparable utils
+	 */
+	static int compareBytes(const char *b1, int s1, int l1, const char *b2,
+			int s2, int l2) {
+		int end1 = s1 + l1;
+		int end2 = s2 + l2;
+		for (int i = s1, j = s2; i < end1 && j < end2; i++, j++) {
+			int a = (b1[i] & 0xff);
+			int b = (b2[j] & 0xff);
+			if (a != b) {
+				return a - b;
+			}
+		}
+		return l1 - l2;
+	}
 };
 }
 }

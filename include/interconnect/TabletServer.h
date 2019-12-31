@@ -49,6 +49,9 @@
 #include "../data/constructs/server/ServerDefinition.h"
 #include "../data/extern/thrift/ClientService.h"
 #include "../data/extern/thrift/TabletClientService.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
+
 
 namespace interconnect {
 
@@ -57,7 +60,8 @@ static TransportPool<ThriftTransporter> CLUSTER_COORDINATOR;
 extern void closeAllThriftConnections();
 
 class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTransporter> {
-
+private:
+  std::shared_ptr<logging::Logger> logger;
  protected:
   ServerInterconnect(cclient::data::security::AuthInfo *creds, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR) {
     myTransportPool = distributedConnector;
@@ -101,11 +105,10 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
   ServerInterconnect(const std::string host, const int port, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR);
 
   ServerInterconnect(std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
-                         &CLUSTER_COORDINATOR) {
+                         &CLUSTER_COORDINATOR): logger(logging::LoggerFactory < ServerInterconnect > ::getLogger())  {
     ConnectorService conn("tserver", rangeDef->getServer(), rangeDef->getPort());
 
-    const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,
-    TSERVER_DEFAULT_PORT);
+    const uint16_t tserverPort = rangeDef->getPort();
 
     if (!isValidPort(tserverPort)) {
       throw cclient::exceptions::IllegalArgumentException("Invalid port");
@@ -122,6 +125,11 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
       try {
         myTransport = distributedConnector->getTransporter(tServer);
       } catch (const apache::thrift::transport::TTransportException &te) {
+
+    	logging::LOG_DEBUG(logger) << "Exception while getting transporter to " << conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT) << " " << rangeDef->getPort() << te.what();
+
+    	tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         // close may occur on a partial write this is okay
         // to know
@@ -166,7 +174,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
   Scan *
   scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize=1000) {
-    ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>> request(&credentials, rangeDef->getAuthorizations(), tServer);
+    ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
     request.setBufferSize(batchSize);
 
@@ -175,11 +183,11 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
     request.setIters(serverSideIterators);
 
     for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents()) {
-      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*> *ident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, cclient::data::Range*>();
+      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>();
       if (rangeDef->getRanges()->size() == 0) {
         return NULL;
       }
-      for (cclient::data::Range *range : *rangeDef->getRanges()) {
+      for (const auto range : *rangeDef->getRanges()) {
         ident->putIdentifier(extent, range);
       }
 
