@@ -57,7 +57,9 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           uint16_t threads);
 
   virtual void addRange(const cclient::data::Range &range) override {
-    ranges.push_back(std::make_shared<cclient::data::Range>(range));
+    auto newRange = std::make_shared<cclient::data::Range>(range.getStartKey(),range.getStartKeyInclusive(),range.getStopKey(),range.getStopKeyInclusive(),false);
+    logging::LOG_TRACE(logger) << "passing in ranges " << range << " " << *newRange.get();
+    ranges.push_back(newRange);
   }
 
   /**
@@ -83,6 +85,10 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
       throw cclient::exceptions::ClientException(RANGE_NOT_SPECIFIED);
     }
     if (IsEmpty(resultSet) && IsEmpty(&servers)) {
+
+      for(const auto &range : ranges){
+        logging::LOG_TRACE(logger) << "range is " << *range.get();
+      }
 
       resultSet = new Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>();
 
@@ -114,14 +120,19 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           auto extentRange = hostExtents.first->toRange();
           // clip the ranges into the extents
           std::vector<std::shared_ptr<cclient::data::Range>> clippedRanges;
+
           for(const auto &range : hostExtents.second){
+            logging::LOG_DEBUG(logger) << " begin range is null " << *extentRange.get();
+            logging::LOG_DEBUG(logger) << " begin range is null " << *range.get() << " " << *extentRange.get();
             auto rng = extentRange->intersect(range);
             if (nullptr == rng){
               logging::LOG_DEBUG(logger) << " clipped range is null " << *range.get() << " " << *extentRange.get();
               clippedRanges.push_back(range);
             }
-            else
+            else{
+              logging::LOG_DEBUG(logger) << " clipped range is " << *rng.get() << " from " << *range.get() << " and " << *extentRange.get();
               clippedRanges.push_back( rng );
+            }
           }
 
           auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &clippedRanges, &extents, columns);

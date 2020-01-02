@@ -197,7 +197,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     out << std::string(cf.first, cf.second) << ":" << std::string(cq.first, cq.second) << " [";
     std::pair<char*, size_t> viz = rhs.getColVisibility();
     auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
-    out << vizstring << "] " << rhs.getTimeStamp();
+    out << vizstring << "] " << std::to_string(rhs.getTimeStamp());
     return out;
   }
 

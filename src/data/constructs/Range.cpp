@@ -40,20 +40,19 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
     :
     startKeyInclusive(startInclusive),
     stopKeyInclusive(endKeyInclusive) {
-
-  start = std::make_shared<cclient::data::Key>();
-  stop = std::make_shared<cclient::data::Key>();
-  start->setRow(startRow);
-  stop->setRow(endRow);
   infiniteStartKey = startRow.empty();
   infiniteStopKey = endRow.empty();
 
-  if (infiniteStopKey){
+  if (infiniteStopKey) {
     stop = nullptr;
+  } else {
+    stop = std::make_shared<cclient::data::Key>(endRow);
   }
 
-  if (infiniteStartKey){
+  if (infiniteStartKey) {
     start = nullptr;
+  } else {
+    start = std::make_shared<cclient::data::Key>(startRow);
   }
 
   if (stopKeyInclusive && stop != nullptr && update) {
@@ -71,12 +70,18 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
 
 Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update)
     :
-    start(startKey),
     startKeyInclusive(startInclusive),
-    stop(endKey),
     stopKeyInclusive(endKeyInclusive) {
   infiniteStartKey = startKey == NULL;
-  infiniteStopKey = stop == NULL;
+  infiniteStopKey = endKey == NULL;
+
+  if (!infiniteStartKey) {
+    start = std::make_shared<Key>(startKey->getRowStr());
+  }
+
+  if (!infiniteStopKey) {
+    stop = std::make_shared<Key>(endKey->getRowStr());
+  }
 
   if (stopKeyInclusive && stop != nullptr && update) {
     std::pair<char*, size_t> row = stop->getRow();
@@ -92,7 +97,7 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
 }
 
 bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
-  if (infiniteStartKey)
+  if (infiniteStopKey)
     return false;
 
   if (stopKeyInclusive) {
