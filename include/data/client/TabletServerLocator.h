@@ -44,7 +44,7 @@ struct locationComparator {
  **/
 class TabletServerLocator : public TabletLocator {
  public:
-  TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *locator, cclient::data::Instance *inst);
+  TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *locator, std::shared_ptr<cclient::data::Instance> inst);
   virtual ~TabletServerLocator();
 
   /**
@@ -265,7 +265,7 @@ class TabletServerLocator : public TabletLocator {
   std::map<std::string, cclient::data::TabletLocation, locationComparator> cachedLocations;
   std::recursive_mutex locatorMutex;
 
-  cclient::data::Instance *instance;
+  std::shared_ptr<cclient::data::Instance> instance;
 
   bool getCachedLocation(std::string startRow, cclient::data::TabletLocation &loc) {
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);

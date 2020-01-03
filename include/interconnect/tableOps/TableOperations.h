@@ -38,7 +38,7 @@ class TableOperations {
    * @param instance instance to use for connection
    * @param table table name
    **/
-  TableOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance, std::string table);
+  TableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table);
 
   /**
    * Create a table.
@@ -139,7 +139,7 @@ class TableOperations {
   // table mutex
   std::recursive_mutex tableOpMutex;
   // instance pointer
-  cclient::data::Instance *myInstance;
+  std::shared_ptr<cclient::data::Instance> myInstance;
   // credentials of the calling user
   cclient::data::security::AuthInfo *credentials;
   // current table id
@@ -166,7 +166,7 @@ void TableOperations<K, V>::createTable(std::string table) {
  * @param table table name
  **/
 template<typename K, typename V>
-TableOperations<K, V>::TableOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance, std::string table)
+TableOperations<K, V>::TableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table)
     : myInstance(instance),
       myTable(table),
       credentials(creds) {

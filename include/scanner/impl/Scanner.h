@@ -53,7 +53,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
    * @param auths authorizations
    * @param threads threads for the scanner
    **/
-  Scanner(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
+  Scanner(std::shared_ptr<cclient::data::Instance> instance, interconnect::TableOperations<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
           uint16_t threads);
 
   virtual void addRange(const cclient::data::Range &range) override {
@@ -160,7 +160,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     }
   }
 
-  cclient::data::Instance* getInstance() override {
+  std::shared_ptr<cclient::data::Instance>  getInstance() override {
     return connectorInstance;
   }
 
@@ -232,7 +232,7 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   // servers to access
   std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> servers;
   // zookeeper instance
-  cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
+  std::shared_ptr<cclient::data::Instance> connectorInstance;
   // scanner heuristic to control server access
   std::unique_ptr<ScannerHeuristic> scannerHeuristic;
   // tablet locator

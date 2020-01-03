@@ -21,7 +21,7 @@
 namespace interconnect {
 class AccumuloStreams : public scanners::Scanner, public writer::Writer {
  public:
-  AccumuloStreams(cclient::data::Instance *instance, TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
+  AccumuloStreams(std::shared_ptr<cclient::data::Instance> instance, TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops, cclient::data::security::Authorizations *auths,
                   uint16_t threads);
   virtual
   ~AccumuloStreams();

@@ -50,9 +50,9 @@ class LocatorKey {
    * @param instance intance implementation
    * @param table table for which we are locating tablets
    **/
-  LocatorKey(cclient::data::Instance *instance, std::string table);
+  LocatorKey(std::shared_ptr<cclient::data::Instance> instance, std::string table);
   // instance
-  cclient::data::Instance *instance;
+  std::shared_ptr<cclient::data::Instance> instance;
   // table name
   std::string tableName;
 

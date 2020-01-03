@@ -61,7 +61,7 @@ class TestWrites(TestRunner):
 		scanner.addRange( accumuloRange )
 		
 		iterator = pysharkbite.PythonIterator("PythonIterator",100)
-		iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), 'new cf', x.getColumnQualifier()) ")
+		iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 		scanner.addIterator(iterator)
 		
 		resultset = scanner.getResultSet()
@@ -82,7 +82,7 @@ class TestWrites(TestRunner):
 		scanner.addRange( accumuloRange )
 		
 		iterator = pysharkbite.PythonIterator("PythonIterator",100)
-		iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), x.getColumnFamily(), 'new cq') ")
+		iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), x.getKey().getColumnFamily(), 'new cq') ")
 		scanner.addIterator(iterator)
 		
 		resultset = scanner.getResultSet()

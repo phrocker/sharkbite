@@ -34,7 +34,7 @@ static std::shared_ptr<cclient::data::KeyExtent> ROOT_EXTENT = std::make_shared<
 
 class RootTabletLocator : public TabletLocator {
  public:
-  explicit RootTabletLocator(cclient::data::Instance *instance);
+  explicit RootTabletLocator(std::shared_ptr<cclient::data::Instance> instance);
   ~RootTabletLocator();
 
   cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
@@ -46,13 +46,12 @@ class RootTabletLocator : public TabletLocator {
       location = getRootTabletLocation();
 
     }
-    if (location){
+    if (location) {
       cclient::data::TabletLocation te(location);
       delete location;
       return te;
-    }
-    else {
-	    throw std::runtime_error("Could not locate root tablet");
+    } else {
+      throw std::runtime_error("Could not locate root tablet");
     }
 
   }
@@ -63,7 +62,9 @@ class RootTabletLocator : public TabletLocator {
   }
 
   virtual std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
-      cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Range>> *ranges, std::set<std::string> *locations,
+      cclient::data::security::AuthInfo *credentials,
+      std::vector<std::shared_ptr<cclient::data::Range>> *ranges,
+      std::set<std::string> *locations,
       std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
     return std::vector<std::shared_ptr<cclient::data::Range>>();
   }
@@ -79,8 +80,8 @@ class RootTabletLocator : public TabletLocator {
 
  protected:
 
-  cclient::data::TabletLocation *getRootTabletLocation();
-  cclient::data::zookeeper::ZookeeperInstance *myInstance;
+  cclient::data::TabletLocation* getRootTabletLocation();
+  std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> myInstance;
 };
 }
 }

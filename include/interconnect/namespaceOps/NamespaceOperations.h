@@ -41,7 +41,7 @@ class NamespaceOperations {
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  NamespaceOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance,
+  NamespaceOperations(cclient::data::security::AuthInfo *creds,  std::shared_ptr<cclient::data::Instance> instance,
                       RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
                       TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
       : NamespaceOperations(creds, "", instance, interface, distributedConnector) {
@@ -56,7 +56,7 @@ class NamespaceOperations {
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  NamespaceOperations(cclient::data::security::AuthInfo *creds, std::string myNamespace, cclient::data::Instance *instance,
+  NamespaceOperations(cclient::data::security::AuthInfo *creds, std::string myNamespace,  std::shared_ptr<cclient::data::Instance> instance,
                       RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
                       TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
       : myNamespace(myNamespace),
@@ -168,7 +168,7 @@ class NamespaceOperations {
   // distributed connector to tservers
   TransportPool<interconnect::AccumuloMasterTransporter> *refTransportPool;
   // instance ptr
-  cclient::data::Instance *myInstance;
+  std::shared_ptr<cclient::data::Instance> myInstance;
   // credentials
   cclient::data::security::AuthInfo *credentials;
   // provided namespace

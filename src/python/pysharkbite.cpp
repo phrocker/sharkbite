@@ -46,13 +46,13 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("get", (std::string (cclient::impl::Configuration::*)(const std::string &, const std::string &) const) &cclient::impl::Configuration::get, "Get the configuration option with default value")
   .def("getLong", (uint32_t (cclient::impl::Configuration::*)(const std::string &, uint32_t) const) &cclient::impl::Configuration::getLong, "Get the integer value of a configuration item");
 
-  pybind11::class_<cclient::data::Instance>(s, "Instance");
+  pybind11::class_<cclient::data::Instance, std::shared_ptr<cclient::data::Instance>>(s, "Instance");
 //logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
   pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")
   .def_static("enableDebugLogger",&logging::LoggerConfiguration::enableLogger)
   .def_static("enableTraceLogger",&logging::LoggerConfiguration::enableTraceLogger);
 
-  pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, cclient::data::Instance>(s, "ZookeeperInstance")
+  pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance>, cclient::data::Instance>(s, "ZookeeperInstance")
   .def(pybind11::init<std::string, std::string,uint32_t, const std::shared_ptr<cclient::impl::Configuration>&>())
   .def("getInstanceName", &cclient::data::zookeeper::ZookeeperInstance::getInstanceName)
   .def("getInstanceId", &cclient::data::zookeeper::ZookeeperInstance::getInstanceId,"retry"_a=false);
@@ -80,7 +80,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
   pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector")
-  .def(pybind11::init<cclient::data::security::AuthInfo&, cclient::data::Instance*>())
+  .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
   .def("securityOps",&interconnect::MasterConnect::securityOps, "Return the security operations object")
   .def("tableOps",&interconnect::MasterConnect::tableOps, "Return the table operations object");
 

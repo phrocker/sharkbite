@@ -52,6 +52,48 @@ class ZookeeperInstance : public Instance {
  public:
 
   /**
+     * ZK constructor
+     * @param in instance name
+     * @param zks zookeepers
+     * @param zkTimeoutMs timeout for zookeeper
+     * @param conf configuration object
+     **/
+    explicit ZookeeperInstance(const ZookeeperInstance *zki)
+        :
+        instanceName(zki->instanceName),
+        zookeeperList(zki->zookeeperList),
+        timeoutMs(zki->timeoutMs),
+        myConfiguration(zki->myConfiguration) {
+      if (IsEmpty(&instanceName) || IsEmpty(&zookeeperList)) {
+        throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
+      }
+
+      myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
+
+      myKeeper->init(&myWatch);
+
+      myZooCache = new ZooCache(myKeeper);
+
+      if (getInstanceId(true).empty()) {
+
+        clear();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
+
+        myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
+
+        myKeeper->init(&myWatch);
+
+        myZooCache = new ZooCache(myKeeper);
+
+        getInstanceId();
+
+      }
+
+    }
+
+
+  /**
    * ZK constructor
    * @param in instance name
    * @param zks zookeepers

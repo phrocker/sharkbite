@@ -74,7 +74,7 @@ class Source {
     return iters;
   }
 
-  virtual cclient::data::Instance* getInstance() = 0;
+  virtual std::shared_ptr<cclient::data::Instance>  getInstance() = 0;
 
   void fetchColumn(std::string col, std::string colqual = "") {
     if (!IsEmpty(&colqual)) {

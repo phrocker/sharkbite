@@ -19,7 +19,7 @@
 namespace cclient {
 namespace impl {
 
-TabletServerLocator::TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *lc, cclient::data::Instance *inst)
+TabletServerLocator::TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *lc, std::shared_ptr<cclient::data::Instance> inst)
     : tableId(tableId),
       parent(parent),
       locator(lc),

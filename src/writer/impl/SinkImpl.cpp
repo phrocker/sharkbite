@@ -21,12 +21,12 @@
 #include "writer/impl/WriterHeuristic.h"
 
 namespace writer {
-Writer::Writer(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+Writer::Writer(std::shared_ptr<cclient::data::Instance> instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
                cclient::data::security::Authorizations *auths, uint16_t threads)
     : tops(tops),
       Sink<cclient::data::KeyValue>(500),
       mutationQueue(500 * 1.5) {
-  connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*>(instance);
+  connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(instance);
   tableLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tops->getTableId()));
   credentials = tops->getCredentials();
   writerHeuristic = new WriterHeuristic(threads);

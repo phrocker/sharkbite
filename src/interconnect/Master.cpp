@@ -37,6 +37,7 @@
 #include "interconnect/../data/constructs/Mutation.h"
 #include "interconnect/TabletServer.h"
 #include "interconnect/../data/exceptions/ClientException.h"
+#include "data/constructs/client/zookeeperinstance.h"
 
 namespace interconnect {
 
@@ -45,7 +46,52 @@ namespace interconnect {
  * @param credentials incoming user credentials
  * @param instance incoming instance
  */
-MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *instance)
+MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *inst)
+    : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, instance){
+
+  auto zki = (cclient::data::zookeeper::ZookeeperInstance*)inst;
+  // copy the instance information
+  instance = std::make_shared<cclient::data::zookeeper::ZookeeperInstance>(zki);
+
+  this->myTransportPool = &MASTER_COORDINATOR;
+  this->credentials = credentials;
+
+  std::vector<std::string> locations = instance->getMasterLocations();
+
+  if (locations.size() == 0) {
+    throw cclient::exceptions::ClientException(NO_MASTER_FOUND);
+  }
+
+  std::string master = locations.at(0);
+
+  std::vector<std::string> masterSplit = split(master, ':');
+
+  uint16_t port = atoi(masterSplit.at(1).c_str());
+  ConnectorService conn("master", masterSplit.at(0), port);
+
+  // create time out from system configuration
+  uint64_t timeout = instance->getConfiguration()->getLong("MASTER_TIMEOUT", 60000);
+
+  // even though we're within the accumulo master, tserver object is just
+  // a reference to the connecting server
+  tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::MASTER_CLIENT), port, timeout);
+
+  cachedTransport = myTransportPool->getTransporter(tServer);
+
+  setTransport(cachedTransport->getTransporter());
+
+  findTservers();
+
+  auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
+
+  // let's authenticate the user early
+  tserverConnection->getTransport()->authenticate(&credentials);
+
+  myTransportPool->freeTransport(tserverConnection);
+
+}
+
+MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance)
     : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, instance),
       instance(instance) {
 

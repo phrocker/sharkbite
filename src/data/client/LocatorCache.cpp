@@ -30,13 +30,13 @@ LocatorCache::LocatorCache() {
 }
 
 LocatorCache::~LocatorCache() {
-  for (auto& locatorEntry : *locatorCache) {
+  for (auto &locatorEntry : *locatorCache) {
     delete locatorEntry.second;
   }
   delete locatorCache;
 }
 
-TabletLocator *
+TabletLocator*
 LocatorCache::getLocator(LocatorKey key) {
   std::lock_guard<std::recursive_mutex> lock(locatorMutex);
 
@@ -48,7 +48,7 @@ LocatorCache::getLocator(LocatorKey key) {
     locator = it->second;
 
   }
-  cclient::data::Instance *instance = key.instance;
+  std::shared_ptr<cclient::data::Instance> instance = key.instance;
 
   if (NULL == locator) {
 
