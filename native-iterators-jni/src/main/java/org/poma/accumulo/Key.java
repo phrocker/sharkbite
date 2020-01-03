@@ -2,14 +2,8 @@ package org.poma.accumulo;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.KeyBuilder;
-import org.apache.accumulo.core.data.KeyValue;
 import org.apache.accumulo.core.data.PartialKey;
-import org.apache.accumulo.core.data.Value;
-import org.apache.accumulo.core.dataImpl.thrift.TKey;
-import org.apache.accumulo.core.dataImpl.thrift.TKeyValue;
 import org.apache.accumulo.core.security.ColumnVisibility;
-import org.apache.accumulo.core.util.ByteBufferUtil;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
@@ -18,9 +12,7 @@ import org.apache.hadoop.io.WritableUtils;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.List;
 
 public class Key implements WritableComparable<Key>, Cloneable{
     protected byte[] row;
@@ -227,24 +219,6 @@ public class Key implements WritableComparable<Key>, Cloneable{
 
     public Key(Key other) {
         this.set(other);
-    }
-
-    public Key(TKey tkey) {
-        this.row = ByteBufferUtil.toBytes(tkey.row);
-        this.colFamily = ByteBufferUtil.toBytes(tkey.colFamily);
-        this.colQualifier = ByteBufferUtil.toBytes(tkey.colQualifier);
-        this.colVisibility = ByteBufferUtil.toBytes(tkey.colVisibility);
-        this.timestamp = tkey.timestamp;
-        this.deleted = false;
-        if (this.row == null) {
-            throw new IllegalArgumentException("null row");
-        } else if (this.colFamily == null) {
-            throw new IllegalArgumentException("null column family");
-        } else if (this.colQualifier == null) {
-            throw new IllegalArgumentException("null column qualifier");
-        } else if (this.colVisibility == null) {
-            throw new IllegalArgumentException("null column visibility");
-        }
     }
 
     public String getRow(Text r) {
