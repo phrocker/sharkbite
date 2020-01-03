@@ -1,7 +1,7 @@
-import sharkbite_iterator
+class ExampleCombiner: 
 ## This example iterator assumes the CQ contains a field name
 ## and value pair separated by a null delimiter
-def onNext(iterator):
+  def onNext(iterator):
     if (iterator.hasTop()):
         kv = sharkbite_iterator.KeyValue()
         mapping = {}

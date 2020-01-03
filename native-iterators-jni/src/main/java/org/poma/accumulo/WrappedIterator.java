@@ -1,7 +1,6 @@
 package org.poma.accumulo;
 
 import org.apache.accumulo.core.data.ByteSequence;
-import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
@@ -13,11 +12,12 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-public class WrappedIterator extends WrappingIterator {
+public class WrappedIterator implements SortedKeyValueIterator<Key,Value>{
 
-    private final SortedKeyValueIterator<Key, Value> sortedKeyValueIterator;
+    private final SortedKeyValueIterator<org.apache.accumulo.core.data.Key, Value> sortedKeyValueIterator;
 
-    WrappedIterator(SortedKeyValueIterator<Key, Value> sortedKeyValueIterator){
+
+    WrappedIterator(SortedKeyValueIterator<org.apache.accumulo.core.data.Key, Value> sortedKeyValueIterator){
         this.sortedKeyValueIterator=sortedKeyValueIterator;
     }
     public void seek(Range range) throws IOException {
@@ -28,13 +28,24 @@ public class WrappedIterator extends WrappingIterator {
     /***
      * wrapped methods
      */
+    @Override
+    public org.poma.accumulo.Key getTopKey() {
 
-    public Key getTopKey() {
-        return sortedKeyValueIterator.getTopKey();
+        return new org.poma.accumulo.Key(sortedKeyValueIterator.getTopKey());
     }
 
     public Value getTopValue() {
         return sortedKeyValueIterator.getTopValue();
+    }
+
+    @Override
+    public SortedKeyValueIterator<Key, Value> deepCopy(IteratorEnvironment iteratorEnvironment) {
+        return null;
+    }
+
+    @Override
+    public void init(SortedKeyValueIterator<Key, Value> sortedKeyValueIterator, Map<String, String> map, IteratorEnvironment iteratorEnvironment) throws IOException {
+
     }
 
     public boolean hasTop() {

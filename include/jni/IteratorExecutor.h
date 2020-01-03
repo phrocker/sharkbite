@@ -44,11 +44,11 @@ struct Interpreter {
 
   Interpreter(const Interpreter &other) = delete;
 
+  static Interpreter* getInterpreter();
+
   py::scoped_interpreter guard_;
   py::gil_scoped_release gil_release_;
 };
-
-static Interpreter* getInterpreter();
 
 class IteratorPythonExecutor {
  public:
@@ -109,13 +109,13 @@ class IteratorPythonExecutor {
     return callWithReturn<std::shared_ptr<cclient::data::KeyValue>>("onNext", iter);
   }
 
-  bool callSeek(cclient::jni::DSLIterator *iter,const std::shared_ptr<cclient::data::Range> &range) {
-      return callOptional("seek", iter,range);
-    }
+  bool callSeek(cclient::jni::DSLIterator *iter, const std::shared_ptr<cclient::data::Range> &range) {
+    return callOptional("seek", iter, range);
+  }
 
   bool callHasTop() {
-      return callWithReturn<bool>("hasTop");
-    }
+    return callWithReturn<bool>("hasTop");
+  }
 
   std::shared_ptr<cclient::data::Key> callGetTopKey() {
     return callWithReturn<std::shared_ptr<cclient::data::Key>>("getTopKey");
@@ -146,6 +146,68 @@ class IteratorPythonExecutor {
  private:
   std::unique_ptr<py::dict> bindings_;
 };
+
+/**
+ * Calls the given function, forwarding arbitrary provided parameters.
+ *
+ * @return
+ */
+template<typename ... Args>
+void IteratorPythonExecutor::call(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  try {
+    if ((*bindings_).contains(fn_name.c_str()))
+      (*bindings_)[fn_name.c_str()](convert(args)...);
+  } catch (pybind11::error_already_set &err) {
+    err.restore();
+    throw JavaException("Python Syntax error");
+  } catch (const std::exception &e) {
+    throw JavaException("Error called running " + fn_name);
+  } catch (...) {
+    throw JavaException("Error called running " + fn_name);
+  }
+
+}
+
+template<typename ... Args>
+bool IteratorPythonExecutor::callOptional(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  if (!(*bindings_).contains(fn_name.c_str()))
+    return false;  // safe
+  try {
+    (*bindings_)[fn_name.c_str()](convert(args)...);
+    return true;
+  } catch (pybind11::error_already_set &err) {
+    err.restore();
+    throw JavaException("Python Syntax error");
+  } catch (const std::exception &e) {
+    throw JavaException(e.what());
+  } catch (...) {
+    throw JavaException("Error called running " + fn_name);
+  }
+}
+
+template<typename T, typename ... Args>
+T IteratorPythonExecutor::callWithReturn(const std::string &fn_name, Args &&...args) {
+  py::gil_scoped_acquire gil { };
+  try {
+
+    std::cout << " call " << fn_name << std::endl;
+    if ((*bindings_).contains(fn_name.c_str())) {
+      pybind11::object result = (*bindings_)[fn_name.c_str()](convert(args)...);
+      std::cout << " called " << fn_name << std::endl;
+      return result.cast<T>();
+    }
+    throw JavaException("No defined function for " + fn_name);
+  } catch (pybind11::error_already_set &err) {
+    err.restore();
+    throw JavaException("Python Syntax error");
+  } catch (const std::exception &e) {
+    throw JavaException(e.what());
+  } catch (...) {
+    throw JavaException("Error called running " + fn_name);
+  }
+}
 
 } /* namespace python */
 } /* namespace jni */

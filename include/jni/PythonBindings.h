@@ -61,6 +61,7 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_iterator, m) { // NOLINT
 
    pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(m, "Key")
      .def(pybind11::init<>())
+     .def(pybind11::init<std::shared_ptr<cclient::data::Key>>())
      .def(pybind11::init<const std::string &,const std::string &, const std::string &, const std::string &, int64_t>(),
                     "row"_a, "columnfamily"_a="","columnqualifier"_a="","columnvisibility"_a="","timestamp"_a=9223372036854775807L)
      .def("setRow",(void (cclient::data::Key::*)(const std::string &) )  &cclient::data::Key::setRow, "Sets the row")
@@ -73,15 +74,16 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_iterator, m) { // NOLINT
      .def("getColumnQualifier", &cclient::data::Key::getColQualifierStr, "Gets the Column Qualifier");
 
    pybind11::class_<cclient::data::KeyValue, std::shared_ptr<cclient::data::KeyValue>>(m, "KeyValue")
-        .def(pybind11::init<>())
-        .def("setKey", &cclient::data::KeyValue::setKey, "Sets the key")
-        .def("setValue", (void (cclient::data::KeyValue::*)(std::shared_ptr<cclient::data::Value> ) ) &cclient::data::KeyValue::setValue, "Sets the value")
-        .def("getKey", &cclient::data::KeyValue::getKey, "Gets the key")
-        .def("getValue", &cclient::data::KeyValue::getValue, "Gets the value");
+    .def(pybind11::init<>())
+    .def(pybind11::init<const std::shared_ptr<cclient::data::Key> &, const std::shared_ptr<cclient::data::Value> &>())
+    .def("setKey", &cclient::data::KeyValue::setKey, "Sets the key")
+    .def("setValue", (void (cclient::data::KeyValue::*)(const std::shared_ptr<cclient::data::Value> &) ) &cclient::data::KeyValue::setValue, "Sets the value")
+    .def("getKey", &cclient::data::KeyValue::getKey, "Gets the key")
+    .def("getValue", &cclient::data::KeyValue::getValue, "Gets the value");
 
-   pybind11::class_<cclient::data::Range,std::shared_ptr<cclient::data::Range>>(m, "Range")
-           .def(pybind11::init<const std::string&>())
-           .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool>());
+  pybind11::class_<cclient::data::Range,std::shared_ptr<cclient::data::Range>>(m, "Range")
+       .def(pybind11::init<const std::string&>())
+       .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool>());
 
 
    pybind11::class_<cclient::jni::python::PythonIterator>(m, "PythonIterator")
@@ -91,6 +93,5 @@ PYBIND11_EMBEDDED_MODULE(sharkbite_iterator, m) { // NOLINT
       .def("hasTop", &cclient::jni::python::PythonIterator::iteratorHasTop)
       .def("getTopKey", &cclient::jni::python::PythonIterator::getIteratorTopKey)
       .def("getTopValue", &cclient::jni::python::PythonIterator::getIteratorTopValue);
-
 
 }

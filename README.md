@@ -76,23 +76,24 @@ Iterators can be defined as single function lambdas or by implementing the seek 
 The first example implements the seek and onNext methods. seek is optional if you don't wish to adjust the range. Once keys are being iterated you may get the top key. You may call 
 iterator.next() after or the infrastructure will do that for you. 
 ```
-import sharkbite_iterator
 
-def seek(iterator,soughtRange):
-  range = sharkbite_iterator.Range("a")
-  iterator.seek(range)
+class myIterator: 
+  def seek(iterator,soughtRange):
+    range = Range("a")
+    iterator.seek(range)
 
 
-def onNext(iterator):
-  if (iterator.hasTop()):
-  	kv = sharkbite_iterator.KeyValue()
-  	key = iterator.getTopKey()
-  	cf = key.getColumnFamily()
-  	key.setColumnFamily("oh changed " + cf)
-  	kv.setKey(key,True)
-  	return kv
-  else: 
-    return None
+  def onNext(iterator):
+    if (iterator.hasTop()):
+    	kv = KeyValue()
+  	  key = iterator.getTopKey()
+  	  cf = key.getColumnFamily()
+  	  value = iterator.getTopValue()
+  	  key.setColumnFamily("oh changed " + cf)
+  	  iterator.next()
+  	  return KeyValue(key,value)
+    else: 
+      return None
 
 ```
 
@@ -106,13 +107,14 @@ iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
 scanner.addIterator(iterator)    
 ```
 
-Alternative you may use lambdas. The lambda you provide will be passed the key. A partial code example of setting it up is below:
+Alternative you may use lambdas. The lambda you provide will be passed the KeyValue ( getKey() and getValue() return the constituent parts). A partial code example of setting it up is below.
+You may return a Key or KeyValue object. If you return the former an empty value will be return ed.
 
 ```
 ## define only the name and priority 
 iterator = pysharkbite.PythonIterator("PythonIterator",100)
 ## define a lambda to ajust the column family.
-iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), 'new cf', x.getColumnQualifier()) ")
+iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 
 scanner.addIterator(iterator)
 ```

@@ -40,12 +40,12 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
       env->ThrowNew(jc, e.what());
   } catch (const std::exception &e) {
     /* unknown exception (may derive from std::exception) */
-    jclass jc = env->FindClass("java/lang/Error");
+    jclass jc = env->FindClass("java/lang/Exception");
     if (jc)
       env->ThrowNew(jc, e.what());
   } catch (...) {
     /* Oops I missed identifying this exception! */
-    jclass jc = env->FindClass("java/lang/Error");
+    jclass jc = env->FindClass("java/lang/Exception");
     if (jc)
       env->ThrowNew(jc, "Unidentified exception => "
                     "Improve rethrow_cpp_exception_as_java_exception()");
@@ -66,6 +66,7 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *env, jo
   cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
   if (nullptr != itr) {
     try {
+      std::cout << "Received DSL" << dslStr << std::endl;
       itr->setDSL(dslStr);
     } catch(...) {
       rethrow_cpp_exception_as_java_exception(env);
@@ -124,6 +125,7 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env
       }
     }
   } catch(...) {
+    std::cout << "exception " << std::endl;
     rethrow_cpp_exception_as_java_exception(env);
   }
 }

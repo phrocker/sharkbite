@@ -45,7 +45,8 @@ void Value::setValue(uint8_t *val, size_t size, uint32_t ptrOff) {
 		valueSize = size + ptrOff;
 	}
 
-	memcpy(value + ptrOff, val, size);
+	if (size > 0)
+	  memcpy(value + ptrOff, val, size);
 
 	offset = size;
 

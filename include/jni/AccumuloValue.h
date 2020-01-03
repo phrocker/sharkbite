@@ -47,7 +47,7 @@ class AccumuloValue {
 
     auto getValueByteArrayMethod = env->GetMethodID(valueClass, "get", "()[B");
 
-    auto byteArray = (jbyteArray)env->CallObjectMethod(value, getValueByteArrayMethod);
+    auto byteArray = (jbyteArray) env->CallObjectMethod(value, getValueByteArrayMethod);
     if (env->ExceptionCheck()) {
       return false;
     }
@@ -55,7 +55,7 @@ class AccumuloValue {
     auto numBytes = env->GetArrayLength(byteArray);
     uint8_t *data = (uint8_t*) env->GetByteArrayElements(byteArray, nullptr);
     std::copy(data, data + numBytes, std::back_inserter(valueData));
-    env->ReleaseByteArrayElements(byteArray, (jbyte*)data, JNI_ABORT);
+    env->ReleaseByteArrayElements(byteArray, (jbyte*) data, JNI_ABORT);
     env->DeleteLocalRef(byteArray);
 
     return true;
@@ -65,16 +65,16 @@ class AccumuloValue {
       :
       env(nullptr),
       value(nullptr) {
-    if (incomingValue){
+    if (incomingValue) {
       auto pair = incomingValue->getValue();
       valueData.resize(pair.second);
-      memcpy(valueData.data(),pair.first,pair.second);
+      memcpy(valueData.data(), pair.first, pair.second);
     }
   }
 
   std::shared_ptr<cclient::data::Value> toValue() {
     auto cclientValue = std::make_shared<cclient::data::Value>();
-    cclientValue->setValue(valueData.data(),valueData.size(),0);
+    cclientValue->setValue(valueData.data(), valueData.size(), 0);
     return cclientValue;
   }
 
@@ -82,17 +82,16 @@ class AccumuloValue {
     valueClass = env->FindClass("org/apache/accumulo/core/data/Value");
 
     auto len = valueData.size();
-    auto javaByteArray = env->NewByteArray( len);
-    env->SetByteArrayRegion( javaByteArray, 0, len, (const jbyte*) valueData.data() );
+    auto javaByteArray = env->NewByteArray(len);
+    env->SetByteArrayRegion(javaByteArray, 0, len, (const jbyte*) valueData.data());
     jobject jvalue = nullptr;
 
     auto constructor = env->GetMethodID(valueClass, "<init>", "([BZ)V");
-    jvalue = env->NewObject(valueClass, constructor, javaByteArray,false);
+    jvalue = env->NewObject(valueClass, constructor, javaByteArray, false);
 
     return jvalue;
 
   }
-
 
 };
 

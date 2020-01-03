@@ -29,7 +29,6 @@ class AccumuloRange {
   JNIEnv *env;
   mutable jclass rangeClass;
 
-
  public:
   AccumuloRange(JNIEnv *env, jobject range)
       :
@@ -53,30 +52,30 @@ class AccumuloRange {
     auto isStopKeyInclusiveMethod = env->GetMethodID(rangeClass, "isEndKeyInclusive", "()Z");
 
     bool isStartKeyInclusive = env->CallBooleanMethod(range, isStartKeyInclusiveMethod) == JNI_TRUE;
-    if (env->ExceptionOccurred()) // check if an exception occurred
+    if (env->ExceptionOccurred())  // check if an exception occurred
     {
-        env->ExceptionDescribe(); // print the stack trace
-        return false;
+      env->ExceptionDescribe();  // print the stack trace
+      return false;
     }
     bool isStopKeyInclusive = env->CallBooleanMethod(range, isStopKeyInclusiveMethod) == JNI_TRUE;
-    if (env->ExceptionOccurred()) // check if an exception occurred
-        {
-            env->ExceptionDescribe(); // print the stack trace
-            return false;
-        }
+    if (env->ExceptionOccurred())  // check if an exception occurred
+    {
+      env->ExceptionDescribe();  // print the stack trace
+      return false;
+    }
 
     auto startkey = env->CallObjectMethod(range, getStartKeyMethod);
-    if (env->ExceptionOccurred()) // check if an exception occurred
-        {
-            env->ExceptionDescribe(); // print the stack trace
-            return false;
-        }
+    if (env->ExceptionOccurred())  // check if an exception occurred
+    {
+      env->ExceptionDescribe();  // print the stack trace
+      return false;
+    }
     auto stopkey = env->CallObjectMethod(range, getEndKeyMethod);
-    if (env->ExceptionOccurred()) // check if an exception occurred
-        {
-            env->ExceptionDescribe(); // print the stack trace
-            return false;
-        }
+    if (env->ExceptionOccurred())  // check if an exception occurred
+    {
+      env->ExceptionDescribe();  // print the stack trace
+      return false;
+    }
 
     std::shared_ptr<cclient::data::Key> keyA, keyB;
 
@@ -110,11 +109,11 @@ class AccumuloRange {
   }
 
   jobject getAccumuloRange(JNIEnv *env) const {
-    if (env->ExceptionOccurred()) // check if an exception occurred
-        {
-            env->ExceptionDescribe(); // print the stack trace
-            return nullptr;
-        }
+    if (env->ExceptionOccurred())  // check if an exception occurred
+    {
+      env->ExceptionDescribe();  // print the stack trace
+      return nullptr;
+    }
     rangeClass = env->FindClass("org/apache/accumulo/core/data/Range");
 
     if (rangeRef->getInfiniteStartKey())  // assume both inifinite
@@ -132,33 +131,32 @@ class AccumuloRange {
       jboolean startInclusive = rangeRef->getStartKeyInclusive() ? JNI_TRUE : JNI_FALSE;
       jboolean stopInclusive = rangeRef->getStopKeyInclusive() ? JNI_TRUE : JNI_FALSE;
 
-      if (env->ExceptionOccurred()) // check if an exception occurred
-                    {
-                        env->ExceptionDescribe(); // print the stack trace
-                        return nullptr;
-                    }
+      if (env->ExceptionOccurred())  // check if an exception occurred
+      {
+        env->ExceptionDescribe();  // print the stack trace
+        return nullptr;
+      }
       auto stk = start.getAccumuloKey(env);
 
-      if (stk == nullptr){
+      if (stk == nullptr) {
         cclient::jni::JavaException("Coould not create key");
       }
-      if (env->ExceptionOccurred()) // check if an exception occurred
-              {
-                  env->ExceptionDescribe(); // print the stack trace
-                  return nullptr;
-              }
+      if (env->ExceptionOccurred())  // check if an exception occurred
+      {
+        env->ExceptionDescribe();  // print the stack trace
+        return nullptr;
+      }
       auto stok = stop.getAccumuloKey(env);
-      if (stok == nullptr){
-              cclient::jni::JavaException("Coould not create key");
-            }
-      if (env->ExceptionOccurred()) // check if an exception occurred
-              {
-                  env->ExceptionDescribe(); // print the stack trace
-                  return nullptr;
-              }
+      if (stok == nullptr) {
+        cclient::jni::JavaException("Coould not create key");
+      }
+      if (env->ExceptionOccurred())  // check if an exception occurred
+      {
+        env->ExceptionDescribe();  // print the stack trace
+        return nullptr;
+      }
       return env->NewObject(rangeClass, constructor, stk, startInclusive, stok, stopInclusive);
     }
-
 
   }
 

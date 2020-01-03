@@ -14,115 +14,91 @@
 
 #include "data/constructs/KeyValue.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-KeyValue::KeyValue () :
-	key (std::make_shared<Key> ()), value (std::make_shared<Value>())
-{
-
-}
-
-KeyValue::~KeyValue ()
-{
-}
-
-void
-KeyValue::setKey (std::shared_ptr<Key> k, bool set_ownership)
-{
-	key = k;
-}
-
-std::shared_ptr<Key>
-KeyValue::getKey ()
-{
-	return key;
-}
-
-std::shared_ptr<streams::StreamInterface> 
-KeyValue::getStream ()
-{
-	return key->getStream ();
-}
-
-std::shared_ptr<Value>
-KeyValue::getValue ()
-{
-	return value;
-}
-
-void
-KeyValue::setValue (std::shared_ptr<Value> v)
-{
-	value->setValue (v->getValue ().first, v->getValue ().second);
-}
-
-void
-KeyValue::setValue (uint8_t *b, size_t size)
-{
-	value->setValue (b, size);
-}
-
-uint64_t
-KeyValue::write (cclient::data::streams::OutputStream *outStream)
-{
-
-	key->write (outStream);
-
-	return value->write (outStream);
-}
-
-KeyValue &
-KeyValue::operator= (const KeyValue &other)
-{
-
-	key = other.key;
-
-	std::pair<uint8_t*, uint32_t> p = other.value->getValue ();
-
-	value->setValue (p.first, p.second);
-	return *this;
-}
-
-bool
-KeyValue::operator < (const KeyValue &rhs) const
-{
-	return (*(Key*) key->getStream ().get() < *(Key*) (rhs.key->getStream ().get()));
-}
-
-bool
-KeyValue::operator < (const KeyValue *rhs) const
-{
-	return *this < *rhs;
+KeyValue::KeyValue()
+    :
+    key(std::make_shared<Key>()),
+    value(std::make_shared<Value>()) {
 
 }
 
-bool
-KeyValue::operator == (const KeyValue & rhs) const
-{
-	return ((Key*) key->getStream ().get() == (Key*) (rhs.key->getStream ().get()))
-	       && (value == rhs.value);
-}
-bool
-KeyValue::operator != (const KeyValue &rhs) const
-{
-	return !(*this == rhs);
+KeyValue::KeyValue(const std::shared_ptr<Key> &k, const std::shared_ptr<Value> &v)
+    :
+    key(std::make_shared<Key>(k)),
+    value(std::make_shared<Value>()) {
+  if (v)
+    setValue(v);
 }
 
-bool
-KeyValue::operator == (const KeyValue *rhs) const
-{
-	return *this == *rhs;
-}
-bool
-KeyValue::operator != (const KeyValue *rhs) const
-{
-	return !(*this == *rhs);
+KeyValue::~KeyValue() {
 }
 
+void KeyValue::setKey(std::shared_ptr<Key> k, bool set_ownership) {
+  key = k;
+}
 
+std::shared_ptr<Key> KeyValue::getKey() {
+  return key;
+}
+
+std::shared_ptr<streams::StreamInterface> KeyValue::getStream() {
+  return key->getStream();
+}
+
+std::shared_ptr<Value> KeyValue::getValue() {
+  return value;
+}
+
+void KeyValue::setValue(const std::shared_ptr<Value> &v) {
+  value->setValue(v->getValue().first, v->getValue().second);
+}
+
+void KeyValue::setValue(uint8_t *b, size_t size) {
+  value->setValue(b, size);
+}
+
+uint64_t KeyValue::write(cclient::data::streams::OutputStream *outStream) {
+
+  key->write(outStream);
+
+  return value->write(outStream);
+}
+
+KeyValue&
+KeyValue::operator=(const KeyValue &other) {
+
+  key = other.key;
+
+  std::pair<uint8_t*, uint32_t> p = other.value->getValue();
+
+  value->setValue(p.first, p.second);
+  return *this;
+}
+
+bool KeyValue::operator <(const KeyValue &rhs) const {
+  return (*(Key*) key->getStream().get() < *(Key*) (rhs.key->getStream().get()));
+}
+
+bool KeyValue::operator <(const KeyValue *rhs) const {
+  return *this < *rhs;
+
+}
+
+bool KeyValue::operator ==(const KeyValue &rhs) const {
+  return ((Key*) key->getStream().get() == (Key*) (rhs.key->getStream().get())) && (value == rhs.value);
+}
+bool KeyValue::operator !=(const KeyValue &rhs) const {
+  return !(*this == rhs);
+}
+
+bool KeyValue::operator ==(const KeyValue *rhs) const {
+  return *this == *rhs;
+}
+bool KeyValue::operator !=(const KeyValue *rhs) const {
+  return !(*this == *rhs);
+}
 
 } /* namespace data */
 } /* namespace cclient */

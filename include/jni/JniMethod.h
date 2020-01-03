@@ -38,16 +38,17 @@ class JavaMethodSignature {
   JavaMethodSignature(const JavaMethodSignature &other) = delete;
   JavaMethodSignature(JavaMethodSignature &&other) = default;
   JavaMethodSignature(const std::string &name, const std::string &params, void *ptr)
-      : name_(name),
-        params_(params),
-        ptr_(ptr) {
+      :
+      name_(name),
+      params_(params),
+      ptr_(ptr) {
   }
 
   /**
    * Returns the method name.
    * Const cast here to clean up the caller's interface ( and java would force the loss of const )
    */
-  const char *getName() const {
+  const char* getName() const {
     return name_.c_str();
   }
 
@@ -55,19 +56,19 @@ class JavaMethodSignature {
    * Returns the parameters.
    * Const cast here to clean up the caller's interface ( and java would force the loss of const )
    */
-  const char *getParameters() const {
+  const char* getParameters() const {
     return params_.c_str();
   }
 
   /**
    * Returns the function pointer. can't be const.
    */
-  const void *getPointer() const {
+  const void* getPointer() const {
     return ptr_;
   }
 
-  JavaMethodSignature &operator=(const JavaMethodSignature &other) = delete;
-  JavaMethodSignature &operator=(JavaMethodSignature &&other) = default;
+  JavaMethodSignature& operator=(const JavaMethodSignature &other) = delete;
+  JavaMethodSignature& operator=(JavaMethodSignature &&other) = default;
 
  private:
 
@@ -82,8 +83,9 @@ class JavaMethodSignature {
 class JavaSignatures {
  public:
   JavaSignatures()
-      : method_ptr_(nullptr),
-        size_(0) {
+      :
+      method_ptr_(nullptr),
+      size_(0) {
   }
   void addSignature(JavaMethodSignature &&signature) {
     methods_.emplace_back(std::move(signature));
@@ -93,12 +95,12 @@ class JavaSignatures {
     return methods_.empty() && size_ == 0;
   }
 
-  const JNINativeMethod *getSignatures() const {
+  const JNINativeMethod* getSignatures() const {
     std::lock_guard<std::mutex> lock(mutex_);
     if (method_ptr_ == nullptr || size_ != methods_.size()) {
       method_ptr_ = std::unique_ptr<JNINativeMethod[]>(new JNINativeMethod[methods_.size()]);
       size_ = methods_.size();
-      for(int i=0; i < methods_.size(); i++) {
+      for (int i = 0; i < methods_.size(); i++) {
         method_ptr_[i].fnPtr = const_cast<void*>(methods_[i].getPointer());
         method_ptr_[i].name = const_cast<char*>(methods_[i].getName());
         method_ptr_[i].signature = const_cast<char*>(methods_[i].getParameters());
@@ -119,7 +121,5 @@ class JavaSignatures {
 
 } /* namespace jni */
 } /* namespace cclient */
-
-
 
 #endif /* EXTENSIONS_JNI_JVM_JNIMETHOD_H_ */

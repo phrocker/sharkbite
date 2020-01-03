@@ -1,17 +1,17 @@
-import sharkbite_iterator
-
-def seek(iterator,soughtRange):
-    range = sharkbite_iterator.Range("a")
+class myIterator: 
+  def seek(self,iterator,soughtRange):
+    range = Range("a")
     iterator.seek(range)
 
 
-def onNext(iterator):
+  def onNext(self,iterator):
     if (iterator.hasTop()):
-       kv = sharkbite_iterator.KeyValue()
-       key = iterator.getTopKey()
-       cf = key.getColumnFamily()
-       key.setColumnFamily("oh changed " + cf)
-       kv.setKey(key,True)
-       return kv
+    	kv = KeyValue()
+  	  key = iterator.getTopKey()
+  	  cf = key.getColumnFamily()
+  	  value = iterator.getTopValue()
+  	  key.setColumnFamily("oh changed " + cf)
+  	  iterator.next()
+  	  return KeyValue(key,value)
     else: 
-       return None
+      return None
