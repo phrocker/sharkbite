@@ -122,8 +122,8 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
           std::vector<std::shared_ptr<cclient::data::Range>> clippedRanges;
 
           for(const auto &range : hostExtents.second){
-            logging::LOG_DEBUG(logger) << " begin range is null " << *extentRange.get();
-            logging::LOG_DEBUG(logger) << " begin range is null " << *range.get() << " " << *extentRange.get();
+            logging::LOG_DEBUG(logger) << " begin range is " << *extentRange.get();
+            logging::LOG_DEBUG(logger) << " begin range is " << *range.get() << " " << *extentRange.get();
             auto rng = extentRange->intersect(range);
             if (nullptr == rng){
               logging::LOG_DEBUG(logger) << " clipped range is null " << *range.get() << " " << *extentRange.get();

@@ -76,11 +76,11 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
   infiniteStopKey = endKey == NULL;
 
   if (!infiniteStartKey) {
-    start = std::make_shared<Key>(startKey->getRowStr());
+    start = std::make_shared<Key>(startKey);
   }
 
   if (!infiniteStopKey) {
-    stop = std::make_shared<Key>(endKey->getRowStr());
+    stop = std::make_shared<Key>(endKey);
   }
 
   if (stopKeyInclusive && stop != nullptr && update) {
