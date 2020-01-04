@@ -23,7 +23,7 @@ TabletLocator::TabletLocator() {
 TabletLocator::~TabletLocator() {
 
 }
-LocatorKey::LocatorKey(cclient::data::Instance* instance, std::string table)
+LocatorKey::LocatorKey(std::shared_ptr<cclient::data::Instance>  instance, std::string table)
     : instance(instance),
       tableName(table) {
 }

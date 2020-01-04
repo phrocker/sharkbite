@@ -53,6 +53,7 @@ class Source {
     iters.emplace_back(iterV);
   }
 
+
   virtual void locateFailedTablet(std::vector<std::shared_ptr<cclient::data::Range>> ranges, std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>> *locatedTablets) = 0;
 
   virtual Results<T, BlockType>* getResultSet() = 0;
@@ -73,7 +74,7 @@ class Source {
     return iters;
   }
 
-  virtual cclient::data::Instance* getInstance() = 0;
+  virtual std::shared_ptr<cclient::data::Instance>  getInstance() = 0;
 
   void fetchColumn(std::string col, std::string colqual = "") {
     if (!IsEmpty(&colqual)) {

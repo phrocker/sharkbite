@@ -42,6 +42,8 @@ public:
 	
 	virtual ~KeyValue();
 
+	explicit KeyValue(const std::shared_ptr<Key> &, const std::shared_ptr<Value> &);
+
 	/**
 	 * Sets the key within this object.
 	 **/
@@ -57,7 +59,7 @@ public:
 	std::shared_ptr<StreamInterface> getStream();
 
 	std::shared_ptr<Value> getValue();
-	void setValue(std::shared_ptr<Value> v);
+	void setValue(const std::shared_ptr<Value> &v);
 	
 	 friend inline std::ostream &
 	operator << (std::ostream &out, KeyValue &rhs)

@@ -20,14 +20,12 @@
 #ifndef INCLUDE_JNI_JVMLOADER_H_
 #define INCLUDE_JNI_JVMLOADER_H_
 
-
 #include <mutex>
 #include <atomic>
 #include <map>
 #include <jni.h>
 #include "JavaException.h"
 #include "JavaClass.h"
-
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -61,7 +59,6 @@ static inline std::string getClassName() {
 #endif
 }
 
-
 /**
  * Purpose and Justification: Provides a mapping function for jfields.
  * Note that jFieldIDs aren't local references, so we don't need to worry
@@ -91,12 +88,12 @@ class FieldMapping {
   std::map<std::string, std::map<std::string, jfieldID>> map_;
 };
 
-typedef jint (*registerNatives_t)(JNIEnv* env, jclass clazz);
+typedef jint (*registerNatives_t)(JNIEnv *env, jclass clazz);
 
 jfieldID getPtrField(JNIEnv *env, jobject obj);
 
 template<typename T>
-T *getPtr(JNIEnv *env, jobject obj);
+T* getPtr(JNIEnv *env, jobject obj);
 
 template<typename T>
 void setPtr(JNIEnv *env, jobject obj, T *t);
@@ -115,12 +112,11 @@ class JVMLoader {
     return initialized_;
   }
 
-
   /**
    * Removes a class reference
    * @param name class name
    */
-  void remove_class(JNIEnv *env,const std::string &name) {
+  void remove_class(JNIEnv *env, const std::string &name) {
     std::lock_guard<std::mutex> lock(internal_mutex_);
     auto finder = objects_.find(name);
     if (finder != objects_.end()) {
@@ -131,15 +127,11 @@ class JVMLoader {
     objects_.erase(name);
   }
 
-
-
-  static JVMLoader *getInstance() {
+  static JVMLoader* getInstance() {
     static JVMLoader jvm;
     jvm.initialized_ = true;
     return &jvm;
   }
-
-
 
   template<typename T>
   void setReference(jobject obj, JNIEnv *env, T *t) {
@@ -147,7 +139,7 @@ class JVMLoader {
   }
 
   template<typename T>
-  T *getReference(JNIEnv *env, jobject obj) {
+  T* getReference(JNIEnv *env, jobject obj) {
     return getPtr<T>(env, obj);
   }
 
@@ -169,9 +161,9 @@ class JVMLoader {
   }
 
   template<typename T>
-  static T *getPtr(JNIEnv *env, jobject obj) {
+  static T* getPtr(JNIEnv *env, jobject obj) {
     jlong handle = env->GetLongField(obj, getPtrField(getClassName<T>(), env, obj));
-    return reinterpret_cast<T *>(handle);
+    return reinterpret_cast<T*>(handle);
   }
 
   template<typename T>
@@ -179,7 +171,6 @@ class JVMLoader {
     jlong handle = reinterpret_cast<jlong>(t);
     env->SetLongField(obj, getPtrField(getClassName<T>(), env, obj), handle);
   }
-
 
   template<typename T>
   static void putClassMapping(JNIEnv *env, JavaClass &clazz, const std::string &fieldStr, const std::string &arg) {
@@ -193,15 +184,14 @@ class JVMLoader {
 
  protected:
 
-  static FieldMapping &getClassMapping() {
+  static FieldMapping& getClassMapping() {
     static FieldMapping map;
     return map;
   }
 
   mutable std::mutex internal_mutex_;
 
-
-  inline jclass find_class_global(JNIEnv* env, const char *name) {
+  inline jclass find_class_global(JNIEnv *env, const char *name) {
     jclass c = env->FindClass(name);
     jclass c_global = (jclass) env->NewGlobalRef(c);
     if (!c) {
@@ -211,39 +201,7 @@ class JVMLoader {
     }
     return c_global;
   }
-/*
-  void initializeJVM(const std::vector<std::string> &opts) {
-    string_options_ = opts;
-    java_options_ = new JavaVMOption[opts.size()];
-    int i = 0;
-    for (const auto &opt : string_options_) {
-      java_options_[i++].optionString = const_cast<char*>(opt.c_str());
-    }
 
-    JavaVMInitArgs vm_args;
-    // rely on 1.8 and above
-    vm_args.version = JNI_VERSION_1_8;
-    vm_args.nOptions = opts.size();
-    vm_args.options = java_options_;
-    // if we see an unrecognized option fail.
-    vm_args.ignoreUnrecognized = JNI_FALSE;
-    // load and initialize a Java VM, return a JNI interface
-    // pointer in env
-    JNI_CreateJavaVM(&jvm_, (void**) &env_, &vm_args);
-    // we're actually using a known class to locate the class loader and provide it
-    // to referentially perform lookups.
-    auto randomClass = find_class_global(env_, "org/apache/nifi/processor/ProcessContext");
-    jclass classClass = env_->GetObjectClass(randomClass);
-    auto classLoaderClass = find_class_global(env_, "java/lang/ClassLoader");
-    auto getClassLoaderMethod = env_->GetMethodID(classClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
-    auto refclazz = env_->CallObjectMethod(randomClass, getClassLoaderMethod);
-    ThrowIf(env_);
-    gClassLoader = env_->NewGlobalRef(refclazz);
-    gFindClassMethod = env_->GetMethodID(classLoaderClass, "findClass", "(Ljava/lang/String;)Ljava/lang/Class;");
-    ThrowIf(env_);
-    initialized_ = true;
-  }
-*/
  private:
 
   std::atomic<bool> initialized_;
@@ -252,8 +210,7 @@ class JVMLoader {
 
   std::vector<std::string> string_options_;
 
-
-  JVMLoader(){
+  JVMLoader() {
     initialized_ = true;
   }
 
@@ -262,10 +219,7 @@ class JVMLoader {
   }
 };
 
-
 } /* namespace jni */
 } /* namespace cclient */
-
-
 
 #endif /* INCLUDE_JNI_JVMLOADER_H_ */

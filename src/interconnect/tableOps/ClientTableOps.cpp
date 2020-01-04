@@ -185,7 +185,7 @@ std::vector<std::string> AccumuloTableOperations::listSplits() {
     loadTableOps();
   }
 
-  cclient::data::zookeeper::ZookeeperInstance *connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*>(myInstance);
+  auto connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(myInstance);
 
   cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId));
 
@@ -201,7 +201,7 @@ std::vector<std::string> AccumuloTableOperations::listSplits() {
 }
 
 void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
-  cclient::data::zookeeper::ZookeeperInstance *connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*>(myInstance);
+  auto connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(myInstance);
 
   // need better error handling here
   for (std::string partition : partitions) {

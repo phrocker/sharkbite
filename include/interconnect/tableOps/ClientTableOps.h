@@ -39,7 +39,7 @@ namespace interconnect {
  */
 class AccumuloTableOperations : public interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
  public:
-  AccumuloTableOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance, std::string table,
+  AccumuloTableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table,
                           RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
                           std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> tserverConn, TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
       :

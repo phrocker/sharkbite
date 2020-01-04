@@ -69,6 +69,18 @@ class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransport
       : MasterConnect(*credentials, instance) {
   }
 
+
+  MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
+
+    /**
+     * Constructor
+     * @param credentials incoming user credentials
+     * @param instance incoming instance
+     */
+    MasterConnect(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
+        : MasterConnect(*credentials, instance) {
+    }
+
   MasterConnect()
       : instance(nullptr) {
   }
@@ -116,7 +128,7 @@ class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransport
   void findTservers();
 
   // instance pointer.
-  cclient::data::Instance *instance;
+  std::shared_ptr<cclient::data::Instance> instance;
 
   // tablet servers.
   std::vector<std::shared_ptr<ServerConnection>> tabletServers;

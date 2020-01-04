@@ -20,13 +20,11 @@
 #include "data/constructs/value.h"
 #include "JNIUtil.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void rethrow_cpp_exception_as_java_exception(JNIEnv *);
-
+void rethrow_cpp_exception_as_java_exception(JNIEnv*);
 
 JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setType(JNIEnv *, jobject, jstring);
 

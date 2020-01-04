@@ -46,7 +46,7 @@ class SecurityOperations {
    * @param interface connecting thrift interface
    * @param interconnect thrift transport pool
    **/
-  SecurityOperations(cclient::data::security::AuthInfo *creds, cclient::data::Instance *instance, std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> interface,
+  SecurityOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> interface,
                      TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
       : credentials(creds),
         myInstance(instance),
@@ -117,7 +117,7 @@ class SecurityOperations {
   std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> cachedTransport;
   // distributed connector
   TransportPool<interconnect::AccumuloMasterTransporter> *refTransportPool;
-  cclient::data::Instance *myInstance;
+  std::shared_ptr<cclient::data::Instance> myInstance;
   cclient::data::security::AuthInfo *credentials;
 
 };

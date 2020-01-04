@@ -447,7 +447,7 @@ if (BUILD_PYTHON_TESTS)
 	
 	message(STATUS "Copying ${MAC19X} to ${MAX19XBIN}")
 	
-	if (MAVEN_FOUND)
+	if (MAVEN_EXECUTABLE)
 		add_custom_command(TARGET pysharkbite POST_BUILD COMMAND "${MAVEN_EXECUTABLE}" "-q" "package" "-Denforcer.skip=true" WORKING_DIRECTORY ${MAX19XBIN}/st/) 
 		cmake_host_system_information(RESULT _host_name QUERY HOSTNAME)
 		
@@ -472,7 +472,7 @@ if (BUILD_PYTHON_TESTS)
 	
 	
 	
-	endif(MAVEN_FOUND)
+	endif(MAVEN_EXECUTABLE)
 
 endif(BUILD_PYTHON_TESTS)
 

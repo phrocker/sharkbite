@@ -36,7 +36,7 @@ namespace writer {
  */
 class Writer : public Sink<cclient::data::KeyValue> {
  public:
-  Writer(cclient::data::Instance *instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+  Writer(std::shared_ptr<cclient::data::Instance> instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
          cclient::data::security::Authorizations *auths, uint16_t threads);
   virtual
   ~Writer();
@@ -87,7 +87,7 @@ class Writer : public Sink<cclient::data::KeyValue> {
   WriterHeuristic *writerHeuristic;
   cclient::data::security::AuthInfo *credentials;
   std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> servers;
-  cclient::data::zookeeper::ZookeeperInstance *connectorInstance;
+  std::shared_ptr<cclient::data::Instance> connectorInstance;
   cclient::impl::TabletLocator *tableLocator;
   interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops;
   moodycamel::ConcurrentQueue<std::shared_ptr<cclient::data::Mutation>> mutationQueue;

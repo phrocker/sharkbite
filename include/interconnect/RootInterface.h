@@ -44,12 +44,22 @@ class RootInterface : public AccumuloConnector<T> {
 
   }
  public:
+
+  /**
+    * Constructor, requires credentials and base instance
+    * @param creds credential pointer
+    * @param instance pointer to the current instance
+    */
+   RootInterface(cclient::data::security::AuthInfo creds, cclient::data::Instance *instance)
+       : AccumuloConnector<T>() {
+
+   }
   /**
    * Constructor, requires credentials and base instance
    * @param creds credential pointer
    * @param instance pointer to the current instance
    */
-  RootInterface(cclient::data::security::AuthInfo creds, cclient::data::Instance *instance)
+  RootInterface(cclient::data::security::AuthInfo creds, std::shared_ptr<cclient::data::Instance> instance)
       : AccumuloConnector<T>() {
 
   }

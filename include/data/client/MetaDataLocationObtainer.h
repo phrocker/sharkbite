@@ -41,7 +41,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
    * Constructor.
    * @param instance instance
    **/
-  explicit MetaDataLocationObtainer(cclient::data::Instance *instance)
+  explicit MetaDataLocationObtainer(std::shared_ptr<cclient::data::Instance> instance)
       :
       instance(instance),
       logger(logging::LoggerFactory<MetaDataLocationObtainer>::getLogger()) {
@@ -82,7 +82,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
   // columns to locate
   std::vector<cclient::data::Column> columns;
   // instance
-  cclient::data::Instance *instance;
+  std::shared_ptr<cclient::data::Instance> instance;
  private:
   std::shared_ptr<logging::Logger> logger;
 };

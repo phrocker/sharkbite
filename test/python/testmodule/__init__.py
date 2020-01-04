@@ -29,61 +29,62 @@ import time
 """
 
 This is an Example of using the Python connectors. The example will accept user input
-create a table writing arbitrary information to it via the BatchWriter and scanner will put the written data      
-     
-             
+create a table writing arbitrary information to it via the BatchWriter and scanner will put the written data
+
+
 """
 
 class TestRunner(object):
 
+        def __init__(self):
+                parser = ArgumentParser(description="This is an Apache Accummulo Python connector")
 
-	def __init__(self):
-		parser = ArgumentParser(description="This is an Apache Accummulo Python connector")
-		
-		parser.add_argument("-i", "--instance", dest="instance",
-		                    help="Apache Accumulo Instance Name", required=True)
-		parser.add_argument("-z", "--zookeepers", dest="zookeepers",
-		                    help="Comma Separated Zookeeper List", required=True)
-		parser.add_argument("-u", "--username", dest="username",
-		                    help="User to access Apache Accumulo", required=True)
-		parser.add_argument("-p", "--password", dest="password",
-		                    help="Password to access Apache Accumulo. May also be supplied at the command line")
-		parser.add_argument("-t", "--table", dest="table",
-		                    help="Table to create/update")
-		parser.add_argument("-s", "--solocation", dest="shardobject",
-		                    help="Shared object Location")
-		args = parser.parse_args()
-		
-		instance = args.instance
-		zookeepers = args.zookeepers
-		password = args.password
-		table = args.table
-		dll = args.shardobject
-		
-		print ("Opening ",dll)
-		py = cdll.LoadLibrary(dll)
-		
-		import pysharkbite
-		
-		self._conf = pysharkbite.Configuration()
-		
-		self._conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
-		
-		self._zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, self._conf)
-		
-		self._user = pysharkbite.AuthInfo(args.username, password, self._zk.getInstanceId()) 
-		
-		self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
-		
-		self._tableOperations = self._connector.tableOps(table)
-		
-		print("created connector")
-		
+                parser.add_argument("-i", "--instance", dest="instance",
+                                    help="Apache Accumulo Instance Name", required=True)
+                parser.add_argument("-z", "--zookeepers", dest="zookeepers",
+                                    help="Comma Separated Zookeeper List", required=True)
+                parser.add_argument("-u", "--username", dest="username",
+                                    help="User to access Apache Accumulo", required=True)
+                parser.add_argument("-p", "--password", dest="password",
+                                    help="Password to access Apache Accumulo. May also be supplied at the command line")
+                parser.add_argument("-t", "--table", dest="table",
+                                    help="Table to create/update")
+                parser.add_argument("-s", "--solocation", dest="shardobject",
+                                    help="Shared object Location")
+                args = parser.parse_args()
 
-	def getConnector(self):
-		return self._connector
-		
-	def getTableOperations(self):
-		return self._tableOperations
-			
+                instance = args.instance
+                zookeepers = args.zookeepers
+                password = args.password
+                table = args.table
+                dll = args.shardobject
 
+                print ("Opening ",dll)
+                py = cdll.LoadLibrary(dll)
+                import pysharkbite
+                self._conf = pysharkbite.Configuration()
+                self._conf.set ("FILE_SYSTEM_ROOT", "/accumulo")
+                self._instance=args.instance
+                self._password=password
+                self._username=args.username
+                self._table=table
+                self._zks=args.zookeepers
+                self._zk = pysharkbite.ZookeeperInstance(self._instance, self._zks, 1000, self._conf)
+                self._user = pysharkbite.AuthInfo(args.username, password, self._zk.getInstanceId())
+                self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
+                self._tableOperations = self._connector.tableOps(table)
+                print("created connector")
+
+        def inity(self,replace=False):
+                import pysharkbite
+                self._zk = pysharkbite.ZookeeperInstance(self._instance, self._zks, 1000, self._conf)
+                self._user = pysharkbite.AuthInfo(self._username, self._password, self._zk.getInstanceId())
+                if replace == True :
+                  self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
+                  self._tableOperations = self._connector.tableOps(self._table)
+
+        def getConnector(self):
+                return self._connector
+
+        def getTableOperations(self):
+                return self._tableOperations

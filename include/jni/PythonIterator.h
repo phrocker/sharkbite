@@ -47,38 +47,10 @@ class PythonIterator : public cclient::jni::DSLIterator {
   ~PythonIterator() {
   }
 
-  virtual void setDSL(const std::string &dsl) override {
-    iter.eval(dsl);
-    calledNext = false;
-  }
+  virtual void setDSL(const std::string &dsl) override;
+  virtual void callNext() override;
 
-  virtual void callNext() override {
-    topKeyValue = iter.callNext(this);
-    if (nullptr != topKeyValue) {
-      topKey = topKeyValue->getKey();
-      topValue = topKeyValue->getValue();
-    } else {
-      topKey = nullptr;
-      topValue = nullptr;
-      calledNext = true;
-      return;
-    }
-    // if the user did not called next then we should call the iterator's next
-    if (!calledNext) {
-      next();
-    }
-    calledNext = false;
-  }
-
-  virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) override {
-    calledNext = false;
-    if (iter.callSeek(this, range)) {
-      callNext();
-    } else {
-      accIter->seek(range);
-      callNext();
-    }
-  }
+  virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) override;
 
   virtual bool callHasTop() override {
     return (nullptr != topKey);
@@ -92,24 +64,14 @@ class PythonIterator : public cclient::jni::DSLIterator {
     //topValue = iter.callGetTopValue();
   }
 
-  virtual std::shared_ptr<cclient::data::Key> getTopKey() override {
-    return topKey;
-  }
-  virtual std::shared_ptr<cclient::data::Value> getTopValue() override {
-    if (nullptr == topValue) {
-      topValue = std::make_shared<cclient::data::Value>();
-    }
-    return topValue;
-  }
+  virtual std::shared_ptr<cclient::data::Key> getTopKey() override;
 
-  virtual bool hasTop() override {
-    return (nullptr != topKey);
-  }
+  virtual std::shared_ptr<cclient::data::Value> getTopValue() override;
 
-  virtual void next() override {
-    calledNext = true;
-    accIter->next();
-  }
+
+  virtual bool hasTop() override;
+
+  virtual void next() override;
 
  private:
   IteratorPythonExecutor iter;

@@ -37,13 +37,13 @@
 namespace scanners
 {
 
-Scanner::Scanner (cclient::data::Instance *instance,
+Scanner::Scanner (std::shared_ptr<cclient::data::Instance> instance,
                   interconnect::TableOperations<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *tops,
                   cclient::data::security::Authorizations *auths, uint16_t threads) :
     scannerAuths (auths),  logger(logging::LoggerFactory<Scanner>::getLogger())
 {
     
-    connectorInstance = dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*> (instance);
+    connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance> (instance);
     if (connectorInstance == nullptr){
     	logging::LOG_ERROR(logger) << "Connector instance is an unexpected type";
     	throw std::runtime_error("Connector instance is an unexpected type");

@@ -39,7 +39,8 @@ class JavaClass {
  public:
 
   JavaClass()
-      : class_ref_(nullptr) {
+      :
+      class_ref_(nullptr) {
 
   }
 
@@ -49,8 +50,9 @@ class JavaClass {
    * @param classref class reference
    * @param jenv Java environment -- should be thread associated
    */
-  explicit JavaClass(const std::string &name, jclass classref, JNIEnv* jenv)
-      : name_(name) {
+  explicit JavaClass(const std::string &name, jclass classref, JNIEnv *jenv)
+      :
+      name_(name) {
     class_ref_ = classref;
     cnstrctr = jenv->GetMethodID(class_ref_, "<init>", "()V");
   }
@@ -70,7 +72,7 @@ class JavaClass {
    * Though this is implicitly created, we'd like to make this aspect
    * clear that we're likely to copy JavaClasses around.
    */
-  JavaClass &operator=(const JavaClass &o) = default;
+  JavaClass& operator=(const JavaClass &o) = default;
 
   /**
    * Call empty constructor
@@ -110,7 +112,7 @@ class JavaClass {
   }
 
   template<typename ... Args>
-  void callVoidMethod(JNIEnv* env, jobject obj, const std::string &methodName, const std::string &type, Args ... args) {
+  void callVoidMethod(JNIEnv *env, jobject obj, const std::string &methodName, const std::string &type, Args ... args) {
     jmethodID method = getClassMethod(env, methodName, type);
     ThrowIf(env);
     env->CallVoidMethod(obj, method, std::forward<Args>(args)...);
@@ -125,7 +127,5 @@ class JavaClass {
 
 } /* namespace jni */
 } /* namespace cclient */
-
-
 
 #endif /* EXTENSIONS_JAVACLASS_H */

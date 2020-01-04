@@ -34,73 +34,28 @@ class PythonIterInfo : public cclient::data::IterInfo {
    * @param cl iterator class name
    * @param pri iterator priority
    **/
-  explicit PythonIterInfo(const std::string &name, uint32_t pri)
-      :
-      cclient::data::IterInfo(name, "", pri, "Python") {
-  }
+  explicit PythonIterInfo(const std::string &name, uint32_t pri);
 
-  explicit PythonIterInfo(const std::string &name, const std::string &dsl, uint32_t pri)
-      :
-      cclient::data::IterInfo(name, dsl, pri, "Python"),
-      dsl(dsl) {
-  }
+  explicit PythonIterInfo(const std::string &name, const std::string &dsl, uint32_t pri);
 
   /**
    * Destructor
    **/
-  virtual ~PythonIterInfo() {
+  virtual ~PythonIterInfo();
 
-  }
-
-  PythonIterInfo& onNext(const std::string &lambda) {
-    if (dsl.empty()){
-      onNextLambda = lambda;
-      options["DSL_VALUE"] = getDSL();
-    }
-    else{
-      throw std::runtime_error("Cannot provide onNext when a python script is provided");
-    }
-    return *this;
-  }
+  PythonIterInfo& onNext(const std::string &lambda);
 
   /**
    * Returns options
    * @returns options for this iterator
    **/
-  const std::map<std::string, std::string> getOptions() const {
-    auto opts = options;
-    opts["DSL_VALUE"] = getDSL();
-    return opts;
-  }
+  const std::map<std::string, std::string> getOptions() const;
  protected:
 
-
-  std::string getDSL() const {
-    std::string formedDSL = dsl;
-    if (formedDSL.empty()) {
-      std::stringstream str;
-      str << "import sharkbite_iterator" << std::endl << std::endl;
-      if (!onNextLambda.empty()) {
-          str << "def onNext(iterator):" << std::endl;
-          str << "  if (iterator.hasTop()): " << std::endl;
-          str << "    userfx="<<  onNextLambda << std::endl;
-          str << "    key = iterator.getTopKey()" << std::endl;
-          str << "    newkey = userfx(key)" << std::endl;
-          str << "    kv = sharkbite_iterator.KeyValue()" << std::endl;
-          str << "    kv.setKey(newkey,True)" << std::endl;
-          str << "    return kv" << std::endl;
-          str << "  else:" << std::endl;
-          str << "    return None" << std::endl;
-      }
-
-      formedDSL = str.str();
-    }
-    return formedDSL;
-  }
+  std::string getDSL() const;
 
   std::string dsl;
   std::string onNextLambda;
-
 
 };
 

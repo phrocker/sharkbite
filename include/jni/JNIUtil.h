@@ -43,7 +43,6 @@ static inline std::string JniStringToUTF(JNIEnv *env, jstring jStr) {
   return ret;
 }
 
-
 static inline jbyteArray toByteArray(JNIEnv *env, const std::string &str) {
   jbyteArray array = env->NewByteArray(str.length());
   if (env->ExceptionOccurred())  // check if an exception occurred

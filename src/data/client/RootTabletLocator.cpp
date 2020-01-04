@@ -17,42 +17,38 @@
 #include "data/client/RootTabletLocator.h"
 #include "data/client/../constructs/client/Instance.h"
 #include "data/client/ExtentLocator.h"
-namespace cclient{
-  namespace impl{
+namespace cclient {
+namespace impl {
 
-
-RootTabletLocator::RootTabletLocator (cclient::data::Instance *instance) :
-    myInstance (dynamic_cast<cclient::data::zookeeper::ZookeeperInstance*> (instance))
-{
-
-}
-
-RootTabletLocator::~RootTabletLocator ()
-{
+RootTabletLocator::RootTabletLocator(std::shared_ptr<cclient::data::Instance> instance)
+    :
+    myInstance(dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(instance)) {
 
 }
 
-cclient::data::TabletLocation *
-RootTabletLocator::getRootTabletLocation ()
-{
-
-    cclient::data::zookeeper::ZooCache *cache = myInstance->getZooCache ();
-
-    std::stringstream zRootLocation;
-    zRootLocation << myInstance->getRoot () << ZROOT_TABLET_LOCATION;
-
-    uint8_t *rootLoc = cache->getData (zRootLocation.str ());
-
-    if (IsEmpty ((char*) rootLoc))
-    {
-        return 0;
-    }
-
-    std::vector<std::string> tokens = split (std::string ((char*) rootLoc), '|');
-
-    return new cclient::data::TabletLocation (ROOT_EXTENT, tokens.at (0), tokens.at (1));
+RootTabletLocator::~RootTabletLocator() {
 
 }
 
+cclient::data::TabletLocation*
+RootTabletLocator::getRootTabletLocation() {
+
+  cclient::data::zookeeper::ZooCache *cache = myInstance->getZooCache();
+
+  std::stringstream zRootLocation;
+  zRootLocation << myInstance->getRoot() << ZROOT_TABLET_LOCATION;
+
+  uint8_t *rootLoc = cache->getData(zRootLocation.str());
+
+  if (IsEmpty((char*) rootLoc)) {
+    return 0;
   }
+
+  std::vector<std::string> tokens = split(std::string((char*) rootLoc), '|');
+
+  return new cclient::data::TabletLocation(ROOT_EXTENT, tokens.at(0), tokens.at(1));
+
+}
+
+}
 }

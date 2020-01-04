@@ -107,7 +107,7 @@ try:
     scanner.addRange( range )
     
     iterator = pysharkbite.PythonIterator("PythonIterator",100)
-    iterator = iterator.onNext("lambda x : sharkbite_iterator.Key( x.getRow(), 'new cf', x.getColumnQualifier()) ")
+    iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 
     scanner.addIterator(iterator)
     resultset = scanner.getResultSet()

@@ -97,7 +97,6 @@ static inline void ThrowJava(JNIEnv *env, const char *message) {
   env->ThrowNew(env->FindClass(EXCEPTION_CLASS), message);
 }
 
-
 } /* namespace jni */
 } /* namespace cclient */
 
