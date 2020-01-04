@@ -2,4 +2,4 @@
 build/
 *.pyc
 workspace.xml
-*/workspace.xml
+native-iterators-jni/.idea/*
