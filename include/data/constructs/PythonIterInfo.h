@@ -36,7 +36,7 @@ class PythonIterInfo : public cclient::data::IterInfo {
    **/
   explicit PythonIterInfo(const std::string &name, uint32_t pri);
 
-  explicit PythonIterInfo(const std::string &name, const std::string &dsl, uint32_t pri);
+  explicit PythonIterInfo(const std::string &name, const std::string &idsl, uint32_t pri);
 
   /**
    * Destructor
