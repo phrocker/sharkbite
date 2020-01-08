@@ -38,7 +38,7 @@ PythonIterInfo::PythonIterInfo(const std::string &name, uint32_t pri)
 
 PythonIterInfo::PythonIterInfo(const std::string &name, const std::string &idsl, uint32_t pri)
     :
-    cclient::data::IterInfo(name, dsl, pri, "Python"), dsl(idsl) {
+    cclient::data::IterInfo(name, idsl, pri, "Python"), dsl(idsl) {
   iterName = name;
   iterClass = "org.poma.accumulo.JythonIterator";
   addOption("DSL_CLASS", name);
