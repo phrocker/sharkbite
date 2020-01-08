@@ -103,6 +103,10 @@ void AccumuloTableOperations::loadTableOps(bool force) {
     }
 
   }
+
+  cachedTableIds.insert(std::make_pair("!0", "accumulo.metadata"));
+  cachedTableIds.insert(std::make_pair("accumulo.metadata", "!0"));
+  tableNames.insert("accumulo.metadata");
 }
 
 std::string AccumuloTableOperations::getTableId() {
@@ -113,7 +117,7 @@ std::string AccumuloTableOperations::getTableId() {
     std::string ephemeralTableId = "";
 
     try {
-      cachedTableIds.at(myTable);
+      ephemeralTableId = cachedTableIds.at(myTable);
     } catch (const std::out_of_range& e) {
       // do nothing since it isn't cached
     }

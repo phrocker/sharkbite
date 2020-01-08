@@ -125,6 +125,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("getValue", &cclient::data::KeyValue::getValue, "Gets the Value");
 
   pybind11::class_<cclient::data::Range>(s, "Range")
+    .def(pybind11::init<>())
   .def(pybind11::init<const std::string&>())
   .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool,std::shared_ptr<cclient::data::Key>,bool,bool>(),
       "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false)
