@@ -14,6 +14,7 @@ import org.python.util.PythonInterpreter;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -51,10 +52,14 @@ public class JythonIterator extends WrappingIterator{
 
     @Override
     public void next() throws IOException {
-        findTop(null);
+        findTop(null,false);
     }
 
-    public void findTop(Range range) throws IOException {
+    public void findTop(Range range, boolean inclusive) throws IOException {
+        findTop(range, Collections.EMPTY_LIST, inclusive);
+    }
+
+    public void findTop(Range range, Collection<String> families, boolean inclusive) throws IOException {
         nextKey = null;
         nextValue = null;
         try(PythonInterpreter iterpret = new PythonInterpreter()) {
@@ -68,7 +73,7 @@ public class JythonIterator extends WrappingIterator{
                 }catch(PyException e){
                     if (e.getMessage().contains("AttributeError"))
                     {
-                        wrappedIterator.seek(range);
+                        wrappedIterator.seek(range,inclusive);
                     }
                     else{
                         throw e;
@@ -102,9 +107,9 @@ public class JythonIterator extends WrappingIterator{
     }
 //private native void seek(WrappedIterator iter,Range range);
     @Override
-    public void seek(Range range, Collection<ByteSequence> collection, boolean b) throws IOException {
+    public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
         List<String> families =  collection.stream().map(x -> x.toString()).collect(Collectors.toList());
-        findTop(range);
+        findTop(range,families,inclusive);
     }
 
     @Override
