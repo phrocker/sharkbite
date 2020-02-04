@@ -6,7 +6,7 @@ import org.apache.accumulo.core.data.Range;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
-import org.apache.accumulo.core.iterators.WrappingIterator;
+import pysharkbite.Key;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -41,9 +41,9 @@ public class WrappedIterator implements SortedKeyValueIterator<Key,Value>{
      * wrapped methods
      */
     @Override
-    public org.poma.accumulo.Key getTopKey() {
+    public Key getTopKey() {
 
-        return new org.poma.accumulo.Key(sortedKeyValueIterator.getTopKey());
+        return new Key(sortedKeyValueIterator.getTopKey());
     }
 
     public Value getTopValue() {

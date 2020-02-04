@@ -1,4 +1,4 @@
-package org.poma.accumulo;
+package pysharkbite;
 
 import org.apache.accumulo.core.data.ArrayByteSequence;
 import org.apache.accumulo.core.data.ByteSequence;

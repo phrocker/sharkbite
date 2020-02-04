@@ -46,7 +46,7 @@ public class ExampleJythonMain {
 
             String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
 
-            options.put(JythonIterator.DSL_CLASS, "myIterator");
+            options.put(JythonIterator.DSL_CLASS, "PythonIterator");
             options.put(JythonIterator.DSL_VALUE, content);
 
             System.out.println("Script is " + content);
@@ -83,7 +83,7 @@ public class ExampleJythonMain {
 
             String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
 
-            options.put(JythonIterator.DSL_CLASS, "myIterator");
+            options.put(JythonIterator.DSL_CLASS, "PythonIterator");
             options.put(JythonIterator.DSL_VALUE, content);
 
             System.out.println("Script is " + content);

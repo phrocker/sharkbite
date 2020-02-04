@@ -20,12 +20,19 @@
   <artifactId>native-iterators-jni</artifactId>
   <packaging>jar</packaging>
   <dependencies>
+
     <dependency>
       <groupId>org.apache.accumulo</groupId>
       <artifactId>accumulo-core</artifactId>
       <version>${acc.version}</version>
     </dependency>
-    <dependency>
+	  <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-pool2 -->
+	  <dependency>
+		  <groupId>org.apache.commons</groupId>
+		  <artifactId>commons-pool2</artifactId>
+		  <version>2.8.0</version>
+	  </dependency>
+	  <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>jcl-over-slf4j</artifactId>
       <version>${org.slf4j.version}</version>

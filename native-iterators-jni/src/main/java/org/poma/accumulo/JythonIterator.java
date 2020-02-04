@@ -7,10 +7,13 @@ import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.iterators.IteratorEnvironment;
 import org.apache.accumulo.core.iterators.SortedKeyValueIterator;
 import org.apache.accumulo.core.iterators.WrappingIterator;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.python.core.Py;
 import org.python.core.PyException;
 import org.python.core.PyInstance;
 import org.python.util.PythonInterpreter;
+import pysharkbite.KeyValue;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -34,6 +37,15 @@ public class JythonIterator extends WrappingIterator{
     private WrappedIterator wrappedIterator;
     private String dsl;
     private String className;
+
+    static GenericObjectPool<PythonInterpreter> pool = null;
+    static {
+        GenericObjectPoolConfig<PythonInterpreter> config = new GenericObjectPoolConfig<>();
+        config.setMaxIdle(10);
+        config.setMaxTotal(20);
+        config.setMinIdle(3);
+        pool = new GenericObjectPool( new PythonInterpreterFactory(),config);
+    }
 
     @Override
     public void init(SortedKeyValueIterator<Key, Value> sortedKeyValueIterator, Map<String, String> options, IteratorEnvironment iteratorEnvironment) throws IOException {
@@ -62,9 +74,11 @@ public class JythonIterator extends WrappingIterator{
     public void findTop(Range range, Collection<String> families, boolean inclusive) throws IOException {
         nextKey = null;
         nextValue = null;
-        try(PythonInterpreter iterpret = new PythonInterpreter()) {
-            iterpret.exec(dsl);
-            PyInstance instance = (PyInstance)iterpret.eval(className + "()");
+        PythonInterpreter interpreter = null;
+        try {
+            interpreter = pool.borrowObject();
+            interpreter.exec(dsl);
+            PyInstance instance = (PyInstance)interpreter.eval(className + "()");
 
             if (range != null){
                 KeyValue kv = null;
@@ -73,7 +87,7 @@ public class JythonIterator extends WrappingIterator{
                 }catch(PyException e){
                     if (e.getMessage().contains("AttributeError"))
                     {
-                        wrappedIterator.seek(range,inclusive);
+                        wrappedIterator.seek(range,inclusive,families);
                     }
                     else{
                         throw e;
@@ -103,12 +117,20 @@ public class JythonIterator extends WrappingIterator{
                 }
             }
             }
+        } catch (Exception e) {
+            // wrap as the end result will always be an i/o exception
+            throw new IOException(e);
+        }
+        finally{
+            if (null != interpreter){
+                pool.returnObject(interpreter);
+            }
         }
     }
 //private native void seek(WrappedIterator iter,Range range);
     @Override
     public void seek(Range range, Collection<ByteSequence> collection, boolean inclusive) throws IOException {
-        List<String> families =  collection.stream().map(x -> x.toString()).collect(Collectors.toList());
+        List<String> families =  collection.stream().map(x -> new String( x.getBackingArray() )).collect(Collectors.toList());
         findTop(range,families,inclusive);
     }
 
