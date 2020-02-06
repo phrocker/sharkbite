@@ -102,7 +102,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
     }
 
     if (!IsEmpty(&tableName)) {
-    	if (tableName.find(".") == std::string::npos){
+    	if (tableName.find(".") == std::string::npos && !namespaceName.empty()){
     		tableName = namespaceName + "." + tableName;
     	}
       // insert both representations
