@@ -58,7 +58,22 @@ class Mutation {
 
   void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len);
 
-  void put(const std::string &cf, const std::string &cq = "", const std::string &cv = "", int64_t ts = 0, const std::string &value="");
+  /**
+   * these breakouts facilitate the python api
+   */
+  void put(const std::string &cf, const std::string &cq){
+	  put(cf,cq,"",0,"");
+  }
+
+  void put(const std::string &cf, const std::string &cq, const std::string &cv){
+	  put(cf,cq,cv,0,"");
+  }
+
+  void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts){
+	  put(cf,cq,cv,ts,"");
+  }
+
+  void put(const std::string &cf, const std::string &cq , const std::string &cv, int64_t ts, const std::string &value);
   virtual ~Mutation();
   std::string getRow() const {
     return mut_row;
