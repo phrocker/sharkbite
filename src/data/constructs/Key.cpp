@@ -19,12 +19,15 @@ namespace cclient
 namespace data
 {
 
-Key::Key () :
+Key::Key (const char * const userRow) :
     deleted (false), timestamp (9223372036854775807L), colVisSize (0), rowMaxSize (
         0), columnFamilySize (0), colQualSize (0), rowLength (0), columnFamilyLength (
             0), colQualLen (0)
 {
-    row = new char[0];
+	if (userRow)
+		setRow(userRow,strlen(userRow));
+	else
+		row = new char[0];
 
     colFamily = new char[0];
 

@@ -72,8 +72,8 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
     :
     startKeyInclusive(startInclusive),
     stopKeyInclusive(endKeyInclusive) {
-  infiniteStartKey = startKey == NULL;
-  infiniteStopKey = endKey == NULL;
+  infiniteStartKey = startKey == NULL || startKey->empty();
+  infiniteStopKey = endKey == NULL || endKey->empty();
 
   if (!infiniteStartKey) {
     start = std::make_shared<Key>(startKey);

@@ -20,9 +20,10 @@ namespace cclient {
 namespace data {
 
 Mutation::Mutation(const std::string &row)
-    : mut_row(row),
-      ptr(0),
-      entries(0) {
+    :
+    mut_row(row),
+    ptr(0),
+    entries(0) {
   outStream = std::make_unique<streams::ByteOutputStream>(1024);
   endianStream = std::make_unique<streams::EndianTranslationStream>(outStream.get());
   baseStream = std::make_unique<streams::DataOutputStream>(endianStream.get());
@@ -32,6 +33,7 @@ Mutation::~Mutation() {
 }
 
 void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len) {
+  std::cout << "wut2" << std::endl;
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 
@@ -60,6 +62,7 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
 }
 
 void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted) {
+  std::cout << "wut " << (deleted == true) << std::endl;
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 
@@ -85,7 +88,7 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
 
 }
 
-void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, unsigned long ts, const std::string &value) {
+void Mutation::put(const std::string &cf, const std::string &cq) {
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 
@@ -93,11 +96,94 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
   //write((uint8_t*)cf.c_str(),cf.size());
   baseStream->writeVLong(cq.size());
   //writeInt(cq.size());
-  baseStream->write((uint8_t*) cq.c_str(), cq.size());
+  if (!cq.empty())
+    baseStream->write((uint8_t*) cq.c_str(), cq.size());
+  //write((uint8_t*)cq.c_str(),cq.size());
+  baseStream->writeVLong(0);
+  //  writeInt(cv.size());
+
+  baseStream->writeBoolean(false);
+
+  baseStream->writeBoolean(false);
+
+  baseStream->writeVLong(0);
+
+  entries++;
+}
+
+void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv) {
+  baseStream->writeVLong(cf.size());
+  //writeInt(cf.size());
+
+  baseStream->write((uint8_t*) cf.c_str(), cf.size());
+  //write((uint8_t*)cf.c_str(),cf.size());
+  baseStream->writeVLong(cq.size());
+  //writeInt(cq.size());
+  if (!cq.empty())
+    baseStream->write((uint8_t*) cq.c_str(), cq.size());
+  //write((uint8_t*)cq.c_str(),cq.size());
+  baseStream->writeVLong(cv.size());
+  //  writeInt(cv.size());
+  if (!cv.empty())
+    baseStream->write((uint8_t*) cv.c_str(), cv.size());
+  // no ts
+  baseStream->writeBoolean(false);
+
+  // no delete
+  baseStream->writeBoolean(false);
+
+  baseStream->writeVLong(0);
+
+  entries++;
+}
+
+void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts) {
+  baseStream->writeVLong(cf.size());
+  //writeInt(cf.size());
+
+  baseStream->write((uint8_t*) cf.c_str(), cf.size());
+  //write((uint8_t*)cf.c_str(),cf.size());
+  baseStream->writeVLong(cq.size());
+  //writeInt(cq.size());
+  if (!cq.empty())
+    baseStream->write((uint8_t*) cq.c_str(), cq.size());
+  //write((uint8_t*)cq.c_str(),cq.size());
+  baseStream->writeVLong(cv.size());
+  //  writeInt(cv.size());
+  if (!cv.empty())
+    baseStream->write((uint8_t*) cv.c_str(), cv.size());
+  //write((uint8_t*)cv.c_str(),cv.size());
+  if (ts == 0) {
+    baseStream->writeBoolean(false);
+  } else {
+    baseStream->writeBoolean(true);
+    //write(true);
+    baseStream->writeVLong(ts);
+  }
+  //writeLong(ts);
+  baseStream->writeBoolean(false);
+  //write(false);
+
+  baseStream->writeVLong(0);
+
+  entries++;
+}
+
+void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, const std::string &value) {
+  baseStream->writeVLong(cf.size());
+  //writeInt(cf.size());
+
+  baseStream->write((uint8_t*) cf.c_str(), cf.size());
+  //write((uint8_t*)cf.c_str(),cf.size());
+  baseStream->writeVLong(cq.size());
+  //writeInt(cq.size());
+  if (!cq.empty())
+    baseStream->write((uint8_t*) cq.c_str(), cq.size());
   //write((uint8_t*)cq.c_str(),cq.size());
   baseStream->writeVLong(cv.size());
 //	writeInt(cv.size());
-  baseStream->write((uint8_t*) cv.c_str(), cv.size());
+  if (!cv.empty())
+    baseStream->write((uint8_t*) cv.c_str(), cv.size());
   //write((uint8_t*)cv.c_str(),cv.size());
   baseStream->writeBoolean(true);
   //write(true);
@@ -106,13 +192,11 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
   baseStream->writeBoolean(false);
   //write(false);
 
-
-  if (!value.empty()){
-	  baseStream->writeVLong(value.size());
-	  baseStream->write( (uint8_t*)value.data(),value.size());
-  }
-  else{
-	  baseStream->writeVLong(0);
+  if (!value.empty()) {
+    baseStream->writeVLong(value.size());
+    baseStream->write((uint8_t*) value.data(), value.size());
+  } else {
+    baseStream->writeVLong(0);
   }
 
   entries++;

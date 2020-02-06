@@ -49,11 +49,17 @@ class Writer : public Sink<cclient::data::KeyValue> {
   }
 
   virtual bool addMutation(const std::shared_ptr<cclient::data::Mutation> &mut) {
+	if (mut == nullptr){
+		return false;
+	}
     bool enqueued = mutationQueue.enqueue(mut);
     return enqueued;
   }
 
   virtual bool addMutation(std::unique_ptr<cclient::data::Mutation> obj) {
+	if (obj == nullptr){
+		return false;
+	}
     while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }

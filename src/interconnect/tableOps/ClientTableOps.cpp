@@ -63,6 +63,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
 
   cachedTableIds.clear();
   tableNames.clear();
+  loadNamespaces(force);
   for (std::string retrievedId : tableIds) {
     std::string tablePath = fsRoot;
     tablePath.append("/");
@@ -92,10 +93,18 @@ void AccumuloTableOperations::loadTableOps(bool force) {
     std::string namespaceName = "";
     if (!IsEmpty(&namespaceId)) {
       if (namespaceId != DEFAULT_NAMESPACE_ID) {
+    	  auto nm = namespaces.find(namespaceId);
+    	  if (nm != std::end(namespaces)){
+    		  namespaceName = nm->second;
+    	  }
+    	  // get the namespace name
       }
     }
 
     if (!IsEmpty(&tableName)) {
+    	if (tableName.find(".") == std::string::npos && !namespaceName.empty()){
+    		tableName = namespaceName + "." + tableName;
+    	}
       // insert both representations
       cachedTableIds.insert(std::make_pair(retrievedId, tableName));
       cachedTableIds.insert(std::make_pair(tableName, retrievedId));
@@ -107,6 +116,47 @@ void AccumuloTableOperations::loadTableOps(bool force) {
   cachedTableIds.insert(std::make_pair("!0", "accumulo.metadata"));
   cachedTableIds.insert(std::make_pair("accumulo.metadata", "!0"));
   tableNames.insert("accumulo.metadata");
+}
+
+void AccumuloTableOperations::loadNamespaces(bool force) {
+  std::lock_guard<std::recursive_mutex> lock(namesOpMutex);
+  const cclient::impl::Configuration *conf = myInstance->getConfiguration();
+
+  std::string fsRoot = conf->get(FILE_SYSTEM_ROOT_CFG);
+
+  fsRoot.append("/");
+  fsRoot.append(myInstance->getInstanceId());
+  fsRoot.append( TABLE_GET_NAMESPACES);
+
+  cclient::data::InstanceCache *cache = myInstance->getInstanceCache();
+  std::vector<std::string> namespaceIds = cache->getChildren(fsRoot, force);
+
+  namespaces.clear();
+  namespaceNames.clear();
+  for (std::string retrievedId : namespaceIds) {
+    std::string tablePath = fsRoot;
+    tablePath.append("/");
+    tablePath.append(retrievedId);
+
+    std::string namePath = tablePath;
+    namePath.append(TABLE_GET_NAME);
+    char *path = (char*) cache->getData(namePath);
+    if (IsEmpty(path)) {
+
+      continue;
+
+    }
+    std::string namespaceName = std::string(path);
+
+    if (!IsEmpty(&namespaceName)) {
+      // insert both representations
+      namespaces.insert(std::make_pair(retrievedId, namespaceName));
+      namespaces.insert(std::make_pair(namespaceName, retrievedId));
+      namespaceNames.push_back(namespaceName);
+    }
+
+  }
+
 }
 
 std::string AccumuloTableOperations::getTableId() {

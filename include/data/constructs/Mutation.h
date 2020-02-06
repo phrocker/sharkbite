@@ -46,11 +46,28 @@ class Mutation {
    **/
   explicit Mutation(const std::string &row);
 
+  void putDelete(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts){
+	  put(cf,cq,cv,ts,true);
+  }
+
+  void putDelete(const std::string &cf, const std::string &cq, const std::string &cv){
+	  put(cf,cq,cv,9223372036854775807L,true);
+  }
+
   void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted);
 
   void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len);
 
-  void put(const std::string &cf, const std::string &cq = "", const std::string &cv = "", unsigned long ts = 0, const std::string &value="");
+  /**
+   * these breakouts facilitate the python api
+   */
+  void put(const std::string &cf, const std::string &cq);
+
+  void put(const std::string &cf, const std::string &cq, const std::string &cv);
+
+  void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts);
+
+  void put(const std::string &cf, const std::string &cq , const std::string &cv, int64_t ts, const std::string &value);
   virtual ~Mutation();
   std::string getRow() const {
     return mut_row;
