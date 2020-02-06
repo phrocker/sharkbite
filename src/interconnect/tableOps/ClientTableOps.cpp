@@ -95,7 +95,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
       if (namespaceId != DEFAULT_NAMESPACE_ID) {
     	  auto nm = namespaces.find(namespaceId);
     	  if (nm != std::end(namespaces)){
-    		  namespaceName = nm.second;
+    		  namespaceName = nm->second;
     	  }
     	  // get the namespace name
       }
@@ -118,7 +118,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
   tableNames.insert("accumulo.metadata");
 }
 
-AccumuloTableOperations::loadNamespaces(bool force) {
+void AccumuloTableOperations::loadNamespaces(bool force) {
   std::lock_guard<std::recursive_mutex> lock(namesOpMutex);
   const cclient::impl::Configuration *conf = myInstance->getConfiguration();
 
