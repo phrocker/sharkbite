@@ -171,6 +171,8 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
 
  protected:
 
+  void loadNamespaces(bool force = false);
+
   TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector;
 
   std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> tserverConn;
@@ -181,6 +183,12 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
 
  private:
   std::shared_ptr<logging::Logger> logger;
+  std::recursive_mutex namesOpMutex;
+
+  // loaded namespaces
+  std::map<std::string, std::string> namespaces;
+  std::vector<std::string> namespaceNames;
+
 };
 
 extern std::map<std::string, std::string> nameSpaceIds;

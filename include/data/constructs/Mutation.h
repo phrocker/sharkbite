@@ -46,6 +46,14 @@ class Mutation {
    **/
   explicit Mutation(const std::string &row);
 
+  void putDelete(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts){
+	  put(cf,cq,cv,ts,true);
+  }
+
+  void putDelete(const std::string &cf, const std::string &cq, const std::string &cv){
+	  put(cf,cq,cv,9223372036854775807L,true);
+  }
+
   void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted);
 
   void put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len);

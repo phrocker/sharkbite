@@ -107,8 +107,8 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(s, "Key")
   .def(pybind11::init<>())
-  .def(pybind11::init<const std::string &,const std::string &, const std::string &, const std::string &, int64_t>(),
-      "row"_a, "columnfamily"_a="","columnqualifier"_a="","columnvisibility"_a="","timestamp"_a=9223372036854775807L)
+  .def(pybind11::init<const char *,const char *, const char *, const char *, int64_t>(),
+      "row"_a, "columnfamily"_a=nullptr,"columnqualifier"_a=nullptr,"columnvisibility"_a=nullptr,"timestamp"_a=9223372036854775807L)
   .def("setRow",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setRow, "Sets the row")
   .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColFamily, "Sets the column fmaily")
   .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColQualifier, "Sets the column qualifier")
@@ -136,6 +136,9 @@ PYBIND11_MODULE(pysharkbite, s) {
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())
   .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, unsigned long, const std::string & ) ) &cclient::data::Mutation::put, "Adds a mutation");
+  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, unsigned long ) ) &cclient::data::Mutation::put, "Adds a mutation");
+  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, unsigned long ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation");
+  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string & ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation");
 
   pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(s, "Results")
   .def("__iter__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {

@@ -32,7 +32,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
  public:
 
-  Key();
+  Key(const char * const userRow = nullptr);
 
   explicit Key(const std::string &row, const std::string &cf = "", const std::string &cq = "", const std::string &cv = "", int64_t ts = 9223372036854775807L) : Key(){
     setRow(row);
@@ -42,6 +42,15 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     timestamp = ts;
     deleted = false;
   }
+
+  explicit Key(const char * rw, const char *cf = nullptr, const char *cq = nullptr, const char * cv = nullptr, int64_t ts = 9223372036854775807L) : Key(){
+      setRow(rw,strlen(rw));
+      setColFamily(cf,strlen(cf));
+      setColQualifier(cq, strlen(cq));
+      setColVisibility(cv, strlen(cv));
+      timestamp = ts;
+      deleted = false;
+    }
 
   /**
    * Constructor that deep copies another key. Does not subsume ownership.
