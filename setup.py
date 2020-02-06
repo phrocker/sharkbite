@@ -21,7 +21,7 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 def readme():
-  with open("README.md", "r") as fh:
+  with open("PYTHONREADME.md", "r") as fh:
     return fh.read()
 
 def operatingsystem():
@@ -32,7 +32,7 @@ def operatingsystem():
 
 setup(
     name='sharkbite',
-    version='0.6.0.4',
+    version='0.6.0.5',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
     url='https://www.github.com/phrocker/sharkbite',
