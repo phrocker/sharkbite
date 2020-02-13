@@ -52,7 +52,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
   std::lock_guard<std::recursive_mutex> lock(tableOpMutex);
   const cclient::impl::Configuration *conf = myInstance->getConfiguration();
 
-  std::string fsRoot = conf->get(FILE_SYSTEM_ROOT_CFG);
+  std::string fsRoot = conf->get(FILE_SYSTEM_ROOT_CFG,"/accumulo");
 
   fsRoot.append("/");
   fsRoot.append(myInstance->getInstanceId());
@@ -122,7 +122,7 @@ void AccumuloTableOperations::loadNamespaces(bool force) {
   std::lock_guard<std::recursive_mutex> lock(namesOpMutex);
   const cclient::impl::Configuration *conf = myInstance->getConfiguration();
 
-  std::string fsRoot = conf->get(FILE_SYSTEM_ROOT_CFG);
+  std::string fsRoot = conf->get(FILE_SYSTEM_ROOT_CFG,"/accumulo");
 
   fsRoot.append("/");
   fsRoot.append(myInstance->getInstanceId());
