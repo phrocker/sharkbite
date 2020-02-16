@@ -12,6 +12,7 @@ import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.python.core.Py;
 import org.python.core.PyException;
 import org.python.core.PyInstance;
+import org.python.core.PyObject;
 import org.python.util.PythonInterpreter;
 import pysharkbite.KeyValue;
 
@@ -83,7 +84,8 @@ public class JythonIterator extends WrappingIterator{
             if (range != null){
                 KeyValue kv = null;
                 try {
-                    kv = (KeyValue) (instance.invoke("seek", Py.java2py(wrappedIterator), Py.java2py(range)).__tojava__(KeyValue.class));
+                    final PyObject objs [] = {Py.java2py(wrappedIterator), Py.java2py(range),  Py.java2py(families),  Py.java2py(inclusive) };
+                    kv = (KeyValue) (instance.invoke("seek", objs).__tojava__(KeyValue.class));
                 }catch(PyException e){
                     if (e.getMessage().contains("AttributeError"))
                     {
