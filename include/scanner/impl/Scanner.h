@@ -135,6 +135,8 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
             }
           }
 
+          logging::LOG_DEBUG(logger) << " clipped range is " << std::to_string( clippedRanges.size() );
+
           auto rangeDef = std::make_shared<cclient::data::tserver::RangeDefinition>(credentials, scannerAuths, locationSplit.at(0), port, &clippedRanges, &extents, columns);
 
           std::shared_ptr<interconnect::ServerInterconnect> directConnect = std::make_shared<interconnect::ServerInterconnect>(rangeDef, connectorInstance->getConfiguration());
