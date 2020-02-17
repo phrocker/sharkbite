@@ -19,9 +19,7 @@ from ctypes import cdll
 from argparse import ArgumentParser
 from ctypes import cdll
 import ctypes
-import os
 import traceback
-import sys
 import time
 
 
@@ -60,11 +58,9 @@ if not table:
 
 import pysharkbite
 
-conf = pysharkbite.Configuration()
+configuration = pysharkbite.Configuration()
 
-conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
-
-zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
+zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, configuration)
 
 user = pysharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
 
@@ -72,11 +68,11 @@ try:
     connector = pysharkbite.AccumuloConnector(user, zk)
 
 
-    tableOperations = connector.tableOps(table)
+    table_operations = connector.tableOps(table)
 
-    if not tableOperations.exists(False):
+    if not table_operations.exists(False):
         print ("Creating table " + table)
-        tableOperations.create(False)  
+        table_operations.create(False)  
     else:
         print (table + " already exists, so not creating it")  
     
@@ -86,7 +82,7 @@ try:
     """ Add authorizations """ 
     """ mutation.put("cf","cq","cv",1569786960) """
     
-    writer = tableOperations.createWriter(auths, 10)
+    writer = table_operations.createWriter(auths, 10)
     
     mutation = pysharkbite.Mutation("row2");    
     
@@ -103,7 +99,7 @@ try:
     
     """ auths.addAuthorization("cv") """
     
-    scanner = tableOperations.createScanner(auths, 2)
+    scanner = table_operations.createScanner(auths, 2)
     
     startKey = pysharkbite.Key()
     
@@ -126,7 +122,7 @@ try:
     
     """ delete your table if user did not create temp """
     if not args.table:
-        tableOperations.remove()
+        table_operations.remove()
     
 except RuntimeError as e:
      traceback.print_exc()
