@@ -172,6 +172,8 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
 
   org::apache::accumulo::core::data::thrift::ScanResult results = scan.result;
 
+  logging::LOG_DEBUG(logger) << "extent is " << extent << " columns " << request->getColumns().size() << " has more? " << (results.more);
+
   std::vector<std::shared_ptr<cclient::data::KeyValue> > *kvs = ThriftWrapper::convert(results.results);
 
   if (!kvs->empty())
@@ -223,6 +225,8 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
 
   initialScan->setHasMore(results.more);
 
+  logging::LOG_DEBUG(logger) << "multiscan return " << scan.scanID << " result set size is " << (kvs != nullptr ? kvs->size() : 0);
+
   initialScan->setMultiScan(true);
 
   initialScan->setScanId(scan.scanID);
@@ -258,9 +262,15 @@ void AccumuloServerFacadeV1::v1_registerService(std::string instance, std::strin
 
 Scan *AccumuloServerFacadeV1::v1_beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
   Scan *initialScan = NULL;
-  if (request->getRangeIdentifiers()->size() > 1) {
+  size_t size = 0;
+  for (auto sz : *request->getRangeIdentifiers()) {
+    size += sz->size();
+  }
+  if (size > 1) {
+	  logging::LOG_DEBUG(logger) << "Begin scan has more than one range";
     initialScan = multiScan(isRunning,request);
   } else {
+	  logging::LOG_DEBUG(logger) << "Begin range has a single range";
     ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request->getRangeIdentifiers()->at(0);
     std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
     auto range = ident->getIdentifiers(extent).at(0);
