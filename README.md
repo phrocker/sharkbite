@@ -13,6 +13,7 @@ Capabilities That will be supported in V0.6 :
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
  * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
  * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
+ * **Python Iterators**  : Python iterators run natively at the tablet server. They are supported either through the labmda iterators in Python or the typical python interfaces. 
  
 Current Master progress 
   * Development is focusing on abstracting out 2.x changes for Apache Accumulo.
