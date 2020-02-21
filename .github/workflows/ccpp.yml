@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install deps
-      run: sudo apt-get install g++ libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler
+      run: sudo apt-get install g++ libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler flex bison
     - name: setup cmake
       run: mkdir build && cd build && cmake ..
     - name: make
