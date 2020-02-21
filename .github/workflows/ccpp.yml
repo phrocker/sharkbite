@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Ubuntu CICD Pipeline
 
 on: [push]
 
@@ -9,7 +9,9 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-    - name: configure
+    - name: install deps
+      run: sudo apt-get install g++4.9 libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler
+    - name: setup cmake
       run: mkdir build && cd build && cmake ..
     - name: make
       run: make
