@@ -28,7 +28,7 @@ uint64_t
 IndexManager::read (cclient::data::streams::InputStream *in)
 {
     size = 0;
-    if (version == 6 || version == 7)
+    if (version == 6 || version == 7 || version == 8)
     {
         size = in->readInt ();
     }

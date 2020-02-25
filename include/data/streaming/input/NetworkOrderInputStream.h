@@ -17,6 +17,7 @@
 
 #include <stdexcept>
 #include <cstdio>
+#include <iostream>
 #include <cstring>
 #include <netinet/in.h>
 
@@ -26,6 +27,8 @@
 namespace cclient {
 namespace data {
 namespace streams {
+
+#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
 
 /**
  * Purpose: converts all network ordered data into host ordered data
@@ -68,7 +71,9 @@ public:
     }
 
     uint64_t readLong() {
-        return ntohl(ByteInputStream::readLong());
+        auto jd = ByteInputStream::readLong();
+        auto ret = ntohll(jd);
+        return ret;
     }
 
 };

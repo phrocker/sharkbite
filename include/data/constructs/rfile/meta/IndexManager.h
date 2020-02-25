@@ -27,75 +27,61 @@
 #include "BlockLookup.h"
 #include "Block.h"
 #include "../../Key.h"
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class IndexManager : public BlockLookup, public cclient::data::streams::StreamInterface
-{
-public:
-    IndexManager (cclient::data::compression::Compressor *compressorRef, cclient::data::streams::InputStream *blockReader,
-                  int version);
+class IndexManager : public BlockLookup, public cclient::data::streams::StreamInterface {
+ public:
+  IndexManager(cclient::data::compression::Compressor *compressorRef, cclient::data::streams::InputStream *blockReader, int version);
 
-    virtual
-    ~IndexManager ()
-    {
-    }
-    uint64_t
-    read (cclient::data::streams::InputStream *in);
+  virtual ~IndexManager() {
+  }
+  uint64_t
+  read(cclient::data::streams::InputStream *in);
 
-    std::shared_ptr<SerializedIndex>
-    lookup (std::shared_ptr<Key> key)
-    {
-    	std::shared_ptr< Block> block = std::make_shared<Block >(this, indexBlock);
-    	std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex> (block,block->lookup (key));
+  std::shared_ptr<SerializedIndex> lookup(std::shared_ptr<Key> key) {
+    std::shared_ptr<Block> block = std::make_shared<Block>(this, indexBlock);
+    std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex>(block, block->lookup(key));
 
-        return index;
-    }
+    return index;
+  }
 
-    int
-    getSize ()
-    {
-        return size;
-    }
+  int getSize() {
+    return size;
+  }
 
-    std::shared_ptr<IndexBlock>
-    getIndexBlock (std::shared_ptr<IndexEntry > ie)
-    {
+  std::shared_ptr<IndexBlock> getIndexBlock(std::shared_ptr<IndexEntry> ie) {
 
-        blockReader->seek (ie->getOffset ());
+    blockReader->seek(ie->getOffset());
 
-        uint8_t *compressedValue = new uint8_t[ie->getCompressedSize ()];
+    uint8_t *compressedValue = new uint8_t[ie->getCompressedSize()];
 
-        blockReader->readBytes (compressedValue, ie->getCompressedSize ());
+    blockReader->readBytes(compressedValue, ie->getCompressedSize());
 
-        compressorRef->setInput ((const char*) compressedValue, 0,
-                                 ie->getCompressedSize ());
+    compressorRef->setInput((const char*) compressedValue, 0, ie->getCompressedSize());
 
-        cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::ByteOutputStream (ie->getRawSize ());
+    cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::ByteOutputStream(ie->getRawSize());
 
-        compressorRef->decompress (outStream);
+    compressorRef->decompress(outStream);
 
-        cclient::data::streams::EndianInputStream *returnStream = new cclient::data::streams::EndianInputStream (
-            outStream->getByteArray (), outStream->getSize (), true);
+    cclient::data::streams::EndianInputStream *returnStream = new cclient::data::streams::EndianInputStream(outStream->getByteArray(), outStream->getSize(), true);
 
-        delete outStream;
+    delete outStream;
 
-        std::shared_ptr<IndexBlock> block = std::make_shared<IndexBlock> (version);
-        block->read (returnStream);
+    std::shared_ptr<IndexBlock> block = std::make_shared<IndexBlock>(version);
+    block->read(returnStream);
 
-        delete returnStream;
+    delete returnStream;
 
-        return block;
+    return block;
 
-    }
-protected:
-    int size = 0;
-    int version;
-    cclient::data::streams::InputStream *blockReader;
-    cclient::data::compression::Compressor *compressorRef;
-    std::shared_ptr<IndexBlock> indexBlock;
+  }
+ protected:
+  int size;
+  int version;
+  cclient::data::streams::InputStream *blockReader;
+  cclient::data::compression::Compressor *compressorRef;
+  std::shared_ptr<IndexBlock> indexBlock;
 
 };
 

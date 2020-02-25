@@ -101,7 +101,6 @@ public:
 
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
-    	std::cout << "writing BE encoded  from " << n << std::endl;
         return DataOutputStream::writeEncodedLong(n);
     }
 
@@ -124,7 +123,6 @@ public:
         compress->setInput(&growingBuffer.at(0), 0, location);
         compress->compress(output_stream);
 
-        std::cout << "writin rawsize " << location << " offset " << compress->getStreamOffset() << " " << compress->getCompressedSize() << std::endl;
 
         associatedRegion->setOffset(compress->getStreamOffset());
         associatedRegion->setRawSize(location);

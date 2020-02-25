@@ -143,7 +143,7 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
     if (bigEndian)
     {
-        // stream = new EndianInputStream(stream);
+         stream = new cclient::data::streams::EndianInputStream(stream);
     }
 
 
@@ -201,8 +201,8 @@ main (int argc, char **argv)
         bigEndian = true;
     if (!IsEmpty (&outputFile))
     {
-        std::cout << "Writing test Rfile to " << outputFile << std::endl;
-        writeRfile (outputFile, bigEndian, 0);
+  //      std::cout << "Writing test Rfile to " << outputFile << std::endl;
+//        writeRfile (outputFile, bigEndian, 0);
         if (bigEndian)
         {
             std::cout << "skipping read" << std::endl;

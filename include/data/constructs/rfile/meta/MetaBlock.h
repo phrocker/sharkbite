@@ -23,6 +23,7 @@
 #define RFILE_VERSION_3 3
 #define RFILE_VERSION_6 6
 #define RFILE_VERSION_7 7
+#define RFILE_VERSION_8 8
 
 
 
