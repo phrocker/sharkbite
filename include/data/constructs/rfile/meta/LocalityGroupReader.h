@@ -161,6 +161,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     }
 
     if (reseek) {
+
       iiter = index->lookup(startKey);
 
       close();
@@ -182,13 +183,14 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         entriesLeft = indexEntry->getNumEntries();
 
+
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
           currentStream = getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(),indexEntry->getRawSize());
           //currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         }
-        checkRange = newSeekRequest->getRange()->getStopKey() > indexEntry->getKey();
+        checkRange = newSeekRequest->getRange()->afterEndKey(indexEntry->getKey());
         if (!checkRange)
           topExists = true;
 
@@ -213,8 +215,8 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       }
     }
 
-    topExists = (rKey != NULL && currentRange->getInfiniteStopKey()) || !(currentRange->getStopKey() > rKey->getStream());
-    while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->getStartKey() < getTopKey()) {
+    topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
+    while (hasTop() && !currentRange->getInfiniteStartKey() && *currentRange->getStartKey() < *getTopKey()) {
       next();
     }
   }
@@ -235,7 +237,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
         } else {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         }
-        checkRange = currentRange->getStopKey() > indexEntry->getKey();
+        checkRange = !currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange)
           topExists = true;
       }
@@ -251,6 +253,9 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     rKey->read(currentStream);
     val->read(currentStream);
     entriesLeft--;
+    if (checkRange){
+      topExists = !currentRange->afterEndKey(getTopKey());
+    }
 
   }
 

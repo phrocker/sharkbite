@@ -180,6 +180,12 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return *this < *rhs || *rhs == *this;
   }
 
+  bool operator <=(const Key &rhs) const {
+    if (rhs == nullptr)
+      return false;
+    return *this < rhs || rhs == *this;
+  }
+
   bool
   operator <(const Key &rhs) const;
 
