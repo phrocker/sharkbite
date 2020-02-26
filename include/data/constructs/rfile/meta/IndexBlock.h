@@ -65,7 +65,7 @@ class IndexBlock : public cclient::data::streams::StreamInterface {
   }
 
   uint64_t read(cclient::data::streams::InputStream *in) {
-    if (version == 6 || version == 7) {
+    if (version == 6 || version == 7 || version == 8) {
       level = in->readInt();
       offset = in->readInt();
       hasNext = in->readBoolean();

@@ -117,7 +117,6 @@ public:
     }
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
-    	std::cout << "writing BE encoded " << htonlw(n) << " from " << n << std::endl;
         return ByteOutputStream::writeEncodedLong((int64_t) htonlw(n));
     }
 

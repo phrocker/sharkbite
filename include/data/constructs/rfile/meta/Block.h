@@ -77,7 +77,8 @@ public:
 		return blockStore->getIndexBlock(ie);
 	}
 
-	std::shared_ptr<Block> lookup(std::shared_ptr<Key> key) {
+	std::shared_ptr<Block> lookup(const std::shared_ptr<Key> &key) {
+
 		int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
 		if (posCheck < 0) {
 			posCheck = (posCheck * -1) - 1;
@@ -95,6 +96,7 @@ public:
 		if (indexBlock->getLevel() == 0) {
 			return shared_from_this();
 		}
+
 
 		std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(pos);
 		std::shared_ptr<Block> newChild = std::make_shared<Block>(

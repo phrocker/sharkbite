@@ -82,6 +82,7 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
     case RFILE_VERSION_3:
     case RFILE_VERSION_6:
     case RFILE_VERSION_7:
+    case RFILE_VERSION_8:
         break;
     default:
         throw std::runtime_error ("Did not see expected magic number");

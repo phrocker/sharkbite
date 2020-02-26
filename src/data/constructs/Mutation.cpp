@@ -33,7 +33,6 @@ Mutation::~Mutation() {
 }
 
 void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted, uint8_t *value, uint64_t value_len) {
-  std::cout << "wut2" << std::endl;
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 
@@ -62,7 +61,6 @@ void Mutation::put(const std::string &cf, const std::string &cq, const std::stri
 }
 
 void Mutation::put(const std::string &cf, const std::string &cq, const std::string &cv, int64_t ts, bool deleted) {
-  std::cout << "wut " << (deleted == true) << std::endl;
   baseStream->writeVLong(cf.size());
   //writeInt(cf.size());
 

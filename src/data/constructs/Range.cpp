@@ -62,6 +62,7 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
     memcpy(newRow, row.first, row.second);
     stop->setRow(newRow, row.second + 1);
     delete[] newRow;
+    stopKeyInclusive = false;
   }
   if (!infiniteStartKey && !infiniteStopKey && (stop != nullptr && *stop.get() < start.get())) {
     throw new cclient::exceptions::IllegalArgumentException("Start key must be less than end key in range");

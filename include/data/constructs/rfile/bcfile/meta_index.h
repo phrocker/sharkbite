@@ -109,7 +109,6 @@ public:
     write (cclient::data::streams::OutputStream *out)
     {
 
-    	std::cout << "Writing " << metaName << std::endl;
         std::string writeString = "data:";
         writeString.append (metaName);
 
@@ -261,7 +260,6 @@ public:
     uint64_t
     write (cclient::data::streams::OutputStream *out)
     {
-    	std::cout << "writing " << index.size() << std::endl;
         out->writeEncodedLong (index.size ());
         // write out all the meta index entries
         for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = index.begin ();

@@ -73,13 +73,13 @@ public:
     }
 
     int
-    binary_search (std::shared_ptr<Key> search_key)
+    binary_search (const std::shared_ptr<Key> &search_key)
     {
         return binary_search (0, offsets->size () - 1, search_key);
     }
 
     int
-    binary_search (int first, int last, std::shared_ptr<Key> search_key)
+    binary_search (int first, int last, const std::shared_ptr<Key> &search_key)
     {
         int index;
 

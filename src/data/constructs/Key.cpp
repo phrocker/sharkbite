@@ -204,6 +204,7 @@ Key::read (cclient::data::streams::InputStream *in)
 
     row = new char[colFamilyOffset];
     in->readBytes (row, colFamilyOffset);
+    rowLength = colFamilyOffset;
 
     colFamily = new char[colQualifierOffset - colFamilyOffset];
     in->readBytes (colFamily, colQualifierOffset - colFamilyOffset);

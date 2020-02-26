@@ -171,7 +171,7 @@ protected:
    
     // number of entries.
     uint32_t entries;
-    std::shared_ptr<cclient::data::streams::StreamInterface> key;
+    std::shared_ptr<cclient::data::Key> key;
     // new format stuff
     bool newFormat;
     // initial key

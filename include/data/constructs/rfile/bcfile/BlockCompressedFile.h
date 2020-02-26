@@ -171,8 +171,18 @@ protected:
         }
         delete[] magicVerify;
         // get the index meta
-        in_stream->seek (fileLength - magic_size - VERSION_SIZE - 8);
-        offsetIndexMeta = in_stream->readLong ();
+        if (version.getMajor() == 1)
+        {
+          in_stream->seek (fileLength - magic_size - VERSION_SIZE - 8);
+          offsetIndexMeta = in_stream->readLong ();
+        }
+        else{
+          in_stream->seek (fileLength - magic_size - VERSION_SIZE - 16);
+          offsetIndexMeta = in_stream->readLong ();
+          offsetIndexMetaCrypto = in_stream->readLong ();
+        }
+
+
 
 
         in_stream->seek (offsetIndexMeta);
@@ -197,6 +207,7 @@ protected:
     // for reading
     cclient::data::streams::InputStream *in_stream;
     uint64_t offsetIndexMeta;
+    uint64_t offsetIndexMetaCrypto;
 };
 
 }
