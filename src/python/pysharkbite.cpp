@@ -103,7 +103,12 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(s, "Value")
   .def(pybind11::init<>())
-  .def("get", &cclient::data::Value::getValueAsString, "Returns the value as a UTF-8 string");
+  .def("get", &cclient::data::Value::getValueAsString, "Returns the value as a UTF-8 string")
+  .def("get_bytes",
+      [](cclient::data::Value &self) {
+          return pybind11::bytes(self.getValueAsString());  // Return the data without transcoding
+      }
+  );
 
   pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(s, "Key")
   .def(pybind11::init<>())
