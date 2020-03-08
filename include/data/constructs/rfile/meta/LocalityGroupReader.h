@@ -62,7 +62,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   RelativeKey *rKey;
 
-  Value *val;
+  std::shared_ptr<Value> val;
 
   void close() {
     if (NULL != currentStream) {
@@ -109,6 +109,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   std::shared_ptr<Key> getTopKey() {
     return rKey->getKey();
+  }
+
+std::shared_ptr<Value> getTopValue() {
+    return val;
   }
 
   bool hasTop() {
@@ -207,7 +211,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
         } else
           prevKey = NULL;
         entriesLeft -= skipRR->getSkipped();
-        val = new Value();
+        val = std::make_shared<Value>();
         val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
         rKey = skipRR->getRelativeKey();
         delete skipRR;

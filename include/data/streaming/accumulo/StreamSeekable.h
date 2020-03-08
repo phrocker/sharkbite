@@ -32,11 +32,11 @@ class StreamSeekable : public StreamRelocation
 {
 protected:
     Range *range;
-    std::vector<uint8_t*> columnFamilies;
+    std::vector<std::string> columnFamilies;
     bool inclusive;
 public:
 
-    StreamSeekable (Range *range, std::vector<uint8_t*> columnFamilies,
+    StreamSeekable (Range *range, std::vector<std::string> columnFamilies,
                     bool inclusive) :
         range (range), columnFamilies (columnFamilies), inclusive (
             inclusive)
@@ -44,13 +44,14 @@ public:
 
     }
 
+
     Range *
     getRange ()
     {
         return range;
     }
 
-    std::vector<uint8_t*> *
+    std::vector<std::string> *
     getColumnFamilies ()
     {
         return &columnFamilies;

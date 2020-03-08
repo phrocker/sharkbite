@@ -15,6 +15,7 @@
 #define INPUT_INPUT_STREAM
 
 #include <istream>
+#include <memory>
 #include <cstring>
 #include <cstdio>
 
@@ -39,12 +40,17 @@ class InputStream
 public:
 
     InputStream (std::istream *ptr, uint64_t pos) :
-        istream_ref (ptr), position (new uint64_t (pos)), copy (false)
+        istream_ref (ptr), position (new uint64_t (pos)), copy (false), own_istream(false)
+    {
+    }
+
+    InputStream (std::unique_ptr<std::istream> ptr, uint64_t pos) :
+        istream_ref (ptr.release()), position (new uint64_t (pos)), copy (false), own_istream(true)
     {
     }
 
     InputStream () :
-        istream_ref (NULL), position (new uint64_t (0)), copy (false)
+        istream_ref (NULL), position (new uint64_t (0)), copy (false), own_istream(false)
     {
 
     }
@@ -68,6 +74,9 @@ public:
 
         if (!copy)
             delete position;
+
+        if (own_istream)
+            delete istream_ref;
     }
 
     virtual uint64_t
@@ -361,7 +370,7 @@ protected:
      */
     InputStream (InputStream *ptr) :
         istream_ref (ptr->istream_ref), position (ptr->position), copy (
-            true)
+            true), own_istream(false)
     {
 
     }
@@ -373,6 +382,7 @@ protected:
     // identify that we have copied a stream
     // useful when deleting position
     bool copy;
+    bool own_istream;
     
 
 };

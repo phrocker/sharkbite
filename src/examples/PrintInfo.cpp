@@ -60,7 +60,7 @@ readRfile (std::string outputFile, uint16_t port, bool dump)
     if (dump)
     {
 
-        std::vector<uint8_t*> cf;
+        std::vector<std::string> cf;
         cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);
 
 

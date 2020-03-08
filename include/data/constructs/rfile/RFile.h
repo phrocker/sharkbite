@@ -251,6 +251,11 @@ public:
         return std::make_pair (currentLocalityGroupReader->getTopKey(), nullptr);
     }
 
+    std::shared_ptr<cclient::data::KeyValue> getTop(){
+        return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(),
+         currentLocalityGroupReader->getTopValue());
+    }
+
 protected:
 
     void
