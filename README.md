@@ -41,6 +41,11 @@ the API.
 	libtool
 	libevent-dev
 	unzip
+	
+### For Native Python Iterators
+ 	JDK ( such as OpenJDK)
+	python3.7-dev
+
 
 ## Building Linux
 ```
@@ -69,13 +74,21 @@ library.
 
 ## Python Iterators (! BETA )
 
-We now support a beta version of python iterators. By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators
+### Recommended
+We now python iterators. If you don't have a need to build sharkbite and don't wish to use JNI for the python bindings, you can build
+the native-iterators-jni package without the rest of sharkbite. Simply run mvn package in the native-iterators-jni directory
+and the target directory will have the required JAR with all necessary dependencies. 
+
+### Using JNI bindings for python ( not recommended )
+By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators using 
+either JNI or Jython. 
 
 Iterators can be defined as single function lambdas or by implementing the seek or next methods.
 
 
 The first example implements the seek and onNext methods. seek is optional if you don't wish to adjust the range. Once keys are being iterated you may get the top key. You may call 
 iterator.next() after or the infrastructure will do that for you. 
+
 ```
 
 class myIterator: 
