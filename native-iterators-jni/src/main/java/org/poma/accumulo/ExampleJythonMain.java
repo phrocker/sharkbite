@@ -80,6 +80,7 @@ public class ExampleJythonMain {
 
             Map<String, String> options = new HashMap<>();
 
+            Key key = new Key();
 
             String content = new Scanner(new File(path)).useDelimiter("\\Z").next();
 

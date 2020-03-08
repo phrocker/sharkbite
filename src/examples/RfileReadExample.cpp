@@ -149,7 +149,7 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
     std::fstream::pos_type size = filesize(outputFile.c_str());
     cclient::data::RFile *newRFile = new cclient::data::RFile (stream, size);
-    std::vector<uint8_t*> cf;
+    std::vector<std::string> cf;
     cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);
 
 

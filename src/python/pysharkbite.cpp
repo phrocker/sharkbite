@@ -31,6 +31,9 @@
 #include "data/constructs/compressor/zlibCompressor.h"
 #include "../include/logging/Logger.h"
 #include "../include/logging/LoggerConfiguration.h"
+#include "data/streaming/accumulo/StreamSeekable.h"
+#include "data/constructs/rfile/RFile.h"
+#include "data/constructs/rfile/RFileOperations.h"
 
 using namespace pybind11::literals;
 
@@ -138,6 +141,9 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def(pybind11::init<const std::string&,bool,const std::string&,bool,bool>(),
       "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false);
 
+  pybind11::class_< cclient::data::streams::StreamSeekable>(s, "Seekable")
+    .def(pybind11::init<cclient::data::Range*,std::vector<std::string>,bool>());
+
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())
   .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t, const std::string & ) ) &cclient::data::Mutation::put, "Adds a mutation")
@@ -170,4 +176,15 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("addMutation", (bool (writer::Sink<cclient::data::KeyValue>::*)(const std::shared_ptr<cclient::data::Mutation> & ) ) &writer::Sink<cclient::data::KeyValue>::addMutation)
   .def("close",&writer::Sink<cclient::data::KeyValue>::close)
   .def("size",&writer::Sink<cclient::data::KeyValue>::size);
+
+  pybind11::class_<cclient::data::RFile>(s, "RFile")
+  .def("seek",&cclient::data::RFile::relocate)
+  .def("hasNext",&cclient::data::RFile::hasNext)
+  .def("getTop",&cclient::data::RFile::getTop)
+  .def("next",&cclient::data::RFile::next);
+
+
+  pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")
+    .def("open",&cclient::data::RFileOperations::open);
+
 }

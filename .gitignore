@@ -3,3 +3,4 @@ build/
 *.pyc
 workspace.xml
 native-iterators-jni/.idea/*
+native-iterators-jni/target

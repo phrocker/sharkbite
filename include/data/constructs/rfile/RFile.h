@@ -200,7 +200,7 @@ public:
     }
 
     virtual void
-    relocate (cclient::data::streams::StreamRelocation *location)
+    relocate (cclient::data::streams::StreamSeekable *location)
     {
         currentLocalityGroupReader->seek(location);
     }
@@ -249,6 +249,11 @@ public:
     {
 
         return std::make_pair (currentLocalityGroupReader->getTopKey(), nullptr);
+    }
+
+    std::shared_ptr<cclient::data::KeyValue> getTop(){
+        return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(),
+         currentLocalityGroupReader->getTopValue());
     }
 
 protected:
