@@ -22,18 +22,12 @@ namespace cclient{
 
 namespace data{
 
-
 class RFileOperations{
 public:
-    std::ifstream::pos_type filesize(const char* filename)
-    {
-        std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-        return in.tellg();
-    }
+  static std::ifstream::pos_type filesize(const char* filename);
+  static cclient::data::RFile *open(const std::string &);
 
-    static cclient::data::RFile *open(const std::string &);
 };
-
 }
 }
 #endif

@@ -49,12 +49,6 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("get", (std::string (cclient::impl::Configuration::*)(const std::string &, const std::string &) const) &cclient::impl::Configuration::get, "Get the configuration option with default value")
   .def("getLong", (uint32_t (cclient::impl::Configuration::*)(const std::string &, uint32_t) const) &cclient::impl::Configuration::getLong, "Get the integer value of a configuration item");
 
-pybind11::class_<cclient::data::Instance, std::shared_ptr<cclient::data::Instance>>(s, "Instance");
-//logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
-  pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")
-  .def_static("enableDebugLogger",&logging::LoggerConfiguration::enableLogger)
-  .def_static("enableTraceLogger",&logging::LoggerConfiguration::enableTraceLogger);
-
   pybind11::class_<cclient::data::Instance, std::shared_ptr<cclient::data::Instance>>(s, "Instance");
 //logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
   pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration")

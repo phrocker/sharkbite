@@ -200,7 +200,7 @@ public:
     }
 
     virtual void
-    relocate (cclient::data::streams::StreamRelocation *location)
+    relocate (cclient::data::streams::StreamSeekable *location)
     {
         currentLocalityGroupReader->seek(location);
     }

@@ -27,9 +27,9 @@ import time
 """
 
 This is an Example of using the Python connectors. The example will accept user input
-create a table writing arbitrary information to it via the BatchWriter and scanner will put the written data      
-     
-             
+create a table writing arbitrary information to it via the BatchWriter and scanner will put the written data
+
+
 """
 
 parser = ArgumentParser(description="This is an Apache Accummulo Python connector")
@@ -42,12 +42,24 @@ args = parser.parse_args()
 file = args.file
 
 import pysharkbite
-
-
 try:
-   
+
    rfile = pysharkbite.RFileOperations.open(file)
-    
+
+   cf = list()
+
+   rng = pysharkbite.Range()
+
+   seek = pysharkbite.Seekable(rng,cf,False)
+
+   rfile.seek(seek)
+
+   ## print the row
+   while rfile.hasNext():
+       kv = rfile.getTop()
+       print(kv.getKey().getRow())
+       rfile.next()
+
 except RuntimeError as e:
      traceback.print_exc()
      print("Oops, error caused: " + str(e))
