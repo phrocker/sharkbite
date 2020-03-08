@@ -32,6 +32,7 @@ the API.
 	GNU 4+
 	cmake
 	make
+	python3.7-dev ( for python bindings )
 	
 ### For Libthrift
 	bison 3+ 
@@ -44,7 +45,6 @@ the API.
 	
 ### For Native Python Iterators
  	JDK ( such as OpenJDK)
-	python3.7-dev
 
 
 ## Building Linux
@@ -80,6 +80,7 @@ the native-iterators-jni package without the rest of sharkbite. Simply run mvn p
 and the target directory will have the required JAR with all necessary dependencies. 
 
 ### Using JNI bindings for python ( not recommended )
+
 By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators using 
 either JNI or Jython. 
 
