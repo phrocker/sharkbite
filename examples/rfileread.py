@@ -46,10 +46,16 @@ try:
 
    rfile = pysharkbite.RFileOperations.open(file)
 
+   # list of column families
    cf = list()
+
+   ## range
 
    rng = pysharkbite.Range()
 
+   ## seekable is an object that replaces the function call
+   ## of seek(range,cf,boolean). This exists because the extension point
+   ## in the C++ Api allows varying seekable objects that change how seeks occur
    seek = pysharkbite.Seekable(rng,cf,False)
 
    rfile.seek(seek)
