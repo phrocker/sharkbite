@@ -86,9 +86,9 @@ public:
 
         if (newFormat)
         {
-            offset = in->readEncodedLong ();
-            compressedSize = in->readEncodedLong ();
-            rawSize = in->readEncodedLong ();
+            offset = in->readHadoopLong ();
+            compressedSize = in->readHadoopLong ();
+            rawSize = in->readHadoopLong ();
         }
         else
         {

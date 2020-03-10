@@ -21,12 +21,13 @@
 #include "IndexEntry.h"
 #include "SerializedIndex.h"
 #include "KeyIndex.h"
+#include "IndexMetaBlock.h"
 
 #include <iomanip>      // std::setfill, std::setw
 namespace cclient {
 namespace data {
 
-class IndexBlock : public cclient::data::streams::StreamInterface {
+class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamInterface {
  protected:
   int level;
   int offset;

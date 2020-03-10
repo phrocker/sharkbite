@@ -20,6 +20,7 @@
 #include <memory>
 #include "../../Key.h"
 #include "data/streaming/Streams.h"
+#include "IndexMetaBlock.h"
 
 namespace cclient {
 namespace data {
@@ -57,7 +58,7 @@ public:
 		return currentPosition;
 	}
 
-	std::shared_ptr<IndexBlock> getIndexBlock() {
+	std::shared_ptr<IndexMetaBlock> getIndexBlock() {
 		return indexBlock;
 	}
 

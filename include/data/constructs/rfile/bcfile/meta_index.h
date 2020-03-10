@@ -87,7 +87,9 @@ public:
     uint64_t
     read (cclient::data::streams::InputStream *in)
     {
+
         std::string fullMetaName = in->readString ();
+
 
         if (fullMetaName.at (0) == 'd' && fullMetaName.at (4) == ':')
         {
@@ -95,8 +97,7 @@ public:
         }
         else
         {
-
-            throw std::runtime_error ("Corrupted Meta region Index");
+            throw std::runtime_error ("Corrupted Meta region Index , received " + fullMetaName);
         }
         compressionAlgo = cclient::data::compression::CompressionAlgorithm (in->readString ());
 
@@ -241,7 +242,6 @@ public:
     uint64_t
     read (cclient::data::streams::InputStream *in)
     {
-        //uint32_t count = in->readEnc
         uint64_t count = in->readHadoopLong ();
 
         for (uint64_t i = 0; i < count; i++)

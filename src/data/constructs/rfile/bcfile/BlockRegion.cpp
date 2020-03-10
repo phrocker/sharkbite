@@ -27,21 +27,17 @@ uint64_t BlockRegion::read(streams::InputStream *in) {
 }
 
 uint64_t BlockRegion::write(streams::OutputStream *out) {
-  std::cout << "Writing block region " << std::endl;
   cclient::data::streams::BigEndianByteStream *byteStream = dynamic_cast<cclient::data::streams::BigEndianByteStream*>(out);
   uint64_t pos = -1;
   if (byteStream != nullptr) {
-    std::cout << "writing beendian out " << offset << " " << compressedSize << " " << rawSize << std::endl;
     byteStream->writeEncodedLong(offset);
     byteStream->writeEncodedLong(compressedSize);
     pos = byteStream->writeEncodedLong(rawSize);
   } else {
-    std::cout << "writing leendian out" << std::endl;
     out->writeEncodedLong(offset);
     out->writeEncodedLong(compressedSize);
     pos = out->writeEncodedLong(rawSize);
   }
-  std::cout << "Finished writing block region " << std::endl;
   return pos;
 
 }

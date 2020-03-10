@@ -63,9 +63,8 @@ public:
 
     uint64_t  read (cclient::data::streams::InputStream *in) {
         compressionAlgorithm = cclient::data::compression::CompressionAlgorithm(in->readString());
-
-        uint64_t count = in->readEncodedLong();
-
+        // TODO was encoded long
+        uint64_t count = in->readHadoopLong();
 
         for (uint64_t i = 0; i < count; i++) {
             listRegions.push_back(new BlockRegion(in));
@@ -78,8 +77,8 @@ public:
     uint64_t write (cclient::data::streams::OutputStream *out) {
 
         out->writeString(compressionAlgorithm.getName());
-
-        out->writeEncodedLong(listRegions.size());
+        // TODO was encoded long
+        out->writeHadoopLong(listRegions.size());
         for (std::vector<BlockRegion*>::iterator it = listRegions.begin();
                 it != listRegions.end(); it++) {
             (*it)->write(out);

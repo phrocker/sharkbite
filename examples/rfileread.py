@@ -63,7 +63,7 @@ try:
    ## print the row
    while rfile.hasNext():
        kv = rfile.getTop()
-       print(kv.getKey().getRow())
+       print(kv.getKey())
        rfile.next()
 
 except RuntimeError as e:

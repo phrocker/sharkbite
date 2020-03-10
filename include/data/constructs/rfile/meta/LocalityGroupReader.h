@@ -239,13 +239,12 @@ std::shared_ptr<Value> getTopValue() {
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
-          currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
+          currentStream = getDataBlock(indexEntry->getOffset(),indexEntry->getCompressedSize(),indexEntry->getRawSize());
         }
         checkRange = !currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange)
           topExists = true;
       }
-
       else {
         rKey = 0;
         val = 0;

@@ -14,7 +14,6 @@
 #ifndef ENDIAN_IN_STREAM
 #define ENDIAN_IN_STREAM
 
-
 #include <stdexcept>
 #include <cstdio>
 #include <iostream>
@@ -28,53 +27,63 @@ namespace cclient {
 namespace data {
 namespace streams {
 
-#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#ifndef ntohll
+  #define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#endif
 
 /**
  * Purpose: converts all network ordered data into host ordered data
  * Meant to be used between thrift calls
  */
-class EndianInputStream: public ByteInputStream {
-public:
+class EndianInputStream : public ByteInputStream {
+ public:
 
-    EndianInputStream(InputStream *out_stream) :
-        ByteInputStream(out_stream) {
+  EndianInputStream(InputStream *out_stream)
+      :
+      ByteInputStream(out_stream) {
 
-    }
+  }
 
-    EndianInputStream(char *byteArray, size_t len) :
-        ByteInputStream(byteArray, len) {
+  EndianInputStream(char *byteArray, size_t len)
+      :
+      ByteInputStream(byteArray, len) {
 
-    }
+  }
 
-    EndianInputStream(char *byteArray, size_t len, bool allocated) :
-        ByteInputStream(byteArray, len,allocated) {
+  EndianInputStream(char *byteArray, size_t len, bool allocated)
+      :
+      ByteInputStream(byteArray, len, allocated) {
 
-    }
+  }
 
-    EndianInputStream() : ByteInputStream()
-    {
-    }
+  EndianInputStream()
+      :
+      ByteInputStream() {
+  }
 
-    virtual ~EndianInputStream() {
+  virtual ~EndianInputStream() {
 
-    }
+  }
 
-    short readShort() {
-        return ntohs(ByteInputStream::readShort());
-    }
+  virtual short readShort() override {
+    return ntohs(ByteInputStream::readShort());
+  }
 
-    int readInt() {
+  virtual unsigned short readUnsignedShort() override {
+    unsigned short shortVal;
+    readBytes((char*) &shortVal, 2);
+    return ntohs(shortVal);
+  }
 
+  virtual int readInt() override {
+    return ntohl(ByteInputStream::readInt());
+  }
 
-        return ntohl(ByteInputStream::readInt());
-    }
-
-    uint64_t readLong() {
-        auto jd = ByteInputStream::readLong();
-        auto ret = ntohll(jd);
-        return ret;
-    }
+  virtual uint64_t readLong() override {
+    auto jd = ByteInputStream::readLong();
+    auto ret = ntohll(jd);
+    return ret;
+  }
 
 };
 }

@@ -151,7 +151,6 @@ RFile::append (std::shared_ptr<KeyValue> kv)
     // we've written all we can write doctor.
     if (position >= maxBlockSize)
     {
-    	std::cout << "stopping at " << entries << std::endl;
         currentBlockWriter->flush ();
         closeBlock (kv);
 

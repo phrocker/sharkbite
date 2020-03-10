@@ -212,8 +212,22 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return !(*this == *rhs);
   }
 
-//	friend ostream &operator<<(ostream&os,const Key *rhs);
-  //friend ostream &operator<<(ostream&os,const Key &rhs);
+
+
+
+  std::string toString(){
+    std::string out = "";
+    std::pair<char*, size_t> row = getRow();
+    out += std::string(row.first, row.second) + " ";
+    std::pair<char*, size_t> cf = getColFamily();
+    std::pair<char*, size_t> cq = getColQualifier();
+    out +=  std::string(cf.first, cf.second) + ":" + std::string(cq.first, cq.second) + " [";
+    std::pair<char*, size_t> viz = getColVisibility();
+    auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
+    out += vizstring + "] " + std::to_string(getTimeStamp());
+    return out;
+  }
+
 
   friend inline std::ostream&
   operator <<(std::ostream &out, Key &rhs) {

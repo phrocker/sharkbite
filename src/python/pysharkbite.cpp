@@ -118,6 +118,9 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def(pybind11::init<const char *,const char *, const char *, const char *, int64_t>(),
       "row"_a, "columnfamily"_a=nullptr,"columnqualifier"_a=nullptr,"columnvisibility"_a=nullptr,"timestamp"_a=9223372036854775807L)
   .def("setRow",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setRow, "Sets the row")
+  .def("__str__",[](const std::shared_ptr<cclient::data::Key> &si) {
+        return si->toString();
+    })
   .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColFamily, "Sets the column fmaily")
   .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColQualifier, "Sets the column qualifier")
   .def("getRow", &cclient::data::Key::getRowStr, "Gets the row")
