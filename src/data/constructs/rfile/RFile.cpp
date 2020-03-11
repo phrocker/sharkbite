@@ -56,6 +56,10 @@ RFile::RFile (streams::InputStream *input_stream, long fileLength) :
     lastKeyValue = NULL;
 
     blockWriter = new BlockCompressedFile (in_stream, fileLength);
+
+    compressorRef = blockWriter->getCompressor ();
+
+    maxBlockSize = compressorRef->getBufferSize () * 8;
     
     streams::InputStream *metaBlock = blockWriter->getMetaIndex ()->getEntry (
                                  "RFile.index")->readDataStream (in_stream);

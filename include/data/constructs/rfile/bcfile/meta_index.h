@@ -160,6 +160,10 @@ public:
         compressionAlgo = algo;
     }
 
+    cclient::data::compression::CompressionAlgorithm getAlgorithm(){
+      return compressionAlgo;
+    }
+
     void
     setBlockRegion (BlockRegion reg)
     {

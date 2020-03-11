@@ -166,6 +166,7 @@ std::shared_ptr<Value> getTopValue() {
 
     if (reseek) {
 
+      std::cout << "reseek" << std::endl;
       iiter = index->lookup(startKey);
 
       close();
@@ -186,6 +187,7 @@ std::shared_ptr<Value> getTopValue() {
 
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         entriesLeft = indexEntry->getNumEntries();
+        std::cout << "entries " << entriesLeft << std::endl;
 
 
         if (version == 3 || version == 4) {

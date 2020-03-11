@@ -154,17 +154,14 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
 
     newRFile->relocate(seekable);
+    long count = 0;
     while (newRFile->hasNext())
     {
-        std::cout << "has next " << (**newRFile).first <<  std::endl;
+        //std::cout << "has next " << (**newRFile).first <<  std::endl;
 
         newRFile->next();
 
-
-        if (!newRFile->hasNext())
-        {
-            std::cout << "no next" << std::endl;
-        }
+        count++;
 
     }
 
@@ -172,7 +169,7 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
 
 
-    std::cout << "we done" << std::endl;
+    std::cout << "we done at " << count << std::endl;
 
     delete stream;
 

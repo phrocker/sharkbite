@@ -31,9 +31,7 @@ public:
     {
     }
     
-    virtual bool
-    hasNextKey () =0;
-
+    virtual bool hasNextKey () =0;
 };
 
 }

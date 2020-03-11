@@ -39,7 +39,7 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
   uint64_t
   read(cclient::data::streams::InputStream *in);
 
-  std::shared_ptr<SerializedIndex> lookup(std::shared_ptr<Key> key) {
+  std::shared_ptr<SerializedIndex> lookup(const std::shared_ptr<Key> &key) {
     std::shared_ptr<Block> block = std::make_shared<Block>(this, indexBlock);
     std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex>(block, block->lookup(key));
 
@@ -50,8 +50,10 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
     return size;
   }
 
-  std::shared_ptr<IndexBlock> getIndexBlock(std::shared_ptr<IndexEntry> ie) {
+  std::shared_ptr<IndexBlock> getIndexBlock(const std::shared_ptr<IndexEntry> &ie) {
 
+    std::cout << "seeking to " << ie->getOffset() << std::endl;
+    
     blockReader->seek(ie->getOffset());
 
     uint8_t *compressedValue = new uint8_t[ie->getCompressedSize()];
@@ -60,18 +62,14 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
 
     compressorRef->setInput((const char*) compressedValue, 0, ie->getCompressedSize());
 
-    cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::ByteOutputStream(ie->getRawSize());
+    cclient::data::streams::ByteOutputStream outStream(ie->getRawSize());
 
-    compressorRef->decompress(outStream);
+    compressorRef->decompress(&outStream);
 
-    cclient::data::streams::EndianInputStream *returnStream = new cclient::data::streams::EndianInputStream(outStream->getByteArray(), outStream->getSize(), true);
-
-    delete outStream;
+    cclient::data::streams::EndianInputStream returnStream(outStream.getByteArray(), outStream.getSize(), true);
 
     std::shared_ptr<IndexBlock> block = std::make_shared<IndexBlock>(version);
-    block->read(returnStream);
-
-    delete returnStream;
+    block->read(&returnStream);
 
     return block;
 

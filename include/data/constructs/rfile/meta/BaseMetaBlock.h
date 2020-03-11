@@ -41,6 +41,12 @@ public:
     virtual std::shared_ptr<BaseMetaBlock>
     getPreviousBlock () = 0;
 
+
+
+    virtual std::shared_ptr<BaseMetaBlock> getNextBlock() = 0;
+
+    virtual std::shared_ptr<BaseMetaBlock> getNext() = 0;
+
     virtual std::shared_ptr<IndexMetaBlock> getIndexBlock() = 0;
 
     virtual uint32_t

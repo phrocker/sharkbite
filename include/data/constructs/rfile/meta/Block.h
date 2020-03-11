@@ -74,11 +74,13 @@ public:
 		return indexBlock->hasNextKey();
 	}
 
-	std::shared_ptr<IndexBlock> getIndexBlock(std::shared_ptr<IndexEntry> ie) {
+	std::shared_ptr<IndexBlock> getIndexBlock(const std::shared_ptr<IndexEntry> &ie) {
 		return blockStore->getIndexBlock(ie);
 	}
 
 	std::shared_ptr<Block> lookup(const std::shared_ptr<Key> &key) {
+
+	  std::cout << "lookup " << std::endl;
 
 		int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
 		if (posCheck < 0) {
@@ -87,7 +89,7 @@ public:
 		uint64_t pos = posCheck;
 		if (pos == indexBlock->getIndex()->size()) {
 			if (parent != NULL) {
-				throw std::runtime_error("Illegal state");
+				throw std::runtime_error("Illegal state ( parent is null )");
 			}
 			currentPosition = pos;
 			return shared_from_this();
@@ -109,14 +111,63 @@ public:
 
 	}
 
+	virtual std::shared_ptr<BaseMetaBlock> getNextBlock(){
+		return parent->getNext();
+	}
+
+  virtual	std::shared_ptr<BaseMetaBlock> getNext() {
+
+    std::cout << "get next is " << currentPosition+1 << std::endl;
+	    if (currentPosition == indexBlock->getIndex()->size()){
+	      std::cout << "return parent next" << std::endl;
+	      return parent->getNext();
+	    }
+
+		auto it =  indexBlock->getIndex()->get(
+	        currentPosition);
+
+	    currentPosition++;
+
+	    std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(
+	        currentPosition);
+			std::cout <<  it->getKey()->toString() << " " << ie->getKey()->toString() << std::endl;
+	    std::shared_ptr<Block> newChild = std::make_shared<Block>(
+	        shared_from_this(), getIndexBlock(ie));
+	    std::shared_ptr<Block> returnBlock = newChild->getFirst();
+	    if (returnBlock != NULL) {
+	      newChild = nullptr;
+	    } else
+	      returnBlock = newChild;
+
+	    return returnBlock;
+
+	  }
+
+  std::shared_ptr<Block> getFirst() {
+    currentPosition = 0;
+    if (indexBlock->getLevel() == 0) {
+      return shared_from_this();
+    }
+
+    std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(
+        currentPosition);
+    std::shared_ptr<Block> newChild = std::make_shared<Block>(
+        shared_from_this(), getIndexBlock(ie));
+    std::shared_ptr<Block> returnBlock = newChild->getFirst();
+
+    return returnBlock;
+
+  }
+
 	std::shared_ptr<Block> getLast() {
-		currentPosition = indexBlock->getIndex()->size() - 1;
+		int pos = indexBlock->getIndex()->size() - 1;
 		if (indexBlock->getLevel() == 0) {
-			return NULL;
+			return shared_from_this();
 		}
 
+		currentPosition = pos;
 		std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(
-				currentPosition);
+				pos);
 		std::shared_ptr<Block> newChild = std::make_shared<Block>(
 				shared_from_this(), getIndexBlock(ie));
 		std::shared_ptr<Block> returnBlock = newChild->getLast();
@@ -130,6 +181,7 @@ public:
 	}
 
 	std::shared_ptr<BaseMetaBlock> getPrevious() {
+	  std::cout << "get previous " << std::endl;
 		if (currentPosition == 0) {
 			return parent->getPrevious();
 		}

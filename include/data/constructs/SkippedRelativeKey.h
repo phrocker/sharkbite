@@ -42,7 +42,7 @@ protected:
     int skipped;
 
     void
-    fastSkip (cclient::data::streams::InputStream *stream, std::shared_ptr<Key>  seekKey, std::vector<char> *valCopy,
+    fastSkip (cclient::data::streams::InputStream *stream, const std::shared_ptr<Key> &seekKey, std::vector<char> *valCopy,
               std::shared_ptr<Key>  prevKey, std::shared_ptr<Key>  currKey)
     {
 

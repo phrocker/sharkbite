@@ -55,7 +55,7 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
   in_buf = new Bytef[len];
   memcpy(in_buf, buffer + off, len);
   delete[] buffer;
-  buffer = NULL;
+  buffer = nullptr;
 
   c_stream.next_in = in_buf;
   c_stream.next_out = out_buf;
@@ -137,7 +137,7 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   in_buf = new Bytef[len];
   memcpy(in_buf, buffer + off, len);
   delete[] buffer;
-  buffer = NULL;
+  buffer = nullptr;
 
   c_stream.next_in = in_buf;
   c_stream.next_out = out_buf;

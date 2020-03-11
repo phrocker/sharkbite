@@ -162,8 +162,7 @@ class InputStream {
     uint8_t byte = 0x00;
     ;
     readBytes((uint8_t*) &byte, 1);
-    //  *position += 1;
-    if (byte)
+    if (byte==0x01)
       return 0x01;
     else
       return 0x00;

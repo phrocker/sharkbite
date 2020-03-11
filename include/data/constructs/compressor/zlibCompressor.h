@@ -31,7 +31,7 @@ public:
 		init = false;
 		// initialize with the defautl buffer size.
 		initialize(64 * 1024);
-		buffer = NULL;
+		buffer = nullptr;
 	}
 	/**
 	 * Sets the input length and intializes the compressor
@@ -41,7 +41,7 @@ public:
 			Compressor(), rawSize(0), total_out(0), in_buf(NULL) {
 		init = false;
 		initialize(in_len);
-		buffer = NULL;
+		buffer = nullptr;
 	}
 
 	virtual ~ZLibCompressor() {

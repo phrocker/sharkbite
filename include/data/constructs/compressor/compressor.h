@@ -36,16 +36,16 @@ public:
     Compressor () :
         len (0), off (0), stream_offset (0)
     {
-        buffer = NULL;
+        buffer = nullptr;
     }
 
     virtual
     ~Compressor ()
     {
 
-        if (buffer != NULL)
+        if (buffer != nullptr)
             delete[] buffer;
-        buffer=NULL;
+        buffer=nullptr;
     }
 
     virtual Compressor *newInstance() = 0;

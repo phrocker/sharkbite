@@ -32,9 +32,8 @@ public:
     {
 
     }
-    //virtual std::shared_ptr<IndexBlock> getBlock();
-
-    virtual std::shared_ptr<IndexBlock> getIndexBlock (std::shared_ptr<IndexEntry> ie) = 0;
+    
+    virtual std::shared_ptr<IndexBlock> getIndexBlock (const std::shared_ptr<IndexEntry> &ie) = 0;
 };
 }
 }
