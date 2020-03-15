@@ -48,7 +48,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   volatile bool closed;
   bool checkRange;
   volatile bool topExists = false;
-  cclient::data::streams::InputStream *currentStream;
+  std::unique_ptr<cclient::data::streams::InputStream> currentStream;
   volatile bool interrupted = false;
   Range *currentRange;
   std::shared_ptr<SerializedIndex> iiter;
@@ -67,7 +67,6 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   void close() {
     if (NULL != currentStream) {
       currentStream->close();
-      delete currentStream;
       currentStream = NULL;
     }
   }
@@ -81,8 +80,6 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       closed(false),
       checkRange(false),
       topExists(false),
-      currentStream(
-      NULL),
       interrupted(false),
       currentRange(NULL),
       iiter(NULL),
@@ -166,7 +163,6 @@ std::shared_ptr<Value> getTopValue() {
 
     if (reseek) {
 
-      std::cout << "reseek" << std::endl;
       iiter = index->lookup(startKey);
 
       close();
@@ -194,7 +190,6 @@ std::shared_ptr<Value> getTopValue() {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
           currentStream = getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(),indexEntry->getRawSize());
-          //currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         }
         checkRange = newSeekRequest->getRange()->afterEndKey(indexEntry->getKey());
         if (!checkRange)
@@ -206,17 +201,16 @@ std::shared_ptr<Value> getTopValue() {
 
         std::shared_ptr<Key> currKey = 0;
 
-        SkippedRelativeKey *skipRR = new SkippedRelativeKey(currentStream, startKey, &valueArray, prevKey, currKey);
+        SkippedRelativeKey skipRR(currentStream.get(), startKey, &valueArray, prevKey, currKey);
 
-        if (skipRR->getPrevKey() != NULL) {
-          prevKey = std::make_shared<Key>(skipRR->getPrevKey());
+        if (skipRR.getPrevKey() != NULL) {
+          prevKey = std::make_shared<Key>(skipRR.getPrevKey());
         } else
           prevKey = NULL;
-        entriesLeft -= skipRR->getSkipped();
+        entriesLeft -= skipRR.getSkipped();
         val = std::make_shared<Value>();
         val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
-        rKey = skipRR->getRelativeKey();
-        delete skipRR;
+        rKey = skipRR.getRelativeKey();
 
       }
     }
@@ -231,7 +225,7 @@ std::shared_ptr<Value> getTopValue() {
 
     if (!hasTop())
       throw std::runtime_error("Illegal State Exception");
-    if (entriesLeft == 0) {
+    if (SH_UNLIKELY(entriesLeft == 0)) {
       currentStream->close();
 
       if (iiter->hasNext()) {
@@ -255,8 +249,8 @@ std::shared_ptr<Value> getTopValue() {
       }
     }
     prevKey = std::static_pointer_cast<Key>(rKey->getStream());
-    rKey->read(currentStream);
-    val->read(currentStream);
+    rKey->read(currentStream.get());
+    val->read(currentStream.get());
     entriesLeft--;
     if (checkRange){
       topExists = !currentRange->afterEndKey(getTopKey());
@@ -264,24 +258,23 @@ std::shared_ptr<Value> getTopValue() {
 
   }
 
-  cclient::data::streams::InputStream*
+  std::unique_ptr<cclient::data::streams::InputStream>
   getDataBlock(uint32_t index) {
 
     BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
     region->setCompressor(bcFile->getDataIndex()->getCompressionAlgorithm().create());
-    cclient::data::streams::InputStream *stream = region->readDataStream(reader);
+    auto stream = region->readDataStream(reader);
     delete region;
     return stream;
   }
 
-  cclient::data::streams::InputStream*
+  std::unique_ptr<cclient::data::streams::InputStream>
   getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize) {
 
 //
     cclient::data::compression::Compressor *compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create();
-    BlockRegion *region = new BlockRegion(offset, compressedSize, rawSize, compressor);
-    cclient::data::streams::InputStream *stream = region->readDataStream(reader);
-    delete region;
+    BlockRegion region(offset, compressedSize, rawSize, compressor);
+    auto stream = region.readDataStream(reader);
     return stream;
   }
 

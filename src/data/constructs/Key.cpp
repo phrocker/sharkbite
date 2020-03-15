@@ -27,85 +27,126 @@ Key::Key (const char * const userRow) :
 	if (userRow)
 		setRow(userRow,strlen(userRow));
 	else
-		row = new char[0];
+		row = nullptr;
 
-    colFamily = new char[0];
+    colFamily = nullptr;
 
-    colQualifier = new char[0];
+    colQualifier = nullptr;
 
-    keyVisibility = new char[0];
+    keyVisibility = nullptr; 
 
 }
 
 Key::~Key ()
 {
 
-    delete[] row;
-    delete[] colFamily;
-    delete[] colQualifier;
-    delete[] keyVisibility;
+    if (row)
+        delete[] row;
+    if (colFamily)
+        delete[] colFamily;
+    if (colQualifier)
+        delete[] colQualifier;
+    if (keyVisibility)
+        delete[] keyVisibility;
 
 }
 
 void
-Key::setRow (const char *r, uint32_t size)
+Key::setRow (const char *r, uint32_t size, bool takeOwnership)
 {
-    if (size > rowMaxSize)
-    {
-        delete[] row;
-        row = new char[size];
+
+    if (!takeOwnership){
+        if (size > rowMaxSize)
+        {
+            delete[] row;
+            row = new char[size];
+            rowMaxSize = size;
+        }
+
+        memcpy (row, r, size);
+    }else{
+        if (row){
+            delete [] row;
+        }
+        row = (char*)r;
         rowMaxSize = size;
     }
-
-    memcpy (row, r, size);
     rowLength = size;
+    
 
 }
 
 void
-Key::setColFamily (const char *r, uint32_t size)
+Key::setColFamily (const char *r, uint32_t size, bool takeOwnership)
 {
 
-    if (size > columnFamilySize)
-    {
-        delete[] colFamily;
-        colFamily = new char[size];
+    if (!takeOwnership){
+        if (size > columnFamilySize)
+        {
+            delete[] colFamily;
+            colFamily = new char[size];
+            columnFamilySize = size;
+        }
+
+        memcpy (colFamily, r, size);
+    }
+    else{
+        if (colFamily){
+            delete [] colFamily;
+        }
+        colFamily = (char*)r;
         columnFamilySize = size;
     }
-
-    memcpy (colFamily, r, size);
     columnFamilyLength = size;
 
 }
 
 void
-Key::setColQualifier (const char *r, uint32_t size, uint32_t offset)
+Key::setColQualifier (const char *r, uint32_t size, uint32_t offset, bool takeOwnership)
 {
-    if (offset + size > colQualSize)
-    {
-        char *nr = new char[size + offset];
-        memcpy (nr, colQualifier, colQualSize);
-        delete[] colQualifier;
-        colQualifier = nr;
+    if (!takeOwnership){
+        if (offset + size > colQualSize)
+        {
+            char *nr = new char[size + offset];
+            memcpy (nr, colQualifier, colQualSize);
+            delete[] colQualifier;
+            colQualifier = nr;
+            colQualSize = size + offset;
+        }
+
+        memcpy (colQualifier + offset, r, size);
+    }
+    else{
+        if (colQualifier){
+            delete [] colQualifier;
+        }
+        colQualifier=(char*)r;
         colQualSize = size + offset;
     }
-
-    memcpy (colQualifier + offset, r, size);
     colQualLen = size + offset;
 
 }
 
 void
-Key::setColVisibility (const char *r, uint32_t size)
+Key::setColVisibility (const char *r, uint32_t size, bool takeOwnership)
 {
-    if (size > colVisSize)
-    {
-        delete[] keyVisibility;
-        keyVisibility = new char[size];
+    if (!takeOwnership){
+        if (size > colVisSize)
+        {
+            delete[] keyVisibility;
+            keyVisibility = new char[size];
+            colVisSize = size;
+        }
+        memcpy (keyVisibility, r, size);
+    }
+    else{
+        if (keyVisibility){
+            delete [] keyVisibility;
+        }
+        keyVisibility = (char*)r;
         colVisSize = size;
     }
-
-    memcpy (keyVisibility, r, size);
+    
 
 }
 

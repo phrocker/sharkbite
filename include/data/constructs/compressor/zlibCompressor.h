@@ -15,6 +15,7 @@
 #define ZLIB_COMPRESSOR_H
 
 #include <exception>
+#include <vector>
 #include <stdexcept>
 #include "compressor.h"
 #include "../../streaming/DataOutputStream.h"
@@ -27,7 +28,7 @@ namespace compression {
 class ZLibCompressor: public Compressor {
 public:
 	ZLibCompressor() :
-			Compressor(), rawSize(0), total_out(0), in_buf(NULL) {
+			Compressor(), rawSize(0), total_out(0) {
 		init = false;
 		// initialize with the defautl buffer size.
 		initialize(64 * 1024);
@@ -38,7 +39,7 @@ public:
 	 * @param in_len input length
 	 */
 	explicit ZLibCompressor(uint32_t in_len) :
-			Compressor(), rawSize(0), total_out(0), in_buf(NULL) {
+			Compressor(), rawSize(0), total_out(0) {
 		init = false;
 		initialize(in_len);
 		buffer = nullptr;
@@ -126,12 +127,12 @@ protected:
 	// raw size of the uncompressed data.
 	uint32_t rawSize;
 	// input buffer.
-	Bytef *in_buf;
+	std::vector<Bytef> in_buf;
 	// total output size.
 	uint32_t total_out;
 
 	// output buffer.
-	Bytef *out_buf;
+	std::vector<Bytef> out_buf;
 	// input length.
 	uint32_t input_length;
 	// output length

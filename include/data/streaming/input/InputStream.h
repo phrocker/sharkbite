@@ -85,29 +85,59 @@ class InputStream {
   virtual std::string readString() {
     // write size of string
     long vLong = readHadoopLong();
+   
+    uint8_t *bytes = new uint8_t[vLong + 1];
+    memset(bytes, 0x00, vLong + 1);
+    readBytes(bytes, vLong);
+    auto ret = std::string((char*) bytes,vLong);
+    delete[] bytes;
+    return ret;
+/**
+ 
+    long vLong = readHadoopLong();
 
     uint8_t *bytes = new uint8_t[vLong + 1];
     memset(bytes, 0x00, vLong + 1);
     readBytes(bytes, vLong);
     //delete[] bytes;
     return std::string((char*) bytes);
+*/
+/*    
+      // write size of string
+    long vLong = readHadoopLong();
+    std::string ret(vLong+1,0x00);
+    istream_ref->read((char*) &(ret[0]), vLong);
+    *position += vLong;
+    return ret;
+
+    std::string ret;
+    ret.resize(vLong+1);
+    //uint8_t *bytes = new uint8_t[vLong + 1];
+    //memset(bytes, 0x00, vLong + 1);
+    readBytes(&(ret[0]), vLong);
+    //readBytes(bytes, vLong);
+    std::cout << "got " << ret << std::endl;
+    //delete[] bytes;
+    return ret;
+
+    */
   }
 
-  virtual uint64_t readBytes(uint8_t *bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual uint64_t readBytes(char *bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(char *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual uint64_t readBytes(uint8_t **bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(uint8_t **bytes, size_t cnt) {
     if (*bytes == NULL) {
       *bytes = new uint8_t[cnt];
     }
@@ -121,7 +151,14 @@ class InputStream {
     return byte;
   }
 
-  virtual int64_t readSignedByte() {
+  virtual int8_t readSignedByte() {
+    int8_t byte=0;
+    readBytes((char *) &byte, 1);
+    //*position += 1;
+    return byte;
+  }
+
+  virtual int64_t readSignedByteAsInt() {
     int8_t byte=0;
     readBytes((char *) &byte, 1);
     //*position += 1;
@@ -174,7 +211,7 @@ class InputStream {
   virtual int64_t readHadoopLong() {
     int64_t firstByte = 0;
 
-    firstByte = readSignedByte();
+    firstByte = readSignedByteAsInt();
     if (firstByte >= -32) {
       return firstByte;
     }
@@ -220,14 +257,14 @@ class InputStream {
   }
 
   long readEncodedLong() {
-    char firstByte = readByte();
+    char firstByte = readSignedByte();
     int len = firstByte >= -112 ? 1 : (firstByte < -120 ? -119 - firstByte : -111 - firstByte);
     if (len == 1)
       return firstByte;
     else {
       long i = 0L;
       for (int idx = 0; idx < len - 1; ++idx) {
-        char b = readByte();
+        char b = readSignedByte();
         i <<= 8;
         i |= (long) (b & 255);
       }

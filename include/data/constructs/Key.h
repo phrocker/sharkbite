@@ -95,7 +95,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   void
-  setRow(const char *r, uint32_t size);
+  setRow(const char *r, uint32_t size, bool takeOwnership=false);
 
   void setRow(const std::string &row) {
     setRow(row.c_str(), row.length());
@@ -110,7 +110,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   void
-  setColFamily(const char *r, uint32_t size);
+  setColFamily(const char *r, uint32_t size, bool takeOwnership=false);
 
   void setColFamily(const std::string &st) {
     setColFamily(st.c_str(), st.size());
@@ -125,7 +125,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   void
-  setColQualifier(const char *r, uint32_t size, uint32_t offset = 0);
+  setColQualifier(const char *r, uint32_t size, uint32_t offset = 0, bool takeOwnership=false);
 
   void setColQualifier(const std::string &st) {
     setColQualifier(st.c_str(), st.size(), 0);
@@ -140,7 +140,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   void
-  setColVisibility(const char *r, uint32_t size);
+  setColVisibility(const char *r, uint32_t size, bool takeOwnership = false);
 
   void setColVisibility(const std::string &st) {
     setColVisibility(st.c_str(), st.size());
@@ -235,7 +235,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     out << std::string(row.first, row.second) << " ";
     std::pair<char*, size_t> cf = rhs.getColFamily();
     std::pair<char*, size_t> cq = rhs.getColQualifier();
-    out << std::string(cf.first, cf.second) << ":" << std::string(cq.first, cq.second) << " [";
+    out << (cf.second > 0 ? std::string(cf.first, cf.second) : "") << ":" << ( cq.second > 0 ? std::string(cq.first, cq.second) : "") << " [";
     std::pair<char*, size_t> viz = rhs.getColVisibility();
     auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
     out << vizstring << "] " << std::to_string(rhs.getTimeStamp());

@@ -49,7 +49,7 @@ public:
      * @param previous_key previous key 
      * @param my_key current key.
      **/
-    RelativeKey (std::shared_ptr<Key> previous_key, std::shared_ptr<Key> my_key);
+    RelativeKey (const std::shared_ptr<Key> &previous_key,const std::shared_ptr<Key> &my_key);
 
     /**
      * Returns the relative key.
@@ -62,7 +62,7 @@ public:
      * @param my_key key to set on the relative key.
      **/
     void
-    setBase (std::shared_ptr<Key> my_key);
+    setBase (const std::shared_ptr<Key> &my_key);
     
 
     /**
@@ -75,7 +75,7 @@ public:
      * @param previous_key prev key.
      **/
     void
-    setPrevious (std::shared_ptr<Key> previous_key);
+    setPrevious (const std::shared_ptr<Key> &previous_key);
 
     /**
      * write function for relative key
@@ -108,21 +108,47 @@ public:
 
     static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
 
-    std::shared_ptr<Key> getKey(){
+    const std::shared_ptr<Key> &getKey(){
     	return key;
     }
 protected:
 
+    void readPrefix (cclient::data::streams::InputStream *stream, std::pair<char*,size_t> *row, std::pair<char*,size_t> *prevRow);
     void readPrefix (cclient::data::streams::InputStream *stream, std::vector<char> *row, std::vector<char> *prevRow);
 
-    bool
-    readPrefix (cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD,
+
+    inline bool readPrefix (cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD,
+                uint8_t PREFIX, char fieldsSame,char fieldsPrefixed, std::pair<char*,size_t> *field,
+                std::pair<char*,size_t> *prevField)
+    {
+
+        if ((fieldsSame & SAME_FIELD) != SAME_FIELD)
+        {
+            if ((fieldsPrefixed & PREFIX) == PREFIX)
+            {
+                readPrefix (stream, field, prevField);
+            }
+            else
+            {
+                read (stream, field);
+            }
+            return true;
+        }
+        else {
+            //field->resize(prevField->size());
+            field->second = prevField->second;
+            field->first = new char[ prevField->second+1 ];
+            memcpy(field->first,prevField->first,prevField->second);
+            
+            //field->insert(field->begin(),prevField->data (),prevField->data ()+prevField->size());
+        }
+        return false;
+    }
+
+    inline bool readPrefix (cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD,
                 uint8_t PREFIX, char fieldsSame,char fieldsPrefixed, std::vector<char> *field,
                 std::vector<char> *prevField)
     {
-        std::vector<char> tmp;
-
-        //field->swap (*prevField);
 
         if ((fieldsSame & SAME_FIELD) != SAME_FIELD)
         {
@@ -144,21 +170,37 @@ protected:
     }
 
 
-    void
-    read (cclient::data::streams::InputStream *stream, std::vector<char> *row)
+    inline void read (cclient::data::streams::InputStream *stream, std::vector<char> *row)
     {
         uint32_t len = stream->readEncodedLong();
         read (stream, row, len);
     }
 
-    void
-    read (cclient::data::streams::InputStream *stream, std::vector<char> *input, uint32_t len)
+    inline void read (cclient::data::streams::InputStream *stream, std::vector<char> *input, uint32_t len)
     {
         char *array = new char[len];
         stream->readBytes (array, len);
 
         input->insert (input->begin (), array, array + len);
         delete[] array;
+    }
+
+
+    inline void read (cclient::data::streams::InputStream *stream, std::pair<char*,size_t> *row)
+    {
+        uint32_t len = stream->readEncodedLong();
+        read (stream, row, len);
+    }
+
+    inline void read (cclient::data::streams::InputStream *stream, std::pair<char*,size_t> *input, uint32_t len)
+    {
+        //char *array = new char[len];'
+        input->first = new char [ len+1 ];
+        input->second = len;
+        stream->readBytes (input->first, len);
+
+        //input->insert (input->begin (), array, array + len);
+        //delete[] array;
     }
 
     inline int
@@ -184,9 +226,9 @@ protected:
     std::shared_ptr<Key> prevKey;
 
     void
-    setKey (std::shared_ptr<Key> keyToCopy, std::shared_ptr<Key> keyToCopyTo);
+    setKey (const std::shared_ptr<Key> &keyToCopy, const std::shared_ptr<Key> &keyToCopyTo);
 
-    bool
+    inline bool
     isSame (std::pair<char*, size_t> a, std::pair<char*, size_t> b);
 
     int32_t rowCommonPrefixLen;

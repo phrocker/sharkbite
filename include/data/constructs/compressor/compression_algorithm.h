@@ -43,10 +43,21 @@ public:
 
     }
 
-    CompressionAlgorithm (Algorithm other) :
+    explicit CompressionAlgorithm (const Algorithm &other) :
         Algorithm (other.getAlgorithm())
     {
 
+    }
+
+
+    CompressionAlgorithm(const CompressionAlgorithm &other) = default;
+
+    CompressionAlgorithm(CompressionAlgorithm &&other) = default;
+
+
+    static ZLibCompressor *getZlibCompressor(){
+        static ZLibCompressor *comp = new ZLibCompressor();
+        return comp;
     }
 
     Compressor *
@@ -54,7 +65,7 @@ public:
     {
         if (compressionAlgo == "gz")
         {
-            return new ZLibCompressor ();
+            return getZlibCompressor();
         }
         else
         {
@@ -69,6 +80,12 @@ public:
         this->setAlgorithm( other.getAlgorithm() );
         return *this;
     }
+
+    CompressionAlgorithm &
+    operator= (const CompressionAlgorithm &other) = default;
+
+    CompressionAlgorithm &
+    operator= (CompressionAlgorithm &&other) = default;
 
 };
 }

@@ -113,7 +113,7 @@ protected:
             {
                 if (row > stopRow)
                 {
-                    rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                    rkey = new RelativeKey (currKey,
                                             std::make_shared<Key> (currKey));
                     skipped = 0;
                     this->prevKey = prevKey;
@@ -125,7 +125,7 @@ protected:
                 {
                     if (cf > stopCf)
                     {
-                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                        rkey = new RelativeKey (currKey,
                                                 std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;
@@ -135,7 +135,7 @@ protected:
 
                     if (cq > stopCq)
                     {
-                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                        rkey = new RelativeKey (currKey,
                                                 std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;

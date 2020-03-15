@@ -36,7 +36,7 @@ public:
     void setCompressionAlgorithm(cclient::data::compression::Compressor *compressor)
 
     {
-        compressionAlgorithm = compressor->getAlgorithm();
+        compressionAlgorithm = *compressor->getAlgorithm();
     }
 
     BlockRegion *addBlockRegion(BlockRegion region) {

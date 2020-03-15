@@ -50,15 +50,18 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
   // estimate the output buffer.
   output_length = len + len / 1000 + 12 + 1;
 
-  out_buf = new Bytef[output_length];
+  if (output_length > out_buf.size())
+    out_buf.resize(output_length);
+  //out_buf = new Bytef[output_length];
+  if (len > in_buf.size())
+    in_buf.resize(len);
 
-  in_buf = new Bytef[len];
-  memcpy(in_buf, buffer + off, len);
+  memcpy(in_buf.data(), buffer + off, len);
   delete[] buffer;
   buffer = nullptr;
 
-  c_stream.next_in = in_buf;
-  c_stream.next_out = out_buf;
+  c_stream.next_in = in_buf.data();
+  c_stream.next_out = out_buf.data();
   c_stream.avail_in = len;
   c_stream.avail_out = output_length;
   c_stream.total_in = 0;
@@ -82,7 +85,7 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
   if (r == Z_STREAM_END) {
     // if we have successful compression, write the data
     // to the output stream. and increment total_out.
-    out_stream->write((const char*) out_buf, c_stream.total_out);
+    out_stream->write((const char*) out_buf.data(), c_stream.total_out);
 
     total_out += c_stream.total_out;
   } else {
@@ -91,8 +94,6 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
 
   len = 0;
   // delete the output buffer and end compression.
-  delete[] out_buf;
-  delete[] in_buf;
 
   deflateEnd(&c_stream);
   len = 0;
@@ -131,16 +132,18 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   // estimate the output buffer.
 
   output_length = len + len / 1000 + 12 + 1;
-
-  out_buf = new Bytef[output_length];
-
-  in_buf = new Bytef[len];
-  memcpy(in_buf, buffer + off, len);
+  if (output_length > out_buf.size())
+    out_buf.resize(output_length);
+  //out_buf = new Bytef[output_length];
+  if (len > in_buf.size())
+    in_buf.resize(len);
+  //in_buf = new Bytef[len];
+  memcpy(in_buf.data(), buffer + off, len);
   delete[] buffer;
   buffer = nullptr;
 
-  c_stream.next_in = in_buf;
-  c_stream.next_out = out_buf;
+  c_stream.next_in = in_buf.data();
+  c_stream.next_out = out_buf.data();
   c_stream.avail_in = len;
   c_stream.avail_out = output_length;
   c_stream.total_in = 0;
@@ -151,12 +154,12 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   int have = 0;
   for (uint32_t i = 0; i < len; i += output_length) {
     c_stream.avail_in = len - i;
-    c_stream.next_in = in_buf + i;
+    c_stream.next_in = in_buf.data() + i;
 
     do {
       have = 0;
       c_stream.avail_out = output_length;       // H
-      c_stream.next_out = out_buf;
+      c_stream.next_out = out_buf.data();
 
       ret = inflate(&c_stream, Z_NO_FLUSH);  // I
 
@@ -175,37 +178,15 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
       }
 
       have = output_length - c_stream.avail_out;     // J
-      out_stream->write((const char*) out_buf, have);
+      out_stream->write((const char*) out_buf.data(), have);
 
     } while (c_stream.avail_out == 0);         // K
   }
   total_out += c_stream.total_out;
   err = inflateEnd(&c_stream);
 
-  /*
-   // finish compression.
-   r = inflate (&c_stream, Z_FINISH);
-
-   if (r == Z_STREAM_END)
-   {
-   // if we have successful compression, write the data
-   // to the output stream. and increment total_out.
-   out_stream->write ((const char*) out_buf, c_stream.total_out);
-
-   total_out += c_stream.total_out;
-   }
-   else
-   {
-   throw std::runtime_error (
-   "Failure during compression; r != Z_STREAM_END");
-   }
-   */
   len = 0;
-  // delete the output buffer and end compression.
-  delete[] out_buf;
-  delete[] in_buf;
 
-  len = 0;
 
 }
 

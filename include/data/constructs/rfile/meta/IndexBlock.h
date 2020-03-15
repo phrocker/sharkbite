@@ -69,15 +69,10 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
     if (version == 6 || version == 7 || version == 8) {
       level = in->readInt();
       offset = in->readInt();
-      std::cout << " level is " << level << " " << offset << std::endl;
       hasNext = in->readBoolean()==0x01;
-
-      std::cout << "index block is " << (hasNext) << std::endl;
-
       int numOffsets = in->readInt();
       std::vector<int> offsets;
       offsets.reserve(numOffsets);
-      std::cout << "number of offsets " << numOffsets << std::endl;
       for (int i = 0; i < numOffsets; i++) {
         offsets.push_back(in->readInt());
       }

@@ -65,19 +65,18 @@ public:
     }
 
     MetaIndexEntry (std::string metameta, BlockRegion reg) :
-        metaName (metameta), compressionAlgo (
-            (cclient::data::compression::CompressionAlgorithm)reg.getCompressor ()->getAlgorithm ()), region (reg), comp (
+        metaName (metameta), region (reg), comp (
                 NULL)
     {
-
+        compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>( *reg.getCompressor ()->getAlgorithm ());
     }
 
     cclient::data::streams::InputStream *
     readDataStream (cclient::data::streams::InputStream *in)
     {
-        comp = compressionAlgo.create ();
+        comp = compressionAlgo->create ();
         uint64_t prevPosition = in->getPos();
-	if (prevPosition <= 0)
+	if (prevPosition < 0)
 	{
 	  throw cclient::exceptions::ClientException("Invalid position in index block");
 	}
@@ -99,7 +98,10 @@ public:
         {
             throw std::runtime_error ("Corrupted Meta region Index , received " + fullMetaName);
         }
-        compressionAlgo = cclient::data::compression::CompressionAlgorithm (in->readString ());
+        auto z = in->readString ();
+
+        std::cout << z << std::endl;
+        compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(z);
 
         region.read (in);
         return in->getPos ();
@@ -114,7 +116,7 @@ public:
         writeString.append (metaName);
 
         out->writeString (writeString);
-        out->writeString (compressionAlgo.getName ());
+        out->writeString (compressionAlgo->getName ());
         return region.write (out);
     }
 
@@ -129,7 +131,7 @@ public:
     operator= (const MetaIndexEntry &other)
     {
         metaName = other.metaName;
-        compressionAlgo = other.compressionAlgo;
+        compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(*other.compressionAlgo.get());
         region = other.region;
 
         if (other.comp != NULL)
@@ -154,14 +156,14 @@ public:
     }
 
     void
-    setAlgorithm (cclient::data::compression::CompressionAlgorithm algo)
+    setAlgorithm (const cclient::data::compression::Algorithm *algo)
     {
 
-        compressionAlgo = algo;
+        compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(*algo);
     }
 
-    cclient::data::compression::CompressionAlgorithm getAlgorithm(){
-      return compressionAlgo;
+    cclient::data::compression::CompressionAlgorithm *getAlgorithm(){
+      return compressionAlgo.get();
     }
 
     void
@@ -173,7 +175,7 @@ public:
 
 protected:
     std::string metaName;
-    cclient::data::compression::CompressionAlgorithm compressionAlgo;
+    std::unique_ptr<cclient::data::compression::CompressionAlgorithm> compressionAlgo;
     BlockRegion region;
     cclient::data::compression::Compressor *comp;
 };

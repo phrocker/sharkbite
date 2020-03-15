@@ -60,7 +60,7 @@ public:
 
     virtual ~BlockRegion() {
 
-        delete compressor;
+        //delete compressor;
     }
 
     /**
@@ -119,7 +119,7 @@ public:
     uint64_t
     write (cclient::data::streams::OutputStream *out);
 
-    cclient::data::streams::InputStream *
+    std::unique_ptr<cclient::data::streams::InputStream>
     readDataStream (cclient::data::streams::InputStream *in)
     {
 
@@ -135,17 +135,16 @@ public:
 
         compressor->setInput ((const char*) compressedValue, 0, compressedSize);
 
-        cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::ByteOutputStream (rawSize);
+        cclient::data::streams::ByteOutputStream outStream(rawSize);
 
-        compressor->decompress (outStream);
+        compressor->decompress (&outStream);
 
 
-        cclient::data::streams::EndianInputStream *returnStream = new cclient::data::streams::EndianInputStream (
-            outStream->getByteArray (), outStream->getSize (), true);
+        auto returnStream = std::make_unique<cclient::data::streams::EndianInputStream >(
+            outStream.getByteArray (), outStream.getSize (), true);
 
         in->seek(pos);
         delete[] compressedValue;
-        delete outStream;
 
         return returnStream;
     }

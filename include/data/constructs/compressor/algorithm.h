@@ -16,6 +16,14 @@
 #include <string>
 
 
+#ifdef __GNUC__
+#define SH_UNLIKELY(val) (__builtin_expect((val), 0))
+#define SH_LIKELY(val) (__builtin_expect((val), 1))
+#else
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
+#endif
+
 
 namespace cclient
 {
@@ -33,18 +41,22 @@ public:
 
     }
 
-    explicit Algorithm (const std::string compressionName) :
+    explicit Algorithm (const std::string &compressionName) :
         compressionAlgo (compressionName)
     {
 
     }
+
+    Algorithm(const Algorithm &other) = default;
+
+    Algorithm(Algorithm &&other) = default;
 
     /**
      * Set the algorithm name
      * @param algorithm algorithm name
      */
     void
-    setAlgorithm (const std::string algorithm)
+    setAlgorithm (const std::string &algorithm)
     {
         compressionAlgo = algorithm;
     }
@@ -60,16 +72,16 @@ public:
     }
 
     Algorithm &
-    operator= (const Algorithm &other)
-    {
-        compressionAlgo = other.compressionAlgo;
-        return *this;
-    }
+    operator= (const Algorithm &other) = default;
+
+    Algorithm &
+    operator= (Algorithm &&other) = default;
 
     std::string getAlgorithm() const
     {
         return compressionAlgo;
     }
+    
 
 protected:
     std::string compressionAlgo;

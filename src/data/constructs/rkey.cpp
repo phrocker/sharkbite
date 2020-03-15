@@ -13,7 +13,7 @@
  */
 #include <cstring>
 #include <algorithm>
-
+#include "data/constructs/compressor/algorithm.h"
 #include "data/constructs/rkey.h"
 
 namespace cclient {
@@ -49,8 +49,8 @@ int RelativeKey::commonPrefix(std::pair<char*, size_t> prev,
   return prevLen == curLen ? -1 : maxChecks;
 }
 
-RelativeKey::RelativeKey(std::shared_ptr<Key> previous_key,
-                         std::shared_ptr<Key> my_key) {
+RelativeKey::RelativeKey(const std::shared_ptr<Key>  &previous_key,
+                        const std::shared_ptr<Key> & my_key) {
   if (my_key == NULL)
     throw std::runtime_error("Key must not be null");
 
@@ -120,14 +120,14 @@ std::shared_ptr<streams::StreamInterface> RelativeKey::getStream() {
   return key;
 }
 
-void RelativeKey::setBase(std::shared_ptr<Key> my_key) {
+void RelativeKey::setBase(const std::shared_ptr<Key> & my_key) {
   if (my_key != NULL) {
     key = std::make_shared<Key>();
     setKey(my_key, key);
   }
 }
 
-void RelativeKey::setPrevious(std::shared_ptr<Key> previous_key) {
+void RelativeKey::setPrevious(const std::shared_ptr<Key> & previous_key) {
   if (previous_key != NULL) {
 
     prevKey = std::make_shared<Key>();
@@ -138,28 +138,22 @@ void RelativeKey::setPrevious(std::shared_ptr<Key> previous_key) {
 uint64_t RelativeKey::read(streams::InputStream *stream) {
   fieldsSame = stream->readByte();
 
-  if ((fieldsSame & PREFIX_COMPRESSION_ENABLED) == PREFIX_COMPRESSION_ENABLED) {
+  if (SH_LIKELY( (fieldsSame & PREFIX_COMPRESSION_ENABLED) == PREFIX_COMPRESSION_ENABLED)) {
     fieldsPrefixed = stream->readByte();
   } else {
     fieldsPrefixed = 0;
   }
 
-  std::vector<char> row, cf, cq, cv;
-  std::vector<char> prevRow, prevCf, prevCq, prevVis;
+  std::pair<char*,size_t> row;
+  std::pair<char*,size_t> cf;
+  std::pair<char*,size_t> cq;
+  std::pair<char*,size_t> cv;
 
-  std::pair<char*, size_t> scratch = prevKey->getRow();
-
-  prevRow.insert(prevRow.begin(), scratch.first,
-                 scratch.first + scratch.second);
-  scratch = prevKey->getColFamily();
-  prevCf.insert(prevCf.begin(), scratch.first, scratch.first + scratch.second);
-  scratch = prevKey->getColQualifier();
-  prevCq.insert(prevCq.begin(), scratch.first, scratch.first + scratch.second);
-
-  scratch = prevKey->getColVisibility();
-  prevVis.insert(prevVis.begin(), scratch.first,
-                 scratch.first + scratch.second);
-
+  std::pair<char*, size_t> prevRow = prevKey->getRow();
+  std::pair<char*, size_t> prevCf  = prevKey->getColFamily();
+  std::pair<char*, size_t> prevCq  = prevKey->getColQualifier();
+  std::pair<char*, size_t> prevVis = prevKey->getColVisibility();
+  
   uint64_t timestamp = 0;
   uint64_t prevTimestamp = prevKey->getTimeStamp();
 
@@ -195,10 +189,10 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
 
 
   key = std::make_shared<Key>();
-  key->setRow(row.data(), row.size());
-  key->setColFamily(cf.data(), cf.size());
-  key->setColQualifier(cq.data(), cq.size());
-  key->setColVisibility(cv.data(), cv.size());
+  key->setRow(row.first, row.second,true);
+  key->setColFamily(cf.first, cf.second,true);
+  key->setColQualifier(cq.first, cq.second,0,true);
+  key->setColVisibility(cv.first, cv.second,true);
   key->setTimeStamp(timestamp);
 
   prevKey = key;
@@ -217,6 +211,24 @@ void RelativeKey::readPrefix(streams::InputStream *stream,
   stream->readBytes(array, remainingLen);
   row->insert(row->end(), array, array + remainingLen);
   delete[] array;
+}
+
+
+
+void RelativeKey::readPrefix(streams::InputStream *stream,
+                             std::pair<char*,size_t> *row,
+                             std::pair<char*,size_t> *prevRow) {
+  uint32_t prefixLen = stream->readHadoopLong();
+  uint32_t remainingLen = stream->readHadoopLong();
+  //row->first = prevRow
+  row->second = prefixLen + remainingLen;
+  row->first = new char[row->second+1];
+  memcpy(row->first,prevRow->first,prefixLen);
+  //row->insert(row->begin(), prevRow->data(), prevRow->data() + prefixLen);
+  //char *array = new char[remainingLen];
+  stream->readBytes(row->first+prefixLen, remainingLen);
+  //row->insert(row->end(), array, array + remainingLen);
+  //delete[] array;
 }
 
 uint64_t RelativeKey::write(streams::OutputStream *outStream) {
@@ -292,8 +304,8 @@ RelativeKey::~RelativeKey() {
 
 }
 
-void RelativeKey::setKey(std::shared_ptr<Key> keyToCopy,
-                         std::shared_ptr<Key> keyToCopyTo) {
+void RelativeKey::setKey(const std::shared_ptr<Key> &keyToCopy,
+                         const std::shared_ptr<Key> &keyToCopyTo) {
   std::pair<char*, size_t> p = keyToCopy->getRow();
   keyToCopyTo->setRow(p.first, p.second);
 

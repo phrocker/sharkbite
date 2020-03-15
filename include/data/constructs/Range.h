@@ -15,7 +15,7 @@
 #ifndef RANGE_H_
 #define RANGE_H_
 
-#include "../exceptions/IllegalArgumentException.h"
+#include "data/exceptions/IllegalArgumentException.h"
 #include "Key.h"
 #include <memory>
 namespace cclient {
@@ -31,6 +31,9 @@ class Range {
    **/
   Range();
 
+  /**
+   * don't allow the copy constructor
+   */
   explicit Range(const Range &range) = delete;
 
   /**
@@ -55,7 +58,7 @@ class Range {
    * @param endKey end key
    * @param endKeyInclusive return whether or not the end key is inclusive.
    **/
-  explicit Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update = true);
+  explicit Range(const std::shared_ptr<Key> &startKey, bool startInclusive, const std::shared_ptr<Key> &endKey, bool endKeyInclusive, bool update = true);
 
   /**
    * Sets the start key and endkey with the inclusive flags.
@@ -64,7 +67,7 @@ class Range {
    * @param endKey end key
    * @param endKeyInclusive return whether or not the end key is inclusive.
    **/
-  explicit Range(std::shared_ptr<Key> endKey, bool endKeyInclusive)
+  explicit Range(const std::shared_ptr<Key> &endKey, bool endKeyInclusive)
       :
       Range(0, false, endKey, endKeyInclusive) {
   }
@@ -76,7 +79,7 @@ class Range {
    * @param endKey end key
    * @param endKeyInclusive return whether or not the end key is inclusive.
    **/
-  explicit Range(bool startInclusive, std::shared_ptr<Key> startKey)
+  explicit Range(bool startInclusive, const std::shared_ptr<Key> &startKey)
       :
       Range(startKey, startInclusive, 0, false) {
   }

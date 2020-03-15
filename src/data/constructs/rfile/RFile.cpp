@@ -60,10 +60,10 @@ RFile::RFile (streams::InputStream *input_stream, long fileLength) :
     compressorRef = blockWriter->getCompressor ();
 
     maxBlockSize = compressorRef->getBufferSize () * 8;
-    
+
     streams::InputStream *metaBlock = blockWriter->getMetaIndex ()->getEntry (
                                  "RFile.index")->readDataStream (in_stream);
-    
+
     readLocalityGroups (metaBlock);
 
     delete metaBlock;
@@ -96,7 +96,7 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
 
 
     localityGroups.resize (size);
-    
+
     for (int i = 0; i < size; i++)
     {
         LocalityGroupMetaData *meatadata = new LocalityGroupMetaData (
@@ -114,7 +114,9 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
 
 RFile::~RFile ()
 {
-
+    for(auto reader : localityGroupReaders){
+        delete reader;
+    }
 }
 
 bool
@@ -163,7 +165,7 @@ RFile::append (std::shared_ptr<KeyValue> kv)
     }
 
     delete key;
-    
+
     return true;
 
 }

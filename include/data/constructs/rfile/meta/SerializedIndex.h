@@ -217,20 +217,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
 
     }
     return true;
-    /*
-     if (blockParty == NULL) {
-     if (ptr) {
-     }
-     if ((ptr && !ptr->hasNextPosition()) || currentPosition + 1 < offsets->size()) {
-     return true;
-     }
-     return false;
-     }
-     if (!ptr->hasNext()) {
-     return blockParty->getIndexBlock()->hasNextKey();
-     } else
-     return true;
-     */
   }
 
   std::shared_ptr<IndexEntry> getPrevious() {

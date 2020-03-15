@@ -136,18 +136,26 @@ void
 readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 {
 
+    std::fstream::pos_type size = filesize(outputFile.c_str());
+
     std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
 
+    
+    ifs.seekg(0, std::ios::beg);
 
-    cclient::data::streams::InputStream *stream = new cclient::data::streams::InputStream(&ifs,0);
+    std::vector<char> buffer(size);
+    ifs.read(buffer.data(), size);
 
-    if (bigEndian)
-    {
-         stream = new cclient::data::streams::EndianInputStream(stream);
-    }
+    std::cout << "got "  << size << std::endl;
+
+    cclient::data::streams::ByteInputStream *stream = new cclient::data::streams::ByteInputStream(buffer.data(),size);
 
 
-    std::fstream::pos_type size = filesize(outputFile.c_str());
+    stream = new cclient::data::streams::EndianInputStream(stream);
+
+
+
+    
     cclient::data::RFile *newRFile = new cclient::data::RFile (stream, size);
     std::vector<std::string> cf;
     cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);

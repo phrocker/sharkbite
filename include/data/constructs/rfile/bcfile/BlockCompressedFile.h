@@ -191,7 +191,7 @@ protected:
 
         MetaIndexEntry *min = metaIndex.getEntry("BCFile.index");
 
-        compressorRef = min->getAlgorithm().create();
+        compressorRef = min->getAlgorithm()->create();
 
         // should be using block comp stream?
         cclient::data::streams::InputStream *dataIndexStream = min->readDataStream(in_stream);

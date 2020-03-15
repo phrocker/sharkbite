@@ -73,6 +73,12 @@ public:
 
     }
 
+    
+
+  virtual uint64_t getPos() {
+    return offset;
+  }
+
     void setArray(char *byteArray, size_t len, bool allocate)
     {
 
@@ -103,10 +109,13 @@ public:
     {
         if (NULL != input_stream_ref)
             input_stream_ref->seek (pos);
+        else{
+            offset = pos;
+        }
         return this;
     }
 
-    virtual uint64_t
+    virtual inline uint64_t
     readBytes (uint8_t *bytes, size_t cnt)
     {
         if (input_stream_ref  != NULL)
