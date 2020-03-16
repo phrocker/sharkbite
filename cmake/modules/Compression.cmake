@@ -30,10 +30,13 @@ if (WIN32)
   ExternalProject_Add(
     zlib-external
     BUILD_IN_SOURCE true
-    GIT_REPOSITORY "https://github.com/cloudflare/zlib.git"
-    GIT_TAG "372bcd151c901418c2721232bf09dc9cdbebafb5"  # Version 1.2.11
+    GIT_REPOSITORY "https://github.com/zlib-ng/zlib-ng"
+    GIT_TAG "232fa02a93f73e9830d9fff1dd91973567697fe3"  # Version 1.2.11
     SOURCE_DIR "${BINARY_DIR}/thirdparty/zlib-src"
     CMAKE_ARGS  "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+          "-DZLIB_ENABLE_TESTS=OFF"
+          "-DZLIB_COMPAT=ON"
+          "-DWITH_NATIVE_INSTRUCTIONS=ON"
     			"-D_INSTALL_PREFIX=${BINARY_DIR}/thirdparty/zlib-install"
     BUILD_BYPRODUCTS ${BYPRODUCT}
     INSTALL_COMMAND ""
