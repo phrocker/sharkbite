@@ -146,7 +146,7 @@ public:
         in->seek(pos);
         delete[] compressedValue;
 
-        return returnStream;
+        return std::move(returnStream);
     }
 
     BlockRegion &
