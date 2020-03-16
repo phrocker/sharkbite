@@ -16,11 +16,11 @@
 
 #include <vector>
 #include <memory>
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/input/ByteInputStream.h"
-#include "../../../streaming/input/NetworkOrderInputStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/input/ByteInputStream.h"
+#include "data/streaming/input/NetworkOrderInputStream.h"
+#include "data/streaming/Streams.h"
 #include "IndexEntry.h"
 #include "BaseMetaBlock.h"
 
@@ -37,7 +37,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
       ptr(NULL),
       blockParty(NULL) {
     offsets = new std::vector<int>();
-    std::cout << "** SI 3 ** " << std::endl;
     offsets->insert(offsets->end(), offsetList.begin(), offsetList.end());
 
     data = new uint8_t[dataLength];
@@ -50,7 +49,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
       dataLength(0),
       newFormat(true),
       blockParty(block) {
-    std::cout << "SI 2" << std::endl;
     currentPosition = block->getCurrentPosition();
     ptr = std::static_pointer_cast<SerializedIndex>(block->getBlock());
 
@@ -65,7 +63,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
       newFormat(true),
       blockParty(block) {
     currentPosition = block->getCurrentPosition();
-    std::cout << "SI " << std::endl;
     ptr = std::static_pointer_cast<SerializedIndex>(block->getBlock());
 
     offsets = new std::vector<int>();
@@ -136,7 +133,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
         ptr->currentPosition++;
         return *this;
       } else {
-        std::cout << "get next block" << std::endl;
         blockParty = blockParty->getNextBlock();
         currentPosition = blockParty->getCurrentPosition();
         ptr = std::static_pointer_cast<SerializedIndex>(blockParty->getBlock());
@@ -159,7 +155,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
         }
         return *this;
       } else {
-        std::cout << "get next block" << std::endl;
         blockParty = blockParty->getNextBlock();
         currentPosition = blockParty->getCurrentPosition();
         ptr = std::static_pointer_cast<SerializedIndex>(blockParty->getBlock());

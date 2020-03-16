@@ -16,24 +16,18 @@
 
 #include "IndexBlock.h"
 #include "IndexEntry.h"
-namespace cclient
-{
-namespace data
-{
-class BlockLookup
-{
-public:
-    BlockLookup ()
-    {
+namespace cclient {
+namespace data {
+class BlockLookup {
+ public:
+  BlockLookup() {
 
-    }
-    virtual
-    ~BlockLookup ()
-    {
+  }
+  virtual ~BlockLookup() {
 
-    }
-    
-    virtual std::shared_ptr<IndexBlock> getIndexBlock (const std::shared_ptr<IndexEntry> &ie) = 0;
+  }
+
+  virtual std::shared_ptr<IndexBlock> getIndexBlock(const std::shared_ptr<IndexEntry> &ie) = 0;
 };
 }
 }

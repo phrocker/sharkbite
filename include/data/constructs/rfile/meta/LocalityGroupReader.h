@@ -14,28 +14,28 @@
 #ifndef INCLUDE_DATA_CONSTRUCTS_RFILE_META_LOCALITYGROUPREADER_H_
 #define INCLUDE_DATA_CONSTRUCTS_RFILE_META_LOCALITYGROUPREADER_H_
 
-#include "../../../streaming/accumulo/StreamSeekable.h"
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/Streams.h"
-#include "../../../streaming/StreamRelocation.h"
-#include "../../../streaming/StreamEnvironment.h"
-#include "../../../streaming/accumulo/FileIterator.h"
-#include "../../../streaming/DataStream.h"
-#include "../../../exceptions/IllegalArgumentException.h"
-#include "../../../exceptions/InterationInterruptedException.h"
+#include "data/streaming/accumulo/StreamSeekable.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/Streams.h"
+#include "data/streaming/StreamRelocation.h"
+#include "data/streaming/StreamEnvironment.h"
+#include "data/streaming/accumulo/FileIterator.h"
+#include "data/streaming/DataStream.h"
+#include "data/exceptions/IllegalArgumentException.h"
+#include "data/exceptions/InterationInterruptedException.h"
 #include "IndexEntry.h"
 #include <memory>
 
 #include "../bcfile/BlockCompressedFile.h"
 // constructs
 
-#include "../../../constructs/Key.h"
-#include "../../../constructs/value.h"
-#include "../../../constructs/compressor/compressor.h"
-#include "../../../constructs/Range.h"
-#include "../../../constructs/SkippedRelativeKey.h"
-#include "../../../constructs/rkey.h"
+#include "data/constructs/Key.h"
+#include "data/constructs/value.h"
+#include "data/constructs/compressor/compressor.h"
+#include "data/constructs/Range.h"
+#include "data/constructs/SkippedRelativeKey.h"
+#include "data/constructs/rkey.h"
 
 namespace cclient {
 namespace data {
@@ -162,7 +162,7 @@ std::shared_ptr<Value> getTopValue() {
     }
 
     if (reseek) {
-
+      
       iiter = index->lookup(startKey);
 
       close();
@@ -183,7 +183,6 @@ std::shared_ptr<Value> getTopValue() {
 
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         entriesLeft = indexEntry->getNumEntries();
-        std::cout << "entries " << entriesLeft << std::endl;
 
 
         if (version == 3 || version == 4) {
@@ -216,7 +215,8 @@ std::shared_ptr<Value> getTopValue() {
     }
 
     topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
-    while (hasTop() && !currentRange->getInfiniteStartKey() && *currentRange->getStartKey() < *getTopKey()) {
+    //*currentRange->getStartKey() < *getTopKey()
+    while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->beforeStartKey(getTopKey())) {
       next();
     }
   }

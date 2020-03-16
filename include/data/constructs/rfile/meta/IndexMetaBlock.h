@@ -16,22 +16,17 @@
 #include "data/streaming/Streams.h"
 #include <memory>
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class IndexMetaBlock
-{
+class IndexMetaBlock {
 
-public:
+ public:
 
-    virtual
-    ~IndexMetaBlock ()
-    {
-    }
-    
-    virtual bool hasNextKey () =0;
+  virtual ~IndexMetaBlock() {
+  }
+
+  virtual bool hasNextKey() =0;
 };
 
 }

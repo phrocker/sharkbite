@@ -146,8 +146,6 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
     std::vector<char> buffer(size);
     ifs.read(buffer.data(), size);
 
-    std::cout << "got "  << size << std::endl;
-
     cclient::data::streams::ByteInputStream *stream = new cclient::data::streams::ByteInputStream(buffer.data(),size);
 
 
@@ -158,14 +156,15 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
     
     cclient::data::RFile *newRFile = new cclient::data::RFile (stream, size);
     std::vector<std::string> cf;
-    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);
+    cclient::data::Range rng;
+    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(&rng,cf,false);
 
 
     newRFile->relocate(seekable);
     long count = 0;
     while (newRFile->hasNext())
     {
-        //std::cout << "has next " << (**newRFile).first <<  std::endl;
+//        std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
 
         newRFile->next();
 
@@ -197,22 +196,14 @@ main (int argc, char **argv)
 
     std::string outputFile = argv[1];
 
-    std::string endian = argv[2];
+    // always assume big endian
+ //   std::string endian = argv[2];
 
 
-    bool bigEndian = false;
-
-    if (endian == "big" )
-        bigEndian = true;
+    bool bigEndian = true;
     if (!IsEmpty (&outputFile))
     {
-  //      std::cout << "Writing test Rfile to " << outputFile << std::endl;
-//        writeRfile (outputFile, bigEndian, 0);
-        if (bigEndian)
-        {
-            std::cout << "skipping read" << std::endl;
-            //return 0;
-        }
+
         std::cout << "Reading test rfile from " << outputFile << std::endl;
         readRfile(outputFile, 0 , bigEndian);
     }

@@ -15,10 +15,10 @@
 #ifndef INDEXMANAGER_H_
 #define INDEXMANAGER_H_
 
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/input/NetworkOrderInputStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/input/NetworkOrderInputStream.h"
+#include "data/streaming/Streams.h"
 
 #include "../../compressor/compressor.h"
 #include "SerializedIndex.h"
@@ -52,8 +52,6 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
 
   std::shared_ptr<IndexBlock> getIndexBlock(const std::shared_ptr<IndexEntry> &ie) {
 
-    std::cout << "seeking to " << ie->getOffset() << std::endl;
-    
     blockReader->seek(ie->getOffset());
 
     uint8_t *compressedValue = new uint8_t[ie->getCompressedSize()];
