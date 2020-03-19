@@ -92,7 +92,8 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	  			 "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
 	  			 "-DWITH_JAVA=OFF"
 	  			 "-DWITH_LIBEVENT=ON"
-	  			 "-DWITH_PYTHON=OFF"
+				 "-DWITH_PYTHON=OFF"
+				 "-DCMAKE_BUILD_TYPE=Release"  
 	  			 "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
                 		"-DLIBRESSL_SRC_DIR=${LIBRESSL_BIN_DIR}"
 	        	        "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
@@ -152,7 +153,6 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	  GIT_TAG v3.1.0
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
-	  #CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/protobuf"
 	  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf
 	  UPDATE_COMMAND ""
 	  )
@@ -174,8 +174,6 @@ download_project(PROJ pybind11
 set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(${pybind11_SOURCE_DIR})
 include_directories("${pybind11_SOURCE_DIR}/include/")
-#find_package(GTest REQUIRED)
- 
 
 find_package (Threads)
 

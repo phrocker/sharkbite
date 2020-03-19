@@ -21,6 +21,9 @@
 #include <cstdio>
 
 #include <stdexcept>
+#include <immintrin.h>
+#include <cstdint>
+#include <cassert>
 
 namespace cclient {
 namespace data {
@@ -92,35 +95,6 @@ class InputStream {
     auto ret = std::string((char*) bytes,vLong);
     delete[] bytes;
     return ret;
-/**
- 
-    long vLong = readHadoopLong();
-
-    uint8_t *bytes = new uint8_t[vLong + 1];
-    memset(bytes, 0x00, vLong + 1);
-    readBytes(bytes, vLong);
-    //delete[] bytes;
-    return std::string((char*) bytes);
-*/
-/*    
-      // write size of string
-    long vLong = readHadoopLong();
-    std::string ret(vLong+1,0x00);
-    istream_ref->read((char*) &(ret[0]), vLong);
-    *position += vLong;
-    return ret;
-
-    std::string ret;
-    ret.resize(vLong+1);
-    //uint8_t *bytes = new uint8_t[vLong + 1];
-    //memset(bytes, 0x00, vLong + 1);
-    readBytes(&(ret[0]), vLong);
-    //readBytes(bytes, vLong);
-    std::cout << "got " << ret << std::endl;
-    //delete[] bytes;
-    return ret;
-
-    */
   }
 
   virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {

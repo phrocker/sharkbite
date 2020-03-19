@@ -15,13 +15,14 @@
 #define INCLUDE_DATA_CONSTRUCTS_COMPRESSOR_ALGORITHM_H_
 #include <string>
 
-
-#ifdef __GNUC__
-#define SH_UNLIKELY(val) (__builtin_expect((val), 0))
-#define SH_LIKELY(val) (__builtin_expect((val), 1))
-#else
-#define SH_UNLIKELY(val) (val)
-#define SH_LIKELY(val) (val)
+#ifndef SH_UNLIKELY
+    #ifdef __GNUC__
+    #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
+    #define SH_LIKELY(val) (__builtin_expect((val), 1))
+    #else
+    #define SH_UNLIKELY(val) (val)
+    #define SH_LIKELY(val) (val)
+    #endif
 #endif
 
 

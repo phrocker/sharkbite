@@ -46,7 +46,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    @param bWriter block compressed writer.
    @param blockSize the desired block size of the bc file.
    **/
-  RFile(cclient::data::streams::OutputStream *output_stream, BlockCompressedFile *bWriter);
+  RFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
 
   /**
    Constructor
@@ -255,7 +255,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   std::vector<LocalityGroupReader*> localityGroupReaders;
 
   // block compressed file.
-  BlockCompressedFile *blockWriter;
+  std::unique_ptr<BlockCompressedFile> blockWriter;
   // compressor reference.
   cclient::data::compression::Compressor *compressorRef;
   // current block writer, created from blockWriter.

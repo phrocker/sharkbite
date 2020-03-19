@@ -15,154 +15,132 @@
 #ifndef BYTE_IN_STREAM
 #define BYTE_IN_STREAM
 
-
 #include <stdexcept>
 #include <cstdio>
 #include <cstring>
 
 #include "InputStream.h"
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
-class ByteInputStream : public InputStream
-{
-public:
+class ByteInputStream : public InputStream {
+ public:
 
-    ByteInputStream (InputStream *out_stream) :
-        InputStream (out_stream), input_stream_ref (out_stream), allocated (
-            false)
-    {
-        length = 0;
-        offset = 0;
+  ByteInputStream(InputStream *out_stream)
+      :
+      InputStream(out_stream),
+      input_stream_ref(out_stream),
+      allocated(false) {
+    length = 0;
+    offset = 0;
+  }
+
+  ByteInputStream(char *byteArray, size_t len)
+      :
+      allocated(false),
+      input_stream_ref(NULL) {
+    iBytes = byteArray;
+    length = len;
+    offset = 0;
+
+  }
+
+  ByteInputStream()
+      :
+      input_stream_ref(NULL),
+      allocated(false) {
+  }
+
+  ByteInputStream(char *byteArray, size_t len, bool allocate)
+      :
+      input_stream_ref(NULL) {
+    if (allocate) {
+      allocated = true;
+      iBytes = new char[len];
+      memcpy_fast(iBytes, byteArray, len);
+    } else {
+      allocated = false;
+      iBytes = byteArray;  //new char[ len ];
     }
+    //memcpy_fast(iBytes,byteArray,len);
+    length = len;
+    offset = 0;
 
-    ByteInputStream (char *byteArray, size_t len) :
-        allocated (false), input_stream_ref (NULL)
-    {
-        iBytes = byteArray;
-        length = len;
-        offset = 0;
-
-    }
-
-    ByteInputStream() : input_stream_ref(NULL), allocated(false)
-    {
-    }
-
-    ByteInputStream (char *byteArray, size_t len, bool allocate) :
-        input_stream_ref (NULL)
-    {
-        if (allocate)
-        {
-            allocated = true;
-            iBytes = new char[len];
-            memcpy (iBytes, byteArray, len);
-        }
-        else
-        {
-            iBytes = byteArray; //new char[ len ];
-        }
-        //memcpy(iBytes,byteArray,len);
-        length = len;
-        offset = 0;
-
-    }
-
-    
+  }
 
   virtual uint64_t getPos() {
     return offset;
   }
 
-    void setArray(char *byteArray, size_t len, bool allocate)
-    {
+  void setArray(char *byteArray, size_t len, bool allocate) {
 
-        if (allocate)
-        {
-            allocated = true;
-            iBytes = new char[len];
-            memcpy (iBytes, byteArray, len);
-        }
-        else
-        {
-            iBytes = byteArray; //new char[ len ];
-        }
-        //memcpy(iBytes,byteArray,len);
-        length = len;
-        offset = 0;
+    if (allocate) {
+      allocated = true;
+      iBytes = new char[len];
+      memcpy_fast(iBytes, byteArray, len);
+    } else {
+      iBytes = byteArray;  //new char[ len ];
+    }
+    //memcpy_fast(iBytes,byteArray,len);
+    length = len;
+    offset = 0;
+  }
+
+  virtual ~ByteInputStream() {
+    if (allocated)
+      delete[] iBytes;
+  }
+
+  virtual InputStream*
+  seek(uint64_t pos) {
+    if (NULL != input_stream_ref)
+      input_stream_ref->seek(pos);
+    else {
+      offset = pos;
+    }
+    return this;
+  }
+
+  virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {
+    if (input_stream_ref != NULL) {
+      return input_stream_ref->readBytes(bytes, cnt);
+      offset += cnt;
     }
 
-    virtual
-    ~ByteInputStream ()
-    {
-        if (allocated)
-            delete[] iBytes;
+    if ((cnt + offset) > length) {
+      throw std::runtime_error("Stream unavailable " + std::to_string(cnt) + " " + std::to_string(offset) + " " + std::to_string(length));
     }
+    memcpy_fast(bytes, iBytes + offset, cnt);
+    offset += cnt;
+    return cnt;
+  }
 
-    virtual InputStream *
-    seek (uint64_t pos)
-    {
-        if (NULL != input_stream_ref)
-            input_stream_ref->seek (pos);
-        else{
-            offset = pos;
-        }
-        return this;
+  virtual uint64_t readBytes(char *bytes, size_t cnt) {
+    if (input_stream_ref != NULL) {
+      return input_stream_ref->readBytes(bytes, cnt);
+      offset += cnt;
     }
+    if ((cnt + offset) > length)
+      throw std::runtime_error("Stream unavailable");
+    memcpy_fast(bytes, iBytes + offset, cnt);
+    offset += cnt;
+    return cnt;
+  }
 
-    virtual inline uint64_t
-    readBytes (uint8_t *bytes, size_t cnt)
-    {
-        if (input_stream_ref  != NULL)
-        {
-            return input_stream_ref->readBytes(bytes,cnt);
-            offset+=cnt;
-        }
+  virtual uint64_t bytesAvailable() {
+    return (length - offset);
+  }
 
-        if ((cnt + offset) > length)
-            throw std::runtime_error ("Stream unavailable");
-        memcpy (bytes, iBytes + offset, cnt);
-        offset += cnt;
-        return cnt;
-    }
-
-    virtual uint64_t
-    readBytes (char *bytes, size_t cnt)
-    {
-        if (input_stream_ref  != NULL)
-        {
-            return input_stream_ref->readBytes(bytes,cnt);
-            offset+=cnt;
-        }
-        if ((cnt + offset) > length)
-            throw std::runtime_error ("Stream unavailable");
-        memcpy (bytes, iBytes + offset, cnt);
-        offset += cnt;
-        return cnt;
-    }
-
-    virtual uint64_t
-    bytesAvailable ()
-    {
-        return (length - offset);
-    }
-
-protected:
-    // output stream reference.
-    InputStream *input_stream_ref;
-    bool allocated;
-    uint64_t length;
-    uint32_t offset;
-    char *iBytes;
-
-    
-
-   
+ protected:
+  // output stream reference.
+  InputStream *input_stream_ref;
+  bool allocated;
+  uint64_t length;
+  uint32_t offset;
+  char *iBytes;
 
 };
 }

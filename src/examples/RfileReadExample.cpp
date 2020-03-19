@@ -26,7 +26,7 @@
 #include "../include/data/constructs/rfile/RFile.h"
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
-
+#include "../include/data/streaming/input/MemorymappedInputStream.h"
 #include "../include/data/streaming/OutputStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
@@ -51,11 +51,11 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 
     cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor (256 * 1024);
 
-    cclient::data::BlockCompressedFile bcFile (compressor);
+    auto  bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
 
 // ByteOutputStream *outStream = new BigEndianByteStream (5 * 1024 * 1024,
 //							 stream);
-    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, &bcFile);
+    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, std::move(bcFile));
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 
@@ -135,8 +135,11 @@ std::ifstream::pos_type filesize(const char* filename)
 void
 readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 {
-
+  for(int i=0; i < 100; i++){
+    auto start = chrono::steady_clock::now();
     std::fstream::pos_type size = filesize(outputFile.c_str());
+/*
+    
 
     std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
 
@@ -144,17 +147,18 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
     ifs.seekg(0, std::ios::beg);
 
     std::vector<char> buffer(size);
-    ifs.read(buffer.data(), size);
+    ifs.read(buffer.data(), size);*/
 
-    cclient::data::streams::ByteInputStream *stream = new cclient::data::streams::ByteInputStream(buffer.data(),size);
+//    cclient::data::streams::ByteInputStream *stream = new cclient::data::streams::ByteInputStream(buffer.data(),size);
+    cclient::data::streams::InputStream *stream = new cclient::data::streams::MemoryMappedInputStream(outputFile);
 
 
-    stream = new cclient::data::streams::EndianInputStream(stream);
+    cclient::data::streams::EndianInputStream *endstream = new cclient::data::streams::EndianInputStream(stream);
 
 
 
     
-    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, size);
+    cclient::data::RFile *newRFile = new cclient::data::RFile (endstream, size);
     std::vector<std::string> cf;
     cclient::data::Range rng;
     cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(&rng,cf,false);
@@ -164,7 +168,7 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
     long count = 0;
     while (newRFile->hasNext())
     {
-//        std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
+       // std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
 
         newRFile->next();
 
@@ -176,11 +180,20 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
 
 
-    std::cout << "we done at " << count << std::endl;
+    
+
+    delete seekable;
+
+    delete endstream;
 
     delete stream;
 
     delete newRFile;
+
+    auto end = chrono::steady_clock::now();
+
+    std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end-start).count() << std::endl;
+  }
 
 }
 int
