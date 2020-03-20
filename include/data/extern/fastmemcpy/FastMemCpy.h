@@ -34,6 +34,7 @@
 #endif
 
 
+#ifdef NATIVE_ARCH
 
 //---------------------------------------------------------------------
 // fast copy for different sizes
@@ -488,5 +489,11 @@ static void* memcpy_fast(void *destination, const void *source, size_t size)
 
 #endif
 
+#else
 
+static void* memcpy_fast(void *destination, const void *source, size_t size){
+  memcpy(destination,source,size);
+}
+
+#endif
 
