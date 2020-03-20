@@ -48,15 +48,18 @@ int main(int argc, char **argv) {
 
 	auto startkey = std::make_shared<cclient::data::Key>();
 
-	startkey->setRow("a", 1);
+	startkey->setRow("a");
 
 	auto stopKey = std::make_shared<cclient::data::Key>();
 
-	stopKey->setRow("d", 1);
+	stopKey->setRow("d");
 
-	cclient::data::Range range(startkey, true, stopKey, true);
+	// use keys or strings
+	cclient::data::Range range(sartKey, true, stopKey, true);
+	// ** OR **
+	// cclient::data::Range range("a", true, "d", true);
 
-	// build your range.
+	// add your range.
 
 	scanner->addRange(range);
 

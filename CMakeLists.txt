@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project (Sharkbite)
+project (sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
@@ -507,17 +507,17 @@ endif(DOXYGEN_FOUND)
 
 include(GNUInstallDirs)
 file(GLOB RECURSE HEADERS include/*.h)
-#install(FILES ${HEADERS} DESTINATION include/${PROJECT_NAME})
 message("Received ${CMAKE_INSTALL_INCLUDEDIR}")
 set_target_properties(sharkbite PROPERTIES PUBLIC_HEADER "${HEADERS}")
 install(TARGETS sharkbite
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    PUBLIC_HEADER DESTINATION include/
+    COMPONENT LIBRARY ) 
+install(TARGETS sharkbite-shared
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     COMPONENT LIBRARY ) 
 INSTALL (
     DIRECTORY ${CMAKE_SOURCE_DIR}/include/
-    DESTINATION include/
+    DESTINATION include/${PROJECT_NAME}
     FILES_MATCHING PATTERN "*.h*")
-#install(DIRECTORY ${PROJECT_SOURCE_DIR}/include
- #       DESTINATION )
