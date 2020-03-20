@@ -64,11 +64,9 @@ Key::~Key() {
 void Key::reclaim(char **val, size_t size, Text **textPtr) {
   if (*val) {
     if (objectPool) {
-      //std::cout << "return " << size << std::endl;
       objectPool->free(std::make_pair(*val, size));
       *val = nullptr;
     } else {
-      //std::cout << "oh delete" << std::endl;
       delete[] *val;
       *val = nullptr;
     }
@@ -83,7 +81,7 @@ void Key::setRow(Text *rowRef) {
   row_ref = rowRef;
 }
 
-void Key::setRow(const char *r, uint32_t size,uint32_t maxsize, bool takeOwnership) {
+void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > rowMaxSize) {
       delete[] row;
@@ -102,7 +100,7 @@ void Key::setRow(const char *r, uint32_t size,uint32_t maxsize, bool takeOwnersh
 
 }
 
-void Key::setColFamily(const char *r, uint32_t size,uint32_t maxsize, bool takeOwnership) {
+void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > columnFamilySize) {
       delete[] colFamily;
@@ -131,7 +129,7 @@ void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool t
 
   if (!takeOwnership) {
     if (maxsize > colQualSize) {
-      char *nr = new char[maxsize+1];
+      char *nr = new char[maxsize + 1];
       delete[] colQualifier;
       colQualifier = nr;
       colQualSize = maxsize;
@@ -158,18 +156,19 @@ void Key::setColumnQualifier(Text *cq) {
 void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
 
   if (!takeOwnership) {
-    if (size > colVisSize) {
+    if (maxsize > colVisSize) {
       delete[] keyVisibility;
-      keyVisibility = new char[size];
-      colVisSize = size;
+      keyVisibility = new char[maxsize+1];
+      colVisSize = maxsize;
     }
     memcpy_fast(keyVisibility, r, size);
   } else {
     reclaim(&keyVisibility, colVisSize, &cv_ref);
     keyVisibility = (char*) r;
-    colVisLen = size;
     colVisSize = maxsize;
   }
+
+  colVisLen = size;
 
 }
 

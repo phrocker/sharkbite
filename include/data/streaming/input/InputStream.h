@@ -230,6 +230,27 @@ class InputStream {
 
   }
 
+
+  int64_t readEncodedVLong() {
+    char firstByte = readSignedByte();
+    int len = firstByte >= -112 ? 1 : (firstByte < -120 ? -119 - firstByte : -111 - firstByte);
+    if (len == 1)
+      return firstByte;
+    else {
+      int64_t i = 0L;
+      for (int idx = 0; idx < len - 1; ++idx) {
+        char b = readSignedByte();
+        i <<= 8;
+        i |= (long) (b & 255);
+      }
+
+      if (i < -120 || (i >= -112 && i < 0)) {
+        return ~i;
+      } else
+        return i;
+    }
+  }
+
   long readEncodedLong() {
     char firstByte = readSignedByte();
     int len = firstByte >= -112 ? 1 : (firstByte < -120 ? -119 - firstByte : -111 - firstByte);
@@ -249,49 +270,7 @@ class InputStream {
         return i;
     }
 
-    /*
-     int firstByte = readByte();
-     if (firstByte >= -32) {
-     return firstByte;
-     }
 
-     switch ((firstByte + 128) / 8) {
-     case 11:
-     case 10:
-     case 9:
-     case 8:
-     case 7:
-     return ((firstByte + 52) << 8) | readByte();
-     case 6:
-     case 5:
-     case 4:
-     case 3:
-     return ((firstByte + 88) << 16) | readShort();
-     case 2:
-     case 1:
-     return ((firstByte + 112) << 24) | (readShort() << 8) | readByte();
-     case 0:
-     int len = firstByte + 129;
-     switch (len) {
-     case 4:
-     return readInt();
-     case 5:
-     return ((long) readInt()) << 8 | readByte();
-     case 6:
-     return ((long) readInt()) << 16 | readShort();
-     case 7:
-     return ((long) readInt()) << 24 | (readShort() << 8)
-     | readByte();
-     case 8:
-     return readLong();
-     default:
-     throw std::runtime_error("Corrupted Encoded Long");
-     }
-     break;
-     default:
-     throw std::runtime_error("Internal Error");
-     }
-     */
   }
   /**
    * Bytes written shall always return the current position

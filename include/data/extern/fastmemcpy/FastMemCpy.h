@@ -18,19 +18,19 @@
 // force inline for compilers
 //---------------------------------------------------------------------
 #ifndef INLINE
-#ifdef __GNUC__
-#if (__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
-    #define INLINE         __inline__ __attribute__((always_inline))
-#else
-    #define INLINE         __inline__
-#endif
-#elif defined(_MSC_VER)
-  #define INLINE __forceinline
-#elif (defined(__BORLANDC__) || defined(__WATCOMC__))
-    #define INLINE __inline
-#else
-    #define INLINE
-#endif
+  #ifdef __GNUC__
+  #if (__GNUC__ > 3) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1))
+      #define INLINE         __inline__ __attribute__((always_inline))
+  #else
+      #define INLINE         __inline__
+  #endif
+  #elif defined(_MSC_VER)
+    #define INLINE __forceinline
+  #elif (defined(__BORLANDC__) || defined(__WATCOMC__))
+      #define INLINE __inline
+  #else
+      #define INLINE
+  #endif
 #endif
 
 
@@ -487,13 +487,16 @@ static void* memcpy_fast(void *destination, const void *source, size_t size)
 }
 
 
-#endif
+
 
 #else
 
 static void* memcpy_fast(void *destination, const void *source, size_t size){
-  memcpy(destination,source,size);
+  return memcpy(destination,source,size);
 }
 
 #endif
 
+
+
+#endif

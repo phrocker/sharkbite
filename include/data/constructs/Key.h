@@ -186,15 +186,15 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   std::pair<char*, size_t> getColVisibility() {
-    if (cv_ref && cv_ref->empty())
+    if (cv_ref && !cv_ref->empty())
       return cv_ref->getBuffer();
-    return std::make_pair(keyVisibility, colVisSize);
+    return std::make_pair(keyVisibility, colVisLen);
   }
 
   std::string getColVisibilityStr() {
-    if (cv_ref && cv_ref->empty())
+    if (cv_ref && !cv_ref->empty())
       return cv_ref->toString();
-    return std::string(keyVisibility, colVisSize);
+    return std::string(keyVisibility, colVisLen);
   }
 
   int64_t getTimeStamp() {
@@ -276,7 +276,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     std::pair<char*, size_t> cq = rhs.getColQualifier();
     out << (cf.second > 0 ? std::string(cf.first, cf.second) : "") << ":" << (cq.second > 0 ? std::string(cq.first, cq.second) : "") << " [";
     std::pair<char*, size_t> viz = rhs.getColVisibility();
-    auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
+    auto vizstring = viz.second > 0 ? std::string(viz.first, viz.second) : "";
     out << vizstring << "] " << std::to_string(rhs.getTimeStamp());
     return out;
   }

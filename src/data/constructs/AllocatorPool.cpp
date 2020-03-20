@@ -35,12 +35,15 @@ ArrayAllocatorPool::~ArrayAllocatorPool() {
 }
 
 ArrayAllocatorPool::ArrayAllocatorPool() {
-  for (int i = 0; i < 500; i++) {
+  for (int i = 0; i < 100; i++) {
     buffers256.push_front(std::make_pair(new char[256], 256));
     buffers128.push_front(std::make_pair(new char[128], 128));
     buffers64.push_front(std::make_pair(new char[64], 64));
-    buffers32.push_front(std::make_pair(new char[32], 32));
   }
+  for (int i = 0; i <50; i++) {
+      buffers32.push_front(std::make_pair(new char[32], 32));
+  }
+
 }
 
 void ArrayAllocatorPool::free(std::pair<char*, size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr) {

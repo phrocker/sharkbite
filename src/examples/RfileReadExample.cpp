@@ -133,23 +133,12 @@ std::ifstream::pos_type filesize(const char* filename)
 
 
 void
-readRfile (std::string outputFile, uint16_t port, bool bigEndian)
+readRfile (std::string outputFile, uint16_t port, bool print)
 {
   for(int i=0; i < 100; i++){
     auto start = chrono::steady_clock::now();
     std::fstream::pos_type size = filesize(outputFile.c_str());
-/*
-    
 
-    std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
-
-    
-    ifs.seekg(0, std::ios::beg);
-
-    std::vector<char> buffer(size);
-    ifs.read(buffer.data(), size);*/
-
-//    cclient::data::streams::ByteInputStream *stream = new cclient::data::streams::ByteInputStream(buffer.data(),size);
     cclient::data::streams::InputStream *stream = new cclient::data::streams::MemoryMappedInputStream(outputFile);
 
 
@@ -168,7 +157,8 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
     long count = 0;
     while (newRFile->hasNext())
     {
-       // std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
+        if (print)
+          std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
 
         newRFile->next();
 
@@ -200,25 +190,29 @@ int
 main (int argc, char **argv)
 {
 
-    if (argc < 3)
+    if (argc < 2)
     {
         std::cout << "Arguments required: ./RfileReadExample"
-             << " <output file>" << std::endl;
+             << " <input rfile> <print -- true/false is optional>" << std::endl;
         exit (1);
     }
 
     std::string outputFile = argv[1];
 
+    bool print = false;
+    if (argc == 3){
     // always assume big endian
- //   std::string endian = argv[2];
+      auto ptr = argv[2];
+      print = (!memcmp(ptr,"true",4));
+    }
 
 
-    bool bigEndian = true;
+
     if (!IsEmpty (&outputFile))
     {
 
         std::cout << "Reading test rfile from " << outputFile << std::endl;
-        readRfile(outputFile, 0 , bigEndian);
+        readRfile(outputFile, 0 , print);
     }
 
 

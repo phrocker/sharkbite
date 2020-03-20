@@ -39,6 +39,10 @@ if (ENABLE_GPROF)
 	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 endif(ENABLE_GPROF)
 
+if (NATIVE_ARCH)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNATIVE_ARCH")
+endif(ENABLE_GPROF)
+
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF)

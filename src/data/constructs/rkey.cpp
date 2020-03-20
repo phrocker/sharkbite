@@ -138,18 +138,20 @@ void RelativeKey::setPrevious(const std::shared_ptr<Key> &previous_key) {
   }
 }
 
-bool RelativeKey::readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                          std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey) {
+bool RelativeKey::readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                          const std::shared_ptr<Key> &newkey) {
 
   if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
+
+      auto prevField = prevKey->getRow();
       // this means that we do not have an interned string...likely the first relative key
-      //textObj = pool->allocateBuffer(prevField->second);
-      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField->second + 1);
+      //textObj = pool->allocateBuffer(prevField.second);
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
 
-      memcpy_fast(ret.first, prevField->first, prevField->second);
+      memcpy_fast(ret.first, prevField.first, prevField.second);
 
-      prevText->reset(ret.first, prevField->second, ret.second);
+      prevText->reset(ret.first, prevField.second, ret.second);
     }
 
     newkey->setRow(prevText);
@@ -158,112 +160,110 @@ bool RelativeKey::readRow(cclient::data::streams::InputStream *stream, int *comp
 
   int maxsize = 0;
   if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getRow();
+    std::pair<char*, size_t> field;
     if ((fieldsPrefixed & PREFIX) == PREFIX) {
-      maxsize = readPrefix(stream, field, prevField);
+      maxsize = readPrefix(stream, &field, &prevField);
     } else {
-      maxsize = read(stream, field);
+      maxsize = read(stream, &field);
     }
-    newkey->setRow(field->first, field->second, maxsize, true);
+    newkey->setRow(field.first, field.second, maxsize, true);
     return true;
   }
 
   return false;
 }
 
-bool RelativeKey::readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                         std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey) {
+bool RelativeKey::readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
 
   if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
+      auto prevField = prevKey->getColFamily();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
 
-      // this means that we do not have an interned string...likely the first relative key
-      //textObj = pool->allocateBuffer(prevField->second);
-      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField->second + 1);
+      memcpy_fast(ret.first, prevField.first, prevField.second);
 
-      memcpy_fast(ret.first, prevField->first, prevField->second);
-
-      prevText->reset(ret.first, prevField->second, ret.second);
+      prevText->reset(ret.first, prevField.second, ret.second);
     }
 
     newkey->setColumnFamily(prevText);
     return true;
   }
 
-  //prevText->reset();
   int maxsize = 0;
   if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColFamily();
+    std::pair<char*, size_t> field;
     if ((fieldsPrefixed & PREFIX) == PREFIX) {
-      maxsize = readPrefix(stream, field, prevField);
+      maxsize = readPrefix(stream, &field, &prevField);
     } else {
-      maxsize = read(stream, field);
+      maxsize = read(stream, &field);
     }
-    newkey->setColFamily(field->first, field->second, maxsize, true);
+    newkey->setColFamily(field.first, field.second, maxsize, true);
     return true;
   }
 
   return false;
 }
 
-bool RelativeKey::readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                         std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey) {
+bool RelativeKey::readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
   if (SH_UNLIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
+      auto prevField = prevKey->getColQualifier();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
 
-      // this means that we do not have an interned string...likely the first relative key
-      //textObj = pool->allocateBuffer(prevField->second);
-      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField->second + 1);
+      memcpy_fast(ret.first, prevField.first, prevField.second);
 
-      memcpy_fast(ret.first, prevField->first, prevField->second);
-
-      prevText->reset(ret.first, prevField->second, ret.second);
+      prevText->reset(ret.first, prevField.second, ret.second);
     }
 
     newkey->setColumnQualifier(prevText);
     return true;
   }
 
-  //prevText->reset();
   int maxsize = 0;
   if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColQualifier();
+    std::pair<char*, size_t> field;
     if ((fieldsPrefixed & PREFIX) == PREFIX) {
-      maxsize = readPrefix(stream, field, prevField);
+      maxsize = readPrefix(stream, &field, &prevField);
     } else {
-      maxsize = read(stream, field);
+      maxsize = read(stream, &field);
     }
-    newkey->setColQualifier(field->first, field->second, maxsize, true);
+    newkey->setColQualifier(field.first, field.second, maxsize, true);
     return true;
   }
 
   return false;
 }
 
-bool RelativeKey::readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                         std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey) {
+bool RelativeKey::readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
   if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
+      auto prevField = prevKey->getColVisibility();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
 
-      // this means that we do not have an interned string...likely the first relative key
-      //textObj = pool->allocateBuffer(prevField->second);
-      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField->second + 1);
+      memcpy_fast(ret.first, prevField.first, prevField.second);
 
-      memcpy_fast(ret.first, prevField->first, prevField->second);
-
-      prevText->reset(ret.first, prevField->second, ret.second);
+      prevText->reset(ret.first, prevField.second, ret.second);
     }
-
     newkey->setColumnVisibility(prevText);
     return true;
   }
 
-  //prevText->reset();
-  int ret = 0;
+  int maxsize = 0;
   if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColVisibility();
+    std::pair<char*, size_t> field;
     if ((fieldsPrefixed & PREFIX) == PREFIX) {
-      ret = readPrefix(stream, field, prevField);
+      maxsize = readPrefix(stream, &field, &prevField);
     } else {
-      ret = read(stream, field);
+      maxsize = read(stream, &field);
     }
-    newkey->setColVisibility(field->first, field->second,ret, true);
+    newkey->setColVisibility(field.first, field.second, maxsize, true);
     return true;
   }
 
@@ -279,16 +279,6 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
     fieldsPrefixed = 0;
   }
 
-  std::pair<char*, size_t> row;
-  std::pair<char*, size_t> cf;
-  std::pair<char*, size_t> cq;
-  std::pair<char*, size_t> cv;
-
-  std::pair<char*, size_t> prevRow = prevKey->getRow();
-  std::pair<char*, size_t> prevCf = prevKey->getColFamily();
-  std::pair<char*, size_t> prevCq = prevKey->getColQualifier();
-  std::pair<char*, size_t> prevVis = prevKey->getColVisibility();
-
   uint64_t timestamp = 0;
   uint64_t prevTimestamp = prevKey->getTimeStamp();
 
@@ -296,48 +286,25 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
 
   key = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
 
-  readRow(stream, &rowCmp, RelativeKey::ROW_SAME, RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed, &row, &prevRow, &row_ref, key);
+  readRow(stream, &rowCmp, RelativeKey::ROW_SAME, RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed, &row_ref, key);
 
-  readCf(stream, &cfCmp, RelativeKey::CF_SAME, RelativeKey::CF_PREFIX, fieldsSame, fieldsPrefixed, &cf, &prevCf, &cf_ref, key);
+  readCf(stream, &cfCmp, RelativeKey::CF_SAME, RelativeKey::CF_PREFIX, fieldsSame, fieldsPrefixed, &cf_ref, key);
 
-  readCq(stream, &cqCmp, RelativeKey::CQ_SAME, RelativeKey::CQ_PREFIX, fieldsSame, fieldsPrefixed, &cq, &prevCq, &cq_ref, key);
+  readCq(stream, &cqCmp, RelativeKey::CQ_SAME, RelativeKey::CQ_PREFIX, fieldsSame, fieldsPrefixed, &cq_ref, key);
 
-  readCv(stream, &cvCmp, RelativeKey::CV_SAME, RelativeKey::CV_PREFIX, fieldsSame, fieldsPrefixed, &cv, &prevVis, &cv_ref, key);
+  readCv(stream, &cvCmp, RelativeKey::CV_SAME, RelativeKey::CV_PREFIX, fieldsSame, fieldsPrefixed, &cv_ref, key);
 
   if ((fieldsSame & RelativeKey::TS_SAME) != RelativeKey::TS_SAME) {
-    prevTimestamp = timestamp;
 
-    timestamp = stream->readEncodedLong();
-    if ((fieldsSame & RelativeKey::TS_DIFF) != RelativeKey::TS_DIFF) {
-      timestamp += prevTimestamp;
+    if ((fieldsPrefixed & RelativeKey::TS_DIFF) == RelativeKey::TS_DIFF) {
+      timestamp = stream->readEncodedVLong() + prevTimestamp;
+    } else {
+      timestamp = stream->readEncodedVLong();
     }
-  } else
+  } else {
     timestamp = prevTimestamp;
+  }
 
-  //
-  /*
-   if (!row_ref.empty())
-   key->setRow(row_ref);
-   else {
-   key->setRow(row.first, row.second, true);
-   }
-
-   if (nullptr != cf_ref) {
-   key->setColumnFamily(cf_ref);
-   } else {
-   key->setColFamily(cf.first, cf.second, true);
-   }
-   if (nullptr != cq_ref) {
-   key->setColumnQualifier(cq_ref);
-   } else {
-   key->setColQualifier(cq.first, cq.second, 0, true);
-   }
-   if (nullptr != cv_ref) {
-   key->setColumnVisibility(cv_ref);
-   } else {
-   key->setColVisibility(cv.first, cv.second, true);
-   }
-   */
   key->setTimeStamp(timestamp);
 
   prevKey = key;

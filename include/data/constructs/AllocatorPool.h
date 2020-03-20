@@ -32,6 +32,8 @@ class ArrayAllocatorPool : public ObjectAllocatorPool<Text> {
   std::deque<std::pair<char*,size_t>> buffers128;
   std::deque<std::pair<char*,size_t>> buffers64;
   std::deque<std::pair<char*,size_t>> buffers32;
+
+
   std::map<char*,std::pair<int,size_t>> referenceCount;
   inline void free(std::pair<char*,size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*,size_t>> *ptr);
 

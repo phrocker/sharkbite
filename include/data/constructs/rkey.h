@@ -114,25 +114,23 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   int readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow);
 
-  bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                         std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey);
+  bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                      const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                           std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey);
+  bool INLINE readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                           std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey);
+  bool INLINE readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::pair<char*, size_t> *field,
-                           std::pair<char*, size_t> *prevField, Text *prevText, const std::shared_ptr<Key> &newkey);
-
-
+  bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
   int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row);
 
   int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *input, uint32_t len);
 
-   int
+  int
   INLINE commonPrefix(std::pair<char*, size_t> prev, std::pair<char*, size_t> curr);
 
   void INLINE writePrefix(cclient::data::streams::OutputStream *outStream, std::pair<char*, size_t> *var, int commonPrefixLength) {
