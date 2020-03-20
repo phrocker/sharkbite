@@ -35,13 +35,16 @@ the API.
 	python3.7-dev ( for python bindings )
 	
 ### For Libthrift
-	bison 3+ 
+	bison 3+
+	libboost.
 	automake
 	autotool
 	autoconf
 	libtool
 	libevent-dev
 	unzip
+	
+Lib Boost is a compile time dependency for thrift. It is not required at runtime, so will no be referenced via any compiled artifact.
 	
 ### For Native Python Iterators
  	JDK ( such as OpenJDK)
