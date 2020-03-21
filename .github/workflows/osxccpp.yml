@@ -1,0 +1,21 @@
+name: OSX CICD Pipeline
+
+on: [push]
+
+jobs:
+  build:
+
+    runs-on: macos-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: install deps
+      run: sudo brew  g++-4.9 libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler flex bison python3
+    - name: setup environment
+      run: brew link --force flex bison && python3 -m pip install --user --upgrade pip wheel
+    - name: setup cmake
+      run: mkdir build && cd build &&  cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. 
+    - name: make
+      run: cd build && cmake --build .
+    - name: make test
+      run: cd build && ctest --debug
