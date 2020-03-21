@@ -1,6 +1,6 @@
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 ![Ubuntu CICD Pipeline](https://github.com/phrocker/sharkbite/workflows/Ubuntu%20CICD%20Pipeline/badge.svg)
-![Travis Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
+[![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
 **S**harkbite is a native client for key/value stores. With 
 initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value
