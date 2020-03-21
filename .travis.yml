@@ -51,5 +51,5 @@ before_script:
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; 
     then mkdir -p build && cd build && cmake .. && cmake --build . && ctest --debug;
-    else mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && cmake --build . && ctest --debug;
+    else mkdir -p build && cd build && cmake -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && travis_wait 30 cmake --build . && ctest --debug;
     fi
