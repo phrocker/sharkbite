@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install deps
-      run: brew  install flex bison python3
+      run: brew  install flex bison python3 boost
     - name: setup environment
       run: brew link --force flex bison && python3 -m pip install --user --upgrade pip wheel
     - name: setup cmake
