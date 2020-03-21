@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install deps
-      run: brew  g++-4.9 libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler flex bison python3
+      run: brew  gcc libbz2-dev libgsasl7-dev uuid-dev libboost-all-dev cmake libgtest-dev libevent-dev libssl-dev libprotobuf-dev protobuf-compiler flex bison python3
     - name: setup environment
       run: brew link --force flex bison && python3 -m pip install --user --upgrade pip wheel
     - name: setup cmake
