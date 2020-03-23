@@ -60,7 +60,7 @@ public:
     {
         filesize = getFileSize(file);
         fd = open(file.c_str(), O_RDONLY, 0);
-        ptr = mmap(NULL, filesize, PROT_READ, MAP_PRIVATE | MAP_POPULATE, fd, 0);   
+        ptr = mmap(NULL, filesize, PROT_READ, MMAP_FLAGS, fd, 0);   
     }
 
 
