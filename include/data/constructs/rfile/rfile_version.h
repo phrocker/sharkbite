@@ -20,90 +20,90 @@
 namespace cclient {
 namespace data {
 
-
 #define VERSION_SIZE 4
 
-class RFileVersion: public cclient::data::streams::StreamInterface {
+class RFileVersion : public cclient::data::streams::StreamInterface {
 
-public:
+ public:
 
-    RFileVersion() :
-        maj(0), min(0) {
+  RFileVersion()
+      :
+      maj(0),
+      min(0) {
 
-    }
+  }
 
-    /**
-     * Constructor for RFile Version
-     * @param majorV major version
-     * @param minorV minor version
-     */
-    RFileVersion(const short majorV, const short minorV) :
-        maj(majorV), min(minorV) {
+  /**
+   * Constructor for RFile Version
+   * @param majorV major version
+   * @param minorV minor version
+   */
+  RFileVersion(const short majorV, const short minorV)
+      :
+      maj(majorV),
+      min(minorV) {
 
-    }
+  }
 
-    explicit RFileVersion(cclient::data::streams::InputStream *input)
-    {
-        maj = input->readShort();
-        min = input->readShort();
-    }
+  explicit RFileVersion(cclient::data::streams::InputStream *input) {
+    maj = input->readShort();
+    min = input->readShort();
+  }
 
+  uint64_t read(cclient::data::streams::InputStream *input) {
+    maj = input->readShort();
+    min = input->readShort();
+    return input->getPos();
+  }
 
-    uint64_t read (cclient::data::streams::InputStream *input)
-    {
-        maj = input->readShort();
-        min = input->readShort();
-        return input->getPos();
-    }
+  /**
+   * Write the RFile File Version
+   * @param out output stream
+   * @returns location of output stream
+   */
+  uint64_t write(cclient::data::streams::OutputStream *out) {
 
-    /**
-     * Write the RFile File Version
-     * @param out output stream
-     * @returns location of output stream
-     */
-    uint64_t write (cclient::data::streams::OutputStream *out) {
+    out->writeShort(maj);
+    return out->writeShort(min);
+  }
 
-        out->writeShort(maj);
-        return out->writeShort(min);
-    }
+  /**
+   * Sets the major version
+   * @param val major version
+   */
+  void setMajor(const short val) {
 
-    /**
-     * Sets the major version
-     * @param val major version
-     */
-    void setMajor(const short val) {
+    maj = val;
+  }
 
-        maj = val;
-    }
+  /**
+   * Gets the major version
+   * @returns the major versions
+   */
+  short getMajor() {
+    return maj;
+  }
 
-    /**
-     * Gets the major version
-     * @returns the major versions
-     */
-    short getMajor() {
-        return maj;
-    }
+  /**
+   * Sets the minor version
+   * @param val minor version
+   */
+  void setMinor(const short val) {
+    min = val;
+  }
 
-    /**
-     * Sets the minor version
-     * @param val minor version
-     */
-    void setMinor(const short val) {
-        min = val;
-    }
+  /**
+   * Returns the minor version
+   * @returns minor version
+   */
+  short getMinor() {
+    return min;
+  }
 
-    /**
-     * Returns the minor version
-     * @returns minor version
-     */
-    short getMinor() {
-        return min;
-    }
+ public:
 
-public:
-
-    // major and minor versions.
-    short maj, min;
+  // major and minor versions.
+  short maj, min;
 
 };
 }

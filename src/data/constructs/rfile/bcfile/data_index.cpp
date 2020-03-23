@@ -18,7 +18,7 @@ namespace cclient{
 
 DataIndex::DataIndex (cclient::data::compression::Compressor *compressor)
 {
-    compressionAlgorithm = compressor->getAlgorithm ();
+    compressionAlgorithm = *compressor->getAlgorithm ();
 }
 
 DataIndex::DataIndex ()

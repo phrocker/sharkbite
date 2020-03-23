@@ -21,95 +21,77 @@
 #include "../../../streaming/Streams.h"
 #include "IndexEntry.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class KeyIndex : cclient::data::streams::StreamInterface
-{
-public:
-    KeyIndex (std::vector<int> offsetList, uint8_t *datums, int dataLength) :
-        newFormat (false), dataLength (
-            dataLength)
-    {
-        offsets = new std::vector<int>();
-        offsets->insert(offsets->end(),offsetList.begin(),offsetList.end());
-        data = new uint8_t[dataLength];
-        memcpy(data,datums,dataLength);
+class KeyIndex : cclient::data::streams::StreamInterface {
+ public:
+  KeyIndex(std::vector<int> offsetList, uint8_t *datums, int dataLength)
+      :
+      newFormat(false),
+      dataLength(dataLength) {
+    offsets = new std::vector<int>();
+    offsets->insert(offsets->end(), offsetList.begin(), offsetList.end());
+    data = new uint8_t[dataLength];
+    memcpy(data, datums, dataLength);
+  }
+
+  virtual ~KeyIndex() {
+    if (NULL != data) {
+      delete[] data;
     }
+    delete offsets;
+  }
 
-    virtual
-    ~KeyIndex ()
-    {
-        if (NULL != data)
-        {
-            delete[] data;
-        }
-        delete offsets;
+  std::shared_ptr<Key> get(uint64_t index) {
+    uint64_t len = 0;
+    if (index == offsets->size() - 1) {
+      len = dataLength - offsets->at(index);
+    } else {
+      len = offsets->at(index + 1) - offsets->at(index);
     }
+    std::shared_ptr<Key> returnKey = std::make_shared<Key>();
 
+    cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream((char*) data + offsets->at(index), len);
+    returnKey->read(inputStream);
+    delete inputStream;
 
-    std::shared_ptr<Key>
-    get (uint64_t index)
-    {
-        uint64_t len = 0;
-        if (index == offsets->size () - 1)
-        {
-            len = dataLength - offsets->at (index);
-        }
-        else
-        {
-            len = offsets->at (index + 1) - offsets->at (index);
-        }
-        std::shared_ptr<Key> returnKey = std::make_shared<Key> ();
+    return returnKey;
+  }
 
-        cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream (
-            (char*) data + offsets->at (index), len);
-        returnKey->read (inputStream);
-        delete inputStream;
+  int binary_search(const std::shared_ptr<Key> &search_key) {
+    return binary_search(0, offsets->size() - 1, search_key);
+  }
 
-        return returnKey;
-    }
+  int binary_search(int first, int last, const std::shared_ptr<Key> &search_key) {
+    int index;
 
-    int
-    binary_search (const std::shared_ptr<Key> &search_key)
-    {
-        return binary_search (0, offsets->size () - 1, search_key);
-    }
+    if (first > last)
+      index = -1;
 
-    int
-    binary_search (int first, int last, const std::shared_ptr<Key> &search_key)
-    {
-        int index;
+    else {
+      int mid = (first + last) / 2;
 
-        if (first > last)
-            index = -1;
+      std::shared_ptr<Key> midKey = get(mid);
+      if (*search_key == *midKey)
+        index = mid;
+      else
 
-        else
-        {
-            int mid = (first + last) / 2;
+      if (*search_key < *midKey)
+        index = binary_search(first, mid - 1, search_key);
+      else
+        index = binary_search(mid + 1, last, search_key);
 
-            std::shared_ptr<Key> midKey = get (mid);
-            if (*search_key == *midKey)
-                index = mid;
-            else
+    }  // end if
+    return index;
+  }  // end binarySearch
 
-                if (*search_key < *midKey)
-                    index = binary_search (first, mid - 1, search_key);
-                else
-                    index = binary_search (mid + 1, last, search_key);
-
-        } // end if
-        return index;
-    } // end binarySearch
-
-protected:
-    int currentValue = 0;
-    std::vector<int> *offsets;
-    uint8_t *data;
-    uint32_t dataLength;
-    bool newFormat;
+ protected:
+  int currentValue = 0;
+  std::vector<int> *offsets;
+  uint8_t *data;
+  uint32_t dataLength;
+  bool newFormat;
 };
 
 }

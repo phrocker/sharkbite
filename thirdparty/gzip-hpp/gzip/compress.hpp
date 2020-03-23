@@ -73,7 +73,7 @@ class Compressor
         }
 #pragma GCC diagnostic pop
 
-        deflate_s.next_in = reinterpret_cast<z_const Bytef*>(data);
+        deflate_s.next_in = reinterpret_cast<const Bytef*>(data);
         deflate_s.avail_in = static_cast<unsigned int>(size);
 
         std::size_t size_compressed = 0;

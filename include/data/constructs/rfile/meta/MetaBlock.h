@@ -25,42 +25,38 @@
 #define RFILE_VERSION_7 7
 #define RFILE_VERSION_8 8
 
-
-
 #include <map>
 
 #include <vector>
 #include <stdexcept>
 
-
-
-#include "../../../streaming/DataOutputStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/DataOutputStream.h"
+#include "data/streaming/Streams.h"
 
 #include "LocalityGroupMetaData.h"
 
 namespace cclient {
 namespace data {
 
-class MetaBlock: public cclient::data::streams::StreamInterface {
-public:
-    /**
-     Default constructor.
-     **/
-    MetaBlock();
+class MetaBlock : public cclient::data::streams::StreamInterface {
+ public:
+  /**
+   Default constructor.
+   **/
+  MetaBlock();
 
-    ~MetaBlock();
+  ~MetaBlock();
 
-    /**
-     Adds a list of locality groups to the RFile Meta Block
-     **/
-    void addLocalityGroups(std::vector<LocalityGroupMetaData*> lgs) {
-        localityGroups.insert(localityGroups.end(), lgs.begin(), lgs.end());
-    }
+  /**
+   Adds a list of locality groups to the RFile Meta Block
+   **/
+  void addLocalityGroups(std::vector<LocalityGroupMetaData*> lgs) {
+    localityGroups.insert(localityGroups.end(), lgs.begin(), lgs.end());
+  }
 
-    uint64_t write(cclient::data::streams::DataOutputStream *outStream);
-protected:
-    std::vector<LocalityGroupMetaData*> localityGroups;
+  uint64_t write(cclient::data::streams::DataOutputStream *outStream);
+ protected:
+  std::vector<LocalityGroupMetaData*> localityGroups;
 };
 
 }

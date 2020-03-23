@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "../streaming/Streams.h"
+#include "data/constructs/AllocatorPool.h"
 
 #include <stdint.h>
 #include <cstdio>
@@ -26,176 +27,144 @@
 #include <cstring>
 #include <stdexcept>
 
-namespace cclient
-{
-namespace data
-{
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 
+namespace cclient {
+namespace data {
 
 /**
  * Based on the accumulo relative key.
  */
-class RelativeKey : public cclient::data::streams::StreamInterface
-{
+class RelativeKey : public cclient::data::streams::StreamInterface {
 
-public:
-    /**
-     * Constructor
-     **/
-    RelativeKey ();
+ public:
+  /**
+   * Constructor
+   **/
+  RelativeKey();
 
-    /**
-     * Constructor.
-     * @param previous_key previous key 
-     * @param my_key current key.
-     **/
-    RelativeKey (std::shared_ptr<Key> previous_key, std::shared_ptr<Key> my_key);
+  /**
+   * Constructor.
+   * @param previous_key previous key
+   * @param my_key current key.
+   **/
+  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key);
 
-    /**
-     * Returns the relative key.
-     **/
-    std::shared_ptr<StreamInterface> 
-    getStream ();
+  /**
+   * Returns the relative key.
+   **/
+  std::shared_ptr<StreamInterface>
+  getStream();
 
-    /**
-     * Sets the base for the relative key
-     * @param my_key key to set on the relative key.
-     **/
-    void
-    setBase (std::shared_ptr<Key> my_key);
-    
+  /**
+   * Sets the base for the relative key
+   * @param my_key key to set on the relative key.
+   **/
+  void
+  setBase(const std::shared_ptr<Key> &my_key);
 
-    /**
-     * create and fulfill the relative key object.
-     **/
-    virtual uint64_t read (cclient::data::streams::InputStream *in);
+  /**
+   * create and fulfill the relative key object.
+   **/
+  virtual uint64_t read(cclient::data::streams::InputStream *in);
 
-    /**
-     * Sets the previous key for this relative key.
-     * @param previous_key prev key.
-     **/
-    void
-    setPrevious (std::shared_ptr<Key> previous_key);
+  /**
+   * Sets the previous key for this relative key.
+   * @param previous_key prev key.
+   **/
+  void
+  setPrevious(const std::shared_ptr<Key> &previous_key);
 
-    /**
-     * write function for relative key
-     * @param outStream output stream.
-     **/
-    uint64_t
-    write (cclient::data::streams::OutputStream *outStream);
+  /**
+   * write function for relative key
+   * @param outStream output stream.
+   **/
+  uint64_t
+  write(cclient::data::streams::OutputStream *outStream);
 
-    bool
-    operator < (const RelativeKey &rhs) const;
+  bool
+  operator <(const RelativeKey &rhs) const;
 
-    bool
-    operator < (const RelativeKey *rhs) const;
+  bool
+  operator <(const RelativeKey *rhs) const;
 
-    ~RelativeKey ();
+  ~RelativeKey();
 
-    // flags taken from java relative key
-    static const uint8_t ROW_SAME = 0x01;
-    static const uint8_t CF_SAME = 0x02;
-    static const uint8_t CQ_SAME = 0x04;
-    static const uint8_t CV_SAME = 0x08;
-    static const uint8_t TS_SAME = 0x10;
-    static const uint8_t DELETED = 0x20;
+  // flags taken from java relative key
+  static const uint8_t ROW_SAME = 0x01;
+  static const uint8_t CF_SAME = 0x02;
+  static const uint8_t CQ_SAME = 0x04;
+  static const uint8_t CV_SAME = 0x08;
+  static const uint8_t TS_SAME = 0x10;
+  static const uint8_t DELETED = 0x20;
 
-    static const uint8_t ROW_PREFIX = 0x01;
-    static const uint8_t CF_PREFIX = 0x02;
-    static const uint8_t CQ_PREFIX = 0x04;
-    static const uint8_t CV_PREFIX = 0x08;
-    static const uint8_t TS_DIFF = 0x10;
+  static const uint8_t ROW_PREFIX = 0x01;
+  static const uint8_t CF_PREFIX = 0x02;
+  static const uint8_t CQ_PREFIX = 0x04;
+  static const uint8_t CV_PREFIX = 0x08;
+  static const uint8_t TS_DIFF = 0x10;
 
-    static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
+  static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
 
-    std::shared_ptr<Key> getKey(){
-    	return key;
-    }
-protected:
+  const std::shared_ptr<Key>& getKey() {
+    return key;
+  }
 
-    void readPrefix (cclient::data::streams::InputStream *stream, std::vector<char> *row, std::vector<char> *prevRow);
+ protected:
 
-    bool
-    readPrefix (cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD,
-                uint8_t PREFIX, char fieldsSame,char fieldsPrefixed, std::vector<char> *field,
-                std::vector<char> *prevField)
-    {
-        std::vector<char> tmp;
+  int readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow);
 
-        //field->swap (*prevField);
+  bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                      const std::shared_ptr<Key> &newkey);
 
-        if ((fieldsSame & SAME_FIELD) != SAME_FIELD)
-        {
-            if ((fieldsPrefixed & PREFIX) == PREFIX)
-            {
-                readPrefix (stream, field, prevField);
-            }
-            else
-            {
-                read (stream, field);
-            }
-            return true;
-        }
-        else {
-            //field->resize(prevField->size());
-            field->insert(field->begin(),prevField->data (),prevField->data ()+prevField->size());
-        }
-        return false;
-    }
+  bool INLINE readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
+  bool INLINE readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
-    void
-    read (cclient::data::streams::InputStream *stream, std::vector<char> *row)
-    {
-        uint32_t len = stream->readEncodedLong();
-        read (stream, row, len);
-    }
+  bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                     const std::shared_ptr<Key> &newkey);
 
-    void
-    read (cclient::data::streams::InputStream *stream, std::vector<char> *input, uint32_t len)
-    {
-        char *array = new char[len];
-        stream->readBytes (array, len);
+  int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row);
 
-        input->insert (input->begin (), array, array + len);
-        delete[] array;
-    }
+  int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *input, uint32_t len);
 
-    inline int
-    commonPrefix (std::pair<char*, size_t> prev,
-                  std::pair<char*, size_t> curr);
+  int
+  INLINE commonPrefix(std::pair<char*, size_t> prev, std::pair<char*, size_t> curr);
 
-    inline void
-    writePrefix (cclient::data::streams::OutputStream *outStream, std::pair<char*, size_t> *var,
-                 int commonPrefixLength)
-    {
-        // should be writevint, below
-        outStream->writeVLong (commonPrefixLength);
-        uint32_t remainder = var->second - commonPrefixLength;
-        outStream->writeVLong (remainder);
-        outStream->writeBytes (var->first + commonPrefixLength, remainder);
+  void INLINE writePrefix(cclient::data::streams::OutputStream *outStream, std::pair<char*, size_t> *var, int commonPrefixLength) {
+    // should be writevint, below
+    outStream->writeVLong(commonPrefixLength);
+    uint32_t remainder = var->second - commonPrefixLength;
+    outStream->writeVLong(remainder);
+    outStream->writeBytes(var->first + commonPrefixLength, remainder);
 
-    }
+  }
 
-    std::shared_ptr<Key> key;
+  std::shared_ptr<Key> key;
 
-    char fieldsSame;
+  char fieldsSame;
 
-    std::shared_ptr<Key> prevKey;
+  std::shared_ptr<Key> prevKey;
 
-    void
-    setKey (std::shared_ptr<Key> keyToCopy, std::shared_ptr<Key> keyToCopyTo);
+  void
+  setKey(const std::shared_ptr<Key> &keyToCopy, const std::shared_ptr<Key> &keyToCopyTo);
 
-    bool
-    isSame (std::pair<char*, size_t> a, std::pair<char*, size_t> b);
+  bool
+  INLINE isSame(std::pair<char*, size_t> a, std::pair<char*, size_t> b);
 
-    int32_t rowCommonPrefixLen;
-    int32_t cfCommonPrefixLen;
-    int32_t cqCommonPrefixLen;
-    int32_t cvCommonPrefixLen;
-    uint8_t fieldsPrefixed;
-    long tsDiff;
+  int32_t rowCommonPrefixLen;
+  int32_t cfCommonPrefixLen;
+  int32_t cqCommonPrefixLen;
+  int32_t cvCommonPrefixLen;
+  uint8_t fieldsPrefixed;
+  long tsDiff;
 
+  Text row_ref;
+  Text cf_ref;
+  Text cq_ref;
+  Text cv_ref;
 };
 }
 }

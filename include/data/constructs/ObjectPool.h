@@ -11,25 +11,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INCLUDE_DATA_CONSTRUCTS_RFILE_META_INDEXMETABLOCK_H_
-#define INCLUDE_DATA_CONSTRUCTS_RFILE_META_INDEXMETABLOCK_H_
-#include "data/streaming/Streams.h"
+
+#ifndef OBJECT_ALLOCATOR_POOL_H_
+#define OBJECT_ALLOCATOR_POOL_H_
+
+#include <vector>
 #include <memory>
 
 namespace cclient {
 namespace data {
 
-class IndexMetaBlock {
+template<typename T>
+class ObjectAllocatorPool {
+ private:
 
+ protected:
+  virtual ~ObjectAllocatorPool() {
+  }
+  ObjectAllocatorPool() {
+  }
  public:
 
-  virtual ~IndexMetaBlock() {
-  }
+  virtual std::pair<char*,size_t> allocateBuffer(size_t size) = 0;
 
-  virtual bool hasNextKey() =0;
+  virtual std::shared_ptr<T> allocate(size_t size) = 0;
+
+  virtual void free(std::pair<char*, size_t> &&ptr) = 0;
+
 };
 
 }
 }
 
-#endif /* INCLUDE_DATA_CONSTRUCTS_RFILE_META_INDEXMETABLOCK_H_ */
+#endif

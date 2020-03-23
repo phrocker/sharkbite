@@ -16,11 +16,11 @@
 
 #include <vector>
 #include <memory>
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/input/ByteInputStream.h"
-#include "../../../streaming/input/NetworkOrderInputStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/input/ByteInputStream.h"
+#include "data/streaming/input/NetworkOrderInputStream.h"
+#include "data/streaming/Streams.h"
 #include "IndexEntry.h"
 #include "BaseMetaBlock.h"
 
@@ -43,28 +43,27 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
     memcpy(data, datums, dataLength);
   }
 
-  SerializedIndex(std::shared_ptr<BaseMetaBlock> source, std::shared_ptr<BaseMetaBlock> block)
+  SerializedIndex(const std::shared_ptr<BaseMetaBlock> &source, const std::shared_ptr<BaseMetaBlock> &block)
       :
       data(NULL),
       dataLength(0),
       newFormat(true),
       blockParty(block) {
-
     currentPosition = block->getCurrentPosition();
-    ptr = std::dynamic_pointer_cast<SerializedIndex>(block->getBlock());
+    ptr = std::static_pointer_cast<SerializedIndex>(block->getBlock());
 
     offsets = new std::vector<int>();
 
   }
 
-  SerializedIndex(std::shared_ptr<BaseMetaBlock> block)
+  SerializedIndex(const std::shared_ptr<BaseMetaBlock> &block)
       :
       data(NULL),
       dataLength(0),
       newFormat(true),
       blockParty(block) {
     currentPosition = block->getCurrentPosition();
-    ptr = std::dynamic_pointer_cast<SerializedIndex>(block->getBlock());
+    ptr = std::static_pointer_cast<SerializedIndex>(block->getBlock());
 
     offsets = new std::vector<int>();
 
@@ -102,8 +101,8 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
   }
 
   std::shared_ptr<IndexEntry> get() {
-    if (!ptr) {
-      return get(currentPosition);
+    if (offsets->size() == 0) {
+      return get(ptr->currentPosition);
     } else {
       return ptr->operator*();
     }
@@ -118,8 +117,8 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
   }
 
   std::shared_ptr<IndexEntry> operator*() {
-    if (!ptr) {
-      return get(currentPosition);
+    if (offsets->size() == 0) {
+      return get(ptr->currentPosition);
     } else {
       return ptr->operator*();
     }
@@ -127,24 +126,44 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
 
   SerializedIndex&
   operator++() {
-    if (!ptr) {
-      currentPosition++;
+    // if we don't have offsets, then use ptr
+    // if we do have offsets, then we should increment
+    if (offsets->size() == 0) {
+      if (ptr->currentPosition + 1 < ptr->offsets->size()) {
+        ptr->currentPosition++;
+        return *this;
+      } else {
+        blockParty = blockParty->getNextBlock();
+        currentPosition = blockParty->getCurrentPosition();
+        ptr = std::static_pointer_cast<SerializedIndex>(blockParty->getBlock());
+        return *this;
+      }
     } else {
-      ptr->operator++(1);
+      currentPosition++;
     }
     return *this;
   }
 
   SerializedIndex&
   operator++(int t) {
-    if (!ptr) {
+    // if we don't have offsets, then use ptr
+    // if we do have offsets, then we should increment
+    if (offsets->size() == 0) {
+      if (ptr->currentPosition + 1 < ptr->offsets->size()) {
+        for (int32_t i = 0; i < (t + 1); i++) {
+          ptr->currentPosition++;
+        }
+        return *this;
+      } else {
+        blockParty = blockParty->getNextBlock();
+        currentPosition = blockParty->getCurrentPosition();
+        ptr = std::static_pointer_cast<SerializedIndex>(blockParty->getBlock());
+      }
+    } else {
       for (int32_t i = 0; i < (t + 1); i++) {
         currentPosition++;
       }
-    } else {
-      ptr->operator++(t);
     }
-
     return *this;
   }
 
@@ -169,18 +188,30 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
   }
 
   bool hasNext() {
-    if (blockParty == NULL) {
-      if (ptr) {
-      }
-      if ((ptr && !ptr->hasNextPosition()) || currentPosition + 1 < offsets->size()) {
-        return true;
-      }
+    if (nullptr == blockParty && offsets->size() == 0)
       return false;
+
+    if (offsets->size() == 0) {
+      if (ptr) {
+        auto morev = ptr->hasNext();
+        if (!morev) {
+          morev = blockParty->getIndexBlock()->hasNextKey();
+        }
+
+        return morev;
+      } else {
+        return false;
+      }
+    } else {
+      if (currentPosition + 1 >= offsets->size()) {
+        if (!blockParty) {
+          return false;
+        }
+        return blockParty->getIndexBlock()->hasNextKey();
+      }
+
     }
-    if (!ptr->hasNext()) {
-      return blockParty->getIndexBlock()->hasNextKey();
-    } else
-      return true;
+    return true;
   }
 
   std::shared_ptr<IndexEntry> getPrevious() {
@@ -206,7 +237,7 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
     if (!ptr->hasPrevious()) {
       blockParty = blockParty->getPreviousBlock();
       currentPosition = blockParty->getCurrentPosition();
-      ptr = std::dynamic_pointer_cast<SerializedIndex>(blockParty->getBlock());
+      ptr = std::static_pointer_cast<SerializedIndex>(blockParty->getBlock());
     }
     if (ptr == shared_from_this())
       return 0;

@@ -4,6 +4,8 @@ set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
 
+option(NATIVE_ARCH "Build with -march=native" OFF)
+option(ENABLE_GPROF "Enable sampling using gprof" OFF)
 option(PYTHON_ITERATOR_SUPPORT "Builds python iterator support." OFF)
 option(BUILD_JAR "Builds python iterator support. Deprecated by PYTHON_ITERATOR_SUPPORT" OFF)
 
@@ -17,8 +19,31 @@ else()
  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 endif()
 
+if (NATIVE_ARCH)
+	message("-- Attempting march=native")
+	include(CheckCXXCompilerFlag)
+	CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
+	if(COMPILER_SUPPORTS_MARCH_NATIVE)
+		message("--  march=native is supported ")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+	else()
+		message("--  march=native is NOT supported ")
+	endif()
+else()
+	message("-- Not attempting march=native")
+endif(NATIVE_ARCH)
 
-set (CMAKE_CXX_FLAGS "-std=c++14 -g -Wno-switch -Wall -fomit-frame-pointer -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
+if (ENABLE_GPROF)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+	SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+	SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+endif(ENABLE_GPROF)
+
+if (NATIVE_ARCH)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNATIVE_ARCH")
+endif(ENABLE_GPROF)
+
+set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF)
 option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)  
@@ -71,7 +96,8 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	  			 "-DCMAKE_MODULE_PATH=${CMAKE_MODULE_PATH}"
 	  			 "-DWITH_JAVA=OFF"
 	  			 "-DWITH_LIBEVENT=ON"
-	  			 "-DWITH_PYTHON=OFF"
+				 "-DWITH_PYTHON=OFF"
+				 "-DCMAKE_BUILD_TYPE=Release"  
 	  			 "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
                 		"-DLIBRESSL_SRC_DIR=${LIBRESSL_BIN_DIR}"
 	        	        "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
@@ -131,7 +157,6 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	  GIT_TAG v3.1.0
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
-	  #CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/protobuf"
 	  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf
 	  UPDATE_COMMAND ""
 	  )
@@ -153,8 +178,6 @@ download_project(PROJ pybind11
 set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(${pybind11_SOURCE_DIR})
 include_directories("${pybind11_SOURCE_DIR}/include/")
-#find_package(GTest REQUIRED)
- 
 
 find_package (Threads)
 

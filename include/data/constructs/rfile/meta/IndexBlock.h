@@ -14,10 +14,10 @@
 #ifndef INCLUDE_DATA_CONSTRUCTS_RFILE_META_INDEXBLOCK_H_
 #define INCLUDE_DATA_CONSTRUCTS_RFILE_META_INDEXBLOCK_H_
 
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/ByteOutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/ByteOutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/Streams.h"
 #include "IndexEntry.h"
 #include "SerializedIndex.h"
 #include "KeyIndex.h"
@@ -41,15 +41,16 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
 
  public:
   explicit IndexBlock(int version)
-      : level(0),
-        offset(0),
-        version(version),
-        hasNext(false),
-        index(
-        NULL),
-        serializedIndex(
-        NULL),
-        keyIndex(NULL) {
+      :
+      level(0),
+      offset(0),
+      version(version),
+      hasNext(false),
+      index(
+      NULL),
+      serializedIndex(
+      NULL),
+      keyIndex(NULL) {
 
   }
 
@@ -69,12 +70,10 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
     if (version == 6 || version == 7 || version == 8) {
       level = in->readInt();
       offset = in->readInt();
-      hasNext = in->readBoolean();
-
+      hasNext = in->readBoolean() == 0x01;
       int numOffsets = in->readInt();
       std::vector<int> offsets;
       offsets.reserve(numOffsets);
-
       for (int i = 0; i < numOffsets; i++) {
         offsets.push_back(in->readInt());
       }
@@ -83,20 +82,16 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
       serializedIndex = new uint8_t[indexSize];
       in->readBytes(serializedIndex, indexSize);
 
-      index = std::make_shared<SerializedIndex>(offsets, serializedIndex,
-                                                indexSize, true);
-      keyIndex = std::make_shared<KeyIndex>(offsets, serializedIndex,
-                                            indexSize);
+      index = std::make_shared<SerializedIndex>(offsets, serializedIndex, indexSize, true);
+      keyIndex = std::make_shared<KeyIndex>(offsets, serializedIndex, indexSize);
     } else if (version == 3) {
       level = 0;
       offset = 0;
       hasNext = false;
       int size = in->readInt();
 
-      cclient::data::streams::ByteOutputStream *byteOutStream =
-          new cclient::data::streams::ByteOutputStream(0);
-      cclient::data::streams::DataOutputStream *outStream =
-          new cclient::data::streams::DataOutputStream(byteOutStream);
+      cclient::data::streams::ByteOutputStream *byteOutStream = new cclient::data::streams::ByteOutputStream(0);
+      cclient::data::streams::DataOutputStream *outStream = new cclient::data::streams::DataOutputStream(byteOutStream);
       std::vector<int> offsetList;
       for (int i = 0; i < size; i++) {
         IndexEntry entry;
@@ -106,16 +101,12 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
 
       }
       serializedIndex = new uint8_t[byteOutStream->getSize()];
-      byteOutStream->getByteArray((char*) serializedIndex,
-                                  byteOutStream->getSize());
+      byteOutStream->getByteArray((char*) serializedIndex, byteOutStream->getSize());
       delete outStream;
       delete byteOutStream;
 
-      index = std::make_shared<SerializedIndex>(offsetList, serializedIndex,
-                                                byteOutStream->getSize(),
-                                                false);
-      keyIndex = std::make_shared<KeyIndex>(offsetList, serializedIndex,
-                                            byteOutStream->getSize());
+      index = std::make_shared<SerializedIndex>(offsetList, serializedIndex, byteOutStream->getSize(), false);
+      keyIndex = std::make_shared<KeyIndex>(offsetList, serializedIndex, byteOutStream->getSize());
 
     } else if (version == 4) {
       level = 0;
@@ -135,8 +126,7 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
       serializedIndex = new uint8_t[size];
       in->readBytes(serializedIndex, size);
 
-      index = std::make_shared<SerializedIndex>(offsets, serializedIndex, size,
-                                                false);
+      index = std::make_shared<SerializedIndex>(offsets, serializedIndex, size, false);
       keyIndex = std::make_shared<KeyIndex>(offsets, serializedIndex, size);
     } else {
       std::runtime_error("Unexpected version");
@@ -145,8 +135,7 @@ class IndexBlock : public IndexMetaBlock, public cclient::data::streams::StreamI
     return in->getPos();
   }
 
-  std::shared_ptr<KeyIndex>
-  getKeyIndex() {
+  std::shared_ptr<KeyIndex> getKeyIndex() {
     return keyIndex;
   }
 

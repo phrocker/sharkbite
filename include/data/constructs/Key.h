@@ -15,6 +15,9 @@
 #define KEY 1
 
 #include "../streaming/Streams.h"
+#include "AllocatorPool.h"
+#include "data/extern/fastmemcpy/FastMemCpy.h"
+#include "Text.h"
 
 #include <stdint.h>
 #include <ostream>
@@ -31,6 +34,8 @@ namespace data {
 class Key : public cclient::data::streams::StreamInterface, public std::enable_shared_from_this<Key> {
 
  public:
+
+  explicit Key(cclient::data::ArrayAllocatorPool *pool);
 
   Key(const char *const userRow = nullptr);
 
@@ -90,68 +95,106 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   virtual
   ~Key();
 
-  bool empty(){
-    return rowMaxSize == 0 && columnFamilySize==0 && colQualSize == 0 && colVisSize == 0;
+  bool empty() {
+    return rowMaxSize == 0 && columnFamilySize == 0 && colQualSize == 0 && colVisSize == 0;
   }
 
-  void
-  setRow(const char *r, uint32_t size);
+  void setRow(const char *r, uint32_t size, bool takeOwnership = false) {
+    setRow(r, size, size, takeOwnership);
+  }
+  void setRow(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
+
+  // set via text objects, incrementing the reference counter for Text
+  void setRow(Text*);
+  void setColumnFamily(Text*);
+  void setColumnQualifier(Text*);
+  void setColumnVisibility(Text*);
 
   void setRow(const std::string &row) {
     setRow(row.c_str(), row.length());
   }
 
   std::pair<char*, size_t> getRow() {
-    return std::make_pair(row, rowLength);
+    if (row_ref && !row_ref->empty())
+      return row_ref->getBuffer();
+    else
+      return std::make_pair(row, rowLength);
   }
 
   std::string getRowStr() {
+    if (row_ref && !row_ref->empty())
+      return row_ref->toString();
     return std::string(row, rowLength);
   }
 
-  void
-  setColFamily(const char *r, uint32_t size);
+  void setColFamily(const char *r, uint32_t size, bool takeOwnership = false){
+    setColFamily(r,size,size,takeOwnership);
+  }
+
+
+  void setColFamily(const char *r, uint32_t size,uint32_t maxSize, bool takeOwnership = false);
 
   void setColFamily(const std::string &st) {
     setColFamily(st.c_str(), st.size());
   }
 
   inline std::pair<char*, size_t> getColFamily() {
+    if (cf_ref && !cf_ref->empty())
+      return cf_ref->getBuffer();
     return std::make_pair(colFamily, columnFamilyLength);
   }
 
   inline std::string getColFamilyStr() {
+    if (cf_ref && !cf_ref->empty())
+      return cf_ref->toString();
     return std::string(colFamily, columnFamilyLength);
   }
 
-  void
-  setColQualifier(const char *r, uint32_t size, uint32_t offset = 0);
+  void setColQualifier(const char *r, uint32_t size, bool takeOwnership = false){
+    setColQualifier(r,size,size,takeOwnership);
+  }
+
+  void setColQualifier(const char *r, uint32_t size, uint32_t maxSize , bool takeOwnership = false);
+
 
   void setColQualifier(const std::string &st) {
-    setColQualifier(st.c_str(), st.size(), 0);
+    setColQualifier(st.c_str(), st.size(), st.size(),false);
   }
 
   std::pair<char*, size_t> getColQualifier() {
+    if (cq_ref && !cq_ref->empty())
+      return cq_ref->getBuffer();
     return std::make_pair(colQualifier, colQualLen);
   }
 
   std::string getColQualifierStr() {
+    if (cq_ref && !cq_ref->empty())
+      return cq_ref->toString();
     return std::string(colQualifier, colQualLen);
   }
 
-  void
-  setColVisibility(const char *r, uint32_t size);
+  void setColVisibility(const char *r, uint32_t size, bool takeOwnership = false){
+    setColVisibility(r,size,size,takeOwnership);
+  }
+
+
+  void setColVisibility(const char *r, uint32_t size,uint32_t maxSize, bool takeOwnership = false);
+
 
   void setColVisibility(const std::string &st) {
     setColVisibility(st.c_str(), st.size());
   }
 
   std::pair<char*, size_t> getColVisibility() {
-    return std::make_pair(keyVisibility, colVisSize);
+    if (cv_ref && !cv_ref->empty())
+      return cv_ref->getBuffer();
+    return std::make_pair(keyVisibility, colVisLen);
   }
 
   std::string getColVisibilityStr() {
-    return std::string(keyVisibility, colVisSize);
+    if (cv_ref && !cv_ref->empty())
+      return cv_ref->toString();
+    return std::string(keyVisibility, colVisLen);
   }
 
   int64_t getTimeStamp() {
@@ -212,22 +255,18 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return !(*this == *rhs);
   }
 
-
-
-
-  std::string toString(){
+  std::string toString() {
     std::string out = "";
     std::pair<char*, size_t> row = getRow();
     out += std::string(row.first, row.second) + " ";
     std::pair<char*, size_t> cf = getColFamily();
     std::pair<char*, size_t> cq = getColQualifier();
-    out +=  std::string(cf.first, cf.second) + ":" + std::string(cq.first, cq.second) + " [";
+    out += std::string(cf.first, cf.second) + ":" + std::string(cq.first, cq.second) + " [";
     std::pair<char*, size_t> viz = getColVisibility();
     auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
     out += vizstring + "] " + std::to_string(getTimeStamp());
     return out;
   }
-
 
   friend inline std::ostream&
   operator <<(std::ostream &out, Key &rhs) {
@@ -235,9 +274,9 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     out << std::string(row.first, row.second) << " ";
     std::pair<char*, size_t> cf = rhs.getColFamily();
     std::pair<char*, size_t> cq = rhs.getColQualifier();
-    out << std::string(cf.first, cf.second) << ":" << std::string(cq.first, cq.second) << " [";
+    out << (cf.second > 0 ? std::string(cf.first, cf.second) : "") << ":" << (cq.second > 0 ? std::string(cq.first, cq.second) : "") << " [";
     std::pair<char*, size_t> viz = rhs.getColVisibility();
-    auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
+    auto vizstring = viz.second > 0 ? std::string(viz.first, viz.second) : "";
     out << vizstring << "] " << std::to_string(rhs.getTimeStamp());
     return out;
   }
@@ -253,6 +292,8 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   uint64_t
   read(cclient::data::streams::InputStream *in);
  protected:
+
+  inline void reclaim(char**, size_t, Text**);
 
   /**
    * Row part of key
@@ -276,8 +317,15 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   uint32_t colQualLen;
   char *keyVisibility;
   uint32_t colVisSize;
+  uint32_t colVisLen;
   int64_t timestamp;
   bool deleted;
+
+  cclient::data::ArrayAllocatorPool *objectPool;
+  Text *row_ref;
+  Text *cf_ref;
+  Text *cq_ref;
+  Text *cv_ref;
 
   /**
    * copied from writable comparable utils

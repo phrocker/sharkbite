@@ -26,6 +26,11 @@
       <artifactId>accumulo-core</artifactId>
       <version>${acc.version}</version>
     </dependency>
+	  <dependency>
+		  <groupId>org.apache.accumulo</groupId>
+		  <artifactId>accumulo-server-base</artifactId>
+		  <version>${acc.version}</version>
+	  </dependency>
 	  <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-pool2 -->
 	  <dependency>
 		  <groupId>org.apache.commons</groupId>

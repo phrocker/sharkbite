@@ -14,215 +14,269 @@
 
 #include "data/constructs/Key.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-Key::Key (const char * const userRow) :
-    deleted (false), timestamp (9223372036854775807L), colVisSize (0), rowMaxSize (
-        0), columnFamilySize (0), colQualSize (0), rowLength (0), columnFamilyLength (
-            0), colQualLen (0)
-{
-	if (userRow)
-		setRow(userRow,strlen(userRow));
-	else
-		row = new char[0];
+Key::Key(cclient::data::ArrayAllocatorPool *pool)
+    :
+    Key() {
+  objectPool = pool;
+}
 
-    colFamily = new char[0];
+Key::Key(const char *const userRow)
+    :
+    deleted(false),
+    timestamp(9223372036854775807L),
+    colVisSize(0),
+    rowMaxSize(0),
+    columnFamilySize(0),
+    colQualSize(0),
+    rowLength(0),
+    columnFamilyLength(0),
+    colQualLen(0),
+    colVisLen(0),
+    objectPool(nullptr),
+    row_ref(nullptr),
+    cf_ref(nullptr),
+    cq_ref(nullptr),
+    cv_ref(nullptr) {
+  if (userRow)
+    setRow(userRow, strlen(userRow));
+  else {
+    row = nullptr;
 
-    colQualifier = new char[0];
+    colFamily = nullptr;
 
-    keyVisibility = new char[0];
+    colQualifier = nullptr;
+
+    keyVisibility = nullptr;
+  }
 
 }
 
-Key::~Key ()
-{
-
-    delete[] row;
-    delete[] colFamily;
-    delete[] colQualifier;
-    delete[] keyVisibility;
-
+Key::~Key() {
+  reclaim(&row, rowMaxSize, &row_ref);
+  reclaim(&colFamily, columnFamilySize, &cf_ref);
+  reclaim(&colQualifier, colQualSize, &cq_ref);
+  reclaim(&keyVisibility, colVisSize, &cv_ref);
 }
 
-void
-Key::setRow (const char *r, uint32_t size)
-{
-    if (size > rowMaxSize)
-    {
-        delete[] row;
-        row = new char[size];
-        rowMaxSize = size;
+void Key::reclaim(char **val, size_t size, Text **textPtr) {
+  if (*val) {
+    if (objectPool) {
+      objectPool->free(std::make_pair(*val, size));
+      *val = nullptr;
+    } else {
+      delete[] *val;
+      *val = nullptr;
+    }
+  }
+  *textPtr = nullptr;
+}
+
+void Key::setRow(Text *rowRef) {
+  if (row) {
+    reclaim(&row, rowMaxSize, &row_ref);
+  }
+  row_ref = rowRef;
+}
+
+void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+  if (!takeOwnership) {
+    if (maxsize > rowMaxSize) {
+      delete[] row;
+      row = new char[maxsize];
+      rowMaxSize = maxsize;
     }
 
-    memcpy (row, r, size);
-    rowLength = size;
+    memcpy_fast(row, r, size);
+  } else {
+    reclaim(&row, rowMaxSize, &row_ref);
+    row = (char*) r;
+    rowMaxSize = maxsize;
+  }
+
+  rowLength = size;
 
 }
 
-void
-Key::setColFamily (const char *r, uint32_t size)
-{
-
-    if (size > columnFamilySize)
-    {
-        delete[] colFamily;
-        colFamily = new char[size];
-        columnFamilySize = size;
+void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+  if (!takeOwnership) {
+    if (maxsize > columnFamilySize) {
+      delete[] colFamily;
+      colFamily = new char[maxsize];
+      columnFamilySize = maxsize;
     }
 
-    memcpy (colFamily, r, size);
-    columnFamilyLength = size;
+    memcpy_fast(colFamily, r, size);
+  } else {
+    reclaim(&colFamily, columnFamilySize, &cf_ref);
+    colFamily = (char*) r;
+    columnFamilySize = maxsize;
+  }
+  columnFamilyLength = size;
 
 }
 
-void
-Key::setColQualifier (const char *r, uint32_t size, uint32_t offset)
-{
-    if (offset + size > colQualSize)
-    {
-        char *nr = new char[size + offset];
-        memcpy (nr, colQualifier, colQualSize);
-        delete[] colQualifier;
-        colQualifier = nr;
-        colQualSize = size + offset;
+void Key::setColumnFamily(Text *col) {
+  if (colFamily) {
+    reclaim(&colFamily, columnFamilySize, &cf_ref);
+  }
+  cf_ref = col;
+}
+
+void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+
+  if (!takeOwnership) {
+    if (maxsize > colQualSize) {
+      char *nr = new char[maxsize + 1];
+      delete[] colQualifier;
+      colQualifier = nr;
+      colQualSize = maxsize;
+
     }
 
-    memcpy (colQualifier + offset, r, size);
-    colQualLen = size + offset;
+    memcpy_fast(colQualifier, r, size);
+  } else {
+    reclaim(&colQualifier, colQualSize, &cq_ref);
+    colQualifier = (char*) r;
+    colQualSize = maxsize;
+  }
+  colQualLen = size;
 
 }
 
-void
-Key::setColVisibility (const char *r, uint32_t size)
-{
-    if (size > colVisSize)
-    {
-        delete[] keyVisibility;
-        keyVisibility = new char[size];
-        colVisSize = size;
+void Key::setColumnQualifier(Text *cq) {
+  if (colQualifier) {
+    reclaim(&colQualifier, colQualSize, &cq_ref);
+  }
+  cq_ref = cq;
+}
+
+void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+
+  if (!takeOwnership) {
+    if (maxsize > colVisSize) {
+      delete[] keyVisibility;
+      keyVisibility = new char[maxsize+1];
+      colVisSize = maxsize;
     }
+    memcpy_fast(keyVisibility, r, size);
+  } else {
+    reclaim(&keyVisibility, colVisSize, &cv_ref);
+    keyVisibility = (char*) r;
+    colVisSize = maxsize;
+  }
 
-    memcpy (keyVisibility, r, size);
+  colVisLen = size;
 
 }
 
-bool
-Key::operator < (const Key &rhs) const
-{
-    int compare = compareBytes (row, 0, rowLength, rhs.row, 0, rhs.rowLength);
+void Key::setColumnVisibility(Text *cv) {
+  if (keyVisibility) {
+    reclaim(&keyVisibility, colVisSize, &cv_ref);
+  }
+  cv_ref = cv;
+}
 
+bool Key::operator <(const Key &rhs) const {
+  int compare = compareBytes(row, 0, rowLength, rhs.row, 0, rhs.rowLength);
 
-    if (compare < 0)
-        return true;
-    else if (compare > 0)
-        return false;
-    compare = compareBytes (colFamily, 0, columnFamilyLength, rhs.colFamily,
-                            0, rhs.columnFamilyLength);
-
-    if (compare < 0)
-        return true;
-    else if (compare > 0)
-        return false;
-    compare = compareBytes (colQualifier, 0, colQualLen, rhs.colQualifier, 0,
-                            rhs.colQualLen);
-
-    if (compare < 0)
-        return true;
-
+  if (compare < 0)
+    return true;
+  else if (compare > 0)
     return false;
+  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0, rhs.columnFamilyLength);
+
+  if (compare < 0)
+    return true;
+  else if (compare > 0)
+    return false;
+  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0, rhs.colQualLen);
+
+  if (compare < 0)
+    return true;
+
+  return false;
 }
 
-bool
-Key::operator == (const Key & rhs) const
-{
-    int compare = compareBytes (row, 0, rowLength, rhs.row, 0,
-                                rhs.columnFamilyLength);
+bool Key::operator ==(const Key &rhs) const {
+  int compare = compareBytes(row, 0, rowLength, rhs.row, 0, rhs.columnFamilyLength);
 
-    if (compare != 0)
-        return false;
+  if (compare != 0)
+    return false;
 
-    compare = compareBytes (colFamily, 0, columnFamilyLength, rhs.colFamily,
-                            0, rhs.columnFamilyLength);
+  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0, rhs.columnFamilyLength);
 
+  if (compare != 0)
+    return false;
 
-    if (compare != 0)
-        return false;
+  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0, rhs.colQualLen);
 
-    compare = compareBytes (colQualifier, 0, colQualLen, rhs.colQualifier, 0,
-                            rhs.colQualLen);
+  if (compare != 0)
+    return false;
 
-
-    if (compare != 0)
-        return false;
-
-    return (timestamp < rhs.timestamp);
-
-}
-
-uint64_t
-Key::write (cclient::data::streams::OutputStream *outStream)
-{
-
-    uint32_t offset = rowLength;
-
-    outStream->writeHadoopLong (offset);
-    //outStream->writeHadoopLong( offset ); // cf offset
-
-    offset += columnFamilyLength;
-    outStream->writeHadoopLong (offset);
-    //outStream->writeHadoopLong( offset ); // cq offset
-
-    offset += colQualLen;
-    outStream->writeHadoopLong (offset);
-    //outStream->writeHadoopLong( offset ); // colvis offset
-
-    offset += colVisSize;
-    outStream->writeHadoopLong (offset);
-    //outStream->writeHadoopLong( offset ); // total
-
-    outStream->writeBytes (row, rowLength);
-    outStream->writeBytes (colFamily, columnFamilyLength);
-    outStream->writeBytes (colQualifier, colQualLen);
-    outStream->writeBytes (keyVisibility, colVisSize);
-    outStream->writeHadoopLong (timestamp);
-    //outStream->writeHadoopLong( timestamp);
-
-    return outStream->writeBoolean (deleted);
+  return (timestamp < rhs.timestamp);
 
 }
 
-uint64_t
-Key::read (cclient::data::streams::InputStream *in)
-{
-    int colFamilyOffset = in->readEncodedLong ();
-    int colQualifierOffset = in->readEncodedLong ();
-    int colVisibilityOffset = in->readEncodedLong ();
-    int totalLen = in->readEncodedLong ();
+uint64_t Key::write(cclient::data::streams::OutputStream *outStream) {
 
-    row = new char[colFamilyOffset];
-    in->readBytes (row, colFamilyOffset);
-    rowLength = colFamilyOffset;
+  uint32_t offset = rowLength;
 
-    colFamily = new char[colQualifierOffset - colFamilyOffset];
-    in->readBytes (colFamily, colQualifierOffset - colFamilyOffset);
-    columnFamilySize = colQualifierOffset - colFamilyOffset;
+  outStream->writeHadoopLong(offset);
+  //outStream->writeHadoopLong( offset ); // cf offset
 
-    colQualifier = new char[colVisibilityOffset - colQualifierOffset];
-    in->readBytes (colQualifier, colVisibilityOffset - colQualifierOffset);
-    colQualSize = colVisibilityOffset - colQualifierOffset;
+  offset += columnFamilyLength;
+  outStream->writeHadoopLong(offset);
+  //outStream->writeHadoopLong( offset ); // cq offset
 
-    keyVisibility = new char[totalLen - colVisibilityOffset];
-    in->readBytes (keyVisibility, totalLen - colVisibilityOffset);
-    colVisSize = totalLen - colVisibilityOffset;
+  offset += colQualLen;
+  outStream->writeHadoopLong(offset);
+  //outStream->writeHadoopLong( offset ); // colvis offset
 
-    timestamp = in->readEncodedLong ();
+  offset += colVisLen;
+  outStream->writeHadoopLong(offset);
+  //outStream->writeHadoopLong( offset ); // total
 
-    deleted = in->readBoolean ();
+  outStream->writeBytes(row, rowLength);
+  outStream->writeBytes(colFamily, columnFamilyLength);
+  outStream->writeBytes(colQualifier, colQualLen);
+  outStream->writeBytes(keyVisibility, colVisLen);
+  outStream->writeHadoopLong(timestamp);
+  //outStream->writeHadoopLong( timestamp);
 
-    return in->getPos();
+  return outStream->writeBoolean(deleted);
+
+}
+
+uint64_t Key::read(cclient::data::streams::InputStream *in) {
+  int colFamilyOffset = in->readEncodedLong();
+  int colQualifierOffset = in->readEncodedLong();
+  int colVisibilityOffset = in->readEncodedLong();
+  int totalLen = in->readEncodedLong();
+
+  row = new char[colFamilyOffset];
+  in->readBytes(row, colFamilyOffset);
+  rowLength = rowMaxSize = colFamilyOffset;
+
+  colFamily = new char[colQualifierOffset - colFamilyOffset];
+  in->readBytes(colFamily, colQualifierOffset - colFamilyOffset);
+  columnFamilyLength = columnFamilySize = colQualifierOffset - colFamilyOffset;
+
+  colQualifier = new char[colVisibilityOffset - colQualifierOffset];
+  in->readBytes(colQualifier, colVisibilityOffset - colQualifierOffset);
+  colQualLen = colQualSize = colVisibilityOffset - colQualifierOffset;
+
+  keyVisibility = new char[totalLen - colVisibilityOffset];
+  in->readBytes(keyVisibility, totalLen - colVisibilityOffset);
+  colVisLen = colVisSize = totalLen - colVisibilityOffset;
+
+  timestamp = in->readEncodedLong();
+
+  deleted = in->readBoolean();
+
+  return in->getPos();
 }
 
 } /* namespace data */

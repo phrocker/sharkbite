@@ -58,11 +58,11 @@ writeRfile (std::string nameNode, uint16_t port)
 
 	cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor (256 * 1024);
 
-	cclient::data::BlockCompressedFile bcFile (compressor);
+	auto  bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
 
 	cclient::data::streams::EndianTranslationStream *outStream = new cclient::data::streams::EndianTranslationStream (stream);
 
-	cclient::data::RFile *newRFile = new cclient::data::RFile (outStream, &bcFile);
+	cclient::data::RFile *newRFile = new cclient::data::RFile (outStream, std::move(bcFile));
 
 	std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 

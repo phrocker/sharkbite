@@ -36,16 +36,16 @@ public:
     Compressor () :
         len (0), off (0), stream_offset (0)
     {
-        buffer = NULL;
+        buffer = nullptr;
     }
 
     virtual
     ~Compressor ()
     {
 
-        if (buffer != NULL)
+        if (buffer != nullptr)
             delete[] buffer;
-        buffer=NULL;
+        buffer=nullptr;
     }
 
     virtual Compressor *newInstance() = 0;
@@ -131,10 +131,10 @@ public:
      Returns the compression algorithm for this compressor
      @returns CompressionAlgorithm instance.
      **/
-    Algorithm &
+    Algorithm *
     getAlgorithm ()
     {
-        return algorithm;
+        return &algorithm;
     }
 
     /**
@@ -155,6 +155,7 @@ public:
     }
 
 protected:
+    uint32_t size; 
     // buffer length.
     uint32_t len;
     // offset within buffer.

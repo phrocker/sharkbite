@@ -69,7 +69,7 @@ Range::Range(const std::string &startRow, bool startInclusive, const std::string
   }
 }
 
-Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr<Key> endKey, bool endKeyInclusive, bool update)
+Range::Range( const  std::shared_ptr<Key> &startKey, bool startInclusive,  const  std::shared_ptr<Key> &endKey, bool endKeyInclusive, bool update)
     :
     startKeyInclusive(startInclusive),
     stopKeyInclusive(endKeyInclusive) {
@@ -97,7 +97,7 @@ Range::Range(std::shared_ptr<Key> startKey, bool startInclusive, std::shared_ptr
   }
 }
 
-bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
+bool Range::afterEndKey(const  std::shared_ptr<Key> &key) const {
   if (infiniteStopKey)
     return false;
 
@@ -109,7 +109,7 @@ bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
 
 }
 
-bool Range::beforeStartKey(const std::shared_ptr<Key> &key) const {
+bool Range::beforeStartKey(const  std::shared_ptr<Key> &key) const {
   if (infiniteStartKey) {
     return false;
   }

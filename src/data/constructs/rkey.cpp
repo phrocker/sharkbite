@@ -13,22 +13,27 @@
  */
 #include <cstring>
 #include <algorithm>
-
+#include "data/constructs/compressor/algorithm.h"
 #include "data/constructs/rkey.h"
 
 namespace cclient {
 namespace data {
 
 RelativeKey::RelativeKey()
-    : fieldsSame(0),
-      fieldsPrefixed(0),
-      key(NULL),
-      prevKey(NULL) {
+    :
+    fieldsSame(0),
+    fieldsPrefixed(0),
+    key(NULL),
+    prevKey(NULL),
+    row_ref(cclient::data::ArrayAllocatorPool::getInstance()),
+    cf_ref(cclient::data::ArrayAllocatorPool::getInstance()),
+    cq_ref(cclient::data::ArrayAllocatorPool::getInstance()),
+    cv_ref(cclient::data::ArrayAllocatorPool::getInstance()),
+    tsDiff(0) {
 
 }
 
-int RelativeKey::commonPrefix(std::pair<char*, size_t> prev,
-                              std::pair<char*, size_t> curr) {
+int RelativeKey::commonPrefix(std::pair<char*, size_t> prev, std::pair<char*, size_t> curr) {
   if (prev == curr)
     return -1;  // infinite... exact match
 
@@ -49,19 +54,20 @@ int RelativeKey::commonPrefix(std::pair<char*, size_t> prev,
   return prevLen == curLen ? -1 : maxChecks;
 }
 
-RelativeKey::RelativeKey(std::shared_ptr<Key> previous_key,
-                         std::shared_ptr<Key> my_key) {
+RelativeKey::RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key)
+    :
+    RelativeKey() {
   if (my_key == NULL)
     throw std::runtime_error("Key must not be null");
 
-  key = std::make_shared<Key>();
+  key = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
   prevKey = NULL;
   fieldsSame = 0;
   fieldsPrefixed = 0;
   setKey(my_key, key);
 
   if (previous_key != NULL) {
-    prevKey = std::make_shared<Key>();
+    prevKey = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
     setKey(previous_key, prevKey);
 
     rowCommonPrefixLen = commonPrefix(prevKey->getRow(), key->getRow());
@@ -71,8 +77,7 @@ RelativeKey::RelativeKey(std::shared_ptr<Key> previous_key,
       fieldsPrefixed |= ROW_PREFIX;
     }
 
-    cfCommonPrefixLen = commonPrefix(prevKey->getColFamily(),
-                                     key->getColFamily());
+    cfCommonPrefixLen = commonPrefix(prevKey->getColFamily(), key->getColFamily());
 
     if (cfCommonPrefixLen == -1) {
       fieldsSame |= CF_SAME;
@@ -80,8 +85,7 @@ RelativeKey::RelativeKey(std::shared_ptr<Key> previous_key,
       fieldsPrefixed |= CF_PREFIX;
     }
 
-    cqCommonPrefixLen = commonPrefix(prevKey->getColQualifier(),
-                                     key->getColQualifier());
+    cqCommonPrefixLen = commonPrefix(prevKey->getColQualifier(), key->getColQualifier());
 
     if (cqCommonPrefixLen == -1) {
       fieldsSame |= CQ_SAME;
@@ -89,8 +93,7 @@ RelativeKey::RelativeKey(std::shared_ptr<Key> previous_key,
       fieldsPrefixed |= CQ_PREFIX;
     }
 
-    cvCommonPrefixLen = commonPrefix(prevKey->getColVisibility(),
-                                     key->getColVisibility());
+    cvCommonPrefixLen = commonPrefix(prevKey->getColVisibility(), key->getColVisibility());
 
     if (cvCommonPrefixLen == -1) {
       fieldsSame |= CV_SAME;
@@ -120,85 +123,188 @@ std::shared_ptr<streams::StreamInterface> RelativeKey::getStream() {
   return key;
 }
 
-void RelativeKey::setBase(std::shared_ptr<Key> my_key) {
+void RelativeKey::setBase(const std::shared_ptr<Key> &my_key) {
   if (my_key != NULL) {
-    key = std::make_shared<Key>();
+    key = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
     setKey(my_key, key);
   }
 }
 
-void RelativeKey::setPrevious(std::shared_ptr<Key> previous_key) {
+void RelativeKey::setPrevious(const std::shared_ptr<Key> &previous_key) {
   if (previous_key != NULL) {
 
-    prevKey = std::make_shared<Key>();
+    prevKey = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
     setKey(previous_key, prevKey);
   }
+}
+
+bool RelativeKey::readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                          const std::shared_ptr<Key> &newkey) {
+
+  if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
+    if (prevText->empty()) {
+
+      auto prevField = prevKey->getRow();
+      // this means that we do not have an interned string...likely the first relative key
+      //textObj = pool->allocateBuffer(prevField.second);
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
+
+      memcpy_fast(ret.first, prevField.first, prevField.second);
+
+      prevText->reset(ret.first, prevField.second, ret.second);
+    }
+
+    newkey->setRow(prevText);
+    return true;
+  }
+
+  int maxsize = 0;
+  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getRow();
+    std::pair<char*, size_t> field;
+    if ((fieldsPrefixed & PREFIX) == PREFIX) {
+      maxsize = readPrefix(stream, &field, &prevField);
+    } else {
+      maxsize = read(stream, &field);
+    }
+    newkey->setRow(field.first, field.second, maxsize, true);
+    return true;
+  }
+
+  return false;
+}
+
+bool RelativeKey::readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
+
+  if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
+    if (prevText->empty()) {
+      auto prevField = prevKey->getColFamily();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
+
+      memcpy_fast(ret.first, prevField.first, prevField.second);
+
+      prevText->reset(ret.first, prevField.second, ret.second);
+    }
+
+    newkey->setColumnFamily(prevText);
+    return true;
+  }
+
+  int maxsize = 0;
+  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColFamily();
+    std::pair<char*, size_t> field;
+    if ((fieldsPrefixed & PREFIX) == PREFIX) {
+      maxsize = readPrefix(stream, &field, &prevField);
+    } else {
+      maxsize = read(stream, &field);
+    }
+    newkey->setColFamily(field.first, field.second, maxsize, true);
+    return true;
+  }
+
+  return false;
+}
+
+bool RelativeKey::readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
+  if (SH_UNLIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
+    if (prevText->empty()) {
+      auto prevField = prevKey->getColQualifier();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
+
+      memcpy_fast(ret.first, prevField.first, prevField.second);
+
+      prevText->reset(ret.first, prevField.second, ret.second);
+    }
+
+    newkey->setColumnQualifier(prevText);
+    return true;
+  }
+
+  int maxsize = 0;
+  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColQualifier();
+    std::pair<char*, size_t> field;
+    if ((fieldsPrefixed & PREFIX) == PREFIX) {
+      maxsize = readPrefix(stream, &field, &prevField);
+    } else {
+      maxsize = read(stream, &field);
+    }
+    newkey->setColQualifier(field.first, field.second, maxsize, true);
+    return true;
+  }
+
+  return false;
+}
+
+bool RelativeKey::readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+                         const std::shared_ptr<Key> &newkey) {
+  if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
+    if (prevText->empty()) {
+      auto prevField = prevKey->getColVisibility();
+      auto ret = ArrayAllocatorPool::getInstance()->allocateBuffer(prevField.second + 1);
+
+      memcpy_fast(ret.first, prevField.first, prevField.second);
+
+      prevText->reset(ret.first, prevField.second, ret.second);
+    }
+    newkey->setColumnVisibility(prevText);
+    return true;
+  }
+
+  int maxsize = 0;
+  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    auto prevField = prevKey->getColVisibility();
+    std::pair<char*, size_t> field;
+    if ((fieldsPrefixed & PREFIX) == PREFIX) {
+      maxsize = readPrefix(stream, &field, &prevField);
+    } else {
+      maxsize = read(stream, &field);
+    }
+    newkey->setColVisibility(field.first, field.second, maxsize, true);
+    return true;
+  }
+
+  return false;
 }
 
 uint64_t RelativeKey::read(streams::InputStream *stream) {
   fieldsSame = stream->readByte();
 
-  if ((fieldsSame & PREFIX_COMPRESSION_ENABLED) == PREFIX_COMPRESSION_ENABLED) {
+  if (SH_LIKELY((fieldsSame & PREFIX_COMPRESSION_ENABLED) == PREFIX_COMPRESSION_ENABLED)) {
     fieldsPrefixed = stream->readByte();
   } else {
     fieldsPrefixed = 0;
   }
-
-  std::vector<char> row, cf, cq, cv;
-  std::vector<char> prevRow, prevCf, prevCq, prevVis;
-
-  std::pair<char*, size_t> scratch = prevKey->getRow();
-
-  prevRow.insert(prevRow.begin(), scratch.first,
-                 scratch.first + scratch.second);
-  scratch = prevKey->getColFamily();
-  prevCf.insert(prevCf.begin(), scratch.first, scratch.first + scratch.second);
-  scratch = prevKey->getColQualifier();
-  prevCq.insert(prevCq.begin(), scratch.first, scratch.first + scratch.second);
-
-  scratch = prevKey->getColVisibility();
-  prevVis.insert(prevVis.begin(), scratch.first,
-                 scratch.first + scratch.second);
 
   uint64_t timestamp = 0;
   uint64_t prevTimestamp = prevKey->getTimeStamp();
 
   int rowCmp = -1, cfCmp = -1, cqCmp = -1, cvCmp = -1;
 
-  readPrefix(stream, &rowCmp, RelativeKey::ROW_SAME, RelativeKey::ROW_PREFIX,
-             fieldsSame, fieldsPrefixed, &row, &prevRow);
+  key = std::make_shared<Key>(cclient::data::ArrayAllocatorPool::getInstance());
 
-  if (readPrefix(stream, &cfCmp, RelativeKey::CF_SAME, RelativeKey::CF_PREFIX,
-                 fieldsSame, fieldsPrefixed, &cf, &prevCf)) {
+  readRow(stream, &rowCmp, RelativeKey::ROW_SAME, RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed, &row_ref, key);
 
-  }
+  readCf(stream, &cfCmp, RelativeKey::CF_SAME, RelativeKey::CF_PREFIX, fieldsSame, fieldsPrefixed, &cf_ref, key);
 
-  if (readPrefix(stream, &cqCmp, RelativeKey::CQ_SAME, RelativeKey::CQ_PREFIX,
-                 fieldsSame, fieldsPrefixed, &cq, &prevCq)) {
+  readCq(stream, &cqCmp, RelativeKey::CQ_SAME, RelativeKey::CQ_PREFIX, fieldsSame, fieldsPrefixed, &cq_ref, key);
 
-  }
-
-  if (readPrefix(stream, &cvCmp, RelativeKey::CV_SAME, RelativeKey::CV_PREFIX,
-                 fieldsSame, fieldsPrefixed, &cv, &prevVis)) {
-
-  }
+  readCv(stream, &cvCmp, RelativeKey::CV_SAME, RelativeKey::CV_PREFIX, fieldsSame, fieldsPrefixed, &cv_ref, key);
 
   if ((fieldsSame & RelativeKey::TS_SAME) != RelativeKey::TS_SAME) {
-    prevTimestamp = timestamp;
 
-    timestamp = stream->readEncodedLong();
-    if ((fieldsSame & RelativeKey::TS_DIFF) != RelativeKey::TS_DIFF) {
-      timestamp += prevTimestamp;
+    if ((fieldsPrefixed & RelativeKey::TS_DIFF) == RelativeKey::TS_DIFF) {
+      timestamp = stream->readEncodedVLong() + prevTimestamp;
+    } else {
+      timestamp = stream->readEncodedVLong();
     }
-  } else
+  } else {
     timestamp = prevTimestamp;
+  }
 
-
-  key = std::make_shared<Key>();
-  key->setRow(row.data(), row.size());
-  key->setColFamily(cf.data(), cf.size());
-  key->setColQualifier(cq.data(), cq.size());
-  key->setColVisibility(cv.data(), cv.size());
   key->setTimeStamp(timestamp);
 
   prevKey = key;
@@ -207,16 +313,42 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
 
 }
 
-void RelativeKey::readPrefix(streams::InputStream *stream,
-                             std::vector<char> *row,
-                             std::vector<char> *prevRow) {
+int RelativeKey::readPrefix(streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow) {
   uint32_t prefixLen = stream->readHadoopLong();
   uint32_t remainingLen = stream->readHadoopLong();
-  row->insert(row->begin(), prevRow->data(), prevRow->data() + prefixLen);
-  char *array = new char[remainingLen];
-  stream->readBytes(array, remainingLen);
-  row->insert(row->end(), array, array + remainingLen);
-  delete[] array;
+
+  auto bfr = ArrayAllocatorPool::getInstance()->allocateBuffer(prefixLen + remainingLen + 1);
+  row->first = bfr.first;    //new char[prefixLen + remainingLen];
+  auto ret = bfr.second;
+  row->second = prefixLen + remainingLen;
+
+  memcpy_fast(row->first, prevRow->first, prefixLen);
+  //row->insert(row->begin(), prevRow->data(), prevRow->data() + prefixLen);
+  //char *array = new char[remainingLen];
+  stream->readBytes(row->first + prefixLen, remainingLen);
+  //row->insert(row->end(), array, array + remainingLen);
+  //delete[] array;
+
+  return ret;
+}
+
+int RelativeKey::read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row) {
+  uint32_t len = stream->readEncodedLong();
+  return read(stream, row, len);
+}
+
+int RelativeKey::read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *input, uint32_t len) {
+
+  auto bfr = ArrayAllocatorPool::getInstance()->allocateBuffer(len);
+  input->first = bfr.first;
+  auto ret = bfr.second;
+
+  input->second = len;
+  stream->readBytes(input->first, len);
+
+  return ret;
+  //input->insert (input->begin (), array, array + len);
+  //delete[] array;
 }
 
 uint64_t RelativeKey::write(streams::OutputStream *outStream) {
@@ -292,8 +424,7 @@ RelativeKey::~RelativeKey() {
 
 }
 
-void RelativeKey::setKey(std::shared_ptr<Key> keyToCopy,
-                         std::shared_ptr<Key> keyToCopyTo) {
+void RelativeKey::setKey(const std::shared_ptr<Key> &keyToCopy, const std::shared_ptr<Key> &keyToCopyTo) {
   std::pair<char*, size_t> p = keyToCopy->getRow();
   keyToCopyTo->setRow(p.first, p.second);
 
@@ -307,8 +438,7 @@ void RelativeKey::setKey(std::shared_ptr<Key> keyToCopy,
 
 }
 
-bool RelativeKey::isSame(std::pair<char*, size_t> a,
-                         std::pair<char*, size_t> b) {
+bool RelativeKey::isSame(std::pair<char*, size_t> a, std::pair<char*, size_t> b) {
   if (a.second > 0 && a.second == b.second) {
     return (memcmp(a.first, b.first, a.second) == 0);
   } else

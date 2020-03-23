@@ -21,6 +21,22 @@
 #include <cstdio>
 
 #include <stdexcept>
+#include <immintrin.h>
+#include <cstdint>
+#include <cassert>
+
+#if __linux__
+#include <linux/version.h>
+#if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,22)
+#define _MAP_POPULATE_AVAILABLE
+#endif
+#endif
+
+#ifdef _MAP_POPULATE_AVAILABLE
+#define MMAP_FLAGS (MAP_PRIVATE | MAP_POPULATE)
+#else
+#define MMAP_FLAGS MAP_PRIVATE
+#endif
 
 namespace cclient {
 namespace data {
@@ -85,29 +101,30 @@ class InputStream {
   virtual std::string readString() {
     // write size of string
     long vLong = readHadoopLong();
-
+   
     uint8_t *bytes = new uint8_t[vLong + 1];
     memset(bytes, 0x00, vLong + 1);
     readBytes(bytes, vLong);
-    //delete[] bytes;
-    return std::string((char*) bytes);
+    auto ret = std::string((char*) bytes,vLong);
+    delete[] bytes;
+    return ret;
   }
 
-  virtual uint64_t readBytes(uint8_t *bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual uint64_t readBytes(char *bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(char *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual uint64_t readBytes(uint8_t **bytes, size_t cnt) {
+  virtual inline uint64_t readBytes(uint8_t **bytes, size_t cnt) {
     if (*bytes == NULL) {
       *bytes = new uint8_t[cnt];
     }
@@ -121,7 +138,14 @@ class InputStream {
     return byte;
   }
 
-  virtual int64_t readSignedByte() {
+  virtual int8_t readSignedByte() {
+    int8_t byte=0;
+    readBytes((char *) &byte, 1);
+    //*position += 1;
+    return byte;
+  }
+
+  virtual int64_t readSignedByteAsInt() {
     int8_t byte=0;
     readBytes((char *) &byte, 1);
     //*position += 1;
@@ -162,8 +186,7 @@ class InputStream {
     uint8_t byte = 0x00;
     ;
     readBytes((uint8_t*) &byte, 1);
-    //  *position += 1;
-    if (byte)
+    if (byte==0x01)
       return 0x01;
     else
       return 0x00;
@@ -175,7 +198,7 @@ class InputStream {
   virtual int64_t readHadoopLong() {
     int64_t firstByte = 0;
 
-    firstByte = readSignedByte();
+    firstByte = readSignedByteAsInt();
     if (firstByte >= -32) {
       return firstByte;
     }
@@ -220,15 +243,36 @@ class InputStream {
 
   }
 
+
+  int64_t readEncodedVLong() {
+    char firstByte = readSignedByte();
+    int len = firstByte >= -112 ? 1 : (firstByte < -120 ? -119 - firstByte : -111 - firstByte);
+    if (len == 1)
+      return firstByte;
+    else {
+      int64_t i = 0L;
+      for (int idx = 0; idx < len - 1; ++idx) {
+        char b = readSignedByte();
+        i <<= 8;
+        i |= (long) (b & 255);
+      }
+
+      if (i < -120 || (i >= -112 && i < 0)) {
+        return ~i;
+      } else
+        return i;
+    }
+  }
+
   long readEncodedLong() {
-    char firstByte = readByte();
+    char firstByte = readSignedByte();
     int len = firstByte >= -112 ? 1 : (firstByte < -120 ? -119 - firstByte : -111 - firstByte);
     if (len == 1)
       return firstByte;
     else {
       long i = 0L;
       for (int idx = 0; idx < len - 1; ++idx) {
-        char b = readByte();
+        char b = readSignedByte();
         i <<= 8;
         i |= (long) (b & 255);
       }
@@ -239,49 +283,7 @@ class InputStream {
         return i;
     }
 
-    /*
-     int firstByte = readByte();
-     if (firstByte >= -32) {
-     return firstByte;
-     }
 
-     switch ((firstByte + 128) / 8) {
-     case 11:
-     case 10:
-     case 9:
-     case 8:
-     case 7:
-     return ((firstByte + 52) << 8) | readByte();
-     case 6:
-     case 5:
-     case 4:
-     case 3:
-     return ((firstByte + 88) << 16) | readShort();
-     case 2:
-     case 1:
-     return ((firstByte + 112) << 24) | (readShort() << 8) | readByte();
-     case 0:
-     int len = firstByte + 129;
-     switch (len) {
-     case 4:
-     return readInt();
-     case 5:
-     return ((long) readInt()) << 8 | readByte();
-     case 6:
-     return ((long) readInt()) << 16 | readShort();
-     case 7:
-     return ((long) readInt()) << 24 | (readShort() << 8)
-     | readByte();
-     case 8:
-     return readLong();
-     default:
-     throw std::runtime_error("Corrupted Encoded Long");
-     }
-     break;
-     default:
-     throw std::runtime_error("Internal Error");
-     }
-     */
   }
   /**
    * Bytes written shall always return the current position

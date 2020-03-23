@@ -60,10 +60,10 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 
 		cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor(256*1024);
 
-		cclient::data::BlockCompressedFile bcFile(compressor);
+		auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
 
 		cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024 * 1024,stream);
-		cclient::data::RFile *newRFile = new cclient::data::RFile(outStream, &bcFile);
+		cclient::data::RFile *newRFile = new cclient::data::RFile(outStream, std::move(bcFile));
 
 		std::set<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 

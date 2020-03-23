@@ -20,9 +20,9 @@
 #include <vector>
 #include <stdexcept>
 
-#include "../../../streaming/ByteOutputStream.h"
-#include "../../../streaming/NetworkOrderStream.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/ByteOutputStream.h"
+#include "data/streaming/NetworkOrderStream.h"
+#include "data/streaming/Streams.h"
 #include "../../compressor/compressor.h"
 
 #include "IndexManager.h"

@@ -38,11 +38,11 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface
 {
 protected:
     std::shared_ptr<Key>  prevKey;
-    RelativeKey *rkey;
+    std::shared_ptr<RelativeKey> rkey;
     int skipped;
 
     void
-    fastSkip (cclient::data::streams::InputStream *stream, std::shared_ptr<Key>  seekKey, std::vector<char> *valCopy,
+    fastSkip (cclient::data::streams::InputStream *stream, const std::shared_ptr<Key> &seekKey, std::vector<char> *valCopy,
               std::shared_ptr<Key>  prevKey, std::shared_ptr<Key>  currKey)
     {
 
@@ -113,7 +113,7 @@ protected:
             {
                 if (row > stopRow)
                 {
-                    rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                      (currKey,
                                             std::make_shared<Key> (currKey));
                     skipped = 0;
                     this->prevKey = prevKey;
@@ -125,7 +125,7 @@ protected:
                 {
                     if (cf > stopCf)
                     {
-                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                        rkey = std::make_shared<RelativeKey> (currKey,
                                                 std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;
@@ -135,7 +135,7 @@ protected:
 
                     if (cq > stopCq)
                     {
-                        rkey = new RelativeKey (std::make_shared<Key> (currKey),
+                        rkey = std::make_shared<RelativeKey> (currKey,
                                                 std::make_shared<Key> (currKey));
                         skipped = 0;
                         this->prevKey = prevKey;
@@ -271,7 +271,7 @@ protected:
             }
 
             prevKey = newPrevKey;
-            rkey = new RelativeKey ();
+            rkey = std::make_shared<RelativeKey> ();
             std::shared_ptr<Key> baseKey = std::make_shared<Key> ();
             baseKey->setRow (row.data (), row.size ());
             baseKey->setColFamily (cf.data (), cf.size ());
@@ -379,7 +379,7 @@ public:
     {
     }
 
-    RelativeKey *
+    std::shared_ptr<RelativeKey>
     getRelativeKey ()
     {
         return rkey;

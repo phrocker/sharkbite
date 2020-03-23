@@ -32,8 +32,10 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
     offset (0), output_stream_ref (out_stream)
 {
     size = initial_size;
-    array.resize(size);
-    std::fill(array.begin(), array.end(), 0x00);
+    if (size > 0){
+        array.resize(size);
+        std::fill(array.begin(), array.end(), 0x00);
+    }
 }
 
 /**

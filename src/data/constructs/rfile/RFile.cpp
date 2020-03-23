@@ -18,18 +18,18 @@
 namespace cclient{
   namespace data{
 
-RFile::RFile (streams::OutputStream *output_stream, BlockCompressedFile *bWriter) :
-    out_stream (output_stream), blockWriter (bWriter), dataClosed (false), currentBlockWriter (
+RFile::RFile (streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter) :
+    out_stream (output_stream), blockWriter (std::move(bWriter)), dataClosed (false), currentBlockWriter (
         NULL), closed (false), dataBlockCnt (0), entries (0), currentLocalityGroup (
             NULL)
 {
-    if (output_stream == NULL || bWriter == NULL)
+    if (output_stream == NULL || blockWriter == NULL)
     {
         throw std::runtime_error (
             "Output Stream and BC File Writer should not be NULL");
     }
 
-    compressorRef = bWriter->getCompressor ();
+    compressorRef = blockWriter->getCompressor ();
 
     maxBlockSize = compressorRef->getBufferSize () * 8;
 
@@ -55,11 +55,15 @@ RFile::RFile (streams::InputStream *input_stream, long fileLength) :
 
     lastKeyValue = NULL;
 
-    blockWriter = new BlockCompressedFile (in_stream, fileLength);
-    
+    blockWriter = std::make_unique<BlockCompressedFile> (in_stream, fileLength);
+
+    compressorRef = blockWriter->getCompressor ();
+
+    maxBlockSize = compressorRef->getBufferSize () * 8;
+
     streams::InputStream *metaBlock = blockWriter->getMetaIndex ()->getEntry (
                                  "RFile.index")->readDataStream (in_stream);
-    
+
     readLocalityGroups (metaBlock);
 
     delete metaBlock;
@@ -92,7 +96,7 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
 
 
     localityGroups.resize (size);
-    
+
     for (int i = 0; i < size; i++)
     {
         LocalityGroupMetaData *meatadata = new LocalityGroupMetaData (
@@ -100,7 +104,7 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
         meatadata->read(metaBlock);
         localityGroups.push_back (meatadata);
         localityGroupReaders.push_back (
-            new LocalityGroupReader (blockWriter, in_stream, meatadata, version));
+            new LocalityGroupReader (blockWriter.get(), in_stream, meatadata, version));
 
     }
 
@@ -110,8 +114,13 @@ RFile::readLocalityGroups (streams::InputStream *metaBlock)
 
 RFile::~RFile ()
 {
+    for(auto reader : localityGroupReaders){
+        delete reader;
+    }
 
-}
+    for(auto metadata : localityGroups){
+        delete metadata;
+    }}
 
 bool
 RFile::append (std::shared_ptr<KeyValue> kv)
@@ -159,7 +168,7 @@ RFile::append (std::shared_ptr<KeyValue> kv)
     }
 
     delete key;
-    
+
     return true;
 
 }

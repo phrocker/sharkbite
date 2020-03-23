@@ -26,7 +26,7 @@
 #include "../include/data/constructs/rfile/RFile.h"
 #include "../include/data/constructs/compressor/compressor.h"
 #include "../include/data/constructs/compressor/zlibCompressor.h"
-
+#include "../include/data/streaming/input/MemorymappedInputStream.h"
 #include "../include/data/streaming/OutputStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
@@ -51,11 +51,11 @@ writeRfile (std::string outputFile,bool bigEndian, uint16_t port)
 
     cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor (256 * 1024);
 
-    cclient::data::BlockCompressedFile bcFile (compressor);
+    auto  bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
 
 // ByteOutputStream *outStream = new BigEndianByteStream (5 * 1024 * 1024,
 //							 stream);
-    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, &bcFile);
+    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, std::move(bcFile));
 
     std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
 
@@ -133,38 +133,36 @@ std::ifstream::pos_type filesize(const char* filename)
 
 
 void
-readRfile (std::string outputFile, uint16_t port, bool bigEndian)
+readRfile (std::string outputFile, uint16_t port, bool print)
 {
-
-    std::ifstream ifs (outputFile.c_str(), std::ifstream::binary | std::ifstream::in);
-
-
-    cclient::data::streams::InputStream *stream = new cclient::data::streams::InputStream(&ifs,0);
-
-    if (bigEndian)
-    {
-         stream = new cclient::data::streams::EndianInputStream(stream);
-    }
-
-
+  for(int i=0; i < 100; i++){
+    auto start = chrono::steady_clock::now();
     std::fstream::pos_type size = filesize(outputFile.c_str());
-    cclient::data::RFile *newRFile = new cclient::data::RFile (stream, size);
+
+    cclient::data::streams::InputStream *stream = new cclient::data::streams::MemoryMappedInputStream(outputFile);
+
+
+    cclient::data::streams::EndianInputStream *endstream = new cclient::data::streams::EndianInputStream(stream);
+
+
+
+    
+    cclient::data::RFile *newRFile = new cclient::data::RFile (endstream, size);
     std::vector<std::string> cf;
-    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);
+    cclient::data::Range rng;
+    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(&rng,cf,false);
 
 
     newRFile->relocate(seekable);
+    long count = 0;
     while (newRFile->hasNext())
     {
-        std::cout << "has next " << (**newRFile).first <<  std::endl;
+        if (print)
+          std::cout << "has next " << (**newRFile).first << " " << (**newRFile).second <<  std::endl;
 
         newRFile->next();
 
-
-        if (!newRFile->hasNext())
-        {
-            std::cout << "no next" << std::endl;
-        }
+        count++;
 
     }
 
@@ -172,44 +170,49 @@ readRfile (std::string outputFile, uint16_t port, bool bigEndian)
 
 
 
-    std::cout << "we done" << std::endl;
+    
+
+    delete seekable;
+
+    delete endstream;
 
     delete stream;
 
     delete newRFile;
+
+    auto end = chrono::steady_clock::now();
+
+    std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end-start).count() << std::endl;
+  }
 
 }
 int
 main (int argc, char **argv)
 {
 
-    if (argc < 3)
+    if (argc < 2)
     {
         std::cout << "Arguments required: ./RfileReadExample"
-             << " <output file>" << std::endl;
+             << " <input rfile> <print -- true/false is optional>" << std::endl;
         exit (1);
     }
 
     std::string outputFile = argv[1];
 
-    std::string endian = argv[2];
+    bool print = false;
+    if (argc == 3){
+    // always assume big endian
+      auto ptr = argv[2];
+      print = (!memcmp(ptr,"true",4));
+    }
 
 
-    bool bigEndian = false;
 
-    if (endian == "big" )
-        bigEndian = true;
     if (!IsEmpty (&outputFile))
     {
-  //      std::cout << "Writing test Rfile to " << outputFile << std::endl;
-//        writeRfile (outputFile, bigEndian, 0);
-        if (bigEndian)
-        {
-            std::cout << "skipping read" << std::endl;
-            //return 0;
-        }
+
         std::cout << "Reading test rfile from " << outputFile << std::endl;
-        readRfile(outputFile, 0 , bigEndian);
+        readRfile(outputFile, 0 , print);
     }
 
 

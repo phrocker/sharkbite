@@ -20,6 +20,7 @@
 #include "../../../streaming/ByteOutputStream.h"
 #include "../../../streaming/input/ByteInputStream.h"
 #include "../../../streaming/input/NetworkOrderInputStream.h"
+#include "data/streaming/input/NonCopyNetworkOrderStream.h"
 
 namespace cclient
 {
@@ -60,7 +61,7 @@ public:
 
     virtual ~BlockRegion() {
 
-        delete compressor;
+        //delete compressor;
     }
 
     /**
@@ -119,7 +120,7 @@ public:
     uint64_t
     write (cclient::data::streams::OutputStream *out);
 
-    cclient::data::streams::InputStream *
+    std::unique_ptr<cclient::data::streams::InputStream>
     readDataStream (cclient::data::streams::InputStream *in)
     {
 
@@ -135,19 +136,50 @@ public:
 
         compressor->setInput ((const char*) compressedValue, 0, compressedSize);
 
-        cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::ByteOutputStream (rawSize);
+        cclient::data::streams::ByteOutputStream outStream(rawSize);
 
-        compressor->decompress (outStream);
+        compressor->decompress (&outStream);
 
 
-        cclient::data::streams::EndianInputStream *returnStream = new cclient::data::streams::EndianInputStream (
-            outStream->getByteArray (), outStream->getSize (), true);
+        auto returnStream = std::make_unique<cclient::data::streams::EndianInputStream >(
+            outStream.getByteArray (), outStream.getSize (), true);
 
         in->seek(pos);
         delete[] compressedValue;
-        delete outStream;
 
-        return returnStream;
+        return std::move(returnStream);
+    }
+
+    std::unique_ptr<cclient::data::streams::InputStream>
+    assimilateDataStream (cclient::data::streams::InputStream *in, std::vector<uint8_t> *compressed, cclient::data::streams::ByteOutputStream *ref)
+    {
+
+        uint64_t pos = in->getPos();
+
+
+        in->seek (offset);
+
+
+        if (compressed->size() <=  compressedSize){
+            compressed->resize(compressedSize+1);
+        }
+
+        in->readBytes (compressed->data(), compressedSize);
+
+
+        compressor->setInput ((const char*) compressed->data(), 0, compressedSize);
+
+        ref->flush();
+
+        compressor->decompress (ref);
+
+
+        auto returnStream = std::make_unique<cclient::data::streams::NonCopyEndianInputStream >(
+            ref->getByteArray (), ref->getSize (), false);
+
+        in->seek(pos);
+
+        return std::move(returnStream);
     }
 
     BlockRegion &

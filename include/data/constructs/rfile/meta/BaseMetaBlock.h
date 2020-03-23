@@ -17,37 +17,36 @@
 #include <memory>
 #include "IndexMetaBlock.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class BaseMetaBlock
-{
+class BaseMetaBlock {
 
-public:
+ public:
 
-    virtual
-    ~BaseMetaBlock ()
-    {
-    }
+  virtual ~BaseMetaBlock() {
+  }
 
-    virtual uint32_t
-    getCurrentPosition () = 0;
+  virtual uint32_t
+  getCurrentPosition() = 0;
 
-    virtual std::shared_ptr<data::streams::StreamInterface>
-    getBlock () = 0;
+  virtual std::shared_ptr<data::streams::StreamInterface>
+  getBlock() = 0;
 
-    virtual std::shared_ptr<BaseMetaBlock>
-    getPreviousBlock () = 0;
+  virtual std::shared_ptr<BaseMetaBlock>
+  getPreviousBlock() = 0;
 
-    virtual std::shared_ptr<IndexMetaBlock> getIndexBlock() = 0;
+  virtual std::shared_ptr<BaseMetaBlock> getNextBlock() = 0;
 
-    virtual uint32_t
-    getOffset () = 0;
+  virtual std::shared_ptr<BaseMetaBlock> getNext() = 0;
 
-    virtual bool
-    hasNextKey () =0;
+  virtual std::shared_ptr<IndexMetaBlock> getIndexBlock() = 0;
+
+  virtual uint32_t
+  getOffset() = 0;
+
+  virtual bool
+  hasNextKey() =0;
 
 };
 

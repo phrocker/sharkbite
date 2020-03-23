@@ -15,169 +15,142 @@
 #ifndef INDEXENTRY_H_
 #define INDEXENTRY_H_
 
-#include "../../../streaming/OutputStream.h"
-#include "../../../constructs/Key.h"
-#include "../../../streaming/Streams.h"
+#include "data/streaming/OutputStream.h"
+#include "data/constructs/Key.h"
+#include "data/streaming/Streams.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-class IndexEntry : cclient::data::streams::StreamInterface
-{
-public:
+class IndexEntry : cclient::data::streams::StreamInterface {
+ public:
 
-    IndexEntry (std::shared_ptr<cclient::data::streams::StreamInterface> mKey, uint32_t entryCount);
+  IndexEntry(std::shared_ptr<cclient::data::streams::StreamInterface> mKey, uint32_t entryCount);
 
-    virtual
-    ~IndexEntry ();
-    
-    
-    /**
-     move constructor.
-     **/
-    IndexEntry (IndexEntry &&other)
-    {
-        key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(other.key));
-        entries = other.entries;
-        newFormat = other.newFormat;
+  virtual
+  ~IndexEntry();
+
+  /**
+   move constructor.
+   **/
+  IndexEntry(IndexEntry &&other) {
+    key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(other.key));
+    entries = other.entries;
+    newFormat = other.newFormat;
+  }
+
+  IndexEntry()
+      :
+      newFormat(false),
+      key(NULL) {
+
+  }
+
+  explicit IndexEntry(bool newFormat)
+      :
+      newFormat(newFormat),
+      key(NULL) {
+
+  }
+
+  /**
+   Gets the key for this index entry
+   @return pointer to key.
+   */
+  std::shared_ptr<Key> getKey() {
+    return std::static_pointer_cast<Key>(key);
+  }
+
+  /**
+   Returns the number of entries in this block region.
+   @param block region.
+   **/
+  uint32_t getNumEntries() {
+
+    return entries;
+  }
+
+  uint64_t read(cclient::data::streams::InputStream *in) {
+    key = std::make_shared<Key>();
+    key->read(in);
+    entries = in->readInt();
+
+    if (newFormat) {
+      offset = in->readHadoopLong();
+      compressedSize = in->readHadoopLong();
+      rawSize = in->readHadoopLong();
+    } else {
+      offset = -1;
+      compressedSize = -1;
+      rawSize = -1;
     }
 
-    IndexEntry () :
-        newFormat (false),  key(NULL)
-    {
+    return in->getPos();
+  }
 
-    }
+  /**
+   Writes the index entry to the output stream.
+   @param outStream output stream.
+   @return final position of the output streamm.
+   **/
+  uint64_t write(cclient::data::streams::DataOutputStream *outStream) {
 
-    explicit IndexEntry (bool newFormat) :
-        newFormat (newFormat),  key(NULL)
-    {
+    key->write(outStream);
+    return outStream->writeInt(entries);
 
-    }
+  }
 
-    /**
-     Gets the key for this index entry
-     @return pointer to key.
-     */
-    std::shared_ptr<Key>
-    getKey ()
-    {
-        return std::static_pointer_cast<Key>(key);
-    }
+  IndexEntry&
+  operator=(const IndexEntry &other) {
 
-    /**
-     Returns the number of entries in this block region.
-     @param block region.
-     **/
-    uint32_t
-    getNumEntries ()
-    {
+    key = other.key;
+    entries = other.entries;
+    newFormat = other.newFormat;
+    return *this;
+  }
 
-        return entries;
-    }
+  IndexEntry&
+  operator=(IndexEntry &&other) {
 
-    uint64_t
-    read (cclient::data::streams::InputStream * in)
-    {
-        key = std::make_shared<Key> ();
-        key->read (in);
-        entries = in->readInt ();
+    key = other.key;
+    entries = other.entries;
+    newFormat = other.newFormat;
+    return *this;
+  }
 
-        if (newFormat)
-        {
-            offset = in->readHadoopLong ();
-            compressedSize = in->readHadoopLong ();
-            rawSize = in->readHadoopLong ();
-        }
-        else
-        {
-            offset = -1;
-            compressedSize = -1;
-            rawSize = -1;
-        }
+  bool operator ==(const IndexEntry &rhs) const {
+    if (offset != rhs.offset)
+      return false;
+    if (compressedSize != rhs.compressedSize)
+      return false;
+    if (rawSize != rhs.rawSize)
+      return false;
+    return true;
+  }
 
-        return in->getPos ();
-    }
+  uint64_t getOffset() {
+    return offset;
+  }
 
-    /**
-     Writes the index entry to the output stream.
-     @param outStream output stream.
-     @return final position of the output streamm.
-     **/
-    uint64_t
-    write (cclient::data::streams::DataOutputStream * outStream)
-    {
+  uint64_t getCompressedSize() {
+    return compressedSize;
+  }
 
-        key->write (outStream);
-        return outStream->writeInt (entries);
+  uint64_t getRawSize() {
+    return rawSize;
+  }
 
-    }
+ protected:
 
-    IndexEntry &
-    operator= (const IndexEntry &other)
-    {
-
-        key = other.key;
-        entries = other.entries;
-        newFormat = other.newFormat;
-        return *this;
-    }
-    
-    
-    IndexEntry &
-    operator= (IndexEntry &&other)
-    {
-
-        key = other.key;
-        entries = other.entries;
-        newFormat = other.newFormat;
-        return *this;
-    }
-
-    bool
-    operator == (const IndexEntry & rhs) const
-    {
-        if (offset != rhs.offset)
-            return false;
-        if (compressedSize != rhs.compressedSize)
-            return false;
-        if (rawSize != rhs.rawSize)
-            return false;
-        return true;
-    }
-
-    uint64_t
-    getOffset ()
-    {
-        return offset;
-    }
-
-    uint64_t
-    getCompressedSize ()
-    {
-        return compressedSize;
-    }
-
-    uint64_t
-    getRawSize ()
-    {
-        return rawSize;
-    }
-
-protected:
-   
-
-   
-    // number of entries.
-    uint32_t entries;
-    std::shared_ptr<cclient::data::Key> key;
-    // new format stuff
-    bool newFormat;
-    // initial key
-    uint64_t offset;
-    uint64_t compressedSize;
-    uint64_t rawSize;
+  // number of entries.
+  uint32_t entries;
+  std::shared_ptr<cclient::data::Key> key;
+  // new format stuff
+  bool newFormat;
+  // initial key
+  uint64_t offset;
+  uint64_t compressedSize;
+  uint64_t rawSize;
 }
 ;
 }

@@ -14,28 +14,29 @@
 #ifndef INCLUDE_DATA_CONSTRUCTS_RFILE_META_LOCALITYGROUPREADER_H_
 #define INCLUDE_DATA_CONSTRUCTS_RFILE_META_LOCALITYGROUPREADER_H_
 
-#include "../../../streaming/accumulo/StreamSeekable.h"
-#include "../../../streaming/OutputStream.h"
-#include "../../../streaming/input/InputStream.h"
-#include "../../../streaming/Streams.h"
-#include "../../../streaming/StreamRelocation.h"
-#include "../../../streaming/StreamEnvironment.h"
-#include "../../../streaming/accumulo/FileIterator.h"
-#include "../../../streaming/DataStream.h"
-#include "../../../exceptions/IllegalArgumentException.h"
-#include "../../../exceptions/InterationInterruptedException.h"
+#include "data/streaming/accumulo/StreamSeekable.h"
+#include "data/streaming/OutputStream.h"
+#include "data/streaming/input/InputStream.h"
+#include "data/streaming/Streams.h"
+#include "data/streaming/StreamRelocation.h"
+#include "data/streaming/StreamEnvironment.h"
+#include "data/streaming/accumulo/FileIterator.h"
+#include "data/streaming/DataStream.h"
+#include "data/exceptions/IllegalArgumentException.h"
+#include "data/exceptions/InterationInterruptedException.h"
 #include "IndexEntry.h"
 #include <memory>
 
 #include "../bcfile/BlockCompressedFile.h"
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 // constructs
 
-#include "../../../constructs/Key.h"
-#include "../../../constructs/value.h"
-#include "../../../constructs/compressor/compressor.h"
-#include "../../../constructs/Range.h"
-#include "../../../constructs/SkippedRelativeKey.h"
-#include "../../../constructs/rkey.h"
+#include "data/constructs/Key.h"
+#include "data/constructs/value.h"
+#include "data/constructs/compressor/compressor.h"
+#include "data/constructs/Range.h"
+#include "data/constructs/SkippedRelativeKey.h"
+#include "data/constructs/rkey.h"
 
 namespace cclient {
 namespace data {
@@ -48,7 +49,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   volatile bool closed;
   bool checkRange;
   volatile bool topExists = false;
-  cclient::data::streams::InputStream *currentStream;
+  std::unique_ptr<cclient::data::streams::InputStream> currentStream;
   volatile bool interrupted = false;
   Range *currentRange;
   std::shared_ptr<SerializedIndex> iiter;
@@ -56,19 +57,34 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   uint32_t entriesLeft;
   std::shared_ptr<IndexManager> index;
 
+  moodycamel::ConcurrentQueue<std::vector<uint8_t>*> compressedBuffers;
+  moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> outputBuffers;
+
+
   int blockCount;
   std::shared_ptr<Key> firstKey;
   int startBlock;
 
-  RelativeKey *rKey;
+  std::shared_ptr<RelativeKey> rKey;
 
   std::shared_ptr<Value> val;
 
   void close() {
     if (NULL != currentStream) {
       currentStream->close();
-      delete currentStream;
       currentStream = NULL;
+    }
+    std::vector<uint8_t>* buf;
+    while(compressedBuffers.size_approx() > 0){
+      if ( compressedBuffers.try_dequeue( buf )) {
+        delete buf;
+      }
+    }
+  cclient::data::streams::ByteOutputStream  *stream;
+    while(outputBuffers.size_approx() > 0){
+      if ( outputBuffers.try_dequeue( stream )) {
+        delete stream;
+      }
     }
   }
 
@@ -81,8 +97,6 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       closed(false),
       checkRange(false),
       topExists(false),
-      currentStream(
-      NULL),
       interrupted(false),
       currentRange(NULL),
       iiter(NULL),
@@ -165,7 +179,7 @@ std::shared_ptr<Value> getTopValue() {
     }
 
     if (reseek) {
-
+      
       iiter = index->lookup(startKey);
 
       close();
@@ -192,7 +206,6 @@ std::shared_ptr<Value> getTopValue() {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
           currentStream = getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(),indexEntry->getRawSize());
-          //currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         }
         checkRange = newSeekRequest->getRange()->afterEndKey(indexEntry->getKey());
         if (!checkRange)
@@ -204,32 +217,31 @@ std::shared_ptr<Value> getTopValue() {
 
         std::shared_ptr<Key> currKey = 0;
 
-        SkippedRelativeKey *skipRR = new SkippedRelativeKey(currentStream, startKey, &valueArray, prevKey, currKey);
+        SkippedRelativeKey skipRR(currentStream.get(), startKey, &valueArray, prevKey, currKey);
 
-        if (skipRR->getPrevKey() != NULL) {
-          prevKey = std::make_shared<Key>(skipRR->getPrevKey());
+        if (skipRR.getPrevKey() != NULL) {
+          prevKey = std::make_shared<Key>(skipRR.getPrevKey());
         } else
           prevKey = NULL;
-        entriesLeft -= skipRR->getSkipped();
+        entriesLeft -= skipRR.getSkipped();
         val = std::make_shared<Value>();
         val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
-        rKey = skipRR->getRelativeKey();
-        delete skipRR;
+        rKey = skipRR.getRelativeKey();
 
       }
     }
 
     topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
-    while (hasTop() && !currentRange->getInfiniteStartKey() && *currentRange->getStartKey() < *getTopKey()) {
+    while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->beforeStartKey(getTopKey())) {
       next();
     }
   }
 
-  virtual void next() {
+  virtual inline void next() {
 
     if (!hasTop())
       throw std::runtime_error("Illegal State Exception");
-    if (entriesLeft == 0) {
+    if (SH_UNLIKELY(entriesLeft == 0)) {
       currentStream->close();
 
       if (iiter->hasNext()) {
@@ -253,8 +265,8 @@ std::shared_ptr<Value> getTopValue() {
       }
     }
     prevKey = std::static_pointer_cast<Key>(rKey->getStream());
-    rKey->read(currentStream);
-    val->read(currentStream);
+    rKey->read(currentStream.get());
+    val->read(currentStream.get());
     entriesLeft--;
     if (checkRange){
       topExists = !currentRange->afterEndKey(getTopKey());
@@ -262,24 +274,45 @@ std::shared_ptr<Value> getTopValue() {
 
   }
 
-  cclient::data::streams::InputStream*
+  std::unique_ptr<cclient::data::streams::InputStream>
   getDataBlock(uint32_t index) {
 
     BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
     region->setCompressor(bcFile->getDataIndex()->getCompressionAlgorithm().create());
-    cclient::data::streams::InputStream *stream = region->readDataStream(reader);
+    auto stream = region->readDataStream(reader);
     delete region;
     return stream;
   }
 
-  cclient::data::streams::InputStream*
+  std::unique_ptr<cclient::data::streams::InputStream>
   getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize) {
 
-//
+
     cclient::data::compression::Compressor *compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create();
-    BlockRegion *region = new BlockRegion(offset, compressedSize, rawSize, compressor);
-    cclient::data::streams::InputStream *stream = region->readDataStream(reader);
-    delete region;
+    BlockRegion region(offset, compressedSize, rawSize, compressor);
+    std::vector<uint8_t> *my_buf;
+    cclient::data::streams::ByteOutputStream *bout;
+    if (!compressedBuffers.try_dequeue(my_buf)){
+        my_buf = new std::vector<uint8_t>();
+    }
+    else{
+//      std::cout << "reusing buffer of size " << my_buf->size() << std::endl;
+    }
+
+    if (!outputBuffers.try_dequeue(bout)){
+      bout = new cclient::data::streams::ByteOutputStream(0);
+  
+    }
+    else{
+  //    std::cout << "reusing buffer of size " << bout->getPos() << std::endl;
+    }
+
+    auto stream = region.assimilateDataStream(reader,my_buf,bout);
+
+    compressedBuffers.enqueue(my_buf);
+    outputBuffers.enqueue(bout);
+    
+
     return stream;
   }
 

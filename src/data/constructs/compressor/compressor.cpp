@@ -27,10 +27,14 @@ void
 cclient::data::compression::Compressor::setInput (const char *b, uint32_t offset, uint32_t length)
 {
 //  std::cout << "buffer address is " << buffer << std::endl;
-
-    if (buffer != NULL)
+    // grow the buffer, but do not remove it. 
+    if (buffer != nullptr && length > size){
         delete[] buffer;
-    buffer = new char[length];
+        buffer=nullptr;
+        size = length;
+    }else{
+        buffer = new char[length];
+    }
     memcpy (buffer, b, length);
     off = offset;
     len = length;
