@@ -96,7 +96,7 @@ public:
 	 * Deompression method.
 	 * @param out_stream.
 	 */
-	void decompress(cclient::data::streams::OutputStream *out_stream);
+	void decompress(cclient::data::streams::OutputStream *out_stream,  char *in_buf = nullptr, size_t size = 0);
 
 protected:
 
@@ -127,7 +127,7 @@ protected:
 	// raw size of the uncompressed data.
 	uint32_t rawSize;
 	// input buffer.
-	std::vector<Bytef> in_buf;
+	//std::vector<Bytef> in_buf;
 	// total output size.
 	uint32_t total_out;
 

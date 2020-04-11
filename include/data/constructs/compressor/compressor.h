@@ -18,7 +18,7 @@
 
 #include "../../streaming/DataOutputStream.h"
 #include "algorithm.h"
-
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "zlib.h"
 
 namespace cclient
@@ -93,7 +93,7 @@ public:
      * @param out_stream output stream.
      */
     virtual void
-    decompress (cclient::data::streams::OutputStream *out_stream)
+    decompress (cclient::data::streams::OutputStream *out_stream, char *in_buf = nullptr, size_t size = 0)
     {
         throw std::runtime_error ("Decompression not supported");
     }

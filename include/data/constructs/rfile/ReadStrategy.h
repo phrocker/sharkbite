@@ -11,25 +11,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#ifndef READ_STRATEGY_H
+#define READ_STRATEGY_H
 
-#ifndef RFILE_H_READER_
-#define RFILE_H_READER_
+#include "../../streaming/Streams.h"
+#include "../../streaming/DataOutputStream.h"
 
-#include <iostream>
-#include <fstream>
-#include "RFile.h"
-#include "SequentialRFile.h"
-namespace cclient{
+namespace cclient {
+namespace data {
 
-namespace data{
-
-class RFileOperations{
-public:
-  static std::ifstream::pos_type filesize(const char* filename);
-  static cclient::data::RFile *open(const std::string &);
-  static cclient::data::SequentialRFile *openSequential(const std::string &);
-
+enum ReadStrategy {
+  SEQUENTIAL,
+  RANDOM_SEEK,
+  SEEK_SEQUENTIAL,
+  UNKNOWN
 };
+
 }
 }
 #endif

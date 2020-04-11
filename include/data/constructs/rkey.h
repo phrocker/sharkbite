@@ -41,14 +41,14 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   /**
    * Constructor
    **/
-  RelativeKey();
+  RelativeKey(ArrayAllocatorPool *allocins);
 
   /**
    * Constructor.
    * @param previous_key previous key
    * @param my_key current key.
    **/
-  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key);
+  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key,ArrayAllocatorPool *allocins);
 
   /**
    * Returns the relative key.
@@ -82,11 +82,9 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   uint64_t
   write(cclient::data::streams::OutputStream *outStream);
 
-  bool
-  operator <(const RelativeKey &rhs) const;
+  bool operator <(const RelativeKey &rhs) const;
 
-  bool
-  operator <(const RelativeKey *rhs) const;
+  bool operator <(const RelativeKey *rhs) const;
 
   ~RelativeKey();
 
@@ -106,24 +104,32 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
 
-  const std::shared_ptr<Key>& getKey() {
+  const std::shared_ptr<Key>getKey() const {
     return key;
   }
 
+  bool isFiltered() const {
+    return filtered;
+  }
+
+  void filterVisibility(const std::string &visibility);
+
+  void setFiltered();
+
  protected:
 
-  int readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow);
+  int INLINE readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow,const size_t &prevsize,bool &disown);
 
-  bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+  bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                       const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+  bool INLINE readCf(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+  bool INLINE readCq(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, Text *prevText,
+  bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
 
   int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row);
@@ -154,6 +160,11 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   bool
   INLINE isSame(std::pair<char*, size_t> a, std::pair<char*, size_t> b);
 
+  bool filtered;
+  bool prevFiltered;
+
+  std::string columnVisibility;
+
   int32_t rowCommonPrefixLen;
   int32_t cfCommonPrefixLen;
   int32_t cqCommonPrefixLen;
@@ -161,10 +172,17 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   uint8_t fieldsPrefixed;
   long tsDiff;
 
-  Text row_ref;
-  Text cf_ref;
-  Text cq_ref;
-  Text cv_ref;
+  std::shared_ptr<Text> row_ref;
+
+  bool row_ref_dirty;
+  std::shared_ptr<Text> cf_ref;
+  bool cf_ref_dirty;
+  std::shared_ptr<Text> cq_ref;
+  bool cq_ref_dirty;
+  std::shared_ptr<Text> cv_ref;
+  bool cv_ref_dirty;
+
+  ArrayAllocatorPool *allocatorInstance;
 };
 }
 }

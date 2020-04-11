@@ -76,12 +76,15 @@ class EndianInputStream : public ByteInputStream {
   }
 
   virtual int readInt() override {
-    return ntohl(ByteInputStream::readInt());
+    int intVal = 0;
+    readBytes((uint8_t*) &intVal, 4);
+    return ntohl(intVal);
   }
 
   virtual uint64_t readLong() override {
-    auto jd = ByteInputStream::readLong();
-    auto ret = ntohll(jd);
+    uint64_t val;
+    readBytes((uint8_t*) &val, 8);
+    auto ret = ntohll(val);
     return ret;
   }
 

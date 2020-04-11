@@ -94,8 +94,7 @@ class ByteInputStream : public InputStream {
       delete[] iBytes;
   }
 
-  virtual InputStream*
-  seek(uint64_t pos) {
+  virtual InputStream* seek(uint64_t pos) {
     if (NULL != input_stream_ref)
       input_stream_ref->seek(pos);
     else {
@@ -104,7 +103,7 @@ class ByteInputStream : public InputStream {
     return this;
   }
 
-  virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {
+  virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) {
     if (input_stream_ref != NULL) {
       return input_stream_ref->readBytes(bytes, cnt);
       offset += cnt;
@@ -118,7 +117,7 @@ class ByteInputStream : public InputStream {
     return cnt;
   }
 
-  virtual uint64_t readBytes(char *bytes, size_t cnt) {
+  virtual INLINE uint64_t readBytes(char *bytes, size_t cnt) {
     if (input_stream_ref != NULL) {
       return input_stream_ref->readBytes(bytes, cnt);
       offset += cnt;

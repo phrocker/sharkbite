@@ -18,8 +18,7 @@
 namespace cclient {
 namespace data {
 
-LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal,
-                                             std::string name)
+LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string name)
     : startBlock(startBlockVal),
       firstKey(NULL),
       read_version(4),
@@ -124,16 +123,14 @@ uint64_t LocalityGroupMetaData::write(
 
   outStream->writeInt(offsets.size());
 
-  for (std::vector<int>::iterator it = offsets.begin(); it != offsets.end();
-      it++) {
+  for (std::vector<int>::iterator it = offsets.begin(); it != offsets.end(); it++) {
     outStream->writeInt((*it));
   }
 
   // write out the number of indices.
   outStream->writeInt(indices.second);
 
-  uint64_t pos = outStream->writeBytes((const uint8_t*) indices.first,
-                                       indices.second);
+  uint64_t pos = outStream->writeBytes((const uint8_t*) indices.first, indices.second);
 
   delete[] indices.first;
 

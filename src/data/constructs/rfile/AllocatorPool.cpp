@@ -124,7 +124,6 @@ bool KeyAllocatorPool::decrement(std::pair<char*,size_t> ptr){
   if (loc != referenceCount.end()){
     
     if (loc->second.first-1 <= 0){
-      std::cout << "free" << std::endl;
       if (ptr.second > 256) {
        delete [] ptr.first;
       } else {

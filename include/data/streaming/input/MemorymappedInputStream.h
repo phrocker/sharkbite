@@ -48,7 +48,7 @@ namespace streams
 
 class MemoryMappedInputStream : public InputStream
 {
-private:
+protected :
     size_t getFileSize(const std::string &filename) {
         struct stat st;
         stat(filename.c_str(), &st);
@@ -60,7 +60,7 @@ public:
     {
         filesize = getFileSize(file);
         fd = open(file.c_str(), O_RDONLY, 0);
-        ptr = mmap(NULL, filesize, PROT_READ, MMAP_FLAGS, fd, 0);   
+        ptr = (char*)mmap(NULL, filesize, PROT_READ, MAP_SHARED , fd, 0);
     }
 
 
@@ -75,7 +75,6 @@ public:
     virtual InputStream *
     seek (uint64_t pos)
     {
-        
         offset = pos;
         return this;
     }
@@ -108,7 +107,7 @@ public:
 
 protected:
     // output stream reference.
-    void *ptr;
+    char *ptr;
     size_t filesize;
     size_t offset;
     int fd;

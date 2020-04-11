@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef RFILE_H_
-#define RFILE_H_
+#ifndef SEQUENTIAL_RFILE_H_
+#define SEQUENTIAL_RFILE_H_
 
 #include <vector>
 #include <future>
@@ -26,7 +26,6 @@
 #include "../../streaming/accumulo/KeyValueIterator.h"
 #include "../../streaming/input/InputStream.h"
 #include "../KeyValue.h"
-
 // meta
 #include "meta/MetaBlock.h"
 #include "meta/LocalityGroupReader.h"
@@ -39,7 +38,7 @@
 namespace cclient {
 namespace data {
 
-class RFile : public cclient::data::streams::StreamInterface, public cclient::data::streams::KeyValueIterator {
+class SequentialRFile : public cclient::data::streams::StreamInterface, public cclient::data::streams::KeyValueIterator {
 
  public:
   /**
@@ -48,7 +47,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    @param bWriter block compressed writer.
    @param blockSize the desired block size of the bc file.
    **/
-  RFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
+  SequentialRFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
 
   /**
    Constructor
@@ -56,10 +55,10 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    @param bWriter block compressed writer.
    @param blockSize the desired block size of the bc file.
    **/
-  RFile(cclient::data::streams::InputStream *input_stream, long fileLength);
+  SequentialRFile(cclient::data::streams::InputStream *input_stream, long fileLength);
 
   virtual
-  ~RFile();
+  ~SequentialRFile();
 
   /**
    Get the maximum block size.
@@ -167,7 +166,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    @param lastKey last key for locality group.
    **/
   void closeBlock(std::shared_ptr<StreamInterface> lastKey) {
-    std::cout << "whut 3" << std::endl;
     currentLocalityGroup->addIndexEntry(IndexEntry(lastKey, entries));
     dataBlockCnt = 0;
     entries = 0;
@@ -175,36 +173,34 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   }
 
-  virtual bool hasNext();
+  bool hasNext();
 
-  virtual void relocate(cclient::data::streams::StreamSeekable *location) {
-    stopReadAhead();
+  void relocate(cclient::data::streams::StreamSeekable *location) {
     if (!colvis.empty())
       currentLocalityGroupReader->limitVisibility(colvis);
     currentLocalityGroupReader->seek(location);
   }
 
-  virtual void next();
+  void next();
 
   virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++();
 
   friend inline std::ostream&
-  operator <<(std::ostream &out, RFile &rhs) {
+  operator <<(std::ostream &out, SequentialRFile &rhs) {
     auto entries = rhs.blockWriter->getMetaIndex()->getEntries();
 
     for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = entries->begin(); it != entries->end(); it++) {
-      out << "Meta Block	: " << (*it).first << std::endl;
+      out << "Meta Block  : " << (*it).first << std::endl;
       auto entry = ((*it).second);
-      out << "	Raw size	:" << entry->getRegion()->getRawSize() << std::endl;
-      out << "	Compressed size	:" << entry->getRegion()->getCompressedSize() << std::endl;
+      out << "  Raw size  :" << entry->getRegion()->getRawSize() << std::endl;
+      out << "  Compressed size :" << entry->getRegion()->getCompressedSize() << std::endl;
     }
 
     return out;
   }
 
   friend inline std::ostream&
-  operator <<(std::ostream &out, RFile *rhs) {
-    std::cout << "whut2 " << std::endl;
+  operator <<(std::ostream &out, SequentialRFile *rhs) {
     return operator<<(out, *rhs);
   }
 
@@ -212,33 +208,8 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   std::shared_ptr<cclient::data::KeyValue> getTop();
 
-  void enableReadAhead(uint64_t max_size = 1000) {
-    this->max_size = max_size;
-    readAhead = true;
-    startReadAhead();
-  }
-
-  void disableReadAhead() {
-    if (readAheadRunning) {
-      stopReadAhead();
-    }
-    readAhead = false;
-  }
-
  protected:
 
-  void startReadAhead();
-
-  void stopReadAhead() {
-    if (readAheadRunning) {
-      std::cout << "stopping" << std::endl;
-      queue_wait.notify_one();
-      readAheadRunning = false;
-      fut.wait();
-      while (!readAheadClosed) {
-      }
-    }
-  }
 
   void
   readLocalityGroups(cclient::data::streams::InputStream *metaBlock);
@@ -255,7 +226,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
     }
 
   }
-
 
   // current locality group.
   LocalityGroupMetaData *currentLocalityGroup;
@@ -290,30 +260,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   // boolean identifying closed rfile.
   bool closed;
 
-  bool readAhead;
-
-  uint64_t max_size;
-
-  std::mutex queueMutex;
-
-
-  std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>> result;
-
-  std::future<uint64_t> fut;
-
-  std::atomic<uint64_t> queue_size;
-
-  std::condition_variable queue_wait;
-
-  std::condition_variable consumer_wait;
-
-  std::deque<std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>>> queues;
-
-  std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>> queue;
-
-  std::atomic<bool> readAheadRunning;
-
-  std::atomic<bool> readAheadClosed;
 
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;

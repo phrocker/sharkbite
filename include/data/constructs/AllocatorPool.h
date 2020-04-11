@@ -17,39 +17,133 @@
 
 #include <vector>
 #include <map>
+#include <mutex>
+#include <set>
 #include <deque>
 #include <cstdio>
 #include "data/extern/concurrentqueue/concurrentqueue.h"
 #include "ObjectPool.h"
+//#include "ConstructPool.h"
 #include "Text.h"
+#include "Key.h"
 
 namespace cclient {
 namespace data {
 
-class ArrayAllocatorPool : public ObjectAllocatorPool<Text> {
+template<typename T>
+class ArrayAllocators {
+
+  std::mutex guard;
+
+  std::deque<T*> pool;
+
+ public:
+  ArrayAllocators() {
+
+  }
+
+  ~ArrayAllocators() {
+
+  }
+
+  T* get() {
+    std::lock_guard<std::mutex> lock(guard);
+    if (pool.empty()) {
+      return new T();
+    }
+    auto ret = pool.back();
+    pool.pop_back();
+    return ret;
+  }
+
+  void returnItem(T *item) {
+    std::lock_guard<std::mutex> lock(guard);
+    pool.push_back(item);
+  }
+
+};
+
+class KeyManager {
  private:
-  std::deque<std::pair<char*,size_t>> buffers256;
-  std::deque<std::pair<char*,size_t>> buffers128;
-  std::deque<std::pair<char*,size_t>> buffers64;
-  std::deque<std::pair<char*,size_t>> buffers32;
-
-
-  std::map<char*,std::pair<int,size_t>> referenceCount;
-  inline void free(std::pair<char*,size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*,size_t>> *ptr);
-
-  inline void reclaim(moodycamel::ConcurrentQueue<std::pair<char*,size_t>> *ptr);
-
- protected:
-  virtual ~ArrayAllocatorPool();
-  ArrayAllocatorPool();
+  std::vector<cclient::data::Key*> freeObjPool;
+  size_t maxsize;
  public:
 
+  KeyManager(size_t maxsize)
+      :
+      maxsize(maxsize) {
 
-  virtual std::pair<char*,size_t> allocateBuffer(size_t size) override;
+  }
+
+  ~KeyManager() {
+    for (auto o : freeObjPool)
+      delete o;
+  }
+
+  void add(cclient::data::Key *o) {
+    if (o && freeObjPool.size() < maxsize) {
+      freeObjPool.push_back(o);
+    } else {
+      delete o;
+    }
+  }
+
+  std::shared_ptr<cclient::data::Key> get(ObjectAllocatorPool<Text> *txt) {
+    cclient::data::Key *o;
+    if (freeObjPool.empty())
+      o = new cclient::data::Key(txt);
+    else {
+      o = freeObjPool.back();
+      freeObjPool.pop_back();
+    }
+    return std::shared_ptr<cclient::data::Key>(o, std::bind(&KeyManager::add, this, std::placeholders::_1));
+  }
+};
+
+class ArrayAllocatorPool : public ObjectAllocatorPool<Text> {
+ private:
+  std::deque<std::pair<char*, size_t>> buffers256;
+  std::deque<std::pair<char*, size_t>> buffers128;
+  std::deque<std::pair<char*, size_t>> buffers64;
+  std::deque<std::pair<char*, size_t>> buffers32;
+  std::set<char*> disownedBuffers;
+  KeyManager keyPool;
+
+  std::map<char*, std::pair<int, size_t>> referenceCount;
+  inline void free(std::pair<char*, size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr);
+
+  inline void reclaim(moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr);
+
+  static ArrayAllocators<ArrayAllocatorPool>* getDelegator() {
+    static ArrayAllocators<ArrayAllocatorPool> delegator;
+    return &delegator;
+  }
+
+ public:
+
+  ArrayAllocatorPool();
+
+  virtual ~ArrayAllocatorPool();
+
+  virtual void disown(std::pair<char*, size_t>) override;
+
+  virtual std::pair<char*, size_t> allocateBuffer(size_t size) override;
 
   virtual std::shared_ptr<Text> allocate(size_t size) override;
 
-  virtual void free(std::pair<char*,size_t> &&ptr) override;
+  virtual void free(std::pair<char*, size_t> &&ptr) override;
+
+  std::shared_ptr<cclient::data::Key> newKey() {
+    return keyPool.get(this);
+  }
+
+  static ArrayAllocatorPool* newInstance() {
+    return getDelegator()->get();
+  }
+
+  static void returnInstance(ArrayAllocatorPool *pool) {
+    getDelegator()->returnItem(pool);
+  }
 
   static ArrayAllocatorPool* getInstance() {
     // create 10000 before we revert to additional heap

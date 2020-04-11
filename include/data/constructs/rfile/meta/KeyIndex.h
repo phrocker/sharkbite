@@ -30,29 +30,27 @@ class KeyIndex : cclient::data::streams::StreamInterface {
       :
       newFormat(false),
       dataLength(dataLength) {
-    offsets = new std::vector<int>();
-    offsets->insert(offsets->end(), offsetList.begin(), offsetList.end());
+    offsets.insert(offsets.end(), offsetList.begin(), offsetList.end());
     data = new uint8_t[dataLength];
-    memcpy(data, datums, dataLength);
+    memcpy_fast(data, datums, dataLength);
   }
 
   virtual ~KeyIndex() {
     if (NULL != data) {
       delete[] data;
     }
-    delete offsets;
   }
 
   std::shared_ptr<Key> get(uint64_t index) {
     uint64_t len = 0;
-    if (index == offsets->size() - 1) {
-      len = dataLength - offsets->at(index);
+    if (index == offsets.size() - 1) {
+      len = dataLength - offsets.at(index);
     } else {
-      len = offsets->at(index + 1) - offsets->at(index);
+      len = offsets.at(index + 1) - offsets.at(index);
     }
     std::shared_ptr<Key> returnKey = std::make_shared<Key>();
 
-    cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream((char*) data + offsets->at(index), len);
+    cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream((char*) data + offsets.at(index), len);
     returnKey->read(inputStream);
     delete inputStream;
 
@@ -60,7 +58,7 @@ class KeyIndex : cclient::data::streams::StreamInterface {
   }
 
   int binary_search(const std::shared_ptr<Key> &search_key) {
-    return binary_search(0, offsets->size() - 1, search_key);
+    return binary_search(0, offsets.size() - 1, search_key);
   }
 
   int binary_search(int first, int last, const std::shared_ptr<Key> &search_key) {
@@ -88,7 +86,7 @@ class KeyIndex : cclient::data::streams::StreamInterface {
 
  protected:
   int currentValue = 0;
-  std::vector<int> *offsets;
+  std::vector<int> offsets;
   uint8_t *data;
   uint32_t dataLength;
   bool newFormat;

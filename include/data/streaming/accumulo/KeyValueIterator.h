@@ -18,78 +18,53 @@
 #include "../../constructs/value.h"
 #include "../DataStream.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
+class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>> {
+ public:
+  KeyValueIterator(KeyValueIterator *source, StreamConfiguration *configuration) {
+    setConfiguration(configuration);
+  }
 
-class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>
-{
-public:
-    KeyValueIterator (KeyValueIterator *source,
-                      StreamConfiguration *configuration)
-    {
-        setConfiguration (configuration);
-    }
+  KeyValueIterator() {
 
-    KeyValueIterator ()
-    {
+  }
 
-    }
+  virtual ~KeyValueIterator() {
+  }
 
-    virtual
-    ~KeyValueIterator ()
-    {
-    }
+  virtual bool hasNext() {
+    return false;
+  }
 
-    virtual bool
-    hasNext ()
-    {
-        return false;
-    }
+  virtual void relocate(StreamRelocation *location) {
+  }
 
-    virtual void
-    relocate (StreamRelocation *location)
-    {
-    }
+  virtual DataStream* begin() {
+    return this;
+  }
 
-    virtual DataStream *
-    begin ()
-    {
-        return this;
-    }
+  virtual DataStream* end() {
+    return this;
+  }
 
-    virtual DataStream *
-    end ()
-    {
-        return this;
-    }
+  virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() {
+    return std::make_pair(nullptr, nullptr);
+  }
 
-    virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>
-    operator* ()
-    {
-        return std::make_pair (nullptr,nullptr);
-    }
+  virtual void next() {
 
-    virtual void next()
-    {
+  }
 
-    }
+  virtual DataStream* operator++() {
+    return this;
+  }
 
-    virtual DataStream*
-    operator++ ()
-    {
-        return this;
-    }
-
-    virtual DataStream*
-    operator++ (int t)
-    {
-        return this;
-    }
+  virtual DataStream* operator++(int t) {
+    return this;
+  }
 }
 ;
 }

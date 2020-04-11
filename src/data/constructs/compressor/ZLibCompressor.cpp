@@ -18,6 +18,7 @@
 #include "data/constructs/compressor/../../streaming/OutputStream.h"
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 
 typedef std::vector<char> buffer_t;
 
@@ -53,14 +54,10 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
   if (output_length > out_buf.size())
     out_buf.resize(output_length);
   //out_buf = new Bytef[output_length];
-  if (len > in_buf.size())
-    in_buf.resize(len);
 
-  memcpy(in_buf.data(), buffer + off, len);
-  delete[] buffer;
-  buffer = nullptr;
+  Bytef *casted_buffer = (Bytef*)((char*)(buffer+off));
 
-  c_stream.next_in = in_buf.data();
+  c_stream.next_in = casted_buffer;
   c_stream.next_out = out_buf.data();
   c_stream.avail_in = len;
   c_stream.avail_out = output_length;
@@ -110,11 +107,14 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
  * Deompression method.
  * @param out_stream.
  */
-void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream) {
+void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream, char *in_buf , size_t size ) {
   if (!init)
     throw std::runtime_error("Failure during compression; compression not initialized");
 
-  if (len == 0)
+  auto my_len = size == 0 ? len : size;
+  char *ptr = in_buf == nullptr ? (buffer + off) : in_buf;
+
+  if (my_len == 0)
     return;
 
   // variable used for the return code.
@@ -128,23 +128,19 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   if (r != Z_OK)
     throw std::runtime_error("Failure initializing compression");
 
-  rawSize += len;
+  rawSize += my_len;
   // estimate the output buffer.
 
-  output_length = len + len / 1000 + 12 + 1;
+  output_length = my_len + my_len / 1000 + 12 + 1;
   if (output_length > out_buf.size())
-    out_buf.resize(output_length);
+    out_buf.resize(output_length*2);
   //out_buf = new Bytef[output_length];
-  if (len > in_buf.size())
-    in_buf.resize(len);
-  //in_buf = new Bytef[len];
-  memcpy(in_buf.data(), buffer + off, len);
-  delete[] buffer;
-  buffer = nullptr;
 
-  c_stream.next_in = in_buf.data();
+  Bytef *casted_buffer = (Bytef*)(ptr);
+
+  c_stream.next_in = casted_buffer;
   c_stream.next_out = out_buf.data();
-  c_stream.avail_in = len;
+  c_stream.avail_in = my_len;
   c_stream.avail_out = output_length;
   c_stream.total_in = 0;
   c_stream.total_out = 0;
@@ -152,9 +148,9 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   int ret = 0;
   int err = 0;
   int have = 0;
-  for (uint32_t i = 0; i < len; i += output_length) {
-    c_stream.avail_in = len - i;
-    c_stream.next_in = in_buf.data() + i;
+  for (uint32_t i = 0; i < my_len; i += output_length) {
+    c_stream.avail_in = my_len - i;
+    c_stream.next_in = casted_buffer + i;
 
     do {
       have = 0;

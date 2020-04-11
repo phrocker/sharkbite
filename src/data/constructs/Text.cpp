@@ -35,10 +35,12 @@ Text::Text(ObjectAllocatorPool<Text> *ref, char *buf, size_t currentSize, size_t
 }
 
 Text::~Text() {
-  if (reference) {
-    reference->free(std::make_pair(buffer, originalSize));
-  } else {
-    delete[] buffer;
+  if (buffer) {
+    if (reference) {
+      reference->free(std::make_pair(buffer, originalSize));
+    } else {
+      delete[] buffer;
+    }
   }
 }
 
@@ -55,6 +57,11 @@ void Text::reset(char *buffer, size_t length, size_t size) {
   originalSize = size;
 }
 
+void Text::clear() {
+  buffer = nullptr;
+  currentSize = originalSize = 0;
+}
+
 void Text::reset() {
   if (buffer) {
     if (reference) {
@@ -64,10 +71,14 @@ void Text::reset() {
     }
   }
   this->buffer = nullptr;
+  currentSize = 0;
 }
 
 std::string Text::toString() {
-  return std::string(buffer, currentSize);
+  if (buffer)
+    return std::string(buffer, currentSize);
+  else
+    return "";
 
 }
 std::pair<char*, size_t> Text::getBuffer() {

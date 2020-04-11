@@ -21,205 +21,173 @@
 #include "../../../streaming/input/ByteInputStream.h"
 #include "../../../streaming/input/NetworkOrderInputStream.h"
 #include "data/streaming/input/NonCopyNetworkOrderStream.h"
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
+class BlockRegion : public cclient::data::streams::StreamInterface {
+ public:
+  BlockRegion()
+      :
+      offset(0),
+      compressedSize(0),
+      rawSize(0),
+      compressor(NULL) {
 
-class BlockRegion : public cclient::data::streams::StreamInterface
-{
-public:
-    BlockRegion () :
-        offset (0), compressedSize (0), rawSize (0), compressor (NULL)
-    {
+  }
 
+  BlockRegion(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, cclient::data::compression::Compressor *compressor)
+      :
+      offset(offset),
+      compressedSize(compressedSize),
+      rawSize(rawSize),
+      compressor(compressor) {
+
+  }
+
+  BlockRegion(cclient::data::streams::InputStream *in) {
+    read(in);
+  }
+  /**
+   Copy constructor.
+   @param object from which we copy our items.
+   **/
+  BlockRegion(const BlockRegion &copy) {
+
+    *this = copy;
+  }
+
+  virtual ~BlockRegion() {
+
+    //delete compressor;
+  }
+
+  /**
+   sets of the offset.
+   @param off offset.
+   **/
+  void setOffset(uint64_t off) {
+    offset = off;
+  }
+
+  /**
+   Sets the compressed size
+   @param csize compressed size.
+   **/
+  void setCompressedSize(uint64_t csize) {
+    compressedSize = csize;
+  }
+
+  /**
+   Sets the raw size
+   **/
+  void setRawSize(uint64_t rsize) {
+    rawSize = rsize;
+  }
+
+  /**
+   Sets the compressor
+   @param comp compressor.
+   **/
+  void setCompressor(cclient::data::compression::Compressor *comp) {
+    compressor = comp;
+  }
+
+  /**
+   * Returns the reference to the compressor
+   * Should not be constant as compressor could be used
+   * and subsequently the internal components could be modified
+   * @returns compressor reference
+   */
+  cclient::data::compression::Compressor*
+  getCompressor() {
+    return compressor;
+  }
+  uint64_t
+  read(cclient::data::streams::InputStream *in);
+
+  uint64_t
+  write(cclient::data::streams::OutputStream *out);
+
+  std::unique_ptr<cclient::data::streams::InputStream> readDataStream(cclient::data::streams::InputStream *in) {
+
+    uint64_t pos = in->getPos();
+
+    in->seek(offset);
+
+    uint8_t *compressedValue = new uint8_t[compressedSize];
+
+    in->readBytes(compressedValue, compressedSize);
+
+    compressor->setInput((const char*) compressedValue, 0, compressedSize);
+
+    cclient::data::streams::ByteOutputStream outStream(rawSize);
+
+    compressor->decompress(&outStream);
+
+    auto returnStream = std::make_unique<cclient::data::streams::EndianInputStream>(outStream.getByteArray(), outStream.getSize(), true);
+
+    in->seek(pos);
+    delete[] compressedValue;
+
+    return std::move(returnStream);
+  }
+
+  std::unique_ptr<cclient::data::streams::InputStream> assimilateDataStream(cclient::data::streams::InputStream *in, std::vector<uint8_t> *compressed, cclient::data::streams::ByteOutputStream *ref,moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> *queueref) {
+
+    uint64_t pos = in->getPos();
+
+    in->seek(offset);
+
+    if (compressed->size() <= compressedSize) {
+      compressed->resize(compressedSize + 1);
     }
 
-    BlockRegion (uint64_t offset, uint64_t compressedSize, uint64_t rawSize,
-                 cclient::data::compression::Compressor *compressor) :
-        offset (offset), compressedSize (compressedSize), rawSize (rawSize), compressor (
-            compressor)
-    {
+    in->readBytes(compressed->data(), compressedSize);
 
-    }
+    ref->flush();
 
-    BlockRegion (cclient::data::streams::InputStream *in)
-    {
-        read (in);
-    }
-    /**
-     Copy constructor.
-     @param object from which we copy our items.
-     **/
-    BlockRegion (const BlockRegion &copy)
-    {
+    compressor->decompress(ref, (char*)compressed->data(), compressedSize);
 
-        *this = copy;
-    }
+    auto returnStream = std::make_unique<cclient::data::streams::NonCopyEndianInputStream>(ref,queueref);
 
-    virtual ~BlockRegion() {
+    in->seek(pos);
 
-        //delete compressor;
-    }
+    return std::move(returnStream);
+  }
 
-    /**
-     sets of the offset.
-     @param off offset.
-     **/
-    void
-    setOffset (uint32_t off)
-    {
-        offset = off;
-    }
+  BlockRegion&
+  operator=(const BlockRegion &other) {
 
-    /**
-     Sets the compressed size
-     @param csize compressed size.
-     **/
-    void
-    setCompressedSize (uint32_t csize)
-    {
-        compressedSize = csize;
-    }
+    offset = other.offset;
+    compressedSize = other.compressedSize;
+    rawSize = other.rawSize;
+    compressor = other.compressor;
+    return *this;
+  }
 
-    /**
-     Sets the raw size
-     **/
-    void
-    setRawSize (uint32_t rsize)
-    {
-        rawSize = rsize;
-    }
+  uint64_t getOffset() {
+    return offset;
+  }
 
-    /**
-     Sets the compressor
-     @param comp compressor.
-     **/
-    void
-    setCompressor (cclient::data::compression::Compressor *comp)
-    {
-        compressor = comp;
-    }
+  uint64_t getCompressedSize() {
+    return compressedSize;
+  }
 
-    /**
-     * Returns the reference to the compressor
-     * Should not be constant as compressor could be used
-     * and subsequently the internal components could be modified
-     * @returns compressor reference
-     */
-    cclient::data::compression::Compressor *
-    getCompressor ()
-    {
-        return compressor;
-    }
-    uint64_t
-    read (cclient::data::streams::InputStream *in);
+  uint64_t getRawSize() {
+    return rawSize;
+  }
 
-    uint64_t
-    write (cclient::data::streams::OutputStream *out);
-
-    std::unique_ptr<cclient::data::streams::InputStream>
-    readDataStream (cclient::data::streams::InputStream *in)
-    {
-
-        uint64_t pos = in->getPos();
-
-
-        in->seek (offset);
-
-        uint8_t *compressedValue = new uint8_t[compressedSize];
-
-        in->readBytes (compressedValue, compressedSize);
-
-
-        compressor->setInput ((const char*) compressedValue, 0, compressedSize);
-
-        cclient::data::streams::ByteOutputStream outStream(rawSize);
-
-        compressor->decompress (&outStream);
-
-
-        auto returnStream = std::make_unique<cclient::data::streams::EndianInputStream >(
-            outStream.getByteArray (), outStream.getSize (), true);
-
-        in->seek(pos);
-        delete[] compressedValue;
-
-        return std::move(returnStream);
-    }
-
-    std::unique_ptr<cclient::data::streams::InputStream>
-    assimilateDataStream (cclient::data::streams::InputStream *in, std::vector<uint8_t> *compressed, cclient::data::streams::ByteOutputStream *ref)
-    {
-
-        uint64_t pos = in->getPos();
-
-
-        in->seek (offset);
-
-
-        if (compressed->size() <=  compressedSize){
-            compressed->resize(compressedSize+1);
-        }
-
-        in->readBytes (compressed->data(), compressedSize);
-
-
-        compressor->setInput ((const char*) compressed->data(), 0, compressedSize);
-
-        ref->flush();
-
-        compressor->decompress (ref);
-
-
-        auto returnStream = std::make_unique<cclient::data::streams::NonCopyEndianInputStream >(
-            ref->getByteArray (), ref->getSize (), false);
-
-        in->seek(pos);
-
-        return std::move(returnStream);
-    }
-
-    BlockRegion &
-    operator= (const BlockRegion &other)
-    {
-
-        offset = other.offset;
-        compressedSize = other.compressedSize;
-        rawSize = other.rawSize;
-        compressor = other.compressor;
-        return *this;
-    }
-
-    uint32_t
-    getOffset ()
-    {
-        return offset;
-    }
-
-    uint32_t
-    getCompressedSize ()
-    {
-        return compressedSize;
-    }
-
-    uint32_t
-    getRawSize ()
-    {
-        return rawSize;
-    }
-
-protected:
-    // compressor.
-    cclient::data::compression::Compressor *compressor;
-    // offset.
-    uint32_t offset;
-    // compressed size.
-    uint32_t compressedSize;
-    // raw size.
-    uint32_t rawSize;
+ protected:
+  // compressor.
+  cclient::data::compression::Compressor *compressor;
+  // offset.
+  uint64_t offset;
+  // compressed size.
+  uint64_t compressedSize;
+  // raw size.
+  uint64_t rawSize;
 };
 }
 }

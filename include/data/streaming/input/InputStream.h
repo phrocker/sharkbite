@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include <istream>
+#include <fstream>
 #include <memory>
 #include <cstring>
 #include <cstdio>
@@ -24,10 +25,13 @@
 #include <immintrin.h>
 #include <cstdint>
 #include <cassert>
-
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 #if __linux__
 #include <linux/version.h>
 #if LINUX_VERSION_CODE > KERNEL_VERSION(2,6,22)
+#include <ext/stdio_filebuf.h>
+#include <type_traits>
+#include <fcntl.h>
 #define _MAP_POPULATE_AVAILABLE
 #endif
 #endif
@@ -56,6 +60,8 @@ class InputStream {
       position(new uint64_t(pos)),
       copy(false),
       own_istream(false) {
+        if (dynamic_cast<std::ifstream*>(ptr) != nullptr)
+        adviseSequentialRead(dynamic_cast<std::ifstream*>(ptr));
   }
 
   InputStream(std::unique_ptr<std::istream> ptr, uint64_t pos)
@@ -64,6 +70,8 @@ class InputStream {
       position(new uint64_t(pos)),
       copy(false),
       own_istream(true) {
+        if (dynamic_cast<std::ifstream*>(ptr.get()) != nullptr)
+        adviseSequentialRead(dynamic_cast<std::ifstream*>(ptr.get()));
   }
 
   InputStream()
@@ -110,21 +118,26 @@ class InputStream {
     return ret;
   }
 
-  virtual inline uint64_t readBytes(uint8_t *bytes, size_t cnt) {
+  void adviseSequentialRead(std::ifstream* ifs)
+{
+  ifs->rdbuf()->pubsetbuf(rdbuffer,sizeof rdbuffer);
+}
+
+  virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual inline uint64_t readBytes(char *bytes, size_t cnt) {
+  virtual INLINE uint64_t readBytes(char *bytes, size_t cnt) {
 
     istream_ref->read((char*) bytes, cnt);
     *position += cnt;
     return *position;
   }
 
-  virtual inline uint64_t readBytes(uint8_t **bytes, size_t cnt) {
+  virtual INLINE uint64_t readBytes(uint8_t **bytes, size_t cnt) {
     if (*bytes == NULL) {
       *bytes = new uint8_t[cnt];
     }
@@ -134,34 +147,28 @@ class InputStream {
   virtual uint8_t readByte() {
     uint8_t byte;
     readBytes((uint8_t*) &byte, 1);
-    //*position += 1;
     return byte;
   }
 
   virtual int8_t readSignedByte() {
     int8_t byte=0;
     readBytes((char *) &byte, 1);
-    //*position += 1;
     return byte;
   }
 
   virtual int64_t readSignedByteAsInt() {
     int8_t byte=0;
     readBytes((char *) &byte, 1);
-    //*position += 1;
     return byte;
   }
 
   virtual short readShort() {
-    //  memcpy(shortByte,shortVal,2);
     short shortVal;
     readBytes((uint8_t*) &shortVal, 2);
-    //  *position += 2;
     return shortVal;
   }
 
   virtual unsigned short readUnsignedShort() {
-      //  memcpy(shortByte,shortVal,2);
       unsigned short shortVal;
       readBytes((char*) &shortVal, 2);
       return shortVal;
@@ -170,7 +177,6 @@ class InputStream {
   virtual int readInt() {
     int intVal = 0;
     readBytes((uint8_t*) &intVal, 4);
-    // *position += 4;
     return intVal;
   }
 
@@ -184,7 +190,6 @@ class InputStream {
   virtual uint64_t readBoolean() {
 
     uint8_t byte = 0x00;
-    ;
     readBytes((uint8_t*) &byte, 1);
     if (byte==0x01)
       return 0x01;
@@ -195,7 +200,7 @@ class InputStream {
   /**
    * Taken directly from accumulo code.
    */
-  virtual int64_t readHadoopLong() {
+  int64_t readHadoopLong() {
     int64_t firstByte = 0;
 
     firstByte = readSignedByteAsInt();
@@ -354,6 +359,8 @@ class InputStream {
   // useful when deleting position
   bool copy;
   bool own_istream;
+
+  char rdbuffer[32356];
 
 };
 }

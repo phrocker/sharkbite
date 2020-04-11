@@ -36,6 +36,8 @@ class Text{
 
   void reset();
 
+  void clear();
+
   std::string toString();
 
   size_t getMaxSize();

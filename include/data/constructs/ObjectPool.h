@@ -32,6 +32,8 @@ class ObjectAllocatorPool {
   }
  public:
 
+  virtual void disown(std::pair<char*,size_t> ) = 0;
+
   virtual std::pair<char*,size_t> allocateBuffer(size_t size) = 0;
 
   virtual std::shared_ptr<T> allocate(size_t size) = 0;

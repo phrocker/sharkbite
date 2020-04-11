@@ -13,12 +13,12 @@
  */
 
 #include "data/streaming/input/NetworkOrderInputStream.h"
-#include "data/constructs/rfile/RFile.h"
+#include "data/constructs/rfile/SequentialRFile.h"
 
 namespace cclient {
 namespace data {
 
-RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter)
+SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter)
     :
     out_stream(output_stream),
     blockWriter(std::move(bWriter)),
@@ -30,10 +30,6 @@ RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompress
     entries(0),
     currentLocalityGroup(
     NULL),
-    max_size(128 * 1024),
-    readAhead(false),
-    readAheadClosed(false),
-    readAheadRunning(false),
     in_stream(nullptr),
     myInputStream(nullptr),
     currentLocalityGroupReader(nullptr) {
@@ -50,7 +46,7 @@ RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompress
   lastKeyValue = NULL;
 }
 
-RFile::RFile(streams::InputStream *input_stream, long fileLength)
+SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLength)
     :
     in_stream(input_stream),
     dataClosed(false),
@@ -60,10 +56,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
     dataBlockCnt(0),
     entries(0),
     currentLocalityGroup(
-    NULL),
-    readAhead(false),
-    readAheadClosed(false),
-    readAheadRunning(false) {
+    NULL) {
   if (input_stream == NULL) {
     throw std::runtime_error("InputSTream Stream and BC Reader Writer should not be NULL");
   }
@@ -88,33 +81,11 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
 
 }
 
-bool RFile::hasNext() {
-  if (SH_LIKELY(!readAhead)) {
+bool SequentialRFile::hasNext() {
     return currentLocalityGroupReader->hasTop();
-  } else {
-
-    if (!queue.empty()) {
-      return true;
-    }
-    std::unique_lock<std::mutex> lock(queueMutex);
-    if (queues.empty()) {
-      consumer_wait.wait(lock, [&] {
-        return (!queues.empty() || !readAheadRunning || readAheadClosed) ||
-        (queues.empty() && !readAheadRunning && readAheadClosed);
-      });
-    }
-    bool ret = queues.empty();
-    if (!ret) {
-      queue = queues.front();
-      queues.pop_front();
-    }
-
-    lock.unlock();
-    return !ret;
-  }
 }
 
-void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
+void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
   int magic = metaBlock->readInt();
 
   int version = metaBlock->readInt();
@@ -148,86 +119,29 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
 
   currentLocalityGroupReader = localityGroupReaders.front();
 
+  currentLocalityGroupReader->enableReadAhead();
+
   if (!colvis.empty()) {
     currentLocalityGroupReader->limitVisibility(colvis);
   }
 
 }
 
-void RFile::next() {
-  if (SH_LIKELY(!readAhead)) {
+void SequentialRFile::next() {
     currentLocalityGroupReader->next();
-  } else {
-
-    result = queue.front();
-    queue.pop_front();
-  }
 }
 
-cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* RFile::operator++() {
-  if (SH_LIKELY(!readAhead)) {
-    currentLocalityGroupReader->next();
-  } else {
-    bool notify = false;
-    std::unique_lock<std::mutex> lck(queueMutex);
-    result = queue.front();
-    queue.pop_front();
-    if (queue.size() <= max_size) {
-      notify = true;
-    }
-    lck.unlock();
-    if (notify)
-      queue_wait.notify_one();
-  }
+cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* SequentialRFile::operator++() {
+  currentLocalityGroupReader->next();
   return this;
 }
 
-std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> RFile::operator*() {
-  if (SH_LIKELY(!readAhead)) {
-    return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
-  } else {
-    return result;
-  }
+std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> SequentialRFile::operator*() {
+  return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
-void RFile::startReadAhead() {
-  std::cout << "start ah " << std::endl;
 
-  fut = std::async(std::launch::async, [&] {
-    uint64_t count = 0;
-
-    std::cout << "waiting on " << max_size << std::endl;
-    int split = max_size / 10;
-    std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>> int_queue;
-    while(readAheadRunning && currentLocalityGroupReader->hasTop()) {
-      auto res = std::make_pair(std::make_shared<Key>(currentLocalityGroupReader->getTopKey()),
-          currentLocalityGroupReader->getTopValue());
-      count++;
-      if (int_queue.size() >= split) {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        queues.emplace_back(int_queue);
-        std::cout << "adding intermediate queue " << int_queue.size() << std::endl;
-        if (queues.size() > 10) {
-          queue_wait.wait(lock,[&] {
-                return queues.size() < 10;
-              });
-        }
-        lock.unlock();
-        consumer_wait.notify_one();
-      }
-      currentLocalityGroupReader->next();
-
-    }
-    readAheadClosed=true;
-    consumer_wait.notify_one();
-    return count;
-  });
-  readAheadRunning = true;
-
-}
-
-RFile::~RFile() {
-  stopReadAhead();
+SequentialRFile::~SequentialRFile() {
   for (auto reader : localityGroupReaders) {
     delete reader;
   }
@@ -237,7 +151,7 @@ RFile::~RFile() {
   }
 }
 
-bool RFile::append(std::shared_ptr<KeyValue> kv) {
+bool SequentialRFile::append(std::shared_ptr<KeyValue> kv) {
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
 
@@ -281,7 +195,7 @@ bool RFile::append(std::shared_ptr<KeyValue> kv) {
 
 }
 
-bool RFile::append(std::vector<std::shared_ptr<streams::StreamInterface>> *keyValues, uint32_t average_recordSize, bool isSorted) {
+bool SequentialRFile::append(std::vector<std::shared_ptr<streams::StreamInterface>> *keyValues, uint32_t average_recordSize, bool isSorted) {
 
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
@@ -322,13 +236,13 @@ bool RFile::append(std::vector<std::shared_ptr<streams::StreamInterface>> *keyVa
 
 }
 
-void RFile::close() {
+void SequentialRFile::close() {
   closeData();
 
   // create  new compression stream.
 
-  BlockCompressorStream *outStream = (BlockCompressorStream*) blockWriter->createCompressorStream(myDataStream, blockWriter->prepareNewEntry("RFile.index"));
-  // prepare the RFile Index.
+  BlockCompressorStream *outStream = (BlockCompressorStream*) blockWriter->createCompressorStream(myDataStream, blockWriter->prepareNewEntry("SequentialRFile.index"));
+  // prepare the SequentialRFile Index.
 
   MetaBlock block;
   closeCurrentGroup();

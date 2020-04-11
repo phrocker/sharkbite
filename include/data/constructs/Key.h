@@ -15,12 +15,13 @@
 #define KEY 1
 
 #include "../streaming/Streams.h"
-#include "AllocatorPool.h"
+#include "ObjectPool.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "Text.h"
 
 #include <stdint.h>
 #include <ostream>
+#include <functional>
 #include <memory>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +36,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
  public:
 
-  explicit Key(cclient::data::ArrayAllocatorPool *pool);
+  explicit Key(cclient::data::ObjectAllocatorPool<Text> *pool);
 
   Key(const char *const userRow = nullptr);
 
@@ -105,10 +106,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   void setRow(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
 
   // set via text objects, incrementing the reference counter for Text
-  void setRow(Text*);
-  void setColumnFamily(Text*);
-  void setColumnQualifier(Text*);
-  void setColumnVisibility(Text*);
+  void setRow(const std::shared_ptr<Text> &);
+  void setColumnFamily(const std::shared_ptr<Text> &);
+  void setColumnQualifier(const std::shared_ptr<Text> &);
+  void setColumnVisibility(const std::shared_ptr<Text> &);
 
   void setRow(const std::string &row) {
     setRow(row.c_str(), row.length());
@@ -127,12 +128,11 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return std::string(row, rowLength);
   }
 
-  void setColFamily(const char *r, uint32_t size, bool takeOwnership = false){
-    setColFamily(r,size,size,takeOwnership);
+  void setColFamily(const char *r, uint32_t size, bool takeOwnership = false) {
+    setColFamily(r, size, size, takeOwnership);
   }
 
-
-  void setColFamily(const char *r, uint32_t size,uint32_t maxSize, bool takeOwnership = false);
+  void setColFamily(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
 
   void setColFamily(const std::string &st) {
     setColFamily(st.c_str(), st.size());
@@ -140,7 +140,9 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   inline std::pair<char*, size_t> getColFamily() {
     if (cf_ref && !cf_ref->empty())
+    {
       return cf_ref->getBuffer();
+  }
     return std::make_pair(colFamily, columnFamilyLength);
   }
 
@@ -150,15 +152,14 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return std::string(colFamily, columnFamilyLength);
   }
 
-  void setColQualifier(const char *r, uint32_t size, bool takeOwnership = false){
-    setColQualifier(r,size,size,takeOwnership);
+  void setColQualifier(const char *r, uint32_t size, bool takeOwnership = false) {
+    setColQualifier(r, size, size, takeOwnership);
   }
 
-  void setColQualifier(const char *r, uint32_t size, uint32_t maxSize , bool takeOwnership = false);
-
+  void setColQualifier(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
 
   void setColQualifier(const std::string &st) {
-    setColQualifier(st.c_str(), st.size(), st.size(),false);
+    setColQualifier(st.c_str(), st.size(), st.size(), false);
   }
 
   std::pair<char*, size_t> getColQualifier() {
@@ -173,13 +174,11 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return std::string(colQualifier, colQualLen);
   }
 
-  void setColVisibility(const char *r, uint32_t size, bool takeOwnership = false){
-    setColVisibility(r,size,size,takeOwnership);
+  void setColVisibility(const char *r, uint32_t size, bool takeOwnership = false) {
+    setColVisibility(r, size, size, takeOwnership);
   }
 
-
-  void setColVisibility(const char *r, uint32_t size,uint32_t maxSize, bool takeOwnership = false);
-
+  void setColVisibility(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
 
   void setColVisibility(const std::string &st) {
     setColVisibility(st.c_str(), st.size());
@@ -207,6 +206,22 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   bool isDeleted() {
     return deleted;
+  }
+
+  void setDisownColumnQualifier() {
+    disownColumnQualifier = true;
+  }
+
+  void setDisownColumnFamily() {
+    disownColumnFamily = true;
+  }
+
+  void setDisownColumnVisibility() {
+    disownColumnVisibility = true;
+  }
+
+  void setDisownRow() {
+    disownRow = true;
   }
 
   void setDeleted(bool isDeleted) {
@@ -291,13 +306,40 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   uint64_t
   read(cclient::data::streams::InputStream *in);
- protected:
 
-  inline void reclaim(char**, size_t, Text**);
+  size_t size() const {
+    return colQualSize + rowMaxSize + columnFamilySize + colVisSize + 8;
+  }
+
+  size_t getRowSize() const {
+    return rowMaxSize;
+  }
+
+  size_t getColumnFamilySize() const {
+    return columnFamilySize;
+  }
+
+  size_t getColQualifierSize() const {
+    return colQualSize;
+  }
+
+  size_t getColumnVisibilitySize() const {
+    return colVisSize;
+  }
+
+  void setObjectPool(ObjectAllocatorPool<Text> *p){
+    objectPool = p;
+  }
+
+ protected:
+ 
+  inline void reclaim(char**, size_t, bool&);
+  inline void reclaim(char**, size_t, bool&, std::function<void()> fun);
 
   /**
    * Row part of key
    */
+  bool disownRow;
   char *row;
   uint32_t rowMaxSize;
   uint32_t rowLength;
@@ -305,6 +347,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   /**
    * Column family
    */
+  bool disownColumnFamily;
   uint32_t columnFamilyLength;
   char *colFamily;
   uint32_t columnFamilySize;
@@ -312,20 +355,23 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   /**
    * Column qualifier.
    */
+  bool disownColumnQualifier;
   char *colQualifier;
   uint32_t colQualSize;
   uint32_t colQualLen;
+
+  bool disownColumnVisibility;
   char *keyVisibility;
   uint32_t colVisSize;
   uint32_t colVisLen;
   int64_t timestamp;
   bool deleted;
 
-  cclient::data::ArrayAllocatorPool *objectPool;
-  Text *row_ref;
-  Text *cf_ref;
-  Text *cq_ref;
-  Text *cv_ref;
+  cclient::data::ObjectAllocatorPool<Text> *objectPool;
+  std::shared_ptr<Text> row_ref;
+  std::shared_ptr<Text> cf_ref;
+  std::shared_ptr<Text> cq_ref;
+  std::shared_ptr<Text> cv_ref;
 
   /**
    * copied from writable comparable utils
