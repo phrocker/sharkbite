@@ -97,7 +97,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
         readAheadRunning = false;
         readAheadResult.interrupt = true;
         readAheadCondition.notify_one();
-        auto ret = readAhead.get();
+        readAhead.wait();
       }
     }
 

@@ -14,6 +14,8 @@
 
 #ifndef MOVABLE_PTR_H_
 #define MOVABLE_PTR_H_
+namespace cclient{
+namespace data{
 template<typename T>
 struct movable_ptr
 {
@@ -37,5 +39,6 @@ struct movable_ptr
     movable_ptr(movable_ptr<T> const & other) = default;
     movable_ptr<T> & operator=(movable_ptr<T> const & other) = default;
 };
-
+}
+}
 #endif

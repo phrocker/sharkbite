@@ -31,9 +31,6 @@ RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompress
     currentLocalityGroup(
     NULL),
     max_size(128 * 1024),
-    readAhead(false),
-    readAheadClosed(false),
-    readAheadRunning(false),
     in_stream(nullptr),
     myInputStream(nullptr),
     currentLocalityGroupReader(nullptr) {
@@ -60,10 +57,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
     dataBlockCnt(0),
     entries(0),
     currentLocalityGroup(
-    NULL),
-    readAhead(false),
-    readAheadClosed(false),
-    readAheadRunning(false) {
+    NULL){
   if (input_stream == NULL) {
     throw std::runtime_error("InputSTream Stream and BC Reader Writer should not be NULL");
   }
@@ -89,29 +83,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
 }
 
 bool RFile::hasNext() {
-  if (SH_LIKELY(!readAhead)) {
     return currentLocalityGroupReader->hasTop();
-  } else {
-
-    if (!queue.empty()) {
-      return true;
-    }
-    std::unique_lock<std::mutex> lock(queueMutex);
-    if (queues.empty()) {
-      consumer_wait.wait(lock, [&] {
-        return (!queues.empty() || !readAheadRunning || readAheadClosed) ||
-        (queues.empty() && !readAheadRunning && readAheadClosed);
-      });
-    }
-    bool ret = queues.empty();
-    if (!ret) {
-      queue = queues.front();
-      queues.pop_front();
-    }
-
-    lock.unlock();
-    return !ret;
-  }
 }
 
 void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
@@ -155,79 +127,23 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
 }
 
 void RFile::next() {
-  if (SH_LIKELY(!readAhead)) {
     currentLocalityGroupReader->next();
-  } else {
-
-    result = queue.front();
-    queue.pop_front();
-  }
 }
 
 cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* RFile::operator++() {
-  if (SH_LIKELY(!readAhead)) {
     currentLocalityGroupReader->next();
-  } else {
-    bool notify = false;
-    std::unique_lock<std::mutex> lck(queueMutex);
-    result = queue.front();
-    queue.pop_front();
-    if (queue.size() <= max_size) {
-      notify = true;
-    }
-    lck.unlock();
-    if (notify)
-      queue_wait.notify_one();
-  }
-  return this;
+    return this;
 }
 
 std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> RFile::operator*() {
-  if (SH_LIKELY(!readAhead)) {
-    return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
-  } else {
-    return result;
-  }
+    return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());  
 }
 
-void RFile::startReadAhead() {
-  std::cout << "start ah " << std::endl;
-
-  fut = std::async(std::launch::async, [&] {
-    uint64_t count = 0;
-
-    std::cout << "waiting on " << max_size << std::endl;
-    int split = max_size / 10;
-    std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>> int_queue;
-    while(readAheadRunning && currentLocalityGroupReader->hasTop()) {
-      auto res = std::make_pair(std::make_shared<Key>(currentLocalityGroupReader->getTopKey()),
-          currentLocalityGroupReader->getTopValue());
-      count++;
-      if (int_queue.size() >= split) {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        queues.emplace_back(int_queue);
-        std::cout << "adding intermediate queue " << int_queue.size() << std::endl;
-        if (queues.size() > 10) {
-          queue_wait.wait(lock,[&] {
-                return queues.size() < 10;
-              });
-        }
-        lock.unlock();
-        consumer_wait.notify_one();
-      }
-      currentLocalityGroupReader->next();
-
-    }
-    readAheadClosed=true;
-    consumer_wait.notify_one();
-    return count;
-  });
-  readAheadRunning = true;
-
+std::shared_ptr<cclient::data::KeyValue> RFile::getTop() {
+    return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
 RFile::~RFile() {
-  stopReadAhead();
   for (auto reader : localityGroupReaders) {
     delete reader;
   }

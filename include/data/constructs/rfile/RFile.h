@@ -178,7 +178,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   virtual bool hasNext();
 
   virtual void relocate(cclient::data::streams::StreamSeekable *location) {
-    stopReadAhead();
     if (!colvis.empty())
       currentLocalityGroupReader->limitVisibility(colvis);
     currentLocalityGroupReader->seek(location);
@@ -212,33 +211,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   std::shared_ptr<cclient::data::KeyValue> getTop();
 
-  void enableReadAhead(uint64_t max_size = 1000) {
-    this->max_size = max_size;
-    readAhead = true;
-    startReadAhead();
-  }
-
-  void disableReadAhead() {
-    if (readAheadRunning) {
-      stopReadAhead();
-    }
-    readAhead = false;
-  }
-
  protected:
-
-  void startReadAhead();
-
-  void stopReadAhead() {
-    if (readAheadRunning) {
-      std::cout << "stopping" << std::endl;
-      queue_wait.notify_one();
-      readAheadRunning = false;
-      fut.wait();
-      while (!readAheadClosed) {
-      }
-    }
-  }
 
   void
   readLocalityGroups(cclient::data::streams::InputStream *metaBlock);
@@ -293,27 +266,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   bool readAhead;
 
   uint64_t max_size;
-
-  std::mutex queueMutex;
-
-
-  std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>> result;
-
-  std::future<uint64_t> fut;
-
-  std::atomic<uint64_t> queue_size;
-
-  std::condition_variable queue_wait;
-
-  std::condition_variable consumer_wait;
-
-  std::deque<std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>>> queues;
-
-  std::deque<std::pair<std::shared_ptr<cclient::data::Key>,std::shared_ptr<cclient::data::Value>>> queue;
-
-  std::atomic<bool> readAheadRunning;
-
-  std::atomic<bool> readAheadClosed;
 
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;

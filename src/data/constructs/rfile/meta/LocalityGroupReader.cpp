@@ -297,9 +297,8 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
   auto stream = region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
-  //outputBuffers.enqueue(bout);
 
-  return std::move(stream);
+  return stream;
 }
 
 }
