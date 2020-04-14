@@ -67,9 +67,9 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   std::shared_ptr<SerializedIndex> iiter;
   std::shared_ptr<Key> prevKey;
   uint32_t entriesLeft;
-  uint32_t entriesWatermark;
   std::shared_ptr<IndexManager> index;
 
+  moodycamel::ConcurrentQueue<cclient::data::compression::Compressor*> compressors;
   moodycamel::ConcurrentQueue<std::vector<uint8_t>*> compressedBuffers;
   moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> outputBuffers;
 
@@ -117,6 +117,15 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
         delete stream;
       }
     }
+
+    cclient::data::compression::Compressor *compressor;
+
+    while (compressors.size_approx() > 0) {
+      if (compressors.try_dequeue(compressor)) {
+        delete compressor;
+      }
+    }
+
   }
 
  public:
@@ -141,12 +150,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     startBlock = metadata->getStartBlock();
     blockCount = index->getSize();
     rKey = NULL;
-    //allocatorInstance = ArrayAllocatorPool::newInstance();
   }
 
   virtual ~LocalityGroupReader() {
     close();
-    //ArrayAllocatorPool::returnInstance(allocatorInstance);
   }
 
   void enableReadAhead() {

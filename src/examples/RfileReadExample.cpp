@@ -119,6 +119,7 @@ void timer_start(std::atomic<int64_t> *biggie, unsigned int interval)
 
     std::thread([interval,biggie]() {
         int64_t time=1;
+        std::this_thread::sleep_for(std::chrono::milliseconds(interval));
         while (true)
         {
 
@@ -146,7 +147,7 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
     //cclient::data::streams::InputStream *stream = new cclient::data::streams::MemoryMappedInputStream(outputFile);
 
     //auto endstream = new cclient::data::streams::EndianInputStream(stream);
-    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128,2*1024*1024,size);
+    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128*1024,2*1024*1024,size);
 
     //auto endStream = new cclient::data::streams::Ne(stream,10*1024,2*1024*1024,size);
 
@@ -172,7 +173,8 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
       newRFile->next();
 
       count++;
-      cntr++;
+      if ((count%100000)==0)
+      cntr.fetch_add(100000, std::memory_order_relaxed);
 
     }
 

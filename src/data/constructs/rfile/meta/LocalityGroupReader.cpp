@@ -84,7 +84,6 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
       std::shared_ptr<IndexEntry> indexEntry = iiter->get();
       entriesLeft = indexEntry->getNumEntries();
-      entriesWatermark = entriesLeft / 2;
 
       if (version == 3 || version == 4) {
         currentStream = std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
@@ -194,7 +193,6 @@ void LocalityGroupReader::next() {
 
       if (readAheadResult.hasData && readAheadResult.checkRange) {
         entriesLeft = readAheadResult.entries;
-        entriesWatermark = readAheadResult.entries / 2;
         currentStream = std::move(readAheadResult.stream);
         topExists = true;
         readAheadResult.hasData = false;
@@ -210,12 +208,10 @@ void LocalityGroupReader::next() {
         return;
       }
     } else {
-      std::cout << "oh no" << std::endl;
       if (iiter->hasNext()) {
         (*iiter)++;
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         entriesLeft = indexEntry->getNumEntries();
-        entriesWatermark = indexEntry->getNumEntries() / 2;
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
@@ -245,7 +241,6 @@ void LocalityGroupReader::next() {
         (*iiter)++;
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         entriesLeft = indexEntry->getNumEntries();
-        entriesWatermark = indexEntry->getNumEntries() / 2;
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
@@ -281,7 +276,11 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
 
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
 
-  cclient::data::compression::Compressor *compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create(use_cached);
+  cclient::data::compression::Compressor *compressor;
+  if (!compressors.try_dequeue(compressor)){
+    compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create(use_cached);;
+  }
+
   BlockRegion region(offset, compressedSize, rawSize, compressor);
   std::vector<uint8_t> *my_buf;
   cclient::data::streams::ByteOutputStream *bout;
@@ -297,6 +296,7 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
   auto stream = region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
+  compressors.enqueue(compressor);
 
   return stream;
 }
