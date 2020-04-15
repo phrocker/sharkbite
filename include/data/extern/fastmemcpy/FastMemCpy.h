@@ -12,7 +12,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <immintrin.h>
-
+#include <cstring>
+#include <cstdio>
 
 //---------------------------------------------------------------------
 // force inline for compilers

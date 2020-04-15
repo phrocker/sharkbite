@@ -160,7 +160,7 @@ public:
         // resize the growing buffer.
         growingBuffer.resize(location + n);
 
-        memcpy(&growingBuffer.at(location), s, n);
+        memcpy_fast(&growingBuffer.at(location), s, n);
 
         return n;
     }

@@ -13,11 +13,11 @@
  */
 
 #include "data/constructs/Key.h"
-
+#include "data/constructs/compressor/algorithm.h"
 namespace cclient {
 namespace data {
 
-Key::Key(cclient::data::ArrayAllocatorPool *pool)
+Key::Key(cclient::data::ObjectAllocatorPool<Text> *pool)
     :
     Key() {
   objectPool = pool;
@@ -38,6 +38,10 @@ Key::Key(const char *const userRow)
     objectPool(nullptr),
     row_ref(nullptr),
     cf_ref(nullptr),
+    disownRow(false),
+    disownColumnFamily(false),
+    disownColumnQualifier(false),
+    disownColumnVisibility(false),
     cq_ref(nullptr),
     cv_ref(nullptr) {
   if (userRow)
@@ -55,30 +59,56 @@ Key::Key(const char *const userRow)
 }
 
 Key::~Key() {
-  reclaim(&row, rowMaxSize, &row_ref);
-  reclaim(&colFamily, columnFamilySize, &cf_ref);
-  reclaim(&colQualifier, colQualSize, &cq_ref);
-  reclaim(&keyVisibility, colVisSize, &cv_ref);
+  reclaim(&row, rowMaxSize, disownRow);
+  reclaim(&colFamily, columnFamilySize, disownColumnFamily);
+  reclaim(&colQualifier, colQualSize, disownColumnQualifier);
+  reclaim(&keyVisibility, colVisSize, disownColumnVisibility);
 }
 
-void Key::reclaim(char **val, size_t size, Text **textPtr) {
+void Key::reclaim(char **val, size_t size, bool &disown) {
   if (*val) {
-    if (objectPool) {
-      objectPool->free(std::make_pair(*val, size));
-      *val = nullptr;
+    if (!disown) {
+      if (objectPool) {
+        objectPool->free(std::make_pair(*val, size));
+        *val = nullptr;
+      } else {
+        delete[] *val;
+        *val = nullptr;
+      }
     } else {
-      delete[] *val;
       *val = nullptr;
     }
   }
-  *textPtr = nullptr;
 }
 
-void Key::setRow(Text *rowRef) {
-  if (row) {
-    reclaim(&row, rowMaxSize, &row_ref);
+void Key::reclaim(char **val, size_t size, bool &disown, std::function<void()> fun) {
+  if (*val) {
+    if (!disown) {
+      if (objectPool) {
+        objectPool->free(std::make_pair(*val, size));
+        *val = nullptr;
+      } else {
+        delete[] *val;
+        *val = nullptr;
+      }
+    } else {
+      *val = nullptr;
+    }
   }
-  row_ref = rowRef;
+  fun();
+}
+
+void Key::setRow(const std::shared_ptr<Text> &rowRef) {
+  if (SH_UNLIKELY(row != nullptr)) {
+    auto fn =[&] (void) {
+      row_ref = rowRef;
+    };
+    reclaim(&row, rowMaxSize, disownRow, fn);
+    disownRow = false;
+  }
+  else{
+    row_ref = rowRef;
+  }
 }
 
 void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
@@ -91,7 +121,11 @@ void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwners
 
     memcpy_fast(row, r, size);
   } else {
-    reclaim(&row, rowMaxSize, &row_ref);
+    auto fn =  [&] (void) {
+      row_ref = nullptr;
+    };
+    reclaim(&row, rowMaxSize, disownRow,fn);
+    disownRow = false;
     row = (char*) r;
     rowMaxSize = maxsize;
   }
@@ -110,7 +144,11 @@ void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool take
 
     memcpy_fast(colFamily, r, size);
   } else {
-    reclaim(&colFamily, columnFamilySize, &cf_ref);
+    auto fn = [&] (void) {
+      cf_ref = nullptr;
+    };
+    reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
+    disownColumnFamily = false;
     colFamily = (char*) r;
     columnFamilySize = maxsize;
   }
@@ -118,11 +156,17 @@ void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool take
 
 }
 
-void Key::setColumnFamily(Text *col) {
-  if (colFamily) {
-    reclaim(&colFamily, columnFamilySize, &cf_ref);
+void Key::setColumnFamily(const std::shared_ptr<Text> &col) {
+  if (SH_UNLIKELY(colFamily != nullptr)) {
+    auto fn = [&] (void) {
+      cf_ref = col;
+    };
+    reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
+    disownColumnFamily = false;
   }
-  cf_ref = col;
+  else{
+    cf_ref = col;
+  }
 }
 
 void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
@@ -138,7 +182,11 @@ void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool t
 
     memcpy_fast(colQualifier, r, size);
   } else {
-    reclaim(&colQualifier, colQualSize, &cq_ref);
+    auto fn = [&] (void) {
+      cq_ref = nullptr;
+    };
+    reclaim(&colQualifier, colQualSize, disownColumnQualifier, fn);
+    disownColumnQualifier = false;
     colQualifier = (char*) r;
     colQualSize = maxsize;
   }
@@ -146,11 +194,17 @@ void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool t
 
 }
 
-void Key::setColumnQualifier(Text *cq) {
-  if (colQualifier) {
-    reclaim(&colQualifier, colQualSize, &cq_ref);
+void Key::setColumnQualifier(const std::shared_ptr<Text> &cq) {
+  if (SH_UNLIKELY(colQualifier != nullptr)) {
+    auto fn = [&] (void) {
+      cq_ref = cq;
+    };
+    reclaim(&colQualifier, colQualSize, disownColumnQualifier,fn );
+    disownColumnQualifier = false;
   }
-  cq_ref = cq;
+  else{
+    cq_ref = cq;
+  }
 }
 
 void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
@@ -158,12 +212,16 @@ void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool 
   if (!takeOwnership) {
     if (maxsize > colVisSize) {
       delete[] keyVisibility;
-      keyVisibility = new char[maxsize+1];
+      keyVisibility = new char[maxsize + 1];
       colVisSize = maxsize;
     }
     memcpy_fast(keyVisibility, r, size);
   } else {
-    reclaim(&keyVisibility, colVisSize, &cv_ref);
+    auto fn = [&](void) {
+      cv_ref = nullptr;
+    };
+    reclaim(&keyVisibility, colVisSize, disownColumnVisibility, fn);
+    disownColumnVisibility = false;
     keyVisibility = (char*) r;
     colVisSize = maxsize;
   }
@@ -172,11 +230,16 @@ void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool 
 
 }
 
-void Key::setColumnVisibility(Text *cv) {
+void Key::setColumnVisibility(const std::shared_ptr<Text> &cv) {
   if (keyVisibility) {
-    reclaim(&keyVisibility, colVisSize, &cv_ref);
+    reclaim(&keyVisibility, colVisSize, disownColumnVisibility, [&] (void) {
+      cv_ref = cv;
+    });
+    disownColumnVisibility = false;
   }
-  cv_ref = cv;
+  else{
+    cv_ref = cv;
+  }
 }
 
 bool Key::operator <(const Key &rhs) const {

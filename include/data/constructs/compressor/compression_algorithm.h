@@ -61,11 +61,16 @@ public:
     }
 
     Compressor *
-    create ()
+    create (bool use_cached = true)
     {
         if (compressionAlgo == "gz")
         {
+            if (use_cached){
             return getZlibCompressor();
+            }
+            else{
+              return new ZLibCompressor();
+            }
         }
         else
         {

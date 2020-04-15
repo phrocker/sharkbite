@@ -89,8 +89,8 @@ class Block : public BaseMetaBlock, public std::enable_shared_from_this<Block> {
       posCheck = (posCheck * -1) - 1;
     }
     uint64_t pos = posCheck;
-    if (pos == indexBlock->getIndex()->size()) {
-      if (parent != NULL) {
+    if (pos >= indexBlock->getIndex()->size()) {
+      if (parent == NULL) { /******** ******** ***** */
         throw std::runtime_error("Illegal state ( parent is null )");
       }
       currentPosition = pos;
@@ -117,7 +117,7 @@ class Block : public BaseMetaBlock, public std::enable_shared_from_this<Block> {
 
   virtual std::shared_ptr<BaseMetaBlock> getNext() {
 
-    if (currentPosition == indexBlock->getIndex()->size()) {
+    if (currentPosition == indexBlock->getIndex()->size()-1) {
       return parent->getNext();
     }
 
@@ -126,6 +126,9 @@ class Block : public BaseMetaBlock, public std::enable_shared_from_this<Block> {
     currentPosition++;
 
     std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(currentPosition);
+    if (!ie){
+      return nullptr;
+    }
     std::shared_ptr<Block> newChild = std::make_shared<Block>(shared_from_this(), getIndexBlock(ie));
     std::shared_ptr<Block> returnBlock = newChild->getFirst();
     if (returnBlock != NULL) {

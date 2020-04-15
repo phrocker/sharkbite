@@ -24,192 +24,159 @@
 #include "../rfile_version.h"
 
 // ... total of 16 bytes
-static const uint8_t B_MAGIC_BCFILE[16] =
-{   0xd1, 0x11, 0xd3, 0x68, 0x91, 0xb5, 0xd7, 0xb6, 0x39, 0xdf, 0x41, 0x40,
-    0x92, 0xba, 0xe1, 0x50
-};
+static const uint8_t B_MAGIC_BCFILE[16] = { 0xd1, 0x11, 0xd3, 0x68, 0x91, 0xb5, 0xd7, 0xb6, 0x39, 0xdf, 0x41, 0x40, 0x92, 0xba, 0xe1, 0x50 };
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
+class BlockCompressedFile : public cclient::data::streams::StreamInterface {
+ public:
+  /**
+   * Constructor accepts a compressor as the only argument
+   * @param compressor our compressor for this BCFile
+   */
+  explicit BlockCompressedFile(cclient::data::compression::Compressor *compressor)
+      :
+      compressorRef(compressor) {
+    version.setMajor(1);
+    version.setMinor(0);
+    dataIndex.setCompressionAlgorithm(compressor);
 
-class BlockCompressedFile : public cclient::data::streams::StreamInterface
-{
-public:
-    /**
-     * Constructor accepts a compressor as the only argument
-     * @param compressor our compressor for this BCFile
-     */
-    explicit BlockCompressedFile (cclient::data::compression::Compressor *compressor) :
-        compressorRef (compressor)
-    {
-        version.setMajor (1);
-        version.setMinor (0);
-        dataIndex.setCompressionAlgorithm (compressor);
+  }
 
+  /**
+   * Constructor accepts a compressor as the only argument
+   * @param compressor our compressor for this BCFile
+   */
+  BlockCompressedFile(cclient::data::streams::InputStream *in_stream, long fileLength)
+      :
+      in_stream(in_stream) {
+    verifyStructure(fileLength);
+
+  }
+
+  void setDataIndex(DataIndex dataIndex) {
+    this->dataIndex = dataIndex;
+  }
+
+  /**
+   * Get the compressor. since it may be used
+   * let's not set this function to constant
+   * @returns compressor reference
+   */
+  cclient::data::compression::Compressor*
+  getCompressor() {
+    return compressorRef;
+  }
+
+  DataIndex*
+  getDataIndex() {
+
+    return &dataIndex;
+  }
+
+  MetaIndex*
+  getMetaIndex() {
+    return &metaIndex;
+  }
+
+  cclient::data::streams::DataOutputStream*
+  createCompressorStream(cclient::data::streams::OutputStream *out, MetaIndexEntry *entry) {
+    return new BlockCompressorStream(out, compressorRef, entry->getRegion());
+  }
+
+  cclient::data::streams::DataOutputStream*
+  createDataStream(cclient::data::streams::OutputStream *out) {
+    return new BlockCompressorStream(out, compressorRef, dataIndex.addBlockRegion());
+  }
+
+  MetaIndexEntry*
+  prepareNewEntry(std::string name) {
+    return metaIndex.prepareNewEntry(name, compressorRef);
+  }
+
+  uint64_t write(cclient::data::streams::OutputStream *out) {
+
+    out->writeBytes(B_MAGIC_BCFILE, 16);
+
+    MetaIndexEntry *entry = metaIndex.prepareNewEntry("BCFile.index", compressorRef);
+
+    BlockCompressorStream *blockStream = new BlockCompressorStream(out, compressorRef, entry->getRegion());
+
+    cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
+
+    dataIndex.write(outStream);
+    outStream->flush();
+    blockStream->flush();
+    //dataIndex.write (blockStream);
+    uint64_t offsetIndexMeta = out->getPos();
+
+    // should synchronize
+
+    delete outStream;
+
+    delete blockStream;
+
+    metaIndex.write(out);
+    out->writeLong(offsetIndexMeta);
+    version.write(out);
+    out->writeBytes(B_MAGIC_BCFILE, 16);
+    //out->flush();
+    return out->getPos();
+  }
+
+  void close() {
+
+  }
+
+ protected:
+
+  void verifyStructure(long fileLength) {
+    const size_t magic_size = array_length(B_MAGIC_BCFILE);
+    in_stream->seek(fileLength - magic_size - VERSION_SIZE);
+    version.read(in_stream);
+    uint8_t *magicVerify = new uint8_t[16];
+    in_stream->readBytes(magicVerify, 16);
+    if (memcmp(B_MAGIC_BCFILE, magicVerify, 16) != 0) {
+      throw std::runtime_error("Invalid Magic Number");
+    }
+    delete[] magicVerify;
+    // get the index meta
+    if (version.getMajor() == 1) {
+      in_stream->seek(fileLength - magic_size - VERSION_SIZE - 8);
+      offsetIndexMeta = in_stream->readLong();
+    } else {
+      in_stream->seek(fileLength - magic_size - VERSION_SIZE - 16);
+      offsetIndexMeta = in_stream->readLong();
+      offsetIndexMetaCrypto = in_stream->readLong();
     }
 
-    /**
-     * Constructor accepts a compressor as the only argument
-     * @param compressor our compressor for this BCFile
-     */
-    BlockCompressedFile (cclient::data::streams::InputStream *in_stream, long fileLength) :
-        in_stream (in_stream)
-    {
-        verifyStructure (fileLength);
+    std::cout << "index meta " << offsetIndexMeta << std::endl;
+    in_stream->seek(offsetIndexMeta);
 
-    }
+    metaIndex.read(in_stream);
 
-    void
-    setDataIndex (DataIndex dataIndex)
-    {
-        this->dataIndex = dataIndex;
-    }
+    MetaIndexEntry *min = metaIndex.getEntry("BCFile.index");
 
-    /**
-     * Get the compressor. since it may be used
-     * let's not set this function to constant
-     * @returns compressor reference
-     */
-    cclient::data::compression::Compressor *
-    getCompressor ()
-    {
-        return compressorRef;
-    }
+    compressorRef = min->getAlgorithm()->create();
 
-    DataIndex *
-    getDataIndex ()
-    {
+    // should be using block comp stream?
+    cclient::data::streams::InputStream *dataIndexStream = min->readDataStream(in_stream);
 
-        return &dataIndex;
-    }
+    dataIndex.read(dataIndexStream);
+    delete dataIndexStream;
+  }
 
-    MetaIndex *
-    getMetaIndex ()
-    {
-        return &metaIndex;
-    }
+  cclient::data::compression::Compressor *compressorRef;
 
-    cclient::data::streams::DataOutputStream *
-    createCompressorStream (cclient::data::streams::OutputStream *out, MetaIndexEntry *entry)
-    {
-        return new BlockCompressorStream (out, compressorRef,
-                                          entry->getRegion ());
-    }
+  DataIndex dataIndex;
+  MetaIndex metaIndex;
+  RFileVersion version;
 
-    cclient::data::streams::DataOutputStream *
-    createDataStream (cclient::data::streams::OutputStream *out)
-    {
-        return new BlockCompressorStream (out, compressorRef,
-                                          dataIndex.addBlockRegion ());
-    }
-
-    MetaIndexEntry *
-    prepareNewEntry (std::string name)
-    {
-        return metaIndex.prepareNewEntry (name, compressorRef);
-    }
-
-    uint64_t
-    write (cclient::data::streams::OutputStream *out)
-    {
-
-        out->writeBytes (B_MAGIC_BCFILE, 16);
-
-        MetaIndexEntry *entry = metaIndex.prepareNewEntry ("BCFile.index",
-                                compressorRef);
-
-        BlockCompressorStream *blockStream = new BlockCompressorStream (
-            out, compressorRef, entry->getRegion ());
-
-
-
-        cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
-
-        dataIndex.write (outStream);
-        outStream->flush();
-        blockStream->flush();
-        //dataIndex.write (blockStream);
-        uint64_t offsetIndexMeta = out->getPos ();
-
-        // should synchronize
-
-
-        delete outStream;
-
-        delete blockStream;
-
-        metaIndex.write (out);
-        out->writeLong (offsetIndexMeta);
-        version.write (out);
-        out->writeBytes (B_MAGIC_BCFILE, 16);
-        //out->flush();
-        return out->getPos ();
-    }
-
-    void
-    close ()
-    {
-
-    }
-
-protected:
-
-    void
-    verifyStructure (long fileLength)
-    {
-        const size_t magic_size = array_length (B_MAGIC_BCFILE);
-        in_stream->seek (fileLength - magic_size - VERSION_SIZE);
-        version.read (in_stream);
-        uint8_t* magicVerify = new uint8_t[16];
-        in_stream->readBytes (magicVerify, 16);
-        if (memcmp (B_MAGIC_BCFILE, magicVerify, 16) != 0)
-        {
-            throw std::runtime_error ("Invalid Magic Number");
-        }
-        delete[] magicVerify;
-        // get the index meta
-        if (version.getMajor() == 1)
-        {
-          in_stream->seek (fileLength - magic_size - VERSION_SIZE - 8);
-          offsetIndexMeta = in_stream->readLong ();
-        }
-        else{
-          in_stream->seek (fileLength - magic_size - VERSION_SIZE - 16);
-          offsetIndexMeta = in_stream->readLong ();
-          offsetIndexMetaCrypto = in_stream->readLong ();
-        }
-
-
-
-
-        in_stream->seek (offsetIndexMeta);
-
-        metaIndex.read (in_stream);
-
-        MetaIndexEntry *min = metaIndex.getEntry("BCFile.index");
-
-        compressorRef = min->getAlgorithm()->create();
-
-        // should be using block comp stream?
-        cclient::data::streams::InputStream *dataIndexStream = min->readDataStream(in_stream);
-
-        dataIndex.read (dataIndexStream);
-        delete dataIndexStream;
-    }
-
-   cclient::data::compression::Compressor *compressorRef;
-
-    DataIndex dataIndex;
-    MetaIndex metaIndex;
-    RFileVersion version;
-
-    // for reading
-    cclient::data::streams::InputStream *in_stream;
-    uint64_t offsetIndexMeta;
-    uint64_t offsetIndexMetaCrypto;
+  // for reading
+  cclient::data::streams::InputStream *in_stream;
+  uint64_t offsetIndexMeta;
+  uint64_t offsetIndexMetaCrypto;
 };
 
 }

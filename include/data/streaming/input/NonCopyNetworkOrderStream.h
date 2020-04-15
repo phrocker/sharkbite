@@ -21,24 +21,24 @@
 #include <netinet/in.h>
 #include "InputStream.h"
 #include "ByteInputStream.h"
-
+#include "data/extern/concurrentqueue/concurrentqueue.h"
+#include "data/constructs/MovablePointer.h"
 namespace cclient {
 namespace data {
 namespace streams {
 
-  
 #ifndef SH_UNLIKELY
-    #ifdef __GNUC__
-    #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
-    #define SH_LIKELY(val) (__builtin_expect((val), 1))
-    #else
+#ifdef __GNUC__
+#define SH_UNLIKELY(val) (__builtin_expect((val), 0))
+#define SH_LIKELY(val) (__builtin_expect((val), 1))
+#else
     #define SH_UNLIKELY(val) (val)
     #define SH_LIKELY(val) (val)
     #endif
 #endif
 
 #ifndef ntohll
-  #define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
 #endif
 
 /**
@@ -46,112 +46,137 @@ namespace streams {
  * Meant to be used between thrift calls
  */
 class NonCopyEndianInputStream : public ByteInputStream {
+ private:
+  movable_ptr<cclient::data::streams::ByteOutputStream> bosref;
+  movable_ptr<moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*>> queueref;
+
  public:
 
-  NonCopyEndianInputStream(InputStream *out_stream)
+  explicit NonCopyEndianInputStream(InputStream *out_stream)
       :
-      ByteInputStream(out_stream) {
+      ByteInputStream(out_stream),
+      bosref(nullptr),
+      queueref(nullptr) {
 
   }
 
-  NonCopyEndianInputStream(char *byteArray, size_t len)
+  explicit NonCopyEndianInputStream(char *byteArray, size_t len)
       :
-      ByteInputStream(byteArray, len) {
+      ByteInputStream(byteArray, len),
+      bosref(nullptr),
+      queueref(nullptr) {
 
   }
 
-  NonCopyEndianInputStream(char *byteArray, size_t len, bool allocated)
+  explicit NonCopyEndianInputStream(char *byteArray, size_t len, bool allocated)
       :
-      ByteInputStream(byteArray, len, allocated) {
+      ByteInputStream(byteArray, len, allocated),
+      bosref(nullptr),
+      queueref(nullptr) {
+
+  }
+
+  explicit NonCopyEndianInputStream(cclient::data::streams::ByteOutputStream *ref, moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> *queueref)
+      :
+      ByteInputStream(ref->getByteArray(), ref->getSize(), false),
+      bosref(ref),
+      queueref(queueref) {
 
   }
 
   NonCopyEndianInputStream()
       :
-      ByteInputStream() {
+      ByteInputStream(),
+      bosref(nullptr),
+      queueref(nullptr) {
   }
 
   virtual ~NonCopyEndianInputStream() {
-
+    if (bosref.pointer != nullptr && queueref.pointer !=nullptr) {
+      bosref->flush();
+      //deete
+     // delete bosref;
+      queueref->enqueue(bosref.pointer);
+    }
   }
 
-  virtual short readShort() override {
+  virtual INLINE short readShort() override {
     short shortVal;
-    char *ptr = (char*)&shortVal;
-    if (SH_UNLIKELY( (2 + offset) > length) )
-          throw std::runtime_error ("Stream unavailable");
-    ptr[0] = iBytes[offset];
-    ptr[1] = iBytes[offset + 1];
+    char *ptr = (char*) &shortVal;
+    if (SH_UNLIKELY((2 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
+    ptr[0] = iBytes[offset + 1];
+    ptr[1] = iBytes[offset];
     offset += 2;
-    return ntohs(shortVal);
+    return shortVal;
   }
 
-  virtual unsigned short readUnsignedShort() override {
+  virtual INLINE unsigned short readUnsignedShort() override {
     unsigned short shortVal;
-    char *ptr = (char*)&shortVal;
-    if (SH_UNLIKELY( (2 + offset) > length) )
-          throw std::runtime_error ("Stream unavailable");
-    ptr[0] = iBytes[offset];
-    ptr[1] = iBytes[offset + 1];
+    char *ptr = (char*) &shortVal;
+    if (SH_UNLIKELY((2 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
+    ptr[0] = iBytes[offset + 1];
+    ptr[1] = iBytes[offset];
     offset += 2;
-    return ntohs(shortVal);
+    return shortVal;
   }
 
-  virtual uint8_t readByte() {
+  virtual INLINE uint8_t readByte() override {
     uint8_t byte;
-    if (SH_UNLIKELY( (1 + offset) > length) )
-          throw std::runtime_error ("Stream unavailable");
+    if (SH_UNLIKELY((1 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
     byte = iBytes[offset];
     offset += 1;
     return byte;
   }
 
-  virtual int8_t readSignedByte() {
+  virtual INLINE int8_t readSignedByte() override {
     int8_t byte;
-    if (SH_UNLIKELY( (1 + offset) > length) )
-          throw std::runtime_error ("Stream unavailable");
+    if (SH_UNLIKELY((1 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
     byte = iBytes[offset];
     offset += 1;
     return byte;
   }
 
-  virtual int64_t readSignedByteAsInt() {
+  virtual INLINE int64_t readSignedByteAsInt() override {
     int8_t byte;
-    if (SH_UNLIKELY( (1 + offset) > length) )
-          throw std::runtime_error ("Stream unavailable");
+    if (SH_UNLIKELY((1 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
     byte = iBytes[offset];
     offset += 1;
     return byte;
   }
 
-  virtual int readInt() override {
+  virtual INLINE int readInt() override {
     int intVal;
-    char *ptr = (char*)&intVal;
-    if (SH_UNLIKELY( (4 + offset) > length))
-          throw std::runtime_error ("Stream unavailable");
-    ptr[0] = iBytes[offset];
-    ptr[1] = iBytes[offset + 1];
-    ptr[2] = iBytes[offset + 2];
-    ptr[3] = iBytes[offset + 3];
+    char *ptr = (char*) &intVal;
+    if (SH_UNLIKELY((4 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
+    ptr[0] = iBytes[offset + 3];
+    ptr[1] = iBytes[offset + 2];
+    ptr[2] = iBytes[offset + 1];
+    ptr[3] = iBytes[offset];
     offset += 4;
-    return ntohl(intVal);
+    return intVal;
   }
 
-  virtual uint64_t readLong() override {
+  virtual INLINE uint64_t readLong() override {
     uint64_t longVal;
-    char *ptr = (char*)&longVal;
-    if ( SH_UNLIKELY( (8 + offset) > length))
-          throw std::runtime_error ("Stream unavailable");
-    ptr[0] = iBytes[offset];
-    ptr[1] = iBytes[offset + 1];
-    ptr[2] = iBytes[offset + 2];
-    ptr[3] = iBytes[offset + 3];
-    ptr[4] = iBytes[offset + 4];
-    ptr[5] = iBytes[offset + 5];
-    ptr[6] = iBytes[offset + 6];
-    ptr[7] = iBytes[offset + 7];
+    char *ptr = (char*) &longVal;
+    if (SH_UNLIKELY((8 + offset) > length))
+      throw std::runtime_error("Stream unavailable");
+    ptr[0] = iBytes[offset + 7];
+    ptr[1] = iBytes[offset + 6];
+    ptr[2] = iBytes[offset + 5];
+    ptr[3] = iBytes[offset + 4];
+    ptr[4] = iBytes[offset + 3];
+    ptr[5] = iBytes[offset + 2];
+    ptr[6] = iBytes[offset + 1];
+    ptr[7] = iBytes[offset];
     offset += 8;
-    return ntohll(longVal);
+    return longVal;
   }
 
 };

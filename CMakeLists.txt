@@ -530,7 +530,6 @@ endif(DOXYGEN_FOUND)
 
 include(GNUInstallDirs)
 file(GLOB RECURSE HEADERS include/*.h)
-message("Received ${CMAKE_INSTALL_INCLUDEDIR}")
 set_target_properties(sharkbite PROPERTIES PUBLIC_HEADER "${HEADERS}")
 install(TARGETS sharkbite
     ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}

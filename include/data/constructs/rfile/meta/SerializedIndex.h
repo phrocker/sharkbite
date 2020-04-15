@@ -89,6 +89,9 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
     }
     int len = 0;
 
+    if (index >= offsets->size() )
+      return nullptr;
+
     len = dataLength - offsets->at(index);
 
     std::shared_ptr<IndexEntry> returnKey = std::make_shared<IndexEntry>(newFormat);
