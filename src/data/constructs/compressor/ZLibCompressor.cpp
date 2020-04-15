@@ -55,7 +55,7 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
     out_buf.resize(output_length);
   //out_buf = new Bytef[output_length];
 
-  Bytef *casted_buffer = (Bytef*)((char*)(buffer+off));
+  Bytef *casted_buffer = (Bytef*) ((char*) (buffer + off));
 
   c_stream.next_in = casted_buffer;
   c_stream.next_out = out_buf.data();
@@ -107,7 +107,7 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
  * Deompression method.
  * @param out_stream.
  */
-void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream, char *in_buf , size_t size ) {
+void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_stream, char *in_buf, size_t size) {
   if (!init)
     throw std::runtime_error("Failure during compression; compression not initialized");
 
@@ -132,14 +132,14 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   // estimate the output buffer.
 
   output_length = my_len + my_len / 1000 + 12 + 1;
-  if (output_length > out_buf.size())
-    out_buf.resize(output_length*2);
-  //out_buf = new Bytef[output_length];
-
-  Bytef *casted_buffer = (Bytef*)(ptr);
+  //if (output_length > out_buf.size())
+//    out_buf.resize(output_length*2);
+  out_stream->flush();
+  out_stream->ensure(output_length);
+  Bytef *casted_buffer = (Bytef*) (ptr);
 
   c_stream.next_in = casted_buffer;
-  c_stream.next_out = out_buf.data();
+  c_stream.next_out = (Bytef*)out_stream->getByteArrayAtPosition();    //out_buf.data();
   c_stream.avail_in = my_len;
   c_stream.avail_out = output_length;
   c_stream.total_in = 0;
@@ -154,12 +154,13 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
 
     do {
       have = 0;
+
       c_stream.avail_out = output_length;       // H
-      c_stream.next_out = out_buf.data();
+      c_stream.next_out = (Bytef*)out_stream->getByteArrayAtPosition();
 
       ret = inflate(&c_stream, Z_NO_FLUSH);  // I
 
-      if (ret == Z_STREAM_ERROR){
+      if (ret == Z_STREAM_ERROR) {
         throw std::runtime_error("Zstream error. Invalid decompressor");
       }
       switch (ret) {
@@ -174,7 +175,10 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
       }
 
       have = output_length - c_stream.avail_out;     // J
-      out_stream->write((const char*) out_buf.data(), have);
+
+      out_stream->ensure(output_length, have);
+//
+      //    out_stream->write((const char*) out_buf.data(), have);
 
     } while (c_stream.avail_out == 0);         // K
   }
@@ -182,7 +186,6 @@ void ZLibCompressor::decompress(cclient::data::streams::OutputStream *out_stream
   err = inflateEnd(&c_stream);
 
   len = 0;
-
 
 }
 

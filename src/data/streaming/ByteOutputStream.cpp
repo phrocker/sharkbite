@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include "data/streaming/ByteOutputStream.h"
+#include "data/extern/fastmemcpy/FastMemCpy.h"
 
 namespace cclient{
   namespace data{
@@ -34,7 +35,6 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
     size = initial_size;
     if (size > 0){
         array.resize(size);
-        std::fill(array.begin(), array.end(), 0x00);
     }
 }
 
@@ -45,6 +45,17 @@ ByteOutputStream::~ByteOutputStream ()
 {
     flush ();
     output_stream_ref=nullptr;
+}
+
+void ByteOutputStream::ensure(size_t size,size_t ptr){
+  if (ptr > 0){
+    offset += ptr;
+  }
+  if (this->size <= (offset+size))
+  {
+    array.resize(this->size + (size+1));
+    this->size += (size+1);
+  }
 }
 
 /**
@@ -85,7 +96,8 @@ ByteOutputStream::getByteArray (char *inArray, size_t inArraySize)
         throw std::runtime_error ("Sizes are unequal");
     }
     //memcpy (inArray, array, offset);
-    std::copy(array.data(),array.data()+offset,inArray);
+    //std::copy(array.data(),array.data()+offset,inArray);
+    memcpy_fast(array.data(),inArray,offset);
     //memcpy (inArray, array, offset);
 }
 
@@ -97,6 +109,16 @@ char *
 ByteOutputStream::getByteArray ()
 {
     return array.data();
+}
+
+/**
+ * Returns the backing array
+ * @returns backing array
+ */
+char *
+ByteOutputStream::getByteArrayAtPosition ()
+{
+    return array.data()+offset;
 }
 
 /**
@@ -142,7 +164,8 @@ ByteOutputStream::write (const char *bytes, long cnt)
         size += cnt * 2;
     }
     //memcpy (array + offset, bytes, cnt);
-    std::copy(bytes,bytes+cnt,array.data()+offset);
+    memcpy_fast(array.data()+offset,bytes,cnt);
+  //  std::copy(bytes,bytes+cnt,array.data()+offset);
     offset += cnt;
     return offset;
 }

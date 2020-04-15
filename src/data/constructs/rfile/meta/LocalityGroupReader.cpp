@@ -94,7 +94,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
       if (!checkRange)
         topExists = true;
 
-      // don't concern outselves with block indexing
+      // don't concern ourselves with block indexing
 
       std::vector<char> valueArray;
 
@@ -152,7 +152,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
         }
         readAheadResult.hasData=true;
         readAheadConsumerCondition.notify_one();
-        if (!readAheadResult.checkRange){
+        if (!readAheadResult.checkRange) {
           break;
         }
         std::unique_lock<std::mutex> lock(readAheadMutex);
@@ -170,7 +170,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
     });
     while(!readAheadRunning);
   }
-  else{
+  else {
     readAheadResult.checkRange=false;
     readAheadResult.hasData = true;
   }
@@ -277,8 +277,8 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
 
   cclient::data::compression::Compressor *compressor;
-  if (!compressors.try_dequeue(compressor)){
-    compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create(use_cached);;
+  if (use_cached || !compressors.try_dequeue(compressor)) {
+    compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create(use_cached);
   }
 
   BlockRegion region(offset, compressedSize, rawSize, compressor);
@@ -296,7 +296,8 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
   auto stream = region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
-  compressors.enqueue(compressor);
+  if (!use_cached)
+    compressors.enqueue(compressor);
 
   return stream;
 }

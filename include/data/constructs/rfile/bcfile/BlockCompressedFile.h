@@ -41,7 +41,6 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
     version.setMajor(1);
     version.setMinor(0);
     dataIndex.setCompressionAlgorithm(compressor);
-
   }
 
   /**

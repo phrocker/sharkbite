@@ -138,18 +138,14 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
   cntr = 1;
   timer_start(&cntr,5000);
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 100; i++) {
     auto start = chrono::steady_clock::now();
     std::fstream::pos_type size = filesize(outputFile.c_str());
     std::ifstream in(outputFile, std::ifstream::ate | std::ifstream::binary);
     std::cout << outputFile << " is " << size << " bytes " << std::endl;
     auto stream = new cclient::data::streams::InputStream(&in, 0);
-    //cclient::data::streams::InputStream *stream = new cclient::data::streams::MemoryMappedInputStream(outputFile);
 
-    //auto endstream = new cclient::data::streams::EndianInputStream(stream);
-    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128*1024,2*1024*1024,size);
-
-    //auto endStream = new cclient::data::streams::Ne(stream,10*1024,2*1024*1024,size);
+    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128*1024,1024*1024,size);
 
     cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(endstream, size);
     std::vector<std::string> cf;
@@ -159,7 +155,6 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
     newRFile->limitVisibility(visibility);
     newRFile->relocate(seekable);
     long count = 0;
-    //newRFile->enableReadAhead(10000000);
     uint64_t total_size = 0;
     while (newRFile->hasNext()) {
 

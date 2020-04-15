@@ -45,6 +45,8 @@ public:
     void getByteArray(char *inArray, size_t inArraySize);
 
     char *getByteArray();
+
+    char *getByteArrayAtPosition();
     size_t getSize();
     void setOutputStreamRef(OutputStream *out_stream);
 
@@ -75,6 +77,9 @@ public:
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
     	return OutputStream::writeEncodedLong(n);
     }
+
+
+    void ensure(size_t size, size_t ptr=0);
 
 protected:
     // offset of the stream.

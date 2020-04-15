@@ -118,10 +118,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       }
     }
 
-    cclient::data::compression::Compressor *compressor;
+    cclient::data::compression::Compressor *compressor = nullptr;
 
     while (compressors.size_approx() > 0) {
-      if (compressors.try_dequeue(compressor)) {
+      if (compressors.try_dequeue(compressor) && compressor != nullptr) {
         delete compressor;
       }
     }
@@ -191,7 +191,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   std::unique_ptr<cclient::data::streams::InputStream> getDataBlock(uint32_t index);
 
-  std::unique_ptr<cclient::data::streams::InputStream> getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached = true);
+  std::unique_ptr<cclient::data::streams::InputStream> getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached = false);
 
 }
 

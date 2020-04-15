@@ -96,7 +96,7 @@ public:
 	 * Deompression method.
 	 * @param out_stream.
 	 */
-	void decompress(cclient::data::streams::OutputStream *out_stream,  char *in_buf = nullptr, size_t size = 0);
+	void decompress(cclient::data::streams::ByteOutputStream *out_stream,  char *in_buf = nullptr, size_t size = 0);
 
 protected:
 
