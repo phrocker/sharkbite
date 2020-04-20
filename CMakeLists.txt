@@ -379,6 +379,14 @@ target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARI
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
 target_link_libraries( RfileReadExample sharkbite)
 
+add_executable(RfileWriteExample "src/examples/RfileWriteExample.cpp")
+target_link_libraries (RfileWriteExample ${CMAKE_THREAD_LIBS_INIT})
+#target_link_libraries (RfileWriteExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
+target_link_libraries( RfileWriteExample )
+target_link_libraries( RfileWriteExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
+target_link_libraries( RfileWriteExample ${THRIFT_LIBS})
+target_link_libraries( RfileWriteExample sharkbite)
+
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
 #target_link_libraries (PrintInfo ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})

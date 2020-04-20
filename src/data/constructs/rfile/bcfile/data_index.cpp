@@ -13,24 +13,44 @@
  */
 
 #include "data/constructs/rfile/bcfile/data_index.h"
-namespace cclient{
-  namespace data{
+namespace cclient {
+namespace data {
 
-DataIndex::DataIndex (cclient::data::compression::Compressor *compressor)
-{
-    compressionAlgorithm = *compressor->getAlgorithm ();
+DataIndex::DataIndex(cclient::data::compression::Compressor *compressor) {
+  compressionAlgorithm = *compressor->getAlgorithm();
 }
 
-DataIndex::DataIndex ()
-{
+DataIndex::DataIndex() {
 }
 
-DataIndex::~DataIndex ()
-{
-    for (std::vector<BlockRegion*>::iterator it = listRegions.begin ();
-            it != listRegions.end (); it++)
-        delete (*it);
+DataIndex::~DataIndex() {
+  for (std::vector<BlockRegion*>::iterator it = listRegions.begin(); it != listRegions.end(); it++)
+    delete (*it);
 }
 
+uint64_t DataIndex::read(cclient::data::streams::InputStream *in) {
+  compressionAlgorithm = cclient::data::compression::CompressionAlgorithm(in->readString());
+  // TODO was encoded long
+  uint64_t count = in->readHadoopLong();
+
+  for (uint64_t i = 0; i < count; i++) {
+    listRegions.push_back(new BlockRegion(in));
   }
+
+  return in->getPos();
+}
+
+uint64_t DataIndex::write(cclient::data::streams::OutputStream *out) {
+
+  out->writeString(compressionAlgorithm.getName());
+  // TODO was encoded long
+  out->writeHadoopLong(listRegions.size());
+  for (std::vector<BlockRegion*>::iterator it = listRegions.begin(); it != listRegions.end(); it++) {
+    (*it)->write(out);
+  }
+
+  return out->getPos();
+}
+
+}
 }

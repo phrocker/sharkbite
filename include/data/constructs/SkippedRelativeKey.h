@@ -62,7 +62,6 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
     int rowCmp = -1, cfCmp = -1, cqCmp = -1, cvCmp = -1;
     if (NULL != currKey) {
 
-      std::cout << "curr key " << std::endl;
       scratch = currKey->getRow();
       prevRow.insert(prevRow.end(), scratch.first, scratch.first + scratch.second);
 

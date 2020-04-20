@@ -167,7 +167,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    @param lastKey last key for locality group.
    **/
   void closeBlock(std::shared_ptr<StreamInterface> lastKey) {
-    std::cout << "whut 3" << std::endl;
     currentLocalityGroup->addIndexEntry(IndexEntry(lastKey, entries));
     dataBlockCnt = 0;
     entries = 0;
@@ -203,7 +202,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   friend inline std::ostream&
   operator <<(std::ostream &out, RFile *rhs) {
-    std::cout << "whut2 " << std::endl;
     return operator<<(out, *rhs);
   }
 

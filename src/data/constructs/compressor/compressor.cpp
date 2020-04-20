@@ -26,7 +26,6 @@
 void
 cclient::data::compression::Compressor::setInput (const char *b, uint32_t offset, uint32_t length)
 {
-//  std::cout << "buffer address is " << buffer << std::endl;
     // grow the buffer, but do not remove it. 
     if (buffer != nullptr){
         if (length > size){

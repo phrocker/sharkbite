@@ -270,7 +270,6 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
   BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
   region->setCompressor(bcFile->getDataIndex()->getCompressionAlgorithm().create());
   auto stream = region->readDataStream(reader);
-  delete region;
   return stream;
 }
 

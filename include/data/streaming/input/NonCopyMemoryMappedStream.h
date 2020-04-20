@@ -61,7 +61,6 @@ class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
     char *ptr = (char*) &shortVal;
     if (SH_UNLIKELY((2 + offset) > filesize))
       throw std::runtime_error("Stream unavailable");
-    std::cout << "offset is " << offset << std::endl;
     ptr[0] = ptr[offset + 1];
     ptr[1] = ptr[offset];
     offset += 2;

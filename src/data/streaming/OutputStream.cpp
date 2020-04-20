@@ -61,7 +61,6 @@ uint64_t OutputStream::writeByte(int byte) {
 
 uint64_t OutputStream::writeString(std::string s) {
   // write size of string
-  std::cout << "write encoded long " << s.size() << " at " << getPos() << std::endl;
   writeEncodedLong(s.size());
   return writeBytes((uint8_t*) s.data(), s.size());
 }
@@ -150,7 +149,6 @@ uint64_t OutputStream::writeVLong(const int64_t n) {
 }
 
 uint64_t OutputStream::writeEncodedLong(const int64_t n) {
-  std::cout << "write encoded long " << n << std::endl;
   if ((n < 128) && (n >= -32)) {
 
     write((const char*) &n, 1);

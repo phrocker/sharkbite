@@ -19,10 +19,12 @@ namespace cclient {
 namespace data {
 
 LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string name)
-    : startBlock(startBlockVal),
-      firstKey(NULL),
-      read_version(4),
-      indexManager(NULL) {
+    :
+    startBlock(startBlockVal),
+    firstKey(NULL),
+    isDefaultLG(false),
+    read_version(4),
+    indexManager(NULL) {
   this->name = name;
   if (name == "") {
     isDefaultLG = true;
@@ -31,12 +33,12 @@ LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string
   }
 }
 
-LocalityGroupMetaData::LocalityGroupMetaData(
-    cclient::data::compression::Compressor *compressorRef, int version,
-    cclient::data::streams::InputStream *reader)
-    : firstKey(NULL),
-      read_version(version),
-      compressorRef(compressorRef) {
+LocalityGroupMetaData::LocalityGroupMetaData(cclient::data::compression::Compressor *compressorRef, int version, cclient::data::streams::InputStream *reader)
+    :
+    firstKey(NULL),
+    isDefaultLG(false),
+    read_version(version),
+    compressorRef(compressorRef) {
   indexManager = std::make_shared<IndexManager>(compressorRef, reader, version);
 }
 
@@ -97,8 +99,7 @@ uint64_t LocalityGroupMetaData::read(cclient::data::streams::InputStream *in) {
  @param outStream output stream.
  @return position of output stream.
  **/
-uint64_t LocalityGroupMetaData::write(
-    cclient::data::streams::DataOutputStream *outStream) {
+uint64_t LocalityGroupMetaData::write(cclient::data::streams::DataOutputStream *outStream) {
 
   outStream->writeBoolean(isDefaultLG);
   if (!isDefaultLG)

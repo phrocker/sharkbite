@@ -17,8 +17,6 @@
 
 #include <vector>
 
-
-
 #include "../../compressor/compressor.h"
 #include "../../compressor/compression_algorithm.h"
 #include "../../../streaming/DataOutputStream.h"
@@ -27,76 +25,53 @@
 #include "BlockRegion.h"
 namespace cclient {
 namespace data {
-class DataIndex: public cclient::data::streams::StreamInterface {
-public:
-    explicit DataIndex(cclient::data::compression::Compressor *compressor);
-    DataIndex();
-    ~DataIndex();
+class DataIndex : public cclient::data::streams::StreamInterface {
+ public:
+  explicit DataIndex(cclient::data::compression::Compressor *compressor);
+  DataIndex();
+  ~DataIndex();
 
-    void setCompressionAlgorithm(cclient::data::compression::Compressor *compressor)
+  void setCompressionAlgorithm(cclient::data::compression::Compressor *compressor)
 
-    {
-        compressionAlgorithm = *compressor->getAlgorithm();
-    }
+  {
+    compressionAlgorithm = *compressor->getAlgorithm();
+  }
 
-    BlockRegion *addBlockRegion(BlockRegion region) {
-        BlockRegion *reg = new BlockRegion(region);
-        reg->setCompressor(compressionAlgorithm.create());
-        listRegions.push_back(reg);
-        return reg;
-    }
+  BlockRegion* addBlockRegion(BlockRegion region) {
+    BlockRegion *reg = new BlockRegion(region);
+    reg->setCompressor(compressionAlgorithm.create());
+    listRegions.push_back(reg);
+    return reg;
+  }
 
-    BlockRegion *addBlockRegion() {
-        BlockRegion *reg = new BlockRegion();
-        reg->setCompressor(compressionAlgorithm.create());
-        listRegions.push_back(reg);
-        return reg;
-    }
+  BlockRegion* addBlockRegion() {
+    BlockRegion *reg = new BlockRegion();
+    reg->setCompressor(compressionAlgorithm.create());
+    listRegions.push_back(reg);
+    return reg;
+  }
 
-    BlockRegion *getBlockRegion(int index) {
-        return listRegions.at(index);
-    }
+  BlockRegion* getBlockRegion(int index) {
+    return listRegions.at(index);
+  }
 
-    cclient::data::compression::CompressionAlgorithm getCompressionAlgorithm() {
-        return compressionAlgorithm;
-    }
+  cclient::data::compression::CompressionAlgorithm getCompressionAlgorithm() {
+    return compressionAlgorithm;
+  }
 
-    uint64_t  read (cclient::data::streams::InputStream *in) {
-        compressionAlgorithm = cclient::data::compression::CompressionAlgorithm(in->readString());
-        // TODO was encoded long
-        uint64_t count = in->readHadoopLong();
+  uint64_t read(cclient::data::streams::InputStream *in);
 
-        for (uint64_t i = 0; i < count; i++) {
-            listRegions.push_back(new BlockRegion(in));
-        }
+  uint64_t write(cclient::data::streams::OutputStream *out);
 
+  DataIndex& operator=(const DataIndex &other) {
+    compressionAlgorithm = other.compressionAlgorithm;
+    listRegions.insert(listRegions.end(), other.listRegions.begin(), other.listRegions.end());
+    return *this;
+  }
 
-        return in->getPos();
-    }
-
-    uint64_t write (cclient::data::streams::OutputStream *out) {
-
-        out->writeString(compressionAlgorithm.getName());
-        // TODO was encoded long
-        out->writeHadoopLong(listRegions.size());
-        for (std::vector<BlockRegion*>::iterator it = listRegions.begin();
-                it != listRegions.end(); it++) {
-            (*it)->write(out);
-        }
-
-        return out->getPos();
-    }
-
-    DataIndex &operator=(const DataIndex &other) {
-        compressionAlgorithm = other.compressionAlgorithm;
-        listRegions.insert(listRegions.end(), other.listRegions.begin(),
-                           other.listRegions.end());
-	return *this;
-    }
-
-protected:
-    std::vector<BlockRegion*> listRegions;
-    cclient::data::compression::CompressionAlgorithm compressionAlgorithm;
+ protected:
+  std::vector<BlockRegion*> listRegions;
+  cclient::data::compression::CompressionAlgorithm compressionAlgorithm;
 
 };
 }

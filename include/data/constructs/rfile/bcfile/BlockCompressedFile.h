@@ -37,7 +37,8 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
    */
   explicit BlockCompressedFile(cclient::data::compression::Compressor *compressor)
       :
-      compressorRef(compressor) {
+      compressorRef(compressor),
+      in_stream(nullptr) {
     version.setMajor(1);
     version.setMinor(0);
     dataIndex.setCompressionAlgorithm(compressor);
@@ -150,7 +151,6 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
       offsetIndexMetaCrypto = in_stream->readLong();
     }
 
-    std::cout << "index meta " << offsetIndexMeta << std::endl;
     in_stream->seek(offsetIndexMeta);
 
     metaIndex.read(in_stream);

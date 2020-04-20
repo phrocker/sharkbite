@@ -241,8 +241,8 @@ void SequentialRFile::close() {
 
   // create  new compression stream.
 
-  BlockCompressorStream *outStream = (BlockCompressorStream*) blockWriter->createCompressorStream(myDataStream, blockWriter->prepareNewEntry("SequentialRFile.index"));
-  // prepare the SequentialRFile Index.
+  BlockCompressorStream *outStream = (BlockCompressorStream*) blockWriter->createCompressorStream(myDataStream, blockWriter->prepareNewEntry("RFile.index"));
+  // prepare the RFile Index.
 
   MetaBlock block;
   closeCurrentGroup();
