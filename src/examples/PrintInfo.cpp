@@ -61,7 +61,8 @@ readRfile (std::string outputFile, uint16_t port, bool dump)
     {
 
         std::vector<std::string> cf;
-        cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(new cclient::data::Range(),cf,false);
+        cclient::data::Range rng;
+        cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(rng,cf,false);
 
 
         newRFile->relocate(seekable);

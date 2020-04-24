@@ -29,6 +29,8 @@
 #include "../include/data/streaming/input/MemorymappedInputStream.h"
 #include "data/streaming/input/ReadAheadInputStream.h"
 #include "../include/data/streaming/OutputStream.h"
+#include "data/iterators/MultiIterator.h"
+#include "data/streaming/accumulo/KeyValueIterator.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
 
@@ -36,188 +38,139 @@ bool keyCompare(std::shared_ptr<cclient::data::KeyValue> a, std::shared_ptr<ccli
   return *(a->getKey()) < *(b->getKey());
 }
 
-void writeRfile(std::string outputFile, bool bigEndian, uint16_t port) {
-  std::ofstream ofs(outputFile.c_str(), std::ofstream::out);
-
-  cclient::data::streams::OutputStream *stream = new cclient::data::streams::OutputStream(&ofs, 0);
-
-  if (bigEndian)
-    stream = new cclient::data::streams::EndianTranslationStream(stream);
-
-  cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor(256 * 1024);
-
-  auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
-
-// ByteOutputStream *outStream = new BigEndianByteStream (5 * 1024 * 1024,
-//							 stream);
-  cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(stream, std::move(bcFile));
-
-  std::vector<std::shared_ptr<cclient::data::KeyValue> > keyValues;
-
-  char rw[13], cf[4], cq[9], cv[9];
-  int i = 0;
-
-  std::string moto = "hello moto";
-  std::string vis = "00000001";
-  for (i = 1; i < 25; i++) {
-
-    std::shared_ptr<cclient::data::Value> v = std::make_shared<cclient::data::Value>(moto);
-
-    std::shared_ptr<cclient::data::Key> k = std::make_shared<cclient::data::Key>();
-
-    std::string rowSt = "2";
-
-    memset(rw, 0x00, 13);
-    sprintf(rw, "bat");
-
-    k->setRow((const char*) rw, 8);
-
-    sprintf(cf, "%03d", i);
-
-    k->setColFamily((const char*) cf, 3);
-
-    sprintf(cq, "%08d", i);
-    sprintf(cv, "%08d", i);
-
-    k->setColQualifier((const char*) cq, 8);
-    k->setColVisibility(vis.c_str(), vis.size());
-
-    k->setTimeStamp(1445105294261L);
-
-    std::shared_ptr<cclient::data::KeyValue> kv = std::make_shared<cclient::data::KeyValue>();
-
-    kv->setKey(k);
-    kv->setValue(v);
-
-    keyValues.push_back(kv);
-  }
-  std::sort(keyValues.begin(), keyValues.end(), keyCompare);
-  newRFile->addLocalityGroup();
-  for (std::vector<std::shared_ptr<cclient::data::KeyValue> >::iterator it = keyValues.begin(); it != keyValues.end(); ++it) {
-    newRFile->append(*it);
-  }
-
-  stream->flush();
-  newRFile->close();
-
-  //outStream->flush ();
-
-  //delete outStream;
-  delete stream;
-
-  delete newRFile;
-
-}
-
 std::ifstream::pos_type filesize(const char *filename) {
   std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
   return in.tellg();
 }
+/*
+void timer_start(std::atomic<int64_t> *biggie, unsigned int interval) {
 
-void timer_start(std::atomic<int64_t> *biggie, unsigned int interval)
-{
+  std::thread([interval, biggie]() {
+    int64_t time = 1;
+    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+    while (true) {
 
-    std::thread([interval,biggie]() {
-        int64_t time=1;
-        std::this_thread::sleep_for(std::chrono::milliseconds(interval));
-        while (true)
-        {
+      std::cout << "Rate is " << (biggie->load() / time) << " keys per ms " << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+      time += interval;
+    }
+  }).detach();
+}
+*/
+std::unique_ptr<cclient::data::streams::KeyValueIterator> createMultiReader(std::vector<std::string> rfiles) {
 
-            std::cout << "Rate is " << (biggie->load() / time) << " keys per ms " << std::endl;
-            std::this_thread::sleep_for(std::chrono::milliseconds(interval));
-            time+=interval;
-        }
-    }).detach();
+  std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
+  for (const auto &path : rfiles) {
+    std::fstream::pos_type size = filesize(path.c_str());
+    auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
+
+    auto stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
+
+    auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
+
+    if (rfiles.size() == 1) {
+      return std::move(std::make_unique<cclient::data::SequentialRFile>(std::move(endstream), size));
+    } else {
+      auto newRFile = std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
+      iters.emplace_back(newRFile);
+    }
+
+  }
+  return std::move(std::make_unique<cclient::data::MultiIterator>(iters));
 }
 
-
-
-void readRfile(std::string outputFile, uint16_t port, bool print, const std::string &visibility) {
+void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, const std::string &visibility) {
 
   std::atomic<int64_t> cntr;
   cntr = 1;
-  timer_start(&cntr,5000);
 
-  for (int i = 0; i < 100; i++) {
-    auto start = chrono::steady_clock::now();
-    std::fstream::pos_type size = filesize(outputFile.c_str());
-    std::ifstream in(outputFile, std::ifstream::ate | std::ifstream::binary);
-    std::cout << outputFile << " is " << size << " bytes " << std::endl;
-    auto stream = new cclient::data::streams::InputStream(&in, 0);
+  auto start = chrono::steady_clock::now();
+ 
+  std::unique_ptr<cclient::data::streams::KeyValueIterator> multi_iter = createMultiReader(rfiles);
+  std::vector<std::string> cf;
+  cclient::data::Range rng;
 
-    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128*1024,1024*1024,size);
-
-    cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(endstream, size);
-    std::vector<std::string> cf;
-    cclient::data::Range rng;
-    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(&rng, cf, false);
-
-    newRFile->limitVisibility(visibility);
-    newRFile->relocate(seekable);
-    long count = 0;
-    uint64_t total_size = 0;
-    while (newRFile->hasNext()) {
-
-      if (print) {
-        std::cout << "has next " << (**newRFile).first << std::endl;
-        std::stringstream ss;
-        ss << (**newRFile).first;
-        total_size += ss.str().size();
-      }
-
-      newRFile->next();
-
-      count++;
-      if ((count%100000)==0)
-      cntr.fetch_add(100000, std::memory_order_relaxed);
-
-    }
-
-    if (print) {
-      std::cout << "Bytes accessed " << total_size << std::endl;
-    }
-
-    delete seekable;
-
-    delete endstream;
-
-    delete stream;
-
-    delete newRFile;
-
-    auto end = chrono::steady_clock::now();
-
-    std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << std::endl;
+  cclient::data::security::Authorizations auths;
+  if (!visibility.empty()){
+    auths.addAuthorization(visibility);
   }
 
+  cclient::data::streams::StreamSeekable seekable(rng, cf,auths, false);
+
+  multi_iter->relocate(&seekable);
+  long count = 0;
+  uint64_t total_size = 0;
+  while (multi_iter->hasNext()) {
+
+    if (print) {
+      std::cout << "has next " << (**multi_iter).first << std::endl;
+      std::stringstream ss;
+      ss << (**multi_iter).first;
+      total_size += ss.str().size();
+    }
+
+    multi_iter->next();
+
+    count++;
+    if ((count % 100000) == 0)
+      cntr.fetch_add(100000, std::memory_order_relaxed);
+
+  }
+
+  if (print) {
+    std::cout << "Bytes accessed " << total_size << std::endl;
+  }
+  auto end = chrono::steady_clock::now();
+
+  std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << std::endl;
+  std::cout << "Skipped " << multi_iter->getEntriesFiltered() << std::endl;
+
+
+  return;
 }
 int main(int argc, char **argv) {
 
   if (argc < 2) {
-    std::cout << "Arguments required: ./RfileReadExample" << " <input rfile> <print -- true/false is optional>" << std::endl;
+    std::cout << "Arguments required: ./RfileReadExample" << " -r <input rfile(s) can be more than one>  " << std::endl;
+    std::cout << "Optional arguments:     -p -- print keys  " << std::endl;
+    std::cout << "Optional arguments:     -v <visibility> -- visibility  " << std::endl;
     exit(1);
   }
 
-  std::string outputFile = argv[1];
+  std::vector<std::string> rfiles;
   std::string visibility;
   bool print = false;
 
-  if (argc >= 3) {
-    // always assume big endian
-    auto ptr = argv[2];
-    print = (!memcmp(ptr, "true", 4));
+  if (argc >= 2) {
+    for (int i = 1; i < argc; i++) {
+      // always assume big endian
+      std::string key = argv[i];
+      if (key == "-p") {
+        print = true;
+      }
 
-    if (argc == 4) {
+      if (key == "-v") {
+        if (i + 1 < argc) {
+          visibility = argv[i + 1];
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply visibility");
+        }
+      }
 
-      visibility = argv[3];
-
+      if (key == "-r") {
+        if (i + 1 < argc) {
+          rfiles.push_back(argv[i + 1]);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+        }
+      }
     }
   }
 
-  if (!IsEmpty(&outputFile)) {
-
-    std::cout << "Reading test rfile from " << outputFile << std::endl;
-    readRfile(outputFile, 0, print, visibility);
+  if (!rfiles.empty()) {
+    readRfile(rfiles, 0, print, visibility);
   }
 
   return 0;

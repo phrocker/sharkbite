@@ -176,15 +176,19 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   virtual bool hasNext();
 
-  virtual void relocate(cclient::data::streams::StreamSeekable *location) {
-    if (!colvis.empty())
-      currentLocalityGroupReader->limitVisibility(colvis);
+  virtual void relocate(cclient::data::streams::StreamRelocation *location) {
+    if (!location->getAuths()->empty())
+      currentLocalityGroupReader->limitVisibility(location->getAuths());
     currentLocalityGroupReader->seek(location);
   }
 
   virtual void next();
 
   virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++();
+
+  std::shared_ptr<Key> getTopKey();
+
+  std::shared_ptr<Value> getTopValue();
 
   friend inline std::ostream&
   operator <<(std::ostream &out, RFile &rhs) {
@@ -226,7 +230,6 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
     }
 
   }
-
 
   // current locality group.
   LocalityGroupMetaData *currentLocalityGroup;

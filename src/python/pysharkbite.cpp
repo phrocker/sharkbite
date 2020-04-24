@@ -145,7 +145,7 @@ PYBIND11_MODULE(pysharkbite, s) {
       "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false);
 
   pybind11::class_< cclient::data::streams::StreamSeekable>(s, "Seekable")
-    .def(pybind11::init<cclient::data::Range*,std::vector<std::string>,bool>());
+    .def(pybind11::init<cclient::data::Range&,std::vector<std::string>&,bool>());
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())

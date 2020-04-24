@@ -57,7 +57,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
     dataBlockCnt(0),
     entries(0),
     currentLocalityGroup(
-    NULL){
+    NULL) {
   if (input_stream == NULL) {
     throw std::runtime_error("InputSTream Stream and BC Reader Writer should not be NULL");
   }
@@ -83,7 +83,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
 }
 
 bool RFile::hasNext() {
-    return currentLocalityGroupReader->hasTop();
+  return currentLocalityGroupReader->hasTop();
 }
 
 void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
@@ -120,27 +120,36 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
 
   currentLocalityGroupReader = localityGroupReaders.front();
 
-  if (!colvis.empty()) {
-    currentLocalityGroupReader->limitVisibility(colvis);
-  }
+  //if (!colvis.empty()) {
+  //  currentLocalityGroupReader->limitVisibility(colvis);
+//  }
 
 }
 
 void RFile::next() {
-    currentLocalityGroupReader->next();
+  currentLocalityGroupReader->next();
 }
 
 cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* RFile::operator++() {
-    currentLocalityGroupReader->next();
-    return this;
+  currentLocalityGroupReader->next();
+  return this;
+}
+
+std::shared_ptr<Key> RFile::getTopKey() {
+  return currentLocalityGroupReader->getTopKey();
+}
+
+std::shared_ptr<Value> RFile::getTopValue() {
+  return currentLocalityGroupReader->getTopValue();
+
 }
 
 std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> RFile::operator*() {
-    return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());  
+  return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
 std::shared_ptr<cclient::data::KeyValue> RFile::getTop() {
-    return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
+  return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
 RFile::~RFile() {

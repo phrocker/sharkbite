@@ -114,8 +114,6 @@ std::ifstream::pos_type filesize(const char *filename) {
   return in.tellg();
 }
 
-
-
 void readRfile(std::string outputFile, uint16_t port, bool print, const std::string &visibility) {
 
   std::atomic<int64_t> cntr;
@@ -128,14 +126,13 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
     std::cout << outputFile << " is " << size << " bytes " << std::endl;
     auto stream = new cclient::data::streams::InputStream(&in, 0);
 
-    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream,128*1024,1024*1024,size);
+    auto endstream = new cclient::data::streams::ReadAheadInputStream(stream, 128 * 1024, 1024 * 1024, size);
 
     cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(endstream, size);
     std::vector<std::string> cf;
     cclient::data::Range rng;
-    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(&rng, cf, false);
+    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(rng, cf, false);
 
-    newRFile->limitVisibility(visibility);
     newRFile->relocate(seekable);
     long count = 0;
     uint64_t total_size = 0;
@@ -195,7 +192,7 @@ int main(int argc, char **argv) {
   }
 
   if (!IsEmpty(&outputFile)) {
-    writeRfile(outputFile,true,0);
+    writeRfile(outputFile, true, 0);
     std::cout << "Reading test rfile from " << outputFile << std::endl;
     readRfile(outputFile, 0, print, visibility);
   }

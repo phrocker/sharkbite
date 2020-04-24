@@ -19,6 +19,8 @@
 #include <stdint.h>
 
 #include "../streaming/Streams.h"
+#include "data/constructs/security/Authorizations.h"
+#include "data/constructs/security/VisibilityEvaluator.h"
 
 #include <stdint.h>
 #include <cstdio>
@@ -35,9 +37,10 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
  protected:
   std::shared_ptr<Key> prevKey;
   std::shared_ptr<RelativeKey> rkey;
-  std::string colvis;
+  //std::string colvis;
   int skipped;
   ArrayAllocatorPool *allocatorInstance;
+  cclient::data::security::Authorizations auths;
 
   bool fastSkip(cclient::data::streams::InputStream *stream, const std::shared_ptr<Key> &seekKey, std::vector<char> *valCopy, std::shared_ptr<Key> prevKey, std::shared_ptr<Key> currKey) {
 
@@ -101,7 +104,7 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
 
         if (cf >= stopCf) {
           if (cf > stopCf) {
-            rkey = std::make_shared<RelativeKey>(currKey, std::make_shared<Key>(currKey),allocatorInstance);
+            rkey = std::make_shared<RelativeKey>(currKey, std::make_shared<Key>(currKey), allocatorInstance);
             skipped = 0;
             this->prevKey = prevKey;
 
@@ -109,7 +112,7 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
           }
 
           if (cq > stopCq) {
-            rkey = std::make_shared<RelativeKey>(currKey, std::make_shared<Key>(currKey),allocatorInstance);
+            rkey = std::make_shared<RelativeKey>(currKey, std::make_shared<Key>(currKey), allocatorInstance);
             skipped = 0;
             this->prevKey = prevKey;
 
@@ -215,8 +218,10 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
       rkey->setPrevious(std::make_shared<Key>(baseKey));
       skipped = count;
 
-      if (!colvis.empty()) {
-        if (rkey && rkey->getKey()->getColVisibilityStr() != colvis) {
+      if (!auths.empty()) {
+        std::cout << "auths aren't empty" << std::endl;
+        cclient::data::security::VisibilityEvaluator eval(auths);
+        if (rkey && !eval.evaluate(cv)) {
           return true;
         }
       }
@@ -289,15 +294,15 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
 
   SkippedRelativeKey(ArrayAllocatorPool *allocator)
       :
-      SkippedRelativeKey(NULL, 0, NULL,allocator) {
+      SkippedRelativeKey(NULL, 0, NULL, allocator) {
   }
 
   bool skip(cclient::data::streams::InputStream *stream, std::shared_ptr<Key> seekKey, std::vector<char> *valCopy, std::shared_ptr<Key> prevKey, std::shared_ptr<Key> currKey) {
     return fastSkip(stream, seekKey, valCopy, prevKey, currKey);
   }
 
-  void filterVisibility(const std::string &colVis) {
-    colvis = colVis;
+  void filterVisibility(const cclient::data::security::Authorizations &auths) {
+    this->auths = auths;
   }
 
   virtual ~SkippedRelativeKey() {

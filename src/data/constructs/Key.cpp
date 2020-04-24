@@ -100,13 +100,12 @@ void Key::reclaim(char **val, size_t size, bool &disown, std::function<void()> f
 
 void Key::setRow(const std::shared_ptr<Text> &rowRef) {
   if (SH_UNLIKELY(row != nullptr)) {
-    auto fn =[&] (void) {
+    auto fn = [&](void) {
       row_ref = rowRef;
     };
     reclaim(&row, rowMaxSize, disownRow, fn);
     disownRow = false;
-  }
-  else{
+  } else {
     row_ref = rowRef;
   }
 }
@@ -121,10 +120,10 @@ void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwners
 
     memcpy_fast(row, r, size);
   } else {
-    auto fn =  [&] (void) {
+    auto fn = [&](void) {
       row_ref = nullptr;
     };
-    reclaim(&row, rowMaxSize, disownRow,fn);
+    reclaim(&row, rowMaxSize, disownRow, fn);
     disownRow = false;
     row = (char*) r;
     rowMaxSize = maxsize;
@@ -144,7 +143,7 @@ void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool take
 
     memcpy_fast(colFamily, r, size);
   } else {
-    auto fn = [&] (void) {
+    auto fn = [&](void) {
       cf_ref = nullptr;
     };
     reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
@@ -158,13 +157,12 @@ void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool take
 
 void Key::setColumnFamily(const std::shared_ptr<Text> &col) {
   if (SH_UNLIKELY(colFamily != nullptr)) {
-    auto fn = [&] (void) {
+    auto fn = [&](void) {
       cf_ref = col;
     };
     reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
     disownColumnFamily = false;
-  }
-  else{
+  } else {
     cf_ref = col;
   }
 }
@@ -182,7 +180,7 @@ void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool t
 
     memcpy_fast(colQualifier, r, size);
   } else {
-    auto fn = [&] (void) {
+    auto fn = [&](void) {
       cq_ref = nullptr;
     };
     reclaim(&colQualifier, colQualSize, disownColumnQualifier, fn);
@@ -196,13 +194,12 @@ void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool t
 
 void Key::setColumnQualifier(const std::shared_ptr<Text> &cq) {
   if (SH_UNLIKELY(colQualifier != nullptr)) {
-    auto fn = [&] (void) {
+    auto fn = [&](void) {
       cq_ref = cq;
     };
-    reclaim(&colQualifier, colQualSize, disownColumnQualifier,fn );
+    reclaim(&colQualifier, colQualSize, disownColumnQualifier, fn);
     disownColumnQualifier = false;
-  }
-  else{
+  } else {
     cq_ref = cq;
   }
 }
@@ -232,30 +229,62 @@ void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool 
 
 void Key::setColumnVisibility(const std::shared_ptr<Text> &cv) {
   if (keyVisibility) {
-    reclaim(&keyVisibility, colVisSize, disownColumnVisibility, [&] (void) {
+    reclaim(&keyVisibility, colVisSize, disownColumnVisibility, [&](void) {
       cv_ref = cv;
     });
     disownColumnVisibility = false;
-  }
-  else{
+  } else {
     cv_ref = cv;
   }
 }
 
+int Key::compare(const std::shared_ptr<Key> &other) {
+  auto btr = other->getRow();
+  auto btl = getRow();
+  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
+
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
+  auto ctr = other->getColFamily();
+  auto ctl = getColFamily();
+  compare = compareBytes(ctl.first, 0, ctl.second, ctr.first, 0, ctr.second);
+
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
+  auto qtr = other->getColQualifier();
+  auto qtl = getColQualifier();
+  compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
+
+  if (compare < 0)
+    return compare;
+
+  return 0;
+}
+
 bool Key::operator <(const Key &rhs) const {
-  int compare = compareBytes(row, 0, rowLength, rhs.row, 0, rhs.rowLength);
+  auto btr = rhs.getRow();
+  auto btl = getRow();
+  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
 
   if (compare < 0)
     return true;
   else if (compare > 0)
     return false;
-  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0, rhs.columnFamilyLength);
+  auto ctr = rhs.getColFamily();
+  auto ctl = getColFamily();
+  compare = compareBytes(ctl.first, 0, ctl.second, ctr.first, 0, ctr.second);
 
   if (compare < 0)
     return true;
   else if (compare > 0)
     return false;
-  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0, rhs.colQualLen);
+  auto qtr = rhs.getColQualifier();
+  auto qtl = getColQualifier();
+  compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
 
   if (compare < 0)
     return true;

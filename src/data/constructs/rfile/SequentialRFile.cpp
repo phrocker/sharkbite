@@ -46,6 +46,12 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
   lastKeyValue = NULL;
 }
 
+SequentialRFile::SequentialRFile(std::unique_ptr<streams::InputStream> input_stream, long fileLength)
+    :
+    SequentialRFile(input_stream.get(), fileLength) {
+  ownedStream = std::move(input_stream);
+}
+
 SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLength)
     :
     in_stream(input_stream),
@@ -82,7 +88,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLe
 }
 
 bool SequentialRFile::hasNext() {
-    return currentLocalityGroupReader->hasTop();
+  return currentLocalityGroupReader->hasTop();
 }
 
 void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
@@ -121,14 +127,10 @@ void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
 
   currentLocalityGroupReader->enableReadAhead();
 
-  if (!colvis.empty()) {
-    currentLocalityGroupReader->limitVisibility(colvis);
-  }
-
 }
 
 void SequentialRFile::next() {
-    currentLocalityGroupReader->next();
+  currentLocalityGroupReader->next();
 }
 
 cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* SequentialRFile::operator++() {
@@ -140,6 +142,14 @@ std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> SequentialRFile::operato
   return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
+std::shared_ptr<Key> SequentialRFile::getTopKey() {
+  return currentLocalityGroupReader->getTopKey();
+}
+
+std::shared_ptr<Value> SequentialRFile::getTopValue() {
+  return currentLocalityGroupReader->getTopValue();
+
+}
 
 SequentialRFile::~SequentialRFile() {
   for (auto reader : localityGroupReaders) {

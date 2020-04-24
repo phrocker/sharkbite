@@ -58,6 +58,10 @@ public:
     inline static int init_auths() {
         return buildDefaultAuths();
     }
+
+    bool empty() const{
+        return authStrings.empty();
+    }
     
     
     bool

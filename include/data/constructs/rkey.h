@@ -27,7 +27,9 @@
 #include <cstring>
 #include <stdexcept>
 
+#include "data/constructs/security/Authorizations.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
+#include "data/constructs/security/VisibilityEvaluator.h"
 
 namespace cclient {
 namespace data {
@@ -48,7 +50,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
    * @param previous_key previous key
    * @param my_key current key.
    **/
-  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key,ArrayAllocatorPool *allocins);
+  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key, ArrayAllocatorPool *allocins);
 
   /**
    * Returns the relative key.
@@ -104,7 +106,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   static const uint8_t PREFIX_COMPRESSION_ENABLED = 128;
 
-  const std::shared_ptr<Key>getKey() const {
+  const std::shared_ptr<Key> getKey() const {
     return key;
   }
 
@@ -112,13 +114,13 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
     return filtered;
   }
 
-  void filterVisibility(const std::string &visibility);
+  void filterVisibility(const cclient::data::security::Authorizations &visibility);
 
   void setFiltered();
 
  protected:
 
-  int INLINE readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow,const size_t &prevsize,bool &disown);
+  int INLINE readPrefix(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row, std::pair<char*, size_t> *prevRow, const size_t &prevsize, bool &disown);
 
   bool INLINE readRow(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                       const std::shared_ptr<Key> &newkey);
@@ -162,8 +164,11 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   bool filtered;
   bool prevFiltered;
+  bool likelyFiltered;
 
-  std::string columnVisibility;
+  cclient::data::security::Authorizations columnVisibility;
+  cclient::data::security::VisibilityEvaluator evaluator;
+
 
   int32_t rowCommonPrefixLen;
   int32_t cfCommonPrefixLen;

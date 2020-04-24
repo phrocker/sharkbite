@@ -40,6 +40,7 @@
 #include "data/constructs/Range.h"
 #include "data/constructs/SkippedRelativeKey.h"
 #include "data/constructs/rkey.h"
+#include "data/constructs/security/Authorizations.h"
 
 namespace cclient {
 namespace data {
@@ -67,6 +68,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   std::shared_ptr<SerializedIndex> iiter;
   std::shared_ptr<Key> prevKey;
   uint32_t entriesLeft;
+  uint64_t entriesSkipped;
   std::shared_ptr<IndexManager> index;
 
   moodycamel::ConcurrentQueue<cclient::data::compression::Compressor*> compressors;
@@ -90,6 +92,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   std::mutex readAheadMutex;
   std::future<size_t> readAhead;
   ReadAheadProxy readAheadResult;
+  cclient::data::security::Authorizations auths;
+
+
+  void startReadAhead();
 
   void close() {
     if (readAheadEnabled) {
@@ -144,7 +150,8 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       NULL),
       readAheadEnabled(false),
       readAheadRunning(false),
-      entriesLeft(-1) {
+      entriesLeft(-1),
+      entriesSkipped(0) {
     index = metadata->getIndexManager();
     firstKey = std::dynamic_pointer_cast<Key>(metadata->getFirstKey());
     startBlock = metadata->getStartBlock();
@@ -164,6 +171,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     return firstKey;
   }
 
+  uint64_t getEntriesFiltered() const {
+    return entriesSkipped;
+  }
+
   std::shared_ptr<Key> getLastKey() {
     return iiter->get(iiter->size() - 1)->getKey();
   }
@@ -176,9 +187,8 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     return val;
   }
 
-  std::string colVis;
-  void limitVisibility(const std::string &colvis) {
-    colVis = colvis;
+  void limitVisibility(cclient::data::security::Authorizations *auths) {
+    this->auths = *auths;
   }
 
   bool hasTop() {
