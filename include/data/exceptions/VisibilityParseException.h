@@ -12,31 +12,33 @@
  * limitations under the License.
  */
 
-#ifndef ILLEGAL_H
-#define ILLEGAL_H
+#ifndef VISIBILITY_PARSE_EXCEPTION_H
+#define VISIBILITY_PARSE_EXCEPTION_H
 
 #include <string>
-
-
 
 namespace cclient {
 namespace exceptions {
 
+class VisibilityParseException : public std::exception {
+ public:
+  explicit VisibilityParseException(std::string message, const std::string &expr, int32_t offset)
+      :
+      excp_str(std::move(message)),
+      terms(expr),
+      offset(offset) {
+  }
 
-class IllegalArgumentException: public std::exception {
-public:
-    explicit IllegalArgumentException(std::string excp) :
-        excp_str(excp) {
-    }
+  ~VisibilityParseException() throw () {
 
-    ~IllegalArgumentException() throw () {
-
-    }
-    const char *what() {
-        return excp_str.c_str();
-    }
-private:
-    std::string excp_str;
+  }
+  const char* what() {
+    return excp_str.c_str();
+  }
+ private:
+  std::string excp_str;
+  std::string terms;
+  int32_t offset;
 };
 } /* namespace data */
 } /* namespace cclient */

@@ -16,23 +16,55 @@
 
 #include <string>
 #include <set>
+#include <iostream>
+
+
 
 namespace cclient {
 namespace data {
 namespace security {
 
-Authorizations::Authorizations() {
+int AuthsInit::buildDefaultAuths() {
+  for (int i = 0; i < 256; i++) {
+    validAuthChars[i] = false;
+  }
 
+  for (int i = 'a'; i <= 'z'; i++) {
+    validAuthChars[i] = true;
+  }
+
+  for (int i = 'A'; i <= 'Z'; i++) {
+    validAuthChars[i] = true;
+  }
+
+  for (int i = '0'; i <= '9'; i++) {
+    validAuthChars[i] = true;
+  }
+
+  validAuthChars['_'] = true;
+  validAuthChars['-'] = true;
+  validAuthChars[':'] = true;
+  return 0;
 }
 
+Authorizations::Authorizations() {
+  AuthsInit::init();
+}
+
+bool Authorizations::isValidAuthCharacter(char c) {
+   return AuthsInit::init()->getDefaultAuths()[(int) c];
+ }
+
 Authorizations::Authorizations(std::string authorizations, char *validCharacters, int valid) {
+  AuthsInit::init();
   for (int i = 0; i < valid; i++) {
-    validAuthChars[(uint8_t) validCharacters[i]] = true;
+    AuthsInit::init()->getDefaultAuths()[(uint8_t) validCharacters[i]] = true;
   }
   addAuthorization(authorizations);
 }
 
 Authorizations::Authorizations(std::vector<std::string> *authorizations) {
+  AuthsInit::init();
   for (auto it = authorizations->begin(); it != authorizations->end(); it++)
     addAuthorization(*it);
 

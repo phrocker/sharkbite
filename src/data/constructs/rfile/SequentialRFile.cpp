@@ -28,6 +28,7 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
     closed(false),
     dataBlockCnt(0),
     entries(0),
+    entriesSkipped(0),
     currentLocalityGroup(
     NULL),
     in_stream(nullptr),
@@ -61,6 +62,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLe
     closed(false),
     dataBlockCnt(0),
     entries(0),
+    entriesSkipped(0),
     currentLocalityGroup(
     NULL) {
   if (input_stream == NULL) {

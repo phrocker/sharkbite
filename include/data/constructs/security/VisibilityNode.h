@@ -40,31 +40,25 @@ enum NodeType {
 class NodeExpression {
  public:
 
-  explicit NodeExpression(char *buf, size_t offset, size_t size)
+  explicit NodeExpression(const std::string &expr, size_t offset, size_t size)
       :
-      buffer(buf),
-      offset(offset),
-      size(size) {
-
+      term(expr, offset, size) {
   }
 
-  char* getBuffer() const {
-    return buffer;
+  std::string getTerm() const {
+    return term;
   }
 
-  size_t getOffset() const {
-    return offset;
+  const char* getBuffer() const {
+    return term.c_str();
   }
 
   size_t getSize() const {
-    return size;
+    return term.size();
   }
 
  private:
-
-  char *buffer;
-  size_t offset;
-  size_t size;
+  std::string term;
 };
 
 class VisibilityNode {
@@ -77,6 +71,14 @@ class VisibilityNode {
   int start;
   int end;
   std::vector<VisibilityNode> children;
+
+  VisibilityNode()
+      :
+      expression(nullptr),
+      start(0),
+      type(NodeType::TERM),
+      end(0) {
+  }
 
   explicit VisibilityNode(std::string *expr, NodeType type, int start)
       :
@@ -102,6 +104,10 @@ class VisibilityNode {
     children.emplace_back(child);
   }
 
+  void add(VisibilityNode &&child) {
+    children.emplace_back(std::move(child));
+  }
+
   NodeType getType() const {
     return type;
   }
@@ -112,6 +118,15 @@ class VisibilityNode {
 
   std::vector<VisibilityNode> getChildren() const {
     return children;
+  }
+
+  void clear() {
+    expression = nullptr;
+    children.clear();
+  }
+
+  bool empty() const {
+    return expression == nullptr;
   }
 
   size_t getSize() const {
@@ -130,7 +145,7 @@ class VisibilityNode {
     return end;
   }
 
-  NodeExpression getTerm(char *expression) {
+  NodeExpression getTerm(const std::string &expression) const {
     if (type != NodeType::TERM)
       throw std::runtime_error("Invalid node type");
 

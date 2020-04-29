@@ -251,7 +251,11 @@ void LocalityGroupReader::next() {
 
   do {
     prevKey = std::static_pointer_cast<Key>(rKey->getStream());
-    rKey->read(currentStream.get());
+    if (auths.empty())
+      rKey->read(currentStream.get());
+    else
+      rKey->readFiltered(currentStream.get());
+
     val->read(currentStream.get());
     entriesLeft--;
     if (!rKey->isFiltered()) {

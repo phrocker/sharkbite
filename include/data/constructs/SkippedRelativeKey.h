@@ -219,7 +219,6 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
       skipped = count;
 
       if (!auths.empty()) {
-        std::cout << "auths aren't empty" << std::endl;
         cclient::data::security::VisibilityEvaluator eval(auths);
         if (rkey && !eval.evaluate(cv)) {
           return true;

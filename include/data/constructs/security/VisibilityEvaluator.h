@@ -25,6 +25,9 @@
 #include "../../exceptions/ClientException.h"
 #include "utils/MemoryUtils.h"
 #include "data/constructs/security/Authorizations.h"
+#include "VisibilityNode.h"
+#include "data/exceptions/VisibilityParseException.h"
+#include "ColumnVisibility.h"
 
 namespace cclient {
 namespace data {
@@ -33,6 +36,8 @@ namespace security {
 class VisibilityEvaluator {
 
   cclient::data::security::Authorizations auths;
+  // not intended to be thread safe.
+  std::map<std::string, bool> resultMap;
  public:
   explicit VisibilityEvaluator(const cclient::data::security::Authorizations &auths)
       :
@@ -47,13 +52,23 @@ class VisibilityEvaluator {
     auths = at;
   }
 
-  bool evaluate(std::vector<char> pr) {
-    return false;
+  bool evaluate(const std::vector<char> &expr) {
+    return evaluate(std::string(expr.data(), expr.size()));
   }
 
-  bool evaluate(const std::string &expression) {
-    return false;
+  bool evaluate(const std::string &expr) {
+    auto cacheLookup = resultMap.find(expr);
+    if (cacheLookup != std::end(resultMap)) {
+      return cacheLookup->second;
+    }
+    auto cv = ColumnVisibility(expr);
+    auto tree = cv.getTree();
+    auto result = evaluate(expr, *tree);
+    resultMap[expr] = result;
+    return result;
   }
+
+  bool evaluate(const std::string &expression, const VisibilityNode &root);
 
  protected:
 

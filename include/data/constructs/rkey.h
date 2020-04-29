@@ -70,6 +70,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
    **/
   virtual uint64_t read(cclient::data::streams::InputStream *in);
 
+  uint64_t readFiltered(cclient::data::streams::InputStream *in);
+
   /**
    * Sets the previous key for this relative key.
    * @param previous_key prev key.
@@ -114,7 +116,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
     return filtered;
   }
 
-  void filterVisibility(const cclient::data::security::Authorizations &visibility);
+  void filterVisibility(const cclient::data::security::Authorizations &visibility, const std::shared_ptr<cclient::data::security::VisibilityEvaluator> &eval = nullptr);
 
   void setFiltered();
 
@@ -132,6 +134,18 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
                      const std::shared_ptr<Key> &newkey);
 
   bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
+                     const std::shared_ptr<Key> &newkey);
+
+  bool INLINE readRowFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
+                      const std::shared_ptr<Key> &newkey);
+
+  bool INLINE readCfFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
+                     const std::shared_ptr<Key> &newkey);
+
+  bool INLINE readCqFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
+                     const std::shared_ptr<Key> &newkey);
+
+  bool INLINE readCvFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
 
   int INLINE read(cclient::data::streams::InputStream *stream, std::pair<char*, size_t> *row);
@@ -167,7 +181,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   bool likelyFiltered;
 
   cclient::data::security::Authorizations columnVisibility;
-  cclient::data::security::VisibilityEvaluator evaluator;
+  std::shared_ptr<cclient::data::security::VisibilityEvaluator> evaluator;
 
 
   int32_t rowCommonPrefixLen;

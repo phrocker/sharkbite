@@ -23,7 +23,9 @@
 #include <vector>
 
 #include "../../exceptions/ClientException.h"
+#include "data/exceptions/IllegalArgumentException.h"
 #include "VisibilityNode.h"
+#include "Authorizations.h"
 
 namespace cclient {
 namespace data {
@@ -32,13 +34,28 @@ namespace security {
 class ColumnVisibility {
 
  public:
-  explicit ColumnVisibility(const std::string &expression);
+  explicit ColumnVisibility(const std::string&);
 
   static VisibilityNode normalize(VisibilityNode &root, const std::string &expression);
+
+  std::string flatten();
+
+  VisibilityNode* getTree() {
+    return &node;
+  }
+
  protected:
 
-  VisibilityNode *node;
+  void astToSTring(VisibilityNode &node, std::string expression, std::string &out);
+
+  VisibilityNode processTerm(size_t start, size_t end, VisibilityNode &expr, std::string &expression);
+
+  VisibilityNode parse_(std::string &expression);
+
+  VisibilityNode node;
   std::string expression;
+  size_t index;
+  size_t parens;
 };
 }
 }

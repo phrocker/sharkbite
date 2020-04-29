@@ -220,7 +220,6 @@ class ReadAheadInputStream : public ByteInputStream {
     if (size > readAheadSizeMax) {
       readAheadSizeMax = size;
       delete[] iBytes;
-      std::cout << "resizing to " << size << " " << readAheadSizeMax << std::endl;
       iBytes = new char[readAheadSizeMax];
     }
     input_stream_ref->seek(whence);
