@@ -170,12 +170,14 @@ void LocalityGroupReader::startReadAhead() {
       else {
         readAheadResult.checkRange = false;
       }
+      std::unique_lock<std::mutex> lock(readAheadMutex);
       readAheadResult.hasData=true;
       readAheadConsumerCondition.notify_one();
       if (!readAheadResult.checkRange) {
+        lock.unlock();
         break;
       }
-      std::unique_lock<std::mutex> lock(readAheadMutex);
+
       readAheadCondition.wait(lock, [&] {
             return !readAheadRunning || readAheadResult.interrupt;
           });
@@ -206,10 +208,12 @@ void LocalityGroupReader::next() {
       // data is available
       if (!readAheadResult.hasData) {
         std::unique_lock<std::mutex> lock(readAheadMutex);
-        readAheadConsumerCondition.wait(lock, [&] {
-          return !readAheadRunning || readAheadResult.hasData;
-        });
-        lock.unlock();
+        if (!readAheadResult.hasData) {
+          readAheadConsumerCondition.wait(lock, [&] {
+            return !readAheadRunning || readAheadResult.hasData;
+          });
+          lock.unlock();
+        }
       }
       if (readAheadResult.hasData && readAheadResult.checkRange) {
         entriesLeft = readAheadResult.entries;
@@ -239,7 +243,7 @@ void LocalityGroupReader::next() {
         }
         checkRange = !currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange)
-          topExists = true;
+        topExists = true;
       } else {
         rKey = 0;
         val = 0;
