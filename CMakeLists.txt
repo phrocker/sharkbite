@@ -50,6 +50,14 @@ option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)
 option(BUILD_TESTS "Build all tests." ON)
 include(ExternalProject)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/client)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/rpc)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/common)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/proto)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/network)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/server)
+
 
 # Use ccache if present
 find_program(CCACHE_FOUND ccache)
@@ -69,9 +77,19 @@ endif()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
 
+
+include_directories("thirdparty/uuid/include/posix")
+add_subdirectory("thirdparty/uuid")
+set(UUID_FOUND "YES" CACHE STRING "" FORCE)
+set(UUID_LIBRARIES uuid CACHE STRING "" FORCE)
+#set(UUID_LIBRARIES "" CACHE STRING "" FORCE)
+
+
+
 include(Compression)
 include(DownloadProject)
 include(LibreSSL)
+
 
 use_bundled_zlib(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
@@ -154,16 +172,19 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	ExternalProject_Add(
 	  Protobuf
 	  GIT_REPOSITORY "https://github.com/phrocker/protobuf.git"
-	  GIT_TAG v3.1.0
+	  GIT_TAG v3.11.4
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
-	  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf
+	  CONFIGURE_COMMAND ./autogen.sh
+  			 COMMAND ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf 
+  			"CFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
+  			"CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
 	  UPDATE_COMMAND ""
 	  )
 	
 	add_library(protobuf STATIC IMPORTED)
 	set_target_properties(protobuf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" )
-	set(PROTOBUF_LIBS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" CACHE STRING "" FORCE)
+	set(PROTOBUF_LIBS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotoc.a" CACHE STRING "" FORCE)
 	set(PROTOBUF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/include" CACHE STRING "" FORCE)
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
@@ -177,6 +198,7 @@ download_project(PROJ pybind11
 
 set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(${pybind11_SOURCE_DIR})
+include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories("${pybind11_SOURCE_DIR}/include/")
 
 find_package (Threads)
@@ -201,6 +223,7 @@ file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
 file(GLOB_RECURSE ZK_SOURCES "src/data/zookeeper/*cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")
 file(GLOB_RECURSE CAPI_SOURCES "src/extern/*cpp")
+file(GLOB_RECURSE LIBHDFS3_SOURCES "src/libhdfs3/client/*.cpp" "src/libhdfs3/common/*.cpp" "src/libhdfs3/proto/*.cpp"  "src/libhdfs3/network/*.cpp"  "src/libhdfs3/rpc/*.cpp" "src/libhdfs3/server/*.cpp")
 file(GLOB_RECURSE UTIL_SOURCES "src/utils/*cpp")
 file(GLOB_RECURSE LOGGING_SOURCES "src/logging/*cpp")
 file(GLOB_RECURSE THRIFT_SOURCES "src/data/extern/thrift/*cpp")
@@ -230,15 +253,15 @@ include_directories("thirdparty/spdlog-20170710/include/")
 include_directories("thirdparty/gzip-hpp/")
 
 
-add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} )
 
-add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-
-
+add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES}  )
 
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+
+
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} )
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
 endif()
@@ -248,7 +271,6 @@ add_dependencies(sharkbite Protobuf)
 add_dependencies(pysharkbite Protobuf)
 add_dependencies(sharkbite-shared Protobuf)
 
-
 add_dependencies(sharkbite ZooKeeper)
 add_dependencies(pysharkbite ZooKeeper)
 add_dependencies(sharkbite-shared ZooKeeper)
@@ -257,7 +279,8 @@ add_dependencies(sharkbite LibThrift)
 add_dependencies(pysharkbite LibThrift)
 add_dependencies(sharkbite-shared LibThrift)
 
-target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} )
+
+target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
 
 target_link_libraries(sharkbite 
@@ -266,8 +289,15 @@ target_link_libraries(sharkbite
   ${NO_WHOLE_ARCHIVE}
 )
 
+target_link_libraries(sharkbite 
+  ${WHOLE_ARCHIVE}
+  ${UUID_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
 
-target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
+
+
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}   ${PROTOBUF_LIBS})
 
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
@@ -288,16 +318,26 @@ target_link_libraries(pysharkbite  PRIVATE
   ${NO_WHOLE_ARCHIVE}
 )
 
+target_link_libraries(pysharkbite  PRIVATE
+  ${WHOLE_ARCHIVE}
+  ${UUID_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
 
 target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
 
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-target_link_libraries(pysharkbite-iterators  PRIVATE
-  ${WHOLE_ARCHIVE}
-  ${ZLIB_LIBRARY}
-  ${NO_WHOLE_ARCHIVE}
-)
-target_compile_options(pysharkbite-iterators INTERFACE -fvisibility=hidden)
+	target_link_libraries(pysharkbite-iterators  PRIVATE
+	  ${WHOLE_ARCHIVE}
+	  ${ZLIB_LIBRARY}
+	  ${NO_WHOLE_ARCHIVE}
+	)
+	target_link_libraries(pysharkbite-iterators  PRIVATE
+	  ${WHOLE_ARCHIVE}
+	  ${UUID_LIBRARIES}
+	  ${NO_WHOLE_ARCHIVE}
+	)
+	target_compile_options(pysharkbite-iterators INTERFACE -fvisibility=hidden)
 endif()
 
 
@@ -433,7 +473,6 @@ ADD_CUSTOM_TARGET(debian-package
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})
   target_link_libraries (testzkInstance ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries( testzkInstance )
   target_link_libraries( testzkInstance ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( testzkInstance ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} sharkbite)
 
@@ -442,7 +481,6 @@ ADD_CUSTOM_TARGET(debian-package
       file(GLOB_RECURSE VANDV "test/vandv/IntegrationTest.cpp")
   add_executable(integrationTest ${VANDV})
   target_link_libraries (integrationTest ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries( integrationTest )
   target_link_libraries( integrationTest ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( integrationTest  ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
   target_link_libraries(integrationTest   sharkbite)

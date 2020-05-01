@@ -188,6 +188,7 @@ PYBIND11_MODULE(pysharkbite, s) {
 
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")
-    .def("open",&cclient::data::RFileOperations::open);
+    .def("randomSeek",&cclient::data::RFileOperations::open)
+    .def("sequentialRead",&cclient::data::RFileOperations::openSequential);
 
 }

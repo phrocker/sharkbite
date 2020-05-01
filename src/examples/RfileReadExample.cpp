@@ -31,6 +31,7 @@
 #include "../include/data/streaming/OutputStream.h"
 #include "data/iterators/MultiIterator.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
+#include "data/streaming/input/HdfsInputStream.h"
 
 #define BOOST_IOSTREAMS_NO_LIB 1
 
@@ -43,28 +44,36 @@ std::ifstream::pos_type filesize(const char *filename) {
   return in.tellg();
 }
 /*
-void timer_start(std::atomic<int64_t> *biggie, unsigned int interval) {
+ void timer_start(std::atomic<int64_t> *biggie, unsigned int interval) {
 
-  std::thread([interval, biggie]() {
-    int64_t time = 1;
-    std::this_thread::sleep_for(std::chrono::milliseconds(interval));
-    while (true) {
+ std::thread([interval, biggie]() {
+ int64_t time = 1;
+ std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+ while (true) {
 
-      std::cout << "Rate is " << (biggie->load() / time) << " keys per ms " << std::endl;
-      std::this_thread::sleep_for(std::chrono::milliseconds(interval));
-      time += interval;
-    }
-  }).detach();
-}
-*/
+ std::cout << "Rate is " << (biggie->load() / time) << " keys per ms " << std::endl;
+ std::this_thread::sleep_for(std::chrono::milliseconds(interval));
+ time += interval;
+ }
+ }).detach();
+ }
+ */
 std::unique_ptr<cclient::data::streams::KeyValueIterator> createMultiReader(std::vector<std::string> rfiles) {
 
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
   for (const auto &path : rfiles) {
-    std::fstream::pos_type size = filesize(path.c_str());
-    auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
+    size_t size = 0;
+    std::unique_ptr<cclient::data::streams::InputStream> stream;
+    if (path.find("hdfs://") != std::string::npos) {
+      auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
+      size = str->getFileSize();
+      stream = std::move(str);
+    } else {
+      size = filesize(path.c_str());
+      auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
 
-    auto stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
+      stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
+    }
 
     auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
 
@@ -85,17 +94,17 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
   cntr = 1;
 
   auto start = chrono::steady_clock::now();
- 
+
   std::unique_ptr<cclient::data::streams::KeyValueIterator> multi_iter = createMultiReader(rfiles);
   std::vector<std::string> cf;
   cclient::data::Range rng;
 
   cclient::data::security::Authorizations auths;
-  if (!visibility.empty()){
+  if (!visibility.empty()) {
     auths.addAuthorization(visibility);
   }
 
-  cclient::data::streams::StreamSeekable seekable(rng, cf,auths, false);
+  cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false);
 
   multi_iter->relocate(&seekable);
   long count = 0;
@@ -124,7 +133,6 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
 
   std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << std::endl;
   std::cout << "Skipped " << multi_iter->getEntriesFiltered() << std::endl;
-
 
   return;
 }
