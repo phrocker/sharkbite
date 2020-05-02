@@ -109,12 +109,10 @@ FileSystemImpl::FileSystemImpl(const FileSystemKey& key, const Config& c)
       nn(NULL),
       sconf(c),
       user(key.getUser()) {
-  std::cout << "blah" << std::endl;
     static atomic<uint32_t> count(0);
     std::stringstream ss;
     ss.imbue(std::locale::classic());
     srand((unsigned int) time(NULL));
-    std::cout << "blah" << std::endl;
     ss << "libhdfs3_client_random_" << rand() << "_count_" << ++count << "_pid_"
        << getpid() << "_tid_" << pthread_self();
     clientName = ss.str();
@@ -143,7 +141,6 @@ const std::string FileSystemImpl::getStandardPath(const std::string & path) {
         lock_guard<mutex> lock(mutWorkingDir);
         base = workingDir;
     }
-    std::cout << "base is " << base << std::endl;
     return CanonicalizePath(GetAbsPath(base, path));
 }
 
@@ -152,31 +149,25 @@ const char * FileSystemImpl::getClientName() {
 }
 
 void FileSystemImpl::connect() {
-  std::cout << "ah " << std::endl;
     std::string host, port, uri;
     std::vector<NamenodeInfo> namenodeInfos;
 
     if (nn) {
         THROW(HdfsIOException, "FileSystemImpl: already connected.");
     }
-    std::cout << "ah " << std::endl;
 
     host = key.getHost();
     port = key.getPort();
     uri += key.getScheme() + "://" + host;
-    std::cout << "ah " << std::endl;
     if (port.empty()) {
-      std::cout << "ah " << std::endl;
         try {
             namenodeInfos = NamenodeInfo::GetHANamenodeInfo(key.getHost(), conf);
         } catch (const HdfsConfigNotFound & e) {
             NESTED_THROW(InvalidParameter, "Cannot parse URI: %s, missing port or invalid HA configuration", uri.c_str());
         }
-        std::cout << "ah " << std::endl;
         tokenService = "ha-hdfs:";
         tokenService += host;
     } else {
-      std::cout << "ah " << std::endl;
         std::stringstream ss;
         ss.imbue(std::locale::classic());
         ss << host << ":" << port;
@@ -184,7 +175,6 @@ void FileSystemImpl::connect() {
         namenodeInfos[0].setRpcAddr(ss.str());
         tokenService = namenodeInfos[0].getRpcAddr();
     }
-    std::cout << "ah " << std::endl;
 
 #ifdef MOCK
     nn = stub->getNamenode();
@@ -305,7 +295,6 @@ FileStatus FileSystemImpl::getFileStatus(std::string path) {
         THROW(InvalidParameter, "Invalid input: path should not be empty");
     }
 
-    std::cout << "path is " << path << std::endl;
     return nn->getFileInfo(getStandardPath(path), NULL);
 }
 

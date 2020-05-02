@@ -44,10 +44,8 @@ std::vector<NamenodeInfo> NamenodeInfo::GetHANamenodeInfo(
     std::vector<NamenodeInfo> retval;
     std::string strNameNodes = StringTrim(
                                    conf.getString(std::string(DFS_NAMENODE_HA) + "." + service));
-    std::cout << "ahhh" << strNameNodes << std::endl;
     std::vector<std::string> nns = StringSplit(strNameNodes, ",");
     retval.resize(nns.size());
-    std::cout << "here" << std::endl;
 
     for (size_t i = 0; i < nns.size(); ++i) {
         std::string dfsRpcAddress = StringTrim(

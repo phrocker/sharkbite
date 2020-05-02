@@ -2,6 +2,10 @@
 // It pretty much entirely negates the need to write these by hand in asm.
 #include "data/extern/knnspeed/avxmem.h"
 
+#ifndef NATIVE_ARCH
+#include <cstring>
+#endif
+#ifdef NATIVE_ARCH
 
 
 int memcmp (const void *str1, const void *str2, size_t count)
@@ -1276,7 +1280,7 @@ int memcmp_large_eq_a(const void *str1, const void *str2, size_t numbytes) // Wo
   }
   return returnval;
 }
-
+#endif
 //-----------------------------------------------------------------------------
 // Main Function:
 //-----------------------------------------------------------------------------
@@ -1284,38 +1288,43 @@ int memcmp_large_eq_a(const void *str1, const void *str2, size_t numbytes) // Wo
 // Main memcmp function
 int AVX_memcmp(const void *str1, const void *str2, size_t numbytes, int equality)
 {
-  int returnval = 0;
+  #ifdef NATIVE_ARCH
+    int returnval = 0;
 
-  if(
-      ( ((uintptr_t)str1 & BYTE_ALIGNMENT) == 0 )
-      &&
-      ( ((uintptr_t)str2 & BYTE_ALIGNMENT) == 0 )
-    ) // Check alignment
-  {
-    // See memmove.c for why it's worth doing special aligned versions of memcmp, which
-    // is a function that involves 2 loads.
-    if(equality == 0)
+    if(
+        ( ((uintptr_t)str1 & BYTE_ALIGNMENT) == 0 )
+        &&
+        ( ((uintptr_t)str2 & BYTE_ALIGNMENT) == 0 )
+      ) // Check alignment
     {
-      returnval = memcmp_large_eq_a(str1, str2, numbytes);
+      // See memmove.c for why it's worth doing special aligned versions of memcmp, which
+      // is a function that involves 2 loads.
+      if(equality == 0)
+      {
+        returnval = memcmp_large_eq_a(str1, str2, numbytes);
+      }
+      else
+      {
+        returnval = memcmp_large_a(str1, str2, numbytes);
+      }
     }
     else
     {
-      returnval = memcmp_large_a(str1, str2, numbytes);
+      if(equality == 0)
+      {
+        returnval = memcmp_large_eq(str1, str2, numbytes);
+      }
+      else
+      {
+        returnval = memcmp_large(str1, str2, numbytes);
+      }
     }
-  }
-  else
-  {
-    if(equality == 0)
-    {
-      returnval = memcmp_large_eq(str1, str2, numbytes);
-    }
-    else
-    {
-      returnval = memcmp_large(str1, str2, numbytes);
-    }
+    return returnval;
+    #else
+      return memcmp(str1,str2,numbytes);
+    #endif
   }
 
-  return returnval;
-}
+  
 
 // AVX-1024+ support pending existence of the standard.

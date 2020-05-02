@@ -26,9 +26,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #ifdef NATIVE_ARCH
-#include <x86intrin.h>
+#include <immintrin.h>
 #endif
-
 // Size limit (in bytes) before switching to non-temporal/streaming loads & stores
 // Applies to: AVX_memmove, AVX_memset, and AVX_memcpy
 #define CACHESIZELIMIT 3*1024*1024 // 3 MB
@@ -40,6 +39,7 @@
 // Calling the individual subfunctions directly is also OK. That's why this header is so huge!
 int AVX_memcmp(const void *str1, const void *str2, size_t numbytes, int equality);
 
+#ifdef NATIVE_ARCH
 //-----------------------------------------------------------------------------
 // MEMCMP:
 //-----------------------------------------------------------------------------
@@ -61,6 +61,7 @@ int memcmp_64bit(const void *str1, const void *str2, size_t count);
 int memcmp_64bit_eq(const void *str1, const void *str2, size_t count);
 
 // SSE4.2 (Unaligned)
+
 int memcmp_128bit_u(const void *str1, const void *str2, size_t count);
 int memcmp_128bit_eq_u(const void *str1, const void *str2, size_t count);
 
@@ -90,5 +91,5 @@ int memcmp_512bit_a(const void *str1, const void *str2, size_t count);
 int memcmp_512bit_eq_a(const void *str1, const void *str2, size_t count);
 #endif
 // END MEMCMP
-
+#endif
 #endif /* _avxmem_H */

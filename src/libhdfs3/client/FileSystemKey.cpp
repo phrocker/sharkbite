@@ -37,7 +37,6 @@ FileSystemKey::FileSystemKey(const std::string & uri, const char * u) {
     //uriobj = xmlParseURI(uri.c_str());
 
     ParserUri uriParser(uri);
-    std::cout << "uri is " << uri << std::endl;
 
     try {
         if (uriParser.getHost().empty()) {

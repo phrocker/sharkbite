@@ -41,7 +41,6 @@ class ParserUri {
   std::string path_;
   int port;
   void parse(const std::string &url_s) {
-    std::cout << "url is " << url_s << std::endl;
     const std::string prot_end("://");
     std::string::const_iterator prot_i = search(url_s.begin(), url_s.end(), prot_end.begin(), prot_end.end());
     protocol_.reserve(std::distance(url_s.begin(), prot_i));
@@ -56,10 +55,8 @@ class ParserUri {
     size_t colon_pos;
 
     std::string portstr = (colon_pos = host_.find(":")) != std::string::npos ? host_.substr(colon_pos + 1) : "";
-    std::cout << portstr << std::endl;
     if (host_.find(":") != std::string::npos)
       host_ = host_.substr(0, host_.find(":"));
-    std::cout << "host name is " << host_ << std::endl;
     if (!portstr.empty()) {
       port = atoi(portstr.c_str());
 

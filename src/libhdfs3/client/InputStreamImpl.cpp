@@ -343,8 +343,12 @@ void InputStreamImpl::setupBlockReader(bool temporaryDisableLocalRead) {
             len = curBlock->getNumBytes() - offset;
             assert(len > 0);
 
+            /**
+             * check the domain socket path too. if it is not set let's avoid an upcoming exception and
+             * access the data node.
+             */
             if (!temporaryDisableLocalRead && !lastReadFromLocal &&
-                !readFromUnderConstructedBlock && localRead && isLocalNode()) {
+                !readFromUnderConstructedBlock && localRead && isLocalNode() && !conf->getDomainSocketPath().empty()) {
                 lastReadFromLocal = true;
 
                 shared_ptr<ReadShortCircuitInfo> info;

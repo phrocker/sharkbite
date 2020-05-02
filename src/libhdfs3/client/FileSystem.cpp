@@ -198,7 +198,6 @@ static FileSystemWrapper * ConnectInternal(const char * uri,
     if (NULL == uri || 0 == strlen(uri)) {
         THROW(InvalidParameter, "Invalid HDFS uri.");
     }
-    std::cout << "url is " << uri << std::endl;
     FileSystemKey key(uri, principal.c_str());
 
     if (token) {
@@ -231,11 +230,8 @@ void FileSystem::connect(const char * uri, const char * username, const char * t
             Token t;
             t.fromString(token);
             principal = ExtractPrincipalFromToken(t);
-            std::cout << "connect" << std::endl;
             impl = ConnectInternal(uri, principal, &t, conf);
-            std::cout << "connect" << std::endl;
             impl->filesystem->connect();
-            std::cout << "connect" << std::endl;
             return;
         } else if (username) {
             principal = username;
@@ -244,11 +240,8 @@ void FileSystem::connect(const char * uri, const char * username, const char * t
         if (auth == AuthMethod::KERBEROS) {
             principal = ExtractPrincipalFromTicketCache(sconf.getKerberosCachePath());
         }
-        std::cout << "huh " << uri << std::endl;
         impl = ConnectInternal(uri, principal, NULL, conf);
-        std::cout << "huh" << std::endl;
         impl->filesystem->connect();
-        std::cout << "huh" << std::endl;
     } catch (...) {
         delete impl;
         impl = NULL;

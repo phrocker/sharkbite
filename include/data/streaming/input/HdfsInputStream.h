@@ -19,6 +19,7 @@
 #include <algorithm>
 #include "InputStream.h"
 #include "extern/libhdfs3/client/hdfs.h"
+#include "utils/Uri.h"
 
 namespace cclient {
 namespace data {
@@ -70,62 +71,6 @@ class HdfsLink {
   hdfsFS reference;
 };
 
-class HdfsUri {
-
- private:
-
-  std::string protocol_;
-  std::string host_;
-  std::string path_;
-  int port;
-  void parse(const std::string &url_s) {
-    const std::string prot_end("://");
-    std::string::const_iterator prot_i = search(url_s.begin(), url_s.end(), prot_end.begin(), prot_end.end());
-    protocol_.reserve(std::distance(url_s.begin(), prot_i));
-    std::transform(url_s.begin(), prot_i, back_inserter(protocol_), std::ptr_fun<int, int>(tolower));  // protocol is icase
-    if (prot_i == url_s.end())
-      return;
-    std::advance(prot_i, prot_end.length());
-    std::string::const_iterator path_i = find(prot_i, url_s.end(), '/');
-    host_.reserve(distance(prot_i, path_i));
-    std::transform(prot_i, path_i, back_inserter(host_), std::ptr_fun<int, int>(tolower));  // host is icase
-
-    size_t colon_pos;
-
-    std::string portstr = (colon_pos = host_.find(":")) != std::string::npos ? host_.substr(colon_pos + 1) : "";
-    std::cout << portstr << std::endl;
-    host_ = host_.substr(0,host_.find(":"));
-    if (!portstr.empty()) {
-      port = atoi(portstr.c_str());
-      std::cout << "port is " << port << std::endl;
-    } else {
-      port = 8080;
-    }
-
-  }
-
- public:
-  explicit HdfsUri(const std::string file) {
-    parse(file);
-  }
-
-  std::string getProtocol() const {
-    return protocol_;
-  }
-
-  std::string getHost() const {
-    return host_;
-  }
-
-  std::string getPath() const {
-    return path_;
-  }
-
-  int getPort() const {
-    return port;
-  }
-
-};
 
 class HdfsInputStream : public InputStream {
 

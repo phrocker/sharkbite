@@ -24,8 +24,6 @@ HdfsLink::HdfsLink(std::string nn, int port)
     :
     nn(nn),
     port(port) {
-  std::cout << " name node is " << this->nn << " " << port << std::endl;
-
   reference = hdfsConnect(this->nn.c_str(), port);
 }
 
@@ -43,16 +41,14 @@ HdfsInputStream::HdfsInputStream(const std::string path)
     hdfs(nullptr),
     file(path) {
 
-  HdfsUri uri(path);
+  utils::Uri uri(path);
 
-  hdfs = std::make_shared<HdfsLink>(file, uri.getPort());
+  hdfs = std::make_shared<HdfsLink>(file, uri.port());
 
-  file = "/accumulo/tables/4/default_tablet/C00000z4.rf";
+  file = uri.path();
 
   fileRef = hdfsOpenFile(hdfs->getHdfsreference(), file.c_str(), O_RDONLY, 0, 0, 0);
-  //hdfsFileInfo * hdfsGetPathInfo(hdfsFS fs, const char * path);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsreference(), file.c_str());
-  std::cout << file << " " << ret << std::endl;
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);
 }
@@ -61,12 +57,17 @@ HdfsInputStream::HdfsInputStream(const std::shared_ptr<HdfsLink> &hdfs, const st
     :
     InputStream(),
     hdfs(hdfs),
-    file(file) {
+    file(path) {
+
+  utils::Uri uri(path);
+
+  file = uri.path();
+
+    
   fileRef = hdfsOpenFile(hdfs->getHdfsreference(), file.c_str(), O_RDONLY, 0, 0, 0);
   //hdfsFileInfo * hdfsGetPathInfo(hdfsFS fs, const char * path);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsreference(), file.c_str());
   size = ret->mSize;
-  std::cout << file << " " << ret << std::endl;
   hdfsFreeFileInfo(ret, 1);
 }
 

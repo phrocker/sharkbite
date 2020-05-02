@@ -552,7 +552,6 @@ FileStatus NamenodeImpl::getFileInfo(const std::string & src, bool *exist)
 /* throw (FileNotFoundException,
  UnresolvedLinkException, HdfsIOException) */{
     FileStatus retval;
-    std::cout << "getfile info on " << src << std::endl;
     try {
         GetFileInfoRequestProto request;
         GetFileInfoResponseProto response;
