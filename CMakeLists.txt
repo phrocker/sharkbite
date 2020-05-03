@@ -82,7 +82,6 @@ include_directories("thirdparty/uuid/include/posix")
 add_subdirectory("thirdparty/uuid")
 set(UUID_FOUND "YES" CACHE STRING "" FORCE)
 set(UUID_LIBRARIES uuid CACHE STRING "" FORCE)
-#set(UUID_LIBRARIES "" CACHE STRING "" FORCE)
 
 
 
@@ -99,6 +98,107 @@ use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 find_package (OpenSSL REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread serialization)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
+
+################# CURL
+
+
+  set(CURL_C_FLAGS "${CMAKE_C_FLAGS}")
+  set(CURL_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+
+get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+
+if ("${LIB64}" STREQUAL "TRUE" AND (NOT WIN32 AND NOT APPLE))
+    set(LIBSUFFIX 64)
+else()
+    set(LIBSUFFIX "")
+endif()
+
+  if (WIN32)
+	set(BYPRODUCT "lib/libcurl.lib")
+  else()
+  	set(BYPRODUCT "lib${LIBSUFFIX}/libcurl.a")
+  endif()
+
+  if (WIN32)
+  set (PC "PATCH_COMMAND ./buildconf.bat")
+  else()
+  endif()
+  
+  list(APPEND CURL_CMAKE_MODULE_PATH_PASSTHROUGH_LIST "${CMAKE_SOURCE_DIR}/cmake/override")
+  
+  string(REPLACE ";" "%" CURL_CMAKE_MODULE_PATH_PASSTHROUGH "${CURL_CMAKE_MODULE_PATH_PASSTHROUGH_LIST}")
+
+  ExternalProject_Add(
+    curl-external
+    GIT_REPOSITORY "https://github.com/curl/curl.git"
+    GIT_TAG "f3294d9d86e6a7915a967efff2842089b8b0d071"  # Version 7.64.0
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-src"
+    LIST_SEPARATOR % # This is needed for passing semicolon-separated lists
+    CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
+               "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install"
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+                -DBUILD_CURL_EXE=OFF
+                -DBUILD_TESTING=OFF
+                -DCMAKE_USE_OPENSSL=ON
+                -DBUILD_SHARED_LIBS=OFF
+                -DHTTP_ONLY=ON
+                -DCMAKE_USE_OPENSSL=ON
+                "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
+                "-DLIBRESSL_SRC_DIR=${LIBRESSL_SRC_DIR}"
+                "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
+                "-DBYPRODUCT_SUFFIX=${BYPRODUCT_SUFFIX}"
+                "-DZLIB_BYPRODUCT_INCLUDE=${ZLIB_BYPRODUCT_INCLUDE}"
+                "-DZLIB_BYPRODUCT=${ZLIB_BYPRODUCT}"
+                "-DZLIB_LIBRARY=${ZLIB_LIBRARY}"
+                "-DZLIB_LIBRARIES=${ZLIB_LIBRARIES}"
+                -DCURL_DISABLE_CRYPTO_AUTH=ON
+                -DCMAKE_USE_LIBSSH2=OFF
+                "-DCMAKE_DEBUG_POSTFIX="
+                -DHAVE_GLIBC_STRERROR_R=1
+                -DHAVE_GLIBC_STRERROR_R__TRYRUN_OUTPUT=""
+                -DHAVE_POSIX_STRERROR_R=0
+                -DHAVE_POSIX_STRERROR_R__TRYRUN_OUTPUT=""
+                -DHAVE_POLL_FINE_EXITCODE=0
+                -DHAVE_FSETXATTR_5=0
+                -DHAVE_FSETXATTR_5__TRYRUN_OUTPUT=""
+               "-DCMAKE_MODULE_PATH=${CURL_CMAKE_MODULE_PATH_PASSTHROUGH}"
+               "-DCMAKE_C_FLAGS=${CURL_C_FLAGS}"
+               "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+               "-DCMAKE_CXX_FLAGS=${CURL_CXX_FLAGS}"
+	${PC}
+    BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install/${BYPRODUCT}"
+  )
+
+  add_dependencies(curl-external libressl-portable)
+  if(WIN32 OR NOT USE_SYSTEM_ZLIB)
+	  add_dependencies(curl-external zlib-external)
+  endif()
+
+  set(CURL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl/" CACHE STRING "" FORCE)
+  set(CURL_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install/" CACHE STRING "" FORCE)
+  set(CURL_BYPRODUCT_DIR "${BYPRODUCT}" CACHE STRING "" FORCE)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/curl/dummy")
+  add_library(curl STATIC IMPORTED)
+  set_target_properties(curl PROPERTIES IMPORTED_LOCATION "${CURL_BIN_DIR}${BYPRODUCT}")
+    
+  if (OPENSSL_FOUND) 
+     if (NOT WIN32)
+       set_target_properties(curl PROPERTIES INTERFACE_LINK_LIBRARIES ${OPENSSL_LIBRARIES})
+	 endif()
+  endif(OPENSSL_FOUND)
+  add_dependencies(curl curl-external)
+  set(CURL_FOUND "YES")
+  set(CURL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl/include")
+  set(CURL_LIBRARY "${CURL_BIN_DIR}${BYPRODUCT}" CACHE STRING "" FORCE)
+  set(CURL_LIBRARIES "${CURL_LIBRARY}" CACHE STRING "" FORCE)
+ 
+
+if (CURL_FOUND)
+  include_directories("${CURL_INCLUDE_DIRS}")
+endif()
+
+################# CURL
 ################# THRIFT
 
 	ExternalProject_Add(
@@ -253,18 +353,25 @@ include_directories("thirdparty/spdlog-20170710/include/")
 include_directories("thirdparty/gzip-hpp/")
 
 
-add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} )
+add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${CURL_LIBRARIES} ${LIBHDFS3_SOURCES} )
 
-add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES}  )
-
-
+add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${CURL_LIBRARIES}  ${LIBHDFS3_SOURCES}  )
 
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} )
+
+
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES}  ${CURL_LIBRARIES}  ${LIBHDFS3_SOURCES} )
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
 endif()
+
+
+
+
+add_dependencies(sharkbite curl)
+add_dependencies(pysharkbite curl)
+add_dependencies(sharkbite-shared curl)
 
 
 add_dependencies(sharkbite Protobuf)
