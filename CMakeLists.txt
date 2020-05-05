@@ -189,7 +189,7 @@ endif()
   endif(OPENSSL_FOUND)
   add_dependencies(curl curl-external)
   set(CURL_FOUND "YES")
-  set(CURL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl/include")
+  set(CURL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl-install/include")
   set(CURL_LIBRARY "${CURL_BIN_DIR}${BYPRODUCT}" CACHE STRING "" FORCE)
   set(CURL_LIBRARIES "${CURL_LIBRARY}" CACHE STRING "" FORCE)
 
