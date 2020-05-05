@@ -4,6 +4,21 @@ set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
 
+TRY_COMPILE(STRERROR_R_RETURN_INT
+      ${CMAKE_BINARY_DIR}
+      ${CMAKE_SOURCE_DIR}/cmake/CMakeTestCompileStrerror.cpp
+      CMAKE_FLAGS "-DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'"
+      OUTPUT_VARIABLE OUTPUT)
+      
+MESSAGE(STATUS "Checking whether strerror_r returns an int")
+  
+IF(STRERROR_R_RETURN_INT)
+   MESSAGE(STATUS "Checking whether strerror_r returns an int -- yes")
+ELSE(STRERROR_R_RETURN_INT)
+   MESSAGE(STATUS "Checking whether strerror_r returns an int -- no")
+ENDIF(STRERROR_R_RETURN_INT)
+
+
 option(NATIVE_ARCH "Build with -march=native" OFF)
 option(ENABLE_GPROF "Enable sampling using gprof" OFF)
 option(PYTHON_ITERATOR_SUPPORT "Builds python iterator support." OFF)
@@ -42,7 +57,11 @@ endif(ENABLE_GPROF)
 
 if (NATIVE_ARCH)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNATIVE_ARCH")
-endif(ENABLE_GPROF)
+endif(NATIVE_ARCH)
+
+if (STRERROR_R_RETURN_INT)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTRERROR_R_RETURN_INT")
+endif(NATIVE_ARCH)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
