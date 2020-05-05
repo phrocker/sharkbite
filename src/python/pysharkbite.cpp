@@ -34,6 +34,8 @@
 #include "data/streaming/accumulo/StreamSeekable.h"
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/rfile/RFileOperations.h"
+#include "data/iterators/MultiIterator.h"
+#include "data/streaming/accumulo/KeyValueIterator.h"
 
 using namespace pybind11::literals;
 
@@ -41,6 +43,8 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
 PYBIND11_MODULE(pysharkbite, s) {
   s.doc() = "Accumulo connector plugin";
+
+  
 
   pybind11::class_<cclient::impl::Configuration, std::shared_ptr<cclient::impl::Configuration>>(s, "Configuration")
   .def(pybind11::init<>())
@@ -186,9 +190,17 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("getTop",&cclient::data::RFile::getTop)
   .def("next",&cclient::data::RFile::next);
 
+pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::streams::KeyValueIterator>>(s, "KeyValueIterator")
+  .def(pybind11::init<>())
+  .def("seek",&cclient::data::streams::KeyValueIterator::relocate)
+  .def("hasNext",&cclient::data::streams::KeyValueIterator::hasNext)
+  .def("getTopKey",&cclient::data::streams::KeyValueIterator::getTopKey)
+  .def("getTopValue",&cclient::data::streams::KeyValueIterator::getTopValue)
+  .def("next",&cclient::data::streams::KeyValueIterator::next);
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")
     .def("randomSeek",&cclient::data::RFileOperations::open)
-    .def("sequentialRead",&cclient::data::RFileOperations::openSequential);
+    .def("sequentialRead",&cclient::data::RFileOperations::openSequential)
+    .def("openManySequential",&cclient::data::RFileOperations::openManySequential);
 
 }

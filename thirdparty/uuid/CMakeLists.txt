@@ -52,4 +52,5 @@ add_library(
     uuid_time.c
 )
 
+set_property(TARGET uuid PROPERTY POSITION_INDEPENDENT_CODE ON)
 set_property(TARGET uuid-shared PROPERTY POSITION_INDEPENDENT_CODE ON)
