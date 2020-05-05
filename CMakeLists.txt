@@ -195,9 +195,6 @@ endif()
 
 include_directories(${CURL_INCLUDE_DIRS}) 
 
-if (CURL_FOUND)
-  include_directories("${CURL_INCLUDE_DIRS}")
-endif()
 
 ################# CURL
 ################# THRIFT

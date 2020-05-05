@@ -24,10 +24,11 @@
 
 #include <string>
 
+
+#ifdef USE_KRB5
 #include "openssl/conf.h"
 #include "openssl/evp.h"
 #include "openssl/err.h"
-#ifdef USE_KRB5
 #include "FileEncryptionInfo.h"
 #include "KmsClientProvider.h"
 
