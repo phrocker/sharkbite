@@ -122,7 +122,7 @@ public:
      * @param permission directory permission.
      * @return return true if success.
      */
-    virtual bool mkdir(const char * path, const Permission & permission) = 0;
+    virtual bool mkdir(std::string  path, const Permission & permission) = 0;
 
     /**
      * To create a directory which given permission.
@@ -131,7 +131,7 @@ public:
      * @param permission directory permission.
      * @return return true if success.
      */
-    virtual bool mkdirs(const char * path, const Permission & permission) = 0;
+    virtual bool mkdirs(std::string  path, const Permission & permission) = 0;
 
     /**
      * To get path information.
@@ -162,7 +162,7 @@ public:
      * @param path the directory path.
      * @return Return a iterator to visit all elements in this directory.
      */
-    virtual DirectoryIterator listDirectory(const char * path,
+    virtual DirectoryIterator listDirectory(std::string path,
                                             bool needLocation) = 0;
 
     /**
@@ -170,7 +170,7 @@ public:
      * @param path The directory path.
      * @return Return a vector of file informations in the directory.
      */
-    virtual std::vector<FileStatus> listAllDirectoryItems(const char * path,
+    virtual std::vector<FileStatus> listAllDirectoryItems(std::string path,
             bool needLocation) = 0;
 
     /**

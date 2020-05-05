@@ -36,6 +36,7 @@
 #include "data/constructs/rfile/RFileOperations.h"
 #include "data/iterators/MultiIterator.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
+#include "data/constructs/client/Hdfs.h"
 
 using namespace pybind11::literals;
 
@@ -189,6 +190,17 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("hasNext",&cclient::data::RFile::hasNext)
   .def("getTop",&cclient::data::RFile::getTop)
   .def("next",&cclient::data::RFile::next);
+
+  pybind11::class_<cclient::data::hdfs::HdfsDirEnt>(s, "HdfsDirEnt")
+      .def("getName",&cclient::data::hdfs::HdfsDirEnt::getName)
+      .def("getOwner",&cclient::data::hdfs::HdfsDirEnt::getOwner)
+      .def("getGroup",&cclient::data::hdfs::HdfsDirEnt::getGroup)
+      .def("getSize",&cclient::data::hdfs::HdfsDirEnt::getSize);
+
+  pybind11::class_<cclient::data::hdfs::HdfsLink, std::shared_ptr<cclient::data::hdfs::HdfsLink>>(s, "Hdfs")
+    .def(pybind11::init<std::string,int>())
+    .def("mkdir",&cclient::data::hdfs::HdfsLink::mkdir)
+    .def("list",&cclient::data::hdfs::HdfsLink::list);
 
 pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::streams::KeyValueIterator>>(s, "KeyValueIterator")
   .def(pybind11::init<>())

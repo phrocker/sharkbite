@@ -475,7 +475,6 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
         myMasterClient->executeFateOperation(transId, creds, fateTransId, type, tableArgs, options, !wait);
         succeeded = true;
       } catch (apache::thrift::transport::TTransportException &e) {
-        std::cout << e.what() << std::endl;
         recreateMasterTransport();
         succeeded = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -498,11 +497,9 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
           break;
 
         } catch (apache::thrift::transport::TTransportException &e) {
-          std::cout << e.what() << std::endl;
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           myTransport->close();
         } catch (std::runtime_error &e) {
-          std::cout << e.what() << std::endl;
           myTransport->close();
           throw e;
         }

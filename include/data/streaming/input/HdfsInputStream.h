@@ -20,6 +20,7 @@
 #include "InputStream.h"
 #include "extern/libhdfs3/client/hdfs.h"
 #include "utils/Uri.h"
+#include "data/constructs/client/Hdfs.h"
 
 namespace cclient {
 namespace data {
@@ -57,21 +58,6 @@ class HadoopDataInputStream : public InputStream {
 
 };
 
-class HdfsLink {
- public:
-  explicit HdfsLink(std::string nn, int port);
-
-  ~HdfsLink();
-
-  hdfsFS getHdfsreference();
-
- private:
-  std::string nn;
-  int port;
-  hdfsFS reference;
-};
-
-
 class HdfsInputStream : public InputStream {
 
  protected:
@@ -80,7 +66,7 @@ class HdfsInputStream : public InputStream {
 
   explicit HdfsInputStream(const std::string path);
 
-  explicit HdfsInputStream(const std::shared_ptr<HdfsLink> &hdfs, const std::string &path);
+  explicit HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path);
 
   virtual ~HdfsInputStream() {
     hdfsCloseFile(hdfs->getHdfsreference(), fileRef);
@@ -111,7 +97,7 @@ class HdfsInputStream : public InputStream {
   std::string file;
 
 // output stream reference.
-  std::shared_ptr<HdfsLink> hdfs;
+  std::shared_ptr<hdfs::HdfsLink> hdfs;
 
 };
 

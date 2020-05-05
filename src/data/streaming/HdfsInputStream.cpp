@@ -20,20 +20,7 @@ namespace cclient {
 namespace data {
 namespace streams {
 
-HdfsLink::HdfsLink(std::string nn, int port)
-    :
-    nn(nn),
-    port(port) {
-  reference = hdfsConnect(this->nn.c_str(), port);
-}
 
-HdfsLink::~HdfsLink() {
-  hdfsDisconnect(reference);
-}
-
-hdfsFS HdfsLink::getHdfsreference() {
-  return reference;
-}
 
 HdfsInputStream::HdfsInputStream(const std::string path)
     :
@@ -43,7 +30,7 @@ HdfsInputStream::HdfsInputStream(const std::string path)
 
   utils::Uri uri(path);
 
-  hdfs = std::make_shared<HdfsLink>(file, uri.port());
+  hdfs = std::make_shared<hdfs::HdfsLink>(file, uri.port());
 
   file = uri.path();
 
@@ -53,7 +40,7 @@ HdfsInputStream::HdfsInputStream(const std::string path)
   hdfsFreeFileInfo(ret, 1);
 }
 
-HdfsInputStream::HdfsInputStream(const std::shared_ptr<HdfsLink> &hdfs, const std::string &path)
+HdfsInputStream::HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path)
     :
     InputStream(),
     hdfs(hdfs),
@@ -65,7 +52,6 @@ HdfsInputStream::HdfsInputStream(const std::shared_ptr<HdfsLink> &hdfs, const st
 
     
   fileRef = hdfsOpenFile(hdfs->getHdfsreference(), file.c_str(), O_RDONLY, 0, 0, 0);
-  //hdfsFileInfo * hdfsGetPathInfo(hdfsFS fs, const char * path);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsreference(), file.c_str());
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);

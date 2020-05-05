@@ -27,6 +27,11 @@
 #include <gsasl.h>
 #endif
 
+
+
+
+#ifdef USE_KRB5
+
 #include "openssl/conf.h"
 #include "openssl/evp.h"
 #include "openssl/err.h"
@@ -38,10 +43,10 @@
 #include "common/Memory.h"
 #include <boost/property_tree/ptree.hpp>
 
-using boost::property_tree::ptree;
 using namespace Hdfs::Internal;
 
-#ifdef USE_KRB5
+using boost::property_tree::ptree;
+
 namespace Hdfs {
 
 class KmsClientProvider {

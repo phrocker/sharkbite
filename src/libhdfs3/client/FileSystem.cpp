@@ -313,7 +313,7 @@ bool FileSystem::deletePath(const char * path, bool recursive) {
  * @param permission directory permission.
  * @return return true if success.
  */
-bool FileSystem::mkdir(const char * path, const Permission & permission) {
+bool FileSystem::mkdir(std::string  path, const Permission & permission) {
     if (!impl) {
         THROW(HdfsIOException, "FileSystem: not connected.");
     }
@@ -328,7 +328,7 @@ bool FileSystem::mkdir(const char * path, const Permission & permission) {
  * @param permission directory permission.
  * @return return true if success.
  */
-bool FileSystem::mkdirs(const char * path, const Permission & permission) {
+bool FileSystem::mkdirs(std::string  path, const Permission & permission) {
     if (!impl) {
         THROW(HdfsIOException, "FileSystem: not connected.");
     }
@@ -377,7 +377,7 @@ std::vector<BlockLocation> FileSystem::getFileBlockLocations(const char * path,
  * @param path the directory path.
  * @return Return a iterator to visit all elements in this directory.
  */
-DirectoryIterator FileSystem::listDirectory(const char * path)  {
+DirectoryIterator FileSystem::listDirectory(std::string path)  {
     if (!impl) {
         THROW(HdfsIOException, "FileSystem: not connected.");
     }
@@ -390,7 +390,7 @@ DirectoryIterator FileSystem::listDirectory(const char * path)  {
  * @param path The directory path.
  * @return Return a vector of file informations in the directory.
  */
-std::vector<FileStatus> FileSystem::listAllDirectoryItems(const char * path) {
+std::vector<FileStatus> FileSystem::listAllDirectoryItems(std::string path) {
     if (!impl) {
         THROW(HdfsIOException, "FileSystem: not connected.");
     }

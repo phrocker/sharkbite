@@ -47,156 +47,155 @@
 namespace Hdfs {
 namespace Internal {
 
-static const std::string GetAbsPath(const std::string & prefix,
-                                    const std::string & path) {
-    if (path.empty()) {
-        return prefix;
-    }
+static const std::string GetAbsPath(const std::string &prefix, const std::string &path) {
+  if (path.empty()) {
+    return prefix;
+  }
 
-    if (path.find("hdfs://") != std::string::npos){
-      return path;
-    }
+  if (path.find("hdfs://") != std::string::npos) {
+    return path;
+  }
 
-    if ('/' == path[0]) {
-        return path;
-    } else {
-        return prefix + "/" + path;
-    }
+  if ('/' == path[0]) {
+    return path;
+  } else {
+    return prefix + "/" + path;
+  }
 }
 
 /*
  * Return the canonical absolute name of file NAME.
  * A canonical name does not contain any `.', `..' components nor any repeated path separators ('/')
  */
-static const std::string CanonicalizePath(const std::string & path) {
-    if (path.find("hdfs://") != std::string::npos)
-      return path;
-    int skip = 0;
-    std::string retval;
-    std::vector<std::string> components = StringSplit(path, "/");
-    std::deque<std::string> tmp;
-    std::vector<std::string>::reverse_iterator s = components.rbegin();
+static const std::string CanonicalizePath(const std::string &path) {
+  if (path.find("hdfs://") != std::string::npos)
+    return path;
+  int skip = 0;
+  std::string retval;
+  std::vector<std::string> components = StringSplit(path, "/");
+  std::deque<std::string> tmp;
+  std::vector<std::string>::reverse_iterator s = components.rbegin();
 
-    while (s != components.rend()) {
-        if (s->empty() || *s == ".") {
-            ++s;
-        } else if (*s == "..") {
-            ++skip;
-            ++s;
-        } else {
-            if (skip <= 0) {
-                tmp.push_front(*s);
-            } else {
-                --skip;
-            }
+  while (s != components.rend()) {
+    if (s->empty() || *s == ".") {
+      ++s;
+    } else if (*s == "..") {
+      ++skip;
+      ++s;
+    } else {
+      if (skip <= 0) {
+        tmp.push_front(*s);
+      } else {
+        --skip;
+      }
 
-            ++s;
-        }
+      ++s;
     }
+  }
 
-    for (size_t i = 0; i < tmp.size(); ++i) {
-        retval += "/";
-        retval += tmp[i];
-    }
+  for (size_t i = 0; i < tmp.size(); ++i) {
+    retval += "/";
+    retval += tmp[i];
+  }
 
-    return retval.empty() ? "/" : retval;
+  return retval.empty() ? "/" : retval;
 }
 
-FileSystemImpl::FileSystemImpl(const FileSystemKey& key, const Config& c)
-    : conf(c),
-      key(key),
-      openedOutputStream(0),
-      nn(NULL),
-      sconf(c),
-      user(key.getUser()) {
-    static atomic<uint32_t> count(0);
-    std::stringstream ss;
-    ss.imbue(std::locale::classic());
-    srand((unsigned int) time(NULL));
-    ss << "libhdfs3_client_random_" << rand() << "_count_" << ++count << "_pid_"
-       << getpid() << "_tid_" << pthread_self();
-    clientName = ss.str();
-    workingDir = std::string("/user/") + user.getEffectiveUser();
-    peerCache = shared_ptr<PeerCache>(new PeerCache(sconf));
+FileSystemImpl::FileSystemImpl(const FileSystemKey &key, const Config &c)
+    :
+    conf(c),
+    key(key),
+    openedOutputStream(0),
+    nn(NULL),
+    sconf(c),
+    user(key.getUser()) {
+  static atomic<uint32_t> count(0);
+  std::stringstream ss;
+  ss.imbue(std::locale::classic());
+  srand((unsigned int) time(NULL));
+  ss << "libhdfs3_client_random_" << rand() << "_count_" << ++count << "_pid_" << getpid() << "_tid_" << pthread_self();
+  clientName = ss.str();
+  workingDir = std::string("/user/") + user.getEffectiveUser();
+  peerCache = shared_ptr<PeerCache>(new PeerCache(sconf));
 #ifdef MOCK
     stub = NULL;
 #endif
-    //set log level
-    RootLogger.setLogSeverity(sconf.getLogSeverity());
+  //set log level
+  RootLogger.setLogSeverity(sconf.getLogSeverity());
 }
 
 /**
  * Destroy a FileSystemBase instance
  */
 FileSystemImpl::~FileSystemImpl() {
-    try {
-        disconnect();
-    } catch (...) {
-    }
+  try {
+    disconnect();
+  } catch (...) {
+  }
 }
 
-const std::string FileSystemImpl::getStandardPath(const std::string & path) {
-    std::string base;
-    {
-        lock_guard<mutex> lock(mutWorkingDir);
-        base = workingDir;
-    }
-    return CanonicalizePath(GetAbsPath(base, path));
+const std::string FileSystemImpl::getStandardPath(const std::string &path) {
+  std::string base;
+  {
+    lock_guard<mutex> lock(mutWorkingDir);
+    base = workingDir;
+  }
+  return CanonicalizePath(GetAbsPath(base, path));
 }
 
-const char * FileSystemImpl::getClientName() {
-    return clientName.c_str();
+const char* FileSystemImpl::getClientName() {
+  return clientName.c_str();
 }
 
 void FileSystemImpl::connect() {
-    std::string host, port, uri;
-    std::vector<NamenodeInfo> namenodeInfos;
+  std::string host, port, uri;
+  std::vector<NamenodeInfo> namenodeInfos;
 
-    if (nn) {
-        THROW(HdfsIOException, "FileSystemImpl: already connected.");
-    }
+  if (nn) {
+    THROW(HdfsIOException, "FileSystemImpl: already connected.");
+  }
 
-    host = key.getHost();
-    port = key.getPort();
-    uri += key.getScheme() + "://" + host;
-    if (port.empty()) {
-        try {
-            namenodeInfos = NamenodeInfo::GetHANamenodeInfo(key.getHost(), conf);
-        } catch (const HdfsConfigNotFound & e) {
-            NESTED_THROW(InvalidParameter, "Cannot parse URI: %s, missing port or invalid HA configuration", uri.c_str());
-        }
-        tokenService = "ha-hdfs:";
-        tokenService += host;
-    } else {
-        std::stringstream ss;
-        ss.imbue(std::locale::classic());
-        ss << host << ":" << port;
-        namenodeInfos.resize(1);
-        namenodeInfos[0].setRpcAddr(ss.str());
-        tokenService = namenodeInfos[0].getRpcAddr();
+  host = key.getHost();
+  port = key.getPort();
+  uri += key.getScheme() + "://" + host;
+  if (port.empty()) {
+    try {
+      namenodeInfos = NamenodeInfo::GetHANamenodeInfo(key.getHost(), conf);
+    } catch (const HdfsConfigNotFound &e) {
+      NESTED_THROW(InvalidParameter, "Cannot parse URI: %s, missing port or invalid HA configuration", uri.c_str());
     }
+    tokenService = "ha-hdfs:";
+    tokenService += host;
+  } else {
+    std::stringstream ss;
+    ss.imbue(std::locale::classic());
+    ss << host << ":" << port;
+    namenodeInfos.resize(1);
+    namenodeInfos[0].setRpcAddr(ss.str());
+    tokenService = namenodeInfos[0].getRpcAddr();
+  }
 
 #ifdef MOCK
     nn = stub->getNamenode();
 #else
-    nn = new NamenodeProxy(namenodeInfos, tokenService, sconf, RpcAuth(user, RpcAuth::ParseMethod(sconf.getRpcAuthMethod())));
+  nn = new NamenodeProxy(namenodeInfos, tokenService, sconf, RpcAuth(user, RpcAuth::ParseMethod(sconf.getRpcAuthMethod())));
 #endif
-    /*
-     * To test if the connection is ok
-     */
-    getFsStats();
+  /*
+   * To test if the connection is ok
+   */
+  getFsStats();
 }
 
 /**
  * disconnect from hdfs
  */
 void FileSystemImpl::disconnect() {
-    if (nn) {
-        nn->close();
-        delete nn;
-    }
+  if (nn) {
+    nn->close();
+    delete nn;
+  }
 
-    nn = NULL;
+  nn = NULL;
 }
 
 /**
@@ -204,7 +203,7 @@ void FileSystemImpl::disconnect() {
  * @return the default number of replication.
  */
 int FileSystemImpl::getDefaultReplication() const {
-    return sconf.getDefaultReplica();
+  return sconf.getDefaultReplica();
 }
 
 /**
@@ -212,7 +211,7 @@ int FileSystemImpl::getDefaultReplication() const {
  * @return the default block size.
  */
 int64_t FileSystemImpl::getDefaultBlockSize() const {
-    return sconf.getDefaultBlockSize();
+  return sconf.getDefaultBlockSize();
 }
 
 /**
@@ -220,7 +219,7 @@ int64_t FileSystemImpl::getDefaultBlockSize() const {
  * @return home directory.
  */
 std::string FileSystemImpl::getHomeDirectory() const {
-    return std::string("/user/") + user.getEffectiveUser();
+  return std::string("/user/") + user.getEffectiveUser();
 }
 
 /**
@@ -230,16 +229,16 @@ std::string FileSystemImpl::getHomeDirectory() const {
  * @return return true if success.
  */
 
-bool FileSystemImpl::deletePath(const char * path, bool recursive) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::deletePath(const char *path, bool recursive) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->deleteFile(getStandardPath(path), recursive);
+  return nn->deleteFile(getStandardPath(path), recursive);
 }
 
 /**
@@ -249,16 +248,16 @@ bool FileSystemImpl::deletePath(const char * path, bool recursive) {
  * @return return true if success.
  */
 
-bool FileSystemImpl::mkdir(const char * path, const Permission & permission) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::mkdir(std::string path, const Permission &permission) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (path.empty()) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->mkdirs(getStandardPath(path), permission, false);
+  return nn->mkdirs(getStandardPath(path), permission, false);
 }
 
 /**
@@ -269,16 +268,16 @@ bool FileSystemImpl::mkdir(const char * path, const Permission & permission) {
  * @return return true if success.
  */
 
-bool FileSystemImpl::mkdirs(const char * path, const Permission & permission) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::mkdirs(std::string path, const Permission &permission) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (path.empty()) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->mkdirs(getStandardPath(path), permission, true);
+  return nn->mkdirs(getStandardPath(path), permission, true);
 }
 
 /**
@@ -287,65 +286,64 @@ bool FileSystemImpl::mkdirs(const char * path, const Permission & permission) {
  * @return the path information.
  */
 FileStatus FileSystemImpl::getFileStatus(std::string path) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (path.empty()) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (path.empty()) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->getFileInfo(getStandardPath(path), NULL);
+  return nn->getFileInfo(getStandardPath(path), NULL);
 }
 
-static void Convert(BlockLocation & bl, const LocatedBlock & lb) {
-    const std::vector<DatanodeInfo> & nodes = lb.getLocations();
-    bl.setCorrupt(lb.isCorrupt());
-    bl.setLength(lb.getNumBytes());
-    bl.setOffset(lb.getOffset());
-    std::vector<std::string> hosts(nodes.size());
-    std::vector<std::string> names(nodes.size());
-    std::vector<std::string> topologyPaths(nodes.size());
+static void Convert(BlockLocation &bl, const LocatedBlock &lb) {
+  const std::vector<DatanodeInfo> &nodes = lb.getLocations();
+  bl.setCorrupt(lb.isCorrupt());
+  bl.setLength(lb.getNumBytes());
+  bl.setOffset(lb.getOffset());
+  std::vector<std::string> hosts(nodes.size());
+  std::vector<std::string> names(nodes.size());
+  std::vector<std::string> topologyPaths(nodes.size());
 
-    for (size_t i = 0 ; i < nodes.size() ; ++i) {
-        hosts[i] = nodes[i].getHostName();
-        names[i] = nodes[i].getXferAddr();
-        topologyPaths[i] = nodes[i].getLocation() + '/' + nodes[i].getXferAddr();
-    }
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    hosts[i] = nodes[i].getHostName();
+    names[i] = nodes[i].getXferAddr();
+    topologyPaths[i] = nodes[i].getLocation() + '/' + nodes[i].getXferAddr();
+  }
 
-    bl.setNames(names);
-    bl.setHosts(hosts);
-    bl.setTopologyPaths(topologyPaths);
+  bl.setNames(names);
+  bl.setHosts(hosts);
+  bl.setTopologyPaths(topologyPaths);
 }
 
-std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(
-    const char * path, int64_t start, int64_t len) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(const char *path, int64_t start, int64_t len) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    if (start < 0) {
-        THROW(InvalidParameter, "Invalid input: start offset should be positive");
-    }
+  if (start < 0) {
+    THROW(InvalidParameter, "Invalid input: start offset should be positive");
+  }
 
-    if (len < 0) {
-        THROW(InvalidParameter, "Invalid input: length should be positive");
-    }
+  if (len < 0) {
+    THROW(InvalidParameter, "Invalid input: length should be positive");
+  }
 
-    LocatedBlocksImpl lbs;
-    nn->getBlockLocations(getStandardPath(path), start, len, lbs);
-    std::vector<LocatedBlock> blocks = lbs.getBlocks();
-    std::vector<BlockLocation> retval(blocks.size());
+  LocatedBlocksImpl lbs;
+  nn->getBlockLocations(getStandardPath(path), start, len, lbs);
+  std::vector<LocatedBlock> blocks = lbs.getBlocks();
+  std::vector<BlockLocation> retval(blocks.size());
 
-    for (size_t i = 0; i < blocks.size(); ++i) {
-        Convert(retval[i], blocks[i]);
-    }
+  for (size_t i = 0; i < blocks.size(); ++i) {
+    Convert(retval[i], blocks[i]);
+  }
 
-    return retval;
+  return retval;
 }
 
 /**
@@ -353,17 +351,16 @@ std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(
  * @param path the directory path.
  * @return return the path informations in the given directory.
  */
-DirectoryIterator FileSystemImpl::listDirectory(const char * path,
-        bool needLocation) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+DirectoryIterator FileSystemImpl::listDirectory(std::string path, bool needLocation) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (path.empty()) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return DirectoryIterator(this, getStandardPath(path), needLocation);
+  return DirectoryIterator(this, getStandardPath(path), needLocation);
 }
 
 /**
@@ -371,25 +368,24 @@ DirectoryIterator FileSystemImpl::listDirectory(const char * path,
  * @param path The directory path.
  * @return Return a vector of file informations in the directory.
  */
-std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(const char * path,
-        bool needLocation) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(std::string path, bool needLocation) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (path.empty()) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    std::string startAfter;
-    std::string p = getStandardPath(path);
-    std::vector<FileStatus> retval;
+  std::string startAfter;
+  std::string p = getStandardPath(path);
+  std::vector<FileStatus> retval;
 
-    while (getListing(p, startAfter, needLocation, retval)) {
-        startAfter = retval.back().getPath();
-    }
+  while (getListing(p, startAfter, needLocation, retval)) {
+    startAfter = retval.back().getPath();
+  }
 
-    return retval;
+  return retval;
 }
 
 /**
@@ -399,24 +395,20 @@ std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(const char * path,
  * @param username new user name.
  * @param groupname new group.
  */
-void FileSystemImpl::setOwner(const char * path, const char * username,
-                              const char * groupname) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::setOwner(const char *path, const char *username, const char *groupname) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    if ((NULL == username || !strlen(username))
-            && (NULL == groupname || !strlen(groupname))) {
-        THROW(InvalidParameter,
-              "Invalid input: username and groupname should not be empty");
-    }
+  if ((NULL == username || !strlen(username)) && (NULL == groupname || !strlen(groupname))) {
+    THROW(InvalidParameter, "Invalid input: username and groupname should not be empty");
+  }
 
-    nn->setOwner(getStandardPath(path), username != NULL ? username : "",
-                 groupname != NULL ? groupname : "");
+  nn->setOwner(getStandardPath(path), username != NULL ? username : "", groupname != NULL ? groupname : "");
 }
 
 /**
@@ -425,16 +417,16 @@ void FileSystemImpl::setOwner(const char * path, const char * username,
  * @param mtime new modification time.
  * @param atime new access time.
  */
-void FileSystemImpl::setTimes(const char * path, int64_t mtime, int64_t atime) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::setTimes(const char *path, int64_t mtime, int64_t atime) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    nn->setTimes(getStandardPath(path), mtime, atime);
+  nn->setTimes(getStandardPath(path), mtime, atime);
 }
 
 /**
@@ -442,17 +434,16 @@ void FileSystemImpl::setTimes(const char * path, int64_t mtime, int64_t atime) {
  * @param path the path which permission is to be changed.
  * @param permission new permission.
  */
-void FileSystemImpl::setPermission(const char * path,
-                                   const Permission & permission) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::setPermission(const char *path, const Permission &permission) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    nn->setPermission(getStandardPath(path), permission);
+  nn->setPermission(getStandardPath(path), permission);
 }
 
 /**
@@ -462,16 +453,16 @@ void FileSystemImpl::setPermission(const char * path,
  * @return return true if success.
  */
 
-bool FileSystemImpl::setReplication(const char * path, short replication) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::setReplication(const char *path, short replication) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->setReplication(getStandardPath(path), replication);
+  return nn->setReplication(getStandardPath(path), replication);
 }
 
 /**
@@ -481,38 +472,37 @@ bool FileSystemImpl::setReplication(const char * path, short replication) {
  * @return return true if success.
  */
 
-bool FileSystemImpl::rename(const char * src, const char * dst) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::rename(const char *src, const char *dst) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == src || !strlen(src)) {
-        THROW(InvalidParameter, "Invalid input: src should not be empty");
-    }
+  if (NULL == src || !strlen(src)) {
+    THROW(InvalidParameter, "Invalid input: src should not be empty");
+  }
 
-    if (NULL == dst || !strlen(dst)) {
-        THROW(InvalidParameter, "Invalid input: dst should not be empty");
-    }
+  if (NULL == dst || !strlen(dst)) {
+    THROW(InvalidParameter, "Invalid input: dst should not be empty");
+  }
 
-    return nn->rename(getStandardPath(src), getStandardPath(dst));
+  return nn->rename(getStandardPath(src), getStandardPath(dst));
 }
 
 /**
  * To set working directory.
  * @param path new working directory.
  */
-void FileSystemImpl::setWorkingDirectory(const char * path) {
-    if (NULL == path) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+void FileSystemImpl::setWorkingDirectory(const char *path) {
+  if (NULL == path) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    if (!strlen(path) || '/' != path[0]) {
-        THROW(InvalidParameter,
-              "Invalid input: path should be an absolute path");
-    }
+  if (!strlen(path) || '/' != path[0]) {
+    THROW(InvalidParameter, "Invalid input: path should be an absolute path");
+  }
 
-    lock_guard<mutex> lock(mutWorkingDir);
-    workingDir = path;
+  lock_guard<mutex> lock(mutWorkingDir);
+  workingDir = path;
 }
 
 /**
@@ -520,7 +510,7 @@ void FileSystemImpl::setWorkingDirectory(const char * path) {
  * @return working directory.
  */
 std::string FileSystemImpl::getWorkingDirectory() const {
-    return workingDir;
+  return workingDir;
 }
 
 /**
@@ -529,24 +519,24 @@ std::string FileSystemImpl::getWorkingDirectory() const {
  * @return return true if the path exist.
  */
 
-bool FileSystemImpl::exist(const char * path) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::exist(const char *path) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    try {
-        bool retval = true;
-        nn->getFileInfo(getStandardPath(path), &retval);
-        return retval;
-    } catch (const FileNotFoundException & e) {
-        return false;
-    }
+  try {
+    bool retval = true;
+    nn->getFileInfo(getStandardPath(path), &retval);
+    return retval;
+  } catch (const FileNotFoundException &e) {
+    return false;
+  }
 
-    return true;
+  return true;
 }
 
 /**
@@ -554,13 +544,13 @@ bool FileSystemImpl::exist(const char * path) {
  * @return the file system status.
  */
 FileSystemStats FileSystemImpl::getFsStats() {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    std::vector<int64_t> retval = nn->getFsStats();
-    assert(retval.size() >= 3);
-    return FileSystemStats(retval[0], retval[1], retval[2]);
+  std::vector<int64_t> retval = nn->getFsStats();
+  assert(retval.size() >= 3);
+  return FileSystemStats(retval[0], retval[1], retval[2]);
 }
 
 /**
@@ -571,214 +561,192 @@ FileSystemStats FileSystemImpl::getFsStats() {
  * @return true if and client does not need to wait for block recovery,
  * false if client needs to wait for block recovery.
  */
-bool FileSystemImpl::truncate(const char * path, int64_t size) {
-    LOG(DEBUG1, "truncate file %s to length %" PRId64, path, size);
+bool FileSystemImpl::truncate(const char *path, int64_t size) {
+  LOG(DEBUG1, "truncate file %s to length %" PRId64, path, size);
 
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: src should not be empty.");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: src should not be empty.");
+  }
 
-    std::string absPath = getStandardPath(path);
+  std::string absPath = getStandardPath(path);
 
-    return nn->truncate(absPath, size, clientName);
+  return nn->truncate(absPath, size, clientName);
 }
 
-std::string FileSystemImpl::getDelegationToken(const char * renewer) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+std::string FileSystemImpl::getDelegationToken(const char *renewer) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == renewer || !strlen(renewer)) {
-        THROW(InvalidParameter, "Invalid input: renewer should not be empty.");
-    }
+  if (NULL == renewer || !strlen(renewer)) {
+    THROW(InvalidParameter, "Invalid input: renewer should not be empty.");
+  }
 
-    Token retval = nn->getDelegationToken(renewer);
-    retval.setService(tokenService);
-    return retval.toString();
+  Token retval = nn->getDelegationToken(renewer);
+  retval.setService(tokenService);
+  return retval.toString();
 }
 
 std::string FileSystemImpl::getDelegationToken() {
-    return getDelegationToken(key.getUser().getPrincipal().c_str());
+  return getDelegationToken(key.getUser().getPrincipal().c_str());
 }
 
-int64_t FileSystemImpl::renewDelegationToken(const std::string & token) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+int64_t FileSystemImpl::renewDelegationToken(const std::string &token) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    Token t;
-    t.fromString(token);
-    return  nn->renewDelegationToken(t);
+  Token t;
+  t.fromString(token);
+  return nn->renewDelegationToken(t);
 }
 
-void FileSystemImpl::cancelDelegationToken(const std::string & token) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::cancelDelegationToken(const std::string &token) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    Token t;
-    t.fromString(token);
-    nn->cancelDelegationToken(t);
+  Token t;
+  t.fromString(token);
+  nn->cancelDelegationToken(t);
 }
 
-void FileSystemImpl::getBlockLocations(const std::string & src, int64_t offset,
-                                       int64_t length, LocatedBlocks & lbs) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::getBlockLocations(const std::string &src, int64_t offset, int64_t length, LocatedBlocks &lbs) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    nn->getBlockLocations(src, offset, length, lbs);
+  nn->getBlockLocations(src, offset, length, lbs);
 }
 
-void FileSystemImpl::create(const std::string & src, const Permission & masked,
-                            int flag, bool createParent, short replication, int64_t blockSize) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::create(const std::string &src, const Permission &masked, int flag, bool createParent, short replication, int64_t blockSize) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    nn->create(src, masked, clientName, flag, createParent, replication,
-               blockSize);
+  nn->create(src, masked, clientName, flag, createParent, replication, blockSize);
 }
 
-std::pair<shared_ptr<LocatedBlock>, shared_ptr<FileStatus> >
-FileSystemImpl::append(const std::string& src) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+std::pair<shared_ptr<LocatedBlock>, shared_ptr<FileStatus> > FileSystemImpl::append(const std::string &src) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->append(src, clientName);
+  return nn->append(src, clientName);
 }
 
-void FileSystemImpl::abandonBlock(const ExtendedBlock & b,
-                                  const std::string & src) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::abandonBlock(const ExtendedBlock &b, const std::string &src) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    nn->abandonBlock(b, src, clientName);
+  nn->abandonBlock(b, src, clientName);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::addBlock(const std::string & src,
-        const ExtendedBlock * previous,
-        const std::vector<DatanodeInfo> & excludeNodes) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+shared_ptr<LocatedBlock> FileSystemImpl::addBlock(const std::string &src, const ExtendedBlock *previous, const std::vector<DatanodeInfo> &excludeNodes) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->addBlock(src, clientName, previous, excludeNodes);
+  return nn->addBlock(src, clientName, previous, excludeNodes);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::getAdditionalDatanode(
-    const std::string & src, const ExtendedBlock & blk,
-    const std::vector<DatanodeInfo> & existings,
-    const std::vector<std::string> & storageIDs,
-    const std::vector<DatanodeInfo> & excludes, int numAdditionalNodes) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+shared_ptr<LocatedBlock> FileSystemImpl::getAdditionalDatanode(const std::string &src, const ExtendedBlock &blk, const std::vector<DatanodeInfo> &existings, const std::vector<std::string> &storageIDs,
+                                                               const std::vector<DatanodeInfo> &excludes, int numAdditionalNodes) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->getAdditionalDatanode(src, blk, existings, storageIDs, excludes,
-                                     numAdditionalNodes, clientName);
+  return nn->getAdditionalDatanode(src, blk, existings, storageIDs, excludes, numAdditionalNodes, clientName);
 }
 
-bool FileSystemImpl::complete(const std::string & src,
-                              const ExtendedBlock * last) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::complete(const std::string &src, const ExtendedBlock *last) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->complete(src, clientName, last);
+  return nn->complete(src, clientName, last);
 }
 
 /*void FileSystemImpl::reportBadBlocks(const std::vector<LocatedBlock> & blocks) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+ if (!nn) {
+ THROW(HdfsIOException, "FileSystemImpl: not connected.");
+ }
 
-    nn->reportBadBlocks(blocks);
-}*/
+ nn->reportBadBlocks(blocks);
+ }*/
 
-void FileSystemImpl::fsync(const std::string & src) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::fsync(const std::string &src) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    nn->fsync(src, clientName);
+  nn->fsync(src, clientName);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::updateBlockForPipeline(
-    const ExtendedBlock & block) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+shared_ptr<LocatedBlock> FileSystemImpl::updateBlockForPipeline(const ExtendedBlock &block) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->updateBlockForPipeline(block, clientName);
+  return nn->updateBlockForPipeline(block, clientName);
 }
 
-void FileSystemImpl::updatePipeline(const ExtendedBlock & oldBlock,
-                                    const ExtendedBlock & newBlock,
-                                    const std::vector<DatanodeInfo> & newNodes,
-                                    const std::vector<std::string> & storageIDs) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+void FileSystemImpl::updatePipeline(const ExtendedBlock &oldBlock, const ExtendedBlock &newBlock, const std::vector<DatanodeInfo> &newNodes, const std::vector<std::string> &storageIDs) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    nn->updatePipeline(clientName, oldBlock, newBlock, newNodes, storageIDs);
+  nn->updatePipeline(clientName, oldBlock, newBlock, newNodes, storageIDs);
 }
 
-bool FileSystemImpl::getListing(const std::string & src,
-                                const std::string & startAfter, bool needLocation,
-                                std::vector<FileStatus> & dl) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::getListing(const std::string &src, const std::string &startAfter, bool needLocation, std::vector<FileStatus> &dl) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->getListing(src, startAfter, needLocation, dl);
+  return nn->getListing(src, startAfter, needLocation, dl);
 }
 
 bool FileSystemImpl::renewLease() {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    //protected by LeaseRenewer's lock
-    if (0 == openedOutputStream) {
-        return false;
-    }
-
-    try {
-        nn->renewLease(clientName);
-        return true;
-    } catch (const HdfsException & e) {
-        std::string buffer;
-        LOG(LOG_ERROR,
-            "Failed to renew lease for filesystem which client name is %s, since:\n%s",
-            getClientName(), GetExceptionDetail(e, buffer));
-    } catch (const std::exception & e) {
-        LOG(LOG_ERROR,
-            "Failed to renew lease for filesystem which client name is %s, since:\n%s",
-            getClientName(), e.what());
-    }
-
+  //protected by LeaseRenewer's lock
+  if (0 == openedOutputStream) {
     return false;
+  }
+
+  try {
+    nn->renewLease(clientName);
+    return true;
+  } catch (const HdfsException &e) {
+    std::string buffer;
+    LOG(LOG_ERROR, "Failed to renew lease for filesystem which client name is %s, since:\n%s", getClientName(), GetExceptionDetail(e, buffer));
+  } catch (const std::exception &e) {
+    LOG(LOG_ERROR, "Failed to renew lease for filesystem which client name is %s, since:\n%s", getClientName(), e.what());
+  }
+
+  return false;
 }
 
 void FileSystemImpl::registerOpenedOutputStream() {
-    //protected by LeaseRenewer's lock
-    ++openedOutputStream;
+  //protected by LeaseRenewer's lock
+  ++openedOutputStream;
 }
 
 bool FileSystemImpl::unregisterOpenedOutputStream() {
-    //protected by LeaseRenewer's lock
-    if (openedOutputStream > 0) {
-        --openedOutputStream;
-    }
+  //protected by LeaseRenewer's lock
+  if (openedOutputStream > 0) {
+    --openedOutputStream;
+  }
 
-    return  openedOutputStream == 0;
+  return openedOutputStream == 0;
 }
 
 /**
@@ -788,22 +756,21 @@ bool FileSystemImpl::unregisterOpenedOutputStream() {
  * @return return true if success.
  */
 
-bool FileSystemImpl::createEncryptionZone(const char * path, const char * keyName) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::createEncryptionZone(const char *path, const char *keyName) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    if (NULL == keyName || !strlen(keyName)) {
-        THROW(InvalidParameter, "Invalid input: key name should not be empty");
-    }
+  if (NULL == keyName || !strlen(keyName)) {
+    THROW(InvalidParameter, "Invalid input: key name should not be empty");
+  }
 
-    return nn->createEncryptionZone(getStandardPath(path), keyName);
+  return nn->createEncryptionZone(getStandardPath(path), keyName);
 }
-
 
 /**
  * To get encryption zone information.
@@ -811,25 +778,24 @@ bool FileSystemImpl::createEncryptionZone(const char * path, const char * keyNam
  * @return the encryption zone information.
  */
 
-EncryptionZoneInfo FileSystemImpl::getEZForPath(const char * path) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+EncryptionZoneInfo FileSystemImpl::getEZForPath(const char *path) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    if (NULL == path || !strlen(path)) {
-        THROW(InvalidParameter, "Invalid input: path should not be empty");
-    }
+  if (NULL == path || !strlen(path)) {
+    THROW(InvalidParameter, "Invalid input: path should not be empty");
+  }
 
-    return nn->getEncryptionZoneInfo(getStandardPath(path), NULL);
+  return nn->getEncryptionZoneInfo(getStandardPath(path), NULL);
 }
 
-bool FileSystemImpl::listEncryptionZones(const int64_t id,
-                                std::vector<EncryptionZoneInfo> & ezl) {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+bool FileSystemImpl::listEncryptionZones(const int64_t id, std::vector<EncryptionZoneInfo> &ezl) {
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return nn->listEncryptionZones(id, ezl);
+  return nn->listEncryptionZones(id, ezl);
 }
 
 /**
@@ -837,11 +803,11 @@ bool FileSystemImpl::listEncryptionZones(const int64_t id,
  * @return return the encryption zone information.
  */
 EncryptionZoneIterator FileSystemImpl::listEncryptionZone() {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    return EncryptionZoneIterator(this, 0);
+  return EncryptionZoneIterator(this, 0);
 }
 /**
  * list all the contents of encryption zones.
@@ -850,21 +816,21 @@ EncryptionZoneIterator FileSystemImpl::listEncryptionZone() {
  */
 
 std::vector<EncryptionZoneInfo> FileSystemImpl::listAllEncryptionZoneItems() {
-    if (!nn) {
-        THROW(HdfsIOException, "FileSystemImpl: not connected.");
-    }
+  if (!nn) {
+    THROW(HdfsIOException, "FileSystemImpl: not connected.");
+  }
 
-    std::vector<EncryptionZoneInfo> retval;
-    retval.clear();
-    int64_t id = 0;
+  std::vector<EncryptionZoneInfo> retval;
+  retval.clear();
+  int64_t id = 0;
 
-    EncryptionZoneIterator it;
-    it = FileSystemImpl::listEncryptionZone();
+  EncryptionZoneIterator it;
+  it = FileSystemImpl::listEncryptionZone();
 
-    while (it.hasNext()) {
-        retval.push_back(it.getNext());
-    }
-    return retval;
+  while (it.hasNext()) {
+    retval.push_back(it.getNext());
+  }
+  return retval;
 }
 
 }
