@@ -40,7 +40,7 @@ function(download_lib_xml SOURCE_DIR BINARY_DIR)
                 BUILD_BYPRODUCTS ${BYPRODUCT}
                 INSTALL_COMMAND ${CMAKE_COMMAND}  -E echo "Skipping install step."
                 CONFIGURE_COMMAND ./autogen.sh --with-lzma=no --with-zlib=no && ./configure
-		  			"CFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
+		  			"CFLAGS= -fPIC"
 		  			"CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
                  EXCLUDE_FROM_ALL TRUE
 				"${BUILD_ARGS}"

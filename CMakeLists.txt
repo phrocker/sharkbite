@@ -192,7 +192,8 @@ endif()
   set(CURL_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl/include")
   set(CURL_LIBRARY "${CURL_BIN_DIR}${BYPRODUCT}" CACHE STRING "" FORCE)
   set(CURL_LIBRARIES "${CURL_LIBRARY}" CACHE STRING "" FORCE)
- 
+
+include_directories(${CURL_INCLUDE_DIRS}) 
 
 if (CURL_FOUND)
   include_directories("${CURL_INCLUDE_DIRS}")
@@ -277,7 +278,7 @@ endif()
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
 	  CONFIGURE_COMMAND ./autogen.sh
   			 COMMAND ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf 
-  			"CFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
+  			"CFLAGS=-fPIC"
   			"CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
 	  UPDATE_COMMAND ""
 	  )
