@@ -30,9 +30,9 @@ namespace data{
 class RFileOperations{
 public:
   static std::ifstream::pos_type filesize(const char* filename);
-  static cclient::data::SequentialRFile *openForWrite(const std::string &path);
+  static std::shared_ptr<cclient::data::SequentialRFile> openForWrite(const std::string &path);
   static cclient::data::RFile *open(const std::string &);
-  static cclient::data::SequentialRFile *openSequential(const std::string &);
+  static std::shared_ptr<cclient::data::SequentialRFile> openSequential(const std::string &);
   /**
    * Returns a merged read across the rfiles
    * @param rfiles absolute path to RFiles in HDFS or on the local file system

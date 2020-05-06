@@ -33,6 +33,13 @@ class StreamSeekable : public StreamRelocation {
   cclient::data::security::Authorizations auths;
  public:
 
+   explicit StreamSeekable(Range &range)
+      :
+      range(std::move(range)),
+      inclusive(false) {
+
+  }
+
   explicit StreamSeekable(Range &range, std::vector<std::string> &columnFamilies, bool inclusive)
       :
       range(std::move(range)),

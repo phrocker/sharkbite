@@ -97,6 +97,10 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     return &entries;
   }
 
+  void addStreams(const std::vector<cclient::data::streams::OutputStream*> &streams){
+    std::copy (streams.begin(), streams.end(), std::back_inserter(ownedStreams));
+  }
+
   /**
    Creates a data stream from the bc file strema.
    @return pointer to new stream.
@@ -245,6 +249,12 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   }
 
+  
+  std::unique_ptr<cclient::data::streams::InputStream> ownedStream;
+  std::unique_ptr<cclient::data::streams::OutputStream> ownedOutStream;
+
+  std::vector<cclient::data::streams::OutputStream*> ownedStreams;
+
   // current locality group.
   LocalityGroupMetaData *currentLocalityGroup;
   LocalityGroupReader *currentLocalityGroupReader;
@@ -262,8 +272,6 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   cclient::data::streams::InputStream *myInputStream;
 
-  std::unique_ptr<cclient::data::streams::InputStream> ownedStream;
-  std::unique_ptr<cclient::data::streams::OutputStream> ownedOutStream;
 
   // list of locality group pointers.
   std::vector<LocalityGroupMetaData*> localityGroups;

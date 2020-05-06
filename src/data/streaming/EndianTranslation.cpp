@@ -32,6 +32,9 @@ uint64_t EndianTranslationStream::htonlw(uint64_t value) {
   }
 }
 
+EndianTranslationStream::~EndianTranslationStream(){
+}
+
 uint64_t EndianTranslationStream::writeShort(short shortVal) {
 
   return HadoopDataOutputStream::writeShort(htons(shortVal));

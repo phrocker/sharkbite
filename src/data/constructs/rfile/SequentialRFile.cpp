@@ -169,11 +169,19 @@ SequentialRFile::~SequentialRFile() {
   for (auto metadata : localityGroups) {
     delete metadata;
   }
+
+  for (auto stream : ownedStreams){
+    delete stream;
+  }
 }
 
 bool SequentialRFile::append(std::shared_ptr<KeyValue> kv) {
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
+
+  if (currentLocalityGroup == nullptr){
+    addLocalityGroup(); // add the default locality group.
+  }
 
   if (currentLocalityGroup->getFirstKey() == NULL) {
     std::shared_ptr<StreamInterface> firstKey = kv->getKey()->getStream();

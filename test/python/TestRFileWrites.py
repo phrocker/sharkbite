@@ -3,102 +3,68 @@ from testmodule import *
 class TestRFileWrites(TestRunner):
 		
 	def __init__(self):
-		super().__init__()
-	
-	def mthd(self):
-	
+		parser = ArgumentParser(description="This is an Apache Accummulo Python connector")
+
+		parser.add_argument("-i", "--instance", dest="instance",
+							help="Apache Accumulo Instance Name", required=True)
+		parser.add_argument("-z", "--zookeepers", dest="zookeepers",
+							help="Comma Separated Zookeeper List", required=True)
+		parser.add_argument("-u", "--username", dest="username",
+							help="User to access Apache Accumulo", required=True)
+		parser.add_argument("-p", "--password", dest="password",
+							help="Password to access Apache Accumulo. May also be supplied at the command line")
+		parser.add_argument("-t", "--table", dest="table",
+							help="Table to create/update")
+		parser.add_argument("-s", "--solocation", dest="shardobject",
+							help="Shared object Location")
+		args = parser.parse_args()
+
+		instance = args.instance
+		zookeepers = args.zookeepers
+		password = args.password
+		table = args.table
+		dll = args.shardobject
+
+		print ("Opening ",dll)
+		py = cdll.LoadLibrary(dll)
 		import pysharkbite
 
+	def writerfile(self):
+
+		import pysharkbite
+		rfile = pysharkbite.RFileOperations.openForWrite("blah.rf")
+
+		for x in range(1000):
+			key = pysharkbite.Key(row=str("row" + str(x)))
+			value = pysharkbite.Value()
+			kv = pysharkbite.KeyValue(key,value)
+			rfile.append(kv)
 		
-		tableOperations = super().getTableOperations()
-			
-		if not tableOperations.exists(False):
-		    print ("Creating table")
-		    if not tableOperations.create(False):
-		    	print("Could not create table")  
-		else:
-		    print ("Table already exists, so not creating it")  
+		rfile.close()
+
+	
+	def mthd(self):
 		
+		import pysharkbite
 		
-		auths = pysharkbite.Authorizations()
+		pysharkbite.LoggingConfiguration.enableTraceLogger()
+
+		self.writerfile()
 		
-		""" Add authorizations """ 
-		""" mutation.put("cf","cq","cv",1569786960) """
-		
-		
-		writer = tableOperations.createWriter(auths, 10)
-		
-		mutation = pysharkbite.Mutation("sow2");    
-		
-		mutation.put("cf","cq","",1569786960, "value")
-		mutation.put("cf2","cq2","",1569786960, "value2")
-		""" no value """
-		mutation.put("cf3","cq3","",1569786960, "") 
-		
-		writer.addMutation( mutation )
-		
-		writer.close()
-		
-		writer = tableOperations.createWriter(auths, 10)
-		
-		rng = range(0,1000)
-		for i in rng:
-			row = ("row%i" % (i+5))
-			mutation = pysharkbite.Mutation(row);    
-			mutation.put("cf","cq","",1569786960, "value")
-			writer.addMutation(mutation)
-			
-		writer.close()
-		
-		print("written")
-		
-		""" auths.addAuthorization("cv") """
-		
-		scanner = tableOperations.createScanner(auths, 2)
-		
-		startKey = pysharkbite.Key()
-		
-		endKey = pysharkbite.Key()
-		
-		startKey.setRow("sow")
-		
-		endKey.setRow("sow3")
-		
-		accumuloRange = pysharkbite.Range(startKey,True,endKey,False)
-		
-		scanner.addRange( accumuloRange )
-		
-		resultset = scanner.getResultSet()
-		
-		for keyvalue in resultset:
-			key = keyvalue.getKey()
-			assert( "sow2" == key.getRow() )
-			value = keyvalue.getValue()
-			if "cf" == key.getColumnFamily():
-				assert( "value"  == value.get() )
-			if ("cf2" == key.getColumnFamily() ):
-				assert( "value2" == value.get() )
-			if ("cf3" == key.getColumnFamily() ):
-				assert( "" == value.get() )
-		    
-		  
-		scanner = tableOperations.createScanner(auths, 2)   
-		
-		accumuloRange = pysharkbite.Range("row",True,"",False)
-		
-		scanner.addRange( accumuloRange )
-		
-		resultset = scanner.getResultSet()
-		count=0
-		for keyvalue in resultset:
-			key = keyvalue.getKey()
-			count=count+1
-		print("count is ", count) 
-		assert(count==1003) # all rows + sows
-		
-		""" delete your table if user did not create temp """
-		
-		tableOperations.remove()
+		readrfile = pysharkbite.RFileOperations.sequentialRead("blah.rf")
+
+		accrange = pysharkbite.Range()
+
+		seekable = pysharkbite.Seekable(accrange)
+		readrfile.seek( seekable)
+		i = 0
+		while readrfile.hasNext():
+			assert( str("row" + str(i)) == readrfile.getTopKey().getRow() )
+			i=i+1
+			readrfile.next()
+		assert(i==1000)
+
+
 
 
 runner = TestRFileWrites()

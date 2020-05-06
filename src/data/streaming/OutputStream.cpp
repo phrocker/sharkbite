@@ -31,7 +31,9 @@ OutputStream::OutputStream()
 }
 
 OutputStream::~OutputStream() {
-  flush();
+  if (canReclaim()){
+    flush();
+  }
   if (!copy)
     delete position;
 }

@@ -30,10 +30,11 @@ class HadoopDataOutputStream: public DataOutputStream {
 public:
 
 
-    HadoopDataOutputStream(OutputStream *out_stream)  : DataOutputStream(out_stream), output_stream_ref( out_stream )
+    explicit HadoopDataOutputStream(OutputStream *out_stream)  : DataOutputStream(out_stream), output_stream_ref( out_stream )
     {
 
     }
+
 
     virtual ~HadoopDataOutputStream();
     virtual uint64_t getPos();
@@ -112,35 +113,35 @@ public:
     }
 
     
-    virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt) {
+    virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt) override {
         written += cnt;
         return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
     }
 
     
-    virtual uint64_t write(const uint8_t *bytes, long cnt) {
+    virtual uint64_t write(const uint8_t *bytes, long cnt) override{
         written += cnt;
         return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
     }
 
     
-    virtual uint64_t getPos() {
+    virtual uint64_t getPos() override{
         return written;
     }
 
-    uint64_t write(const char *bytes, long cnt) {
+    uint64_t write(const char *bytes, long cnt) override{
         written += cnt;
         return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
     }
 
-    virtual uint64_t writeByte(int byte) {
+    virtual uint64_t writeByte(int byte) override {
         return writeBytes(reinterpret_cast<uint8_t*>(&byte),1);
     }
 
 
 
 
-    virtual uint64_t writeByte(const uint8_t byte) {
+    virtual uint64_t writeByte(const uint8_t byte) override {
         return writeBytes(&byte,1);
     }
 
