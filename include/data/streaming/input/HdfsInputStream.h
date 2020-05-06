@@ -69,22 +69,22 @@ class HdfsInputStream : public InputStream {
   explicit HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path);
 
   virtual ~HdfsInputStream() {
-    hdfsCloseFile(hdfs->getHdfsreference(), fileRef);
+    hdfsCloseFile(hdfs->getHdfsReference(), fileRef);
   }
 
   virtual InputStream* seek(uint64_t pos) {
-    hdfsSeek(hdfs->getHdfsreference(), fileRef, pos);
+    hdfsSeek(hdfs->getHdfsReference(), fileRef, pos);
     return this;
   }
 
   virtual uint64_t readBytes(uint8_t *bytes, size_t cnt) override{
     //tSize hdfsRead(hdfsFS fs, hdfsFile file, void * buffer, tSize length);
-    return hdfsRead(hdfs->getHdfsreference(), fileRef, (void*) bytes, cnt);
+    return hdfsRead(hdfs->getHdfsReference(), fileRef, (void*) bytes, cnt);
   }
 
   virtual uint64_t readBytes(char *bytes, size_t cnt) override{
       //tSize hdfsRead(hdfsFS fs, hdfsFile file, void * buffer, tSize length);
-      return hdfsRead(hdfs->getHdfsreference(), fileRef, (void*) bytes, cnt);
+      return hdfsRead(hdfs->getHdfsReference(), fileRef, (void*) bytes, cnt);
     }
 
   size_t getFileSize() const {

@@ -46,6 +46,10 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
 
   lastKeyValue = NULL;
 }
+SequentialRFile::SequentialRFile(std::unique_ptr<streams::OutputStream> output_stream, std::unique_ptr<BlockCompressedFile> bWriter) : SequentialRFile(output_stream.get(),std::move(bWriter))
+{
+  ownedOutStream = std::move(output_stream);
+}
 
 SequentialRFile::SequentialRFile(std::unique_ptr<streams::InputStream> input_stream, long fileLength)
     :

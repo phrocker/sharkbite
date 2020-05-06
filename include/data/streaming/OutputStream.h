@@ -17,6 +17,7 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
 #include <ostream>
+#include <memory>
 #include <stdint.h>
 
 
@@ -27,6 +28,10 @@ namespace streams {
 
 class OutputStream {
 public:
+
+    OutputStream(std::unique_ptr<std::ostream> ptr, uint64_t pos) : OutputStream(ptr.get(),pos){
+        owned_ostream_ref = std::move(ptr);
+    }
 
     OutputStream(std::ostream *ptr, uint64_t pos);
 
@@ -111,6 +116,9 @@ protected:
         ostream_ref(ptr == NULL ? NULL : ptr->ostream_ref), position(ptr == NULL ? 0 : ptr->position), copy(true) {
 
     }
+
+    std::unique_ptr<std::ostream> owned_ostream_ref;
+
      // ostream reference.
     std::ostream *ostream_ref;
     // position pointer.

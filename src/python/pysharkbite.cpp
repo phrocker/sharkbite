@@ -27,6 +27,7 @@
 #include "interconnect/tableOps/TableOperations.h"
 
 #include "data/constructs/rfile/RFile.h"
+#include "data/constructs/rfile/SequentialRFile.h"
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
 #include "../include/logging/Logger.h"
@@ -191,6 +192,13 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("getTop",&cclient::data::RFile::getTop)
   .def("next",&cclient::data::RFile::next);
 
+  pybind11::class_<cclient::data::SequentialRFile>(s, "SequentialRFile")
+  .def("seek",&cclient::data::SequentialRFile::relocate)
+  .def("hasNext",&cclient::data::SequentialRFile::hasNext)
+  .def("getTop",&cclient::data::SequentialRFile::getTop)
+  .def("append",(bool (cclient::data::SequentialRFile::*)(std::shared_ptr<cclient::data::KeyValue> ) )&cclient::data::SequentialRFile::append)
+  .def("next",&cclient::data::SequentialRFile::next);
+
   pybind11::class_<cclient::data::hdfs::HdfsDirEnt>(s, "HdfsDirEnt")
       .def("getName",&cclient::data::hdfs::HdfsDirEnt::getName)
       .def("getOwner",&cclient::data::hdfs::HdfsDirEnt::getOwner)
@@ -212,6 +220,7 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")
     .def("randomSeek",&cclient::data::RFileOperations::open)
+    .def("openForWrite",&cclient::data::RFileOperations::openForWrite)
     .def("sequentialRead",&cclient::data::RFileOperations::openSequential)
     .def("openManySequential",&cclient::data::RFileOperations::openManySequential);
 

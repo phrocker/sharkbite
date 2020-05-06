@@ -130,6 +130,43 @@ uint64_t HadoopDataOutputStream::writeHadoopLong(const int64_t n) {
   return output_stream_ref->getPos();
 
 }
+
+HdfsOutputStream::HdfsOutputStream(const std::string path)
+    :
+    ByteOutputStream(0),
+    hdfs(nullptr),
+    file(path) {
+
+  utils::Uri uri(path);
+
+  hdfs = std::make_shared<hdfs::HdfsLink>(file, uri.port());
+
+  file = uri.path();
+
+  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
+  size = ret->mSize;
+  hdfsFreeFileInfo(ret, 1);
+}
+
+HdfsOutputStream::HdfsOutputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path)
+    :
+    ByteOutputStream(0),
+    hdfs(hdfs),
+    file(path) {
+
+  utils::Uri uri(path);
+
+  file = uri.path();
+
+    
+  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
+  size = ret->mSize;
+  hdfsFreeFileInfo(ret, 1);
+}
+
+
 }
 }
 }

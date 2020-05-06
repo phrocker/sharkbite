@@ -1,10 +1,33 @@
 #include "data/constructs/rfile/RFileOperations.h"
 #include "data/streaming/input/HdfsInputStream.h"
+#include "data/streaming/HdfsOutputStream.h"
+#include "data/streaming/OutputStream.h"
 
 namespace cclient{
 namespace data{
 
 
+cclient::data::SequentialRFile *RFileOperations::openForWrite(const std::string &rfile){
+
+std::unique_ptr<cclient::data::streams::OutputStream> stream;
+  if (rfile.find("hdfs://") != std::string::npos) {
+    auto str = std::make_unique<cclient::data::streams::HdfsOutputStream>(rfile);
+    stream = std::move(str);
+    } else {
+    auto in = std::make_unique<std::ofstream>(rfile, std::ifstream::ate | std::ifstream::binary);
+
+    stream = std::make_unique<cclient::data::streams::OutputStream>(std::move(in), 0);
+    }
+
+
+  auto compressor = std::make_unique<cclient::data::compression::ZLibCompressor>(256 * 1024);
+
+  auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(std::move(compressor));
+
+  cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(std::move(stream), std::move(bcFile));
+
+  return newRFile;
+}
 
 cclient::data::RFile *RFileOperations::open(const std::string &rfile){
 

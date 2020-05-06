@@ -612,7 +612,7 @@ OpenObjectFileContainingPcAndGetStartAddress(uint64_t pc,
         return object_fd;
     }
 }
-
+/*
 static const std::string SymbolizeAndDemangle(void * pc) {
     std::vector<char> buffer(1024);
     std::ostringstream ss;
@@ -655,7 +655,7 @@ static const std::string SymbolizeAndDemangle(void * pc) {
 
     return ss.str();
 }
-
+*/
 #endif
 
 const std::string PrintStack(int skip, int maxDepth) {
@@ -663,9 +663,9 @@ const std::string PrintStack(int skip, int maxDepth) {
     std::vector<void *> stack;
     GetStack(skip + 1, maxDepth, stack);
 
-    for (size_t i = 0; i < stack.size(); ++i) {
-        ss << SymbolizeAndDemangle(stack[i]) << std::endl;
-    }
+  //  for (size_t i = 0; i < stack.size(); ++i) {
+  //      ss << SymbolizeAndDemangle(stack[i]) << std::endl;
+   // }
 
     return ss.str();
 }

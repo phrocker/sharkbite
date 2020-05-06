@@ -57,7 +57,7 @@ HdfsLink::~HdfsLink() {
   hdfsDisconnect(reference);
 }
 
-hdfsFS HdfsLink::getHdfsreference() {
+hdfsFS HdfsLink::getHdfsReference() {
   return reference;
 }
 

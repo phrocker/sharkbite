@@ -31,6 +31,16 @@ namespace data {
 
 class BlockCompressedFile : public cclient::data::streams::StreamInterface {
  public:
+
+ explicit BlockCompressedFile(std::unique_ptr<cclient::data::compression::Compressor> compressor)
+      :
+      compressorRef(compressor.get()),
+      in_stream(nullptr) {
+    version.setMajor(1);
+    version.setMinor(0);
+    dataIndex.setCompressionAlgorithm(compressor.get());
+    ownedRef = std::move(compressor);
+  }
   /**
    * Constructor accepts a compressor as the only argument
    * @param compressor our compressor for this BCFile
@@ -167,6 +177,7 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
   }
 
   cclient::data::compression::Compressor *compressorRef;
+  std::unique_ptr<cclient::data::compression::Compressor> ownedRef;
 
   DataIndex dataIndex;
   MetaIndex metaIndex;

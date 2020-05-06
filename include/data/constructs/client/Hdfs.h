@@ -81,7 +81,7 @@ class HdfsLink {
 
   std::vector<HdfsDirEnt> list(const std::string &dir);
 
-  hdfsFS getHdfsreference();
+  hdfsFS getHdfsReference();
 
  private:
   std::string nn;

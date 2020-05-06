@@ -49,6 +49,8 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
    **/
   explicit SequentialRFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
 
+  explicit SequentialRFile(std::unique_ptr<cclient::data::streams::OutputStream> output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
+
   /**
    Constructor
    @param input stream output stream for the r file
@@ -131,8 +133,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     return append(keyValues, generate_average(keyValues), isSorted);
   }
 
-  bool
-  append(std::shared_ptr<KeyValue> kv);
+  bool append(std::shared_ptr<KeyValue> kv);
 
   bool
   append(std::vector<std::shared_ptr<StreamInterface> > *keyValues, uint32_t average_recordSize, bool isSorted);
@@ -262,6 +263,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   cclient::data::streams::InputStream *myInputStream;
 
   std::unique_ptr<cclient::data::streams::InputStream> ownedStream;
+  std::unique_ptr<cclient::data::streams::OutputStream> ownedOutStream;
 
   // list of locality group pointers.
   std::vector<LocalityGroupMetaData*> localityGroups;
