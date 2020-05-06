@@ -148,6 +148,10 @@ std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> SequentialRFile::operato
   return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
+std::shared_ptr<cclient::data::KeyValue> SequentialRFile::getTop() {
+  return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
+}
+
 std::shared_ptr<Key> SequentialRFile::getTopKey() {
   return currentLocalityGroupReader->getTopKey();
 }
