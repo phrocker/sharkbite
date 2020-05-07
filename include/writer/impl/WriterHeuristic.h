@@ -31,19 +31,21 @@ class WritePair {
  public:
   explicit WritePair(std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef, void *ref, const cclient::impl::Configuration *conf,
                      std::shared_ptr<cclient::data::TabletServerMutations> mutations)
-      : rangeDef(rangeDef),
-        conf(conf),
-        ref(ref),
-        mutations(mutations) {
+      :
+      rangeDef(rangeDef),
+      conf(conf),
+      ref(ref),
+      mutations(mutations) {
   }
-  explicit WritePair(const WritePair&& other)
-      : rangeDef(std::move(other.rangeDef)),
-        conf(other.conf),
-        ref(std::move(other.ref)),
-        mutations(std::move(other.mutations)) {
+  explicit WritePair(const WritePair &&other)
+      :
+      rangeDef(std::move(other.rangeDef)),
+      conf(other.conf),
+      ref(std::move(other.ref)),
+      mutations(std::move(other.mutations)) {
   }
 
-  WritePair &operator=(const WritePair &&other) {
+  WritePair& operator=(const WritePair &&other) {
     rangeDef = (std::move(other.rangeDef));
     conf = (other.conf);
     ref = (std::move(other.ref));
@@ -86,15 +88,12 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
     }
 
     std::shared_ptr<WritePair> pair = std::make_shared<WritePair>(rangeDef, this, conf, mutations);
-//    pair->conf = conf;
-    //pair->ref = this;
-    //pair->rangeDef = rangeDef;
     mutations->setMaxFailures(2);
-    //pair->mutations = mutations;
 
     while (!queue.try_enqueue(pair)) {
-      if (!conditionals->isAlive())
+      if (!conditionals->isAlive()){
         throw std::runtime_error("Closed during write");
+      }
     }
     conditionals->incrementMutationCount();
 
@@ -158,7 +157,7 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
   }
  protected:
 
-  static void *write_thrift(WriterHeuristic *heuristic) {
+  static void* write_thrift(WriterHeuristic *heuristic) {
 
     std::shared_ptr<WritePair> pair = nullptr;
     do {
@@ -172,9 +171,6 @@ class WriterHeuristic : public scanners::Heuristic<interconnect::ThriftTransport
           ((WriterHeuristic*) pair->ref)->addFailedMutation(pair->mutations);
         }
 
-//        delete pair->mutations;
-        //      delete pair->rangeDef;
-        //    delete pair;
       } else {
         break;
       }

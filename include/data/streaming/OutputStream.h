@@ -17,6 +17,7 @@
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
 #include <ostream>
+#include <memory>
 #include <stdint.h>
 
 
@@ -28,7 +29,14 @@ namespace streams {
 class OutputStream {
 public:
 
-    OutputStream(std::ostream *ptr, uint64_t pos);
+    explicit OutputStream(std::unique_ptr<std::ostream> ptr, uint64_t pos) : 
+     ostream_ref(ptr.get()),
+      position(new uint64_t(pos)),
+      copy(false){
+        owned_ostream_ref = std::move(ptr);
+    }
+
+    explicit OutputStream(std::ostream *ptr, uint64_t pos);
 
     OutputStream();
 
@@ -67,10 +75,18 @@ public:
     virtual uint64_t writeEncodedLong(const int64_t n=0);
 
     virtual uint32_t bytesWritten();
+
+
+
+
     friend class HadoopDataOutputStream;
     friend class DataOutputStream;
 
 protected:
+
+    virtual bool canReclaim(){
+      return true;
+    }
 
     int numberOfLeadingZeros(uint64_t i) {
         // HD, Figure 5-6
@@ -107,10 +123,13 @@ protected:
      * a friend class
      * @param ptr stream pointer
      */
-    OutputStream(OutputStream *ptr) :
+    explicit OutputStream(OutputStream *ptr) :
         ostream_ref(ptr == NULL ? NULL : ptr->ostream_ref), position(ptr == NULL ? 0 : ptr->position), copy(true) {
-
     }
+
+
+    std::unique_ptr<std::ostream> owned_ostream_ref;
+
      // ostream reference.
     std::ostream *ostream_ref;
     // position pointer.

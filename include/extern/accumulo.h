@@ -54,7 +54,6 @@ public:
 	        st.getNextResult();
             kv_ = *st;
             if (kv_ == nullptr){
-                std::cout  << "kv is null" << std::endl;
                 return false;
             }
             key_ = kv_->getKey();

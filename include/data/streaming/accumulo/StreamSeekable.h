@@ -19,49 +19,62 @@
 #include <vector>
 #include "../StreamRelocation.h"
 #include "../../constructs/Range.h"
+#include "data/constructs/security/Authorizations.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
+class StreamSeekable : public StreamRelocation {
+ protected:
+  Range range;
+  std::vector<std::string> columnFamilies;
+  bool inclusive;
+  cclient::data::security::Authorizations auths;
+ public:
 
-class StreamSeekable : public StreamRelocation
-{
-protected:
-    Range *range;
-    std::vector<std::string> columnFamilies;
-    bool inclusive;
-public:
+   explicit StreamSeekable(Range &range)
+      :
+      range(std::move(range)),
+      inclusive(false) {
 
-    StreamSeekable (Range *range, std::vector<std::string> columnFamilies,
-                    bool inclusive) :
-        range (range), columnFamilies (columnFamilies), inclusive (
-            inclusive)
-    {
+  }
 
-    }
+  explicit StreamSeekable(Range &range, std::vector<std::string> &columnFamilies, bool inclusive)
+      :
+      range(std::move(range)),
+      columnFamilies(columnFamilies),
+      inclusive(inclusive) {
 
+  }
 
-    Range *
-    getRange ()
-    {
-        return range;
-    }
+  explicit StreamSeekable(Range &range, std::vector<std::string> &columnFamilies, cclient::data::security::Authorizations &in_auths, bool inclusive)
+      :
+      range(std::move(range)),
+      columnFamilies(columnFamilies),
+      inclusive(inclusive),
+      auths(std::move(in_auths)) {
 
-    std::vector<std::string> *
-    getColumnFamilies ()
-    {
-        return &columnFamilies;
-    }
+  }
 
-    bool
-    isInclusive ()
-    {
-        return inclusive;
-    }
+  virtual cclient::data::security::Authorizations* getAuths() override {
+    return &auths;
+  }
+
+  virtual Range* getRange() override
+  {
+    return &range;
+  }
+
+  virtual std::vector<std::string>* getColumnFamilies() override
+  {
+    return &columnFamilies;
+  }
+
+  virtual bool isInclusive() override
+  {
+    return inclusive;
+  }
 };
 
 }

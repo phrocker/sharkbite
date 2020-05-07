@@ -14,28 +14,32 @@
 #ifndef INCLUDE_INTERCONNECT_STREAMING_STREAMRELOCATION_H_
 #define INCLUDE_INTERCONNECT_STREAMING_STREAMRELOCATION_H_
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+#include "data/constructs/security/Authorizations.h"
+#include "data/constructs/Range.h"
 
-class StreamRelocation
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
-public:
+class StreamRelocation {
 
-    StreamRelocation ()
-    {
+ public:
 
-    }
+  StreamRelocation() {
 
-    virtual
-    ~StreamRelocation ()
-    {
+  }
 
-    }
+  virtual ~StreamRelocation() {
+
+  }
+
+  virtual cclient::data::security::Authorizations* getAuths() = 0;
+
+  virtual cclient::data::Range* getRange() = 0;
+
+  virtual std::vector<std::string>* getColumnFamilies() = 0;
+
+  virtual bool isInclusive() = 0;
 
 };
 

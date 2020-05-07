@@ -4,11 +4,27 @@ set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
 
+TRY_COMPILE(STRERROR_R_RETURN_INT
+      ${CMAKE_BINARY_DIR}
+      ${CMAKE_SOURCE_DIR}/cmake/CMakeTestCompileStrerror.cpp
+      CMAKE_FLAGS "-DCMAKE_CXX_LINK_EXECUTABLE='echo not linking now...'"
+      OUTPUT_VARIABLE OUTPUT)
+      
+MESSAGE(STATUS "Checking whether strerror_r returns an int")
+  
+IF(STRERROR_R_RETURN_INT)
+   MESSAGE(STATUS "Checking whether strerror_r returns an int -- yes")
+ELSE(STRERROR_R_RETURN_INT)
+   MESSAGE(STATUS "Checking whether strerror_r returns an int -- no")
+ENDIF(STRERROR_R_RETURN_INT)
+
+
 option(NATIVE_ARCH "Build with -march=native" OFF)
 option(ENABLE_GPROF "Enable sampling using gprof" OFF)
 option(PYTHON_ITERATOR_SUPPORT "Builds python iterator support." OFF)
 option(BUILD_JAR "Builds python iterator support. Deprecated by PYTHON_ITERATOR_SUPPORT" OFF)
-
+option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)  
+option(BUILD_TESTS "Build all tests." ON)
 CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX14)
@@ -41,15 +57,26 @@ endif(ENABLE_GPROF)
 
 if (NATIVE_ARCH)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNATIVE_ARCH")
-endif(ENABLE_GPROF)
+endif(NATIVE_ARCH)
+
+if (STRERROR_R_RETURN_INT)
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTRERROR_R_RETURN_INT")
+endif(NATIVE_ARCH)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF)
-option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)  
-option(BUILD_TESTS "Build all tests." ON)
+
 include(ExternalProject)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/client)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/rpc)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/common)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/proto)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/network)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include/extern/libhdfs3/server)
+
 
 # Use ccache if present
 find_program(CCACHE_FOUND ccache)
@@ -69,9 +96,18 @@ endif()
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules)
 ####
 
+
+include_directories("thirdparty/uuid/include/posix")
+add_subdirectory("thirdparty/uuid")
+set(UUID_FOUND "YES" CACHE STRING "" FORCE)
+set(UUID_LIBRARIES uuid CACHE STRING "" FORCE)
+
+
+
 include(Compression)
 include(DownloadProject)
 include(LibreSSL)
+
 
 use_bundled_zlib(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
@@ -81,6 +117,105 @@ use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 find_package (OpenSSL REQUIRED)
 find_package(Boost 1.55 REQUIRED COMPONENTS system thread serialization)
 include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
+
+################# CURL
+
+
+  set(CURL_C_FLAGS "${CMAKE_C_FLAGS}")
+  set(CURL_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+
+get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+
+if ("${LIB64}" STREQUAL "TRUE" AND (NOT WIN32 AND NOT APPLE))
+    set(LIBSUFFIX 64)
+else()
+    set(LIBSUFFIX "")
+endif()
+
+  if (WIN32)
+	set(BYPRODUCT "lib/libcurl.lib")
+  else()
+  	set(BYPRODUCT "lib${LIBSUFFIX}/libcurl.a")
+  endif()
+
+  if (WIN32)
+  set (PC "PATCH_COMMAND ./buildconf.bat")
+  else()
+  endif()
+  
+  list(APPEND CURL_CMAKE_MODULE_PATH_PASSTHROUGH_LIST "${CMAKE_SOURCE_DIR}/cmake/override")
+  
+  string(REPLACE ";" "%" CURL_CMAKE_MODULE_PATH_PASSTHROUGH "${CURL_CMAKE_MODULE_PATH_PASSTHROUGH_LIST}")
+
+  ExternalProject_Add(
+    curl-external
+    GIT_REPOSITORY "https://github.com/curl/curl.git"
+    GIT_TAG "f3294d9d86e6a7915a967efff2842089b8b0d071"  # Version 7.64.0
+    SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-src"
+    LIST_SEPARATOR % # This is needed for passing semicolon-separated lists
+    CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
+               "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install"
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+                -DBUILD_CURL_EXE=OFF
+                -DBUILD_TESTING=OFF
+                -DCMAKE_USE_OPENSSL=ON
+                -DBUILD_SHARED_LIBS=OFF
+                -DHTTP_ONLY=ON
+                -DCMAKE_USE_OPENSSL=ON
+                "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
+                "-DLIBRESSL_SRC_DIR=${LIBRESSL_SRC_DIR}"
+                "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
+                "-DBYPRODUCT_SUFFIX=${BYPRODUCT_SUFFIX}"
+                "-DZLIB_BYPRODUCT_INCLUDE=${ZLIB_BYPRODUCT_INCLUDE}"
+                "-DZLIB_BYPRODUCT=${ZLIB_BYPRODUCT}"
+                "-DZLIB_LIBRARY=${ZLIB_LIBRARY}"
+                "-DZLIB_LIBRARIES=${ZLIB_LIBRARIES}"
+                -DCURL_DISABLE_CRYPTO_AUTH=ON
+                -DCMAKE_USE_LIBSSH2=OFF
+                "-DCMAKE_DEBUG_POSTFIX="
+                -DHAVE_GLIBC_STRERROR_R=1
+                -DHAVE_GLIBC_STRERROR_R__TRYRUN_OUTPUT=""
+                -DHAVE_POSIX_STRERROR_R=0
+                -DHAVE_POSIX_STRERROR_R__TRYRUN_OUTPUT=""
+                -DHAVE_POLL_FINE_EXITCODE=0
+                -DHAVE_FSETXATTR_5=0
+                -DHAVE_FSETXATTR_5__TRYRUN_OUTPUT=""
+               "-DCMAKE_MODULE_PATH=${CURL_CMAKE_MODULE_PATH_PASSTHROUGH}"
+               "-DCMAKE_C_FLAGS=${CURL_C_FLAGS}"
+               "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+               "-DCMAKE_CXX_FLAGS=${CURL_CXX_FLAGS}"
+	${PC}
+    BUILD_BYPRODUCTS "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install/${BYPRODUCT}"
+  )
+
+  add_dependencies(curl-external libressl-portable)
+  if(WIN32 OR NOT USE_SYSTEM_ZLIB)
+	  add_dependencies(curl-external zlib-external)
+  endif()
+
+  set(CURL_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/curl/" CACHE STRING "" FORCE)
+  set(CURL_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install/" CACHE STRING "" FORCE)
+  set(CURL_BYPRODUCT_DIR "${BYPRODUCT}" CACHE STRING "" FORCE)
+  list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/curl/dummy")
+  add_library(curl STATIC IMPORTED)
+  set_target_properties(curl PROPERTIES IMPORTED_LOCATION "${CURL_BIN_DIR}${BYPRODUCT}")
+    
+  if (OPENSSL_FOUND) 
+     if (NOT WIN32)
+       set_target_properties(curl PROPERTIES INTERFACE_LINK_LIBRARIES ${OPENSSL_LIBRARIES})
+	 endif()
+  endif(OPENSSL_FOUND)
+  add_dependencies(curl curl-external)
+  set(CURL_FOUND "YES")
+  set(CURL_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-install/include")
+  set(CURL_LIBRARY "${CURL_BIN_DIR}${BYPRODUCT}" CACHE STRING "" FORCE)
+  set(CURL_LIBRARIES "${CURL_LIBRARY}" CACHE STRING "" FORCE)
+
+include_directories(${CURL_INCLUDE_DIRS}) 
+
+
+################# CURL
 ################# THRIFT
 
 	ExternalProject_Add(
@@ -154,16 +289,19 @@ include_directories(SYSTEM ${Boost_INCLUDE_DIR} )
 	ExternalProject_Add(
 	  Protobuf
 	  GIT_REPOSITORY "https://github.com/phrocker/protobuf.git"
-	  GIT_TAG v3.1.0
+	  GIT_TAG v3.11.4
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
-	  CONFIGURE_COMMAND ./autogen.sh && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf
+	  CONFIGURE_COMMAND ./autogen.sh
+  			 COMMAND ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf 
+  			"CFLAGS=-fPIC"
+  			"CXXFLAGS=${CMAKE_CXX_FLAGS} -fPIC"
 	  UPDATE_COMMAND ""
 	  )
 	
 	add_library(protobuf STATIC IMPORTED)
 	set_target_properties(protobuf PROPERTIES IMPORTED_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" )
-	set(PROTOBUF_LIBS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" CACHE STRING "" FORCE)
+	set(PROTOBUF_LIBS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotobuf.a" "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/lib/libprotoc.a" CACHE STRING "" FORCE)
 	set(PROTOBUF_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf/include" CACHE STRING "" FORCE)
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
@@ -177,6 +315,7 @@ download_project(PROJ pybind11
 
 set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(${pybind11_SOURCE_DIR})
+include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories("${pybind11_SOURCE_DIR}/include/")
 
 find_package (Threads)
@@ -201,9 +340,11 @@ file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
 file(GLOB_RECURSE ZK_SOURCES "src/data/zookeeper/*cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")
 file(GLOB_RECURSE CAPI_SOURCES "src/extern/*cpp")
+file(GLOB_RECURSE LIBHDFS3_SOURCES "src/libhdfs3/client/*.cpp" "src/libhdfs3/common/*.cpp" "src/libhdfs3/proto/*.cpp"  "src/libhdfs3/network/*.cpp"  "src/libhdfs3/rpc/*.cpp" "src/libhdfs3/server/*.cpp")
 file(GLOB_RECURSE UTIL_SOURCES "src/utils/*cpp")
 file(GLOB_RECURSE LOGGING_SOURCES "src/logging/*cpp")
 file(GLOB_RECURSE THRIFT_SOURCES "src/data/extern/thrift/*cpp")
+file(GLOB_RECURSE AVX_MOD_SOURCES "src/data/extern/knnspeed/*cpp")
 file(GLOB_RECURSE THRIFTV2_SOURCES "src/data/extern/thriftv2/*cpp")
 file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
 file(GLOB_RECURSE CWRAPPER_SOURCES "src/extern/*cpp")
@@ -229,24 +370,30 @@ include_directories("thirdparty/spdlog-20170710/include/")
 include_directories("thirdparty/gzip-hpp/")
 
 
-add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+add_library(sharkbite STATIC  ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} )
 
-add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
-
-
+add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${CURL_LIBRARIES} ${LIBHDFS3_SOURCES}  )
 
 
 
-pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} )
+
+
+pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES}   ${LIBHDFS3_SOURCES} )
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
+	pybind11_add_module(pysharkbite-iterators ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${JNI_SOURCES})
 endif()
+
+
+
+
+add_dependencies(sharkbite curl)
+add_dependencies(pysharkbite curl)
+add_dependencies(sharkbite-shared curl)
 
 
 add_dependencies(sharkbite Protobuf)
 add_dependencies(pysharkbite Protobuf)
 add_dependencies(sharkbite-shared Protobuf)
-
 
 add_dependencies(sharkbite ZooKeeper)
 add_dependencies(pysharkbite ZooKeeper)
@@ -256,7 +403,10 @@ add_dependencies(sharkbite LibThrift)
 add_dependencies(pysharkbite LibThrift)
 add_dependencies(sharkbite-shared LibThrift)
 
-target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} )
+
+target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
+
+target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
 
 target_link_libraries(sharkbite 
@@ -265,8 +415,28 @@ target_link_libraries(sharkbite
   ${NO_WHOLE_ARCHIVE}
 )
 
+target_link_libraries(sharkbite 
+  ${WHOLE_ARCHIVE}
+  ${CURL_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
 
-target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
+target_link_libraries(sharkbite-shared
+   ${WHOLE_ARCHIVE}
+   ${CURL_LIBRARIES}
+   ${NO_WHOLE_ARCHIVE}
+ )
+
+
+target_link_libraries(sharkbite 
+  ${WHOLE_ARCHIVE}
+  ${UUID_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
+
+
+
+target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
@@ -288,15 +458,32 @@ target_link_libraries(pysharkbite  PRIVATE
 )
 
 
+target_link_libraries(pysharkbite  PRIVATE
+  ${WHOLE_ARCHIVE}
+  ${UUID_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
+
+target_link_libraries(pysharkbite PRIVATE
+  ${WHOLE_ARCHIVE}
+  ${CURL_LIBRARIES}
+  ${NO_WHOLE_ARCHIVE}
+)
+
 target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
 
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-target_link_libraries(pysharkbite-iterators  PRIVATE
-  ${WHOLE_ARCHIVE}
-  ${ZLIB_LIBRARY}
-  ${NO_WHOLE_ARCHIVE}
-)
-target_compile_options(pysharkbite-iterators INTERFACE -fvisibility=hidden)
+	target_link_libraries(pysharkbite-iterators  PRIVATE
+	  ${WHOLE_ARCHIVE}
+	  ${ZLIB_LIBRARY}
+	  ${NO_WHOLE_ARCHIVE}
+	)
+	target_link_libraries(pysharkbite-iterators  PRIVATE
+	  ${WHOLE_ARCHIVE}
+	  ${UUID_LIBRARIES}
+	  ${NO_WHOLE_ARCHIVE}
+	)
+	target_compile_options(pysharkbite-iterators INTERFACE -fvisibility=hidden)
 endif()
 
 
@@ -432,7 +619,6 @@ ADD_CUSTOM_TARGET(debian-package
     file(GLOB_RECURSE TEST_ZK_INSTANCE "test/zookeeper/testInstance.cpp")
   add_executable(testzkInstance ${TEST_ZK_INSTANCE})
   target_link_libraries (testzkInstance ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries( testzkInstance )
   target_link_libraries( testzkInstance ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( testzkInstance ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} sharkbite)
 
@@ -441,7 +627,6 @@ ADD_CUSTOM_TARGET(debian-package
       file(GLOB_RECURSE VANDV "test/vandv/IntegrationTest.cpp")
   add_executable(integrationTest ${VANDV})
   target_link_libraries (integrationTest ${CMAKE_THREAD_LIBS_INIT})
-  target_link_libraries( integrationTest )
   target_link_libraries( integrationTest ${ZOOKEEPER_LIBRARIES} )
   target_link_libraries( integrationTest  ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
   target_link_libraries(integrationTest   sharkbite)

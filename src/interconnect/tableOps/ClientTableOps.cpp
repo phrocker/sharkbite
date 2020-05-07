@@ -34,7 +34,7 @@ AccumuloTableOperations::~AccumuloTableOperations() {
 
 std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> AccumuloTableOperations::createScanner(cclient::data::security::Authorizations *auths,
                                                                                                                                                   uint16_t threads) {
-  if (IsEmpty(auths))
+  if (nullptr == auths)
     throw cclient::exceptions::ClientException(ARGUMENT_CANNOT_BE_NULL);
   if (!exists())
     throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);

@@ -27,13 +27,18 @@
 #include "interconnect/tableOps/TableOperations.h"
 
 #include "data/constructs/rfile/RFile.h"
+#include "data/constructs/rfile/SequentialRFile.h"
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
 #include "../include/logging/Logger.h"
 #include "../include/logging/LoggerConfiguration.h"
-#include "data/streaming/accumulo/StreamSeekable.h"
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/rfile/RFileOperations.h"
+#include "data/iterators/MultiIterator.h"
+#include "data/streaming/accumulo/KeyValueIterator.h"
+#include "data/constructs/client/Hdfs.h"
+#include "data/streaming/accumulo/StreamSeekable.h"
+#include "data/streaming/StreamRelocation.h"
 
 using namespace pybind11::literals;
 
@@ -41,6 +46,8 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 
 PYBIND11_MODULE(pysharkbite, s) {
   s.doc() = "Accumulo connector plugin";
+
+  
 
   pybind11::class_<cclient::impl::Configuration, std::shared_ptr<cclient::impl::Configuration>>(s, "Configuration")
   .def(pybind11::init<>())
@@ -132,8 +139,8 @@ PYBIND11_MODULE(pysharkbite, s) {
   pybind11::class_<cclient::data::KeyValue, std::shared_ptr<cclient::data::KeyValue>>(s, "KeyValue")
   .def(pybind11::init<>())
   .def(pybind11::init<const std::shared_ptr<cclient::data::Key> &, const std::shared_ptr<cclient::data::Value> &>())
-  .def("getKey", &cclient::data::KeyValue::getKey, "Gets the Key")
-  .def("getValue", &cclient::data::KeyValue::getValue, "Gets the Value");
+  .def("getKey", &cclient::data::KeyValue::getKey, "Gets the Key from the key value object")
+  .def("getValue", &cclient::data::KeyValue::getValue, "Gets the Value from the key value object");
 
   pybind11::class_<cclient::data::Range>(s, "Range")
     .def(pybind11::init<>())
@@ -143,9 +150,6 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool>())
   .def(pybind11::init<const std::string&,bool,const std::string&,bool,bool>(),
       "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false);
-
-  pybind11::class_< cclient::data::streams::StreamSeekable>(s, "Seekable")
-    .def(pybind11::init<cclient::data::Range*,std::vector<std::string>,bool>());
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())
@@ -184,10 +188,54 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("seek",&cclient::data::RFile::relocate)
   .def("hasNext",&cclient::data::RFile::hasNext)
   .def("getTop",&cclient::data::RFile::getTop)
+  .def("close",&cclient::data::RFile::close)
   .def("next",&cclient::data::RFile::next);
+
+  
+pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::streams::KeyValueIterator>>(s, "KeyValueIterator")
+  .def(pybind11::init<>())
+  .def("seek",&cclient::data::streams::KeyValueIterator::relocate)
+  .def("hasNext",&cclient::data::streams::KeyValueIterator::hasNext)
+  .def("getTopKey",&cclient::data::streams::KeyValueIterator::getTopKey)
+  .def("getTopValue",&cclient::data::streams::KeyValueIterator::getTopValue)
+  .def("next",&cclient::data::streams::KeyValueIterator::next);
+
+  pybind11::class_<cclient::data::SequentialRFile, cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::SequentialRFile>>(s, "SequentialRFile")
+  .def("seek",&cclient::data::SequentialRFile::relocate)
+  .def("hasNext",&cclient::data::SequentialRFile::hasNext)
+  .def("getTop",&cclient::data::SequentialRFile::getTop)
+  .def("addLocalityGroup",&cclient::data::SequentialRFile::addLocalityGroup)
+  .def("append",(bool (cclient::data::SequentialRFile::*)(std::shared_ptr<cclient::data::KeyValue> ) )&cclient::data::SequentialRFile::append)
+  .def("close",&cclient::data::SequentialRFile::close)
+  .def("next",&cclient::data::SequentialRFile::next);
+
+  pybind11::class_<cclient::data::hdfs::HdfsDirEnt>(s, "HdfsDirEnt")
+      .def("getName",&cclient::data::hdfs::HdfsDirEnt::getName)
+      .def("getOwner",&cclient::data::hdfs::HdfsDirEnt::getOwner)
+      .def("getGroup",&cclient::data::hdfs::HdfsDirEnt::getGroup)
+      .def("getSize",&cclient::data::hdfs::HdfsDirEnt::getSize);
+
+  pybind11::class_<cclient::data::hdfs::HdfsLink, std::shared_ptr<cclient::data::hdfs::HdfsLink>>(s, "Hdfs")
+    .def(pybind11::init<std::string,int>())
+    .def("mkdir",&cclient::data::hdfs::HdfsLink::mkdir)
+    .def("list",&cclient::data::hdfs::HdfsLink::list);
+
+    pybind11::class_<cclient::data::streams::StreamRelocation>(s, "StreamRelocation");
+
+  pybind11::class_<cclient::data::streams::StreamSeekable, cclient::data::streams::StreamRelocation>(s, "Seekable")
+    .def(pybind11::init<cclient::data::Range&>())
+    .def(pybind11::init<cclient::data::Range&,std::vector<std::string> &,bool>())
+    .def("getRange",&cclient::data::streams::StreamSeekable::getRange, "Gets this seekable range")
+    .def("getColumnFamilies",&cclient::data::streams::StreamSeekable::getColumnFamilies, "Gets the column families for this seekable")
+    .def("isInclusive",&cclient::data::streams::StreamSeekable::isInclusive, "Returns true if the column families are inclusive.");
+
+    
 
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")
-    .def("open",&cclient::data::RFileOperations::open);
+    .def("randomSeek",&cclient::data::RFileOperations::open)
+    .def("openForWrite",&cclient::data::RFileOperations::openForWrite)
+    .def("sequentialRead",&cclient::data::RFileOperations::openSequential)
+    .def("openManySequential",&cclient::data::RFileOperations::openManySequential);
 
 }

@@ -106,23 +106,23 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   void setRow(const char *r, uint32_t size, uint32_t maxSize, bool takeOwnership = false);
 
   // set via text objects, incrementing the reference counter for Text
-  void setRow(const std::shared_ptr<Text> &);
-  void setColumnFamily(const std::shared_ptr<Text> &);
-  void setColumnQualifier(const std::shared_ptr<Text> &);
-  void setColumnVisibility(const std::shared_ptr<Text> &);
+  void setRow(const std::shared_ptr<Text>&);
+  void setColumnFamily(const std::shared_ptr<Text>&);
+  void setColumnQualifier(const std::shared_ptr<Text>&);
+  void setColumnVisibility(const std::shared_ptr<Text>&);
 
   void setRow(const std::string &row) {
     setRow(row.c_str(), row.length());
   }
 
-  std::pair<char*, size_t> getRow() {
+  std::pair<char*, size_t> getRow() const {
     if (row_ref && !row_ref->empty())
       return row_ref->getBuffer();
     else
       return std::make_pair(row, rowLength);
   }
 
-  std::string getRowStr() {
+  std::string getRowStr() const {
     if (row_ref && !row_ref->empty())
       return row_ref->toString();
     return std::string(row, rowLength);
@@ -138,11 +138,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     setColFamily(st.c_str(), st.size());
   }
 
-  inline std::pair<char*, size_t> getColFamily() {
-    if (cf_ref && !cf_ref->empty())
-    {
+  inline std::pair<char*, size_t> getColFamily() const {
+    if (cf_ref && !cf_ref->empty()) {
       return cf_ref->getBuffer();
-  }
+    }
     return std::make_pair(colFamily, columnFamilyLength);
   }
 
@@ -162,13 +161,13 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     setColQualifier(st.c_str(), st.size(), st.size(), false);
   }
 
-  std::pair<char*, size_t> getColQualifier() {
+  std::pair<char*, size_t> getColQualifier() const {
     if (cq_ref && !cq_ref->empty())
       return cq_ref->getBuffer();
     return std::make_pair(colQualifier, colQualLen);
   }
 
-  std::string getColQualifierStr() {
+  std::string getColQualifierStr() const {
     if (cq_ref && !cq_ref->empty())
       return cq_ref->toString();
     return std::string(colQualifier, colQualLen);
@@ -243,6 +242,8 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
       return false;
     return *this < rhs || rhs == *this;
   }
+
+  int compare(const std::shared_ptr<Key> &other);
 
   bool
   operator <(const Key &rhs) const;
@@ -327,12 +328,12 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return colVisSize;
   }
 
-  void setObjectPool(ObjectAllocatorPool<Text> *p){
+  void setObjectPool(ObjectAllocatorPool<Text> *p) {
     objectPool = p;
   }
 
  protected:
- 
+
   inline void reclaim(char**, size_t, bool&);
   inline void reclaim(char**, size_t, bool&, std::function<void()> fun);
 

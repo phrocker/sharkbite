@@ -28,6 +28,7 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
     closed(false),
     dataBlockCnt(0),
     entries(0),
+    entriesSkipped(0),
     currentLocalityGroup(
     NULL),
     in_stream(nullptr),
@@ -45,6 +46,16 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
 
   lastKeyValue = NULL;
 }
+SequentialRFile::SequentialRFile(std::unique_ptr<streams::OutputStream> output_stream, std::unique_ptr<BlockCompressedFile> bWriter) : SequentialRFile(output_stream.get(),std::move(bWriter))
+{
+  ownedOutStream = std::move(output_stream);
+}
+
+SequentialRFile::SequentialRFile(std::unique_ptr<streams::InputStream> input_stream, long fileLength)
+    :
+    SequentialRFile(input_stream.get(), fileLength) {
+  ownedStream = std::move(input_stream);
+}
 
 SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLength)
     :
@@ -55,6 +66,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLe
     closed(false),
     dataBlockCnt(0),
     entries(0),
+    entriesSkipped(0),
     currentLocalityGroup(
     NULL) {
   if (input_stream == NULL) {
@@ -82,7 +94,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLe
 }
 
 bool SequentialRFile::hasNext() {
-    return currentLocalityGroupReader->hasTop();
+  return currentLocalityGroupReader->hasTop();
 }
 
 void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
@@ -121,14 +133,10 @@ void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
 
   currentLocalityGroupReader->enableReadAhead();
 
-  if (!colvis.empty()) {
-    currentLocalityGroupReader->limitVisibility(colvis);
-  }
-
 }
 
 void SequentialRFile::next() {
-    currentLocalityGroupReader->next();
+  currentLocalityGroupReader->next();
 }
 
 cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* SequentialRFile::operator++() {
@@ -140,6 +148,18 @@ std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> SequentialRFile::operato
   return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
 }
 
+std::shared_ptr<cclient::data::KeyValue> SequentialRFile::getTop() {
+  return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
+}
+
+std::shared_ptr<Key> SequentialRFile::getTopKey() {
+  return currentLocalityGroupReader->getTopKey();
+}
+
+std::shared_ptr<Value> SequentialRFile::getTopValue() {
+  return currentLocalityGroupReader->getTopValue();
+
+}
 
 SequentialRFile::~SequentialRFile() {
   for (auto reader : localityGroupReaders) {
@@ -149,11 +169,19 @@ SequentialRFile::~SequentialRFile() {
   for (auto metadata : localityGroups) {
     delete metadata;
   }
+
+  for (auto stream : ownedStreams){
+    delete stream;
+  }
 }
 
 bool SequentialRFile::append(std::shared_ptr<KeyValue> kv) {
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
+
+  if (currentLocalityGroup == nullptr){
+    addLocalityGroup(); // add the default locality group.
+  }
 
   if (currentLocalityGroup->getFirstKey() == NULL) {
     std::shared_ptr<StreamInterface> firstKey = kv->getKey()->getStream();

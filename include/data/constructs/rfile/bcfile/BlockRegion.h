@@ -100,15 +100,12 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
    * and subsequently the internal components could be modified
    * @returns compressor reference
    */
-  cclient::data::compression::Compressor*
-  getCompressor() {
+  cclient::data::compression::Compressor* getCompressor() {
     return compressor;
   }
-  uint64_t
-  read(cclient::data::streams::InputStream *in);
+  uint64_t read(cclient::data::streams::InputStream *in);
 
-  uint64_t
-  write(cclient::data::streams::OutputStream *out);
+  uint64_t write(cclient::data::streams::OutputStream *out);
 
   std::unique_ptr<cclient::data::streams::InputStream> readDataStream(cclient::data::streams::InputStream *in) {
 
@@ -134,7 +131,8 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
     return std::move(returnStream);
   }
 
-  std::unique_ptr<cclient::data::streams::InputStream> assimilateDataStream(cclient::data::streams::InputStream *in, std::vector<uint8_t> *compressed, cclient::data::streams::ByteOutputStream *ref,moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> *queueref) {
+  std::unique_ptr<cclient::data::streams::InputStream> assimilateDataStream(cclient::data::streams::InputStream *in, std::vector<uint8_t> *compressed, cclient::data::streams::ByteOutputStream *ref,
+                                                                            moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> *queueref) {
 
     uint64_t pos = in->getPos();
 
@@ -148,9 +146,9 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
 
     ref->flush();
 
-    compressor->decompress(ref, (char*)compressed->data(), compressedSize);
+    compressor->decompress(ref, (char*) compressed->data(), compressedSize);
 
-    auto returnStream = std::make_unique<cclient::data::streams::NonCopyEndianInputStream>(ref,queueref);
+    auto returnStream = std::make_unique<cclient::data::streams::NonCopyEndianInputStream>(ref, queueref);
 
     in->seek(pos);
 

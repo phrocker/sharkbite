@@ -44,7 +44,7 @@ ByteOutputStream::ByteOutputStream (size_t initial_size,
 ByteOutputStream::~ByteOutputStream ()
 {
     flush ();
-    output_stream_ref=nullptr;
+    //output_stream_ref=nullptr;
 }
 
 void ByteOutputStream::ensure(size_t size,size_t ptr){

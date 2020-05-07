@@ -28,7 +28,7 @@ public:
      Constructor.
      @param output stream.
      **/
-    DataOutputStream(OutputStream *out_stream) :
+    explicit DataOutputStream(OutputStream *out_stream) :
         OutputStream(out_stream), output_stream_ref(out_stream) {
 
     }

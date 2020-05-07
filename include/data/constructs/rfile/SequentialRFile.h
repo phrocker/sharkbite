@@ -47,7 +47,9 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
    @param bWriter block compressed writer.
    @param blockSize the desired block size of the bc file.
    **/
-  SequentialRFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
+  explicit SequentialRFile(cclient::data::streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
+
+  explicit SequentialRFile(std::unique_ptr<cclient::data::streams::OutputStream> output_stream, std::unique_ptr<BlockCompressedFile> bWriter);
 
   /**
    Constructor
@@ -55,7 +57,19 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
    @param bWriter block compressed writer.
    @param blockSize the desired block size of the bc file.
    **/
-  SequentialRFile(cclient::data::streams::InputStream *input_stream, long fileLength);
+  explicit SequentialRFile(cclient::data::streams::InputStream *input_stream, long fileLength);
+
+  /**
+   Constructor
+   @param input stream output stream for the r file
+   @param bWriter block compressed writer.
+   @param blockSize the desired block size of the bc file.
+   **/
+  explicit SequentialRFile(std::unique_ptr<cclient::data::streams::InputStream> input_stream, long fileLength);
+
+  SequentialRFile(SequentialRFile &&other) = default;
+
+  SequentialRFile& operator=(SequentialRFile &&other) = default;
 
   virtual
   ~SequentialRFile();
@@ -83,12 +97,15 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     return &entries;
   }
 
+  void addStreams(const std::vector<cclient::data::streams::OutputStream*> &streams){
+    std::copy (streams.begin(), streams.end(), std::back_inserter(ownedStreams));
+  }
+
   /**
    Creates a data stream from the bc file strema.
    @return pointer to new stream.
    **/
-  BlockCompressorStream*
-  createStream() {
+  BlockCompressorStream* createStream() {
     return (BlockCompressorStream*) blockWriter->createDataStream(myDataStream);
   }
 
@@ -120,8 +137,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     return append(keyValues, generate_average(keyValues), isSorted);
   }
 
-  bool
-  append(std::shared_ptr<KeyValue> kv);
+  bool append(std::shared_ptr<KeyValue> kv);
 
   bool
   append(std::vector<std::shared_ptr<StreamInterface> > *keyValues, uint32_t average_recordSize, bool isSorted);
@@ -175,9 +191,8 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   bool hasNext();
 
-  void relocate(cclient::data::streams::StreamSeekable *location) {
-    if (!colvis.empty())
-      currentLocalityGroupReader->limitVisibility(colvis);
+  void relocate(cclient::data::streams::StreamRelocation *location) {
+    currentLocalityGroupReader->limitVisibility(location->getAuths());
     currentLocalityGroupReader->seek(location);
   }
 
@@ -206,10 +221,17 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*();
 
+  std::shared_ptr<Key> getTopKey();
+
+  std::shared_ptr<Value> getTopValue();
+
   std::shared_ptr<cclient::data::KeyValue> getTop();
 
- protected:
+  virtual uint64_t getEntriesFiltered() {
+    return currentLocalityGroupReader != nullptr ? entriesSkipped + currentLocalityGroupReader->getEntriesFiltered() : entriesSkipped;
+  }
 
+ protected:
 
   void
   readLocalityGroups(cclient::data::streams::InputStream *metaBlock);
@@ -227,12 +249,19 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   }
 
+  
+  std::unique_ptr<cclient::data::streams::InputStream> ownedStream;
+  std::unique_ptr<cclient::data::streams::OutputStream> ownedOutStream;
+
+  std::vector<cclient::data::streams::OutputStream*> ownedStreams;
+
   // current locality group.
   LocalityGroupMetaData *currentLocalityGroup;
   LocalityGroupReader *currentLocalityGroupReader;
   // number of entries in current block.
   uint32_t entries;
   uint32_t currentBlockCount;
+  uint64_t entriesSkipped;
   std::shared_ptr<KeyValue> lastKeyValue;
   // current data block count in locality group.
   uint16_t dataBlockCnt;
@@ -242,6 +271,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   cclient::data::streams::OutputStream *myDataStream;
 
   cclient::data::streams::InputStream *myInputStream;
+
 
   // list of locality group pointers.
   std::vector<LocalityGroupMetaData*> localityGroups;
@@ -259,7 +289,6 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   bool dataClosed;
   // boolean identifying closed rfile.
   bool closed;
-
 
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;

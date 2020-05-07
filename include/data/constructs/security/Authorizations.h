@@ -12,99 +12,89 @@
  * limitations under the License.
  */
 
-
 #ifndef AUTHORIZATIONS_H_
 #define AUTHORIZATIONS_H_ 1
 
 #pragma once
 
-
 #include <string>
+#include <algorithm>
 #include <set>
 
 #include <vector>
 
-
-
 #include "../../exceptions/ClientException.h"
-
 
 namespace cclient {
 namespace data {
 namespace security {
 
-static bool validAuthChars[256];
+class AuthsInit {
+ public:
+  static AuthsInit* init() {
+    static AuthsInit initer;
+    return &initer;
+  }
+
+  bool* getDefaultAuths() {
+    return &validAuthChars[0];
+  }
+ private:
+  AuthsInit() {
+    buildDefaultAuths();
+  }
+
+  bool validAuthChars[256];
+  int buildDefaultAuths();
+};
 
 class Authorizations {
-public:
-    Authorizations();
+ public:
+  Authorizations();
 
-    Authorizations(std::string authorizations, char *validCharacters, int valid);
+  Authorizations(std::string authorizations, char *validCharacters, int valid);
 
-    ~Authorizations();
+  ~Authorizations();
 
-    explicit Authorizations(std::vector<std::string> *);
-    
-    void addAuthorization(std::string auth);
+  explicit Authorizations(std::vector<std::string>*);
 
-    std::vector<std::string> getAuthorizations() {
-        std::vector<std::string> strAuths;
-        for (auto it : authStrings) {
-            strAuths.push_back(it);
-        }
-        return strAuths;
+  void addAuthorization(std::string auth);
+
+  std::vector<std::string> getAuthorizations() {
+    std::vector<std::string> strAuths;
+    for (auto it : authStrings) {
+      strAuths.push_back(it);
     }
+    return strAuths;
+  }
 
-    inline static int init_auths() {
-        return buildDefaultAuths();
-    }
-    
-    
-    bool
-    operator == (const Authorizations & rhs) const
-    {
-      return authStrings == rhs.authStrings;
-    }
+  bool empty() const {
+    return authStrings.empty();
+  }
 
-protected:
+  bool contains(const std::string &viz) const {
+    return std::find(authStrings.begin(), authStrings.end(), viz) != authStrings.end();
+  }
 
-    void validateAuths() {
-        for (auto it = authStrings.begin(); it != authStrings.end(); it++) {
-            for (uint32_t i = 0; i < (*it).size(); i++) {
-                if (!isValidAuthCharacter((*it).at(i))) {
-                    throw cclient::exceptions::ClientException("Invalid authorization character");
-                }
-            }
+  bool operator ==(const Authorizations &rhs) const {
+    return authStrings == rhs.authStrings;
+  }
+
+  static bool isValidAuthCharacter(char c);
+
+ protected:
+
+  void validateAuths() {
+    for (auto it = authStrings.begin(); it != authStrings.end(); it++) {
+      for (uint32_t i = 0; i < (*it).size(); i++) {
+        if (!isValidAuthCharacter((*it).at(i))) {
+          throw cclient::exceptions::ClientException("Invalid authorization character");
         }
+      }
     }
-    static int buildDefaultAuths() {
-        for (int i = 0; i < 256; i++) {
-            validAuthChars[i] = false;
-        }
+  }
 
-        for (int i = 'a'; i <= 'z'; i++) {
-            validAuthChars[i] = true;
-        }
-
-        for (int i = 'A'; i <= 'Z'; i++) {
-            validAuthChars[i] = true;
-        }
-
-        for (int i = '0'; i <= '9'; i++) {
-            validAuthChars[i] = true;
-        }
-
-        validAuthChars['_'] = true;
-        validAuthChars['-'] = true;
-        validAuthChars[':'] = true;
-        return 0;
-    }
-
-    static bool isValidAuthCharacter(char c) {
-        return validAuthChars[(uint8_t)c];
-    }
-
-    std::set<std::string> authStrings;
+  std::set<std::string> authStrings;
 
 };
 

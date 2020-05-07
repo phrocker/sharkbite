@@ -27,7 +27,6 @@ class IllegalArgumentException: public std::exception {
 public:
     explicit IllegalArgumentException(std::string excp) :
         excp_str(excp) {
-
     }
 
     ~IllegalArgumentException() throw () {

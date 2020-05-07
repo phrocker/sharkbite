@@ -66,7 +66,6 @@ JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *env, jo
   cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
   if (nullptr != itr) {
     try {
-      std::cout << "Received DSL" << dslStr << std::endl;
       itr->setDSL(dslStr);
     } catch(...) {
       rethrow_cpp_exception_as_java_exception(env);

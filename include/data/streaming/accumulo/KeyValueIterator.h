@@ -24,7 +24,7 @@ namespace streams {
 
 class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>> {
  public:
-  KeyValueIterator(KeyValueIterator *source, StreamConfiguration *configuration) {
+  explicit KeyValueIterator(KeyValueIterator *source, StreamConfiguration *configuration) {
     setConfiguration(configuration);
   }
 
@@ -50,12 +50,24 @@ class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::
     return this;
   }
 
+  virtual std::shared_ptr<Key> getTopKey() {
+    return nullptr;
+  }
+
+  virtual std::shared_ptr<Value> getTopValue() {
+    return nullptr;
+  }
+
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() {
     return std::make_pair(nullptr, nullptr);
   }
 
   virtual void next() {
 
+  }
+
+  virtual uint64_t getEntriesFiltered(){
+    return 0;
   }
 
   virtual DataStream* operator++() {

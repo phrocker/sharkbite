@@ -14,6 +14,8 @@
 
 #include "data/constructs/Key.h"
 #include "data/constructs/rfile/meta/LocalityGroupReader.h"
+#include <thread>
+#include <chrono>
 namespace cclient {
 namespace data {
 
@@ -101,10 +103,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
       std::shared_ptr<Key> currKey = 0;
 
       SkippedRelativeKey skipRR(&allocatorInstance);
-
-      if (!colVis.empty())
-        skipRR.filterVisibility(colVis);
-
+      skipRR.filterVisibility(auths);
       filtered = skipRR.skip(currentStream.get(), startKey, &valueArray, prevKey, currKey);
 
       if (skipRR.getPrevKey() != NULL) {
@@ -115,12 +114,23 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
       val = std::make_shared<Value>();
       val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
       rKey = skipRR.getRelativeKey();
-      if (!colVis.empty())
-        rKey->filterVisibility(colVis);
+      /**
+       * Visibility filtering when done at this level allows us to more efficiently skip index blocks.
+       * Since we'll be doing a merged read it is safe to
+       */
+      if (!auths.empty()) {
+        rKey->filterVisibility(auths);
+      }
 
       if (filtered) {
+        entriesSkipped++;
         rKey->setFiltered();
+        // start readahead
+        startReadAhead();
         next();
+        if (!topExists) {
+          return;
+        }
       }
     }
   }
@@ -130,49 +140,60 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
     next();
   }
   if (topExists && readAheadEnabled && iiter->hasNext()) {
-    readAhead = std::async(std::launch::async, [&] {
-      readAheadResult.hasData = false;
-      size_t count = 0;
-      readAheadRunning = true;
-      while(readAheadRunning) {
-        if (iiter->hasNext()) {
-          (*iiter)++;
-          std::shared_ptr<IndexEntry> indexEntry = iiter->get();
-          readAheadResult.entries = indexEntry->getNumEntries();
+    startReadAhead();
+  } else {
+    readAheadResult.checkRange = false;
+    readAheadResult.hasData = true;
+  }
+}
 
-          if (version == 3 || version == 4) {
-            readAheadResult.stream = std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
-          } else {
-            readAheadResult.stream = std::move(getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize(), false));
-          }
-          readAheadResult.checkRange = !currentRange->afterEndKey(indexEntry->getKey());
+void LocalityGroupReader::startReadAhead() {
+  if (readAheadRunning)
+    return;
+  readAhead = std::async(std::launch::async, [&] {
+    readAheadResult.hasData = false;
+    size_t count = 0;
+    readAheadRunning = true;
+    while(readAheadRunning) {
+      if (iiter->hasNext()) {
+        (*iiter)++;
+        std::shared_ptr<IndexEntry> indexEntry = iiter->get();
+        readAheadResult.entries = indexEntry->getNumEntries();
+
+        if (version == 3 || version == 4) {
+          readAheadResult.stream = std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
+        } else {
+          readAheadResult.stream = std::move(getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize(), false));
         }
-        else {
-          readAheadResult.checkRange = false;
-        }
-        readAheadResult.hasData=true;
-        readAheadConsumerCondition.notify_one();
-        if (!readAheadResult.checkRange) {
-          break;
-        }
-        std::unique_lock<std::mutex> lock(readAheadMutex);
-        readAheadCondition.wait(lock, [&] {
-              return !readAheadRunning || readAheadResult.interrupt;
-            });
-        readAheadResult.interrupt = false;
+        readAheadResult.checkRange = !currentRange->afterEndKey(indexEntry->getKey());
+      }
+      else {
+        readAheadResult.checkRange = false;
+      }
+      std::unique_lock<std::mutex> lock(readAheadMutex);
+      readAheadResult.hasData=true;
+      readAheadConsumerCondition.notify_one();
+      if (!readAheadResult.checkRange) {
         lock.unlock();
-
-        count++;
+        break;
       }
 
-      return count;
+      readAheadCondition.wait(lock, [&] {
+            return !readAheadRunning || readAheadResult.interrupt;
+          });
+      readAheadResult.interrupt = false;
+      lock.unlock();
 
-    });
-    while(!readAheadRunning);
-  }
-  else {
-    readAheadResult.checkRange=false;
-    readAheadResult.hasData = true;
+      count++;
+    }
+
+    return count;
+
+  });
+  while (!readAheadRunning) {
+    // a long sleep isn't needed here and avoids starvation on
+    // single CPU systems
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
   }
 }
 
@@ -182,15 +203,18 @@ void LocalityGroupReader::next() {
   if (SH_UNLIKELY(entriesLeft == 0)) {
     currentStream->close();
     if (readAheadEnabled) {
+
+      readAheadLabel:
       // data is available
       if (!readAheadResult.hasData) {
         std::unique_lock<std::mutex> lock(readAheadMutex);
-        readAheadConsumerCondition.wait(lock, [&] {
-          return !readAheadRunning || readAheadResult.hasData;
-        });
-        lock.unlock();
+        if (!readAheadResult.hasData) {
+          readAheadConsumerCondition.wait(lock, [&] {
+            return !readAheadRunning || readAheadResult.hasData;
+          });
+          lock.unlock();
+        }
       }
-
       if (readAheadResult.hasData && readAheadResult.checkRange) {
         entriesLeft = readAheadResult.entries;
         currentStream = std::move(readAheadResult.stream);
@@ -219,7 +243,7 @@ void LocalityGroupReader::next() {
         }
         checkRange = !currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange)
-          topExists = true;
+        topExists = true;
       } else {
         rKey = 0;
         val = 0;
@@ -231,11 +255,25 @@ void LocalityGroupReader::next() {
 
   do {
     prevKey = std::static_pointer_cast<Key>(rKey->getStream());
-    rKey->read(currentStream.get());
+    if (auths.empty())
+      rKey->read(currentStream.get());
+    else
+      rKey->readFiltered(currentStream.get());
+
     val->read(currentStream.get());
     entriesLeft--;
-    if (entriesLeft == 0 && rKey->isFiltered() && !readAheadEnabled) {
+    if (!rKey->isFiltered()) {
+      // if we aren't filtered we can exit the loop.
+      break;
+    }
+    entriesSkipped++;
+    if (entriesLeft == 0) {
       currentStream->close();
+      // this handles the case where we have not started the read ahead
+      // because we are just opening the RFile.
+      if (SH_LIKELY(readAheadEnabled)) {
+        goto readAheadLabel;
+      }
 
       if (iiter->hasNext()) {
         (*iiter)++;
@@ -258,7 +296,7 @@ void LocalityGroupReader::next() {
       if (!hasTop())
         return;
     }
-  } while (rKey->isFiltered());
+  } while (entriesLeft > 0);
   if (checkRange) {
     topExists = !currentRange->afterEndKey(getTopKey());
   }

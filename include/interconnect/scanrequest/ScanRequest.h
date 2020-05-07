@@ -42,7 +42,7 @@ class ScanRequest {
       auths(auths),
       connection(server), singlebufferSize(1000) {
 
-    if (IsEmpty(credentials) || IsEmpty(auths) || IsEmpty(server.get())) {
+    if (IsEmpty(credentials) || auths == nullptr || IsEmpty(server.get())) {
       throw cclient::exceptions::IllegalArgumentException("credentials, authorizations, and server must not be empty");
     }
 

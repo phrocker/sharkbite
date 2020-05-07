@@ -193,7 +193,6 @@ private:
 
       request.putIdentifier(ident);
     }
-
     return transport->beginScan(isRunning,&request);
 
   }
