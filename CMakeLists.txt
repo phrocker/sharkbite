@@ -406,7 +406,7 @@ add_dependencies(sharkbite-shared LibThrift)
 
 target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
-target_link_libraries (sharkbite ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
+target_link_libraries (sharkbite-shared ${CMAKE_THREAD_LIBS_INIT} ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
 
 target_link_libraries(sharkbite 

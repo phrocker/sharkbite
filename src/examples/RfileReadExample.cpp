@@ -78,14 +78,14 @@ std::unique_ptr<cclient::data::streams::KeyValueIterator> createMultiReader(std:
     auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
 
     if (rfiles.size() == 1) {
-      return std::move(std::make_unique<cclient::data::SequentialRFile>(std::move(endstream), size));
+      return std::make_unique<cclient::data::SequentialRFile>(std::move(endstream), size);
     } else {
       auto newRFile = std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
       iters.emplace_back(newRFile);
     }
 
   }
-  return std::move(std::make_unique<cclient::data::MultiIterator>(iters));
+  return std::make_unique<cclient::data::MultiIterator>(iters);
 }
 
 void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, const std::string &visibility) {
