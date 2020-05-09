@@ -57,6 +57,7 @@ class Authorizations {
   ~Authorizations();
 
   explicit Authorizations(std::vector<std::string>*);
+  explicit Authorizations(const std::vector<std::string>&);
 
   void addAuthorization(std::string auth);
 

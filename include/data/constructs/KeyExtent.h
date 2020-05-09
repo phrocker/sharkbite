@@ -38,14 +38,14 @@ class KeyExtent {
    * @param flattenedText flattened representation of the end row and table id
    * @param prevEndRow the previous endrow so we can ensure lexicographical ordering
    **/
-  KeyExtent(std::string flattenedText, std::shared_ptr<Value> prevEndRow);
+  explicit KeyExtent(std::string flattenedText, std::shared_ptr<Value> prevEndRow);
 
   /**
    * Constructor
    * @param tableIdIn table Id
    * @param endRowIn end row for the tablet
    **/
-  KeyExtent(std::string tableIdIn, std::string endRowIn)
+  explicit KeyExtent(std::string tableIdIn, std::string endRowIn)
       :
       KeyExtent(tableIdIn, endRowIn, "") {
 
@@ -68,7 +68,7 @@ class KeyExtent {
    @param endRowIn end row
    @param prevEndRowIn previous end row
    **/
-  KeyExtent(std::string tableIdIn, std::string endRowIn, std::string prevEndRowIn) {
+  explicit KeyExtent(std::string tableIdIn, std::string endRowIn, std::string prevEndRowIn) {
     if (IsEmpty(&tableIdIn)) {
       throw cclient::exceptions::IllegalArgumentException("Table Id cannot be null");
     }
@@ -108,7 +108,16 @@ class KeyExtent {
     tableId = other.tableId;
     endRow = other.endRow;
     prevEndRow = other.prevEndRow;
+    fileLocations = other.fileLocations;
     return *this;
+  }
+
+  void setFileLocations(const std::vector<std::string> &otherLocs){
+    fileLocations = otherLocs;
+  }
+
+  std::vector<std::string> getFileLocations() const {
+    return fileLocations;
   }
 
   bool operator <(const KeyExtent &rhs) const {
@@ -233,6 +242,8 @@ class KeyExtent {
   std::string endRow;
   // previous end row.
   std::string prevEndRow;
+  // locations of rfiles.
+  std::vector<std::string> fileLocations;
 };
 // static variable for the root tablet key extent.
 static const KeyExtent ROOT_TABLET_EXTENT(

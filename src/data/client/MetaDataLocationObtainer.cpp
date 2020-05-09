@@ -76,6 +76,8 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
   std::shared_ptr<cclient::data::Value> prevRow = 0;
 
+  std::shared_ptr<cclient::data::KeyExtent> currentKe = nullptr;
+  std::vector<std::string> files;
   for (std::map<std::shared_ptr<cclient::data::Key>, std::shared_ptr<cclient::data::Value> >::iterator it = results.begin(); it != results.end(); it++) {
     key = it->first;
     logging::LOG_DEBUG(logger) << "FindTablet received" << key;
@@ -89,8 +91,7 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
 
     std::pair<char*, size_t> cfBytes = key->getColFamily();
     std::string cf = std::string(cfBytes.first, cfBytes.second);
-    std::pair<char*, size_t> cqBytes = key->getColQualifier();
-    std::string cq = std::string(cqBytes.first, cqBytes.second);
+    std::string cq = key->getColQualifierStr();
 
     value = it->second;
     std::pair<uint8_t*, size_t> valBytes = value->getValue();
@@ -99,11 +100,15 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
       session = cq;
     } else if (cf == METADATA_TABLET_COLUMN_FAMILY && cq == METADATA_PREV_ROW_COLUMN_CQ) {
       prevRow = value;
+    } else if (cf == METADATA_FILE_COLUMN_FAMILY){
+      files.emplace_back( cq );
     }
 
     if (prevRow != NULL) {
 
       std::shared_ptr<cclient::data::KeyExtent> ke = std::make_shared<cclient::data::KeyExtent>(currentRow, prevRow);
+      ke->setFileLocations( files );
+      files.clear();
       if (location.length() > 0) {
         cclient::data::TabletLocation te(ke, location, session);
         tabletLocations.push_back(te);

@@ -29,7 +29,8 @@ const std::map<uint16_t,std::string> CLIENT_ERROR_CODES = {
   {TABLE_NOT_FOUND,"Table not found in instance"},
   {RANGE_NOT_SPECIFIED,"Range not supplied for scanner"},
   {TABLE_OR_NAMESPACE_EMPTY,"The table or namespace must not be empty"},
-  {ARGUMENT_CANNOT_BE_NULL,"Function argument cannot be null or empty"}
+  {ARGUMENT_CANNOT_BE_NULL,"Function argument cannot be null or empty"},
+  {SCANNER_ALREADY_STARTED,"Options cannot be set on a scanner after iteration of results has begun"}
   
 };
 

@@ -31,8 +31,10 @@
 #include "../include/data/streaming/OutputStream.h"
 #include "data/iterators/MultiIterator.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
+#include "data/constructs/rfile/RFileOperations.h"
 #include "data/streaming/input/HdfsInputStream.h"
-
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 #define BOOST_IOSTREAMS_NO_LIB 1
 
 bool keyCompare(std::shared_ptr<cclient::data::KeyValue> a, std::shared_ptr<cclient::data::KeyValue> b) {
@@ -95,9 +97,10 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
 
   auto start = chrono::steady_clock::now();
 
-  std::unique_ptr<cclient::data::streams::KeyValueIterator> multi_iter = createMultiReader(rfiles);
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles);
   std::vector<std::string> cf;
-  cclient::data::Range rng;
+  cclient::data::Range rng("justin");
+
 
   cclient::data::security::Authorizations auths;
   if (!visibility.empty()) {
@@ -144,6 +147,8 @@ int main(int argc, char **argv) {
     std::cout << "Optional arguments:     -v <visibility> -- visibility  " << std::endl;
     exit(1);
   }
+
+  logging::LoggerConfiguration::enableTraceLogger();
 
   std::vector<std::string> rfiles;
   std::string visibility;

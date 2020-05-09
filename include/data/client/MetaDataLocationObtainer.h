@@ -48,6 +48,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
     columns.emplace_back(cclient::data::Column(METADATA_CURRENT_LOCATION_COLUMN_FAMILY));
     columns.emplace_back(cclient::data::Column(METADATA_TABLET_COLUMN_FAMILY,
     METADATA_PREV_ROW_COLUMN_CQ));
+    columns.emplace_back(cclient::data::Column(METADATA_FILE_COLUMN_FAMILY));
     std::sort(columns.begin(), columns.end());
 
   }

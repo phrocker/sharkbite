@@ -40,7 +40,8 @@ class ScanRequest {
       :
       creds(credentials),
       auths(auths),
-      connection(server), singlebufferSize(1000) {
+      connection(server),
+      singlebufferSize(1000) {
 
     if (IsEmpty(credentials) || auths == nullptr || IsEmpty(server.get())) {
       throw cclient::exceptions::IllegalArgumentException("credentials, authorizations, and server must not be empty");
@@ -54,7 +55,7 @@ class ScanRequest {
     }
   }
 
-  void setBufferSize(uint32_t size){
+  void setBufferSize(uint32_t size) {
     singlebufferSize = size;
   }
 
@@ -86,7 +87,7 @@ class ScanRequest {
     return auths;
   }
 
-  uint32_t getBuffersize(){
+  uint32_t getBuffersize() {
     return singlebufferSize;
   }
 
@@ -100,6 +101,10 @@ class ScanRequest {
 
   std::vector<I*>* getRangeIdentifiers() {
     return &identifiers;
+  }
+
+  size_t size() const {
+    return identifiers.size();
   }
 
  protected:

@@ -12,20 +12,34 @@
  * limitations under the License.
  */
 
-#ifndef STRUCTURE_DEFS_H_
-#define STRUCTURE_DEFS_H_
+#ifndef SCANARBITER_H_
+#define SCANARBITER_H_
+#include "Scan.h"
+#include <future>
+#include <memory>
+#include <deque>
 
-#include <string>
+namespace interconnect {
 
+class ScanArbiter {
+ private:
+  std::mutex m;
+  std::condition_variable cv;
+  std::deque<Scan*> index;
+  std::vector<std::future<Scan*>> futures;
+  uint16_t count;
+  uint16_t max;
+ public:
 
+  explicit ScanArbiter(uint16_t desired);
 
-#define METADATA_TABLET_COLUMN_FAMILY std::string("~tab")
-#define METADATA_CURRENT_LOCATION_COLUMN_FAMILY std::string("loc")
-#define METADATA_FILE_COLUMN_FAMILY std::string("file")
-#define METADATA_FUTURE_LOCATION_COLUMN_FAMILY std::string("future")
-#define METADATA_LAST_LOCATION_COLUMN_FAMILY std::string("last")
-#define METADATA_PREV_ROW_COLUMN_CQ std::string("~pr")
-#define METADATA_TABLE_ID std::string("!0")
+  ~ScanArbiter();
 
+  Scan* wait();
 
+  void add(Scan *scan);
+
+};
+
+}
 #endif

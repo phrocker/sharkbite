@@ -43,7 +43,7 @@ struct ScanPair {
  * Contains base functionality to support multi scanning
  */
 
-class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
+class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
  private:
   std::shared_ptr<logging::Logger> logger;
 
@@ -69,7 +69,11 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     close();
   }
 
-  void close() {
+  bool isRunning() const {
+    return running;
+  }
+
+  virtual void close() {
     running = false;
     std::lock_guard<std::timed_mutex> lock(serverLock);
 
@@ -81,7 +85,7 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     started = false;
   }
 
-  uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
+  virtual uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
     acquireLock();
     std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
     if (!started) {
@@ -99,13 +103,13 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
     return scans;
   }
 
- private:
+ protected:
   std::timed_mutex serverLock;
   std::vector<std::thread> threads;
   uint16_t threadCount;
  protected:
 
-  std::shared_ptr<logging::Logger> getLogger() {
+  virtual std::shared_ptr<logging::Logger> getLogger()  {
     return logger;
   }
 
@@ -156,7 +160,6 @@ class ScannerHeuristic : Heuristic<interconnect::ThriftTransporter> {
       auto directConnect = std::make_shared<interconnect::ServerInterconnect>(newRangeDef, scanResource->src->getInstance()->getConfiguration());
 
       addUniqueConnection(directConnect);
-      //((ScannerHeuristic*) scanResource->heuristic)->addClientInterface(directConnect);
     }
 
   }

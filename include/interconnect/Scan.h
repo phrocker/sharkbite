@@ -15,7 +15,6 @@
 #ifndef SCAN_H_
 #define SCAN_H_ 1
 
-
 #include <vector>
 #include <atomic>
 #include <stdio.h>      /* printf, scanf, puts, NULL */
@@ -23,6 +22,7 @@
 #include <time.h>
 
 #include "../data/constructs/KeyValue.h"
+#include "data/streaming/accumulo/KeyValueIterator.h"
 
 //http://sector.sourceforge.net/software.html
 
@@ -30,119 +30,90 @@
  * Represents a running scan
  */
 
-namespace interconnect
-{
+namespace interconnect {
 
 /**
  * Scan representation
  * 
  **/
-class Scan
-{
-public:
+class Scan {
+ public:
 
-	explicit Scan(std::atomic<bool> *isRunning);
+  explicit Scan(std::atomic<bool> *isRunning);
 
-	~Scan();
+  ~Scan();
 
-	/**
-	 * Sets the next result set.
-	 * @param resultSet result set to add to this object's results
-	 * @returns result of adding. 
-	 **/
-	bool setNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet)
-	{
-		results.insert(results.end(), resultSet->begin(),
-		               resultSet->end());
-		if (!resultSet->empty())
-		  topKey = resultSet->back()->getKey();
-		return true;
-	}
+  /**
+   * Sets the next result set.
+   * @param resultSet result set to add to this object's results
+   * @returns result of adding.
+   **/
+  bool setNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
 
-	bool isClientRunning(){
-	  return isRunning->load();
-	}
+  bool isClientRunning();
 
-	/**
-	 * Gets the next result and places it into resultSet
-	 * @param reference result set to add. 
-	 **/
-	bool getNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet)
-	{
-		resultSet->insert(resultSet->end(), results.begin(), results.end());
-		results.clear();
-		return hasMore;
-	}
+  void setMultiIterator(std::shared_ptr<cclient::data::streams::KeyValueIterator> &itr);
 
-	/**
-	 * Set flag to identify that more results are available.
-	 * @param more more results
-	 **/
-	void setHasMore(bool more)
-	{
-		hasMore = more;
-	}
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> getMultiIterator();
 
-	/**
-	 * Gets variable to identify if more results are available
-	 * @returns whether or not there are more results.
-	 **/
-	bool getHasMore()
-	{
-		return hasMore;
-	
-	}
-	/**
-	 * Returns the scan id
-	 * @returns scan id.
-	 **/
-	int64_t getId()
-	{
+  /**
+   * Gets the next result and places it into resultSet
+   * @param reference result set to add.
+   **/
+  bool getNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
 
-		return scanId;
+  /**
+   * Set flag to identify that more results are available.
+   * @param more more results
+   **/
+  void setHasMore(bool more);
 
-	}
+  /**
+   * Gets variable to identify if more results are available
+   * @returns whether or not there are more results.
+   **/
+  bool getHasMore() const;
+  /**
+   * Returns the scan id
+   * @returns scan id.
+   **/
+  int64_t getId() const;
 
-	void setMultiScan(bool isMulti){
-	  this->isMulti = isMulti;
-	}
+  void setMultiScan(bool isMulti);
+  bool isMultiScan() const;
 
-	bool isMultiScan() const {
-	  return isMulti;
-	}
+  void setRFileScan(bool isRFile);
+  bool isRFileScan() const;
 
-	/**
-	 * Sets the scan id
-	 * @param scanId scan identifier
-	 **/
-	void setScanId(int64_t scanId)
-	{
-		this->scanId = scanId;
-	}
-	
-	void setTopKey(std::shared_ptr<cclient::data::Key> key)
-	{
-	  topKey = key;
-	}
-	
-	std::shared_ptr<cclient::data::Key> getTopKey() const
-	{
-	  return topKey;
-	}
+  bool empty() const;
 
-protected:
+  /**
+   * Sets the scan id
+   * @param scanId scan identifier
+   **/
+  void setScanId(int64_t scanId);
 
-	bool isMulti;
+  void setTopKey(std::shared_ptr<cclient::data::Key> key);
 
-	std::atomic<bool> *isRunning;
+  std::shared_ptr<cclient::data::Key> getTopKey() const;
 
-	std::shared_ptr<cclient::data::Key> topKey;
-	// scan id
-	int64_t scanId;
-	// has more results.
-	bool hasMore;
-	// results
-	std::vector<std::shared_ptr<cclient::data::KeyValue> > results;
+ protected:
+
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> iter;
+
+  bool isRFile;
+
+  bool isMulti;
+
+  std::atomic<bool> *isRunning;
+
+  std::shared_ptr<cclient::data::Key> topKey;
+  // scan id
+  int64_t scanId;
+  // has more results.
+  bool hasMore;
+  // results
+  std::vector<std::shared_ptr<cclient::data::KeyValue> > results;
 };
 }
 #endif /* SCAN_H_ */

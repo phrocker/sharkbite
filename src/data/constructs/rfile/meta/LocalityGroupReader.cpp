@@ -43,6 +43,8 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
     return;
   }
 
+
+
   std::shared_ptr<Key> startKey = NULL;
   if (NULL != currentRange->getStartKey()) {
     startKey = std::make_shared<Key>(currentRange->getStartKey());
@@ -53,8 +55,9 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
   bool reseek = true;
 
-  if (currentRange->getStopKey() != NULL && firstKey > currentRange->getStopKey()) {
+  if (currentRange->getStopKey() != NULL && firstKey->compare(currentRange->getStopKey()) > 0) {
     // range is before the first key;
+    logging::LOG_TRACE(logger) << "reseek not needed for " << firstKey << " > " << currentRange->getStopKey();
     reseek = false;
   }
 
@@ -68,7 +71,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
     iiter = index->lookup(startKey);
 
-    close();
+        close();
     bool filtered = false;
     if (!iiter->isEnd()) {
       while (iiter->hasPrevious()) {
@@ -104,7 +107,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
       SkippedRelativeKey skipRR(&allocatorInstance);
       skipRR.filterVisibility(auths);
-      filtered = skipRR.skip(currentStream.get(), startKey, &valueArray, prevKey, currKey);
+      filtered = skipRR.skip(currentStream.get(), startKey, &valueArray, prevKey, currKey, entriesLeft);
 
       if (skipRR.getPrevKey() != NULL) {
         prevKey = std::make_shared<Key>(skipRR.getPrevKey());
@@ -133,10 +136,14 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
         }
       }
     }
+    else{
+      logging::LOG_TRACE(logger) << "reseek not necessary";
+    }
   }
 
   topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
   while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->beforeStartKey(getTopKey())) {
+    logging::LOG_TRACE(logger) << "Checking " << getTopKey() << " against " << currentRange->getStartKey();
     next();
   }
   if (topExists && readAheadEnabled && iiter->hasNext()) {

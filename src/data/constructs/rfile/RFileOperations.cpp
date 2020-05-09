@@ -95,7 +95,7 @@ std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openM
       iters.emplace_back(newRFile);
     }
   }
-  return std::move(std::make_shared<cclient::data::MultiIterator>(iters));
+  return std::make_shared<cclient::data::MultiIterator>(iters);
 }
 
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {

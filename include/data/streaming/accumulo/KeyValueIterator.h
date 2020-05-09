@@ -16,6 +16,7 @@
 
 #include "../../constructs/Key.h"
 #include "../../constructs/value.h"
+#include "../../constructs/KeyValue.h"
 #include "../DataStream.h"
 
 namespace cclient {
@@ -56,6 +57,10 @@ class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::
 
   virtual std::shared_ptr<Value> getTopValue() {
     return nullptr;
+  }
+
+  virtual std::shared_ptr<KeyValue> getTop(){
+    return std::make_shared<KeyValue>(getTopKey(),getTopValue());
   }
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() {

@@ -32,6 +32,7 @@
 #define RANGE_NOT_SPECIFIED 10
 #define TABLE_OR_NAMESPACE_EMPTY 11
 #define ARGUMENT_CANNOT_BE_NULL 12
+#define SCANNER_ALREADY_STARTED 13
 
 namespace cclient {
 namespace exceptions {

@@ -33,7 +33,7 @@ class StreamSeekable : public StreamRelocation {
   cclient::data::security::Authorizations auths;
  public:
 
-   explicit StreamSeekable(Range &range)
+  explicit StreamSeekable(Range &range)
       :
       range(std::move(range)),
       inclusive(false) {
@@ -54,6 +54,15 @@ class StreamSeekable : public StreamRelocation {
       columnFamilies(columnFamilies),
       inclusive(inclusive),
       auths(std::move(in_auths)) {
+
+  }
+
+  explicit StreamSeekable(Range *rng, std::vector<std::string> &columnFamilies, cclient::data::security::Authorizations *in_auths, bool inclusive)
+      :
+      range(rng->getStartKey(), rng->getStartKeyInclusive(), rng->getStopKey(), rng->getStartKeyInclusive()),
+      columnFamilies(columnFamilies),
+      inclusive(inclusive),
+      auths(in_auths->getAuthorizations()) {
 
   }
 

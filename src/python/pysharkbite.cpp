@@ -39,6 +39,7 @@
 #include "data/constructs/client/Hdfs.h"
 #include "data/streaming/accumulo/StreamSeekable.h"
 #include "data/streaming/StreamRelocation.h"
+#include "scanner/ScannerOptions.h"
 
 using namespace pybind11::literals;
 
@@ -47,7 +48,7 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 PYBIND11_MODULE(pysharkbite, s) {
   s.doc() = "Accumulo connector plugin";
 
-  
+
 
   pybind11::class_<cclient::impl::Configuration, std::shared_ptr<cclient::impl::Configuration>>(s, "Configuration")
   .def(pybind11::init<>())
@@ -166,9 +167,15 @@ PYBIND11_MODULE(pysharkbite, s) {
         return it;})
   .def("__next__", &scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>::next);
 
+
+  pybind11::enum_<ScannerOptions>(s, "ScannerOptions", pybind11::arithmetic())
+       .value("HedgedReads", ScannerOptions::ENABLE_HEDGED_READS);
+
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
   .def("getResultSet", &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)
   .def("fetchColumn", &scanners::BatchScanner::fetchColumn)
+  .def("setOption", &scanners::BatchScanner::setOption)
+  .def("removeOption", &scanners::BatchScanner::removeOption)
   .def("addIterator", (void (scanners::BatchScanner::*)(const cclient::data::IterInfo &) ) &scanners::BatchScanner::addIterator)
   .def("addIterator",(void (scanners::BatchScanner::*)(const cclient::data::python::PythonIterInfo &) ) &scanners::BatchScanner::addPythonIterator)
   .def("close", &scanners::BatchScanner::close)
@@ -191,7 +198,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("close",&cclient::data::RFile::close)
   .def("next",&cclient::data::RFile::next);
 
-  
+
 pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::streams::KeyValueIterator>>(s, "KeyValueIterator")
   .def(pybind11::init<>())
   .def("seek",&cclient::data::streams::KeyValueIterator::relocate)
@@ -229,7 +236,7 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("getColumnFamilies",&cclient::data::streams::StreamSeekable::getColumnFamilies, "Gets the column families for this seekable")
     .def("isInclusive",&cclient::data::streams::StreamSeekable::isInclusive, "Returns true if the column families are inclusive.");
 
-    
+
 
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations")

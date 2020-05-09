@@ -41,6 +41,8 @@
 #include "data/constructs/SkippedRelativeKey.h"
 #include "data/constructs/rkey.h"
 #include "data/constructs/security/Authorizations.h"
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 
 namespace cclient {
 namespace data {
@@ -54,6 +56,8 @@ struct ReadAheadProxy {
 };
 
 class LocalityGroupReader : public cclient::data::streams::FileIterator {
+ private:
+  std::shared_ptr<logging::Logger> logger;
  protected:
   ArrayAllocatorPool allocatorInstance;
   BlockCompressedFile *bcFile;
@@ -93,7 +97,6 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   std::future<size_t> readAhead;
   ReadAheadProxy readAheadResult;
   cclient::data::security::Authorizations auths;
-
 
   void startReadAhead();
 
@@ -137,6 +140,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
  public:
   LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, LocalityGroupMetaData *metadata, int version)
       :
+      logger(logging::LoggerFactory<LocalityGroupReader>::getLogger()),
       bcFile(bcFile),
       reader(input_stream),
       version(version),

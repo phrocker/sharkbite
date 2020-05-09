@@ -12,20 +12,11 @@
  * limitations under the License.
  */
 
-#ifndef STRUCTURE_DEFS_H_
-#define STRUCTURE_DEFS_H_
-
-#include <string>
-
-
-
-#define METADATA_TABLET_COLUMN_FAMILY std::string("~tab")
-#define METADATA_CURRENT_LOCATION_COLUMN_FAMILY std::string("loc")
-#define METADATA_FILE_COLUMN_FAMILY std::string("file")
-#define METADATA_FUTURE_LOCATION_COLUMN_FAMILY std::string("future")
-#define METADATA_LAST_LOCATION_COLUMN_FAMILY std::string("last")
-#define METADATA_PREV_ROW_COLUMN_CQ std::string("~pr")
-#define METADATA_TABLE_ID std::string("!0")
+#include "scanner/ScannerOptions.h"
+#include <cstdint>
+namespace scanners
+{
 
 
-#endif
+
+}

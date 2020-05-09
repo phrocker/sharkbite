@@ -25,13 +25,14 @@
 #include "../data/constructs/IterInfo.h"
 #include "data/constructs/PythonIterInfo.h"
 #include "../data/constructs/column.h"
+#include "ScannerOptions.h"
 
 namespace scanners {
 
 template<typename T, class BlockType>
 class Source {
  public:
-  Source() {
+  Source() : sourceOptions(ScannerOptions::BASIC_SCANNER){
   }
 
   virtual void addRange(std::unique_ptr<cclient::data::Range> range) = 0;
@@ -58,8 +59,6 @@ class Source {
 
   virtual Results<T, BlockType>* getResultSet() = 0;
 
-  //virtual void addResults(Results<T, BlockType> *results) = 0;
-
   virtual ~Source() {
   }
 
@@ -74,6 +73,18 @@ class Source {
     return iters;
   }
 
+  virtual void setOption(ScannerOptions opt){
+    sourceOptions |= opt;
+  }
+
+  virtual void removeOption(ScannerOptions opt){
+    sourceOptions &= ~opt ;
+  }
+
+  virtual bool containsOption(ScannerOptions option){
+    return option == (sourceOptions & option);
+  }
+
   virtual std::shared_ptr<cclient::data::Instance>  getInstance() = 0;
 
   void fetchColumn(std::string col, std::string colqual = "") {
@@ -83,6 +94,7 @@ class Source {
       columns.emplace_back(cclient::data::Column(col));
   }
  protected:
+  ScannerOptions sourceOptions;
   std::vector<cclient::data::Column> columns;
   std::vector<cclient::data::IterInfo> iters;
 };

@@ -85,7 +85,6 @@ class Range {
   }
 
   Range(Range &&) = default;
-  Range(Range&) = default;
 
   /**
    * Returns the start key.

@@ -18,8 +18,6 @@
 #include <set>
 #include <iostream>
 
-
-
 namespace cclient {
 namespace data {
 namespace security {
@@ -52,8 +50,8 @@ Authorizations::Authorizations() {
 }
 
 bool Authorizations::isValidAuthCharacter(char c) {
-   return AuthsInit::init()->getDefaultAuths()[(int) c];
- }
+  return AuthsInit::init()->getDefaultAuths()[(int) c];
+}
 
 Authorizations::Authorizations(std::string authorizations, char *validCharacters, int valid) {
   AuthsInit::init();
@@ -66,6 +64,13 @@ Authorizations::Authorizations(std::string authorizations, char *validCharacters
 Authorizations::Authorizations(std::vector<std::string> *authorizations) {
   AuthsInit::init();
   for (auto it = authorizations->begin(); it != authorizations->end(); it++)
+    addAuthorization(*it);
+
+}
+
+Authorizations::Authorizations(const std::vector<std::string> &authorizations) {
+  AuthsInit::init();
+  for (auto it = authorizations.begin(); it != authorizations.end(); it++)
     addAuthorization(*it);
 
 }
