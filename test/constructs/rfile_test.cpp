@@ -58,9 +58,9 @@ TEST_CASE("Create rfile", "[CreateRfile]") {
 //		fstream fileStream("/test.rf",
 	//			fstream::in | fstream::out | fstream::trunc);
 
-		cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor(256*1024);
+		auto compressor = std::make_unique< cclient::data::compression::ZLibCompressor>(256*1024);
 
-		auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
+		auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(std::move(compressor));
 
 		cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024 * 1024,stream);
 		cclient::data::RFile *newRFile = new cclient::data::RFile(outStream, std::move(bcFile));

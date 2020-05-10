@@ -58,10 +58,10 @@ class BlockCompressorStream: private BlockStreambuffer,
 
 public:
     // takes ownership of the compressor
-    BlockCompressorStream(OutputStream *out_stream, cclient::data::compression::Compressor *compressor,
+    BlockCompressorStream(OutputStream *out_stream, std::unique_ptr<cclient::data::compression::Compressor> compressor,
                           BlockRegion *region);
 
-    BlockCompressorStream(InputStream *in_stream,cclient::data::compression::Compressor *decompressor,BlockRegion *region);
+    BlockCompressorStream(InputStream *in_stream,std::unique_ptr<cclient::data::compression::Compressor> decompressor,BlockRegion *region);
 
     ~BlockCompressorStream();
 
@@ -93,12 +93,12 @@ public:
 
     /**
      * Returns the reference to the compressor
-     */
+     
     cclient::data::compression::Compressor *getCompressor() {
 
         return compress;
     }
-
+*/
 
     virtual uint64_t writeEncodedLong(const int64_t n = 0) {
         return DataOutputStream::writeEncodedLong(n);
@@ -175,7 +175,7 @@ protected:
     // if not true, then we neet to set the stream offset
     bool writeStart;
     // compressor reference.
-    cclient::data::compression::Compressor  *compress;
+    std::unique_ptr<cclient::data::compression::Compressor> compress;
     BlockRegion *associatedRegion;
 
     InputStream *input_stream;

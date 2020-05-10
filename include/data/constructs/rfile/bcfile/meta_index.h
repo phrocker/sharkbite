@@ -25,6 +25,7 @@
 
 #include "../../compressor/algorithm.h"
 #include "../../compressor/compression_algorithm.h"
+#include "../../compressor/CompressorFactory.h"
 #include "../../compressor/compressor.h"
 #include "../../../streaming/Streams.h"
 #include "../../../streaming/OutputStream.h"
@@ -38,8 +39,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
  public:
   MetaIndexEntry()
       :
-      metaName(""),
-      comp(NULL) {
+      metaName("") {
 
   }
 
@@ -47,10 +47,10 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
 
   }
 
-  explicit MetaIndexEntry(cclient::data::compression::Compressor *compressor)
+  explicit MetaIndexEntry(std::unique_ptr<cclient::data::compression::Compressor> compressor)
       :
       metaName(""),
-      comp(compressor) {
+      comp(std::move(compressor)) {
 
   }
 
@@ -61,20 +61,17 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
   MetaIndexEntry(std::string metameta, BlockRegion reg)
       :
       metaName(metameta),
-      region(reg),
-      comp(
-      NULL) {
-    compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(*reg.getCompressor()->getAlgorithm());
+      region(reg) {
+    compressionAlgo = reg.getAlgorithm();
   }
 
   cclient::data::streams::InputStream*
   readDataStream(cclient::data::streams::InputStream *in) {
-    comp = compressionAlgo->create();
     uint64_t prevPosition = in->getPos();
     if (prevPosition < 0) {
       throw cclient::exceptions::ClientException("Invalid position in index block");
     }
-    return new BlockCompressorStream(in, comp, &region);
+    return new BlockCompressorStream(in, cclient::data::compression::CompressorFactory::create( compressionAlgo ), &region);
   }
 
   uint64_t read(cclient::data::streams::InputStream *in) {
@@ -88,7 +85,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
     }
     auto z = in->readString();
 
-    compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(z);
+    compressionAlgo = cclient::data::compression::CompressionAlgorithm(z);
 
     region.read(in);
     return in->getPos();
@@ -101,7 +98,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
     writeString.append(metaName);
 
     out->writeString(writeString);
-    out->writeString(compressionAlgo->getName());
+    out->writeString(compressionAlgo.getName());
     return region.write(out);
   }
 
@@ -113,12 +110,12 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
   MetaIndexEntry&
   operator=(const MetaIndexEntry &other) {
     metaName = other.metaName;
-    compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(*other.compressionAlgo.get());
+    compressionAlgo =other.compressionAlgo;
     region = other.region;
 
     if (other.comp != NULL) {
 
-      comp = other.comp;
+      comp = other.comp->newInstance();
     }
 
     return *this;
@@ -133,13 +130,13 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
     metaName = name;
   }
 
-  void setAlgorithm(const cclient::data::compression::Algorithm *algo) {
+  void setAlgorithm(const cclient::data::compression::Algorithm &algo) {
 
-    compressionAlgo = std::make_unique<cclient::data::compression::CompressionAlgorithm>(*algo);
+    compressionAlgo = algo;
   }
 
-  cclient::data::compression::CompressionAlgorithm* getAlgorithm() {
-    return compressionAlgo.get();
+  cclient::data::compression::CompressionAlgorithm getAlgorithm() {
+    return compressionAlgo;
   }
 
   void setBlockRegion(BlockRegion reg) {
@@ -149,9 +146,9 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
 
  protected:
   std::string metaName;
-  std::unique_ptr<cclient::data::compression::CompressionAlgorithm> compressionAlgo;
+  cclient::data::compression::CompressionAlgorithm compressionAlgo;
   BlockRegion region;
-  cclient::data::compression::Compressor *comp;
+  std::unique_ptr<cclient::data::compression::Compressor> comp;
 };
 
 /**
@@ -202,9 +199,9 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
    * @returns newly allocated MetaIndexEntry
    */
   MetaIndexEntry*
-  prepareNewEntry(const std::string name, cclient::data::compression::Compressor *comp) {
+  prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp) {
 
-    std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(comp);
+    std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(std::move(comp));
     //MetaIndexEntry entry (comp);
     entry->setName(name);
     entry->setAlgorithm(comp->getAlgorithm());

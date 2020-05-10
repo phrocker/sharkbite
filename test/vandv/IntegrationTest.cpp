@@ -57,11 +57,11 @@ main (int argc, char **argv)
 
 	std::string table = "IntTestTable";
 
-	cclient::data::zookeeper::ZookeeperInstance instance(argv[1],argv[2],1000);
+	std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> instance = std::make_shared<cclient::data::zookeeper::ZookeeperInstance>(argv[1],argv[2],1000);
 
-	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance.getInstanceId ());
+	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());
 
-	interconnect::MasterConnect master(creds,&instance);
+	interconnect::MasterConnect master(creds,instance);
 
 	
 	std::vector<IntegrationTest*> tests;

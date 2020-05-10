@@ -123,7 +123,7 @@ public:
 	
 	
 
-	}catch(cclient::exceptions::ClientException ce)
+	}catch(const cclient::exceptions::ClientException &ce)
 	{
 	  std::cout << "Failed message: " << ce.what() << std::endl;
 	}
@@ -226,7 +226,7 @@ public:
 	std::cout << "[rate=" << (fruit_to_write/elapsed_secs) << "]" << std::endl;
 	
 
-	}catch(cclient::exceptions::ClientException ce)
+	}catch(const cclient::exceptions::ClientException &ce)
 	{
 	  std::cout << "Failed message: " << ce.what() << std::endl;
 	}

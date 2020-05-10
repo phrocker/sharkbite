@@ -44,9 +44,9 @@ void writeRfile(std::string outputFile, bool bigEndian, uint16_t port) {
   if (bigEndian)
     stream = new cclient::data::streams::EndianTranslationStream(stream);
 
-  cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor(256 * 1024);
+  auto compressor = std::make_unique< cclient::data::compression::ZLibCompressor>(256 * 1024);
 
-  auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
+  auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(std::move(compressor));
 
 // ByteOutputStream *outStream = new BigEndianByteStream (5 * 1024 * 1024,
 ///							 stream);

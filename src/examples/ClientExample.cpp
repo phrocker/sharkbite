@@ -56,9 +56,9 @@ writeRfile (std::string nameNode, uint16_t port)
 
   cclient::data::streams::OutputStream *stream = new cclient::data::streams::OutputStream(&ofs,0);
 
-	cclient::data::compression::Compressor *compressor = new cclient::data::compression::ZLibCompressor (256 * 1024);
+	auto compressor = std::make_unique< cclient::data::compression::ZLibCompressor >(256 * 1024);
 
-	auto  bcFile = std::make_unique<cclient::data::BlockCompressedFile>(compressor);
+	auto  bcFile = std::make_unique<cclient::data::BlockCompressedFile>(std::move(compressor));
 
 	cclient::data::streams::EndianTranslationStream *outStream = new cclient::data::streams::EndianTranslationStream (stream);
 
@@ -149,44 +149,31 @@ main (int argc, char **argv)
 	}
 
 	std::string nameNode = "";
-	uint16_t nnPort = 0;
+
 	if (argc == 6) {
 		std::cout << "Arguments must contains namenode port" << std::endl;
 		exit (1);
-	} else if (argc == 7) {
-		nameNode = argv[5];
-		nnPort = atoi (argv[6]);
-	}
+	} 
 
 	std::string table = "blah2";
 
 	
 	
-	cclient::data::zookeeper::ZookeeperInstance *instance = 0;
-	
-	try{
+	std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> instance = 0;
+
 	cclient::impl::Configuration *confC = (new cclient::impl::Configuration());
 	confC->set ("FILE_SYSTEM_ROOT", "/accumulo");
 	
-	instance = new cclient::data::zookeeper::ZookeeperInstance (argv[1],argv[2], 1000,
+	instance = std::make_shared<cclient::data::zookeeper::ZookeeperInstance >(argv[1],argv[2], 1000,
 	                std::unique_ptr<cclient::impl::Configuration>(confC));
-	}catch(cclient::exceptions::ClientException ce)
-	{
-	  std::cout << "Could not connect to ZK. Error: " << ce.what()  << std::endl;
-	  return 1;
-	}
+	
 
 	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());
 
 	interconnect::MasterConnect *master = 0;
 	
-	try{
 	master = new interconnect::MasterConnect (creds, instance);
-	}catch(cclient::exceptions::ClientException ce)
-	{
-	  std::cout << "Could not connect: " << ce.what() << std::endl;
-	  return 1;
-	}
+
 	std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps (
 	                        table);
 
@@ -307,7 +294,7 @@ main (int argc, char **argv)
 			std::cout << "Key is null" << std::endl;
 	}
 
-	}catch(cclient::exceptions::ClientException ce)
+	}catch(const cclient::exceptions::ClientException &ce)
 	{
 	  std::cout << "Failed message: " << ce.what() << std::endl;
 	}
@@ -327,8 +314,6 @@ main (int argc, char **argv)
 	//assert(counter == fruit_to_write/2 );
 
 	delete master;
-
-	delete instance;
 
 	return 0;
 }

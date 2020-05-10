@@ -174,7 +174,7 @@ public:
 		
 	}
 
-	}catch(cclient::exceptions::ClientException ce)
+	}catch(const cclient::exceptions::ClientException &ce)
 	{
 	  std::cout << "Failed message: " << ce.what() << std::endl;
 	}

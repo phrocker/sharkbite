@@ -33,13 +33,13 @@ LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string
   }
 }
 
-LocalityGroupMetaData::LocalityGroupMetaData(cclient::data::compression::Compressor *compressorRef, int version, cclient::data::streams::InputStream *reader)
+LocalityGroupMetaData::LocalityGroupMetaData(std::unique_ptr<cclient::data::compression::Compressor> compressorRef, int version, cclient::data::streams::InputStream *reader)
     :
     firstKey(NULL),
     isDefaultLG(false),
     read_version(version),
-    compressorRef(compressorRef) {
-  indexManager = std::make_shared<IndexManager>(compressorRef, reader, version);
+    compressorRef(std::move(compressorRef)) {
+  indexManager = std::make_shared<IndexManager>(this->compressorRef->newInstance(), reader, version);
 }
 
 LocalityGroupMetaData::~LocalityGroupMetaData() {

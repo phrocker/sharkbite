@@ -50,7 +50,7 @@ create_connector(char *instance, char *zks, char *username, char *password) {
 
   cclient::data::security::AuthInfo creds(string(username), string(password), instPtr->getInstanceId());
 
-  interconnect::MasterConnect *master = new MasterConnect(&creds, instPtr);
+  interconnect::MasterConnect *master = new MasterConnect(&creds, std::shared_ptr<ZookeeperInstance>(instPtr));
 
   con->masterPtr = master;
 
@@ -58,8 +58,8 @@ create_connector(char *instance, char *zks, char *username, char *password) {
 }
 
 int free_connector(struct connector *connector) {
-  ZookeeperInstance *instPtr = static_cast<ZookeeperInstance*>(connector->zk);
-  delete instPtr;
+  //ZookeeperInstance *instPtr = static_cast<ZookeeperInstance*>(connector->zk);
+  //delete instPtr; not needed since we're passing it as a shared ptr to masterconnect
   interconnect::MasterConnect *master = static_cast<interconnect::MasterConnect*>(connector->masterPtr);
   delete master;
   delete connector;

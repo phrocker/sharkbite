@@ -57,27 +57,27 @@ class MasterConnect : public RootInterface<interconnect::AccumuloMasterTransport
    * Constructor
    * @param credentials incoming user credentials
    * @param instance incoming instance
-   */
-  MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *instance);
+   
+  explicit MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *instance);
 
-  /**
+
    * Constructor
    * @param credentials incoming user credentials
    * @param instance incoming instance
-   */
-  MasterConnect(cclient::data::security::AuthInfo *credentials, cclient::data::Instance *instance)
+   
+  explicit MasterConnect(cclient::data::security::AuthInfo *credentials, cclient::data::Instance *instance)
       : MasterConnect(*credentials, instance) {
   }
+*/
 
-
-  MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
+  explicit MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
 
     /**
      * Constructor
      * @param credentials incoming user credentials
      * @param instance incoming instance
      */
-    MasterConnect(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
+    explicit MasterConnect(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
         : MasterConnect(*credentials, instance) {
     }
 

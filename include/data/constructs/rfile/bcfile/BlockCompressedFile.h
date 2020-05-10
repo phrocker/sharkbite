@@ -34,17 +34,16 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
 
  explicit BlockCompressedFile(std::unique_ptr<cclient::data::compression::Compressor> compressor)
       :
-      compressorRef(compressor.get()),
+      compressorRef(std::move(compressor)),
       in_stream(nullptr) {
     version.setMajor(1);
     version.setMinor(0);
-    dataIndex.setCompressionAlgorithm(compressor.get());
-    ownedRef = std::move(compressor);
+    dataIndex.setCompressionAlgorithm(compressorRef.get());
   }
   /**
    * Constructor accepts a compressor as the only argument
    * @param compressor our compressor for this BCFile
-   */
+   
   explicit BlockCompressedFile(cclient::data::compression::Compressor *compressor)
       :
       compressorRef(compressor),
@@ -52,7 +51,7 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
     version.setMajor(1);
     version.setMinor(0);
     dataIndex.setCompressionAlgorithm(compressor);
-  }
+  }*/
 
   /**
    * Constructor accepts a compressor as the only argument
@@ -74,9 +73,8 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
    * let's not set this function to constant
    * @returns compressor reference
    */
-  cclient::data::compression::Compressor*
-  getCompressor() {
-    return compressorRef;
+  std::unique_ptr<cclient::data::compression::Compressor> cloneCompressor() {
+    return compressorRef->newInstance();
   }
 
   DataIndex*
@@ -92,26 +90,26 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
 
   cclient::data::streams::DataOutputStream*
   createCompressorStream(cclient::data::streams::OutputStream *out, MetaIndexEntry *entry) {
-    return new BlockCompressorStream(out, compressorRef, entry->getRegion());
+    return new BlockCompressorStream(out, compressorRef->newInstance(), entry->getRegion());
   }
 
   cclient::data::streams::DataOutputStream*
   createDataStream(cclient::data::streams::OutputStream *out) {
-    return new BlockCompressorStream(out, compressorRef, dataIndex.addBlockRegion());
+    return new BlockCompressorStream(out, compressorRef->newInstance(), dataIndex.addBlockRegion());
   }
 
   MetaIndexEntry*
   prepareNewEntry(std::string name) {
-    return metaIndex.prepareNewEntry(name, compressorRef);
+    return metaIndex.prepareNewEntry(name, compressorRef->newInstance());
   }
 
   uint64_t write(cclient::data::streams::OutputStream *out) {
 
     out->writeBytes(B_MAGIC_BCFILE, 16);
 
-    MetaIndexEntry *entry = metaIndex.prepareNewEntry("BCFile.index", compressorRef);
+    MetaIndexEntry *entry = metaIndex.prepareNewEntry("BCFile.index", compressorRef->newInstance());
 
-    BlockCompressorStream *blockStream = new BlockCompressorStream(out, compressorRef, entry->getRegion());
+    BlockCompressorStream *blockStream = new BlockCompressorStream(out, compressorRef->newInstance(), entry->getRegion());
 
     cclient::data::streams::ByteOutputStream *outStream = new cclient::data::streams::BigEndianByteStream(250 * 1024, blockStream);
 
@@ -145,12 +143,11 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
     const size_t magic_size = array_length(B_MAGIC_BCFILE);
     in_stream->seek(fileLength - magic_size - VERSION_SIZE);
     version.read(in_stream);
-    uint8_t *magicVerify = new uint8_t[16];
-    in_stream->readBytes(magicVerify, 16);
+    uint8_t magicVerify[16];
+    in_stream->readBytes(&magicVerify[0], 16);
     if (memcmp(B_MAGIC_BCFILE, magicVerify, 16) != 0) {
       throw std::runtime_error("Invalid Magic Number");
     }
-    delete[] magicVerify;
     // get the index meta
     if (version.getMajor() == 1) {
       in_stream->seek(fileLength - magic_size - VERSION_SIZE - 8);
@@ -167,7 +164,7 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
 
     MetaIndexEntry *min = metaIndex.getEntry("BCFile.index");
 
-    compressorRef = min->getAlgorithm()->create();
+    compressorRef = cclient::data::compression::CompressorFactory::create( min->getAlgorithm() );
 
     // should be using block comp stream?
     cclient::data::streams::InputStream *dataIndexStream = min->readDataStream(in_stream);
@@ -176,8 +173,7 @@ class BlockCompressedFile : public cclient::data::streams::StreamInterface {
     delete dataIndexStream;
   }
 
-  cclient::data::compression::Compressor *compressorRef;
-  std::unique_ptr<cclient::data::compression::Compressor> ownedRef;
+  std::unique_ptr<cclient::data::compression::Compressor> compressorRef;
 
   DataIndex dataIndex;
   MetaIndex metaIndex;

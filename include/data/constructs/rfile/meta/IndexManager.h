@@ -32,7 +32,7 @@ namespace data {
 
 class IndexManager : public BlockLookup, public cclient::data::streams::StreamInterface {
  public:
-  IndexManager(cclient::data::compression::Compressor *compressorRef, cclient::data::streams::InputStream *blockReader, int version);
+  explicit IndexManager(std::unique_ptr<cclient::data::compression::Compressor> compressorRef, cclient::data::streams::InputStream *blockReader, int version);
 
   virtual ~IndexManager() {
   }
@@ -76,7 +76,7 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
   int size;
   int version;
   cclient::data::streams::InputStream *blockReader;
-  cclient::data::compression::Compressor *compressorRef;
+  std::unique_ptr<cclient::data::compression::Compressor> compressorRef;
   std::shared_ptr<IndexBlock> indexBlock;
 
 };

@@ -15,7 +15,7 @@
 #define BLOCKREGION_H_
 
 #include "../../compressor/compressor.h"
-
+#include "../../compressor/compression_algorithm.h"
 #include "../../../streaming/Streams.h"
 #include "../../../streaming/ByteOutputStream.h"
 #include "../../../streaming/input/ByteInputStream.h"
@@ -32,17 +32,16 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
       :
       offset(0),
       compressedSize(0),
-      rawSize(0),
-      compressor(NULL) {
+      rawSize(0) {
 
   }
 
-  BlockRegion(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, cclient::data::compression::Compressor *compressor)
+  explicit BlockRegion(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, std::unique_ptr<cclient::data::compression::Compressor> compressor)
       :
       offset(offset),
       compressedSize(compressedSize),
       rawSize(rawSize),
-      compressor(compressor) {
+      compressor(std::move(compressor)) {
 
   }
 
@@ -90,8 +89,8 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
    Sets the compressor
    @param comp compressor.
    **/
-  void setCompressor(cclient::data::compression::Compressor *comp) {
-    compressor = comp;
+  void setCompressor(std::unique_ptr<cclient::data::compression::Compressor> comp) {
+    compressor = std::move(comp);
   }
 
   /**
@@ -99,10 +98,15 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
    * Should not be constant as compressor could be used
    * and subsequently the internal components could be modified
    * @returns compressor reference
-   */
+   
   cclient::data::compression::Compressor* getCompressor() {
     return compressor;
   }
+  */
+
+ cclient::data::compression::CompressionAlgorithm getAlgorithm(){
+   return compressor->getAlgorithm();
+ }
   uint64_t read(cclient::data::streams::InputStream *in);
 
   uint64_t write(cclient::data::streams::OutputStream *out);
@@ -161,7 +165,7 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
     offset = other.offset;
     compressedSize = other.compressedSize;
     rawSize = other.rawSize;
-    compressor = other.compressor;
+    compressor = other.compressor->newInstance();
     return *this;
   }
 
@@ -179,7 +183,7 @@ class BlockRegion : public cclient::data::streams::StreamInterface {
 
  protected:
   // compressor.
-  cclient::data::compression::Compressor *compressor;
+  std::unique_ptr<cclient::data::compression::Compressor> compressor;
   // offset.
   uint64_t offset;
   // compressed size.

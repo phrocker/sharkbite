@@ -9,6 +9,7 @@ class TestWrites(TestRunner):
 	def mthd(self):
 	
 		import pysharkbite
+		#pysharkbite.LoggingConfiguration.enableTraceLogger()
 		
 		tableOperations = super().getTableOperations()
 			

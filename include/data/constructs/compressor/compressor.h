@@ -18,6 +18,7 @@
 
 #include "../../streaming/DataOutputStream.h"
 #include "algorithm.h"
+#include "compression_algorithm.h"
 #include "data/streaming/ByteOutputStream.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "zlib.h"
@@ -49,7 +50,7 @@ public:
         buffer=nullptr;
     }
 
-    virtual Compressor *newInstance() = 0;
+    virtual std::unique_ptr<Compressor> newInstance() = 0;
     /**
      Set the input.
      @param b input buffer.
@@ -132,10 +133,9 @@ public:
      Returns the compression algorithm for this compressor
      @returns CompressionAlgorithm instance.
      **/
-    Algorithm *
-    getAlgorithm ()
+    CompressionAlgorithm &getAlgorithm ()
     {
-        return &algorithm;
+        return algorithm;
     }
 
     /**
@@ -165,7 +165,7 @@ protected:
     uint32_t stream_offset;
     // input buffer.
     char *buffer;
-    Algorithm algorithm;
+    CompressionAlgorithm algorithm;
     
     
     

@@ -48,8 +48,8 @@ public:
 	virtual ~ZLibCompressor() {
 	}
 
-	virtual Compressor *newInstance() {
-		return new ZLibCompressor();
+	virtual std::unique_ptr<Compressor> newInstance() {
+		return std::make_unique<ZLibCompressor>();
 	}
 
 	/**

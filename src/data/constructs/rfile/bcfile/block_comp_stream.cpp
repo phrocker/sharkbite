@@ -22,10 +22,10 @@
 namespace cclient {
 namespace data {
 
-BlockCompressorStream::BlockCompressorStream(streams::OutputStream *out_stream, compression::Compressor *compressor, BlockRegion *region)
+BlockCompressorStream::BlockCompressorStream(streams::OutputStream *out_stream, std::unique_ptr<cclient::data::compression::Compressor> compressor, BlockRegion *region)
     : BlockStreambuffer(compressor->getBufferSize()),
       cclient::data::streams::DataOutputStream(new streams::BigEndianOutStream(new OutputStream((std::ostream*) this, out_stream->getPos()))),
-      compress(compressor->newInstance()),
+      compress(std::move(compressor)),
       output_stream(out_stream),
       std::ostream((BlockStreambuffer*) this),
       std::istream(this),
@@ -35,7 +35,7 @@ BlockCompressorStream::BlockCompressorStream(streams::OutputStream *out_stream, 
       associatedRegion(region) {
 }
 
-BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, compression::Compressor *decompressor, BlockRegion *region)
+BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, std::unique_ptr<compression::Compressor> decompressor, BlockRegion *region)
     : BlockStreambuffer(decompressor->getBufferSize()),
       cclient::data::streams::DataOutputStream(NULL),
       cclient::data::streams::EndianInputStream(),
@@ -45,7 +45,7 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, compression
       writeStart(false),
       associatedRegion(region),
       output_stream(NULL),
-      compress(decompressor->newInstance()) {
+      compress(std::move(decompressor)) {
   uint64_t prevPosition = in_stream->getPos();
 
   in_stream->seek(region->getOffset());
@@ -54,11 +54,11 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, compression
 
   in_stream->readBytes(compressedValue, region->getCompressedSize());
 
-  decompressor->setInput((const char*) compressedValue, 0, region->getCompressedSize());
+  compress->setInput((const char*) compressedValue, 0, region->getCompressedSize());
 
   streams::ByteOutputStream *outStream = new streams::ByteOutputStream(region->getRawSize());
 
-  decompressor->decompress(outStream);
+  compress->decompress(outStream);
 
   setArray(outStream->getByteArray(), outStream->getSize(), true);
 
@@ -73,10 +73,6 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, compression
 }
 
 BlockCompressorStream::~BlockCompressorStream() {
-  if (compress != nullptr) {
-    delete compress;
-    compress = NULL;
-  }
 }
 
 }

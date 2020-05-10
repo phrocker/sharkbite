@@ -72,28 +72,37 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
 
 std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openManySequential(const std::vector<std::string> &rfiles) {
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
+  std::vector<std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>> futures;
   for (const auto &path : rfiles) {
-    size_t size = 0;
-    std::unique_ptr<cclient::data::streams::InputStream> stream;
-    if (path.find("hdfs://") != std::string::npos) {
-      auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
-      size = str->getFileSize();
-      stream = std::move(str);
-    } else {
-      size = filesize(path.c_str());
-      auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
+    futures.emplace_back( std::async([path](void) ->std::shared_ptr<cclient::data::streams::KeyValueIterator> {
+        size_t size = 0;
+        std::unique_ptr<cclient::data::streams::InputStream> stream;
+        if (path.find("hdfs://") != std::string::npos) {
+          auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
+          size = str->getFileSize();
+          stream = std::move(str);
+        } else {
+          size = filesize(path.c_str());
+          auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
 
-      stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
-    }
+          stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
+        }
 
-    auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
+        auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
 
-    if (rfiles.size() == 1) {
-      return std::move(std::make_unique<cclient::data::SequentialRFile>(std::move(endstream), size));
-    } else {
-      auto newRFile = std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
-      iters.emplace_back(newRFile);
-    }
+        return  std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
+      
+    }));
+    
+      
+  }
+  for(auto &future : futures){
+      auto res = future.get();
+      if (res)
+        iters.push_back(res);
+      else{
+        throw std::runtime_error("Error while opening rfile");
+      }
   }
   return std::make_shared<cclient::data::MultiIterator>(iters);
 }

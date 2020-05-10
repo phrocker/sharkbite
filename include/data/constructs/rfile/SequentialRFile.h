@@ -280,7 +280,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   // block compressed file.
   std::unique_ptr<BlockCompressedFile> blockWriter;
   // compressor reference.
-  cclient::data::compression::Compressor *compressorRef;
+  std::unique_ptr<cclient::data::compression::Compressor> compressorRef;
   // current block writer, created from blockWriter.
   BlockCompressorStream *currentBlockWriter;
   // maximum block size.

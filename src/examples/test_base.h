@@ -28,7 +28,7 @@
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/compressor/compressor.h"
 #include "data/constructs/compressor/zlibCompressor.h"
-
+#include <iostream>
 #include <assert.h>
 
 #define BOOST_IOSTREAMS_NO_LIB 1
@@ -36,14 +36,14 @@
 #ifndef INSERT_TEST_H
 #define INSERT_TEST_H 1
 int run_test(std::string table, std::string instanceStr, std::string zks, std::string username, std::string password, uint64_t numToWrite) {
-  cclient::data::zookeeper::ZookeeperInstance *instance = 0;
+  std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> instance = 0;
 
   try {
     auto confC = std::make_shared<cclient::impl::Configuration>();
     confC->set("FILE_SYSTEM_ROOT", "/accumulo");
 
-    instance = new cclient::data::zookeeper::ZookeeperInstance(instanceStr, zks, 1000, confC);
-  } catch (cclient::exceptions::ClientException ce) {
+    instance = std::make_shared< cclient::data::zookeeper::ZookeeperInstance>(instanceStr, zks, 1000, confC);
+  }catch(const cclient::exceptions::ClientException &ce) {
     std::cout << "Could not connect to ZK. Error: " << ce.what() << std::endl;
     return 1;
   }
@@ -55,7 +55,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
   try {
     master = new interconnect::MasterConnect(&creds, instance);
 
-  } catch (cclient::exceptions::ClientException ce) {
+  }catch(const cclient::exceptions::ClientException &ce) {
     std::cout << "Could not connect to Master. Error: " << ce.what() << std::endl;
     return 1;
   }
@@ -110,7 +110,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
   }
 
   try {
-    for (int i = 0; i < numToWrite; i++) {
+    for (size_t i = 0; i < numToWrite; i++) {
 
       std::shared_ptr<cclient::data::KeyValue> newKv = std::make_shared<cclient::data::KeyValue>();
       std::shared_ptr<cclient::data::Key> newKey = std::make_shared<cclient::data::Key>();
@@ -127,7 +127,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
       newKv->setValue(v);
       sink->push(newKv);
     }
-  } catch (cclient::exceptions::ClientException ce) {
+  }catch(const cclient::exceptions::ClientException &ce) {
     std::cout << "Exception is  " << ce.what() << std::endl;
   }
 
@@ -168,8 +168,6 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
   }
 
   delete master;
-
-  delete instance;
 
   return 0;
 }

@@ -312,19 +312,19 @@ void LocalityGroupReader::next() {
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint32_t index) {
 
   BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
-  region->setCompressor(bcFile->getDataIndex()->getCompressionAlgorithm().create());
+  region->setCompressor( cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm() ));
   auto stream = region->readDataStream(reader);
   return stream;
 }
 
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
 
-  cclient::data::compression::Compressor *compressor;
-  if (use_cached || !compressors.try_dequeue(compressor)) {
-    compressor = bcFile->getDataIndex()->getCompressionAlgorithm().create(use_cached);
-  }
+  std::unique_ptr<cclient::data::compression::Compressor> compressor = cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm());
+  //if (use_cached || !compressors.try_dequeue(compressor)) {
+   // compressor = cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm());
+ // }
 
-  BlockRegion region(offset, compressedSize, rawSize, compressor);
+  BlockRegion region(offset, compressedSize, rawSize, std::move(compressor));
   std::vector<uint8_t> *my_buf;
   cclient::data::streams::ByteOutputStream *bout;
   if (!compressedBuffers.try_dequeue(my_buf)) {
@@ -339,8 +339,8 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
   auto stream = region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
-  if (!use_cached)
-    compressors.enqueue(compressor);
+//  if (!use_cached)
+  //  compressors.enqueue(compressor);
 
   return stream;
 }

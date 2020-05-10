@@ -18,8 +18,7 @@
 
 
 #include "algorithm.h"
-#include "compressor.h"
-#include "zlibCompressor.h"
+
 
 namespace cclient
 {
@@ -53,31 +52,6 @@ public:
     CompressionAlgorithm(const CompressionAlgorithm &other) = default;
 
     CompressionAlgorithm(CompressionAlgorithm &&other) = default;
-
-
-    static ZLibCompressor *getZlibCompressor(){
-        static ZLibCompressor *comp = new ZLibCompressor();
-        return comp;
-    }
-
-    Compressor *
-    create (bool use_cached = true)
-    {
-        if (compressionAlgo == "gz")
-        {
-            if (use_cached){
-            return getZlibCompressor();
-            }
-            else{
-              return new ZLibCompressor();
-            }
-        }
-        else
-        {
-            std::runtime_error ("Unsupported compression algorithm");
-        }
-        return 0;
-    }
 
     CompressionAlgorithm &
     operator= (const Algorithm &other)

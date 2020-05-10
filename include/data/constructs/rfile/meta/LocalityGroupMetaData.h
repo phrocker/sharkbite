@@ -43,9 +43,9 @@ class LocalityGroupMetaData : cclient::data::streams::StreamInterface {
    @param name The name of the locality group.
 
    **/
-  LocalityGroupMetaData(uint32_t startBlockVal, std::string name = "");
+  explicit LocalityGroupMetaData(uint32_t startBlockVal, std::string name = "");
 
-  LocalityGroupMetaData(cclient::data::compression::Compressor *compressorRef, int version, cclient::data::streams::InputStream *reader);
+  explicit LocalityGroupMetaData(std::unique_ptr<cclient::data::compression::Compressor> compressorRef, int version, cclient::data::streams::InputStream *reader);
 
   ~LocalityGroupMetaData();
 
@@ -152,7 +152,7 @@ class LocalityGroupMetaData : cclient::data::streams::StreamInterface {
   // index entries.
   std::vector<IndexEntry> index;
 
-  cclient::data::compression::Compressor *compressorRef;
+  std::unique_ptr<cclient::data::compression::Compressor> compressorRef;
 
   std::shared_ptr<IndexManager> indexManager;
   // boolean value identifying this as the default locality group.

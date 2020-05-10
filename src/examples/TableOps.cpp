@@ -55,7 +55,7 @@ main (int argc, char **argv)
 	cclient::impl::Configuration *confC = (new cclient::impl::Configuration());
 	confC->set ("FILE_SYSTEM_ROOT", "/accumulo");
 	
-	cclient::data::zookeeper::ZookeeperInstance *instance = new cclient::data::zookeeper::ZookeeperInstance (argv[1], argv[2], 1000,
+	auto instance = std::make_shared< cclient::data::zookeeper::ZookeeperInstance >(argv[1], argv[2], 1000,
 	                std::unique_ptr<cclient::impl::Configuration>(confC));
 
 	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());

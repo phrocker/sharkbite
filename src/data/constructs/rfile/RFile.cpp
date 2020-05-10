@@ -38,7 +38,7 @@ RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompress
     throw std::runtime_error("Output Stream and BC File Writer should not be NULL");
   }
 
-  compressorRef = blockWriter->getCompressor();
+  compressorRef = blockWriter->cloneCompressor();
 
   maxBlockSize = compressorRef->getBufferSize() * 8;
 
@@ -70,7 +70,7 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
 
   blockWriter = std::make_unique<BlockCompressedFile>(in_stream, fileLength);
 
-  compressorRef = blockWriter->getCompressor();
+  compressorRef = blockWriter->cloneCompressor();
 
   maxBlockSize = compressorRef->getBufferSize() * 8;
 
@@ -111,7 +111,7 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   localityGroups.resize(size);
 
   for (int i = 0; i < size; i++) {
-    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(compressorRef, version, in_stream);
+    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(compressorRef->newInstance(), version, in_stream);
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
     localityGroupReaders.push_back(new LocalityGroupReader(blockWriter.get(), in_stream, meatadata, version));

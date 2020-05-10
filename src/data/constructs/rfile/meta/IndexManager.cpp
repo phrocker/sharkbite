@@ -17,9 +17,9 @@
 namespace cclient{
   namespace data{
 
-IndexManager::IndexManager (cclient::data::compression::Compressor *compressorRef,cclient::data::streams::InputStream *blockReader, int version) :
+IndexManager::IndexManager (std::unique_ptr<cclient::data::compression::Compressor> compressorRef,cclient::data::streams::InputStream *blockReader, int version) :
     blockReader (blockReader), version (version), indexBlock (NULL), compressorRef (
-        compressorRef)
+        std::move(compressorRef))
 {
 
 }

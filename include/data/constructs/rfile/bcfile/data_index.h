@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "../../compressor/compressor.h"
+#include "../../compressor/CompressorFactory.h"
 #include "../../compressor/compression_algorithm.h"
 #include "../../../streaming/DataOutputStream.h"
 #include "../../../streaming/Streams.h"
@@ -34,19 +35,19 @@ class DataIndex : public cclient::data::streams::StreamInterface {
   void setCompressionAlgorithm(cclient::data::compression::Compressor *compressor)
 
   {
-    compressionAlgorithm = *compressor->getAlgorithm();
+    compressionAlgorithm = compressor->getAlgorithm();
   }
 
   BlockRegion* addBlockRegion(BlockRegion region) {
     BlockRegion *reg = new BlockRegion(region);
-    reg->setCompressor(compressionAlgorithm.create());
+    reg->setCompressor(cclient::data::compression::CompressorFactory::create( compressionAlgorithm ));
     listRegions.push_back(reg);
     return reg;
   }
 
   BlockRegion* addBlockRegion() {
     BlockRegion *reg = new BlockRegion();
-    reg->setCompressor(compressionAlgorithm.create());
+    reg->setCompressor(cclient::data::compression::CompressorFactory::create( compressionAlgorithm ));
     listRegions.push_back(reg);
     return reg;
   }

@@ -46,12 +46,11 @@ namespace interconnect {
  * @param credentials incoming user credentials
  * @param instance incoming instance
  */
-MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, cclient::data::Instance *inst)
-    : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, instance){
+MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> inst)
+    : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, inst.get()){
 
-  auto zki = (cclient::data::zookeeper::ZookeeperInstance*)inst;
   // copy the instance information
-  instance = std::make_shared<cclient::data::zookeeper::ZookeeperInstance>(zki);
+  instance = inst;
 
   this->myTransportPool = &MASTER_COORDINATOR;
   this->credentials = credentials;
@@ -90,7 +89,7 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, ccl
   myTransportPool->freeTransport(tserverConnection);
 
 }
-
+/*
 MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance)
     : RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, instance),
       instance(instance) {
@@ -131,7 +130,7 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials, std
 
   myTransportPool->freeTransport(tserverConnection);
 
-}
+}*/
 
 void MasterConnect::findTservers() {
   tabletServers = instance->getServers();
