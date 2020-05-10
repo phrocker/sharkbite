@@ -250,16 +250,14 @@ std::shared_ptr<streams::StreamInterface> RelativeKey::getStream() {
 
 void RelativeKey::setBase(const std::shared_ptr<Key> &my_key) {
   if (my_key != NULL) {
-    key = std::make_shared<Key>(allocatorInstance);
-    setKey(my_key, key);
+    key = my_key;
   }
 }
 
 void RelativeKey::setPrevious(const std::shared_ptr<Key> &previous_key) {
   if (previous_key != NULL) {
 
-    prevKey = std::make_shared<Key>(allocatorInstance);
-    setKey(previous_key, prevKey);
+    prevKey = previous_key;
   }
 }
 

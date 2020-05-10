@@ -36,6 +36,11 @@ struct TextBuffer{
   size_t size;
   size_t max;
 
+  TextBuffer(){
+    buffer=nullptr;
+    size=max=0;
+  }
+
   bool operator>(const TextBuffer &o) const{
     if (strncmp(buffer,o.buffer,size > o.size ? o.size : size)>0)
     return true;

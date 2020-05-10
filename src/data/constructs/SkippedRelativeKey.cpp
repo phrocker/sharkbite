@@ -17,14 +17,25 @@ namespace cclient {
 namespace data {
 
 bool SkippedRelativeKey::readPrefix(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame,int fieldsPrefixed, TextBuffer *field, TextBuffer *prevField, TextBuffer *stopField) {
-  std::vector<char> tmp;
+  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
+    //auto tmp = field;
+    TextBuffer tmp;
+    tmp.buffer = field->buffer;
+    tmp.size =field->size;
+    tmp.max = field->max;
+
+    field->buffer = prevField->buffer;
+    field->size = prevField->size;
+    field->max = prevField->max;
 
   
+    prevField->buffer = tmp.buffer;
+    prevField->size = tmp.size;
+    prevField->max = tmp.max;
 
-  if ((fieldsSame & SAME_FIELD) != SAME_FIELD) {
-    auto tmp = field;
-    field = prevField;
-    prevField = tmp;
+  
+    
+    
     if ((fieldsPrefixed & PREFIX) == PREFIX) {
       readPrefix(stream, field, prevField);
     } else
@@ -58,7 +69,6 @@ void SkippedRelativeKey::read(cclient::data::streams::InputStream *stream,  Text
 }
 
 void SkippedRelativeKey::read(cclient::data::streams::InputStream *stream, TextBuffer *row, uint32_t len) {
-  logging::LOG_TRACE(logger) << "Trying to read " << len << " bytes";
   
   auto bfr = allocatorInstance->allocateBuffer(len);
   row->buffer = bfr.first;
@@ -169,7 +179,6 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream, c
     size_t count = 0;
 
     std::shared_ptr<Key> newPrevKey = NULL;
-    logging::LOG_TRACE(logger) << "Attempting to seek up to " << entriesRemaining;
     int fieldsPrefixed=0;
     while (count < entriesRemaining) {
 
@@ -239,11 +248,15 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream, c
       cqPtr = (fieldsSame & RelativeKey::CQ_SAME) == RelativeKey::CQ_SAME ? &cq : &prevCq;
       cvPtr = (fieldsSame & RelativeKey::CV_SAME) == RelativeKey::CV_SAME ? &cv : &prevVis;
       long returnTs = (fieldsSame & RelativeKey::TS_SAME) == RelativeKey::TS_SAME ? timestamp : prevTimestamp;
-      newPrevKey = std::make_shared<Key>(allocatorInstance);
-      newPrevKey->setRow(rowPtr->buffer, rowPtr->size, rowPtr->max, true);
-      newPrevKey->setColFamily(cfPtr->buffer, cfPtr->size, cfPtr->max, true);
-      newPrevKey->setColQualifier(cqPtr->buffer, cqPtr->size, cqPtr->max, true);
-      newPrevKey->setColVisibility(cvPtr->buffer, cvPtr->size,cvPtr->max, true);
+      newPrevKey = allocatorInstance->newKey();
+       if (rowPtr->size > 0)
+          newPrevKey->setRow(rowPtr->buffer, rowPtr->size, rowPtr->max, false);
+        if (cfPtr->size > 0)
+          newPrevKey->setColFamily(cfPtr->buffer, cfPtr->size, cfPtr->max, false);
+        if (cqPtr->size > 0)
+          newPrevKey->setColQualifier(cqPtr->buffer, cqPtr->size, cqPtr->max, false);
+        if (cvPtr->size > 0)
+          newPrevKey->setColVisibility(cvPtr->buffer, cvPtr->size,cvPtr->max, false);
       newPrevKey->setTimeStamp(returnTs);
       newPrevKey->setDeleted(previousDeleted);
 
@@ -251,9 +264,9 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream, c
 
     } else if (count == 1) {
       if (currKey != NULL) {
-        newPrevKey = std::make_shared<Key>(prevKey);
+        newPrevKey = currKey;
       } else {
-        newPrevKey = std::make_shared<Key>(prevKey);
+        newPrevKey = prevKey;
       }
     } else {
       throw std::runtime_error("Illegal state");
@@ -261,15 +274,19 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream, c
 
     prevKey = newPrevKey;
     rkey = std::make_shared<RelativeKey>(allocatorInstance);
-    std::shared_ptr<Key> baseKey = std::make_shared<Key>(allocatorInstance);
+    std::shared_ptr<Key> baseKey = allocatorInstance->newKey();
+    if (row.size > 0)
     baseKey->setRow(row.buffer, row.size, row.max,true);
+    if (cf.size > 0)
     baseKey->setColFamily(cf.buffer, cf.size, cf.max, true);
+    if (cq.size > 0)
     baseKey->setColQualifier(cq.buffer, cq.size, cq.max, true);
+    if ( cv.size > 0)
     baseKey->setColVisibility(cv.buffer, cv.size, cv.max, true);
     baseKey->setTimeStamp(timestamp);
     baseKey->setDeleted((fieldsSame & RelativeKey::DELETED) != 0);
     rkey->setBase(baseKey);
-    rkey->setPrevious(std::make_shared<Key>(baseKey));
+    rkey->setPrevious(baseKey);
     skipped = count;
 
     if (!auths.empty()) {

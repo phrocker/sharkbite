@@ -143,7 +143,6 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
   topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
   while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->beforeStartKey(getTopKey())) {
-    logging::LOG_TRACE(logger) << "Checking " << getTopKey() << " against " << currentRange->getStartKey();
     next();
   }
   if (topExists && readAheadEnabled && iiter->hasNext()) {

@@ -222,9 +222,6 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
       auto locations = extent->getFileLocations();
       auto range = ident->getIdentifiers(extent).at(0);
       auto auths =rangeDef->getAuthorizations();
-      for(auto loc : locations){
-        std::cout << "opening " << loc << std::endl;
-      }
       auto multi_iter = cclient::data::RFileOperations::openManySequential(locations);
       std::vector<std::string> cols;
       cclient::data::streams::StreamSeekable seekable(*range,cols,*auths,false);
@@ -243,7 +240,6 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
         }
 
       }
-      std::cout << "got " << count << " from rfile " << multi_iter->getEntriesFiltered() << std::endl;
       newScan->setMultiIterator(multi_iter);
       newScan->setRFileScan(true);
       newScan->setNextResults(&res);
