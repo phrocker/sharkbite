@@ -1,7 +1,7 @@
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
 
-**S**harkbite is a native client for key/value stores. With 
+**S**harkbite is an HDFS and native client for key/value stores. With 
 initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
 despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
@@ -25,14 +25,27 @@ cross compatible objects, the underlying interfaces are heavily coupled to each 
 became a fitting name since interfaces exist to abstract the high coupling that exists within implementations of 
 the API.
 
-## Python Lib
-The Python library can be installed by simply typing pip install sharkbite. into the root source directory.
-During this process the C++ library and python bindings will be built.
+## Python Support
+This python client can be installed via `pip install sharkbite`
 
 [A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
 library.
+## Features
 
-## Python Iterators (! BETA )
+
+### Hedged Reads (! BETA )
+
+Sharkbite now supports hedged reads ( executing scans against RFiles when they can be accessed ) concurrently with 
+Accumulo RPC scans. The first executor to complete will return your results. This feature is in beta and not suggested
+for production environments.
+
+Enable it with the following option:
+
+```
+	scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+```
+
+### Python Iterators  
 
 We now support a beta version of python iterators. By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators
 

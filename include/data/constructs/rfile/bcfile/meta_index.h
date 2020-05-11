@@ -71,7 +71,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
     if (prevPosition < 0) {
       throw cclient::exceptions::ClientException("Invalid position in index block");
     }
-    return new BlockCompressorStream(in, cclient::data::compression::CompressorFactory::create( compressionAlgo ), &region);
+    return new BlockCompressorStream(in, cclient::data::compression::CompressorFactory::create(compressionAlgo), &region);
   }
 
   uint64_t read(cclient::data::streams::InputStream *in) {
@@ -110,7 +110,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
   MetaIndexEntry&
   operator=(const MetaIndexEntry &other) {
     metaName = other.metaName;
-    compressionAlgo =other.compressionAlgo;
+    compressionAlgo = other.compressionAlgo;
     region = other.region;
 
     if (other.comp != NULL) {
@@ -161,8 +161,7 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
 
   MetaIndex();
 
-  virtual
-  ~MetaIndex();
+  virtual ~MetaIndex();
 
   /**
    * Adds an entry to the Meta Index
@@ -170,25 +169,16 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
    * @param out output stream, from which we gather the region
    * offset
    */
-  void addEntry(const std::shared_ptr<MetaIndexEntry> &indexEntry, cclient::data::streams::DataOutputStream *out) {
-    index[indexEntry->getMetaName()] = indexEntry;
-    BlockRegion *region = index[indexEntry->getMetaName()]->getRegion();
-    if (out != NULL) {
-      region->setOffset(out->getPos());
-    }
-  }
+  void addEntry(const std::shared_ptr<MetaIndexEntry> &indexEntry, cclient::data::streams::DataOutputStream *out);
 
   /**
-   * Returns the entry associatd with the given name.
+   * Returns the entry associated with the given name.
    * @param name name of entry we wish to retrieve
    * @returns MetaIndexEntry pointer. Not constant as we may
    * wish, and are allowed, to modify the index Entry. Note
    * that this may return null.
    */
-  MetaIndexEntry*
-  getEntry(const std::string &name) {
-    return index[name].get();
-  }
+  MetaIndexEntry* getEntry(const std::string &name);
 
   /**
    * Prepares a new MetaIndexEntry for this meta index table.
@@ -198,43 +188,16 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
    * modifying the internals of the compressor )
    * @returns newly allocated MetaIndexEntry
    */
-  MetaIndexEntry*
-  prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp) {
-    std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(std::move(comp));
-    entry->setName(name);
-    addEntry(entry, NULL);
-    return getEntry(name);
+  MetaIndexEntry* prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp);
 
-  }
-
-  uint64_t read(cclient::data::streams::InputStream *in) {
-    uint64_t count = in->readHadoopLong();
-
-    for (uint64_t i = 0; i < count; i++) {
-      std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(in);
-
-      index.insert(std::make_pair(entry->getMetaName(), entry));
-    }
-
-    return in->getPos();
-  }
+  uint64_t read(cclient::data::streams::InputStream *in);
 
   /**
    * @Override
    */
-  uint64_t write(cclient::data::streams::OutputStream *out) {
-    out->writeEncodedLong(index.size());
-    // write out all the meta index entries
-    for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = index.begin(); it != index.end(); it++) {
+  uint64_t write(cclient::data::streams::OutputStream *out);
 
-      (*it).second->write(out);
-    }
-    return out->getPos();
-  }
-
-  std::map<std::string, std::shared_ptr<MetaIndexEntry>>* getEntries() {
-    return &index;
-  }
+  std::map<std::string, std::shared_ptr<MetaIndexEntry>>* getEntries();
 
  protected:
   // meta index map. This will map the names of those
