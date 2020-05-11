@@ -211,7 +211,7 @@ bool SequentialRFile::append(std::shared_ptr<KeyValue> kv) {
   // we've written all we can write doctor.
   if (position >= maxBlockSize) {
     currentBlockWriter->flush();
-    closeBlock(kv);
+    closeBlock(kv->getKey());
 
     delete currentBlockWriter;
     currentBlockWriter = NULL;
@@ -233,9 +233,9 @@ bool SequentialRFile::append(std::vector<std::shared_ptr<streams::StreamInterfac
 
   uint32_t recordIncrement = (maxBlockSize / average_recordSize);
 
-  std::shared_ptr<streams::StreamInterface> key;
-  std::shared_ptr<streams::StreamInterface> firstKey = NULL;
-  firstKey = keyValues->at(0)->getStream();
+  std::shared_ptr<cclient::data::Key> key;
+  std::shared_ptr<cclient::data::Key> firstKey = NULL;
+  firstKey =  std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(0))->getKey();;
   // set the first key for the current locality group.
   setCurrentLocalityKey(firstKey);
 
@@ -247,7 +247,8 @@ bool SequentialRFile::append(std::vector<std::shared_ptr<streams::StreamInterfac
       entries++;
     }
     currentBlockWriter->flush();
-    closeBlock(keyValues->at(j - 1)->getStream());
+    auto ky = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(j - 1))->getKey();
+    closeBlock(ky);
 
     delete currentBlockWriter;
     currentBlockWriter = NULL;
@@ -257,7 +258,7 @@ bool SequentialRFile::append(std::vector<std::shared_ptr<streams::StreamInterfac
     currentBlockWriter->flush();
     delete currentBlockWriter;
   }
-  key = keyValues->back()->getStream();
+  key = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->back())->getKey();
   closeBlock(key);
 
   return true;

@@ -74,19 +74,23 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
       Key() {
     std::pair<char*, size_t> row = other->getRow();
 
-    setRow(row.first, row.second);
+    if (row.second > 0)
+      setRow(row.first, row.second);
 
     std::pair<char*, size_t> cf = other->getColFamily();
 
-    setColFamily(cf.first, cf.second);
+    if (cf.second > 0)
+      setColFamily(cf.first, cf.second);
 
     std::pair<char*, size_t> cq = other->getColQualifier();
 
-    setColQualifier(cq.first, cq.second);
+    if (cq.second > 0)
+      setColQualifier(cq.first, cq.second);
 
     std::pair<char*, size_t> cv = other->getColVisibility();
 
-    setColVisibility(cv.first, cv.second);
+    if (cv.second > 0)
+      setColVisibility(cv.first, cv.second);
 
     setTimeStamp(other->getTimeStamp());
 

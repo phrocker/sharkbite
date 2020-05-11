@@ -167,7 +167,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
     if (currentBlockWriter != NULL) {
       currentBlockWriter->flush();
-      closeBlock(lastKeyValue->getKey()->getStream());
+      closeBlock(lastKeyValue->getKey());
       delete currentBlockWriter;
       currentBlockWriter = NULL;
     }
@@ -180,7 +180,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
    and adding that entry to the current locality group.
    @param lastKey last key for locality group.
    **/
-  void closeBlock(std::shared_ptr<StreamInterface> lastKey) {
+  void closeBlock(std::shared_ptr<cclient::data::Key> lastKey) {
     currentLocalityGroup->addIndexEntry(IndexEntry(lastKey, entries));
     dataBlockCnt = 0;
     entries = 0;

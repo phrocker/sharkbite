@@ -154,18 +154,10 @@ ByteOutputStream::write (const char *bytes, long cnt)
     {
         // we don't have space, so create
         // a new array that we can copy to
-        //char *nArray = new char[size + (cnt * 2)];
-	 array.resize(size+(cnt*2));
-       // memcpy (nArray, array, offset);
-	//std::copy(array,array+offset,nArray);
-
-        //elete[] array;
-        //array = nArray;
+        array.resize(size+(cnt*2));
         size += cnt * 2;
     }
-    //memcpy (array + offset, bytes, cnt);
     memcpy_fast(array.data()+offset,bytes,cnt);
-  //  std::copy(bytes,bytes+cnt,array.data()+offset);
     offset += cnt;
     return offset;
 }

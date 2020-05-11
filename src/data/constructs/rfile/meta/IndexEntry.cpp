@@ -17,10 +17,10 @@
 namespace cclient{
   namespace data{
 
-IndexEntry::IndexEntry (std::shared_ptr<streams::StreamInterface> mKey, uint32_t entryCount) :
+IndexEntry::IndexEntry (std::shared_ptr<cclient::data::Key> mKey, uint32_t entryCount) :
     entries (entryCount), newFormat (false)
 {
-	key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(mKey));
+	key = std::make_shared<cclient::data::Key>(mKey);
 }
 
 IndexEntry::~IndexEntry ()

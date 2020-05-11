@@ -25,7 +25,7 @@ namespace data {
 class IndexEntry : cclient::data::streams::StreamInterface {
  public:
 
-  IndexEntry(std::shared_ptr<cclient::data::streams::StreamInterface> mKey, uint32_t entryCount);
+  explicit IndexEntry(std::shared_ptr<cclient::data::Key> mKey, uint32_t entryCount);
 
   virtual
   ~IndexEntry();
@@ -33,11 +33,7 @@ class IndexEntry : cclient::data::streams::StreamInterface {
   /**
    move constructor.
    **/
-  IndexEntry(IndexEntry &&other) {
-    key = std::make_shared<cclient::data::Key>(std::static_pointer_cast<cclient::data::Key>(other.key));
-    entries = other.entries;
-    newFormat = other.newFormat;
-  }
+  IndexEntry(IndexEntry &&other) = default;
 
   IndexEntry()
       :
@@ -58,7 +54,7 @@ class IndexEntry : cclient::data::streams::StreamInterface {
    @return pointer to key.
    */
   std::shared_ptr<Key> getKey() {
-    return std::static_pointer_cast<Key>(key);
+    return key;
   }
 
   /**
