@@ -67,7 +67,7 @@ public:
      * @returns algorith name
      */
     std::string
-    getName ()
+    getName () const
     {
         return compressionAlgo;
     }

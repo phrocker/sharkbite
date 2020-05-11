@@ -97,8 +97,8 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     return &entries;
   }
 
-  void addStreams(const std::vector<cclient::data::streams::OutputStream*> &streams){
-    std::copy (streams.begin(), streams.end(), std::back_inserter(ownedStreams));
+  void addStreams(const std::vector<cclient::data::streams::OutputStream*> &streams) {
+    std::copy(streams.begin(), streams.end(), std::back_inserter(ownedStreams));
   }
 
   /**
@@ -157,8 +157,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   /**
    Closes the RFile.
    **/
-  void
-  close();
+  void close();
   /**
    Closes the data section of the RFile.
    **/
@@ -249,7 +248,6 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   }
 
-  
   std::unique_ptr<cclient::data::streams::InputStream> ownedStream;
   std::unique_ptr<cclient::data::streams::OutputStream> ownedOutStream;
 
@@ -271,7 +269,6 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   cclient::data::streams::OutputStream *myDataStream;
 
   cclient::data::streams::InputStream *myInputStream;
-
 
   // list of locality group pointers.
   std::vector<LocalityGroupMetaData*> localityGroups;

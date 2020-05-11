@@ -51,7 +51,7 @@ class MetaIndexEntry : public cclient::data::streams::StreamInterface {
       :
       metaName(""),
       comp(std::move(compressor)) {
-
+    compressionAlgo = comp->getAlgorithm();
   }
 
   explicit MetaIndexEntry(cclient::data::streams::InputStream *in) {
@@ -200,11 +200,8 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
    */
   MetaIndexEntry*
   prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp) {
-
     std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(std::move(comp));
-    //MetaIndexEntry entry (comp);
     entry->setName(name);
-    entry->setAlgorithm(comp->getAlgorithm());
     addEntry(entry, NULL);
     return getEntry(name);
 
