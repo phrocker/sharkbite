@@ -1,3 +1,4 @@
+
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 ![Ubuntu CICD Pipeline](https://github.com/phrocker/sharkbite/workflows/Ubuntu%20CICD%20Pipeline/badge.svg)
 [![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
@@ -16,10 +17,6 @@ Capabilities That will be supported in V0.6 :
  * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
  * **Python Iterators**  : Python iterators run natively at the tablet server. They are supported either through the labmda iterators in Python or the typical python interfaces. 
  
-Current Master progress 
-  * Development is focusing on abstracting out 2.x changes for Apache Accumulo.
-  * Help is desired in abstracting these thrift changes.  
-
 About the name
 
 **S**harkbite's name originated from design as a connector that abstracted components in which we tightly
@@ -49,6 +46,20 @@ Lib Boost is a compile time dependency for thrift. It is not required at runtime
 	
 ### For Native Python Iterators
  	JDK ( such as OpenJDK)
+ ## Build Options
+ The following is a list of build options in cmake. Preface this with -D at the command line. An example command might be
+
+```
+cmake -DPYTHON_ITERATOR_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release -D BUILD_TESTS=ON -D BUILD_PYTHON_TESTS=ON ..
+``` 
+
+| CMAKE Option | Default value  |  Purpose  
+|--|--|--|
+|BUILD_TESTS  | ON | Build all tests
+|BUILD_PYTHON_TESTS  | OFF  | Builds python Integration tests that are used for verification and validation
+|NATIVE_ARCH  | OFF  | Builds using native architecture symbols. 
+|PYTHON_ITERATOR_SUPPORT  | OFF  | Builds the python iterator jar
+
 
 
 ## Building Linux
