@@ -24,23 +24,30 @@
 
 #include "HWCrc32c.h"
 
-#if ((defined(__X86__) || defined(__i386__) || defined(i386) || defined(_M_IX86) || defined(__386__) || defined(__x86_64__) || defined(_M_X64)))
+#if defined(NATIVE_ARCH) && ((defined(__X86__) || defined(__i386__) || defined(i386) || defined(_M_IX86) || defined(__386__) || defined(__x86_64__) || defined(_M_X64)))
 #include <cpuid.h>
 #endif
 
-#if ((defined(__X86__) || defined(__i386__) || defined(i386) || defined(_M_IX86) || defined(__386__) || defined(__x86_64__) || defined(_M_X64)))
-#if !defined(__SSE4_2__)
+#ifndef NATIVE_ARCH
+#include <zlib.h>
+#endif
+
 
 namespace Hdfs {
 namespace Internal {
 
-#if defined(__LP64__)
+#if ((defined(__X86__) || defined(__i386__) || defined(i386) || defined(_M_IX86) || defined(__386__) || defined(__x86_64__) || defined(_M_X64)))
+#if !defined(__SSE4_2__)
+
+
+#if defined(NATIVE_ARCH) && defined(__LP64__)
 static inline uint64_t _mm_crc32_u64(uint64_t crc, uint64_t value) {
     asm("crc32q %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
     return crc;
 }
 #endif
 
+#if defined(NATIVE_ARCH)
 static inline uint32_t _mm_crc32_u16(uint32_t crc, uint16_t value) {
     asm("crc32w %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
     return crc;
@@ -58,31 +65,37 @@ static inline uint32_t _mm_crc32_u8(uint32_t crc, uint8_t value) {
 
 }
 }
+#endif
 
 #else
 
-#include <nmmintrin.h>
-
+  #if defined(NATIVE_ARCH)
+  #include <nmmintrin.h>
+  #endif
 #endif
 
-namespace Hdfs {
-namespace Internal {
+
 
 bool HWCrc32c::available() {
 #if ((defined(__X86__) || defined(__i386__) || defined(i386) || defined(_M_IX86) || defined(__386__) || defined(__x86_64__) || defined(_M_X64)))
-    uint32_t eax, ebx, ecx = 0, edx;
-    /*
-     * get the CPU features (level 1). ecx will have the SSE4.2 bit.
-     * This gcc routine automatically handles saving ebx in the case where we are -fpic or -fPIC
-     */
-    __get_cpuid(1, &eax, &ebx, &ecx, &edx);
-    return (ecx & (1 << 20)) != 0;
+  #if defined(NATIVE_ARCH)
+      uint32_t eax, ebx, ecx = 0, edx;
+      /*
+       * get the CPU features (level 1). ecx will have the SSE4.2 bit.
+       * This gcc routine automatically handles saving ebx in the case where we are -fpic or -fPIC
+       */
+      __get_cpuid(1, &eax, &ebx, &ecx, &edx);
+      return (ecx & (1 << 20)) != 0;
+  #else
+      return false;
+  #endif
 #else
     return false;
 #endif
 }
 
 void HWCrc32c::update(const void * b, int len) {
+#if defined(NATIVE_ARCH)
     const char * p = static_cast<const char *>(b);
 #if defined(__LP64__)
     const size_t bytes = sizeof(uint64_t);
@@ -115,11 +128,12 @@ void HWCrc32c::update(const void * b, int len) {
         len &= bytes - 1;
         updateInt64(p, len);
     }
+#endif
 }
 
 void HWCrc32c::updateInt64(const char * b, int len) {
     assert(len < 8);
-
+#if defined(NATIVE_ARCH)
     switch (len) {
     case 7:
         crc = _mm_crc32_u8(crc, *reinterpret_cast<const uint8_t *>(b++));
@@ -151,6 +165,7 @@ void HWCrc32c::updateInt64(const char * b, int len) {
     case 0:
         break;
     }
+#endif
 }
 
 }

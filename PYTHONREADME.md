@@ -42,7 +42,29 @@ for production environments.
 Enable it with the following option:
 
 ```
-	scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+
+	import pysharkbite as sharkbite
+
+	connector = sharkbite.AccumuloConnector(user, zk)
+
+    table_operations = connector.tableOps(table)  
+	
+ 	scanner = table_operations.createScanner(auths, 2)
+    
+    range = sharkbite.Range("myrow")
+    
+    scanner.addRange( range )
+    
+    ### enable the beta option of hedged reads
+    
+    scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+    
+    resultset = scanner.getResultSet()
+    
+    for keyvalue in resultset:
+        key = keyvalue.getKey()
+        value = keyvalue.getValue()
+	
 ```
 
 ### Python Iterators  

@@ -24,54 +24,71 @@
 
 #include "Checksum.h"
 
+#ifndef NATIVE_ARCH
+#include <zlib.h>
+#endif
+
 namespace Hdfs {
 namespace Internal {
 
 /**
  * Calculate CRC with hardware support.
  */
-class HWCrc32c: public Checksum {
-public:
-    /**
-     * Constructor.
-     */
-    HWCrc32c() :
-        crc(0xFFFFFFFF) {
-    }
-
-    uint32_t getValue() {
-        return ~crc;
-    }
-
-    /**
-     * @ref Checksum#reset()
-     */
-    void reset() {
+class HWCrc32c : public Checksum {
+ public:
+  /**
+   * Constructor.
+   */
+  HWCrc32c() {
+#if defined(NATIVE_ARCH)
         crc = 0xFFFFFFFF;
-    }
+#else
+    crc = crc32(0L, Z_NULL, 0);
+#endif
+  }
 
-    /**
-     * @ref Checksum#update(const void *, int)
-     */
-    void update(const void * b, int len);
+  uint32_t getValue() {
+#if defined(NATIVE_ARCH)
+    return ~crc;
+#else
+    return crc;
+#endif
+  }
 
-    /**
-     * Destory an HWCrc32 instance.
-     */
-    ~HWCrc32c() {
-    }
+  /**
+   * @ref Checksum#reset()
+   */
+  void reset() {
+#if defined(NATIVE_ARCH)
+        crc = 0xFFFFFFFF;
+#else
+    crc = crc32(0L, Z_NULL, 0);
+#endif
+  }
 
-    /**
-     * To test if the hardware support this function.
-     * @return true if the hardware support to calculate the CRC.
-     */
-    static bool available();
+  /**
+   * @ref Checksum#update(const void *, int)
+   */
+  void update(const void *b, int len);
 
-private:
-    void updateInt64(const char * b, int len);
+  /**
+   * Destory an HWCrc32 instance.
+   */
+  ~HWCrc32c() {
+  }
 
-private:
-    uint32_t crc;
+  /**
+   * To test if the hardware support this function.
+   * @return true if the hardware support to calculate the CRC.
+   */
+  static bool available();
+
+ private:
+  void updateInt64(const char *b, int len);
+
+ private:
+
+  uint32_t crc;
 };
 
 }

@@ -214,7 +214,7 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
     std::cout << "not doing a single scan" << std::endl;
     return transport->beginScan(isRunning, &request);
   } else {
-    std::cout << "doing a single scan" << std::endl;
+    std::cout << "doing a single scan " << rangeSize << std::endl;
     auto result0 = std::async([&] {
 
       ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request.getRangeIdentifiers()->at(0);
@@ -249,9 +249,13 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
     });
 
     auto result1 = std::async([&] {
-      auto r = transport->beginScan(isRunning,&request);
-      arbiter->add(r);
+      try{
+        auto r = transport->beginScan(isRunning,&request);
+        arbiter->add(r);
       return r;
+      }catch(...){
+          return (Scan*)nullptr;
+      }
     });
     return arbiter->wait();
   }

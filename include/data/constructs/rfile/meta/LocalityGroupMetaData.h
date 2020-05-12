@@ -121,7 +121,6 @@ class LocalityGroupMetaData : cclient::data::streams::StreamInterface {
   std::pair<char*, size_t> buildIndexArray() {
     cclient::data::streams::BigEndianByteStream *byteOutStream = new cclient::data::streams::BigEndianByteStream(index.size() * 120);
     cclient::data::streams::DataOutputStream *outputStream = new cclient::data::streams::DataOutputStream(byteOutStream);
-    //BigEndianOutStream outputStream(&byteOutStream);
 
     uint64_t totalPos = 0;
     uint32_t off = byteOutStream->getPos();
