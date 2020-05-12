@@ -61,7 +61,8 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
       :
       logger(logging::LoggerFactory<ScannerHeuristic>::getLogger()),
       threadCount(numThreads),
-      started(false) {
+      started(false),
+      running(false){
 
   }
 
