@@ -165,4 +165,4 @@ A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/blob
 
 A Python example can be found [here] (https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py)
 
-[accumulo]: https://accumulo.apache.org
+[Apache Accumulo]: https://accumulo.apache.org
