@@ -38,7 +38,7 @@ public:
    * @param rfiles absolute path to RFiles in HDFS or on the local file system
    * @return shared pointer to a multi iterator read
    */
-  static std::shared_ptr<cclient::data::streams::KeyValueIterator> openManySequential(const std::vector<std::string>  &rfiles);
+  static std::shared_ptr<cclient::data::streams::KeyValueIterator> openManySequential(const std::vector<std::string>  &rfiles,int versions=0);
 
 };
 }

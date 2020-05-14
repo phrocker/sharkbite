@@ -265,6 +265,41 @@ int Key::compare(const std::shared_ptr<Key> &other) {
   return 0;
 }
 
+int Key::compareToVisibility(const std::shared_ptr<Key> &other) {
+  auto btr = other->getRow();
+  auto btl = getRow();
+  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
+
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
+  auto ctr = other->getColFamily();
+  auto ctl = getColFamily();
+  compare = compareBytes(ctl.first, 0, ctl.second, ctr.first, 0, ctr.second);
+
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
+  auto qtr = other->getColQualifier();
+  auto qtl = getColQualifier();
+  compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
+
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
+  auto vtr = other->getColVisibility();
+  auto vtl = getColVisibility();
+  compare = compareBytes(vtl.first, 0, vtl.second, vtr.first, 0, vtr.second);
+
+  if (compare < 0)
+    return compare;
+
+  return 0;
+}
+
 bool Key::operator <(const Key &rhs) const {
   auto btr = rhs.getRow();
   auto btl = getRow();

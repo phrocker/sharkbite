@@ -265,7 +265,7 @@ void LocalityGroupReader::next() {
       rKey->read(currentStream.get());
     else
       rKey->readFiltered(currentStream.get());
-
+    val = std::make_shared<Value>();
     val->read(currentStream.get());
     entriesLeft--;
     if (!rKey->isFiltered()) {
@@ -320,9 +320,6 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
 
   std::unique_ptr<cclient::data::compression::Compressor> compressor = cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm());
-  //if (use_cached || !compressors.try_dequeue(compressor)) {
-   // compressor = cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm());
- // }
 
   BlockRegion region(offset, compressedSize, rawSize, std::move(compressor));
   std::vector<uint8_t> *my_buf;

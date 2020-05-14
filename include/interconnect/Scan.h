@@ -87,6 +87,12 @@ class Scan {
 
   bool empty() const;
 
+  void setException(std::string exc);
+
+  std::string getException() const;
+
+  bool hasException() const;
+
   /**
    * Sets the scan id
    * @param scanId scan identifier
@@ -98,6 +104,8 @@ class Scan {
   std::shared_ptr<cclient::data::Key> getTopKey() const;
 
  protected:
+
+  std::string clientException;
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> iter;
 

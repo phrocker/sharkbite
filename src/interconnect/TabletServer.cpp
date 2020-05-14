@@ -181,8 +181,10 @@ ServerInterconnect::~ServerInterconnect() {
 }
 
 Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> &arbiter, std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols,
-                                     const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize) {
+                                     const std::vector<cclient::data::IterInfo> &serverSideIterators, cclient::data::IterInfo &versioningIterator, uint32_t batchSize, bool disableRpc) {
   ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> request(&credentials, rangeDef->getAuthorizations(), tServer);
+
+  ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> hedgedRequest(&credentials, rangeDef->getAuthorizations(), tServer);
 
   request.setBufferSize(batchSize);
 
@@ -190,12 +192,21 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
 
   request.setIters(serverSideIterators);
 
-  size_t rangeSize=0;
+  hedgedRequest.setBufferSize(batchSize);
+
+  hedgedRequest.addColumns(cols);
+
+  hedgedRequest.setIters(serverSideIterators);
+
+  size_t rangeSize = 0;
 
   for (std::shared_ptr<cclient::data::KeyExtent> extent : *rangeDef->getExtents()) {
     auto locs = extent->getFileLocations();
 
     ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+        std::shared_ptr<cclient::data::Range>>();
+
+    ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *hedgedident = new ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
         std::shared_ptr<cclient::data::Range>>();
     auto rangeSize = rangeDef->getRanges()->size();
     if (rangeSize == 0) {
@@ -204,59 +215,120 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
 
     for (const auto range : *rangeDef->getRanges()) {
       ident->putIdentifier(extent, range);
+      hedgedident->putIdentifier(extent, range);
       rangeSize++;
     }
 
     request.putIdentifier(ident);
+    hedgedRequest.putIdentifier(hedgedident);
   }
 
   if (request.size() > 1 || rangeSize > 1 || !cols.empty()) {
-    std::cout << "not doing a single scan" << std::endl;
+    logging::LOG_DEBUG(logger) << "Initiating a non-hedged read";
     return transport->beginScan(isRunning, &request);
   } else {
-    std::cout << "doing a single scan " << rangeSize << std::endl;
+    logging::LOG_DEBUG(logger) << "Initiating a hedged read on" << rangeSize << " ranges";
     auto result0 = std::async([&] {
+      try {
+        ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = hedgedRequest.getRangeIdentifiers()->at(0);
+        std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
+        auto locations = extent->getFileLocations();
+        auto range = ident->getIdentifiers(extent).at(0);
+        auto auths =rangeDef->getAuthorizations();
+        int maxVersion = 0;
+        if (!versioningIterator.empty()) {
+          try {
+            auto maxvs = versioningIterator.getOption("maxVersion","0");
+            logging::LOG_DEBUG(logger) << "Max versions is " << maxvs;
+            maxVersion = std::stoi ( maxvs);
+          } catch(...) {
 
-      ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> *ident = request.getRangeIdentifiers()->at(0);
-      std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
-      auto locations = extent->getFileLocations();
-      auto range = ident->getIdentifiers(extent).at(0);
-      auto auths =rangeDef->getAuthorizations();
-      auto multi_iter = cclient::data::RFileOperations::openManySequential(locations);
-      std::vector<std::string> cols;
-      cclient::data::streams::StreamSeekable seekable(*range,cols,*auths,false);
-      multi_iter->relocate(&seekable);
-      int count=0;
-      std::vector<std::shared_ptr<cclient::data::KeyValue> > res;
-      Scan *newScan = new Scan(isRunning);
-      while (multi_iter->hasNext() && isRunning) {
-        auto top = multi_iter->getTop();
-        res.emplace_back(top);
-        multi_iter->next();
+          }
+        }
+        else {
+          logging::LOG_DEBUG(logger) << "Max versions is empty";
+        }
+        auto multi_iter = cclient::data::RFileOperations::openManySequential(locations,maxVersion);
+        std::vector<std::string> cols;
+        cclient::data::streams::StreamSeekable seekable(*range,cols,*auths,false);
+        multi_iter->relocate(&seekable);
+        int count=0;
+        std::vector<std::shared_ptr<cclient::data::KeyValue> > res;
+        Scan *newScan = new Scan(isRunning);
+        while (multi_iter->hasNext() && isRunning) {
+          auto top = multi_iter->getTop();
+          res.emplace_back(top);
+          multi_iter->next();
 
-        if (++count >= 1000) {
-          newScan->setHasMore(true);
-          break;
+          if (++count >= 1000) {
+            newScan->setHasMore(true);
+            break;
+          }
+
+        }
+        newScan->setMultiIterator(multi_iter);
+        newScan->setRFileScan(true);
+        newScan->setNextResults(&res);
+
+        arbiter->add(newScan);
+        return newScan;
+      } catch(const cclient::exceptions::ClientException &e ) {
+        auto r = new Scan(isRunning);
+        r->setRFileScan(true);
+        logging::LOG_DEBUG(logger) << "Client exception whilst scanning, " << e.what();
+        r->setException(e.what());
+        arbiter->add(r);
+        return r;
+      } catch(...) {
+        auto r = new Scan(isRunning);
+        r->setRFileScan(true);
+        auto eptr = std::current_exception();
+        try {std::rethrow_exception(eptr);
+        }
+        catch (const std::exception &e) {
+          logging::LOG_DEBUG(logger) << "Exception whilst scanning, " << e.what();
+          r->setException(e.what());
+        }
+        catch(...) {
+          logging::LOG_DEBUG(logger) << "Unkonwn exception while scanning";
+          r->setException("Unknown Exception");
         }
 
-      }
-      newScan->setMultiIterator(multi_iter);
-      newScan->setRFileScan(true);
-      newScan->setNextResults(&res);
-
-      arbiter->add(newScan);
-      return newScan;
-    });
-
-    auto result1 = std::async([&] {
-      try{
-        auto r = transport->beginScan(isRunning,&request);
         arbiter->add(r);
-      return r;
-      }catch(...){
-          return (Scan*)nullptr;
+        return r;
       }
     });
+    if (!disableRpc) {
+      auto result1 = std::async([&] {
+        try {
+          auto r = transport->beginScan(isRunning,&request);
+          arbiter->add(r);
+          return r;
+        } catch(...) {
+          try {
+            // try again
+            auto r = transport->beginScan(isRunning,&request);
+            arbiter->add(r);
+          } catch(...) {
+            auto r = new Scan(isRunning);
+            r->setMultiScan(true);
+            auto eptr = std::current_exception();
+            try {std::rethrow_exception(eptr);
+            }
+            catch (const std::exception &e) {
+              r->setException(e.what());
+            }
+            catch(...) {
+              r->setException("Unknown Exception");
+            }
+
+            arbiter->add(r);
+            return r;
+          }
+        }
+        return (Scan*)nullptr;
+      });
+    }
     return arbiter->wait();
   }
 }

@@ -2,7 +2,7 @@
 #include "data/streaming/input/HdfsInputStream.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
-
+#include "data/iterators/VersioningIterator.h"
 namespace cclient {
 namespace data {
 
@@ -70,7 +70,7 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
   return std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
 }
 
-std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openManySequential(const std::vector<std::string> &rfiles) {
+std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openManySequential(const std::vector<std::string> &rfiles,int versions) {
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
   std::vector<std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>> futures;
   for (const auto &path : rfiles) {
@@ -104,7 +104,10 @@ std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openM
         throw std::runtime_error("Error while opening rfile");
       }
   }
+  if (versions==0)
   return std::make_shared<cclient::data::MultiIterator>(iters);
+  else
+  return std::make_shared<cclient::data::VersioningIterator>(iters);
 }
 
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {

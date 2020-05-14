@@ -52,46 +52,15 @@ class ZookeeperInstance : public Instance {
  public:
 
   /**
-     * ZK constructor
-     * @param in instance name
-     * @param zks zookeepers
-     * @param zkTimeoutMs timeout for zookeeper
-     * @param conf configuration object
-     **/
-    explicit ZookeeperInstance(const ZookeeperInstance *zki)
-        :
-        instanceName(zki->instanceName),
-        zookeeperList(zki->zookeeperList),
-        timeoutMs(zki->timeoutMs),
-        myConfiguration(zki->myConfiguration) {
-      if (IsEmpty(&instanceName) || IsEmpty(&zookeeperList)) {
-        throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
-      }
-
-      myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
-
-      myKeeper->init(&myWatch);
-
-      myZooCache = new ZooCache(myKeeper);
-
-      if (getInstanceId(true).empty()) {
-
-        clear();
-
-        std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
-
-        myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
-
-        myKeeper->init(&myWatch);
-
-        myZooCache = new ZooCache(myKeeper);
-
-        getInstanceId();
-
-      }
-
-    }
-
+   * ZK constructor
+   * @param in instance name
+   * @param zks zookeepers
+   * @param zkTimeoutMs timeout for zookeeper
+   * @param conf configuration object
+   **/
+  explicit ZookeeperInstance(const ZookeeperInstance *zki)
+      :ZookeeperInstance( zki->instanceName, zki->zookeeperList, zki->timeoutMs, zki->myConfiguration){
+  }
 
   /**
    * ZK constructor
@@ -116,21 +85,23 @@ class ZookeeperInstance : public Instance {
 
     myZooCache = new ZooCache(myKeeper);
 
-    if (getInstanceId(true).empty()) {
+    uint8_t failcount = 0;
+
+    while (getInstanceId(true).empty() && failcount++ < 10) {
 
       clear();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(zkTimeoutMs));
+      std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
 
-      myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+      myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
 
       myKeeper->init(&myWatch);
 
       myZooCache = new ZooCache(myKeeper);
 
-      getInstanceId();
-
     }
+
+    getInstanceId();
 
   }
 
@@ -207,7 +178,10 @@ class ZookeeperInstance : public Instance {
    * Return instance namespace
    * @return instance name
    **/
-  std::string getInstanceName();
+  std::string getInstanceName() const;
+
+
+  std::string getZookeepers() const;
   /**
    * Returns configuration
    * @return configuration reference

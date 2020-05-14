@@ -36,6 +36,8 @@ template<typename T>
 struct ScanPair {
   Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *src;
   Heuristic<T> *heuristic;
+  bool disableRpc;
+  void *ownedAdditionalFeatures;
   std::atomic<bool> *runningFlag;
 };
 
@@ -47,6 +49,8 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
  private:
   std::shared_ptr<logging::Logger> logger;
 
+ protected:
+ bool disableRpc;
  public:
 
   /**
@@ -61,7 +65,9 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
       :
       logger(logging::LoggerFactory<ScannerHeuristic>::getLogger()),
       threadCount(numThreads),
-      started(false) {
+      started(false),
+      running(false),
+      disableRpc(false){
 
   }
 
@@ -72,6 +78,11 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
   bool isRunning() const {
     return running;
   }
+
+void disableRpcCalls(){
+    disableRpc = true;
+  } 
+
 
   virtual void close() {
     running = false;
@@ -98,6 +109,8 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
       pair->src = source;
       pair->heuristic = this;
       pair->runningFlag = &running;
+      pair->disableRpc = disableRpc;
+      pair->ownedAdditionalFeatures=nullptr;
       threads.push_back(std::thread(ScannerHeuristic::scanRoutine, pair));
     }
     return scans;

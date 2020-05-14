@@ -27,11 +27,13 @@ class ScanArbiter {
   std::condition_variable cv;
   std::deque<Scan*> index;
   std::vector<std::future<Scan*>> futures;
+  std::string receivedException;
   uint16_t count;
   uint16_t max;
+  bool disableRpc;
  public:
 
-  explicit ScanArbiter(uint16_t desired);
+  explicit ScanArbiter(uint16_t desired,bool disableRpc);
 
   ~ScanArbiter();
 

@@ -100,16 +100,16 @@ std::shared_ptr<streams::StreamInterface> Value::getStream() {
 }
 
 std::pair<uint8_t*, size_t> Value::getValue() const {
-	return std::make_pair(value, offset);
+	return std::make_pair(value, valueSize);
 }
 
 std::string Value::getValueAsString() const {
-	return std::string((char*)(value), offset);
+	return std::string((char*)(value), valueSize);
 }
 
 uint64_t Value::write(cclient::data::streams::OutputStream *outStream) {
-	outStream->writeInt(offset);
-	return outStream->writeBytes(value, offset);
+	outStream->writeInt(valueSize);
+	return outStream->writeBytes(value, valueSize);
 }
 
 uint64_t Value::read(cclient::data::streams::InputStream *in) {
@@ -118,6 +118,7 @@ uint64_t Value::read(cclient::data::streams::InputStream *in) {
 
 	uint32_t size = in->readInt();
 	value = new uint8_t[size];
+	valueSize = size;
 	return in->readBytes(value, size);
 }
 

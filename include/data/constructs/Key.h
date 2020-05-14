@@ -249,6 +249,8 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   int compare(const std::shared_ptr<Key> &other);
 
+  int compareToVisibility(const std::shared_ptr<Key> &other);
+
   bool
   operator <(const Key &rhs) const;
 

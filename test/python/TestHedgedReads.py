@@ -52,7 +52,7 @@ class TestWrites(TestRunner):
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-		#scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
 
 		startKey = pysharkbite.Key()
 
@@ -96,7 +96,7 @@ class TestWrites(TestRunner):
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-		#scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
 
 		scanner.addRange( range )
 
@@ -128,7 +128,7 @@ class TestWrites(TestRunner):
 
 		scanner.addRange( range )
 
-		#scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
 
 		resultset = scanner.getResultSet()
 
