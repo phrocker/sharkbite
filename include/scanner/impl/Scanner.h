@@ -39,6 +39,7 @@
 #include "logging/LoggerConfiguration.h"
 #include "logging/Logger.h"
 #include "scanner/ScannerOptions.h"
+#include "data/constructs/IterInfo.h"
 #include "scanner/constructs/HedgedHeuristic.h"
 
 namespace scanners {
@@ -91,37 +92,12 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
     scannerHeuristic->close();
   }
 
-  virtual void setOption(ScannerOptions opt) override {
-    std::lock_guard<std::mutex> lock(scannerLock);
+  virtual void setOption(ScannerOptions opt) override;
 
-    if (opt== ( opt & ScannerOptions::ENABLE_HEDGED_READS)) {
-      /**
-       * We are changing the scanner type amidst the requested option change
-       */
-      if (scannerHeuristic->isRunning()) {
-        throw cclient::exceptions::ClientException(SCANNER_ALREADY_STARTED);
-      }
-      scannerHeuristic = std::make_unique<scanners::HedgedScannerHeuristic>(numThreads);
-      sourceOptions |= ScannerOptions::ENABLE_HEDGED_READS;
-    }
-  }
-
-  virtual void removeOption(ScannerOptions opt) override {
-    std::lock_guard<std::mutex> lock(scannerLock);
-    if ((opt == (opt & ScannerOptions::ENABLE_HEDGED_READS)) && (sourceOptions == (sourceOptions & ScannerOptions::ENABLE_HEDGED_READS))) {
-      /**
-       * We are changing the scanner type amidst the requested option change
-       */
-      if (scannerHeuristic->isRunning()) {
-        throw cclient::exceptions::ClientException(SCANNER_ALREADY_STARTED);
-      }
-      scannerHeuristic = std::make_unique<scanners::ScannerHeuristic>(numThreads);
-      sourceOptions &= ~ScannerOptions::ENABLE_HEDGED_READS;
-    }
-
-  }
+  virtual void removeOption(ScannerOptions opt) override ;
 
  protected:
+
 
   /**
    * Flushes the scanner
@@ -144,6 +120,8 @@ class Scanner : public scanners::Source<cclient::data::KeyValue, ResultBlock<ccl
   void addServerDefinition(std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> ifc) {
     servers.insert(servers.end(), ifc.begin(), ifc.end());
   }
+
+  std::vector<cclient::data::IterInfo> getTableIterators(std::string iterName="");
 
   uint16_t numThreads;
   // scanner

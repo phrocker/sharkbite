@@ -13,12 +13,12 @@
  */
 
 #include "interconnect/ScanArbiter.h"
-
+#include "data/exceptions/ClientException.h"
 namespace interconnect {
 
-ScanArbiter::ScanArbiter(uint16_t desired)
+ScanArbiter::ScanArbiter(uint16_t desired, bool disableRpc)
     :
-    max(desired) {
+    max(desired), disableRpc(disableRpc) {
 }
 
 ScanArbiter::~ScanArbiter() {
@@ -36,7 +36,16 @@ Scan* ScanArbiter::wait() {
     });
     r = index.front();
     index.pop_front();
-    if (r->isRFileScan() && r->empty())
+    if (r->hasException()) {
+      if (!receivedException.empty()) {
+        hasResult = false;
+        receivedException = r->getException();
+      }
+      else {
+        throw cclient::exceptions::ClientException(receivedException);
+      }
+    }
+    else if (r->isRFileScan() && (!disableRpc && r->empty()))
     {
       hasResult = false;
     }

@@ -46,6 +46,10 @@ std::string ZookeeperInstance::getRootTabletLocation() {
   return split(std::string((char*) rootLoc), '|').at(0);
 }
 
+std::string ZookeeperInstance::getZookeepers() const {
+  return zookeeperList;
+}
+
 std::string ZookeeperInstance::getRoot() {
   std::stringstream st;
   st << ZROOT << "/" << instanceId;
@@ -156,7 +160,7 @@ std::vector<std::shared_ptr<interconnect::ServerConnection>> ZookeeperInstance::
 
 }
 
-std::string ZookeeperInstance::getInstanceName() {
+std::string ZookeeperInstance::getInstanceName() const {
   return instanceName;
 }
 

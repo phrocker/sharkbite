@@ -31,6 +31,7 @@
 #include "scanner/impl/../../interconnect/ClientInterface.h"
 #include "scanner/impl/../../interconnect/tableOps/TableOperations.h"
 #include "scanner/impl/Scanner.h"
+#include "utils/StringUtils.h"
 
 namespace scanners {
 
@@ -168,6 +169,91 @@ void Scanner::locateFailedTablet(std::vector<std::shared_ptr<cclient::data::Rang
       locatedTablets->push_back(rangeDef);
     }
   }
+}
+
+std::vector<cclient::data::IterInfo> Scanner::getTableIterators(std::string iterName) {
+  std::vector<cclient::data::IterInfo> matches;
+  std::string name, clazz;
+  uint32_t priority;
+  std::map<std::string,std::string> options;
+  for(const auto &opt : tableOptions){
+    if (opt.first.rfind("table.iterator.scan", 0) == 0) {
+      // found a scan time iterator.
+      auto iterOptsName = utils::StringUtils::split(opt.first,".");
+      // table. iterator. scan . name . opt . optname
+      if (iterOptsName.size() < 4){ 
+        continue;
+      }
+      if (name != iterOptsName.at(3)){
+        if (!name.empty() && !clazz.empty()){
+          matches.emplace_back(cclient::data::IterInfo(name,clazz,priority,options));
+          name = iterOptsName.at(3);
+          options.clear();
+        }
+      }
+      if (utils::StringUtils::endsWith(opt.second,iterName)){
+        // have found your iterator.
+        auto iterPriorityName = utils::StringUtils::split(opt.second,",");
+        if (iterPriorityName.size() == 2){
+          clazz = iterName;
+          priority = std::atoi(iterPriorityName.at(0).c_str());
+        }
+      }else{
+        if (iterOptsName.size() == 6){
+          options[ iterOptsName[5]] = opt.second;
+        }
+      }
+    }
+  }
+  if (!name.empty() && !clazz.empty()){
+    matches.emplace_back(cclient::data::IterInfo(name,clazz,priority,options));
+    options.clear();
+  }
+  return matches;
+}
+
+void Scanner::setOption(ScannerOptions opt) {
+  std::lock_guard<std::mutex> lock(scannerLock);
+
+  if (opt == (opt & ScannerOptions::ENABLE_HEDGED_READS) || 
+      opt == (opt & ScannerOptions::ENABLE_RFILE_SCANNER) ) {
+    /**
+     * We are changing the scanner type amidst the requested option change
+     */
+    if (scannerHeuristic->isRunning()) {
+      throw cclient::exceptions::ClientException(SCANNER_ALREADY_STARTED);
+    }
+    auto heuristic = std::make_unique<scanners::HedgedScannerHeuristic>(numThreads);
+    /**
+     * need to determine if the versioning iterator is used.
+     */
+    auto iterators = getTableIterators("org.apache.accumulo.core.iterators.user.VersioningIterator");
+
+    heuristic->setTableIterators(std::move(iterators));
+
+    if (opt == (opt & ScannerOptions::ENABLE_RFILE_SCANNER)){
+      heuristic->disableRpcCalls();
+    }
+
+    scannerHeuristic = std::move(heuristic);
+    sourceOptions |= ScannerOptions::ENABLE_HEDGED_READS;
+
+  }
+}
+
+void Scanner::removeOption(ScannerOptions opt) {
+  std::lock_guard<std::mutex> lock(scannerLock);
+  if ((opt == (opt & ScannerOptions::ENABLE_HEDGED_READS)) && (sourceOptions == (sourceOptions & ScannerOptions::ENABLE_HEDGED_READS))) {
+    /**
+     * We are changing the scanner type amidst the requested option change
+     */
+    if (scannerHeuristic->isRunning()) {
+      throw cclient::exceptions::ClientException(SCANNER_ALREADY_STARTED);
+    }
+    scannerHeuristic = std::make_unique<scanners::ScannerHeuristic>(numThreads);
+    sourceOptions &= ~ScannerOptions::ENABLE_HEDGED_READS;
+  }
+
 }
 
 }

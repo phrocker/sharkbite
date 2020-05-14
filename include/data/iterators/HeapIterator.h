@@ -51,11 +51,13 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   std::priority_queue<std::shared_ptr<cclient::data::streams::KeyValueIterator>, std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>>, KeyValueIteratorComparator> queues;
 
-  std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
-
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iterators;
 
   std::shared_ptr<cclient::data::Key> nextKey;
+
+  protected:
+    std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
+
 
  public:
 
@@ -88,6 +90,10 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   virtual std::shared_ptr<Value> getTopValue() override {
     return topIterator->getTopValue();
+  }
+
+virtual std::shared_ptr<KeyValue> getTop() override{
+    return std::make_shared<KeyValue>(topIterator->getTopKey(), topIterator->getTopValue());
   }
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override {

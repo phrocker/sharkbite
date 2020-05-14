@@ -169,7 +169,8 @@ PYBIND11_MODULE(pysharkbite, s) {
 
 
   pybind11::enum_<ScannerOptions>(s, "ScannerOptions", pybind11::arithmetic())
-       .value("HedgedReads", ScannerOptions::ENABLE_HEDGED_READS);
+       .value("HedgedReads", ScannerOptions::ENABLE_HEDGED_READS)
+       .value("RFileScanOnly", ScannerOptions::ENABLE_RFILE_SCANNER);
 
   pybind11::class_<scanners::BatchScanner>(s, "BatchScanner")
   .def("getResultSet", &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference)

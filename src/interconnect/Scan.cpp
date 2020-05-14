@@ -35,6 +35,18 @@ Scan::~Scan() {
 
 }
 
+void Scan::setException(std::string exc) {
+  clientException = std::move(exc);
+}
+
+std::string Scan::getException() const {
+  return clientException;
+}
+
+bool Scan::hasException() const {
+  return !clientException.empty();
+}
+
 /**
  * Sets the next result set.
  * @param resultSet result set to add to this object's results

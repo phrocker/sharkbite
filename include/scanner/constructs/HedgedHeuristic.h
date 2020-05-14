@@ -26,6 +26,7 @@
 #include "../Source.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
+#include "data/constructs/IterInfo.h"
 #include <thread>
 #include <vector>
 #include <chrono>
@@ -40,6 +41,8 @@ namespace scanners {
 class HedgedScannerHeuristic : public ScannerHeuristic {
  private:
   std::shared_ptr<logging::Logger> logger;
+
+  std::vector<cclient::data::IterInfo> iters;
 
  public:
 
@@ -58,6 +61,8 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
 
   virtual uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) override;
 
+  void setTableIterators(std::vector<cclient::data::IterInfo> iters);
+
  protected:
 
   virtual std::shared_ptr<logging::Logger> getLogger() override {
@@ -68,12 +73,22 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
 
     Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source = scanResource->src;
 
+    cclient::data::IterInfo versioningIterator;
+    if (scanResource->ownedAdditionalFeatures) {
+      std::vector<cclient::data::IterInfo> *iterators = static_cast<std::vector<cclient::data::IterInfo>*>(scanResource->ownedAdditionalFeatures);
+      for (const auto &iterator : *iterators) {
+        if (iterator.getClass() == "org.apache.accumulo.core.iterators.user.VersioningIterator") {
+          versioningIterator = iterator;
+        }
+      }
+    }
+
     source->getResultSet()->registerProducer();
 
     std::shared_ptr<interconnect::ServerInterconnect> conn = 0;
 
     bool failed = false;
-    std::shared_ptr<interconnect::ScanArbiter> arbiter = std::make_shared<interconnect::ScanArbiter>(1);
+    std::shared_ptr<interconnect::ScanArbiter> arbiter = std::make_shared<interconnect::ScanArbiter>(1, scanResource->disableRpc);
     do {
       conn = ((HedgedScannerHeuristic*) scanResource->heuristic)->next();
 
@@ -83,7 +98,7 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
 
         try {
 
-          scan = conn->hedgedScan(arbiter, scanResource->runningFlag, source->getColumns(), source->getIters());
+          scan = conn->hedgedScan(arbiter, scanResource->runningFlag, source->getColumns(), source->getIters(), versioningIterator, 1000, scanResource->disableRpc);
 
           do {
 
@@ -91,10 +106,9 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
               break;
             }
 
-            if (scan->isRFileScan()){
+            if (scan->isRFileScan()) {
               logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "RFile scan completed first";
-            }
-            else{
+            } else {
               logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "Accumulo scan completed first";
             }
 

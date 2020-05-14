@@ -21,7 +21,8 @@
 
 enum class ScannerOptions : unsigned int {
   BASIC_SCANNER = 0x0,
-  ENABLE_HEDGED_READS = 0x1
+  ENABLE_HEDGED_READS = 0x1,
+  ENABLE_RFILE_SCANNER
 };
 
 template<>

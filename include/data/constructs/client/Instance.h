@@ -70,7 +70,7 @@ public:
      * Return instance namespace
      * @return instance name
      **/
-    virtual std::string getInstanceName() = 0;
+    virtual std::string getInstanceName() const = 0;
     /**
       * Return link to instance instance cache
       * @return instance cache

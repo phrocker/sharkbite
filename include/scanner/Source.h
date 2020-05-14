@@ -73,6 +73,10 @@ class Source {
     return iters;
   }
 
+  virtual void setTableOptions(std::map<std::string,std::string> options){
+    tableOptions = std::move(options);
+  }
+
   virtual void setOption(ScannerOptions opt){
     sourceOptions |= opt;
   }
@@ -94,6 +98,7 @@ class Source {
       columns.emplace_back(cclient::data::Column(col));
   }
  protected:
+  std::map<std::string,std::string> tableOptions;
   ScannerOptions sourceOptions;
   std::vector<cclient::data::Column> columns;
   std::vector<cclient::data::IterInfo> iters;

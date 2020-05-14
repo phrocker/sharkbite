@@ -81,7 +81,7 @@ class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTranspor
 
   Scan*
   hedgedScan(std::shared_ptr<interconnect::ScanArbiter> &arbiter, std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols,
-             const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize = 1000);
+             const std::vector<cclient::data::IterInfo> &serverSideIterators,cclient::data::IterInfo &versioningIterator, uint32_t batchSize = 1000, bool disableRpc = false);
 
   Scan*
   scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize = 1000);

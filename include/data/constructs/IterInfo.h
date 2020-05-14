@@ -19,7 +19,6 @@
 #include <map>
 #include "inputvalidation.h"
 
-
 namespace cclient {
 namespace data {
 
@@ -58,6 +57,11 @@ inline std::ostream& operator <<(std::ostream &out, const ITERATOR_TYPES &obj) {
  **/
 class IterInfo {
  public:
+  IterInfo()
+      :
+      priority(0) {
+
+  }
   /**
    * Constructor
    * @param name iterator name
@@ -72,14 +76,26 @@ class IterInfo {
 
   }
 
-  explicit IterInfo(const std::string &name, const std::string &dsl, uint32_t pri,const std::string &type)
+  /**
+   * Constructor
+   * @param name iterator name
+   * @param cl iterator class name
+   * @param pri iterator priority
+   **/
+  explicit IterInfo(const std::string &name, const std::string &cl, uint32_t pri, std::map<std::string, std::string> &opts)
+      :
+      IterInfo(name, cl, pri) {
+    options = opts;
+  }
+
+  explicit IterInfo(const std::string &name, const std::string &dsl, uint32_t pri, const std::string &type)
       :
       iterName("NativeDSLIterator"),
       iterClass("org.poma.accumulo.NativeDSLIterator"),
       priority(pri) {
-    addOption("DSL_TYPE",type);
-    addOption("DSL_VALUE",dsl);
-    addOption("DSL_NAME",name);
+    addOption("DSL_TYPE", type);
+    addOption("DSL_VALUE", dsl);
+    addOption("DSL_NAME", name);
   }
   /**
    * Destructor
@@ -94,6 +110,13 @@ class IterInfo {
    **/
   uint32_t getPriority() const {
     return priority;
+  }
+
+  /**
+   * Returns true if the iterator info object is empty
+   */
+  bool empty() const {
+    return iterName.empty() && iterClass.empty();
   }
 
   /**
@@ -124,6 +147,19 @@ class IterInfo {
     }
     options[optionName] = optionValue;
     return true;
+  }
+
+  /**
+   * Returns options
+   * @returns options for this iterator
+   **/
+  std::string getOption(const std::string &value, const std::string &def = "") const {
+    auto fnd = options.find(value);
+    if (fnd != std::end(options)) {
+      return fnd->second;
+    } else {
+      return def;
+    }
   }
 
   /**
