@@ -17,6 +17,16 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
+#define DEFINE_RUNTIME_EXCEPTION(name, type) \
+    class name : public pybind11::builtin_exception { public: \
+        using pybind11::builtin_exception::builtin_exception; \
+        name() : name("") { } \
+        void set_error() const override { PyErr_SetString(type, what()); } \
+    };
+
+
+DEFINE_RUNTIME_EXCEPTION(stop_async_iteration, PyExc_StopAsyncIteration)
+
 #include <memory>
 
 

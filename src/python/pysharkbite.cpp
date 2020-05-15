@@ -162,9 +162,26 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string & ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation");
 
   pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(s, "Results")
+  .def("__await__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
+            it->begin();
+            return it;})
+  .def("__aiter__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
+              it->begin();
+              return it;})
   .def("__iter__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
         it->begin();
         return it;})
+  .def("__anext__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> pybind11::object {
+            if (it->isEndOfRange()){
+              throw stop_async_iteration();
+            }
+            auto ret = it->next();
+            pybind11::object loop = pybind11::module::import("asyncio.events").attr("get_event_loop")();
+            pybind11::object f = loop.attr("create_future")();
+            f.attr("set_result")(ret);
+            //return f.attr("__anext__")();
+            return f;
+  })
   .def("__next__", &scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>::next);
 
 
