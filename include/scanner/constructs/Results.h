@@ -308,6 +308,10 @@ public:
 	void add_ptr(std::vector<std::shared_ptr<T>> *t) {
 		iter->add(t);
 	}
+
+	bool isEndOfRange() const{
+		return iter->isEndOfRange(); 
+	}
 #ifdef PYTHON
 	auto next() {
 		if (!iter->isEndOfRange()) {
