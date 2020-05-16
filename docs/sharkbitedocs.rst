@@ -1,4 +1,4 @@
 Sharkbite Documentation
 ***********************
-.. automodule:: sharkbite
+.. automodule:: pysharkbite
     :members:

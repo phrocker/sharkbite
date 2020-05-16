@@ -85,7 +85,7 @@ html_theme = 'sphinx_rtd_theme'
 # documentation.
 #
 html_theme_options = {
-    'logo': 'https://camo.githubusercontent.com/dbf39cef1a973d8741437693e96b59e31d9e3754/68747470733a2f2f7777772e736861726b626974652e696f2f77702d636f6e74656e742f75706c6f6164732f323031372f30322f736861726b626974652e6a7067',
+    'logo': 'logo.png',
     'canonical_url': '',
     'analytics_id': '',  #  Provided by Google in your dashboard
     'logo_only': True,
