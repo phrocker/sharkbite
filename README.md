@@ -90,7 +90,7 @@ library.
 ## Python Iterators (! BETA )
 
 ### Recommended
-We now python iterators. If you don't have a need to build sharkbite and don't wish to use JNI for the python bindings, you can build
+We now support python iterators. If you don't have a need to build sharkbite and don't wish to use JNI for the python bindings, you can build
 the native-iterators-jni package without the rest of sharkbite. Simply run mvn package in the native-iterators-jni directory
 and the target directory will have the required JAR with all necessary dependencies. 
 
