@@ -10,7 +10,13 @@ Welcome to Sharkbite's documentation!
    :maxdepth: 2
 
    intro
-   
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Examples
+
+   asynciterator
+
 .. toctree::
    :maxdepth: 2
    :caption: API Documentation
