@@ -79,6 +79,8 @@ class HdfsLink {
 
   int mkdir(const std::string &dir);
 
+
+
   std::vector<HdfsDirEnt> list(const std::string &dir);
 
   hdfsFS getHdfsReference();
@@ -90,6 +92,6 @@ class HdfsLink {
 };
 
 }
-}
+} 
 }
 #endif
