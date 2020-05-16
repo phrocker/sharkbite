@@ -48,28 +48,18 @@ for production environments.
 Enable it with the following option:
 
 .. code-block:: python
-
-	import pysharkbite as sharkbite
-
+	import pysharkbite as sharkbite	
 	connector = sharkbite.AccumuloConnector(user, zk)
-
-    table_operations = connector.tableOps(table)  
-	
- 	scanner = table_operations.createScanner(auths, 2)
-    
-    range = sharkbite.Range("myrow")
-    
-    scanner.addRange( range )
-    
-    ### enable the beta option of hedged reads
-    
-    scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
-    
-    resultset = scanner.getResultSet()
-    
-    for keyvalue in resultset:
-        key = keyvalue.getKey()
-        value = keyvalue.getValue()
+	table_operations = connector.tableOps(table)  
+	scanner = table_operations.createScanner(auths, 2)
+	range = sharkbite.Range("myrow")
+	scanner.addRange( range )
+	### enable the beta option of hedged reads
+	scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+	resultset = scanner.getResultSet()
+	for keyvalue in resultset:
+	    key = keyvalue.getKey()
+	    value = keyvalue.getValue()
 	
 
 
@@ -84,45 +74,42 @@ Iterators can be defined as single function lambdas or by implementing the seek 
 The first example implements the seek and onNext methods. seek is optional if you don't wish to adjust the range. Once keys are being iterated you may get the top key. You may call 
 iterator.next() after or the infrastructure will do that for you. 
 .. code-block:: python
+  class myIterator: 
+    def seek(iterator,soughtRange):
+      range = Range("a")
+      iterator.seek(range)
 
-	class myIterator: 
-	  def seek(iterator,soughtRange):
-	    range = Range("a")
-	    iterator.seek(range)
-	
-	
-	  def onNext(iterator):
-	    if (iterator.hasTop()):
-	    	kv = KeyValue()
-	  	  key = iterator.getTopKey()
-	  	  cf = key.getColumnFamily()
-	  	  value = iterator.getTopValue()
-	  	  key.setColumnFamily("oh changed " + cf)
-	  	  iterator.next()
-	  	  return KeyValue(key,value)
-	    else: 
-	      return None
 
+    def onNext(iterator):
+      if (iterator.hasTop()):
+      	kv = KeyValue()
+    	  key = iterator.getTopKey()
+  	    cf = key.getColumnFamily()
+  	    value = iterator.getTopValue()
+  	    key.setColumnFamily("oh changed " + cf)
+  	    iterator.next()
+  	    return KeyValue(key,value)
+      else: 
+        return None
 
 If this is defined in a separate file, you may use it with the following code snippet
 
 .. code-block:: python
-	with open('test.iter', 'r') as file:
-	iterator = file.read()
-	## name, iterator text, priority
-	iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
-	scanner.addIterator(iterator)    
+  with open('test.iter', 'r') as file:
+  iterator = file.read()
+  ## name, iterator text, priority
+  iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
+  scanner.addIterator(iterator)    
 
 Alternative you may use lambdas. The lambda you provide will be passed the KeyValue ( getKey() and getValue() return the constituent parts). A partial code example of setting it up is below.
 You may return a Key or KeyValue object. If you return the former an empty value will be return ed.
 
 .. code-block:: python
-	## define only the name and priority 
-	iterator = pysharkbite.PythonIterator("PythonIterator",100)
-	## define a lambda to ajust the column family.
-	iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
-	
-	scanner.addIterator(iterator)
+## define only the name and priority 
+  iterator = pysharkbite.PythonIterator("PythonIterator",100)
+  ## define a lambda to ajust the column family.
+  iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
+  scanner.addIterator(iterator)
 	
 You may either define a python iterator as a text implementation or a lambda. Both cannot be used simulaneously. 
 
