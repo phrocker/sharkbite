@@ -18,6 +18,7 @@ Welcome to Sharkbite's documentation!
    :caption: Examples
 
    asynciterator
+   hdfsclient
 
 .. toctree::
    :maxdepth: 2

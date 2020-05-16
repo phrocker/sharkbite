@@ -33,16 +33,28 @@ This python client can be installed via `pip install sharkbite`
 `A Python example <https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py>`_ is included. This is your primary example of the Python bound sharkbite
 library.
 
-Sharkbite now supports async iteration `A simple example <https://github.com/phrocker/sharkbite/blob/master/examples/asyncexample.py>`_ is provided. 
+**Sharkbite** supports async iteration `A simple example <https://github.com/phrocker/sharkbite/blob/master/examples/asyncexample.py>`_ is provided. 
 
 Features
 ********
+
+HDFS Client
+************
+
+**Sharkbite** supports a limited HDFS client. As this functionality grows so will the capabilities. Version 0.7 will support a complete
+HDFS client. Since Sharkbite it built as a python bindings around a C++ Client, the python client will mature slightly behind the C++ client,
+hence the delta with building this into V 0.7
+
+Version Detection
+************
+
+**Sharkbite** detects the version of Apache Accumulo. Therefore you will be able to simply create a connector to the zookeeper instance.
 
 
 Hedged Reads
 ************
 
-Sharkbite supports hedged reads ( executing scans against RFiles when they can be accessed ) concurrently with 
+**Sharkbite** supports hedged reads ( executing scans against RFiles when they can be accessed ) concurrently with 
 Accumulo RPC scans. The first executor to complete will return your results. This feature is in beta and not suggested
 for production environments.
 
