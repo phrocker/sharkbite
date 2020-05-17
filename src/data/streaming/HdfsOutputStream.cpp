@@ -143,7 +143,7 @@ HdfsOutputStream::HdfsOutputStream(const std::string path)
 
   file = uri.path();
 
-  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_WRONLY|O_APPEND, 0, 0, 0);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);
@@ -155,12 +155,17 @@ HdfsOutputStream::HdfsOutputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, 
     hdfs(hdfs),
     file(path) {
 
+   try{
   utils::Uri uri(path);
 
   file = uri.path();
+  }
+  catch(...){
+    file = path;
+  }
 
     
-  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_WRONLY|O_APPEND, 0, 0, 0);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);

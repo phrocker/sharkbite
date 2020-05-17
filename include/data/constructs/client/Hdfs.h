@@ -17,10 +17,12 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <memory>
 #include <algorithm>
-#include "InputStream.h"
 #include "extern/libhdfs3/client/hdfs.h"
 #include "utils/Uri.h"
+#include "data/streaming/ByteOutputStream.h"
+#include "data/streaming/input/InputStream.h"
 
 namespace cclient {
 namespace data {
@@ -71,7 +73,7 @@ class HdfsDirEnt {
 
 };
 
-class HdfsLink {
+class HdfsLink : public std::enable_shared_from_this<HdfsLink> {
  public:
   explicit HdfsLink(std::string nn, int port);
 
@@ -79,7 +81,16 @@ class HdfsLink {
 
   int mkdir(const std::string &dir);
 
+  int remove(const std::string &dir, bool recursive);
 
+  int rename(const std::string &fromName, const std::string toName);
+
+  int chmod(const std::string &path,int perm);
+
+  int chown(const std::string &path,const std::string &user, const std::string &group);
+
+  std::shared_ptr<cclient::data::streams::ByteOutputStream> write(const std::string &path);
+  std::shared_ptr<cclient::data::streams::InputStream> read(const std::string &path);
 
   std::vector<HdfsDirEnt> list(const std::string &dir);
 
