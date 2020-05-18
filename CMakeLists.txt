@@ -61,7 +61,7 @@ endif(NATIVE_ARCH)
 
 if (STRERROR_R_RETURN_INT)
 	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTRERROR_R_RETURN_INT")
-endif(NATIVE_ARCH)
+endif(STRERROR_R_RETURN_INT)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
@@ -306,8 +306,10 @@ include_directories(${CURL_INCLUDE_DIRS})
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
 
-
-find_package(Python COMPONENTS Interpreter Development)
+set(Python_ADDITIONAL_VERSIONS 3.7)
+#find_package(Python COMPONENTS Interpreter Development)
+find_package(PythonInterp 3.7 REQUIRED)
+find_package(PythonLibs 3.7 REQUIRED)
 
 download_project(PROJ pybind11 
 				 GIT_REPOSITORY "https://github.com/pybind/pybind11.git" 
@@ -317,6 +319,7 @@ set(PYBIND11_CPP_STANDARD -std=c++14)
 add_subdirectory(${pybind11_SOURCE_DIR})
 include_directories(${PROTOBUF_INCLUDE_DIRS})
 include_directories("${pybind11_SOURCE_DIR}/include/")
+include_directories(${Python_INCLUDE_DIRS})
 
 find_package (Threads)
 

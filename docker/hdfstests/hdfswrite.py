@@ -52,11 +52,13 @@ import pysharkbite
 
 hdfs = pysharkbite.Hdfs(args.nn,int(args.port))
 
-stream = hdfs.write(args.hdfspath)
+hdfs.mkdir("/blah")
 
-stream.writeString("hello world")
+#stream = hdfs.write(args.hdfspath)
 
-read = hdfs.read(args.hdfspath)
+#stream.writeString("hello world")
 
-print ("got ", read.readString())
+#read = hdfs.read(args.hdfspath)
+
+#print ("got ", read.readString())
 
