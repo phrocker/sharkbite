@@ -36,6 +36,9 @@ HdfsInputStream::HdfsInputStream(const std::string path)
 
   fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
+  if (!fileRef || !ret){
+      throw cclient::exceptions::HDFSException("File does not exist");
+    }
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);
 }
