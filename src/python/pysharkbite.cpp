@@ -40,6 +40,8 @@
 #include "data/streaming/accumulo/StreamSeekable.h"
 #include "data/streaming/StreamRelocation.h"
 #include "scanner/ScannerOptions.h"
+#include "data/streaming/HdfsOutputStream.h"
+#include "data/streaming/input/HdfsInputStream.h"
 
 using namespace pybind11::literals;
 
@@ -240,10 +242,34 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
       .def("getName",&cclient::data::hdfs::HdfsDirEnt::getName, "Gets the name of the directory entry")
       .def("getOwner",&cclient::data::hdfs::HdfsDirEnt::getOwner, "Gets the owner of the directory entry")
       .def("getGroup",&cclient::data::hdfs::HdfsDirEnt::getGroup, "Gets the group of the directory entry")
-      .def("getSize",&cclient::data::hdfs::HdfsDirEnt::getSize, "Returns the size of the directory entry");
+      .def("getSize",&cclient::data::hdfs::HdfsDirEnt::getSize, "Returns the size of the directory entry")
+      .def("__str__",[](const cclient::data::hdfs::HdfsDirEnt self) {
+        return self.getName();
+    });
+
+  pybind11::class_<cclient::data::streams::HdfsOutputStream, std::shared_ptr<cclient::data::streams::HdfsOutputStream>>(s, "HdfsOutputStream", "HDFS Output Stream")
+    .def("writeShort",&cclient::data::streams::HdfsOutputStream::writeShort, "Writes a two byte integer")
+    .def("writeLong",&cclient::data::streams::HdfsOutputStream::writeLong, "Writes an eight byte integer")
+    .def("write", (uint64_t (cclient::data::streams::HdfsOutputStream::*)(const char *, long ) )&cclient::data::streams::HdfsOutputStream::write, "Writes an eight byte integer")
+    .def("writeString", &cclient::data::streams::HdfsOutputStream::writeString, "Writes a string")
+    .def("writeInt",&cclient::data::streams::HdfsOutputStream::writeInt, "Writes a four byte integer");
+
+    pybind11::class_<cclient::data::streams::HdfsInputStream, std::shared_ptr<cclient::data::streams::HdfsInputStream>>(s, "HdfsInputStream", "HDFS Input Stream")
+    .def("readShort",&cclient::data::streams::HdfsInputStream::readShort, "Reads a two byte integer")
+    .def("readLong",&cclient::data::streams::HdfsInputStream::readLong, "Reads an eight byte integer")
+    .def("readBytes", (uint64_t (cclient::data::streams::HdfsInputStream::*)(char *, size_t ) )&cclient::data::streams::HdfsInputStream::readBytes, "Reads a character sequence from the file on HDFS")
+    .def("readString", &cclient::data::streams::HdfsInputStream::readString, "Reads a string")
+    .def("readInt",&cclient::data::streams::HdfsInputStream::readInt, "Reads a four byte integer");
+    
 
   pybind11::class_<cclient::data::hdfs::HdfsLink, std::shared_ptr<cclient::data::hdfs::HdfsLink>>(s, "Hdfs", "HDFS refernce object")
     .def(pybind11::init<std::string,int>(), "Constructs an HDFS object with the namenode host name and the namenode port")
+    .def("write",&cclient::data::hdfs::HdfsLink::write, "Opens a write stream to an HDFS file, creating or updating it")
+    .def("read",&cclient::data::hdfs::HdfsLink::read, "Opens a read stream to an HDFS file, creating or updating it")
+    .def("remove",&cclient::data::hdfs::HdfsLink::remove, "Removes a file or directory, the boolean flag, if set to true, deletes recusively")
+    .def("rename",&cclient::data::hdfs::HdfsLink::rename, "Renames a path")
+    .def("chmod",&cclient::data::hdfs::HdfsLink::chmod, "Chmods the provided path")
+    .def("chown",&cclient::data::hdfs::HdfsLink::chown, "Chowns the provided path")
     .def("mkdir",&cclient::data::hdfs::HdfsLink::mkdir, "Creates a directory on HDFS. Should be a relative path")
     .def("list",&cclient::data::hdfs::HdfsLink::list, "Lists HDFS directory, returns a list of HdfsDirEnt objects");
 

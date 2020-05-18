@@ -31,7 +31,7 @@ function(use_libre_ssl SOURCE_DIR BINARY_DIR)
 	endif(WIN32)
 	ExternalProject_Add(
 	libressl-portable
-	URL "https://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.8.3.tar.gz"
+	URL "http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-3.1.1.tar.gz"
 	SOURCE_DIR "${BINARY_DIR}/dependencies/libressl-src"
 	CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
 				"-DCMAKE_INSTALL_PREFIX=${BINARY_DIR}/dependencies/libressl-install"

@@ -140,7 +140,8 @@ const std::string FileSystemImpl::getStandardPath(const std::string &path) {
     lock_guard<mutex> lock(mutWorkingDir);
     base = workingDir;
   }
-  return CanonicalizePath(GetAbsPath(base, path));
+  auto canonicalpath = CanonicalizePath(GetAbsPath(base, path));
+  return canonicalpath;
 }
 
 const char* FileSystemImpl::getClientName() {
@@ -237,8 +238,8 @@ bool FileSystemImpl::deletePath(const char *path, bool recursive) {
   if (NULL == path || !strlen(path)) {
     THROW(InvalidParameter, "Invalid input: path should not be empty");
   }
-
-  return nn->deleteFile(getStandardPath(path), recursive);
+  auto deletepath = getStandardPath(path);
+  return nn->deleteFile(deletepath, recursive);
 }
 
 /**
