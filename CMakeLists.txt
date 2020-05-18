@@ -306,10 +306,13 @@ include_directories(${CURL_INCLUDE_DIRS})
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
 
-set(Python_ADDITIONAL_VERSIONS 3.7)
-#find_package(Python COMPONENTS Interpreter Development)
-find_package(PythonInterp 3.7 REQUIRED)
-find_package(PythonLibs 3.7 REQUIRED)
+if (TRAVIS)
+	find_package(Python COMPONENTS Interpreter Development)
+else()
+	set(Python_ADDITIONAL_VERSIONS 3.6)
+	find_package(PythonInterp 3.6 REQUIRED)
+	find_package(PythonLibs 3.6 REQUIRED)
+endif()
 
 download_project(PROJ pybind11 
 				 GIT_REPOSITORY "https://github.com/pybind/pybind11.git" 
