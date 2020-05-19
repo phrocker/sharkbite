@@ -14,6 +14,7 @@
 #include "data/constructs/client/Hdfs.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
+#include "utils/Uri.h"
 
 namespace cclient {
 namespace data {
@@ -27,6 +28,13 @@ HdfsDirEnt::HdfsDirEnt(const hdfsFileInfo *entry)
     owner(entry->mOwner),
     group(entry->mGroup),
     isDir(entry->mKind == kObjectKindDirectory) {
+}
+
+HdfsLink::HdfsLink(std::string nn)
+    :
+    nn(nn){
+  auto uri = utils::Uri(nn);
+  reference = hdfsConnect(this->nn.c_str(), uri.port());
 }
 
 HdfsLink::HdfsLink(std::string nn, int port)
@@ -46,6 +54,10 @@ int HdfsLink::remove(const std::string &dir,bool recursive) {
 
 int HdfsLink::rename(const std::string &fromName, const std::string toName){
   return hdfsRename(reference, fromName.c_str(), toName.c_str());
+}
+
+int HdfsLink::move(const std::string &from_path, const std::string &to_path){
+  return hdfsMove(reference,from_path.c_str(),reference,to_path.c_str());
 }
 
 int HdfsLink::chmod(const std::string &dir, int perm) {

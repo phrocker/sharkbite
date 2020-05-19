@@ -1,5 +1,6 @@
 .kdev4/
 build/
+build*
 *.pyc
 workspace.xml
 native-iterators-jni/.idea/*

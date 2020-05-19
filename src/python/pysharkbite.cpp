@@ -268,7 +268,7 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("read",&cclient::data::hdfs::HdfsLink::read, "Opens a read stream to an HDFS file, creating or updating it")
     .def("remove",&cclient::data::hdfs::HdfsLink::remove, "Removes a file or directory, the boolean flag, if set to true, deletes recusively")
     .def("rename",&cclient::data::hdfs::HdfsLink::rename, "Renames a path")
-    .def("chmod",&cclient::data::hdfs::HdfsLink::chmod, "Chmods the provided path")
+    .def("move",&cclient::data::hdfs::HdfsLink::move, "Moves a file within a NN instance.")
     .def("chown",&cclient::data::hdfs::HdfsLink::chown, "Chowns the provided path")
     .def("mkdir",&cclient::data::hdfs::HdfsLink::mkdir, "Creates a directory on HDFS. Should be a relative path")
     .def("list",&cclient::data::hdfs::HdfsLink::list, "Lists HDFS directory, returns a list of HdfsDirEnt objects");

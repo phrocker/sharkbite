@@ -32,11 +32,11 @@ def operatingsystem():
 
 setup(
     name='sharkbite',
-    version='0.6.0.9',
+    version='0.6.0.10',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
-    url='https://www.github.com/phrocker/sharkbite',
-    description='Python bindings for sharkbite, a native Apache Accumulo Key/Value Connector',
+    url='https://docs.sharkbite.io/',
+    description='Apache Accumulo and Apache HDFS Python Connector',
     long_description=readme(),
     long_description_content_type='text/markdown',
     ext_modules=[CMakeExtension('pysharkbite')],

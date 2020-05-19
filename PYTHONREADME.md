@@ -1,5 +1,5 @@
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
-[![Build Status](https://travis-ci.org/phrocker/sharkbite.svg?branch=master)](https://travis-ci.org/phrocker/sharkbite)
+[![Documentation Status](https://readthedocs.org/projects/sharkbite/badge/?version=latest)](https://docs.sharkbite.io/en/latest/?badge=latest)
 
 **S**harkbite is an HDFS and native client for key/value stores. With 
 initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value

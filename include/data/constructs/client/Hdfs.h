@@ -75,7 +75,9 @@ class HdfsDirEnt {
 
 class HdfsLink : public std::enable_shared_from_this<HdfsLink> {
  public:
+
   explicit HdfsLink(std::string nn, int port);
+  explicit HdfsLink(std::string nn);
 
   ~HdfsLink();
 
@@ -84,6 +86,8 @@ class HdfsLink : public std::enable_shared_from_this<HdfsLink> {
   int remove(const std::string &dir, bool recursive);
 
   int rename(const std::string &fromName, const std::string toName);
+
+  int move(const std::string &from_path, const std::string &to_path);
 
   int chmod(const std::string &path,int perm);
 

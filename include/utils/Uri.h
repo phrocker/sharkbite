@@ -53,6 +53,7 @@ class Uri {
   }
  
   std::string hostname() const;
+
   uint16_t 
   port() const {
     return port_;
