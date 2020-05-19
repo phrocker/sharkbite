@@ -244,7 +244,7 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
       .def("getGroup",&cclient::data::hdfs::HdfsDirEnt::getGroup, "Gets the group of the directory entry")
       .def("getSize",&cclient::data::hdfs::HdfsDirEnt::getSize, "Returns the size of the directory entry")
       .def("__str__",[](const cclient::data::hdfs::HdfsDirEnt self) {
-        return self.getName();
+        return self.getOwner() + " " + self.getGroup() + " " + std::to_string(self.getSize()) + " " + self.getName();
     });
 
   pybind11::class_<cclient::data::streams::HdfsOutputStream, std::shared_ptr<cclient::data::streams::HdfsOutputStream>>(s, "HdfsOutputStream", "HDFS Output Stream")

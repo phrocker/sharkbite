@@ -57,7 +57,7 @@ int HdfsLink::rename(const std::string &fromName, const std::string toName){
 }
 
 int HdfsLink::move(const std::string &from_path, const std::string &to_path){
-  return hdfsMove(reference,from_path.c_str(),reference,to_path.c_str());
+  return hdfsRename(reference,from_path.c_str(),to_path.c_str());
 }
 
 int HdfsLink::chmod(const std::string &dir, int perm) {
