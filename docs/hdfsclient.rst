@@ -3,9 +3,8 @@
 HDFS Client
 ==================
 
-The hdfs client only supports `mkdir <https://docs.sharkbite.io/en/latest/sharkbitedocs.html#pysharkbite.Hdfs.mkdir>`_ and
-`list <https://docs.sharkbite.io/en/latest/sharkbitedocs.html#pysharkbite.Hdfs.list>`_ at this time. Once additional tests are built
-around the remainder of the HDFS python functionality we will add in the remaining portions of the client.
+The `hdfs client  <https://docs.sharkbite.io/en/latest/sharkbitedocs.html#pysharkbite.Hdfs>`_ is nearly full client. It lacks 
+features found in the C++ client. These will be added over time. Please visit the link, above, to find the API of what is currently supported
 
 An example usage of these functions is below. Note that if Opening RFiles in pysharkbite, you must specify the full path including
 the hdfs protocol if it is located on HDFS. This will open a full HDFS client to access these files.
@@ -14,7 +13,7 @@ the hdfs protocol if it is located on HDFS. This will open a full HDFS client to
 
     import pysharkbite
 
-    hdfs = pysharkbite.Hdfs("namenode",8020);
+    hdfs = pysharkbite.Hdfs("hdfs://namenode:8020");
 
     hdfs.mkdir("/directoryA/directoryB");
 

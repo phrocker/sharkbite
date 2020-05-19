@@ -46,7 +46,7 @@ HDFS client. Since Sharkbite it built as a python bindings around a C++ Client, 
 hence the delta with building this into V 0.7
 
 Version Detection
-************
+*****************
 
 **Sharkbite** detects the version of Apache Accumulo. Therefore you will be able to simply create a connector to the zookeeper instance.
 

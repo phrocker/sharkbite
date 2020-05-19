@@ -260,6 +260,12 @@ Sharkbite Documentation
 	<em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Hdfs</code><a class="headerlink" href="#pysharkbite.Hdfs" title="Permalink to this definition">¶</a></dt>
 	<dd><p>HDFS refernce object</p>
 	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.chown">
+	<code class="sig-name descname">chown</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Hdfs.chown" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Chowns the provided path</p>
+	</dd></dl>
+	
+	<dl class="py method">
 	<dt id="pysharkbite.Hdfs.list">
 	<code class="sig-name descname">list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pysharkbite.HdfsDirEnt" title="pysharkbite.HdfsDirEnt">pysharkbite.HdfsDirEnt</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.Hdfs.list" title="Permalink to this definition">¶</a></dt>
 	<dd><p>Lists HDFS directory, returns a list of HdfsDirEnt objects</p>
@@ -269,6 +275,36 @@ Sharkbite Documentation
 	<dt id="pysharkbite.Hdfs.mkdir">
 	<code class="sig-name descname">mkdir</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Hdfs.mkdir" title="Permalink to this definition">¶</a></dt>
 	<dd><p>Creates a directory on HDFS. Should be a relative path</p>
+	</dd></dl>
+	
+	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.move">
+	<code class="sig-name descname">move</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Hdfs.move" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Moves a file within a NN instance.</p>
+	</dd></dl>
+	
+	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.read">
+	<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; cclient::data::streams::InputStream<a class="headerlink" href="#pysharkbite.Hdfs.read" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Opens a read stream to an HDFS file, creating or updating it</p>
+	</dd></dl>
+	
+	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.remove">
+	<code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">bool</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Hdfs.remove" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Removes a file or directory, the boolean flag, if set to true, deletes recusively</p>
+	</dd></dl>
+	
+	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.rename">
+	<code class="sig-name descname">rename</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Hdfs.rename" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Renames a path</p>
+	</dd></dl>
+	
+	<dl class="py method">
+	<dt id="pysharkbite.Hdfs.write">
+	<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Hdfs" title="pysharkbite.Hdfs">pysharkbite.Hdfs</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; cclient::data::streams::ByteOutputStream<a class="headerlink" href="#pysharkbite.Hdfs.write" title="Permalink to this definition">¶</a></dt>
+	<dd><p>Opens a write stream to an HDFS file, creating or updating it</p>
 	</dd></dl>
 	
 	</dd></dl>
