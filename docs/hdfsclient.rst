@@ -13,7 +13,7 @@ the hdfs protocol if it is located on HDFS. This will open a full HDFS client to
 
     import pysharkbite
 
-    hdfs = pysharkbite.Hdfs("hdfs://namenode:8020");
+    hdfs = pysharkbite.Hdfs("hdfs://namenode:8020",8020);
 
     hdfs.mkdir("/directoryA/directoryB");
 
