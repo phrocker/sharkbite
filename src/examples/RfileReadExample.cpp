@@ -87,7 +87,6 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
   std::vector<std::string> cf;
   cclient::data::Range rng;
 
-
   cclient::data::security::Authorizations auths;
   if (!visibility.empty()) {
     auths.addAuthorization(visibility);
@@ -139,6 +138,7 @@ int main(int argc, char **argv) {
   std::vector<std::string> rfiles;
   std::string visibility;
   bool print = false;
+  long iterations = 1;
 
   if (argc >= 2) {
     for (int i = 1; i < argc; i++) {
@@ -166,19 +166,21 @@ int main(int argc, char **argv) {
         }
       }
 
-      if (key == "-r") {
-              if (i + 1 < argc) {
-                rfiles.push_back(argv[i + 1]);
-                i++;
-              } else {
-                throw std::runtime_error("Invalid number of arguments. Must supply rfile");
-              }
-            }
+      if (key == "-i") {
+        if (i + 1 < argc) {
+          iterations = std::stoi(argv[i + 1]);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply nmumber of iterations");
+        }
+      }
     }
   }
 
   if (!rfiles.empty()) {
-    readRfile(rfiles, 0, print, visibility);
+    for(long i=0; i < iterations; i++){
+      readRfile(rfiles, 0, print, visibility);
+    }
   }
 
   return 0;
