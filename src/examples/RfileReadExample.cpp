@@ -45,21 +45,7 @@ std::ifstream::pos_type filesize(const char *filename) {
   std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
   return in.tellg();
 }
-/*
- void timer_start(std::atomic<int64_t> *biggie, unsigned int interval) {
 
- std::thread([interval, biggie]() {
- int64_t time = 1;
- std::this_thread::sleep_for(std::chrono::milliseconds(interval));
- while (true) {
-
- std::cout << "Rate is " << (biggie->load() / time) << " keys per ms " << std::endl;
- std::this_thread::sleep_for(std::chrono::milliseconds(interval));
- time += interval;
- }
- }).detach();
- }
- */
 std::unique_ptr<cclient::data::streams::KeyValueIterator> createMultiReader(std::vector<std::string> rfiles) {
 
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
@@ -99,7 +85,7 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles);
   std::vector<std::string> cf;
-  cclient::data::Range rng("justin");
+  cclient::data::Range rng;
 
 
   cclient::data::security::Authorizations auths;
@@ -179,6 +165,15 @@ int main(int argc, char **argv) {
           throw std::runtime_error("Invalid number of arguments. Must supply rfile");
         }
       }
+
+      if (key == "-r") {
+              if (i + 1 < argc) {
+                rfiles.push_back(argv[i + 1]);
+                i++;
+              } else {
+                throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+              }
+            }
     }
   }
 

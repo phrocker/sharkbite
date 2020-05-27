@@ -259,7 +259,6 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream, c
           newPrevKey->setColVisibility(cvPtr->buffer, cvPtr->size,cvPtr->max, false);
       newPrevKey->setTimeStamp(returnTs);
       newPrevKey->setDeleted(previousDeleted);
-
       logging::LOG_TRACE(logger) << "Ended at count " << count << " newPrevKey is " << newPrevKey;
 
     } else if (count == 1) {

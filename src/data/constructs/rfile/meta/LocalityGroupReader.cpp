@@ -43,8 +43,6 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
     return;
   }
 
-
-
   std::shared_ptr<Key> startKey = NULL;
   if (NULL != currentRange->getStartKey()) {
     startKey = std::make_shared<Key>(currentRange->getStartKey());
@@ -71,7 +69,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
     iiter = index->lookup(startKey);
 
-        close();
+    close();
     bool filtered = false;
     if (!iiter->isEnd()) {
       while (iiter->hasPrevious()) {
@@ -113,7 +111,16 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
         prevKey = std::make_shared<Key>(skipRR.getPrevKey());
       } else
         prevKey = NULL;
-      entriesLeft -= skipRR.getSkipped();
+      logging::LOG_TRACE(logger) << "SRK skipped " << skipRR.getSkipped() << " keys of " << entriesLeft;
+      auto skp = skipRR.getSkipped();
+      if (skp > entriesLeft)
+      {
+        entriesLeft = 0;
+      }
+      else
+        entriesLeft -= skp;
+      if (skp > 1)
+        entriesSkipped += skp-1;
       val = std::make_shared<Value>();
       val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
       rKey = skipRR.getRelativeKey();
@@ -135,8 +142,7 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
           return;
         }
       }
-    }
-    else{
+    } else {
       logging::LOG_TRACE(logger) << "reseek not necessary";
     }
   }
@@ -312,14 +318,14 @@ void LocalityGroupReader::next() {
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint32_t index) {
 
   BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
-  region->setCompressor( cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm() ));
+  region->setCompressor(cclient::data::compression::CompressorFactory::create(bcFile->getDataIndex()->getCompressionAlgorithm()));
   auto stream = region->readDataStream(reader);
   return stream;
 }
 
 std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
 
-  std::unique_ptr<cclient::data::compression::Compressor> compressor = cclient::data::compression::CompressorFactory::create( bcFile->getDataIndex()->getCompressionAlgorithm());
+  std::unique_ptr<cclient::data::compression::Compressor> compressor = cclient::data::compression::CompressorFactory::create(bcFile->getDataIndex()->getCompressionAlgorithm());
 
   BlockRegion region(offset, compressedSize, rawSize, std::move(compressor));
   std::vector<uint8_t> *my_buf;
