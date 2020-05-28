@@ -307,16 +307,15 @@ include_directories(${CURL_INCLUDE_DIRS})
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
 
 set(MY_PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
-if(MY_PYTHON_VERSION)
-  find_package(Python ${MY_PYTHON_VERSION} EXACT REQUIRED)
-else()
-  find_package(Python REQUIRED)
-endif()
-
-
 if (TRAVIS)
 	find_package(Python COMPONENTS Interpreter Development)
 else()
+	
+	if(MY_PYTHON_VERSION)
+	find_package(Python ${MY_PYTHON_VERSION} EXACT REQUIRED)
+	else()
+	find_package(Python REQUIRED)
+	endif()
     if(MY_PYTHON_VERSION)
      set(Python_ADDITIONAL_VERSIONS ${MY_PYTHON_VERSION})
 	    find_package(PythonInterp ${MY_PYTHON_VERSION} EXACT REQUIRED)
