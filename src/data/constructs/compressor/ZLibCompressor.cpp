@@ -132,8 +132,7 @@ void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_st
   // estimate the output buffer.
 
   output_length = my_len + my_len / 1000 + 12 + 1;
-  //if (output_length > out_buf.size())
-//    out_buf.resize(output_length*2);
+  
   out_stream->flush();
   out_stream->ensure(output_length);
   Bytef *casted_buffer = (Bytef*) (ptr);
@@ -177,8 +176,7 @@ void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_st
       have = output_length - c_stream.avail_out;     // J
 
       out_stream->ensure(output_length, have);
-//
-      //    out_stream->write((const char*) out_buf.data(), have);
+
 
     } while (c_stream.avail_out == 0);         // K
   }

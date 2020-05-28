@@ -585,6 +585,14 @@ target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARI
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
 target_link_libraries( RfileReadExample sharkbite)
 
+add_executable(Compact "src/examples/Compact.cpp")
+target_link_libraries (Compact ${CMAKE_THREAD_LIBS_INIT})
+#target_link_libraries (Compact ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
+target_link_libraries( Compact )
+target_link_libraries( Compact ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
+target_link_libraries( Compact ${THRIFT_LIBS})
+target_link_libraries( Compact sharkbite)
+
 add_executable(HedgedRead "src/examples/HedgedRead.cpp")
 target_link_libraries (HedgedRead ${CMAKE_THREAD_LIBS_INIT})
 #target_link_libraries (HedgedRead ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})

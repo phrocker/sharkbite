@@ -259,6 +259,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   // number of entries in current block.
   uint32_t entries;
   uint32_t currentBlockCount;
+  uint32_t currentBlockStart;
   uint64_t entriesSkipped;
   std::shared_ptr<KeyValue> lastKeyValue;
   // current data block count in locality group.

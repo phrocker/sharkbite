@@ -236,6 +236,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   LocalityGroupReader *currentLocalityGroupReader;
   // number of entries in current block.
   uint32_t entries;
+  uint32_t currentBlockStart;
   uint32_t currentBlockCount;
   std::shared_ptr<KeyValue> lastKeyValue;
   // current data block count in locality group.

@@ -74,7 +74,6 @@ class VersioningIterator : public cclient::data::HeapIterator {
   }
 
   virtual std::shared_ptr<KeyValue> getTop() override {
-    std::cout << "got " << topKey << " , value " << topValue->getValueAsString() << std::endl;
     return std::make_shared<KeyValue>(topKey, topValue);
   }
 

@@ -30,7 +30,7 @@ namespace data{
 class RFileOperations{
 public:
   static std::ifstream::pos_type filesize(const char* filename);
-  static std::shared_ptr<cclient::data::SequentialRFile> openForWrite(const std::string &path);
+  static std::shared_ptr<cclient::data::SequentialRFile> openForWrite(const std::string &path, uint32_t compress_blocK_size = 32*1024);
   static cclient::data::RFile *open(const std::string &);
   static std::shared_ptr<cclient::data::SequentialRFile> openSequential(const std::string &);
   /**

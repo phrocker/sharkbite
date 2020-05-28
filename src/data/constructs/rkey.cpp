@@ -159,7 +159,8 @@ void RelativeKey::setFiltered() {
 }
 
 int RelativeKey::commonPrefix(std::pair<char*, size_t> prev, std::pair<char*, size_t> curr) {
-  if (prev == curr)
+  
+  if (prev.second==curr.second && !AVX_memcmp(prev.first,curr.first,prev.second,0))
     return -1;  // infinite... exact match
 
   int prevLen = prev.second;
@@ -185,15 +186,16 @@ RelativeKey::RelativeKey(const std::shared_ptr<Key> &previous_key, const std::sh
   if (my_key == NULL)
     throw std::runtime_error("Key must not be null");
 
-  key = std::make_shared<Key>(allocatorInstance);
+  //key = std::make_shared<Key>(allocatorInstance);
+  key = my_key;
   prevKey = NULL;
   fieldsSame = 0;
   fieldsPrefixed = 0;
-  setKey(my_key, key);
+  //setKey(my_key, key);
 
   if (previous_key != NULL) {
-    prevKey = std::make_shared<Key>(allocatorInstance);
-    setKey(previous_key, prevKey);
+    prevKey = previous_key; // std::make_shared<Key>(allocatorInstance);
+    //setKey(previous_key, prevKey);
 
     rowCommonPrefixLen = commonPrefix(prevKey->getRow(), key->getRow());
     if (rowCommonPrefixLen == -1) {

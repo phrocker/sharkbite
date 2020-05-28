@@ -44,7 +44,7 @@ uint64_t DataIndex::write(cclient::data::streams::OutputStream *out) {
 
   out->writeString(compressionAlgorithm.getName());
   // TODO was encoded long
-  out->writeHadoopLong(listRegions.size());
+  out->writeEncodedLong(listRegions.size());
   for (std::vector<BlockRegion*>::iterator it = listRegions.begin(); it != listRegions.end(); it++) {
     (*it)->write(out);
   }

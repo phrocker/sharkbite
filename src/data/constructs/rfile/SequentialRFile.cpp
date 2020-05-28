@@ -25,6 +25,7 @@ SequentialRFile::SequentialRFile(streams::OutputStream *output_stream, std::uniq
     dataClosed(false),
     currentBlockWriter(
     NULL),
+    currentBlockStart(0),
     closed(false),
     dataBlockCnt(0),
     entries(0),
@@ -65,6 +66,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream, long fileLe
     NULL),
     closed(false),
     dataBlockCnt(0),
+    currentBlockStart(0),
     entries(0),
     entriesSkipped(0),
     currentLocalityGroup(
@@ -193,31 +195,30 @@ bool SequentialRFile::append(std::shared_ptr<KeyValue> kv) {
   if (NULL != lastKeyValue) {
     prevKey = lastKeyValue->getKey();
   }
-  RelativeKey *key = new RelativeKey(prevKey, kv->getKey(), ArrayAllocatorPool::getInstance());
+  RelativeKey key(prevKey, kv->getKey(), ArrayAllocatorPool::getInstance());
 
   if (NULL == currentBlockWriter) {
 
     currentBlockWriter = (BlockCompressorStream*) blockWriter->createDataStream(myDataStream);
+    currentBlockStart = currentBlockWriter->getPos();
     currentBlockCount = 0;
   }
 
   entries++;
   currentBlockCount++;
-  key->write(currentBlockWriter);
+  key.write(currentBlockWriter);
   uint64_t position = kv->getValue()->write(currentBlockWriter);
 
   lastKeyValue = kv;
 
   // we've written all we can write doctor.
-  if (position >= maxBlockSize) {
+  if (position-currentBlockStart >= maxBlockSize) {
     currentBlockWriter->flush();
     closeBlock(kv->getKey());
 
     delete currentBlockWriter;
     currentBlockWriter = NULL;
   }
-
-  delete key;
 
   return true;
 
