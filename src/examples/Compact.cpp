@@ -53,7 +53,7 @@ void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const
 
   auto start = chrono::steady_clock::now();
 
-  auto outStream = cclient::data::RFileOperations::openForWrite(file, compressBlockSize);
+  auto outStream = cclient::data::RFileOperations::write(file, compressBlockSize);
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles);
   std::vector<std::string> cf;

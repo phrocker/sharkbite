@@ -6,7 +6,39 @@
 namespace cclient {
 namespace data {
 
-std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openForWrite(const std::string &rfile, uint32_t compress_blocK_size) {
+std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openForWrite(const std::string &rfile) {
+
+  cclient::data::streams::OutputStream *stream;
+  std::vector<cclient::data::streams::OutputStream*> ownedStreams;
+  if (rfile.find("hdfs://") != std::string::npos) {
+    stream = new cclient::data::streams::HdfsOutputStream(rfile);
+    ownedStreams.push_back(stream);
+  } else {
+    auto in = std::make_unique<std::ofstream>(rfile, std::ifstream::ate | std::ifstream::binary);
+
+    auto os = new cclient::data::streams::OutputStream(std::move(in), 0);
+
+    stream = new cclient::data::streams::EndianTranslationStream(os);
+
+    ownedStreams.push_back(stream);
+
+    ownedStreams.push_back(os);
+
+  }
+
+
+  auto compressor = std::make_unique<cclient::data::compression::ZLibCompressor>(256*1024);
+
+  auto bcFile = std::make_unique<cclient::data::BlockCompressedFile>(std::move(compressor));
+
+  auto shrd = std::make_shared<cclient::data::SequentialRFile>(stream, std::move(bcFile));
+
+  shrd->addStreams(ownedStreams);
+
+  return shrd;
+}
+
+std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::write(const std::string &rfile, uint32_t compress_blocK_size) {
 
   cclient::data::streams::OutputStream *stream;
   std::vector<cclient::data::streams::OutputStream*> ownedStreams;
