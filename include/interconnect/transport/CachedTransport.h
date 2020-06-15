@@ -92,12 +92,6 @@ class CachedTransport {
     return std::addressof(this) == std::addressof(rhs);
     //return *this == *rhs;
   }
-  /*
-   bool operator==(const CachedTransport &rhs) const
-   {
-   return threadName == rhs.threadName && (*cacheKey == *(rhs.cacheKey));
-   }
-   */
 
   bool isOpen() {
     return serverTransport->isOpen();
@@ -122,7 +116,7 @@ class CachedTransport {
 
   bool foundError;
   std::string threadName;
-  volatile bool reserved;
+  std::atomic<bool> reserved;
 
   std::string stuckThreadName;
 

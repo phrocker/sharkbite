@@ -21,7 +21,7 @@
 #include "../include/scanner/constructs/Results.h"
 #include "../include/scanner/impl/Scanner.h"
 #include "../include/data/constructs/client/zookeeperinstance.h"
-#include "../include/interconnect/Master.h"
+#include "../include/interconnect/Accumulo.h"
 #include "../include/interconnect/tableOps/TableOperations.h"
 
 #include "../include/data/constructs/rfile/RFile.h"
@@ -60,9 +60,9 @@ main (int argc, char **argv)
 
 	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());
 
-	interconnect::MasterConnect master(&creds, instance);
+	interconnect::AccumuloConnector accumulo(&creds, instance);
 
-	std::unique_ptr<interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> ops = master.tableOps (
+	std::unique_ptr<interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> ops = accumulo.tableOps (
 	                        table);
 
 	// create the table. no harm/no foul if it exists
@@ -78,7 +78,7 @@ main (int argc, char **argv)
 	std::cout << "Compacting table " << std::endl;
 	ops->compact("a","z",false);
 
-	std::unique_ptr<interconnect::NamespaceOperations> nameOps = master.namespaceOps();
+	std::unique_ptr<interconnect::NamespaceOperations> nameOps = accumulo.namespaceOps();
 		
 	for(auto nm : nameOps->list())
 	{

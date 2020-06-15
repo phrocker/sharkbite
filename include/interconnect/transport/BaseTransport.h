@@ -26,6 +26,7 @@
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
 
+
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
 #include <transport/TTransport.h>
@@ -38,7 +39,7 @@
 #include <sys/time.h>
 
 #include "Transport.h"
-
+#include "data/constructs/security/Permissions.h"
 #include "interconnect/accumulo/AccumuloServerFacade.h"
 #include "interconnect/accumulo/AccumuloServerOne.h"
 #include "interconnect/accumulo/AccumuloServerTwo.h"
@@ -241,6 +242,66 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     });
 
   }
+
+
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->grant(auth,user,perm);
+    });
+  }
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->grant(auth,user,table,perm);
+    });
+  }
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->grant(auth,user,nsp,perm);
+    });
+  }
+
+  
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->revoke(auth,user,perm);
+    });
+  }
+
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->revoke(auth,user,table,perm);
+    });
+  }
+
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->revoke(auth,user,nsp,perm);
+    });
+  }
+
+
+  
+  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]()-> bool {
+      return server->hasPermission(auth,user,perm);
+    });
+  }
+
+  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->hasPermission(auth,user,table,perm);
+    });
+  }
+
+  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>([&]() -> bool{
+      return server->hasPermission(auth,user,nsp,perm);
+    });
+  }
+
   void close() override {
     server->close();
 

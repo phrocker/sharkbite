@@ -11,9 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#ifndef MASTER_H_
-#define MASTER_H_
+#ifndef ACCUMULO_CPP_H_
+#define ACCUMULO_CPP_H_
 
 //#define SIGNED_RIGHT_SHIFT_IS 5
 //#define ARITHMETIC_RIGHT_SHIFT 5
@@ -46,28 +45,28 @@
 
 namespace interconnect {
 
-static TransportPool<interconnect::AccumuloCoordinatorTransporter> MASTER_COORDINATOR;
+static TransportPool<interconnect::AccumuloCoordinatorTransporter> ACCUMULO_COORDINATOR;
 /**
- * Provides interconnect for master.
+ * Provides interconnect for coordinator.
  *
  */
-class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
+class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
  public:
  
-  explicit MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
+  explicit AccumuloConnector(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
 
     /**
      * Constructor
      * @param credentials incoming user credentials
      * @param instance incoming instance
      */
-    explicit MasterConnect(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
-        : MasterConnect(*credentials, instance) {
+    explicit AccumuloConnector(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
+        : AccumuloConnector(*credentials, instance) {
     }
 
-  MasterConnect()
-      : instance(nullptr) {
-  }
+  //AccumuloConnector()
+//      : instance(nullptr){
+  //}
 
   /**
    * Returns an instance of table operations
@@ -89,9 +88,9 @@ class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTran
    */
   std::unique_ptr<SecurityOperations> securityOps();
 
-  virtual ~MasterConnect();
+  virtual ~AccumuloConnector();
 
-  MasterConnect &operator=(const MasterConnect &other) {
+  AccumuloConnector &operator=(const AccumuloConnector &other) {
     instance = other.instance;
     tabletServers = other.tabletServers;
     cachedTransport = other.cachedTransport;
@@ -117,7 +116,7 @@ class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTran
   // tablet servers.
   std::vector<std::shared_ptr<ServerConnection>> tabletServers;
 
-  // cached transport for the master.
+  // cached transport for the coordinator.
   std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> cachedTransport;
 
   friend class AccumuloTableOperations;
@@ -126,4 +125,5 @@ class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTran
 
 };
 }
-#endif /* MASTER_H_ */
+
+#endif

@@ -22,7 +22,7 @@
 #include "../include/scanner/impl/Scanner.h"
 #include "../include/writer/impl/SinkImpl.h"
 #include "../include/data/constructs/client/zookeeperinstance.h"
-#include "../include/interconnect/Master.h"
+#include "../include/interconnect/Accumulo.h"
 #include "../include/interconnect/tableOps/TableOperations.h"
 #include "../include/interconnect/securityOps/SecurityOperations.h"
 
@@ -170,15 +170,13 @@ main (int argc, char **argv)
 
 	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());
 
-	interconnect::MasterConnect *master = 0;
-	
-	master = new interconnect::MasterConnect (creds, instance);
+	auto accumulo = new interconnect::AccumuloConnector (creds, instance);
 
-	std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps (
+	std::unique_ptr<interconnect::AccumuloTableOperations> ops = accumulo->tableOps (
 	                        table);
 
 	
-	std::unique_ptr<interconnect::SecurityOperations> secOps = master->securityOps();
+	std::unique_ptr<interconnect::SecurityOperations> secOps = accumulo->securityOps();
 
 	// create the table. no harm/no foul if it exists
 	std::cout << "Checking if " << table << " exists." << std::endl;
@@ -192,7 +190,7 @@ main (int argc, char **argv)
 
 
 
-	std::unique_ptr<interconnect::NamespaceOperations> nameOps = master->namespaceOps();
+	std::unique_ptr<interconnect::NamespaceOperations> nameOps = accumulo->namespaceOps();
 
 
 	cclient::data::security::Authorizations auths;
@@ -313,7 +311,7 @@ main (int argc, char **argv)
 
 	//assert(counter == fruit_to_write/2 );
 
-	delete master;
+	delete accumulo;
 
 	return 0;
 }

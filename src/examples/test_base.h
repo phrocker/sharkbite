@@ -21,7 +21,7 @@
 #include "scanner/impl/Scanner.h"
 #include "writer/impl/SinkImpl.h"
 #include "data/constructs/client/zookeeperinstance.h"
-#include "interconnect/Master.h"
+#include "interconnect/Accumulo.h"
 #include "interconnect/tableOps/TableOperations.h"
 #include "interconnect/securityOps/SecurityOperations.h"
 
@@ -50,19 +50,19 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
 
   cclient::data::security::AuthInfo creds(username, password, instance->getInstanceId());
 
-  interconnect::MasterConnect *master = 0;
+  interconnect::AccumuloConnector *accumulo = 0;
 
   try {
-    master = new interconnect::MasterConnect(&creds, instance);
+    accumulo = new interconnect::AccumuloConnector(&creds, instance);
 
   }catch(const cclient::exceptions::ClientException &ce) {
     std::cout << "Could not connect to Master. Error: " << ce.what() << std::endl;
     return 1;
   }
 
-  std::unique_ptr<interconnect::AccumuloTableOperations> ops = master->tableOps(table);
+  std::unique_ptr<interconnect::AccumuloTableOperations> ops = accumulo->tableOps(table);
 
-  std::unique_ptr<interconnect::SecurityOperations> secOps = master->securityOps();
+  std::unique_ptr<interconnect::SecurityOperations> secOps = accumulo->securityOps();
 
   // create the table. no harm/no foul if it exists
   std::cout << "Checking if " << table << " exists." << std::endl;
@@ -167,7 +167,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
     std::cout << "Table : " << table << std::endl;
   }
 
-  delete master;
+  delete accumulo;
 
   return 0;
 }

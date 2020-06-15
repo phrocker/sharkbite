@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef SRC_INTERCONNECT_MASTERINTERFACE_H_
-#define SRC_INTERCONNECT_MASTERINTERFACE_H_
+#ifndef SRC_INTERCONNECT_COORDINTERFACE_H_
+#define SRC_INTERCONNECT_COORDINTERFACE_H_
 
 #include <concurrency/ThreadManager.h>
 
@@ -66,12 +66,12 @@ namespace interconnect {
  * Pure virtual class that represents the master interface
  * 
  **/
-class MasterInterface {
+class CoordinatorInterface {
  public:
   /**
    * Recreates the master client, usually upon error.
    **/
-  virtual void recreateMasterClient() = 0;
+  virtual void recreateCoordinatorClient() = 0;
   /**
    * Recreates a thrift transporter. This will usually happen upon error
    * @return a new thrift transport

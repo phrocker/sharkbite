@@ -11,8 +11,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef SRC_INTERCONNECT_TRANSPORT_ACCUMULOMASTERTRANSPOTER_H_
-#define SRC_INTERCONNECT_TRANSPORT_ACCUMULOMASTERTRANSPOTER_H_
+#ifndef SRC_INTERCONNECT_TRANSPORT_COORDTRANSPOTER_H_
+#define SRC_INTERCONNECT_TRANSPORT_COORDTRANSPOTER_H_
 
 #include <concurrency/ThreadManager.h>
 
@@ -46,9 +46,9 @@
 
 #include "BaseTransport.h"
 #include "FateInterface.h"
-#include "interconnect/accumulo/AccumuloMasterFacade.h"
-#include "interconnect/accumulo/AccumuloMasterOne.h"
-#include "interconnect/accumulo/AccumuloMasterTwo.h"
+#include "interconnect/accumulo/AccumuloCoordinatorFacade.h"
+#include "interconnect/accumulo/AccumuloCoordinatorOne.h"
+#include "interconnect/accumulo/AccumuloCoordinatorTwo.h"
 #include "data/constructs/InstanceVersion.h"
 
 namespace interconnect {
@@ -64,17 +64,15 @@ namespace interconnect {
 #include "../exceptions/APIException.h"
 
 /**
- * Represents the interconnect to the master client
- * Purpose: Provides the API connection capabilities to the master client
+ * Represents the interconnect to the coordinator client
+ * Purpose: Provides the API connection capabilities to the coordinator client
  * Design: Isa ThriftTransporter and FateInterface, therefore it allows for fate operations
  **/
-class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface {
+class AccumuloCoordinatorTransporter : public ThriftTransporter, public FateInterface {
  private:
   std::shared_ptr<logging::Logger> logger;
  protected:
-  std::unique_ptr<AccumuloMasterFacade> master;
-
-  // thrift master client interface.
+  std::unique_ptr<AccumuloCoordinatorFacade> coordinator;
 
   /**
    * creates a new transporter
@@ -88,20 +86,20 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
    * Creates a new master client for this instance.
    *
    **/
-  void createMasterClient() {
-    master->createMasterClient(underlyingTransport);
+  void createCoordinatorClient() {
+    coordinator->createCoordinatorClient(underlyingTransport);
   }
 
-  void recreateMasterClient() override {
+  void recreateCoordinatorClient() override {
     underlyingTransport->close();
     underlyingTransport.reset();
     underlyingTransport = createTransporter();
-    createMasterClient();
+    createCoordinatorClient();
   }
 
   virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation type, const std::vector<std::string> &tableArgs,
                                        const std::map<std::string, std::string> &options, bool wait = false) override {
-    return master->doFateOperations(auth, type, tableArgs, options, wait);
+    return coordinator->doFateOperations(auth, type, tableArgs, options, wait);
   }
 
   void switchInterconnect(int version = -1) override {
@@ -111,8 +109,8 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
     switch (version) {
       case -1:
       case 1:
-        master = std::make_unique<AccumuloMasterFacadeV1>(getConnection()->getHost(), [&]() {
-          recreateMasterClient();
+        coordinator = std::make_unique<AccumuloCoordinatorFacadeV1>(getConnection()->getHost(), [&]() {
+          recreateCoordinatorClient();
         }
                                                           ,
                                                           [&]() -> std::shared_ptr<apache::thrift::transport::TTransport> {
@@ -121,8 +119,8 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
         break;
       case 2:
-        master = std::make_unique<AccumuloMasterFacadeV2>(getConnection()->getHost(), [&]() {
-          recreateMasterClient();
+        coordinator = std::make_unique<AccumuloCoordinatorFacadeV2>(getConnection()->getHost(), [&]() {
+          recreateCoordinatorClient();
         }
                                                           ,
                                                           [&]() -> std::shared_ptr<apache::thrift::transport::TTransport> {
@@ -132,7 +130,7 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
         break;
     }
 
-    createMasterClient();
+    createCoordinatorClient();
   }
 
   bool callApiBool(std::function<bool()> fx) {
@@ -162,67 +160,67 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
  public:
 
   virtual void registerService(std::string instance, std::string clusterManagers) {
-    createMasterClient();
+    createCoordinatorClient();
     createClientService(false);
 
   }
 
-  explicit AccumuloMasterTransporter(std::shared_ptr<ServerConnection> conn)
+  explicit AccumuloCoordinatorTransporter(std::shared_ptr<ServerConnection> conn)
       :
       interconnect::ThriftTransporter(conn, false),
       interconnect::ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent, std::shared_ptr<cclient::data::Range>, std::shared_ptr<cclient::data::Mutation>>(conn),
-      logger(logging::LoggerFactory<AccumuloMasterTransporter>::getLogger()) {
+      logger(logging::LoggerFactory<AccumuloCoordinatorTransporter>::getLogger()) {
     switchInterconnect();
-    createMasterClient();
+    createCoordinatorClient();
     createClientService(false);
   }
 
   bool createTable(cclient::data::security::AuthInfo *auth, const std::string &table) {
     return callApiBool([&]() -> bool {
-      return master->createTable(auth, table);
+      return coordinator->createTable(auth, table);
     });
   }
 
   bool importDirectory(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &dir, std::string failure_dir, bool setTime) {
     return callApiBool([&]() -> bool {
-      return master->importDirectory(auth, table, dir, failure_dir, setTime);
+      return coordinator->importDirectory(auth, table, dir, failure_dir, setTime);
     });
   }
 
   bool compactFallBack(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &startrow, const std::string &endrow, bool wait) {
     return callApiBool([&]() -> bool {
-      return master->compactFallBack(auth, table, startrow, endrow, wait);
+      return coordinator->compactFallBack(auth, table, startrow, endrow, wait);
     });
   }
 
   bool compact(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &startrow, const std::string &endrow, bool wait) {
     return callApiBool([&]() -> bool {
-      return master->compact(auth, table, startrow, endrow, wait);
+      return coordinator->compact(auth, table, startrow, endrow, wait);
     });
   }
 
   bool flush(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &startrow, const std::string &endrow, bool wait) {
     return callApiBool([&]() -> bool {
-      return master->flush(auth, table, startrow, endrow, wait);
+      return coordinator->flush(auth, table, startrow, endrow, wait);
     });
   }
 
   bool removeTable(cclient::data::security::AuthInfo *auth, const std::string &table) {
     return callApiBool([&]() -> bool {
-      return master->removeTable(auth, table);
+      return coordinator->removeTable(auth, table);
     });
   }
 
   void removeTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property) {
     callAPi([&]() {
-      return master->removeTableProperty(auth, table, property);
+      return coordinator->removeTableProperty(auth, table, property);
     });
 
   }
 
   void setTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property, const std::string &value) {
     callAPi([&]() {
-      return master->setTableProperty(auth, table, property, value);
+      return coordinator->setTableProperty(auth, table, property, value);
     });
 
   }
@@ -231,41 +229,41 @@ class AccumuloMasterTransporter : public ThriftTransporter, public FateInterface
 
   bool createNamespace(cclient::data::security::AuthInfo *auth, std::string name) {
     return callApiBool([&]() -> bool {
-      return master->createNamespace(auth, name);
+      return coordinator->createNamespace(auth, name);
     });
   }
 
   bool deletenamespace(cclient::data::security::AuthInfo *auth, std::string name) {
     return callApiBool([&]() -> bool {
-      return master->deletenamespace(auth, name);
+      return coordinator->deletenamespace(auth, name);
     });
   }
 
   bool renamenamespace(cclient::data::security::AuthInfo *auth, std::string oldName, std::string newName) {
     return callApiBool([&]() -> bool {
-      return master->renamenamespace(auth, oldName, newName);
+      return coordinator->renamenamespace(auth, oldName, newName);
     });
   }
 
   void removeNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property) {
     callAPi([&]() {
-      return master->removeNamespaceProperty(auth, nameSpaceName, property);
+      return coordinator->removeNamespaceProperty(auth, nameSpaceName, property);
     });
 
   }
 
   void setNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property, const std::string &value) {
     callAPi([&]() {
-      return master->setNamespaceProperty(auth, nameSpaceName, property, value);
+      return coordinator->setNamespaceProperty(auth, nameSpaceName, property, value);
     });
   }
 
-  virtual ~AccumuloMasterTransporter() {
+  virtual ~AccumuloCoordinatorTransporter() {
 
   }
 };
 
 } /* namespace data */
 
-#endif /* SRC_INTERCONNECT_TRANSPORT_ACCUMULOMASTERTRANSPOTER_H_ */
+#endif /* SRC_INTERCONNECT_TRANSPORT_COORDTRANSPOTER_H_ */
 

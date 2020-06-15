@@ -10,7 +10,7 @@
 #include "scanner/impl/Scanner.h"
 #include "writer/impl/SinkImpl.h"
 #include "data/constructs/client/zookeeperinstance.h"
-#include "interconnect/Master.h"
+#include "interconnect/Accumulo.h"
 #include "interconnect/tableOps/TableOperations.h"
 #include "interconnect/securityOps/SecurityOperations.h"
 
@@ -34,9 +34,9 @@ int main(int argc, char **argv) {
 	cclient::data::security::AuthInfo creds(username, password,
 			instance->getInstanceId());
 
-	auto master = new interconnect::MasterConnect(&creds, instance);
+	auto coordinator = new interconnect::AccumuloConnector(&creds, instance);
 
-	auto ops = master->tableOps(table);
+	auto ops = coordinator->tableOps(table);
 
 	// create the scanner with ten threads.
 

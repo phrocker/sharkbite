@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include "AccumuloMasterFacade.h"
+#include "AccumuloCoordinatorFacade.h"
 #include "data/extern/thrift/ClientService.h"
 #include "data/extern/thrift/TabletClientService.h"
 #include <mutex>
@@ -34,17 +34,17 @@
 
 namespace interconnect {
 
-class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
+class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
 
  private:
 
   std::shared_ptr<logging::Logger> logger;
 
-  std::shared_ptr<org::apache::accumulo::core::master::thrift::MasterClientServiceClient> masterClient;
+  std::shared_ptr<org::apache::accumulo::core::master::thrift::MasterClientServiceClient> coordinatorClient;
 
-  void v1_createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
+  void v1_createCoordinatorClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) {
     auto protocolPtr = std::make_shared<apache::thrift::protocol::TCompactProtocol>(underlyingTransport);
-    masterClient = std::make_shared<org::apache::accumulo::core::master::thrift::MasterClientServiceClient>(protocolPtr);
+    coordinatorClient = std::make_shared<org::apache::accumulo::core::master::thrift::MasterClientServiceClient>(protocolPtr);
   }
 
   bool v1_createTable(cclient::data::security::AuthInfo *auth, const std::string &table) {
@@ -201,7 +201,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
 
     int64_t flushId = 0;
     try {
-      flushId = masterClient->initiateFlush(transId, creds, table);
+      flushId = coordinatorClient->initiateFlush(transId, creds, table);
 
     } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
       switch (e.type) {
@@ -209,10 +209,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
           if (e.description.find("arguments") != std::string::npos)
             throw APIException();
       }
-      recreateMasterTransport();
+      recreateCoordinatorTransport();
       return false;
     } catch (const apache::thrift::TApplicationException &e) {
-      recreateMasterTransport();
+      recreateCoordinatorTransport();
       return false;
     }
 
@@ -225,11 +225,11 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
       try {
         transId.parentId = transId.traceId;
         transId.traceId++;
-        recreateMasterTransport();
-        masterClient->waitForFlush(transId, creds, table, startrow, endrow, flushId, maxLoops);
+        recreateCoordinatorTransport();
+        coordinatorClient->waitForFlush(transId, creds, table, startrow, endrow, flushId, maxLoops);
         break;
       } catch (const apache::thrift::transport::TTransportException &e) {
-        recreateMasterTransport();
+        recreateCoordinatorTransport();
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftTableOperationException &e) {
         switch (e.type) {
@@ -237,10 +237,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
             if (e.description.find("arguments") != std::string::npos)
               throw APIException();
         }
-        recreateMasterTransport();
+        recreateCoordinatorTransport();
         return false;
       } catch (const apache::thrift::TApplicationException &e) {
-        recreateMasterTransport();
+        recreateCoordinatorTransport();
         return false;
       }
     }
@@ -277,7 +277,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     transId.parentId = 0;
     transId.traceId = rand();
 
-    masterClient->removeTableProperty(transId, creds, table, property);
+    coordinatorClient->removeTableProperty(transId, creds, table, property);
   }
 
   void v1_setTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property, const std::string &value) {
@@ -286,7 +286,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     transId.parentId = 0;
     transId.traceId = rand();
 
-    masterClient->setTableProperty(transId, creds, table, property, value);
+    coordinatorClient->setTableProperty(transId, creds, table, property, value);
   }
 
   /**namespace operations**/
@@ -369,7 +369,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     transId.parentId = 0;
     transId.traceId = rand();
 
-    masterClient->removeNamespaceProperty(transId, creds, nameSpaceName, property);
+    coordinatorClient->removeNamespaceProperty(transId, creds, nameSpaceName, property);
   }
 
   void v1_setNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property, const std::string &value) {
@@ -378,19 +378,19 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     transId.parentId = 0;
     transId.traceId = rand();
 
-    masterClient->setNamespaceProperty(transId, creds, nameSpaceName, property, value);
+    coordinatorClient->setNamespaceProperty(transId, creds, nameSpaceName, property, value);
   }
 
  public:
 
-  AccumuloMasterFacadeV1(const std::string &host, std::function<void()> fx, std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> tfx)
+  AccumuloCoordinatorFacadeV1(const std::string &host, std::function<void()> fx, std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> tfx)
       :
-      AccumuloMasterFacade(host, ACCUMULO_ONE, fx, tfx),
-      logger(logging::LoggerFactory<AccumuloMasterFacadeV1>::getLogger()) {
+      AccumuloCoordinatorFacade(host, ACCUMULO_ONE, fx, tfx),
+      logger(logging::LoggerFactory<AccumuloCoordinatorFacadeV1>::getLogger()) {
   }
 
-  void createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) override {
-    v1_createMasterClient(underlyingTransport);
+  void createCoordinatorClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) override {
+    v1_createCoordinatorClient(underlyingTransport);
   }
 
   std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs, const std::map<std::string, std::string> &options,
@@ -404,7 +404,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
 
   std::string v1_doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs, const std::map<std::string, std::string> &options,
                                   bool wait = false) {
-    auto myMasterClient = masterClient;
+    auto myCoordinatorClient = coordinatorClient;
 
     org::apache::accumulo::core::master::thrift::FateOperation::type type = org::apache::accumulo::core::master::thrift::FateOperation::type::TABLE_CREATE;
     switch (mytype) {
@@ -463,7 +463,7 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
     transId.parentId = 0;
     transId.traceId = rand();
-    int64_t fateTransId = myMasterClient->beginFateOperation(transId, creds);
+    int64_t fateTransId = myCoordinatorClient->beginFateOperation(transId, creds);
 
     transId.parentId = transId.traceId;
     transId.traceId = transId.traceId + 1;
@@ -472,10 +472,10 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
     while (!succeeded) {
 
       try {
-        myMasterClient->executeFateOperation(transId, creds, fateTransId, type, tableArgs, options, !wait);
+        myCoordinatorClient->executeFateOperation(transId, creds, fateTransId, type, tableArgs, options, !wait);
         succeeded = true;
       } catch (apache::thrift::transport::TTransportException &e) {
-        recreateMasterTransport();
+        recreateCoordinatorTransport();
         succeeded = false;
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
@@ -509,8 +509,8 @@ class AccumuloMasterFacadeV1 : public AccumuloMasterFacade {
 
       transId.parentId = transId.traceId;
       transId.traceId = transId.traceId + 1;
-      myMasterClient->finishFateOperation(transId, creds, fateTransId);
-      recreateMasterTransport();
+      myCoordinatorClient->finishFateOperation(transId, creds, fateTransId);
+      recreateCoordinatorTransport();
     }
     return returnValue;
   }

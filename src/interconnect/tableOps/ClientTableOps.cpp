@@ -20,7 +20,7 @@
 #include "interconnect/tableOps/../../scanner/impl/Scanner.h"
 #include "interconnect/tableOps/../../writer/impl/SinkImpl.h"
 #include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
-#include "interconnect/tableOps/../transport/AccumuloMasterTransporter.h"
+#include "interconnect/tableOps/../transport/AccumuloCoordinatorTransporter.h"
 #include "data/client/LocatorCache.h"
 #include "data/client/ExtentLocator.h"
 
@@ -47,6 +47,24 @@ std::unique_ptr<writer::Sink<cclient::data::KeyValue>> AccumuloTableOperations::
   if (!exists())
     throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
   return std::unique_ptr<writer::Sink<cclient::data::KeyValue>>(new AccumuloStreams(myInstance, this, auths, threads));
+
+}
+
+std::shared_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> AccumuloTableOperations::createSharedScanner(cclient::data::security::Authorizations *auths,
+                                                                                                                                                  uint16_t threads) {
+  if (nullptr == auths)
+    throw cclient::exceptions::ClientException(ARGUMENT_CANNOT_BE_NULL);
+  if (!exists())
+    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+  auto scnr = std::make_shared<AccumuloStreams>(myInstance, this, auths, threads);
+  scnr->setTableOptions(getProperties());
+  return scnr;
+}
+
+std::shared_ptr<writer::Sink<cclient::data::KeyValue>> AccumuloTableOperations::createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) {
+  if (!exists())
+    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+  return std::make_shared<AccumuloStreams>(myInstance, this, auths, threads);
 
 }
 
@@ -191,7 +209,7 @@ std::string AccumuloTableOperations::getTableId() {
 }
 
 bool AccumuloTableOperations::import(std::string dir, std::string fail_path, bool setTime) {
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
 
   if (!baseTransport->importDirectory(credentials, myTable, dir, fail_path, setTime)) {
     return false;
@@ -201,7 +219,7 @@ bool AccumuloTableOperations::import(std::string dir, std::string fail_path, boo
 }
 
 int8_t AccumuloTableOperations::flush(std::string startRow, std::string endRow, bool wait) {
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
 
   if (!baseTransport->flush(credentials, tableId, startRow, endRow, wait)) {
     return 0;
@@ -211,7 +229,7 @@ int8_t AccumuloTableOperations::flush(std::string startRow, std::string endRow, 
 }
 
 int8_t AccumuloTableOperations::compact(std::string startRow, std::string endRow, bool wait) {
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
 
   if (!baseTransport->compact(credentials, tableId, startRow, endRow, wait)) {
     return 0;
@@ -221,7 +239,7 @@ int8_t AccumuloTableOperations::compact(std::string startRow, std::string endRow
 }
 
 bool AccumuloTableOperations::create(bool recreate) {
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
 
   std::lock_guard<std::recursive_mutex> lock(tableOpMutex);
   if (recreate) {
@@ -310,7 +328,7 @@ int8_t AccumuloTableOperations::removeProperty(std::string property) {
 
   if (IsEmpty(&property))
     return -1;
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
   baseTransport->removeTableProperty(credentials, myTable, property);
 
   return 0;
@@ -322,7 +340,7 @@ int8_t AccumuloTableOperations::setProperty(std::string property, std::string va
     return -1;
   if (IsEmpty(&value))
     return removeProperty(property);
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
   baseTransport->setTableProperty(credentials, myTable, property, value);
   return 0;
 }

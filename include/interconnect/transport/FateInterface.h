@@ -60,13 +60,13 @@
 #include <transport/TTransportException.h>
 #include <transport/TBufferTransports.h>
 #include "interconnect/accumulo/AccumuloFacade.h"
-#include "MasterInterface.h"
+#include "CoordinatorInterface.h"
 namespace interconnect {
 
 /**
  * Fate implementation class
  **/
-class FateInterface : public MasterInterface {
+class FateInterface : public CoordinatorInterface {
  public:
   virtual ~FateInterface() {
 
