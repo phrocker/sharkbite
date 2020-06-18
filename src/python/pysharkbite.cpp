@@ -159,7 +159,7 @@ PYBIND11_MODULE(pysharkbite, s) {
           return self->getValueAsString();
         }
         else{
-          return std::string("[]");
+          return std::string("");
         }
     });
 

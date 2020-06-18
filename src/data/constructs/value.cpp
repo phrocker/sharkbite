@@ -108,7 +108,7 @@ std::string Value::getValueAsString() const {
 		return std::string((char*)(value), valueSize);
 	}
 	else{
-		return std::string("[]");
+		return std::string("");
 	}
 }
 
