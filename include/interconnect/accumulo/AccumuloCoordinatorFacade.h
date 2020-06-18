@@ -33,7 +33,7 @@
 
 namespace interconnect {
 
-class AccumuloMasterFacade {
+class AccumuloCoordinatorFacade {
 
  private:
 
@@ -43,24 +43,24 @@ class AccumuloMasterFacade {
   std::string host;
 
   std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> createTransport;
-  std::function<void()> createMasterTransport;
+  std::function<void()> createCoordinatorTransport;
 
  public:
 
-  AccumuloMasterFacade(const std::string &host, int version, std::function<void()> fx, std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> tfx)
-      : createMasterTransport(fx),
+  AccumuloCoordinatorFacade(const std::string &host, int version, std::function<void()> fx, std::function<std::shared_ptr<apache::thrift::transport::TTransport>()> tfx)
+      : createCoordinatorTransport(fx),
         createTransport(tfx),
         host(host),
         accumuloVersion(version) {
   }
 
-  virtual ~AccumuloMasterFacade() {
+  virtual ~AccumuloCoordinatorFacade() {
   }
 
-  virtual void createMasterClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) = 0;
+  virtual void createCoordinatorClient(std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport) = 0;
 
-  void recreateMasterTransport() {
-    createMasterTransport();
+  void recreateCoordinatorTransport() {
+    createCoordinatorTransport();
   }
 
   virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs,

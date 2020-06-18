@@ -82,32 +82,11 @@ try:
     """ Add authorizations """ 
     """ mutation.put("cf","cq","cv",1569786960) """
     
-    writer = table_operations.createWriter(auths, 10)
-    
-    mutation = pysharkbite.Mutation("row2");    
-    
-    mutation.put("cf","cq","",1569786960, "value")
-    mutation.put("cf2","cq2","",1569786960, "value2")
-    """ no value """
-    mutation.put("cf3","cq3","",1569786960, "") 
-    
-    writer.addMutation( mutation )
-    
-    writer.close()
-    
-    time.sleep(2)
-    
-    """ auths.addAuthorization("cv") """
-    
     scanner = table_operations.createScanner(auths, 2)
     
     startKey = pysharkbite.Key()
     
     endKey = pysharkbite.Key()
-    
-    startKey.setRow("row")
-    
-    endKey.setRow("row3")
     
     range = pysharkbite.Range(startKey,True,endKey,False)
     
@@ -118,11 +97,11 @@ try:
     for keyvalue in resultset:
         key = keyvalue.getKey()
         value = keyvalue.getValue()
-        
+        v = value.get()
+        print("value is ",v)
+    
     
     """ delete your table if user did not create temp """
-    if not args.table:
-        table_operations.remove()
     
 except RuntimeError as e:
      traceback.print_exc()

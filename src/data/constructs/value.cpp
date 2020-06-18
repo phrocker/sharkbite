@@ -104,7 +104,12 @@ std::pair<uint8_t*, size_t> Value::getValue() const {
 }
 
 std::string Value::getValueAsString() const {
-	return std::string((char*)(value), valueSize);
+	if (valueSize > 0 && value){
+		return std::string((char*)(value), valueSize);
+	}
+	else{
+		return std::string("");
+	}
 }
 
 uint64_t Value::write(cclient::data::streams::OutputStream *outStream) {

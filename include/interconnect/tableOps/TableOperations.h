@@ -63,6 +63,23 @@ class TableOperations {
    */
   virtual std::unique_ptr<writer::Sink<K>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
 
+
+  /**
+   * Creates a new scanner
+   * @param auths authorizations for this scanner
+   * @param threads current threads
+   * @return new scanner
+   **/
+  virtual std::shared_ptr<scanners::Source<K, V>> createSharedScanner(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
+
+  /**
+   * Creates a writer for the current table
+   * @param auths authorizations for this writer
+   * @param threads number of threads for writer
+   * @return new batch writer
+   */
+  virtual std::shared_ptr<writer::Sink<K>> createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
+
   virtual ~TableOperations();
 
   /**

@@ -727,8 +727,6 @@ endif(BUILD_PYTHON_TESTS)
 
 endif(BUILD_TESTS)
 
-add_subdirectory(include/interconnect/securityOps)
-
 ### JAR building
 
 

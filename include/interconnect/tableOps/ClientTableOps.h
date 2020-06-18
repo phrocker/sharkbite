@@ -21,7 +21,7 @@
 #include "../../data/constructs/client/Instance.h"
 #include "../../scanner/Source.h"
 #include "../../scanner/constructs/Results.h"
-#include "../transport/AccumuloMasterTransporter.h"
+#include "../transport/AccumuloCoordinatorTransporter.h"
 #include "../RootInterface.h"
 #include "../../writer/Sink.h"
 #include "logging/Logger.h"
@@ -39,9 +39,9 @@ namespace interconnect {
  */
 class AccumuloTableOperations : public interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
  public:
-  AccumuloTableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table,
-                          RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                          std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> tserverConn, TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
+  explicit AccumuloTableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table,
+                          RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+                          std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> tserverConn, TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
       :
       TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
       clientInterface(interface),
@@ -169,15 +169,31 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    */
   std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
 
+  /**
+   * Creates a new scanner
+   * @param auths authorizations for this scanner
+   * @param threads current threads
+   * @return new scanner
+   **/
+  std::shared_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createSharedScanner(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+
+  /**
+   * Creates a writer for the current table
+   * @param auths authorizations for this writer
+   * @param threads number of threads for writer
+   * @return new batch writer
+   */
+  std::shared_ptr<writer::Sink<cclient::data::KeyValue>> createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+
  protected:
 
   void loadNamespaces(bool force = false);
 
-  TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector;
+  TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector;
 
-  std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> tserverConn;
+  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> tserverConn;
 
-  RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
+  RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
 
   void loadTableOps(bool force = false);
 

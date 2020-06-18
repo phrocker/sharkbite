@@ -19,10 +19,11 @@
 
 #include "../../data/constructs/KeyValue.h"
 #include "../../data/constructs/security/AuthInfo.h"
+#include "../../data/constructs/security/Permissions.h"
 #include "../../data/constructs/client/Instance.h"
 #include "../../scanner/Source.h"
 #include "../../scanner/constructs/Results.h"
-#include "../transport/AccumuloMasterTransporter.h"
+#include "../transport/AccumuloCoordinatorTransporter.h"
 #include "../RootInterface.h"
 
 #include <map>
@@ -46,8 +47,8 @@ class SecurityOperations {
    * @param interface connecting thrift interface
    * @param interconnect thrift transport pool
    **/
-  SecurityOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> interface,
-                     TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
+  SecurityOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> interface,
+                     TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
       : credentials(creds),
         myInstance(instance),
         clientInterface(interface->getTransport()) {
@@ -108,15 +109,105 @@ class SecurityOperations {
 
    **/
   int8_t grantAuthorizations(cclient::data::security::Authorizations *auths, std::string user);
+
+  /**
+   * Returns true if user has a system permission
+   * @param user user to grant to
+   * @param perm permission to test
+   * @returns true if user has the permission, false otherwise
+   **/
+  bool hasSystemPermission(const std::string &user, cclient::data::SystemPermissions perm);
+
+  /**
+   * Returns true if user has a tabl;e permission
+   * @param user user to grant to
+   * @param table table name
+   * @param perm permission to test
+   * @returns true if user has the permission, false otherwise
+   **/
+  bool hasTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm);
+
+  /**
+   * Returns true if user has a namespace permission
+   * @param user user to grant to
+   * @param namespace namespace name
+   * @param perm permission to test
+   * @returns true if user has the permission, false otherwise
+   **/
+  bool hasNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm);
+
+
+ /**
+   * Grants permissions
+   * @param user user to grant to
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t grantSystemPermission(const std::string &user, cclient::data::SystemPermissions perm);
+   /**
+   * Revokes permissions
+   * @param user user from which to revoke permission
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t revokeSystemPermission(const std::string &user, cclient::data::SystemPermissions perm);
+
+
+ /**
+   * Grants permissions
+   * @param user user to grant to
+   * @param table table on which to grant permission
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t grantTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm);
+   /**
+   * Revokes permissions
+   * @param user user from which to revoke permission
+   * @param table table on which to revoke permission
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t revokeTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm);
+
+
+ /**
+   * Grants permissions
+   * @param user user to grant to
+   * @param nsp namespace on which to grant permission
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t grantNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm);
+  /**
+   * Revokes permissions
+   * @param user user from which to revoke permission
+   * @param nsp namespace on which to revoke permission
+   * @param perm permission to grant
+   * @returns result of this security operations.
+   * -1 grant failed
+   * 1 grant succeeded.
+   **/
+  int8_t revokeNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm);
  protected:
   // shared pointer for the thrift transport
-  std::shared_ptr<interconnect::AccumuloMasterTransporter> ptr;
+  std::shared_ptr<interconnect::AccumuloCoordinatorTransporter> ptr;
   // client interface
-  std::shared_ptr<interconnect::AccumuloMasterTransporter> clientInterface;
+  std::shared_ptr<interconnect::AccumuloCoordinatorTransporter> clientInterface;
   // cached transport that can be replaced in light of failure.
-  std::shared_ptr<CachedTransport<interconnect::AccumuloMasterTransporter>> cachedTransport;
+  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> cachedTransport;
   // distributed connector
-  TransportPool<interconnect::AccumuloMasterTransporter> *refTransportPool;
+  TransportPool<interconnect::AccumuloCoordinatorTransporter> *refTransportPool;
   std::shared_ptr<cclient::data::Instance> myInstance;
   cclient::data::security::AuthInfo *credentials;
 

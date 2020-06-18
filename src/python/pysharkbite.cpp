@@ -15,6 +15,7 @@
 
 #include "data/constructs/PythonIterInfo.h"
 #include "data/constructs/IterInfo.h"
+#include "data/constructs/security/Permissions.h"
 #include "data/constructs/KeyValue.h"
 #include "data/constructs/Mutation.h"
 #include "data/constructs/security/Authorizations.h"
@@ -23,9 +24,9 @@
 #include "scanner/constructs/Results.h"
 #include "writer/impl/SinkImpl.h"
 #include "data/constructs/client/zookeeperinstance.h"
-#include "interconnect/Master.h"
+#include "interconnect/Accumulo.h"
 #include "interconnect/tableOps/TableOperations.h"
-
+#include "interconnect/namespaceOps/NamespaceOperations.h"
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/rfile/SequentialRFile.h"
 #include "data/constructs/compressor/compressor.h"
@@ -92,10 +93,20 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("onNext",&cclient::data::python::PythonIterInfo::onNext, "Lambda that is provided the accumulo key")
   .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
-  pybind11::class_<interconnect::MasterConnect>(s, "AccumuloConnector", "Accumulo connector")
+  pybind11::class_<interconnect::AccumuloConnector>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
-  .def("securityOps",&interconnect::MasterConnect::securityOps, "Return the security operations object")
-  .def("tableOps",&interconnect::MasterConnect::tableOps, "Return the table operations object");
+  .def("securityOps",&interconnect::AccumuloConnector::securityOps, "Return the security operations object")
+  .def("namespaceOps",&interconnect::AccumuloConnector::namespaceOps, "Allows the user to perform namespace operations")
+  .def("tableOps",&interconnect::AccumuloConnector::tableOps, "Return the table operations object");
+
+ pybind11::class_<interconnect::NamespaceOperations>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
+  .def("list",&interconnect::NamespaceOperations::list, "Lists namespaces within this Accumulo instance")
+  .def("remove",&interconnect::NamespaceOperations::remove, "removes the namespace")
+  .def("exists",&interconnect::NamespaceOperations::exists, "Returns true if the namespace exists")
+  .def("rename",&interconnect::NamespaceOperations::rename, "Renames the namespace")
+  .def("setProperty", &interconnect::NamespaceOperations::setProperty, "Sets a namespace property")
+  .def("removeProperty", &interconnect::NamespaceOperations::removeProperty, "Remove the namespace property")
+  .def("create",&interconnect::NamespaceOperations::create, "Creates the namespace");
 
   pybind11::class_<interconnect::AccumuloTableOperations>(s, "AccumuloTableOperations", "Accumulo table operations. Should be accessed through 'AccumuloConnector'")
   .def("remove",&interconnect::AccumuloTableOperations::remove, "remove the table")
@@ -107,11 +118,24 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("removeProperty", &interconnect::AccumuloTableOperations::removeProperty, "Remove the table property")
   .def("addSplits", &interconnect::AccumuloTableOperations::addSplits, "Add splits for a table")
   .def("addConstraint", &interconnect::AccumuloTableOperations::addConstraint, "Add table constraint")
-  .def("createScanner", &interconnect::AccumuloTableOperations::createScanner, "Create scanner")
-  .def("createWriter", &interconnect::AccumuloTableOperations::createWriter, "Create writer for table")
+  .def("createScanner", &interconnect::AccumuloTableOperations::createSharedScanner, "Create scanner")
+  .def("createWriter", &interconnect::AccumuloTableOperations::createSharedWriter, "Create writer for table")
   .def("create",&interconnect::AccumuloTableOperations::create, "Create the table");
 
   pybind11::class_<interconnect::SecurityOperations>(s, "SecurityOperations", "Basic security operations")
+  .def("create_user",&interconnect::SecurityOperations::createUser, "Creates a user")
+  .def("change_password",&interconnect::SecurityOperations::changeUserPassword, "Changes the user password")
+  .def("remove_user",&interconnect::SecurityOperations::dropUser, "Removes the user")
+  .def("get_auths",&interconnect::SecurityOperations::getAuths, "Returns the user's authorizations")
+  .def("has_system_permission",&interconnect::SecurityOperations::hasSystemPermission, "Returns true if the user has the system permission")
+  .def("has_table_permission",&interconnect::SecurityOperations::hasTablePermission, "Has table permission")
+  .def("has_namesapce_permission",&interconnect::SecurityOperations::hasNamespacePermission, "Has namespace permission")  
+  .def("grant_system_permission",&interconnect::SecurityOperations::grantSystemPermission, "Grants a system permission")
+  .def("revoke_system_permission",&interconnect::SecurityOperations::revokeSystemPermission, "Revokes a system permission")
+  .def("grant_table_permission",&interconnect::SecurityOperations::grantTablePermission, "Grants a table permission")
+  .def("revoke_table_permission",&interconnect::SecurityOperations::revokeTablePermission, "Revokes a table permission")
+  .def("grant_namespace_permission",&interconnect::SecurityOperations::grantNamespacePermission, "Grants a namespace permission")
+  .def("revoke_namesapce_permission",&interconnect::SecurityOperations::revokeNamespacePermission, "Revokes a namespace permission")
   .def("grantAuthorizations",&interconnect::SecurityOperations::grantAuthorizations, "Get user authorizations");
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(s, "Value", "Accumulo value")
@@ -122,8 +146,21 @@ PYBIND11_MODULE(pysharkbite, s) {
           return pybind11::bytes(self.getValueAsString());  // Return the data without transcoding
       }, "Returns the bytes as python bytes"
   )
+  .def("__repr__",[](const std::shared_ptr<cclient::data::Value> &self) {
+        if (self){  
+          return self->getValueAsString();
+        }
+        else{
+          return std::string("[]");
+        }
+    })
   .def("__str__",[](const std::shared_ptr<cclient::data::Value> &self) {
-        return self->getValueAsString();
+        if (self){  
+          return self->getValueAsString();
+        }
+        else{
+          return std::string("");
+        }
     });
 
   pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(s, "Key", "Accumulo Key")
@@ -132,7 +169,20 @@ PYBIND11_MODULE(pysharkbite, s) {
       "row"_a, "columnfamily"_a=nullptr,"columnqualifier"_a=nullptr,"columnvisibility"_a=nullptr,"timestamp"_a=9223372036854775807L)
   .def("setRow",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setRow, "Sets the row")
   .def("__str__",[](const std::shared_ptr<cclient::data::Key> &si) {
-        return si->toString();
+        if (si){
+          return si->toString();
+        }
+        else{
+          return std::string(" : []");
+        }
+    })
+  .def("__repr__",[](const std::shared_ptr<cclient::data::Key> &si) {
+        if (si){
+          return si->toString();
+        }
+        else{
+          return std::string(" : []");
+        }
     })
   .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColFamily, "Sets the column fmaily")
   .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColQualifier, "Sets the column qualifier")
@@ -193,10 +243,50 @@ PYBIND11_MODULE(pysharkbite, s) {
        .value("HedgedReads", ScannerOptions::ENABLE_HEDGED_READS, "Enables hedged reads")
        .value("RFileScanOnly", ScannerOptions::ENABLE_RFILE_SCANNER, "Enables the RFile Scanner");
 
-  pybind11::class_<scanners::BatchScanner>(s, "BatchScanner", "Batch Scanner to be constructed via TableOperations")
+  pybind11::enum_<cclient::data::SystemPermissions>(s, "SystemPermissions", pybind11::arithmetic())
+      .value("GRANT",cclient::data::SystemPermissions::GRANT, "Enables grant permission on the system")
+      .value("CREATE_TABLE",cclient::data::SystemPermissions::CREATE_TABLE, "Enables create table permissions on the system")
+      .value("DROP_TABLE",cclient::data::SystemPermissions::DROP_TABLE, "Enables drop table permissions on the system")
+      .value("ALTER_TABLE",cclient::data::SystemPermissions::ALTER_TABLE, "Enables alter table permissions on the system")
+      .value("CREATE_USER",cclient::data::SystemPermissions::CREATE_USER, "Enables create user permissions on the system")
+      .value("ALTER_USER",cclient::data::SystemPermissions::ALTER_USER, "Enables alter user permissions on the system")
+      .value("SYSTEM",cclient::data::SystemPermissions::SYSTEM, "Enables system permissions for the user")
+      .value("CREATE_NAMESPACE",cclient::data::SystemPermissions::CREATE_NAMESPACE, "Enables create namespace permissions for the user")
+      .value("DROP_NAMESPACE",cclient::data::SystemPermissions::DROP_NAMESPACE, "Enables drop namespace permissions for the user")
+      .value("ALTER_NAMESPACE",cclient::data::SystemPermissions::ALTER_NAMESPACE, "Enables the alter namespace permissions for the user");
+
+  pybind11::enum_<cclient::data::NamespacePermissions>(s, "NamespacePermissions", pybind11::arithmetic())
+      .value("READ",cclient::data::NamespacePermissions::READ, "Enables read permission on the namespace") 
+      .value("WRITE",cclient::data::NamespacePermissions::WRITE, "Enables write permission on the namespace") 
+      .value("ALTER_NAMESPACE",cclient::data::NamespacePermissions::ALTER_NAMESPACE, "Enables the alter namespace permissions for the user")
+      .value("GRANT",cclient::data::NamespacePermissions::GRANT, "Enables grant permission on the namespace")
+      .value("ALTER_TABLE",cclient::data::NamespacePermissions::ALTER_TABLE, "Enables alter table permissions on the namespace")
+      .value("CREATE_TABLE",cclient::data::NamespacePermissions::CREATE_TABLE, "Enables create table permissions on the namespace")
+      .value("DROP_TABLE",cclient::data::NamespacePermissions::DROP_TABLE, "Enables drop table permissions on the namespace")
+      .value("BULK_IMPORT",cclient::data::NamespacePermissions::BULK_IMPORT, "Enables bulk import permissions on the namespace")
+      .value("DROP_NAMESPACE",cclient::data::NamespacePermissions::DROP_NAMESPACE, "Enables drop namespace permissions on the namespace");
+
+  pybind11::enum_<cclient::data::TablePermissions>(s, "TablePermissions", pybind11::arithmetic())
+      .value("READ",cclient::data::TablePermissions::READ, "Enables read permission on the table") 
+      .value("WRITE",cclient::data::TablePermissions::WRITE, "Enables write permission on the table") 
+      .value("GRANT",cclient::data::TablePermissions::GRANT, "Enables grant permission on the table")
+      .value("ALTER_TABLE",cclient::data::TablePermissions::ALTER_TABLE, "Enables alter table permissions on the table")
+      .value("DROP_TABLE",cclient::data::TablePermissions::DROP_TABLE, "Enables drop table permissions on the table")
+      .value("BULK_IMPORT",cclient::data::TablePermissions::BULK_IMPORT, "Enables bulk import permissions on the table");
+
+  pybind11::class_<scanners::BatchScanner,std::shared_ptr<scanners::BatchScanner>>(s, "BatchScanner", "Batch Scanner to be constructed via TableOperations")
   .def("getResultSet", &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference, "Gets a result set that can be used asynchronously")
   .def("fetchColumn", &scanners::BatchScanner::fetchColumn, "Fetches the column")
   .def("setOption", &scanners::BatchScanner::setOption, "Sets the option")
+  .def("__enter__",[](const std::shared_ptr<scanners::BatchScanner> &self) {
+        return self;
+    })
+  .def("__exit__",[](std::shared_ptr<scanners::BatchScanner> &self, pybind11::object exc_type, pybind11::object exc_value, pybind11::object exc_traceback) {
+       self->close();
+    })
+   .def("withRange", [](std::shared_ptr<scanners::BatchScanner> &self,const cclient::data::Range &r) -> std::shared_ptr<scanners::BatchScanner> {
+            self->addRange( r);
+            return self;})
   .def("removeOption", &scanners::BatchScanner::removeOption, "Removes an option")
   .def("addIterator", (void (scanners::BatchScanner::*)(const cclient::data::IterInfo &) ) &scanners::BatchScanner::addIterator, "Add an iterator to be run server side")
   .def("addIterator",(void (scanners::BatchScanner::*)(const cclient::data::python::PythonIterInfo &) ) &scanners::BatchScanner::addPythonIterator, "Adds a python iterator to be run server side")
@@ -207,9 +297,15 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def(pybind11::init<>())
   .def("addAuthorization",&cclient::data::security::Authorizations::addAuthorization, "Add an authorization to be used for table operations");
 
-  pybind11::class_<writer::Sink<cclient::data::KeyValue>>(s, "BatchWriter", "Batch writer to be constructed, from TableOperations")
+  pybind11::class_<writer::Sink<cclient::data::KeyValue>,std::shared_ptr<writer::Sink<cclient::data::KeyValue>> >(s, "BatchWriter", "Batch writer to be constructed, from TableOperations")
   .def("flush",&writer::Sink<cclient::data::KeyValue>::flush, "Flushes the batch writer. Will be called automatically by close.")
   .def("addMutation", (bool (writer::Sink<cclient::data::KeyValue>::*)(const std::shared_ptr<cclient::data::Mutation> & ) ) &writer::Sink<cclient::data::KeyValue>::addMutation, "Adds a mutation to the batch writer")
+  .def("__enter__",[](const std::shared_ptr<writer::Sink<cclient::data::KeyValue>> &self) {
+        return self;
+    })
+  .def("__exit__",[](std::shared_ptr<writer::Sink<cclient::data::KeyValue>> &self, pybind11::object exc_type, pybind11::object exc_value, pybind11::object exc_traceback) {
+       self->close();
+    })
   .def("close",&writer::Sink<cclient::data::KeyValue>::close, "Closes the batch writer")
   .def("size",&writer::Sink<cclient::data::KeyValue>::size, "Returns the current size to be written to Accumulo");
 

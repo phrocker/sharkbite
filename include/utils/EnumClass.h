@@ -23,6 +23,11 @@
  * under the boost license.
  */
 
+template <typename E>
+constexpr typename std::underlying_type<E>::type to_base(E e) noexcept {
+    return static_cast<typename std::underlying_type<E>::type>(e);
+}
+
 template<typename Enum>
 struct EnableBitMaskOperators {
   static const bool enable = false;

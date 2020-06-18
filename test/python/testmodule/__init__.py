@@ -69,10 +69,7 @@ class TestRunner(object):
                 self._username=args.username
                 self._table=table
                 self._zks=args.zookeepers
-                self._zk = pysharkbite.ZookeeperInstance(self._instance, self._zks, 1000, self._conf)
-                self._user = pysharkbite.AuthInfo(args.username, password, self._zk.getInstanceId())
-                self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
-                self._tableOperations = self._connector.tableOps(table)
+                self.inity(replace=True)
                 print("created connector")
 
         def inity(self,replace=False):
@@ -82,9 +79,20 @@ class TestRunner(object):
                 if replace == True :
                   self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
                   self._tableOperations = self._connector.tableOps(self._table)
+                  self._securityOperations = self._connector.securityOps()
+
+        def setUser(self,user,pwd):
+                self._username=user
+                self._password=pwd
+
+        def getTable(self):
+                return self._table
 
         def getConnector(self):
                 return self._connector
 
         def getTableOperations(self):
                 return self._tableOperations
+
+        def getSecurityOperations(self):
+                return self._securityOperations

@@ -21,6 +21,7 @@
 #include "data/extern/thrift/ThriftWrapper.h"
 #include "data/extern/thriftv2/ThriftV2Wrapper.h"
 #include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/Permissions.h"
 #include "../Scan.h"
 #include "logging/Logger.h"
 
@@ -73,6 +74,21 @@ class AccumuloServerFacade {
   virtual std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName) = 0;
 
   virtual void authenticate(cclient::data::security::AuthInfo *auth) = 0;
+
+  /**
+   * Permissions
+   */
+
+  virtual bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, cclient::data::SystemPermissions perm) = 0;
+  virtual bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user,const std::string &table, cclient::data::TablePermissions perm) = 0;
+  virtual bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, const std::string &nsp, cclient::data::NamespacePermissions perm) = 0;
+  virtual bool grant(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm)=0;
+  virtual bool grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm)=0;
+  virtual bool grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm)=0;
+  virtual bool revoke(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm) =0;
+  virtual bool revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm) =0;
+  virtual bool revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm) =0;
+
 
 };
 

@@ -12,8 +12,8 @@
  * limitations under the License.
  */
 
-#ifndef SRC_INTERCONNECT_ACCUMULOCONNECTOR_H_
-#define SRC_INTERCONNECT_ACCUMULOCONNECTOR_H_
+#ifndef SRC_INTERCONNECT_ACCUMULOBASECONNECTOR_H_
+#define SRC_INTERCONNECT_ACCUMULOBASECONNECTOR_H_
 
 #include "../data/constructs/inputvalidation.h"
 #include "../data/constructs/IterInfo.h"
@@ -35,12 +35,12 @@ namespace interconnect {
  * Accumulo Connector
  */
 template<typename Tr>
-class AccumuloConnector : virtual public ClientInterface<Tr> {
+class AccumuloBaseConnector : virtual public ClientInterface<Tr> {
  public:
   /**
    * base constructor
    **/
-  AccumuloConnector()
+  AccumuloBaseConnector()
       : ClientInterface<Tr>(),
         myTransportPool(NULL),
         rangeDef(NULL),
@@ -53,7 +53,7 @@ class AccumuloConnector : virtual public ClientInterface<Tr> {
    * @param host host name
    * @param port port for Accumulo server
    **/
-  AccumuloConnector(const std::string host, const int port)
+  AccumuloBaseConnector(const std::string host, const int port)
       : ClientInterface<Tr>(host, port),
         myTransportPool(NULL),
         rangeDef(NULL),
@@ -64,7 +64,7 @@ class AccumuloConnector : virtual public ClientInterface<Tr> {
   /**
    * Destructor with no ownership guidelines
    **/
-  virtual ~AccumuloConnector() {
+  virtual ~AccumuloBaseConnector() {
 
   }
 
@@ -86,4 +86,4 @@ class AccumuloConnector : virtual public ClientInterface<Tr> {
 
 } /* namespace interconnect */
 
-#endif /* SRC_INTERCONNECT_ACCUMULOCONNECTOR_H_ */
+#endif /* SRC_INTERCONNECT_ACCUMULOBASECONNECTOR_H_ */

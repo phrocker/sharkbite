@@ -59,7 +59,7 @@ static TransportPool<ThriftTransporter> CLUSTER_COORDINATOR;
 
 extern void closeAllThriftConnections();
 
-class ServerInterconnect : public AccumuloConnector<interconnect::ThriftTransporter> {
+class ServerInterconnect : public AccumuloBaseConnector<interconnect::ThriftTransporter> {
  private:
   std::shared_ptr<logging::Logger> logger;
  protected:

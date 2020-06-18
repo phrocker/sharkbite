@@ -469,4 +469,83 @@ void AccumuloServerFacadeV1::v1_splitTablet(cclient::data::security::AuthInfo *a
   tserverClient->splitTablet(tinfo, creds, ke, split);
 }
 
+  bool AccumuloServerFacadeV1::hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, cclient::data::SystemPermissions perm){
+    
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    logging::LOG_DEBUG(logger) << "Looking up permission ( " << std::to_string(to_base(perm)) << ") for " << user;
+    return tserverClient->hasSystemPermission(tinfo,creds,user,to_base(perm));
+  }
+  bool AccumuloServerFacadeV1::hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
+        
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    logging::LOG_DEBUG(logger) << "Looking up permission ( " << std::to_string(to_base(perm)) << ") for " << user << " on " << table;
+    return tserverClient->hasTablePermission(tinfo,creds,user,table,to_base(perm));
+  }
+  bool AccumuloServerFacadeV1::hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    logging::LOG_DEBUG(logger) << "Looking up permission ( " << std::to_string(to_base(perm)) << ") for " << user << " on " << nsp;
+    return tserverClient->hasNamespacePermission(tinfo,creds,user,nsp,to_base(perm));
+  }
+  bool AccumuloServerFacadeV1::grant(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->grantSystemPermission(tinfo,creds,user,to_base(perm));
+    return true;
+  }
+  bool AccumuloServerFacadeV1::grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->grantTablePermission(tinfo,creds,user,table,to_base(perm));
+    return true;
+
+  }
+  bool AccumuloServerFacadeV1::grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->grantNamespacePermission(tinfo,creds,user,nsp,to_base(perm));
+    return true;
+
+  }
+
+  bool AccumuloServerFacadeV1::revoke(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->revokeSystemPermission(tinfo,creds,user,to_base(perm));
+    return true;
+  }
+  bool AccumuloServerFacadeV1::revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->revokeTablePermission(tinfo,creds,user,table,to_base(perm));
+    return true;
+  }
+  bool AccumuloServerFacadeV1::revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    org::apache::accumulo::core::trace::thrift::TInfo tinfo;
+    tinfo.parentId = 0;
+    tinfo.traceId = rand();
+    org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+    tserverClient->revokeNamespacePermission(tinfo,creds,user,nsp,to_base(perm));
+    return true;
+  }
+
 } /* namespace interconnect */

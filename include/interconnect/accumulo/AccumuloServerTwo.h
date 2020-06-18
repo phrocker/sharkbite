@@ -116,6 +116,15 @@ class AccumuloServerFacadeV2 : public AccumuloServerFacade {
 
   void authenticate(cclient::data::security::AuthInfo *auth) override;
 
+  bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, cclient::data::SystemPermissions perm) override;
+  bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, const std::string &table, cclient::data::TablePermissions perm) override;
+  bool hasPermission(cclient::data::security::AuthInfo *auth,const std::string &user, const std::string &nsp, cclient::data::NamespacePermissions perm) override;
+  bool grant(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm) override;
+  bool grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm) override;
+  bool grant(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm) override;
+  bool revoke(cclient::data::security::AuthInfo *auth,const std::string user, cclient::data::SystemPermissions perm) override;
+  bool revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &table, cclient::data::TablePermissions perm) override;
+  bool revoke(cclient::data::security::AuthInfo *auth,const std::string user,const std::string &nsp, cclient::data::NamespacePermissions perm) override;
 };
 
 }

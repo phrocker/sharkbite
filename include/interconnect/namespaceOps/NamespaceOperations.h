@@ -23,7 +23,7 @@
 #include "../../data/constructs/client/Instance.h"
 #include "../../scanner/Source.h"
 #include "../../scanner/constructs/Results.h"
-#include "../transport/AccumuloMasterTransporter.h"
+#include "../transport/AccumuloCoordinatorTransporter.h"
 #include "../RootInterface.h"
 
 #include <map>
@@ -41,9 +41,9 @@ class NamespaceOperations {
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  NamespaceOperations(cclient::data::security::AuthInfo *creds,  std::shared_ptr<cclient::data::Instance> instance,
-                      RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                      TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
+  explicit NamespaceOperations(cclient::data::security::AuthInfo *creds,  std::shared_ptr<cclient::data::Instance> instance,
+                      RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+                      TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
       : NamespaceOperations(creds, "", instance, interface, distributedConnector) {
     // simply calls the other constructor
   }
@@ -56,9 +56,9 @@ class NamespaceOperations {
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  NamespaceOperations(cclient::data::security::AuthInfo *creds, std::string myNamespace,  std::shared_ptr<cclient::data::Instance> instance,
-                      RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                      TransportPool<interconnect::AccumuloMasterTransporter> *distributedConnector)
+  explicit NamespaceOperations(cclient::data::security::AuthInfo *creds, std::string myNamespace,  std::shared_ptr<cclient::data::Instance> instance,
+                      RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+                      TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
       : myNamespace(myNamespace),
         credentials(creds),
         myInstance(instance),
@@ -164,9 +164,9 @@ class NamespaceOperations {
   void loadNamespaces(bool force = false);
 
   // client interface
-  RootInterface<interconnect::AccumuloMasterTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
+  RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
   // distributed connector to tservers
-  TransportPool<interconnect::AccumuloMasterTransporter> *refTransportPool;
+  TransportPool<interconnect::AccumuloCoordinatorTransporter> *refTransportPool;
   // instance ptr
   std::shared_ptr<cclient::data::Instance> myInstance;
   // credentials

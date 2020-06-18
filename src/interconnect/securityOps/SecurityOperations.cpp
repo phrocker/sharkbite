@@ -86,4 +86,85 @@ int8_t SecurityOperations::grantAuthorizations(cclient::data::security::Authoriz
   return 1;
 }
 
+  int8_t SecurityOperations::grantSystemPermission(const std::string &user, cclient::data::SystemPermissions perm){
+    if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->grant(credentials,user,perm);
+    return 1;
+  }
+
+  int8_t SecurityOperations::revokeSystemPermission(const std::string &user, cclient::data::SystemPermissions perm){
+     if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->revoke(credentials,user,perm);
+    return 1;
+  }
+
+  int8_t SecurityOperations::grantTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm){
+     if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->grant(credentials,user,table,perm);
+    return 1;
+  }
+
+  int8_t SecurityOperations::revokeTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm){
+     if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->revoke(credentials,user,table,perm);
+    return 1;
+  }
+
+
+  int8_t SecurityOperations::grantNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm){
+ if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->grant(credentials,user,nsp,perm);
+    return 1;
+  }
+  
+  int8_t SecurityOperations::revokeNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm){
+     if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    clientInterface->revoke(credentials,user,nsp,perm);
+    return 1;
+  }
+
+  bool SecurityOperations::hasSystemPermission(const std::string &user, cclient::data::SystemPermissions perm){
+    if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    return clientInterface->hasPermission(credentials,user,perm);
+  }
+
+
+  bool SecurityOperations::hasTablePermission(const std::string &user,const std::string &table, cclient::data::TablePermissions perm){
+    if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    return clientInterface->hasPermission(credentials,user,table,perm);
+  }
+
+  bool SecurityOperations::hasNamespacePermission(const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm){
+    if (IsEmpty(&user))
+      return -1;
+    // create the client interface so that this service is usable.
+    clientInterface->closeAndCreateClient();
+    return clientInterface->hasPermission(credentials,user,nsp,perm);
+  }
+
+
 }

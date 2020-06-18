@@ -142,6 +142,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
   std::lock_guard<std::recursive_mutex> lock(cacheLock);
 
   if (closing || closed) {
+    logging::LOG_TRACE(logger) << "Closed or closing, so returning" << cacheKey;
     cachedTransport->close();
     return;
   }
@@ -207,8 +208,6 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
     closer->close();
   }
 
-  //delete closeList;
-
 }
 
 template<typename Tr>
@@ -233,7 +232,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
         std::vector<std::shared_ptr<CachedTransport<Tr>> > cachedConnections = cache[conn];
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
           if (!cacheTransport->isReserved() && !cacheTransport->hasError() && (*cacheTransport->getCacheKey().get() == *conn.get())) {
-
+          logging::LOG_TRACE(logger) << "Returning " << conn->toString();
             cacheTransport->reserve();
             return std::make_pair(conn->toString(), cacheTransport);
           }
@@ -243,7 +242,7 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
     }
 
   }
-
+  logging::LOG_TRACE(logger) << "Continuing to create a new connection";
   std::vector<std::shared_ptr<ServerConnection>> serverPool(*servers);
 
   short retryCount = 0;

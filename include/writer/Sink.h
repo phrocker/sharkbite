@@ -95,6 +95,10 @@ class Sink {
     flush(true);
   }
 
+  virtual void exit() {
+    flush(true);
+  }
+
   inline virtual size_t size() {
 
     return sinkQueue.size_approx();

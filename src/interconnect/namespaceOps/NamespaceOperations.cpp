@@ -18,7 +18,7 @@
 
 #include "data/exceptions/ClientException.h"
 #include "interconnect/namespaceOps/NamespaceOperations.h"
-#include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
+#include "data/constructs/ConfigurationOptions.h"
 
 namespace interconnect {
 
@@ -33,7 +33,7 @@ bool NamespaceOperations::exists(std::string name) {
 }
 
 void NamespaceOperations::create(std::string name) {
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
 
   if (IsEmpty(&name))
     name = myNamespace;
@@ -52,7 +52,7 @@ bool NamespaceOperations::remove(std::string name) {
   if (IsEmpty(&id) || id == "accumulo") {
     throw cclient::exceptions::ClientException(DELETE_DEFAULT_NAMESPACE);
   } else {
-    interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+    auto baseTransport = clientInterface->getTransport().get();
 
     if (!baseTransport->deletenamespace(credentials, name)) {
       throw cclient::exceptions::ClientException(COULD_NOT_CREATE_NAMESPACE);
@@ -74,7 +74,7 @@ void NamespaceOperations::rename(std::string newName, std::string oldName) {
   if (IsEmpty(&id) || id == "accumulo") {
     throw cclient::exceptions::ClientException(DELETE_DEFAULT_NAMESPACE);
   } else {
-    interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+    auto baseTransport = clientInterface->getTransport().get();
 
     if (!baseTransport->renamenamespace(credentials, oldName, newName)) {
       throw cclient::exceptions::ClientException(COULD_NOT_CREATE_NAMESPACE);
@@ -139,7 +139,7 @@ std::map<std::string, std::string> NamespaceOperations::getProperties(std::strin
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
   }
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
   return baseTransport->getNamespaceConfiguration(credentials, nm);
 }
 
@@ -148,7 +148,7 @@ void NamespaceOperations::removeProperty(std::string property, std::string names
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
   }
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
   baseTransport->removeNamespaceProperty(credentials, nm, property);
 }
 void NamespaceOperations::setProperty(std::string property, std::string value, std::string namespaceName) {
@@ -156,7 +156,7 @@ void NamespaceOperations::setProperty(std::string property, std::string value, s
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
   }
-  interconnect::AccumuloMasterTransporter *baseTransport = clientInterface->getTransport().get();
+  auto baseTransport = clientInterface->getTransport().get();
   baseTransport->setNamespaceProperty(credentials, nm, property, value);
 }
 

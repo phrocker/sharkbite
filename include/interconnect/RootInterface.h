@@ -33,14 +33,14 @@ namespace interconnect {
  * Provides base connectivity to accumulo services
  */
 template<class T, class S1, class S2>
-class RootInterface : public AccumuloConnector<T> {
+class RootInterface : public AccumuloBaseConnector<T> {
  protected:
 
   /**
    * Default constructor
    **/
   RootInterface()
-      : AccumuloConnector<T>() {
+      : AccumuloBaseConnector<T>() {
 
   }
  public:
@@ -51,7 +51,7 @@ class RootInterface : public AccumuloConnector<T> {
     * @param instance pointer to the current instance
     */
    RootInterface(cclient::data::security::AuthInfo creds, cclient::data::Instance *instance)
-       : AccumuloConnector<T>() {
+       : AccumuloBaseConnector<T>() {
 
    }
   /**
@@ -60,7 +60,7 @@ class RootInterface : public AccumuloConnector<T> {
    * @param instance pointer to the current instance
    */
   RootInterface(cclient::data::security::AuthInfo creds, std::shared_ptr<cclient::data::Instance> instance)
-      : AccumuloConnector<T>() {
+      : AccumuloBaseConnector<T>() {
 
   }
 

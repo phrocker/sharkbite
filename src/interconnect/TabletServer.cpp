@@ -150,7 +150,7 @@ ServerInterconnect::ServerInterconnect(std::shared_ptr<cclient::data::tserver::S
 ServerInterconnect::ServerInterconnect(const std::string host, const int port, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector)
     :
     logger(logging::LoggerFactory<ServerInterconnect>::getLogger()),
-    AccumuloConnector<interconnect::ThriftTransporter>(host, port) {
+    AccumuloBaseConnector<interconnect::ThriftTransporter>(host, port) {
   ConnectorService conn("tserver", host, port);
 
   const uint16_t tserverPort = (uint16_t) conf->getLong(TSERVER_PORT_OPT,

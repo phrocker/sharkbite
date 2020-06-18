@@ -22,7 +22,7 @@
 #include "../include/scanner/impl/Scanner.h"
 #include "../include/writer/impl/SinkImpl.h"
 #include "../include/data/constructs/client/zookeeperinstance.h"
-#include "../include/interconnect/Master.h"
+#include "../include/interconnect/Accumulo.h"
 #include "../include/interconnect/tableOps/TableOperations.h"
 #include "../include/interconnect/securityOps/SecurityOperations.h"
 
