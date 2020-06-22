@@ -306,7 +306,7 @@ include_directories(${CURL_INCLUDE_DIRS})
 	add_dependencies(protobuf Protobuf)
 	set(PROTOBUF_FOUND TRUE CACHE STRING "" FORCE)
 
-set(MPythonInterpY_PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
+set(MY_PYTHON_VERSION "" CACHE STRING "Optional user-selected Python version")
 if (TRAVIS)
 	find_package(Python COMPONENTS Interpreter Development)
 else()
