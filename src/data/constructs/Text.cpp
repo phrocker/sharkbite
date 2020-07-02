@@ -74,8 +74,8 @@ void Text::reset() {
   currentSize = 0;
 }
 
-std::string Text::toString() {
-  if (buffer)
+std::string Text::toString() const{
+  if (buffer && currentSize > 0)
     return std::string(buffer, currentSize);
   else
     return "";

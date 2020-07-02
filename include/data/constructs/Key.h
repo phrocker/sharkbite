@@ -18,7 +18,6 @@
 #include "ObjectPool.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "Text.h"
-
 #include <stdint.h>
 #include <ostream>
 #include <functional>
@@ -129,7 +128,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   std::string getRowStr() const {
     if (row_ref && !row_ref->empty())
       return row_ref->toString();
-    return std::string(row, rowLength);
+    return rowLength > 0 ? std::string(row, rowLength) : std::string("");
   }
 
   void setColFamily(const char *r, uint32_t size, bool takeOwnership = false) {
@@ -149,10 +148,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return std::make_pair(colFamily, columnFamilyLength);
   }
 
-  inline std::string getColFamilyStr() {
+  inline std::string getColFamilyStr() const {
     if (cf_ref && !cf_ref->empty())
       return cf_ref->toString();
-    return std::string(colFamily, columnFamilyLength);
+    return columnFamilyLength > 0 ? std::string(colFamily, columnFamilyLength) : std::string("");
   }
 
   void setColQualifier(const char *r, uint32_t size, bool takeOwnership = false) {
@@ -174,7 +173,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   std::string getColQualifierStr() const {
     if (cq_ref && !cq_ref->empty())
       return cq_ref->toString();
-    return std::string(colQualifier, colQualLen);
+    return colQualLen > 0 ? std::string(colQualifier, colQualLen) : std::string("");
   }
 
   void setColVisibility(const char *r, uint32_t size, bool takeOwnership = false) {
@@ -187,16 +186,16 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     setColVisibility(st.c_str(), st.size());
   }
 
-  std::pair<char*, size_t> getColVisibility() {
+  std::pair<char*, size_t> getColVisibility() const{
     if (cv_ref && !cv_ref->empty())
       return cv_ref->getBuffer();
     return std::make_pair(keyVisibility, colVisLen);
   }
 
-  std::string getColVisibilityStr() {
+  std::string getColVisibilityStr() const{
     if (cv_ref && !cv_ref->empty())
       return cv_ref->toString();
-    return std::string(keyVisibility, colVisLen);
+    return colVisLen > 0 ? std::string(keyVisibility, colVisLen) : std::string("");
   }
 
   int64_t getTimeStamp() {
@@ -278,28 +277,18 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   std::string toString() {
-    std::string out = "";
-    std::pair<char*, size_t> row = getRow();
-    out += std::string(row.first, row.second) + " ";
-    std::pair<char*, size_t> cf = getColFamily();
-    std::pair<char*, size_t> cq = getColQualifier();
-    out += std::string(cf.first, cf.second) + ":" + std::string(cq.first, cq.second) + " [";
-    std::pair<char*, size_t> viz = getColVisibility();
-    auto vizstring = viz.second > 1 ? std::string(viz.first, viz.second) : "";
-    out += vizstring + "] " + std::to_string(getTimeStamp());
+    std::string out;
+    out += getRowStr() + " ";
+    out += getColFamilyStr() + ":" + getColQualifierStr()+ " [";
+    out += getColVisibilityStr() + "] " + std::to_string(getTimeStamp());
     return out;
   }
 
   friend inline std::ostream&
   operator <<(std::ostream &out, Key &rhs) {
-    std::pair<char*, size_t> row = rhs.getRow();
-    out << std::string(row.first, row.second) << " ";
-    std::pair<char*, size_t> cf = rhs.getColFamily();
-    std::pair<char*, size_t> cq = rhs.getColQualifier();
-    out << (cf.second > 0 ? std::string(cf.first, cf.second) : "") << ":" << (cq.second > 0 ? std::string(cq.first, cq.second) : "") << " [";
-    std::pair<char*, size_t> viz = rhs.getColVisibility();
-    auto vizstring = viz.second > 0 ? std::string(viz.first, viz.second) : "";
-    out << vizstring << "] " << std::to_string(rhs.getTimeStamp());
+    out << rhs.getRowStr() << " ";
+    out << rhs.getColFamilyStr() << ":" << rhs.getColQualifierStr()+ " [";
+    out << rhs.getColVisibilityStr() << "] " << std::to_string(rhs.getTimeStamp());
     return out;
   }
 
