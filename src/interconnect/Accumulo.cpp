@@ -100,12 +100,11 @@ void AccumuloConnector::findTservers() {
  * @param table incoming table
  * @returns instance of table ops for this type of interface
  */
-std::unique_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::string &table) {
+std::shared_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::string &table) {
   if (IsEmpty(&table))
     throw cclient::exceptions::ClientException(TABLE_OR_NAMESPACE_EMPTY);
   auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
-  return std::unique_ptr<AccumuloTableOperations>(
-      new AccumuloTableOperations(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, table, this, tserverConnection, myTransportPool));
+  return std::make_shared<AccumuloTableOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, table, this, tserverConnection, myTransportPool);
 }
 
 /**
@@ -113,18 +112,18 @@ std::unique_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::
  * @param nm namespace to create. optional argument.
  * @returns Namespace Operations.
  */
-std::unique_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(const std::string &nm) {
-  return std::unique_ptr<NamespaceOperations>(new NamespaceOperations(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), nm, instance, this, myTransportPool));
+std::shared_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(const std::string &nm) {
+  return std::make_shared<NamespaceOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), nm, instance, this, myTransportPool);
 }
 
 /**
  * Create Security Operations
  * @returns new Security operations argument.
  */
-std::unique_ptr<SecurityOperations> AccumuloConnector::securityOps() {
+std::shared_ptr<SecurityOperations> AccumuloConnector::securityOps() {
 
   auto ptr = myTransportPool->getTransporter(&tabletServers, true).second;
-  return std::unique_ptr<SecurityOperations>(new SecurityOperations(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, ptr, myTransportPool));
+  return std::make_shared<SecurityOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, ptr, myTransportPool);
 }
 
 /**

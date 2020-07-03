@@ -62,7 +62,7 @@ main (int argc, char **argv)
 
 	interconnect::AccumuloConnector accumulo(&creds, instance);
 
-	std::unique_ptr<interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> ops = accumulo.tableOps (
+	auto ops = accumulo.tableOps (
 	                        table);
 
 	// create the table. no harm/no foul if it exists
@@ -78,7 +78,7 @@ main (int argc, char **argv)
 	std::cout << "Compacting table " << std::endl;
 	ops->compact("a","z",false);
 
-	std::unique_ptr<interconnect::NamespaceOperations> nameOps = accumulo.namespaceOps();
+	auto nameOps = accumulo.namespaceOps();
 		
 	for(auto nm : nameOps->list())
 	{

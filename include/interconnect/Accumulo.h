@@ -64,29 +64,26 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
         : AccumuloConnector(*credentials, instance) {
     }
 
-  //AccumuloConnector()
-//      : instance(nullptr){
-  //}
 
   /**
    * Returns an instance of table operations
    * @param table incoming table
    * @returns instance of table ops for this type of interface
    */
-  std::unique_ptr<AccumuloTableOperations> tableOps(const std::string &table);
+  std::shared_ptr<AccumuloTableOperations> tableOps(const std::string &table);
 
   /**
    * Returns an instance of namespace  operations
    * @param nm namespace
    * @returns instance of namespace ops for this type of interface
    */
-  std::unique_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
+  std::shared_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
 
   /**
    * Returns an instance of security operations
    * @returns instance of security ops for this type of interface
    */
-  std::unique_ptr<SecurityOperations> securityOps();
+  std::shared_ptr<SecurityOperations> securityOps();
 
   virtual ~AccumuloConnector();
 

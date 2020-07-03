@@ -60,9 +60,9 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
     return 1;
   }
 
-  std::unique_ptr<interconnect::AccumuloTableOperations> ops = accumulo->tableOps(table);
+  auto ops = accumulo->tableOps(table);
 
-  std::unique_ptr<interconnect::SecurityOperations> secOps = accumulo->securityOps();
+  auto secOps = accumulo->securityOps();
 
   // create the table. no harm/no foul if it exists
   std::cout << "Checking if " << table << " exists." << std::endl;

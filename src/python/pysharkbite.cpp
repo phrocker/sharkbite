@@ -93,13 +93,13 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("onNext",&cclient::data::python::PythonIterInfo::onNext, "Lambda that is provided the accumulo key")
   .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
-  pybind11::class_<interconnect::AccumuloConnector>(s, "AccumuloConnector", "Accumulo connector")
+  pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
   .def("securityOps",&interconnect::AccumuloConnector::securityOps, "Return the security operations object")
   .def("namespaceOps",&interconnect::AccumuloConnector::namespaceOps, "Allows the user to perform namespace operations")
   .def("tableOps",&interconnect::AccumuloConnector::tableOps, "Return the table operations object");
 
- pybind11::class_<interconnect::NamespaceOperations>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
+ pybind11::class_<interconnect::NamespaceOperations, std::shared_ptr<interconnect::NamespaceOperations>>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
   .def("list",&interconnect::NamespaceOperations::list, "Lists namespaces within this Accumulo instance")
   .def("remove",&interconnect::NamespaceOperations::remove, "removes the namespace")
   .def("exists",&interconnect::NamespaceOperations::exists, "Returns true if the namespace exists")
@@ -108,7 +108,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("removeProperty", &interconnect::NamespaceOperations::removeProperty, "Remove the namespace property")
   .def("create",&interconnect::NamespaceOperations::create, "Creates the namespace");
 
-  pybind11::class_<interconnect::AccumuloTableOperations>(s, "AccumuloTableOperations", "Accumulo table operations. Should be accessed through 'AccumuloConnector'")
+  pybind11::class_<interconnect::AccumuloTableOperations, std::shared_ptr<interconnect::AccumuloTableOperations>>(s, "AccumuloTableOperations", "Accumulo table operations. Should be accessed through 'AccumuloConnector'")
   .def("remove",&interconnect::AccumuloTableOperations::remove, "remove the table")
   .def("exists",&interconnect::AccumuloTableOperations::exists, "Returns true if the table exists")
   .def("import",&interconnect::AccumuloTableOperations::import, "import data into this directory")
@@ -122,7 +122,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("createWriter", &interconnect::AccumuloTableOperations::createSharedWriter, "Create writer for table")
   .def("create",&interconnect::AccumuloTableOperations::create, "Create the table");
 
-  pybind11::class_<interconnect::SecurityOperations>(s, "SecurityOperations", "Basic security operations")
+  pybind11::class_<interconnect::SecurityOperations, std::shared_ptr<interconnect::SecurityOperations>>(s, "SecurityOperations", "Basic security operations")
   .def("create_user",&interconnect::SecurityOperations::createUser, "Creates a user")
   .def("change_password",&interconnect::SecurityOperations::changeUserPassword, "Changes the user password")
   .def("remove_user",&interconnect::SecurityOperations::dropUser, "Removes the user")

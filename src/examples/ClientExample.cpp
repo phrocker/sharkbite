@@ -172,11 +172,11 @@ main (int argc, char **argv)
 
 	auto accumulo = new interconnect::AccumuloConnector (creds, instance);
 
-	std::unique_ptr<interconnect::AccumuloTableOperations> ops = accumulo->tableOps (
+	auto ops = accumulo->tableOps (
 	                        table);
 
 	
-	std::unique_ptr<interconnect::SecurityOperations> secOps = accumulo->securityOps();
+	auto secOps = accumulo->securityOps();
 
 	// create the table. no harm/no foul if it exists
 	std::cout << "Checking if " << table << " exists." << std::endl;
@@ -190,7 +190,7 @@ main (int argc, char **argv)
 
 
 
-	std::unique_ptr<interconnect::NamespaceOperations> nameOps = accumulo->namespaceOps();
+	auto  nameOps = accumulo->namespaceOps();
 
 
 	cclient::data::security::Authorizations auths;
