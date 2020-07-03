@@ -1,5 +1,6 @@
 from testmodule import *
 import sys
+import asyncio
 
 class TestAsync(TestRunner):
 		
@@ -7,19 +8,12 @@ class TestAsync(TestRunner):
 		super().__init__()
 	
 	
-	async def printasync(iter):
-      async for keyvalue in iter:
-        key = keyvalue.getKey()
-        print(key.getRow())
-
-	def mthd(self):
-	
+	async def testasync(self,connector,table):
 		import pysharkbite
+		tableOperations = connector.tableOps(table)
 		
-		tableOperations = super().getTableOperations()
-			
 		if not tableOperations.exists(False):
-		    print ("Creating table")
+		    print ("Creating table" + table)
 		    tableOperations.create(False)  
 		else:
 		    print ("Table already exists, so not creating it")  
@@ -65,7 +59,8 @@ class TestAsync(TestRunner):
 		
 		endKey.setRow("row3")
 		
-		range = pysharkbite.Range(startKey,True,endKey,False)
+		# test single range
+		range = pysharkbite.Range("row2")
 		
 		scanner.addRange( range )
 		
@@ -83,12 +78,111 @@ class TestAsync(TestRunner):
 				print("Unexpected column cf3")
 				sys.exit(1)
 		    
+		range = pysharkbite.Range("row1",True,"row1.5",True)
+		
+		scanner.addRange( range )
+		
+		resultset = scanner.getResultSet()
+		
+		for keyvalue in resultset:
+			print("Unexpected result")
+			sys.exit(1)
 		    
+		# test single range
+		range = pysharkbite.Range("row",False,"row3",True)
+		
+		scanner = tableOperations.createScanner(auths, 2)
+		
+		scanner.addRange( range )
+		
+		resultset = scanner.getResultSet()
+		
+		count =0
+		for keyvalue in resultset:
+			key = keyvalue.getKey()
+			assert( "row2" == key.getRow() )
+			value = keyvalue.getValue()
+			if "cf" == key.getColumnFamily():
+				assert( "value"  == value.get() )
+			if ("cf2" == key.getColumnFamily() ):
+				assert( "value2" == value.get() )
+			if ("cf3" == key.getColumnFamily() ):
+				print("Unexpected column cf3")
+				sys.exit(1)
+			count=count+1
+		if count <= 0:
+			print("Expected results")
+			sys.exit(1)
+			
+		
+		# test infinite range
+		range = pysharkbite.Range("",False,"row3",True)
+		
+		scanner = tableOperations.createScanner(auths, 2)
+		
+		scanner.addRange( range )
+		
+		resultset = scanner.getResultSet()
+		
+		count =0
+		for keyvalue in resultset:
+			key = keyvalue.getKey()
+			assert( "row2" == key.getRow() )
+			value = keyvalue.getValue()
+			if "cf" == key.getColumnFamily():
+				assert( "value"  == value.get() )
+			if ("cf2" == key.getColumnFamily() ):
+				assert( "value2" == value.get() )
+			if ("cf3" == key.getColumnFamily() ):
+				print("Unexpected column cf3")
+				sys.exit(1)
+			count=count+1
+		if count <= 0:
+			print("Expected results")
+			sys.exit(1)
+			
+		startKey = pysharkbite.Key("row3")
+			
+		range = pysharkbite.Range(None,False,startKey,True)
+		
+		scanner = tableOperations.createScanner(auths, 2)
+		
+		scanner.addRange( range )
+		
+		resultset = scanner.getResultSet()
+		
+		count =0
+		for keyvalue in resultset:
+			key = keyvalue.getKey()
+			assert( "row2" == key.getRow() )
+			value = keyvalue.getValue()
+			if "cf" == key.getColumnFamily():
+				assert( "value"  == value.get() )
+			if ("cf2" == key.getColumnFamily() ):
+				assert( "value2" == value.get() )
+			if ("cf3" == key.getColumnFamily() ):
+				print("Unexpected column cf3")
+				sys.exit(1)
+			count=count+1
+		if count <= 0:
+			print("Expected results")
+			sys.exit(1)
+		
 		
 		""" delete your table if user did not create temp """
 		
 		tableOperations.remove()
 
+	async def mthd(self):
+	
+		import pysharkbite
+	
+		await self.testasync(self.getConnector(),self.getTable()+"a")
+		await self.testasync(self.getConnector(),self.getTable()+"b")
+		await self.testasync(self.getConnector(),self.getTable()+"c")
+		await self.testasync(self.getConnector(),self.getTable()+"d")
+		await self.testasync(self.getConnector(),self.getTable()+"e")
 
-runner = TestWrites()
-runner.mthd()
+
+runner = TestAsync()
+asyncio.run(runner.mthd())
