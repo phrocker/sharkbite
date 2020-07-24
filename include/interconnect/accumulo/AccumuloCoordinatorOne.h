@@ -519,6 +519,18 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
     return v1_createTable(auth, table);
     return false;
   }
+  
+
+  virtual cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth){
+      org::apache::accumulo::core::trace::thrift::TInfo transId;
+      org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+      transId.parentId = 0;
+      transId.traceId = rand();
+
+      org::apache::accumulo::core::master::thrift::MasterMonitorInfo stats;
+      coordinatorClient->getMasterStats(stats,transId, creds);
+      return ThriftWrapper::convert(stats);
+  }
 
   bool importDirectory(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &dir, std::string failure_dir, bool setTime) override {
     return v1_importDirectory(auth, table, dir, failure_dir, setTime);

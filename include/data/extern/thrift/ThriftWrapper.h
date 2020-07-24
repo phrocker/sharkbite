@@ -11,6 +11,7 @@
 #include "../../constructs/Mutation.h"
 #include "../../constructs/KeyExtent.h"
 #include "../../constructs/column.h"
+#include "data/constructs/coordinator/AccumuloInfo.h"
 
 #include "gzip/compress.hpp"
 #include "gzip/config.hpp"
@@ -60,6 +61,20 @@ class ThriftWrapper {
     delete[] array;
     return new cclient::data::security::AuthInfo(creds.principal, decompressed, creds.instanceId);
   }
+
+  static cclient::data::AccumuloInfo convert(org::apache::accumulo::core::master::thrift::MasterMonitorInfo &stats){
+
+   std::map<std::string, cclient::data::TableInfo>  tableMap;
+    std::vector<cclient::data::TabletServerStatus>  tServerInfo;
+    std::map<std::string, int8_t>  badTServers;
+    CoordinatorState::type state;
+    CoordinatorGoalState::type goalState;
+    int32_t unassignedTablets;
+    std::set<std::string>  serversShuttingDown;
+    std::vector<DeadServer>  deadTabletServers;
+
+  }
+
   static org::apache::accumulo::core::security::thrift::TCredentials convert(cclient::data::security::AuthInfo *authInfo) {
     org::apache::accumulo::core::security::thrift::TCredentials stackAuthInfo;
     stackAuthInfo.instanceId = authInfo->getInstanceId();

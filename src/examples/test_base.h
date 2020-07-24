@@ -56,7 +56,7 @@ int run_test(std::string table, std::string instanceStr, std::string zks, std::s
     accumulo = new interconnect::AccumuloConnector(&creds, instance);
 
   }catch(const cclient::exceptions::ClientException &ce) {
-    std::cout << "Could not connect to Master. Error: " << ce.what() << std::endl;
+    std::cout << "Could not connect to Accumulo. Error: " << ce.what() << std::endl;
     return 1;
   }
 
