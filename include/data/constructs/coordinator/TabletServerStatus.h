@@ -54,6 +54,50 @@ class TabletServerStatusBuilder;
 class TabletServerStatus{
 public:
     static TabletServerStatusBuilder make();
+
+    auto getTableMap() const{
+        return tableMap;
+    }
+
+    auto getLastContact() const{
+        return lastContact;
+    }
+
+    auto getName() const{
+        return name;
+    }
+
+    auto getOsLoad() const{
+        return osLoad;
+    }
+
+    auto getLookups() const{
+        return lookups;
+    }
+
+    auto getIndexCacheHits() const{
+        return indexCacheHits;
+    }
+
+    auto getDataCacheHits() const{
+        return dataCacheHits;
+    }
+
+    auto getDataCacheRequests() const{
+        return dataCacheRequest;
+    }
+
+    auto getLogSorts() const{
+        return logSorts;
+    }
+
+    auto getFlushes() const{
+        return flushs;
+    }
+
+    auto getSyncs() const{
+        return syncs;
+    }
 private:
     friend class TabletServerStatusBuilder;
     TabletServerStatus():lastContact(0),holdTime(0),lookups(0),indexCacheHits(0),indexCacheRequest(0),dataCacheHits(0),dataCacheRequest(0),flushs(0),syncs(0){
@@ -154,9 +198,7 @@ class TabletServerStatusBuilder{
     TabletServerStatus status;
 };
 
-TabletServerStatusBuilder TabletServerStatus::make(){
-    return TabletServerStatusBuilder();
-}
+
 
 }
 }

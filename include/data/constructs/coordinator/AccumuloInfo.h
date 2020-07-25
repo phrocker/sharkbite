@@ -187,10 +187,6 @@ class AccumuloInfoBuilder{
     AccumuloInfo info;
 };
 
-AccumuloInfoBuilder AccumuloInfo::make(){
-    return AccumuloInfoBuilder();
-}
-
 
 }
 

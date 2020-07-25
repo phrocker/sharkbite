@@ -132,6 +132,19 @@ class AccumuloCoordinatorTransporter : public ThriftTransporter, public FateInte
 
     createCoordinatorClient();
   }
+ 
+  template<typename T>
+  T callApiWith(std::function<T()> fx) {
+    try {
+      return fx();
+    } catch (const interconnect::APIException &e) {
+      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->toString()) + 1;
+      switchInterconnect(suspectedVersion);
+      T ret = fx();
+      cclient::data::InstanceVersion::setVersion(getConnection()->toString(), suspectedVersion);
+      return ret;
+    }
+  }
 
   bool callApiBool(std::function<bool()> fx) {
     bool ret = false;
@@ -186,6 +199,13 @@ class AccumuloCoordinatorTransporter : public ThriftTransporter, public FateInte
       return coordinator->importDirectory(auth, table, dir, failure_dir, setTime);
     });
   }
+
+  cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth) {
+    return callApiWith<cclient::data::AccumuloInfo>([&]() -> cclient::data::AccumuloInfo {
+      return coordinator->getStatistics(auth);
+    });
+  }
+  
 
   bool compactFallBack(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &startrow, const std::string &endrow, bool wait) {
     return callApiBool([&]() -> bool {

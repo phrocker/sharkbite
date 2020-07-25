@@ -42,6 +42,7 @@
 #include "securityOps/SecurityOperations.h"
 #include "../data/constructs/inputvalidation.h"
 #include "transport/AccumuloCoordinatorTransporter.h"
+#include "data/constructs/coordinator/AccumuloInfo.h"
 
 namespace interconnect {
 
@@ -78,6 +79,14 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
    * @returns instance of namespace ops for this type of interface
    */
   std::shared_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
+
+
+  /**
+   * Gets statistics about the accumulo cluster
+   * @returns AccumuloInfo object that contains statistics about the cluster
+   */
+  cclient::data::AccumuloInfo getStatistics();
+
 
   /**
    * Returns an instance of security operations

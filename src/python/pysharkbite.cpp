@@ -43,7 +43,9 @@
 #include "scanner/ScannerOptions.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
-
+#include "data/constructs/coordinator/AccumuloInfo.h"
+#include "data/constructs/coordinator/TableInfo.h"
+#include "data/constructs/coordinator/TabletServerStatus.h"
 using namespace pybind11::literals;
 
 PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
@@ -93,10 +95,90 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("onNext",&cclient::data::python::PythonIterInfo::onNext, "Lambda that is provided the accumulo key")
   .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
+
+
+    pybind11::class_<cclient::data::TableRates>(s, "TableRates")
+    .def("getIngestRate",&cclient::data::TableRates::getIngestRate, "Gets the ingest rate in records.")
+    .def("getIngestRateByte",&cclient::data::TableRates::getIngestRateByte, "Gets the ingest rate in bytes.")
+    .def("getQueryRate",&cclient::data::TableRates::getQueryRate, "Gets the query rate in records.")
+    .def("getQueryRateByte",&cclient::data::TableRates::getQueryRateByte, "Gets the query rate in bytes.")
+    .def("getScanRate",&cclient::data::TableRates::getScanRate, "Gets the scan rate.");
+
+
+  pybind11::class_<cclient::data::Compacting>(s, "Compacting")
+    .def("getRunning",&cclient::data::Compacting::getRunning, "Gets running compactions.")
+    .def("getQueued",&cclient::data::Compacting::getQueued, "Gets queued compactions.");
+
+    
+    pybind11::class_<cclient::data::RecoveryStatus>(s, "RecoveryStatus")
+    .def("getName",&cclient::data::RecoveryStatus::getName, "Gets the name of the recovery.")
+    .def("getRuntime",&cclient::data::RecoveryStatus::getRuntime, "Gets the runtime of the recovery process.")
+    .def("getProgress",&cclient::data::RecoveryStatus::getProgress, "Gets the progress of the recovery.");
+
+    pybind11::class_<cclient::data::TableCompactions>(s, "TableCompactions")
+    .def("getMinorCompactions",&cclient::data::TableCompactions::getMinorCompactions, "Gets minor compaction stats.")
+    .def("getMajorCompactions",&cclient::data::TableCompactions::getMajorCompactions, "Gets major compaction stats.")
+    .def("getScans",&cclient::data::TableCompactions::getScans, "Gets scan stats.");
+
+    pybind11::class_<cclient::data::TableInfo>(s, "TableInfo")
+    .def("getRecords",&cclient::data::TableInfo::getRecords, "Gets records in the table")
+    .def("getRecordsInMemory",&cclient::data::TableInfo::getRecordsInMemory, "Gets records in memory for a table")
+    .def("getTablets",&cclient::data::TableInfo::getTablets, "Gets tablets in the table")
+    .def("getOnlineTablets",&cclient::data::TableInfo::getOnlineTablets, "Gets online tablets in the table")
+    .def("getTableRates",&cclient::data::TableInfo::getTableRates, "Gets table rates for the table")
+    .def("getCompactioninfo",&cclient::data::TableInfo::getCompactioninfo, "Gets compaction info for the table");
+
+  pybind11::class_<cclient::data::TabletServerStatus>(s, "TabletServerStatus")
+    .def("getTableMap",&cclient::data::TabletServerStatus::getTableMap, "Gets the table map")
+    .def("getLastContact",&cclient::data::TabletServerStatus::getLastContact, "Gets the last contact time of the server")
+    .def("getName",&cclient::data::TabletServerStatus::getName, "Gets the name of the server")
+    .def("getOsLoad",&cclient::data::TabletServerStatus::getOsLoad, "Gets the load of the server")
+    .def("getLookups",&cclient::data::TabletServerStatus::getLookups, "Gets lookups against the server")
+    .def("getIndexCacheHits",&cclient::data::TabletServerStatus::getIndexCacheHits, "Gets index cache hits against the server")
+    .def("getDataCacheHits",&cclient::data::TabletServerStatus::getDataCacheHits, "Gets data cache hits against the server")
+    .def("getDataCacheRequests",&cclient::data::TabletServerStatus::getDataCacheRequests, "Gets data cache requests against the server")
+    .def("getLogSorts",&cclient::data::TabletServerStatus::getLogSorts, "Gets the number of log sorts")
+    .def("getFlushes",&cclient::data::TabletServerStatus::getFlushes, "Gets the number of flushes on the server")
+    .def("getSyncs",&cclient::data::TabletServerStatus::getSyncs, "Gets the number of syncs on the server");
+
+
+
+   pybind11::class_<cclient::data::DeadServer>(s, "DeadServer")
+    .def("getServer",&cclient::data::DeadServer::getServer, "Gets the server name.")
+    .def("getLastContact",&cclient::data::DeadServer::getLastContact, "Get last contact time with this server.")
+    .def("getStatus",&cclient::data::DeadServer::getStatus, "Gets the status of the server.");
+
+      pybind11::enum_<cclient::data::CoordinatorGoalState::type>(s, "CoordinatorGoalState", pybind11::arithmetic())
+       .value("CLEAN_STOP", cclient::data::CoordinatorGoalState::type::CLEAN_STOP, "CLEAN_STOP state")
+       .value("SAFE_MODE", cclient::data::CoordinatorGoalState::type::SAFE_MODE, "SAFE_MODE state")
+       .value("NORMAL", cclient::data::CoordinatorGoalState::type::NORMAL, "NORMAL state");
+
+
+  pybind11::enum_<cclient::data::CoordinatorState::type>(s, "CoordinatorState", pybind11::arithmetic())
+       .value("INITIAL", cclient::data::CoordinatorState::type::INITIAL, "INITIAL state")
+       .value("HAVE_LOCK", cclient::data::CoordinatorState::type::HAVE_LOCK, "HAVE_LOCK state")
+       .value("SAFE_MODE", cclient::data::CoordinatorState::type::SAFE_MODE, "SAFE_MODE state")
+       .value("NORMAL", cclient::data::CoordinatorState::type::NORMAL, "NORMAL state")
+       .value("UNLOAD_METADATA_TABLETS", cclient::data::CoordinatorState::type::UNLOAD_METADATA_TABLETS, "UNLOAD_METADATA_TABLETS state")
+       .value("UNLOAD_ROOT_TABLET", cclient::data::CoordinatorState::type::UNLOAD_ROOT_TABLET, "UNLOAD_ROOT_TABLET state")
+       .value("STOP", cclient::data::CoordinatorState::type::STOP, "STOP state");
+
+    pybind11::class_<cclient::data::AccumuloInfo>(s, "AccumuloInfo")
+    .def("getTableMap",&cclient::data::AccumuloInfo::getTableMap, "Gets the Table map for the cluster.")
+    .def("getTabletServerInfo",&cclient::data::AccumuloInfo::getTabletServerInfo, "Gets tablet server Info")
+    .def("getBadTabletServers",&cclient::data::AccumuloInfo::getBadTabletServers, "Gets a mapping of bad tablet servers.")
+    .def("getState",&cclient::data::AccumuloInfo::getState, "Gets the state of the accumulo cluster.")
+    .def("getGoalState",&cclient::data::AccumuloInfo::getGoalState, "Returns the goal state of the cluster.")
+    .def("getUnassignedTablets",&cclient::data::AccumuloInfo::getUnassignedTablets, "Gets the unassigned tablets")
+    .def("getServerShuttingDown",&cclient::data::AccumuloInfo::getServerShuttingDown, "Returns the set of servers shutting down.")
+    .def("getDeadServers",&cclient::data::AccumuloInfo::getDeadServers, "Returns a list of dead tablet servers.");
+
+
   pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
   .def("securityOps",&interconnect::AccumuloConnector::securityOps, "Return the security operations object")
   .def("namespaceOps",&interconnect::AccumuloConnector::namespaceOps, "Allows the user to perform namespace operations")
+  .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
   .def("tableOps",&interconnect::AccumuloConnector::tableOps, "Return the table operations object");
 
  pybind11::class_<interconnect::NamespaceOperations, std::shared_ptr<interconnect::NamespaceOperations>>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
@@ -377,9 +459,6 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("getRange",&cclient::data::streams::StreamSeekable::getRange, "Gets this seekable range")
     .def("getColumnFamilies",&cclient::data::streams::StreamSeekable::getColumnFamilies, "Gets the column families for this seekable")
     .def("isInclusive",&cclient::data::streams::StreamSeekable::isInclusive, "Returns true if the column families are inclusive.");
-
-
-
 
   pybind11::class_<cclient::data::RFileOperations>(s, "RFileOperations", "RFile Operations")
     .def("randomSeek",&cclient::data::RFileOperations::open, "Opens a single RFile to read, best used for random seeks")
