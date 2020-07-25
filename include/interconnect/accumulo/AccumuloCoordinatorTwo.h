@@ -346,13 +346,13 @@ class AccumuloCoordinatorFacadeV2 : public AccumuloCoordinatorFacade {
   
   virtual cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth) override{
       org::apache::accumulov2::core::trace::thrift::TInfo transId;
-      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftWrapper::convert(auth);
+      org::apache::accumulov2::core::securityImpl::thrift::TCredentials creds = ThriftV2Wrapper::convert(auth);
       transId.parentId = 0;
       transId.traceId = rand();
 
       org::apache::accumulov2::core::master::thrift::MasterMonitorInfo stats;
-      coordinatorClient->getMasterStats(stats,transId, creds);
-      return ThriftWrapper::convert(stats);
+      coordinatorClientV2->getMasterStats(stats,transId, creds);
+      return ThriftV2Wrapper::convert(stats);
   }
 
   std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs, const std::map<std::string, std::string> &options,

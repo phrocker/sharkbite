@@ -22,6 +22,7 @@
 #include "../../streaming/input/NetworkOrderInputStream.h"
 #include "data_types.h"
 #include "security_types.h"
+#include "master_types.h"
 namespace interconnect {
 
 class ThriftV2Wrapper {
@@ -345,16 +346,29 @@ class ThriftV2Wrapper {
 				[&ret] (const std::pair<std::string,org::apache::accumulov2::core::master::thrift::TableInfo> &entry)
 				{
           auto tableRates = cclient::data::TableRates(entry.second.ingestRate, entry.second.ingestByteRate,
-                entry.second.queryRate, entry.second.queryByteRate);
+                entry.second.queryRate, entry.second.queryByteRate,entry.second.scanRate);
           auto tableCompacting = cclient::data::TableCompactions(
                 cclient::data::Compacting(entry.second.minors.running,entry.second.minors.queued),
-                cclient::data::Compacting(entry.second.majors.running,entry.second.majors.queued),;
+                cclient::data::Compacting(entry.second.majors.running,entry.second.majors.queued),
                 cclient::data::Compacting(entry.second.scans.running,entry.second.scans.queued));
               
 					ret.insert( std::make_pair(entry.first,
           cclient::data::TableInfo( entry.second.recs,entry.second.recsInMemory,
               entry.second.tablets, entry.second.onlineTablets, 
               tableRates,tableCompacting)));
+				});
+        return ret;
+  }
+
+  static std::vector<cclient::data::RecoveryStatus> convert(std::vector<org::apache::accumulov2::core::master::thrift::RecoveryStatus> logSorts){
+  std::vector<cclient::data::RecoveryStatus> ret;
+
+  	std::for_each(logSorts.begin(), logSorts.end(),
+				[&ret] (const org::apache::accumulov2::core::master::thrift::RecoveryStatus &entry)
+				{
+					ret.push_back(
+            cclient::data::RecoveryStatus(entry.name,entry.runtime,entry.progress)
+            );
 				});
         return ret;
   }
@@ -370,12 +384,10 @@ class ThriftV2Wrapper {
             cclient::data::TabletServerStatus::make().tableMap(convert(entry.tableMap)).lastContact(entry.lastContact).
               name(entry.name).osLoad(entry.osLoad).holdTime(entry.holdTime).lookups(entry.lookups).indexCacheHits(entry.indexCacheHits).
               indexCacheRequest(entry.indexCacheRequest).dataCacheHits(entry.dataCacheHits).dataCacheRequest(entry.dataCacheRequest).
-              logSorts(entry.logSorts).flushs(entry.flushs).syncs(entry.syncs)
+              logSorts(convert(entry.logSorts)).flushs(entry.flushs).syncs(entry.syncs)
             );
 				});
         return ret;
-
-    return ret;
   }
 
   static cclient::data::CoordinatorState::type convert(org::apache::accumulov2::core::master::thrift::MasterState::type state){
@@ -425,11 +437,11 @@ class ThriftV2Wrapper {
 
 
   static cclient::data::AccumuloInfo convert(org::apache::accumulov2::core::master::thrift::MasterMonitorInfo &stats){
-    return cclient::data::AccumuloInfo::make().
+    return std::move(cclient::data::AccumuloInfo::make().
         tableMap( convert(stats.tableMap) ).tabletServerInfo( convert(stats.tServerInfo)).
         badTabletServers(stats.badTServers).state(convert(stats.state)).
         goalState(convert(stats.goalState)).unassignedTablets(stats.unassignedTablets).
-        serversShuttingDown(stats.serversShuttingDown).deadTabletServers(convert(stats.deadTabletServers));
+        serversShuttingDown(stats.serversShuttingDown).deadTabletServers(convert(stats.deadTabletServers)));
   }
 
  protected:

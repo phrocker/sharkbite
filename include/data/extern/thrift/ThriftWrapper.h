@@ -27,6 +27,7 @@
 #include "../../streaming/input/NetworkOrderInputStream.h"
 #include "data_types.h"
 #include "security_types.h"
+#include "master_types.h"
 namespace interconnect {
 
 class ThriftWrapper {
@@ -349,10 +350,10 @@ class ThriftWrapper {
 				[&ret] (const std::pair<std::string,org::apache::accumulo::core::master::thrift::TableInfo> &entry)
 				{
           auto tableRates = cclient::data::TableRates(entry.second.ingestRate, entry.second.ingestByteRate,
-                entry.second.queryRate, entry.second.queryByteRate);
+                entry.second.queryRate, entry.second.queryByteRate,entry.second.scanRate);
           auto tableCompacting = cclient::data::TableCompactions(
                 cclient::data::Compacting(entry.second.minors.running,entry.second.minors.queued),
-                cclient::data::Compacting(entry.second.majors.running,entry.second.majors.queued),;
+                cclient::data::Compacting(entry.second.majors.running,entry.second.majors.queued),
                 cclient::data::Compacting(entry.second.scans.running,entry.second.scans.queued));
               
 					ret.insert( std::make_pair(entry.first,
@@ -362,6 +363,21 @@ class ThriftWrapper {
 				});
         return ret;
   }
+
+  
+  static std::vector<cclient::data::RecoveryStatus> convert(std::vector<org::apache::accumulo::core::master::thrift::RecoveryStatus> logSorts){
+  std::vector<cclient::data::RecoveryStatus> ret;
+
+  	std::for_each(logSorts.begin(), logSorts.end(),
+				[&ret] (const org::apache::accumulo::core::master::thrift::RecoveryStatus &entry)
+				{
+					ret.push_back(
+            cclient::data::RecoveryStatus(entry.name,entry.runtime,entry.progress)
+            );
+				});
+        return ret;
+  }
+
 
   static std::vector<cclient::data::TabletServerStatus> convert(std::vector<org::apache::accumulo::core::master::thrift::TabletServerStatus> stat){
 
@@ -374,7 +390,7 @@ class ThriftWrapper {
             cclient::data::TabletServerStatus::make().tableMap(convert(entry.tableMap)).lastContact(entry.lastContact).
               name(entry.name).osLoad(entry.osLoad).holdTime(entry.holdTime).lookups(entry.lookups).indexCacheHits(entry.indexCacheHits).
               indexCacheRequest(entry.indexCacheRequest).dataCacheHits(entry.dataCacheHits).dataCacheRequest(entry.dataCacheRequest).
-              logSorts(entry.logSorts).flushs(entry.flushs).syncs(entry.syncs)
+              logSorts(convert(entry.logSorts)).flushs(entry.flushs).syncs(entry.syncs)
             );
 				});
         return ret;
@@ -429,11 +445,11 @@ class ThriftWrapper {
 
 
   static cclient::data::AccumuloInfo convert(org::apache::accumulo::core::master::thrift::MasterMonitorInfo &stats){
-    return cclient::data::AccumuloInfo::make().
+    return std::move(cclient::data::AccumuloInfo::make().
         tableMap( convert(stats.tableMap) ).tabletServerInfo( convert(stats.tServerInfo)).
         badTabletServers(stats.badTServers).state(convert(stats.state)).
         goalState(convert(stats.goalState)).unassignedTablets(stats.unassignedTablets).
-        serversShuttingDown(stats.serversShuttingDown).deadTabletServers(convert(stats.deadTabletServers));
+        serversShuttingDown(stats.serversShuttingDown).deadTabletServers(convert(stats.deadTabletServers)));
   }
 
  protected:

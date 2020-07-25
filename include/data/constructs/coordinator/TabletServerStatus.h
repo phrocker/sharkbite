@@ -29,7 +29,23 @@ private:
     std::string name;
     int32_t runtime;  
     double progress;
+public:
+    explicit RecoveryStatus(std::string name,
+    int32_t runtime,  
+    double progress) : name(name),runtime(runtime),progress(progress){
+    }
 
+    auto getName() const{
+        return name;
+    }
+
+    auto getRuntime() const{
+        return runtime;
+    }
+
+    auto getProgress() const{
+        return progress;
+    }
      
 };
 
@@ -111,7 +127,7 @@ class TabletServerStatusBuilder{
             return *this;
         }
 
-        TabletServerStatusBuilder& logSorts(int64_t logSorts){
+        TabletServerStatusBuilder& logSorts(std::vector<RecoveryStatus> logSorts){
             status.logSorts = logSorts;
             return *this;
         }
@@ -136,7 +152,7 @@ class TabletServerStatusBuilder{
             
     private:
     TabletServerStatus status;
-}
+};
 
 TabletServerStatusBuilder TabletServerStatus::make(){
     return TabletServerStatusBuilder();

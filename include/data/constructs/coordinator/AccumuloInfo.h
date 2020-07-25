@@ -178,7 +178,7 @@ class AccumuloInfoBuilder{
             return *this;
         }
 
-        operator TabletServerStatus&&() {
+        operator AccumuloInfo&&() {
             return std::move(info);
         }
         
