@@ -36,9 +36,10 @@ private:
 class TabletServerStatusBuilder;
 
 class TabletServerStatus{
-    friend class TabletServerStatusBuilder;
+public:
     static TabletServerStatusBuilder make();
 private:
+    friend class TabletServerStatusBuilder;
     TabletServerStatus():lastContact(0),holdTime(0),lookups(0),indexCacheHits(0),indexCacheRequest(0),dataCacheHits(0),dataCacheRequest(0),flushs(0),syncs(0){
     
     }

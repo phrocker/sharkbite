@@ -521,7 +521,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
   
 
-  virtual cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth){
+  virtual cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth) override{
       org::apache::accumulo::core::trace::thrift::TInfo transId;
       org::apache::accumulo::core::security::thrift::TCredentials creds = ThriftWrapper::convert(auth);
       transId.parentId = 0;

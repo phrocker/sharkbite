@@ -76,6 +76,8 @@ struct CoordinatorGoalState {
 class AccumuloInfoBuilder;
 
 class AccumuloInfo {
+public:
+    static AccumuloInfoBuilder make();
 private:
     friend class AccumuloInfoBuilder;
     std::map<std::string, TableInfo>  tableMap;
@@ -130,22 +132,51 @@ public:
 class AccumuloInfoBuilder{
     public:
         AccumuloInfoBuilder& tableMap(std::map<std::string, TableInfo>  tableMap){
-            status.tableMap = tableMap;
+            info.tableMap = tableMap;
             return *this;
         }
 
 
         AccumuloInfoBuilder& tabletServerInfo(std::vector<TabletServerStatus>  tServerInfo){  
-            status.tServerInfo = tServerInfo;
+            info.tServerInfo = tServerInfo;
             return *this;
         }
 
         AccumuloInfoBuilder& badTabletServers(std::map<std::string, int8_t>  badTServers){  
-            status.badTServers = badTServers;
+            info.badTServers = badTServers;
             return *this;
         }
+
+        
+    
+        AccumuloInfoBuilder& state(CoordinatorState::type state){  
+            info.state = state;
+            return *this;
+        }
+
+        AccumuloInfoBuilder& goalState(CoordinatorGoalState::type goalState){  
+            info.goalState = goalState;
+            return *this;
+        }
+
         
 
+        AccumuloInfoBuilder& unassignedTablets(int32_t unassignedTablets){  
+            info.unassignedTablets = unassignedTablets;
+            return *this;
+        }
+
+
+        AccumuloInfoBuilder& serversShuttingDown(std::set<std::string>  serversShuttingDown){  
+            info.serversShuttingDown = serversShuttingDown;
+            return *this;
+        }
+
+
+        AccumuloInfoBuilder& deadTabletServers(std::vector<DeadServer>  deadTabletServers){  
+            info.deadTabletServers = deadTabletServers;
+            return *this;
+        }
 
         operator TabletServerStatus&&() {
             return std::move(info);
