@@ -93,7 +93,6 @@ private:
 
     }
 public:
-// https://riptutorial.com/cplusplus/example/30166/builder-pattern-with-fluent-api
 
 
     auto getTableMap() const{
