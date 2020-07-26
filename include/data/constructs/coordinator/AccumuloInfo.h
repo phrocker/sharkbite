@@ -76,6 +76,10 @@ struct CoordinatorGoalState {
 
 class AccumuloInfoBuilder;
 
+/**
+ * Main accumulo statistics object that provides statistics from
+ * the coordinator
+ */
 class AccumuloInfo {
 public:
     static AccumuloInfoBuilder make();
@@ -89,6 +93,10 @@ private:
     int32_t unassignedTablets;
     std::set<std::string>  serversShuttingDown;
     std::vector<DeadServer>  deadTabletServers;
+    /**
+     * Constructor that is private requiring the use
+     * of the builder
+     */
     AccumuloInfo() : unassignedTablets(0){
 
     }
