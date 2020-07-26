@@ -99,7 +99,7 @@ public:
     auto getSyncs() const{
         return syncs;
     }
-    auto getHoldtime() const {
+    auto getHoldTime() const {
         return holdTime;
     }
 private:
