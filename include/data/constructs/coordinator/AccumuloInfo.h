@@ -18,6 +18,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <string>
 #include "TableInfo.h"
 #include "TabletServerStatus.h"
 

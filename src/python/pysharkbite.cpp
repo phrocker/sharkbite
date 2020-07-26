@@ -139,7 +139,8 @@ PYBIND11_MODULE(pysharkbite, s) {
     .def("getDataCacheRequests",&cclient::data::TabletServerStatus::getDataCacheRequests, "Gets data cache requests against the server")
     .def("getLogSorts",&cclient::data::TabletServerStatus::getLogSorts, "Gets the number of log sorts")
     .def("getFlushes",&cclient::data::TabletServerStatus::getFlushes, "Gets the number of flushes on the server")
-    .def("getSyncs",&cclient::data::TabletServerStatus::getSyncs, "Gets the number of syncs on the server");
+    .def("getSyncs",&cclient::data::TabletServerStatus::getSyncs, "Gets the number of syncs on the server")
+    .def("getHoldTime",&cclient::data::TabletServerStatus::getHoldTime, "Gets the hold time");
 
 
 

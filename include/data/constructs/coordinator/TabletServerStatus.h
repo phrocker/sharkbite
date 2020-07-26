@@ -18,6 +18,7 @@
 #include <map>
 #include <vector>
 #include <set>
+#include <string>
 #include "TableInfo.h"
 namespace cclient {
 namespace data {
@@ -97,6 +98,9 @@ public:
 
     auto getSyncs() const{
         return syncs;
+    }
+    auto getHoldtime() const {
+        return holdTime;
     }
 private:
     friend class TabletServerStatusBuilder;

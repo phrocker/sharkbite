@@ -18,7 +18,7 @@
 #include <map>
 #include <vector>
 #include <set>
-
+#include <string>
 namespace cclient {
 namespace data {
 
