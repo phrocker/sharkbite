@@ -23,13 +23,12 @@ namespace cclient {
 namespace data {
 
 class TableRates{
-private:
+public:
     double ingestRate;
     double ingestByteRate;
     double queryRate;
     double queryByteRate;
     double scanRate;
-public:
 
     explicit TableRates(double ingestRate, double ingestByteRate, double queryRate, double queryByteRate, double scanRate):
         ingestRate(ingestRate),ingestByteRate(ingestByteRate),queryRate(queryRate),queryByteRate(queryByteRate),scanRate(scanRate)
@@ -62,10 +61,10 @@ public:
 };
 
 class Compacting{
-private:
+public:
     int32_t running;
     int32_t queued;
-public:
+
     explicit Compacting(int32_t running, int32_t queued) : running(running), queued(queued){
 
     }
@@ -80,11 +79,10 @@ public:
 };
 
 class TableCompactions{
-private:
+public:
     Compacting minors;
     Compacting majors;
     Compacting scans;
-public:
 
     explicit TableCompactions(Compacting minors, Compacting majors, Compacting scans) : minors(minors),majors(majors),scans(scans){
     }
@@ -105,7 +103,7 @@ public:
     
 
 class TableInfo{
-private:
+public:
     int64_t recs;
     int64_t recsInMemory;
     int32_t tablets;
@@ -113,7 +111,6 @@ private:
     TableRates rates;
     TableCompactions compactionInfo;
     
-public:
     explicit TableInfo( 
         int64_t recs, int64_t recsInMemory, int32_t tablets, int32_t onlineTablets, TableRates rates, TableCompactions compactions) :
             recs(recs),recsInMemory(recsInMemory),tablets(tablets),onlineTablets(onlineTablets),rates(rates),compactionInfo(compactions){

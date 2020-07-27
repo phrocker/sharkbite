@@ -20,6 +20,7 @@ from argparse import ArgumentParser
 from ctypes import cdll
 import ctypes
 import traceback
+import json
 import time
 
 
@@ -71,9 +72,12 @@ try:
 
     stats = connector.getStatistics()
 
-    # print the server names
+    # print some server info
     for serverinfo in stats.getTabletServerInfo():
             print(serverinfo.getName())
+            print(serverinfo.getLastContact())
+            print( json.dumps(serverinfo.toJson())  )
+    
 
    
 except RuntimeError as e:

@@ -26,11 +26,10 @@ namespace data {
     
 
 class RecoveryStatus{
-private:
+public:
     std::string name;
     int32_t runtime;  
     double progress;
-public:
     explicit RecoveryStatus(std::string name,
     int32_t runtime,  
     double progress) : name(name),runtime(runtime),progress(progress){
@@ -102,11 +101,6 @@ public:
     auto getHoldTime() const {
         return holdTime;
     }
-private:
-    friend class TabletServerStatusBuilder;
-    TabletServerStatus():lastContact(0),holdTime(0),lookups(0),indexCacheHits(0),indexCacheRequest(0),dataCacheHits(0),dataCacheRequest(0),flushs(0),syncs(0){
-    
-    }
     std::map<std::string, cclient::data::TableInfo>  tableMap;
     int64_t lastContact;
     std::string name;
@@ -120,6 +114,13 @@ private:
     std::vector<RecoveryStatus>  logSorts;
     int64_t flushs;
     int64_t syncs;
+
+private:
+    friend class TabletServerStatusBuilder;
+    TabletServerStatus():lastContact(0),holdTime(0),lookups(0),indexCacheHits(0),indexCacheRequest(0),dataCacheHits(0),dataCacheRequest(0),flushs(0),syncs(0){
+    
+    }
+    
 };
 
 class TabletServerStatusBuilder{

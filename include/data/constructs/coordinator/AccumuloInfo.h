@@ -26,11 +26,10 @@ namespace cclient {
 namespace data {
 
 class DeadServer{
-private:
+public:
     std::string server;
     int64_t lastStatus;
     std::string status;
-public:
     explicit DeadServer(const std::string &server, int64_t last, std::string status): server(server), lastStatus(last),status(status){
 
     }
@@ -85,14 +84,6 @@ public:
     static AccumuloInfoBuilder make();
 private:
     friend class AccumuloInfoBuilder;
-    std::map<std::string, TableInfo>  tableMap;
-    std::vector<TabletServerStatus>  tServerInfo;
-    std::map<std::string, int8_t>  badTServers;
-    CoordinatorState::type state;
-    CoordinatorGoalState::type goalState;
-    int32_t unassignedTablets;
-    std::set<std::string>  serversShuttingDown;
-    std::vector<DeadServer>  deadTabletServers;
     /**
      * Constructor that is private requiring the use
      * of the builder
@@ -102,6 +93,14 @@ private:
     }
 public:
 
+    std::map<std::string, TableInfo>  tableMap;
+    std::vector<TabletServerStatus>  tServerInfo;
+    std::map<std::string, int8_t>  badTServers;
+    CoordinatorState::type state;
+    CoordinatorGoalState::type goalState;
+    int32_t unassignedTablets;
+    std::set<std::string>  serversShuttingDown;
+    std::vector<DeadServer>  deadTabletServers;
 
     auto getTableMap() const{
         return tableMap;

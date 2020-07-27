@@ -120,34 +120,50 @@ PYBIND11_MODULE(pysharkbite, s) {
     .def("getMajorCompactions",&cclient::data::TableCompactions::getMajorCompactions, "Gets major compaction stats.")
     .def("getScans",&cclient::data::TableCompactions::getScans, "Gets scan stats.");
 
-    pybind11::class_<cclient::data::TableInfo>(s, "TableInfo")
+    pybind11::class_<cclient::data::TableInfo>(s, "TableInfo", pybind11::dynamic_attr())
     .def("getRecords",&cclient::data::TableInfo::getRecords, "Gets records in the table")
     .def("getRecordsInMemory",&cclient::data::TableInfo::getRecordsInMemory, "Gets records in memory for a table")
     .def("getTablets",&cclient::data::TableInfo::getTablets, "Gets tablets in the table")
     .def("getOnlineTablets",&cclient::data::TableInfo::getOnlineTablets, "Gets online tablets in the table")
     .def("getTableRates",&cclient::data::TableInfo::getTableRates, "Gets table rates for the table")
-    .def("getCompactioninfo",&cclient::data::TableInfo::getCompactioninfo, "Gets compaction info for the table");
+    .def("getCompactioninfo",&cclient::data::TableInfo::getCompactioninfo, "Gets compaction info for the table")
+    .def_readonly("compaction_info",&cclient::data::TableInfo::compactionInfo);
 
-  pybind11::class_<cclient::data::TabletServerStatus>(s, "TabletServerStatus")
+  pybind11::class_<cclient::data::TabletServerStatus>(s, "TabletServerStatus", pybind11::dynamic_attr())
     .def("getTableMap",&cclient::data::TabletServerStatus::getTableMap, "Gets the table map")
+    .def_readonly("table_map",&cclient::data::TabletServerStatus::tableMap)
     .def("getLastContact",&cclient::data::TabletServerStatus::getLastContact, "Gets the last contact time of the server")
+    .def_readonly("last_contact",&cclient::data::TabletServerStatus::lastContact)
     .def("getName",&cclient::data::TabletServerStatus::getName, "Gets the name of the server")
+    .def_readonly("name",&cclient::data::TabletServerStatus::name)
     .def("getOsLoad",&cclient::data::TabletServerStatus::getOsLoad, "Gets the load of the server")
+    .def_readonly("os_load",&cclient::data::TabletServerStatus::osLoad)
     .def("getLookups",&cclient::data::TabletServerStatus::getLookups, "Gets lookups against the server")
+    .def_readonly("lookups",&cclient::data::TabletServerStatus::lookups)
     .def("getIndexCacheHits",&cclient::data::TabletServerStatus::getIndexCacheHits, "Gets index cache hits against the server")
+    .def_readonly("index_cache_hits",&cclient::data::TabletServerStatus::indexCacheHits)
     .def("getDataCacheHits",&cclient::data::TabletServerStatus::getDataCacheHits, "Gets data cache hits against the server")
+    .def_readonly("data_cache_hits",&cclient::data::TabletServerStatus::dataCacheHits)
     .def("getDataCacheRequests",&cclient::data::TabletServerStatus::getDataCacheRequests, "Gets data cache requests against the server")
+    .def_readonly("data_cache_requests",&cclient::data::TabletServerStatus::dataCacheRequest)
     .def("getLogSorts",&cclient::data::TabletServerStatus::getLogSorts, "Gets the number of log sorts")
+    .def_readonly("log_sorts",&cclient::data::TabletServerStatus::logSorts)
     .def("getFlushes",&cclient::data::TabletServerStatus::getFlushes, "Gets the number of flushes on the server")
+    .def_readonly("flushes",&cclient::data::TabletServerStatus::flushs)
     .def("getSyncs",&cclient::data::TabletServerStatus::getSyncs, "Gets the number of syncs on the server")
-    .def("getHoldTime",&cclient::data::TabletServerStatus::getHoldTime, "Gets the hold time");
+    .def_readonly("syncs",&cclient::data::TabletServerStatus::syncs)
+    .def("getHoldTime",&cclient::data::TabletServerStatus::getHoldTime, "Gets the hold time")
+    .def_readonly("hold_time",&cclient::data::TabletServerStatus::holdTime);
 
 
 
-   pybind11::class_<cclient::data::DeadServer>(s, "DeadServer")
+   pybind11::class_<cclient::data::DeadServer>(s, "DeadServer", pybind11::dynamic_attr())
     .def("getServer",&cclient::data::DeadServer::getServer, "Gets the server name.")
+    .def_readonly("server",&cclient::data::DeadServer::server)
     .def("getLastContact",&cclient::data::DeadServer::getLastContact, "Get last contact time with this server.")
-    .def("getStatus",&cclient::data::DeadServer::getStatus, "Gets the status of the server.");
+    .def_readonly("last_contact",&cclient::data::DeadServer::lastStatus)
+    .def("getStatus",&cclient::data::DeadServer::getStatus, "Gets the status of the server.")
+    .def_readonly("status",&cclient::data::DeadServer::status);;
 
       pybind11::enum_<cclient::data::CoordinatorGoalState::type>(s, "CoordinatorGoalState", pybind11::arithmetic())
        .value("CLEAN_STOP", cclient::data::CoordinatorGoalState::type::CLEAN_STOP, "CLEAN_STOP state")
