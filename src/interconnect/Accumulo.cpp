@@ -95,6 +95,12 @@ AccumuloConnector::AccumuloConnector(cclient::data::security::AuthInfo &credenti
 void AccumuloConnector::findTservers() {
   tabletServers = instance->getServers();
 }
+
+
+cclient::data::AccumuloInfo AccumuloConnector::getStatistics(){
+  return getTransport().get()->getStatistics(&credentials);
+}
+
 /**
  * Returns an instance of table operations
  * @param table incoming table

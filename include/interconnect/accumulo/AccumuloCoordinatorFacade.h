@@ -28,6 +28,7 @@
 #include "data/extern/thrift/ThriftWrapper.h"
 #include "data/extern/thriftv2/ThriftV2Wrapper.h"
 #include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/coordinator/AccumuloInfo.h"
 #include "../Scan.h"
 #include "logging/Logger.h"
 
@@ -66,6 +67,8 @@ class AccumuloCoordinatorFacade {
   virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation mytype, const std::vector<std::string> &tableArgs,
                                        const std::map<std::string, std::string> &options, bool wait = false) = 0;
 
+  virtual cclient::data::AccumuloInfo getStatistics(cclient::data::security::AuthInfo *auth) = 0;
+
   virtual bool createTable(cclient::data::security::AuthInfo *auth, const std::string &table) = 0;
 
   virtual bool importDirectory(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &dir, std::string failure_dir, bool setTime)= 0;
@@ -80,6 +83,7 @@ class AccumuloCoordinatorFacade {
   virtual void removeTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property) = 0;
 
   virtual void setTableProperty(cclient::data::security::AuthInfo *auth, const std::string &table, const std::string &property, const std::string &value) = 0;
+  
 
   /**namespace operations**/
 
@@ -92,6 +96,8 @@ class AccumuloCoordinatorFacade {
   virtual void removeNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property)= 0;
 
   virtual void setNamespaceProperty(cclient::data::security::AuthInfo *auth, std::string nameSpaceName, const std::string &property, const std::string &value)= 0;
+
+
 
 };
 

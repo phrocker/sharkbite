@@ -1,6 +1,10 @@
 #ifndef THRIFTWRAPPER_H_
 #define THRIFTWRAPPER_H_
 
+#include <algorithm>
+#include <map>
+#include <set>
+
 #include "../../constructs/security/AuthInfo.h"
 #include "../../constructs/security/Authorizations.h"
 #include "../../constructs/inputvalidation.h"
@@ -11,6 +15,7 @@
 #include "../../constructs/Mutation.h"
 #include "../../constructs/KeyExtent.h"
 #include "../../constructs/column.h"
+#include "data/constructs/coordinator/AccumuloInfo.h"
 
 #include "gzip/compress.hpp"
 #include "gzip/config.hpp"
@@ -22,6 +27,7 @@
 #include "../../streaming/input/NetworkOrderInputStream.h"
 #include "data_types.h"
 #include "security_types.h"
+#include "master_types.h"
 namespace interconnect {
 
 class ThriftWrapper {
@@ -60,6 +66,7 @@ class ThriftWrapper {
     delete[] array;
     return new cclient::data::security::AuthInfo(creds.principal, decompressed, creds.instanceId);
   }
+
   static org::apache::accumulo::core::security::thrift::TCredentials convert(cclient::data::security::AuthInfo *authInfo) {
     org::apache::accumulo::core::security::thrift::TCredentials stackAuthInfo;
     stackAuthInfo.instanceId = authInfo->getInstanceId();
@@ -334,6 +341,115 @@ class ThriftWrapper {
 
     return auths->getAuthorizations();
 
+  }
+
+  static std::map<std::string,cclient::data::TableInfo> convert(std::map<std::string, org::apache::accumulo::core::master::thrift::TableInfo> tableMap){  
+    std::map<std::string,cclient::data::TableInfo> ret;
+
+  	std::for_each(tableMap.begin(), tableMap.end(),
+				[&ret] (const std::pair<std::string,org::apache::accumulo::core::master::thrift::TableInfo> &entry)
+				{
+          auto tableRates = cclient::data::TableRates(entry.second.ingestRate, entry.second.ingestByteRate,
+                entry.second.queryRate, entry.second.queryByteRate,entry.second.scanRate);
+          auto tableCompacting = cclient::data::TableCompactions(
+                cclient::data::Compacting(entry.second.minors.running,entry.second.minors.queued),
+                cclient::data::Compacting(entry.second.majors.running,entry.second.majors.queued),
+                cclient::data::Compacting(entry.second.scans.running,entry.second.scans.queued));
+              
+					ret.insert( std::make_pair(entry.first,
+          cclient::data::TableInfo( entry.second.recs,entry.second.recsInMemory,
+              entry.second.tablets, entry.second.onlineTablets, 
+              tableRates,tableCompacting)));
+				});
+        return ret;
+  }
+
+  
+  static std::vector<cclient::data::RecoveryStatus> convert(std::vector<org::apache::accumulo::core::master::thrift::RecoveryStatus> logSorts){
+  std::vector<cclient::data::RecoveryStatus> ret;
+
+  	std::for_each(logSorts.begin(), logSorts.end(),
+				[&ret] (const org::apache::accumulo::core::master::thrift::RecoveryStatus &entry)
+				{
+					ret.push_back(
+            cclient::data::RecoveryStatus(entry.name,entry.runtime,entry.progress)
+            );
+				});
+        return ret;
+  }
+
+
+  static std::vector<cclient::data::TabletServerStatus> convert(std::vector<org::apache::accumulo::core::master::thrift::TabletServerStatus> stat){
+
+    std::vector<cclient::data::TabletServerStatus> ret;
+
+  	std::for_each(stat.begin(), stat.end(),
+				[&ret] (const org::apache::accumulo::core::master::thrift::TabletServerStatus &entry)
+				{
+					ret.push_back(
+            cclient::data::TabletServerStatus::make().tableMap(convert(entry.tableMap)).lastContact(entry.lastContact).
+              name(entry.name).osLoad(entry.osLoad).holdTime(entry.holdTime).lookups(entry.lookups).indexCacheHits(entry.indexCacheHits).
+              indexCacheRequest(entry.indexCacheRequest).dataCacheHits(entry.dataCacheHits).dataCacheRequest(entry.dataCacheRequest).
+              logSorts(convert(entry.logSorts)).flushs(entry.flushs).syncs(entry.syncs)
+            );
+				});
+        return ret;
+
+    return ret;
+  }
+
+  static cclient::data::CoordinatorState::type convert(org::apache::accumulo::core::master::thrift::MasterState::type state){
+    switch(state){
+      case org::apache::accumulo::core::master::thrift::MasterState::type::INITIAL:
+        return cclient::data::CoordinatorState::type::INITIAL;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::HAVE_LOCK:
+        return cclient::data::CoordinatorState::type::HAVE_LOCK;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::SAFE_MODE:
+        return cclient::data::CoordinatorState::type::SAFE_MODE;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::NORMAL:
+        return cclient::data::CoordinatorState::type::NORMAL;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::UNLOAD_METADATA_TABLETS:
+        return cclient::data::CoordinatorState::type::UNLOAD_METADATA_TABLETS;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::UNLOAD_ROOT_TABLET:
+        return cclient::data::CoordinatorState::type::UNLOAD_ROOT_TABLET;
+      case org::apache::accumulo::core::master::thrift::MasterState::type::STOP:
+        return cclient::data::CoordinatorState::type::STOP;  
+      default:
+      return cclient::data::CoordinatorState::type::INITIAL;
+    };
+  }
+
+  static cclient::data::CoordinatorGoalState::type convert(org::apache::accumulo::core::master::thrift::MasterGoalState::type state){
+    switch(state){
+      case org::apache::accumulo::core::master::thrift::MasterGoalState::type::CLEAN_STOP:
+        return cclient::data::CoordinatorGoalState::type::CLEAN_STOP;
+      case org::apache::accumulo::core::master::thrift::MasterGoalState::type::SAFE_MODE:
+        return cclient::data::CoordinatorGoalState::type::SAFE_MODE;
+      case org::apache::accumulo::core::master::thrift::MasterGoalState::type::NORMAL:
+        return cclient::data::CoordinatorGoalState::type::NORMAL;
+      default:
+      return cclient::data::CoordinatorGoalState::type::NORMAL;
+    };
+  }
+
+  static std::vector<cclient::data::DeadServer>  convert(std::vector<org::apache::accumulo::core::master::thrift::DeadServer>  deadTabletServers){
+    std::vector<cclient::data::DeadServer> ret;
+
+	std::for_each(deadTabletServers.begin(), deadTabletServers.end(),
+				[&ret] (const org::apache::accumulo::core::master::thrift::DeadServer &entry)
+				{
+					ret.push_back(cclient::data::DeadServer(entry.server,entry.lastStatus,entry.status));
+				});
+        return ret;
+  }
+
+
+  static cclient::data::AccumuloInfo convert(org::apache::accumulo::core::master::thrift::MasterMonitorInfo &stats){
+    return std::move(cclient::data::AccumuloInfo::make().
+        tableMap( convert(stats.tableMap) ).tabletServerInfo( convert(stats.tServerInfo)).
+        badTabletServers(stats.badTServers).state(convert(stats.state)).
+        goalState(convert(stats.goalState)).unassignedTablets(stats.unassignedTablets).
+        serversShuttingDown(stats.serversShuttingDown).deadTabletServers(convert(stats.deadTabletServers)));
   }
 
  protected:
