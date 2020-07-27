@@ -57,8 +57,6 @@ if not password:
 if not table:
     table = "blahblahd"
 
-cls = cdll.LoadLibrary("./pysharkbite.cpython-38-x86_64-linux-gnu.so")
-
 import pysharkbite
 
 configuration = pysharkbite.Configuration()
