@@ -97,35 +97,53 @@ PYBIND11_MODULE(pysharkbite, s) {
 
 
 
-    pybind11::class_<cclient::data::TableRates>(s, "TableRates")
+  pybind11::class_<cclient::data::TableRates>(s, "TableRates", pybind11::dynamic_attr())
     .def("getIngestRate",&cclient::data::TableRates::getIngestRate, "Gets the ingest rate in records.")
+    .def_readonly("query_rate_byte",&cclient::data::TableRates::queryByteRate)
     .def("getIngestRateByte",&cclient::data::TableRates::getIngestRateByte, "Gets the ingest rate in bytes.")
+    .def_readonly("query_rate_byte",&cclient::data::TableRates::queryByteRate)
     .def("getQueryRate",&cclient::data::TableRates::getQueryRate, "Gets the query rate in records.")
+    .def_readonly("query_rate_byte",&cclient::data::TableRates::queryByteRate)
     .def("getQueryRateByte",&cclient::data::TableRates::getQueryRateByte, "Gets the query rate in bytes.")
-    .def("getScanRate",&cclient::data::TableRates::getScanRate, "Gets the scan rate.");
+    .def_readonly("query_rate_byte",&cclient::data::TableRates::queryByteRate)
+    .def("getScanRate",&cclient::data::TableRates::getScanRate, "Gets the scan rate.")
+    .def_readonly("scan_rate",&cclient::data::TableRates::scanRate);
 
 
-  pybind11::class_<cclient::data::Compacting>(s, "Compacting")
+  pybind11::class_<cclient::data::Compacting>(s, "Compacting", pybind11::dynamic_attr())
     .def("getRunning",&cclient::data::Compacting::getRunning, "Gets running compactions.")
-    .def("getQueued",&cclient::data::Compacting::getQueued, "Gets queued compactions.");
+    .def_readonly("running",&cclient::data::Compacting::running)
+    .def("getQueued",&cclient::data::Compacting::getQueued, "Gets queued compactions.")
+    .def_readonly("queued",&cclient::data::Compacting::queued);
 
     
-    pybind11::class_<cclient::data::RecoveryStatus>(s, "RecoveryStatus")
+    pybind11::class_<cclient::data::RecoveryStatus>(s, "RecoveryStatus", pybind11::dynamic_attr())
     .def("getName",&cclient::data::RecoveryStatus::getName, "Gets the name of the recovery.")
+    .def_readonly("name",&cclient::data::RecoveryStatus::name)
     .def("getRuntime",&cclient::data::RecoveryStatus::getRuntime, "Gets the runtime of the recovery process.")
-    .def("getProgress",&cclient::data::RecoveryStatus::getProgress, "Gets the progress of the recovery.");
+    .def_readonly("runtime",&cclient::data::RecoveryStatus::runtime)
+    .def("getProgress",&cclient::data::RecoveryStatus::getProgress, "Gets the progress of the recovery.")
+    .def_readonly("progress",&cclient::data::RecoveryStatus::progress);
 
-    pybind11::class_<cclient::data::TableCompactions>(s, "TableCompactions")
+    pybind11::class_<cclient::data::TableCompactions>(s, "TableCompactions", pybind11::dynamic_attr())
     .def("getMinorCompactions",&cclient::data::TableCompactions::getMinorCompactions, "Gets minor compaction stats.")
+    .def_readonly("minors",&cclient::data::TableCompactions::minors)
     .def("getMajorCompactions",&cclient::data::TableCompactions::getMajorCompactions, "Gets major compaction stats.")
-    .def("getScans",&cclient::data::TableCompactions::getScans, "Gets scan stats.");
+    .def_readonly("majors",&cclient::data::TableCompactions::majors)
+    .def("getScans",&cclient::data::TableCompactions::getScans, "Gets scan stats.")
+    .def_readonly("scans",&cclient::data::TableCompactions::scans);
 
     pybind11::class_<cclient::data::TableInfo>(s, "TableInfo", pybind11::dynamic_attr())
     .def("getRecords",&cclient::data::TableInfo::getRecords, "Gets records in the table")
+    .def_readonly("records",&cclient::data::TableInfo::recs)
     .def("getRecordsInMemory",&cclient::data::TableInfo::getRecordsInMemory, "Gets records in memory for a table")
+    .def_readonly("records_in_memory",&cclient::data::TableInfo::recsInMemory)
     .def("getTablets",&cclient::data::TableInfo::getTablets, "Gets tablets in the table")
+    .def_readonly("tablets",&cclient::data::TableInfo::tablets)
     .def("getOnlineTablets",&cclient::data::TableInfo::getOnlineTablets, "Gets online tablets in the table")
+    .def_readonly("online_tables",&cclient::data::TableInfo::onlineTablets)
     .def("getTableRates",&cclient::data::TableInfo::getTableRates, "Gets table rates for the table")
+    .def_readonly("table_rates",&cclient::data::TableInfo::rates)
     .def("getCompactioninfo",&cclient::data::TableInfo::getCompactioninfo, "Gets compaction info for the table")
     .def_readonly("compaction_info",&cclient::data::TableInfo::compactionInfo);
 
@@ -165,30 +183,38 @@ PYBIND11_MODULE(pysharkbite, s) {
     .def("getStatus",&cclient::data::DeadServer::getStatus, "Gets the status of the server.")
     .def_readonly("status",&cclient::data::DeadServer::status);;
 
-      pybind11::enum_<cclient::data::CoordinatorGoalState::type>(s, "CoordinatorGoalState", pybind11::arithmetic())
-       .value("CLEAN_STOP", cclient::data::CoordinatorGoalState::type::CLEAN_STOP, "CLEAN_STOP state")
-       .value("SAFE_MODE", cclient::data::CoordinatorGoalState::type::SAFE_MODE, "SAFE_MODE state")
-       .value("NORMAL", cclient::data::CoordinatorGoalState::type::NORMAL, "NORMAL state");
+  pybind11::enum_<cclient::data::CoordinatorGoalState::type>(s, "CoordinatorGoalState", pybind11::arithmetic())
+    .value("CLEAN_STOP", cclient::data::CoordinatorGoalState::type::CLEAN_STOP, "CLEAN_STOP state")
+    .value("SAFE_MODE", cclient::data::CoordinatorGoalState::type::SAFE_MODE, "SAFE_MODE state")
+    .value("NORMAL", cclient::data::CoordinatorGoalState::type::NORMAL, "NORMAL state");
 
 
   pybind11::enum_<cclient::data::CoordinatorState::type>(s, "CoordinatorState", pybind11::arithmetic())
-       .value("INITIAL", cclient::data::CoordinatorState::type::INITIAL, "INITIAL state")
-       .value("HAVE_LOCK", cclient::data::CoordinatorState::type::HAVE_LOCK, "HAVE_LOCK state")
-       .value("SAFE_MODE", cclient::data::CoordinatorState::type::SAFE_MODE, "SAFE_MODE state")
-       .value("NORMAL", cclient::data::CoordinatorState::type::NORMAL, "NORMAL state")
-       .value("UNLOAD_METADATA_TABLETS", cclient::data::CoordinatorState::type::UNLOAD_METADATA_TABLETS, "UNLOAD_METADATA_TABLETS state")
-       .value("UNLOAD_ROOT_TABLET", cclient::data::CoordinatorState::type::UNLOAD_ROOT_TABLET, "UNLOAD_ROOT_TABLET state")
-       .value("STOP", cclient::data::CoordinatorState::type::STOP, "STOP state");
+    .value("INITIAL", cclient::data::CoordinatorState::type::INITIAL, "INITIAL state")
+    .value("HAVE_LOCK", cclient::data::CoordinatorState::type::HAVE_LOCK, "HAVE_LOCK state")
+    .value("SAFE_MODE", cclient::data::CoordinatorState::type::SAFE_MODE, "SAFE_MODE state")
+    .value("NORMAL", cclient::data::CoordinatorState::type::NORMAL, "NORMAL state")
+    .value("UNLOAD_METADATA_TABLETS", cclient::data::CoordinatorState::type::UNLOAD_METADATA_TABLETS, "UNLOAD_METADATA_TABLETS state")
+    .value("UNLOAD_ROOT_TABLET", cclient::data::CoordinatorState::type::UNLOAD_ROOT_TABLET, "UNLOAD_ROOT_TABLET state")
+    .value("STOP", cclient::data::CoordinatorState::type::STOP, "STOP state");
 
-    pybind11::class_<cclient::data::AccumuloInfo>(s, "AccumuloInfo")
+  pybind11::class_<cclient::data::AccumuloInfo>(s, "AccumuloInfo", pybind11::dynamic_attr())
     .def("getTableMap",&cclient::data::AccumuloInfo::getTableMap, "Gets the Table map for the cluster.")
+    .def_readonly("table_map",&cclient::data::AccumuloInfo::tableMap)
     .def("getTabletServerInfo",&cclient::data::AccumuloInfo::getTabletServerInfo, "Gets tablet server Info")
+    .def_readonly("tablet_server_info",&cclient::data::AccumuloInfo::tServerInfo)
     .def("getBadTabletServers",&cclient::data::AccumuloInfo::getBadTabletServers, "Gets a mapping of bad tablet servers.")
+    .def_readonly("bad_servers",&cclient::data::AccumuloInfo::badTServers)
     .def("getState",&cclient::data::AccumuloInfo::getState, "Gets the state of the accumulo cluster.")
+    .def_readonly("state",&cclient::data::AccumuloInfo::state)
     .def("getGoalState",&cclient::data::AccumuloInfo::getGoalState, "Returns the goal state of the cluster.")
+    .def_readonly("goal_state",&cclient::data::AccumuloInfo::goalState)
     .def("getUnassignedTablets",&cclient::data::AccumuloInfo::getUnassignedTablets, "Gets the unassigned tablets")
+    .def_readonly("unassigned_tablets",&cclient::data::AccumuloInfo::unassignedTablets)
     .def("getServerShuttingDown",&cclient::data::AccumuloInfo::getServerShuttingDown, "Returns the set of servers shutting down.")
-    .def("getDeadServers",&cclient::data::AccumuloInfo::getDeadServers, "Returns a list of dead tablet servers.");
+    .def_readonly("servs_shutting_down",&cclient::data::AccumuloInfo::serversShuttingDown)
+    .def("getDeadServers",&cclient::data::AccumuloInfo::getDeadServers, "Returns a list of dead tablet servers.")
+    .def_readonly("dead_servers",&cclient::data::AccumuloInfo::deadTabletServers);
 
 
   pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")

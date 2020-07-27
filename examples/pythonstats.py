@@ -57,7 +57,7 @@ if not password:
 if not table:
     table = "blahblahd"
 
-cls = cdll.LoadLibrary("./pysharkbite.cpython-37m-x86_64-linux-gnu.so")
+cls = cdll.LoadLibrary("./pysharkbite.cpython-38-x86_64-linux-gnu.so")
 
 import pysharkbite
 
@@ -72,11 +72,13 @@ try:
 
     stats = connector.getStatistics()
 
+    print("Goal state: " + str(stats.goal_state))
+
     # print some server info
-    for serverinfo in stats.getTabletServerInfo():
-            print(serverinfo.getName())
-            print(serverinfo.getLastContact())
-            print( json.dumps(serverinfo.toJson())  )
+    for serverinfo in stats.tablet_server_info:
+            print(serverinfo.name)
+            print(serverinfo.last_contact)
+            
     
 
    
