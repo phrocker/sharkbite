@@ -65,6 +65,7 @@ private:
     std::vector<std::shared_ptr<ServerConnection>> servers;
     servers.push_back(conn);
     std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> cached = getTransporter(&servers, true);
+    logging::LOG_TRACE(logger) << "Reserving" << cached.second->getCacheKey();
     return cached.second;
   }
 
@@ -111,7 +112,7 @@ private:
 template<typename Tr>
 TransportPool<Tr>::TransportPool()
     : closed(false),
-      closing(false), logger(logging::LoggerFactory < ThriftTransporter > ::getLogger()){
+      closing(false), logger(logging::LoggerFactory < TransportPool > ::getLogger()){
   //cache = new std::map<std::shared_ptr<ServerConnection>, std::vector<CachedTransport<Tr>*>>();
 }
 
@@ -136,7 +137,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
 
   auto cacheKey = cachedTransport->getCacheKey();
 
-  logging::LOG_TRACE(logger) << "Freeing transport" << cacheKey;
+  logging::LOG_TRACE(logger) << "Freeing transport " << cacheKey;
 
   std::vector<std::shared_ptr<CachedTransport<Tr>> > closeList;
   std::lock_guard<std::recursive_mutex> lock(cacheLock);
@@ -156,6 +157,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
   gettimeofday(&time, NULL);
   long millis = (time.tv_sec * 1000) + (time.tv_usec / 1000);
   bool foundCacheKey = false;
+  
   for (; cacheIter != cachedConnections.end(); cacheIter++) {
     if (std::addressof(*((*cacheIter).get())) == std::addressof(*(cachedTransport.get()))) {
       if (cachedTransport->hasError()) {
@@ -179,6 +181,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
       } else {
       }
       (*cacheIter)->setReturnTime(millis);
+      logging::LOG_TRACE(logger) << "Cache Key is not reserved " << cacheKey;
       (*cacheIter)->reserve(false);
       foundCacheKey = true;
       break;
@@ -187,6 +190,7 @@ void TransportPool<Tr>::freeTransport(std::shared_ptr<CachedTransport<Tr>> cache
   }
 
   if (cachedTransport->hasError()) {
+    logging::LOG_TRACE(logger) << "Transport has an error " << cacheKey;
     cacheIter = cachedConnections.begin();
     for (; cacheIter != cachedConnections.end();) {
       if (!(*cacheIter)->isReserved()) {
@@ -230,11 +234,16 @@ std::pair<std::string, std::shared_ptr<CachedTransport<Tr>>> TransportPool<Tr>::
 
       for (std::shared_ptr<ServerConnection> conn : connections) {
         std::vector<std::shared_ptr<CachedTransport<Tr>> > cachedConnections = cache[conn];
+        logging::LOG_TRACE(logger) << "Checking " << cachedConnections.size() << " connections";
         for (std::shared_ptr<CachedTransport<Tr>> cacheTransport : cachedConnections) {
           if (!cacheTransport->isReserved() && !cacheTransport->hasError() && (*cacheTransport->getCacheKey().get() == *conn.get())) {
-          logging::LOG_TRACE(logger) << "Returning " << conn->toString();
+          logging::LOG_TRACE(logger) << "Returning " << conn->toString() << " via cache key " << cacheTransport->getCacheKey();
             cacheTransport->reserve();
             return std::make_pair(conn->toString(), cacheTransport);
+          }
+          else{
+            if (cacheTransport->isReserved())
+            logging::LOG_TRACE(logger) << cacheTransport->getCacheKey()->getHost() << ":" << cacheTransport->getCacheKey()->getPort() << " is reserved";
           }
         }
       }
@@ -292,11 +301,16 @@ std::shared_ptr<CachedTransport<Tr>> TransportPool<Tr>::createNewTransport(std::
 
   cachedTransport->reserve();
 
+  logging::LOG_TRACE(logger) << "Creating a new connection to " << conn->getHost();
+
   try {
 
     auto cachedConnections = cache[conn];
 
     cachedConnections.push_back(cachedTransport);
+
+
+  logging::LOG_TRACE(logger) << "Found a cache key " << cachedConnections.size();
 
     cache[conn] = cachedConnections;
 

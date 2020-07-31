@@ -13,6 +13,7 @@
  */
 #include <python/bindings.h>
 
+#include <sstream>
 #include "data/constructs/PythonIterInfo.h"
 #include "data/constructs/IterInfo.h"
 #include "data/constructs/security/Permissions.h"
@@ -241,7 +242,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("compact", &interconnect::AccumuloTableOperations::compact, "compact the table")
   .def("setProperty", &interconnect::AccumuloTableOperations::setProperty, "Set table property")
   .def("removeProperty", &interconnect::AccumuloTableOperations::removeProperty, "Remove the table property")
-  .def("addSplits", &interconnect::AccumuloTableOperations::addSplits, "Add splits for a table")
+  .def("addSplits", &interconnect::AccumuloTableOperations::addSplits, "Add splits 44444444444for a table")
   .def("addConstraint", &interconnect::AccumuloTableOperations::addConstraint, "Add table constraint")
   .def("createScanner", &interconnect::AccumuloTableOperations::createSharedScanner, "Create scanner")
   .def("createWriter", &interconnect::AccumuloTableOperations::createSharedWriter, "Create writer for table")
@@ -420,7 +421,30 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<cclient::data::security::Authorizations>(s, "Authorizations", "Authorizations object")
   .def(pybind11::init<>())
-  .def("addAuthorization",&cclient::data::security::Authorizations::addAuthorization, "Add an authorization to be used for table operations");
+  .def("addAuthorization",&cclient::data::security::Authorizations::addAuthorization, "Add an authorization to be used for table operations")
+  .def("contains",&cclient::data::security::Authorizations::contains, "Returns true if the set contains an authorization")
+  .def("get_authorizations",&cclient::data::security::Authorizations::getAuthorizations, "Returns an iterable of authorizations")
+  .def("__str__",[](const cclient::data::security::Authorizations &si) {
+          std::stringstream str;
+          const auto vec = si.getAuthorizations();
+          str << "[ ";
+          std::copy(vec.begin(), vec.end()-1, 
+            std::ostream_iterator<std::string>(str, ", ")); 
+          str << vec.back();
+          str << " ]";
+          return str.str();
+        
+    })
+  .def("__repr__",[](const cclient::data::security::Authorizations &si) {
+          std::stringstream str;
+          auto vec = si.getAuthorizations();
+          str << "[ ";
+          std::copy(vec.begin(), vec.end()-1, 
+            std::ostream_iterator<std::string>(str, ", ")); 
+          str << vec.back();
+          str << " ]";
+          return str.str();
+    });
 
   pybind11::class_<writer::Sink<cclient::data::KeyValue>,std::shared_ptr<writer::Sink<cclient::data::KeyValue>> >(s, "BatchWriter", "Batch writer to be constructed, from TableOperations")
   .def("flush",&writer::Sink<cclient::data::KeyValue>::flush, "Flushes the batch writer. Will be called automatically by close.")
