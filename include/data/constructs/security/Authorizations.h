@@ -61,7 +61,7 @@ class Authorizations {
 
   void addAuthorization(std::string auth);
 
-  std::vector<std::string> getAuthorizations() {
+  std::vector<std::string> getAuthorizations() const {
     std::vector<std::string> strAuths;
     for (auto it : authStrings) {
       strAuths.push_back(it);

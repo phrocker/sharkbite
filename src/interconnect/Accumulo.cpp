@@ -110,6 +110,7 @@ std::shared_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::
   if (IsEmpty(&table))
     throw cclient::exceptions::ClientException(TABLE_OR_NAMESPACE_EMPTY);
   auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
+  tserverConnection->getTransport()->closeAndCreateClient();
   return std::make_shared<AccumuloTableOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, table, this, tserverConnection, myTransportPool);
 }
 
@@ -129,6 +130,7 @@ std::shared_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(const std::
 std::shared_ptr<SecurityOperations> AccumuloConnector::securityOps() {
 
   auto ptr = myTransportPool->getTransporter(&tabletServers, true).second;
+  ptr->getTransport()->closeAndCreateClient();
   return std::make_shared<SecurityOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, ptr, myTransportPool);
 }
 

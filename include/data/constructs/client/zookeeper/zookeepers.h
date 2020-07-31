@@ -23,7 +23,8 @@
 #include <chrono>
 #include <thread>
 #include <sys/select.h>
-
+#include "logging/Logger.h"
+#include "logging/LoggerConfiguration.h"
 #include "watch.h"
 
 #include <mutex>
@@ -66,9 +67,11 @@ static void watcher_function(zhandle_t*, int type, int state, const char *path, 
 }
 
 class ZooKeeper {
+ private: 
+  std::shared_ptr<logging::Logger> logger;
  public:
   explicit ZooKeeper(const char *hostPorts, uint32_t timeout)
-      :
+      : logger(logging::LoggerFactory<ZooKeeper>::getLogger()),
       hostPorts((char*) hostPorts),
       timeout(timeout),
       zookeeperReference(0),
@@ -90,6 +93,9 @@ class ZooKeeper {
   }
 
   bool isConnected() {
+    if (!myWatch->isConnected()){
+      logging::LOG_TRACE(logger) << "Failed to connect to " << hostPorts;
+    }
     return myWatch->isConnected();
   }
 
@@ -161,13 +167,17 @@ class ZooKeeper {
   }
 
   void init(Watch *watch) {
+    FILE* outfile =  fopen ("nul", "w");
+    zoo_set_log_stream(outfile);
     myWatch = watch;
     // init zk with our zk info, and the watcher_function will
     // label our watch as 'connected'
     initWatchFp = new WatchFn();
     initWatchFp->ptr = myWatch;
     zookeeperReference = zookeeper_init(hostPorts, watcher_function, timeout, 0, initWatchFp, 0);
+    
     myWatch->setHandle(zookeeperReference);
+    logging::LOG_TRACE(logger) << "Connecting to " << hostPorts;
 
   }
 
@@ -241,6 +251,7 @@ class ZooSession {
 class ZooKeepers {
  private:
   static std::map<std::string, ZooSession*> sessions;
+  
  public:
 
   static std::string sessionKey(std::string keepers, uint16_t timeout, std::string auth) {
@@ -292,6 +303,7 @@ class ZooKeepers {
       for (int i = 0; i < TOTAL_CONNECT_TIME_WAIT_MS / TIME_BETWEEN_CONNECT_CHECKS_MS && tryAgain; i++) {
 
         if (zk->isConnected()) {
+          
           if (auth.size() > 0) {
             break;
             tryAgain = false;

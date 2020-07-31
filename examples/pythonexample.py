@@ -76,6 +76,12 @@ try:
     else:
         print (table + " already exists, so not creating it")  
     
+
+    print ( connector.securityOps().get_auths("root") )
+    print ( connector.securityOps().get_auths("root").get_authorizations() )
+    for auth in connector.securityOps().get_auths("root").get_authorizations():
+        print(auth)
+
     
     auths = pysharkbite.Authorizations()
     

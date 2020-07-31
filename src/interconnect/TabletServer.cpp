@@ -42,6 +42,7 @@ ServerInterconnect::ServerInterconnect(std::shared_ptr<cclient::data::tserver::R
   tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
 
   int failures = 0;
+  /*
   do {
 
     try {
@@ -80,7 +81,8 @@ ServerInterconnect::ServerInterconnect(std::shared_ptr<cclient::data::tserver::R
     }
 
     break;
-  } while (true);
+  } while (true);*/
+  myTransport=nullptr;
 
   myTransportPool = distributedConnector;
 
@@ -109,6 +111,8 @@ ServerInterconnect::ServerInterconnect(std::shared_ptr<cclient::data::tserver::S
   GENERAL_RPC_TIMEOUT);
 
   tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT), rangeDef->getPort(), timeout);
+
+  /*
   do {
 
     try {
@@ -139,7 +143,8 @@ ServerInterconnect::ServerInterconnect(std::shared_ptr<cclient::data::tserver::S
 
     break;
   } while (true);
-
+*/
+  myTransport = nullptr;
   myTransportPool = distributedConnector;
 
   authenticate(rangeDef->getCredentials());
@@ -177,11 +182,15 @@ ServerInterconnect::ServerInterconnect(const std::string host, const int port, c
 }
 
 ServerInterconnect::~ServerInterconnect() {
-  myTransportPool->freeTransport(myTransport);
+  if (myTransport)
+    myTransportPool->freeTransport(myTransport);
 }
 
 Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> &arbiter, std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols,
                                      const std::vector<cclient::data::IterInfo> &serverSideIterators, cclient::data::IterInfo &versioningIterator, uint32_t batchSize, bool disableRpc) {
+  if (!myTransport){
+    recreateConnection();
+  }
   ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
   ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> hedgedRequest(&credentials, rangeDef->getAuthorizations(), tServer);
@@ -335,9 +344,11 @@ Scan* ServerInterconnect::hedgedScan(std::shared_ptr<interconnect::ScanArbiter> 
 
 void ServerInterconnect::recreateConnection(bool errorOcurred) {
   do {
-    myTransport->sawError(errorOcurred);
+    if (myTransport)
+      myTransport->sawError(errorOcurred);
     try {
-      myTransportPool->freeTransport(myTransport);
+      if (myTransport)
+        myTransportPool->freeTransport(myTransport);
     } catch (const apache::thrift::transport::TTransportException &te) {
       // close may occur on a partial write this is okay
       // to know
@@ -365,6 +376,9 @@ void ServerInterconnect::recreateConnection(bool errorOcurred) {
 
 Scan*
 ServerInterconnect::scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize) {
+  if (!myTransport){
+    recreateConnection();
+  }
   ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>>> request(&credentials, rangeDef->getAuthorizations(), tServer);
 
   request.setBufferSize(batchSize);
@@ -417,7 +431,9 @@ void ServerInterconnect::authenticate(cclient::data::security::AuthInfo *credent
 }
 
 Scan* ServerInterconnect::scan(std::atomic<bool> *isRunning) {
-
+  if (!myTransport){
+    recreateConnection();
+  }
   std::vector<cclient::data::Column> emptyCols;
 
   std::vector<cclient::data::IterInfo> emptyServerSideIterators;
@@ -427,6 +443,9 @@ Scan* ServerInterconnect::scan(std::atomic<bool> *isRunning) {
 }
 
 Scan* ServerInterconnect::continueScan(Scan *scan) {
+  if (!myTransport){
+    recreateConnection();
+  }
   if (scan->getHasMore() && scan->isClientRunning()) {
     if (scan->isRFileScan()) {
       auto multi_iter = scan->getMultiIterator();
@@ -453,7 +472,9 @@ Scan* ServerInterconnect::continueScan(Scan *scan) {
 }
 
 std::shared_ptr<cclient::data::TabletServerMutations> ServerInterconnect::write(std::shared_ptr<cclient::data::TabletServerMutations> mutations) {
-
+if (!myTransport){
+    recreateConnection();
+  }
   bool success = false;
   uint32_t failures = 0;
   do {
