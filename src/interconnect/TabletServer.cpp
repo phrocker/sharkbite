@@ -431,7 +431,9 @@ void ServerInterconnect::authenticate(cclient::data::security::AuthInfo *credent
 }
 
 Scan* ServerInterconnect::scan(std::atomic<bool> *isRunning) {
-
+  if (!myTransport){
+    recreateConnection();
+  }
   std::vector<cclient::data::Column> emptyCols;
 
   std::vector<cclient::data::IterInfo> emptyServerSideIterators;
@@ -441,6 +443,9 @@ Scan* ServerInterconnect::scan(std::atomic<bool> *isRunning) {
 }
 
 Scan* ServerInterconnect::continueScan(Scan *scan) {
+  if (!myTransport){
+    recreateConnection();
+  }
   if (scan->getHasMore() && scan->isClientRunning()) {
     if (scan->isRFileScan()) {
       auto multi_iter = scan->getMultiIterator();
@@ -467,7 +472,9 @@ Scan* ServerInterconnect::continueScan(Scan *scan) {
 }
 
 std::shared_ptr<cclient::data::TabletServerMutations> ServerInterconnect::write(std::shared_ptr<cclient::data::TabletServerMutations> mutations) {
-
+if (!myTransport){
+    recreateConnection();
+  }
   bool success = false;
   uint32_t failures = 0;
   do {
