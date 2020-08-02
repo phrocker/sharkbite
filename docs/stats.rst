@@ -1,6 +1,6 @@
 .. image:: https://camo.githubusercontent.com/dbf39cef1a973d8741437693e96b59e31d9e3754/68747470733a2f2f7777772e736861726b626974652e696f2f77702d636f6e74656e742f75706c6f6164732f323031372f30322f736861726b626974652e6a7067
 
-Getting Statistics in Python. 
+Getting Statistics in Python
 =============================
 
 You can retreive Accumulo stats with the get_statistics function in the connector. 
