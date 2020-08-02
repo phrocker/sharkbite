@@ -7,11 +7,11 @@ Sharkbite Documentation
   <p>Accumulo connector plugin</p>
   <dl class="py class">
   <dt id="pysharkbite.AccumuloConnector">
-  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">AccumuloConnector</code><a class="headerlink" href="#pysharkbite.AccumuloConnector" title="Permalink to this definition"></a></dt>
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">AccumuloConnector</code><a class="headerlink" href="#pysharkbite.AccumuloConnector" title="Permalink to this definition">¶</a></dt>
   <dd><p>Accumulo connector</p>
   <dl class="py method">
   <dt id="pysharkbite.AccumuloConnector.getStatistics">
-  <code class="sig-name descname">getStatistics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em><span class="sig-paren">)</span> &#x2192; pysharkbite.AccumuloInfo<a class="headerlink" href="#pysharkbite.AccumuloConnector.getStatistics" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">getStatistics</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a><a class="headerlink" href="#pysharkbite.AccumuloConnector.getStatistics" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns Statistics for the accumulo connector</p>
   </dd></dl>
 
@@ -32,9 +32,150 @@ Sharkbite Documentation
   <code class="sig-name descname">tableOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; interconnect::AccumuloTableOperations<a class="headerlink" href="#pysharkbite.AccumuloConnector.tableOps" title="Permalink to this definition">¶</a></dt>
   <dd><p>Return the table operations object</p>
   </dd></dl>
-    
-    </dd></dl>
-    
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.AccumuloInfo">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">AccumuloInfo</code><a class="headerlink" href="#pysharkbite.AccumuloInfo" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.bad_servers">
+  <em class="property">property </em><code class="sig-name descname">bad_servers</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.bad_servers" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.dead_servers">
+  <em class="property">property </em><code class="sig-name descname">dead_servers</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.dead_servers" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getBadTabletServers">
+  <code class="sig-name descname">getBadTabletServers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span>int<span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloInfo.getBadTabletServers" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets a mapping of bad tablet servers.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getDeadServers">
+  <code class="sig-name descname">getDeadServers</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pysharkbite.DeadServer" title="pysharkbite.DeadServer">pysharkbite.DeadServer</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloInfo.getDeadServers" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns a list of dead tablet servers.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getGoalState">
+  <code class="sig-name descname">getGoalState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.CoordinatorGoalState" title="pysharkbite.CoordinatorGoalState">pysharkbite.CoordinatorGoalState</a><a class="headerlink" href="#pysharkbite.AccumuloInfo.getGoalState" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns the goal state of the cluster.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getServerShuttingDown">
+  <code class="sig-name descname">getServerShuttingDown</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; Set<span class="p">[</span>str<span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloInfo.getServerShuttingDown" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns the set of servers shutting down.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getState">
+  <code class="sig-name descname">getState</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.CoordinatorState" title="pysharkbite.CoordinatorState">pysharkbite.CoordinatorState</a><a class="headerlink" href="#pysharkbite.AccumuloInfo.getState" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the state of the accumulo cluster.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getTableMap">
+  <code class="sig-name descname">getTableMap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloInfo.getTableMap" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the Table map for the cluster.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getTabletServerInfo">
+  <code class="sig-name descname">getTabletServerInfo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloInfo.getTabletServerInfo" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets tablet server Info</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.getUnassignedTablets">
+  <code class="sig-name descname">getUnassignedTablets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloInfo" title="pysharkbite.AccumuloInfo">pysharkbite.AccumuloInfo</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.AccumuloInfo.getUnassignedTablets" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the unassigned tablets</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.goal_state">
+  <em class="property">property </em><code class="sig-name descname">goal_state</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.goal_state" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.servs_shutting_down">
+  <em class="property">property </em><code class="sig-name descname">servs_shutting_down</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.servs_shutting_down" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.state">
+  <em class="property">property </em><code class="sig-name descname">state</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.state" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.table_map">
+  <em class="property">property </em><code class="sig-name descname">table_map</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.table_map" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.tablet_server_info">
+  <em class="property">property </em><code class="sig-name descname">tablet_server_info</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.tablet_server_info" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloInfo.unassigned_tablets">
+  <em class="property">property </em><code class="sig-name descname">unassigned_tablets</code><a class="headerlink" href="#pysharkbite.AccumuloInfo.unassigned_tablets" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.AccumuloNamespaceOperations">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">AccumuloNamespaceOperations</code><a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Accumulo namespace operations. Should be accessed through ‘AccumuloConnector’</p>
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.create">
+  <code class="sig-name descname">create</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.create" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Creates the namespace</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.exists">
+  <code class="sig-name descname">exists</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.exists" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the namespace exists</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.list">
+  <code class="sig-name descname">list</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.list" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Lists namespaces within this Accumulo instance</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.remove">
+  <code class="sig-name descname">remove</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.remove" title="Permalink to this definition">¶</a></dt>
+  <dd><p>removes the namespace</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.removeProperty">
+  <code class="sig-name descname">removeProperty</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.removeProperty" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Remove the namespace property</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.rename">
+  <code class="sig-name descname">rename</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.rename" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Renames the namespace</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.AccumuloNamespaceOperations.setProperty">
+  <code class="sig-name descname">setProperty</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.AccumuloNamespaceOperations.setProperty" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Sets a namespace property</p>
+  </dd></dl>
+
+  </dd></dl>
+
   <dl class="py class">
   <dt id="pysharkbite.AccumuloTableOperations">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">AccumuloTableOperations</code><a class="headerlink" href="#pysharkbite.AccumuloTableOperations" title="Permalink to this definition">¶</a></dt>
@@ -181,7 +322,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.BatchScanner.addRange">
-  <code class="sig-name descname">addRange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">pysharkbite.Range</span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.BatchScanner.addRange" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">addRange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.BatchScanner.addRange" title="Permalink to this definition">¶</a></dt>
   <dd><p>Adds a range</p>
   </dd></dl>
 
@@ -199,7 +340,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.BatchScanner.getResultSet">
-  <code class="sig-name descname">getResultSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em><span class="sig-paren">)</span> &#x2192; pysharkbite.Results<a class="headerlink" href="#pysharkbite.BatchScanner.getResultSet" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">getResultSet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Results" title="pysharkbite.Results">pysharkbite.Results</a><a class="headerlink" href="#pysharkbite.BatchScanner.getResultSet" title="Permalink to this definition">¶</a></dt>
   <dd><p>Gets a result set that can be used asynchronously</p>
   </dd></dl>
 
@@ -217,7 +358,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.BatchScanner.withRange">
-  <code class="sig-name descname">withRange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">pysharkbite.Range</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a><a class="headerlink" href="#pysharkbite.BatchScanner.withRange" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">withRange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.BatchScanner" title="pysharkbite.BatchScanner">pysharkbite.BatchScanner</a><a class="headerlink" href="#pysharkbite.BatchScanner.withRange" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
   </dd></dl>
@@ -228,7 +369,7 @@ Sharkbite Documentation
   <dd><p>Batch writer to be constructed, from TableOperations</p>
   <dl class="py method">
   <dt id="pysharkbite.BatchWriter.addMutation">
-  <code class="sig-name descname">addMutation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchWriter" title="pysharkbite.BatchWriter">pysharkbite.BatchWriter</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">pysharkbite.Mutation</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.BatchWriter.addMutation" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">addMutation</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchWriter" title="pysharkbite.BatchWriter">pysharkbite.BatchWriter</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Mutation" title="pysharkbite.Mutation">pysharkbite.Mutation</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.BatchWriter.addMutation" title="Permalink to this definition">¶</a></dt>
   <dd><p>Adds a mutation to the batch writer</p>
   </dd></dl>
 
@@ -249,6 +390,33 @@ Sharkbite Documentation
   <code class="sig-name descname">size</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.BatchWriter" title="pysharkbite.BatchWriter">pysharkbite.BatchWriter</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.BatchWriter.size" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns the current size to be written to Accumulo</p>
   </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.Compacting">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Compacting</code><a class="headerlink" href="#pysharkbite.Compacting" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.Compacting.getQueued">
+  <code class="sig-name descname">getQueued</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Compacting" title="pysharkbite.Compacting">pysharkbite.Compacting</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Compacting.getQueued" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets queued compactions.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Compacting.getRunning">
+  <code class="sig-name descname">getRunning</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Compacting" title="pysharkbite.Compacting">pysharkbite.Compacting</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.Compacting.getRunning" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets running compactions.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Compacting.queued">
+  <em class="property">property </em><code class="sig-name descname">queued</code><a class="headerlink" href="#pysharkbite.Compacting.queued" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Compacting.running">
+  <em class="property">property </em><code class="sig-name descname">running</code><a class="headerlink" href="#pysharkbite.Compacting.running" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
 
   </dd></dl>
 
@@ -291,6 +459,21 @@ Sharkbite Documentation
   <p>CLEAN_STOP : CLEAN_STOP state</p>
   <p>SAFE_MODE : SAFE_MODE state</p>
   <p>NORMAL : NORMAL state</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorGoalState.CLEAN_STOP">
+  <code class="sig-name descname">CLEAN_STOP</code><em class="property"> = CoordinatorGoalState.CLEAN_STOP</em><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.CLEAN_STOP" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorGoalState.NORMAL">
+  <code class="sig-name descname">NORMAL</code><em class="property"> = CoordinatorGoalState.NORMAL</em><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.NORMAL" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorGoalState.SAFE_MODE">
+  <code class="sig-name descname">SAFE_MODE</code><em class="property"> = CoordinatorGoalState.SAFE_MODE</em><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.SAFE_MODE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.CoordinatorGoalState.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.name" title="Permalink to this definition">¶</a></dt>
@@ -310,11 +493,84 @@ Sharkbite Documentation
   <p>UNLOAD_METADATA_TABLETS : UNLOAD_METADATA_TABLETS state</p>
   <p>UNLOAD_ROOT_TABLET : UNLOAD_ROOT_TABLET state</p>
   <p>STOP : STOP state</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.HAVE_LOCK">
+  <code class="sig-name descname">HAVE_LOCK</code><em class="property"> = CoordinatorState.HAVE_LOCK</em><a class="headerlink" href="#pysharkbite.CoordinatorState.HAVE_LOCK" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.INITIAL">
+  <code class="sig-name descname">INITIAL</code><em class="property"> = CoordinatorState.INITIAL</em><a class="headerlink" href="#pysharkbite.CoordinatorState.INITIAL" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.NORMAL">
+  <code class="sig-name descname">NORMAL</code><em class="property"> = CoordinatorState.NORMAL</em><a class="headerlink" href="#pysharkbite.CoordinatorState.NORMAL" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.SAFE_MODE">
+  <code class="sig-name descname">SAFE_MODE</code><em class="property"> = CoordinatorState.SAFE_MODE</em><a class="headerlink" href="#pysharkbite.CoordinatorState.SAFE_MODE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.STOP">
+  <code class="sig-name descname">STOP</code><em class="property"> = CoordinatorState.STOP</em><a class="headerlink" href="#pysharkbite.CoordinatorState.STOP" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.UNLOAD_METADATA_TABLETS">
+  <code class="sig-name descname">UNLOAD_METADATA_TABLETS</code><em class="property"> = CoordinatorState.UNLOAD_METADATA_TABLETS</em><a class="headerlink" href="#pysharkbite.CoordinatorState.UNLOAD_METADATA_TABLETS" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.UNLOAD_ROOT_TABLET">
+  <code class="sig-name descname">UNLOAD_ROOT_TABLET</code><em class="property"> = CoordinatorState.UNLOAD_ROOT_TABLET</em><a class="headerlink" href="#pysharkbite.CoordinatorState.UNLOAD_ROOT_TABLET" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.CoordinatorState.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.CoordinatorState.name" title="Permalink to this definition">¶</a></dt>
   <dd><p>(self: handle) -&gt; str</p>
   </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.DeadServer">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">DeadServer</code><a class="headerlink" href="#pysharkbite.DeadServer" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.DeadServer.getLastContact">
+  <code class="sig-name descname">getLastContact</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.DeadServer" title="pysharkbite.DeadServer">pysharkbite.DeadServer</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.DeadServer.getLastContact" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Get last contact time with this server.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.DeadServer.getServer">
+  <code class="sig-name descname">getServer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.DeadServer" title="pysharkbite.DeadServer">pysharkbite.DeadServer</a></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#pysharkbite.DeadServer.getServer" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the server name.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.DeadServer.getStatus">
+  <code class="sig-name descname">getStatus</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.DeadServer" title="pysharkbite.DeadServer">pysharkbite.DeadServer</a></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#pysharkbite.DeadServer.getStatus" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the status of the server.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.DeadServer.last_contact">
+  <em class="property">property </em><code class="sig-name descname">last_contact</code><a class="headerlink" href="#pysharkbite.DeadServer.last_contact" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.DeadServer.server">
+  <em class="property">property </em><code class="sig-name descname">server</code><a class="headerlink" href="#pysharkbite.DeadServer.server" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.DeadServer.status">
+  <em class="property">property </em><code class="sig-name descname">status</code><a class="headerlink" href="#pysharkbite.DeadServer.status" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
 
   </dd></dl>
 
@@ -559,6 +815,23 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py class">
+  <dt id="pysharkbite.KeyValue">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">KeyValue</code><a class="headerlink" href="#pysharkbite.KeyValue" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.KeyValue.getKey">
+  <code class="sig-name descname">getKey</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.KeyValue" title="pysharkbite.KeyValue">pysharkbite.KeyValue</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Key" title="pysharkbite.Key">pysharkbite.Key</a><a class="headerlink" href="#pysharkbite.KeyValue.getKey" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the Key from the key value object</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.KeyValue.getValue">
+  <code class="sig-name descname">getValue</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.KeyValue" title="pysharkbite.KeyValue">pysharkbite.KeyValue</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Value" title="pysharkbite.Value">pysharkbite.Value</a><a class="headerlink" href="#pysharkbite.KeyValue.getValue" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the Value from the key value object</p>
+  </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
   <dt id="pysharkbite.KeyValueIterator">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">KeyValueIterator</code><a class="headerlink" href="#pysharkbite.KeyValueIterator" title="Permalink to this definition">¶</a></dt>
   <dd><p>Iterable object within Accumulo</p>
@@ -613,6 +886,47 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py class">
+  <dt id="pysharkbite.Mutation">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Mutation</code><a class="headerlink" href="#pysharkbite.Mutation" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.Mutation.put">
+  <code class="sig-name descname">put</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pysharkbite.Mutation.put" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Overloaded function.</p>
+  <ol class="arabic simple">
+  <li><p>put(self: pysharkbite.Mutation, arg0: str, arg1: str, arg2: str, arg3: int, arg4: str) -&gt; None</p></li>
+  </ol>
+  <p>Adds a mutation</p>
+  <ol class="arabic simple" start="2">
+  <li><p>put(self: pysharkbite.Mutation, arg0: str, arg1: str, arg2: str, arg3: int) -&gt; None</p></li>
+  </ol>
+  <p>Adds a mutation</p>
+  <ol class="arabic simple" start="3">
+  <li><p>put(self: pysharkbite.Mutation, arg0: str, arg1: str, arg2: str) -&gt; None</p></li>
+  </ol>
+  <p>Adds a mutation</p>
+  <ol class="arabic simple" start="4">
+  <li><p>put(self: pysharkbite.Mutation, arg0: str, arg1: str) -&gt; None</p></li>
+  </ol>
+  <p>Adds a mutation</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Mutation.putDelete">
+  <code class="sig-name descname">putDelete</code><span class="sig-paren">(</span><em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pysharkbite.Mutation.putDelete" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Overloaded function.</p>
+  <ol class="arabic simple">
+  <li><p>putDelete(self: pysharkbite.Mutation, arg0: str, arg1: str, arg2: str, arg3: int) -&gt; None</p></li>
+  </ol>
+  <p>Adds a delete mutation</p>
+  <ol class="arabic simple" start="2">
+  <li><p>putDelete(self: pysharkbite.Mutation, arg0: str, arg1: str, arg2: str) -&gt; None</p></li>
+  </ol>
+  <p>Adds a delete mutation</p>
+  </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
   <dt id="pysharkbite.NamespacePermissions">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">NamespacePermissions</code><a class="headerlink" href="#pysharkbite.NamespacePermissions" title="Permalink to this definition">¶</a></dt>
   <dd><p>Members:</p>
@@ -625,6 +939,51 @@ Sharkbite Documentation
   <p>DROP_TABLE : Enables drop table permissions on the namespace</p>
   <p>BULK_IMPORT : Enables bulk import permissions on the namespace</p>
   <p>DROP_NAMESPACE : Enables drop namespace permissions on the namespace</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.ALTER_NAMESPACE">
+  <code class="sig-name descname">ALTER_NAMESPACE</code><em class="property"> = NamespacePermissions.ALTER_NAMESPACE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.ALTER_NAMESPACE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.ALTER_TABLE">
+  <code class="sig-name descname">ALTER_TABLE</code><em class="property"> = NamespacePermissions.ALTER_TABLE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.ALTER_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.BULK_IMPORT">
+  <code class="sig-name descname">BULK_IMPORT</code><em class="property"> = NamespacePermissions.BULK_IMPORT</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.BULK_IMPORT" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.CREATE_TABLE">
+  <code class="sig-name descname">CREATE_TABLE</code><em class="property"> = NamespacePermissions.CREATE_TABLE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.CREATE_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.DROP_NAMESPACE">
+  <code class="sig-name descname">DROP_NAMESPACE</code><em class="property"> = NamespacePermissions.DROP_NAMESPACE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.DROP_NAMESPACE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.DROP_TABLE">
+  <code class="sig-name descname">DROP_TABLE</code><em class="property"> = NamespacePermissions.DROP_TABLE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.DROP_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.GRANT">
+  <code class="sig-name descname">GRANT</code><em class="property"> = NamespacePermissions.GRANT</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.GRANT" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.READ">
+  <code class="sig-name descname">READ</code><em class="property"> = NamespacePermissions.READ</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.READ" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.WRITE">
+  <code class="sig-name descname">WRITE</code><em class="property"> = NamespacePermissions.WRITE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.WRITE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.NamespacePermissions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.NamespacePermissions.name" title="Permalink to this definition">¶</a></dt>
@@ -675,7 +1034,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.RFile.getTop">
-  <code class="sig-name descname">getTop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.RFile" title="pysharkbite.RFile">pysharkbite.RFile</a></span></em><span class="sig-paren">)</span> &#x2192; pysharkbite.KeyValue<a class="headerlink" href="#pysharkbite.RFile.getTop" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">getTop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.RFile" title="pysharkbite.RFile">pysharkbite.RFile</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.KeyValue" title="pysharkbite.KeyValue">pysharkbite.KeyValue</a><a class="headerlink" href="#pysharkbite.RFile.getTop" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns the top key/value</p>
   </dd></dl>
 
@@ -730,11 +1089,69 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py class">
+  <dt id="pysharkbite.Range">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Range</code><a class="headerlink" href="#pysharkbite.Range" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.RecoveryStatus">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">RecoveryStatus</code><a class="headerlink" href="#pysharkbite.RecoveryStatus" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.getName">
+  <code class="sig-name descname">getName</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.RecoveryStatus" title="pysharkbite.RecoveryStatus">pysharkbite.RecoveryStatus</a></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#pysharkbite.RecoveryStatus.getName" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the name of the recovery.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.getProgress">
+  <code class="sig-name descname">getProgress</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.RecoveryStatus" title="pysharkbite.RecoveryStatus">pysharkbite.RecoveryStatus</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.RecoveryStatus.getProgress" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the progress of the recovery.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.getRuntime">
+  <code class="sig-name descname">getRuntime</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.RecoveryStatus" title="pysharkbite.RecoveryStatus">pysharkbite.RecoveryStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.RecoveryStatus.getRuntime" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the runtime of the recovery process.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.name">
+  <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.RecoveryStatus.name" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.progress">
+  <em class="property">property </em><code class="sig-name descname">progress</code><a class="headerlink" href="#pysharkbite.RecoveryStatus.progress" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.RecoveryStatus.runtime">
+  <em class="property">property </em><code class="sig-name descname">runtime</code><a class="headerlink" href="#pysharkbite.RecoveryStatus.runtime" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.Results">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Results</code><a class="headerlink" href="#pysharkbite.Results" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py class">
   <dt id="pysharkbite.ScannerOptions">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">ScannerOptions</code><a class="headerlink" href="#pysharkbite.ScannerOptions" title="Permalink to this definition">¶</a></dt>
   <dd><p>Members:</p>
   <p>HedgedReads : Enables hedged reads</p>
   <p>RFileScanOnly : Enables the RFile Scanner</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.ScannerOptions.HedgedReads">
+  <code class="sig-name descname">HedgedReads</code><em class="property"> = ScannerOptions.HedgedReads</em><a class="headerlink" href="#pysharkbite.ScannerOptions.HedgedReads" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.ScannerOptions.RFileScanOnly">
+  <code class="sig-name descname">RFileScanOnly</code><em class="property"> = ScannerOptions.RFileScanOnly</em><a class="headerlink" href="#pysharkbite.ScannerOptions.RFileScanOnly" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.ScannerOptions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.ScannerOptions.name" title="Permalink to this definition">¶</a></dt>
@@ -834,6 +1251,29 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py class">
+  <dt id="pysharkbite.Seekable">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Seekable</code><a class="headerlink" href="#pysharkbite.Seekable" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.Seekable.getColumnFamilies">
+  <code class="sig-name descname">getColumnFamilies</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Seekable" title="pysharkbite.Seekable">pysharkbite.Seekable</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>str<span class="p">]</span><a class="headerlink" href="#pysharkbite.Seekable.getColumnFamilies" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the column families for this seekable</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Seekable.getRange">
+  <code class="sig-name descname">getRange</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Seekable" title="pysharkbite.Seekable">pysharkbite.Seekable</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a><a class="headerlink" href="#pysharkbite.Seekable.getRange" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets this seekable range</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Seekable.isInclusive">
+  <code class="sig-name descname">isInclusive</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Seekable" title="pysharkbite.Seekable">pysharkbite.Seekable</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Seekable.isInclusive" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the column families are inclusive.</p>
+  </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
   <dt id="pysharkbite.SequentialRFile">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">SequentialRFile</code><a class="headerlink" href="#pysharkbite.SequentialRFile" title="Permalink to this definition">¶</a></dt>
   <dd><p>Specializd RFile, which is an internal data structure for storing data within Accumulo, to be used when much of the data is similar</p>
@@ -845,7 +1285,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.SequentialRFile.append">
-  <code class="sig-name descname">append</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SequentialRFile" title="pysharkbite.SequentialRFile">pysharkbite.SequentialRFile</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">pysharkbite.KeyValue</span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SequentialRFile.append" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">append</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SequentialRFile" title="pysharkbite.SequentialRFile">pysharkbite.SequentialRFile</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.KeyValue" title="pysharkbite.KeyValue">pysharkbite.KeyValue</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SequentialRFile.append" title="Permalink to this definition">¶</a></dt>
   <dd><p>Appends a key and value pair to the RFile</p>
   </dd></dl>
 
@@ -857,7 +1297,7 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.SequentialRFile.getTop">
-  <code class="sig-name descname">getTop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SequentialRFile" title="pysharkbite.SequentialRFile">pysharkbite.SequentialRFile</a></span></em><span class="sig-paren">)</span> &#x2192; pysharkbite.KeyValue<a class="headerlink" href="#pysharkbite.SequentialRFile.getTop" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">getTop</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SequentialRFile" title="pysharkbite.SequentialRFile">pysharkbite.SequentialRFile</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.KeyValue" title="pysharkbite.KeyValue">pysharkbite.KeyValue</a><a class="headerlink" href="#pysharkbite.SequentialRFile.getTop" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns the top key/value</p>
   </dd></dl>
 
@@ -882,6 +1322,11 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py class">
+  <dt id="pysharkbite.StreamRelocation">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">StreamRelocation</code><a class="headerlink" href="#pysharkbite.StreamRelocation" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py class">
   <dt id="pysharkbite.SystemPermissions">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">SystemPermissions</code><a class="headerlink" href="#pysharkbite.SystemPermissions" title="Permalink to this definition">¶</a></dt>
   <dd><p>Members:</p>
@@ -895,11 +1340,170 @@ Sharkbite Documentation
   <p>CREATE_NAMESPACE : Enables create namespace permissions for the user</p>
   <p>DROP_NAMESPACE : Enables drop namespace permissions for the user</p>
   <p>ALTER_NAMESPACE : Enables the alter namespace permissions for the user</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.ALTER_NAMESPACE">
+  <code class="sig-name descname">ALTER_NAMESPACE</code><em class="property"> = SystemPermissions.ALTER_NAMESPACE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.ALTER_NAMESPACE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.ALTER_TABLE">
+  <code class="sig-name descname">ALTER_TABLE</code><em class="property"> = SystemPermissions.ALTER_TABLE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.ALTER_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.ALTER_USER">
+  <code class="sig-name descname">ALTER_USER</code><em class="property"> = SystemPermissions.ALTER_USER</em><a class="headerlink" href="#pysharkbite.SystemPermissions.ALTER_USER" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.CREATE_NAMESPACE">
+  <code class="sig-name descname">CREATE_NAMESPACE</code><em class="property"> = SystemPermissions.CREATE_NAMESPACE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.CREATE_NAMESPACE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.CREATE_TABLE">
+  <code class="sig-name descname">CREATE_TABLE</code><em class="property"> = SystemPermissions.CREATE_TABLE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.CREATE_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.CREATE_USER">
+  <code class="sig-name descname">CREATE_USER</code><em class="property"> = SystemPermissions.CREATE_USER</em><a class="headerlink" href="#pysharkbite.SystemPermissions.CREATE_USER" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.DROP_NAMESPACE">
+  <code class="sig-name descname">DROP_NAMESPACE</code><em class="property"> = SystemPermissions.DROP_NAMESPACE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.DROP_NAMESPACE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.DROP_TABLE">
+  <code class="sig-name descname">DROP_TABLE</code><em class="property"> = SystemPermissions.DROP_TABLE</em><a class="headerlink" href="#pysharkbite.SystemPermissions.DROP_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.GRANT">
+  <code class="sig-name descname">GRANT</code><em class="property"> = SystemPermissions.GRANT</em><a class="headerlink" href="#pysharkbite.SystemPermissions.GRANT" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.SYSTEM">
+  <code class="sig-name descname">SYSTEM</code><em class="property"> = SystemPermissions.SYSTEM</em><a class="headerlink" href="#pysharkbite.SystemPermissions.SYSTEM" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.SystemPermissions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.SystemPermissions.name" title="Permalink to this definition">¶</a></dt>
   <dd><p>(self: handle) -&gt; str</p>
   </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.TableCompactions">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">TableCompactions</code><a class="headerlink" href="#pysharkbite.TableCompactions" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.TableCompactions.getMajorCompactions">
+  <code class="sig-name descname">getMajorCompactions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableCompactions" title="pysharkbite.TableCompactions">pysharkbite.TableCompactions</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Compacting" title="pysharkbite.Compacting">pysharkbite.Compacting</a><a class="headerlink" href="#pysharkbite.TableCompactions.getMajorCompactions" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets major compaction stats.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableCompactions.getMinorCompactions">
+  <code class="sig-name descname">getMinorCompactions</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableCompactions" title="pysharkbite.TableCompactions">pysharkbite.TableCompactions</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Compacting" title="pysharkbite.Compacting">pysharkbite.Compacting</a><a class="headerlink" href="#pysharkbite.TableCompactions.getMinorCompactions" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets minor compaction stats.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableCompactions.getScans">
+  <code class="sig-name descname">getScans</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableCompactions" title="pysharkbite.TableCompactions">pysharkbite.TableCompactions</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Compacting" title="pysharkbite.Compacting">pysharkbite.Compacting</a><a class="headerlink" href="#pysharkbite.TableCompactions.getScans" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets scan stats.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableCompactions.majors">
+  <em class="property">property </em><code class="sig-name descname">majors</code><a class="headerlink" href="#pysharkbite.TableCompactions.majors" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableCompactions.minors">
+  <em class="property">property </em><code class="sig-name descname">minors</code><a class="headerlink" href="#pysharkbite.TableCompactions.minors" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableCompactions.scans">
+  <em class="property">property </em><code class="sig-name descname">scans</code><a class="headerlink" href="#pysharkbite.TableCompactions.scans" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.TableInfo">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">TableInfo</code><a class="headerlink" href="#pysharkbite.TableInfo" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.TableInfo.compaction_info">
+  <em class="property">property </em><code class="sig-name descname">compaction_info</code><a class="headerlink" href="#pysharkbite.TableInfo.compaction_info" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getCompactioninfo">
+  <code class="sig-name descname">getCompactioninfo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.TableCompactions" title="pysharkbite.TableCompactions">pysharkbite.TableCompactions</a><a class="headerlink" href="#pysharkbite.TableInfo.getCompactioninfo" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets compaction info for the table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getOnlineTablets">
+  <code class="sig-name descname">getOnlineTablets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TableInfo.getOnlineTablets" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets online tablets in the table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getRecords">
+  <code class="sig-name descname">getRecords</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TableInfo.getRecords" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets records in the table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getRecordsInMemory">
+  <code class="sig-name descname">getRecordsInMemory</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TableInfo.getRecordsInMemory" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets records in memory for a table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getTableRates">
+  <code class="sig-name descname">getTableRates</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a><a class="headerlink" href="#pysharkbite.TableInfo.getTableRates" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets table rates for the table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.getTablets">
+  <code class="sig-name descname">getTablets</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TableInfo.getTablets" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets tablets in the table</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.online_tables">
+  <em class="property">property </em><code class="sig-name descname">online_tables</code><a class="headerlink" href="#pysharkbite.TableInfo.online_tables" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.records">
+  <em class="property">property </em><code class="sig-name descname">records</code><a class="headerlink" href="#pysharkbite.TableInfo.records" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.records_in_memory">
+  <em class="property">property </em><code class="sig-name descname">records_in_memory</code><a class="headerlink" href="#pysharkbite.TableInfo.records_in_memory" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.table_rates">
+  <em class="property">property </em><code class="sig-name descname">table_rates</code><a class="headerlink" href="#pysharkbite.TableInfo.table_rates" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableInfo.tablets">
+  <em class="property">property </em><code class="sig-name descname">tablets</code><a class="headerlink" href="#pysharkbite.TableInfo.tablets" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
 
   </dd></dl>
 
@@ -913,11 +1517,223 @@ Sharkbite Documentation
   <p>ALTER_TABLE : Enables alter table permissions on the table</p>
   <p>DROP_TABLE : Enables drop table permissions on the table</p>
   <p>BULK_IMPORT : Enables bulk import permissions on the table</p>
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.ALTER_TABLE">
+  <code class="sig-name descname">ALTER_TABLE</code><em class="property"> = TablePermissions.ALTER_TABLE</em><a class="headerlink" href="#pysharkbite.TablePermissions.ALTER_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.BULK_IMPORT">
+  <code class="sig-name descname">BULK_IMPORT</code><em class="property"> = TablePermissions.BULK_IMPORT</em><a class="headerlink" href="#pysharkbite.TablePermissions.BULK_IMPORT" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.DROP_TABLE">
+  <code class="sig-name descname">DROP_TABLE</code><em class="property"> = TablePermissions.DROP_TABLE</em><a class="headerlink" href="#pysharkbite.TablePermissions.DROP_TABLE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.GRANT">
+  <code class="sig-name descname">GRANT</code><em class="property"> = TablePermissions.GRANT</em><a class="headerlink" href="#pysharkbite.TablePermissions.GRANT" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.READ">
+  <code class="sig-name descname">READ</code><em class="property"> = TablePermissions.READ</em><a class="headerlink" href="#pysharkbite.TablePermissions.READ" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.WRITE">
+  <code class="sig-name descname">WRITE</code><em class="property"> = TablePermissions.WRITE</em><a class="headerlink" href="#pysharkbite.TablePermissions.WRITE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.TablePermissions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.TablePermissions.name" title="Permalink to this definition">¶</a></dt>
   <dd><p>(self: handle) -&gt; str</p>
   </dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.TableRates">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">TableRates</code><a class="headerlink" href="#pysharkbite.TableRates" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.TableRates.getIngestRate">
+  <code class="sig-name descname">getIngestRate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TableRates.getIngestRate" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the ingest rate in records.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.getIngestRateByte">
+  <code class="sig-name descname">getIngestRateByte</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TableRates.getIngestRateByte" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the ingest rate in bytes.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.getQueryRate">
+  <code class="sig-name descname">getQueryRate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TableRates.getQueryRate" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the query rate in records.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.getQueryRateByte">
+  <code class="sig-name descname">getQueryRateByte</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TableRates.getQueryRateByte" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the query rate in bytes.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.getScanRate">
+  <code class="sig-name descname">getScanRate</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TableRates" title="pysharkbite.TableRates">pysharkbite.TableRates</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TableRates.getScanRate" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the scan rate.</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.query_rate_byte">
+  <em class="property">property </em><code class="sig-name descname">query_rate_byte</code><a class="headerlink" href="#pysharkbite.TableRates.query_rate_byte" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TableRates.scan_rate">
+  <em class="property">property </em><code class="sig-name descname">scan_rate</code><a class="headerlink" href="#pysharkbite.TableRates.scan_rate" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  </dd></dl>
+
+  <dl class="py class">
+  <dt id="pysharkbite.TabletServerStatus">
+  <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">TabletServerStatus</code><a class="headerlink" href="#pysharkbite.TabletServerStatus" title="Permalink to this definition">¶</a></dt>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.data_cache_hits">
+  <em class="property">property </em><code class="sig-name descname">data_cache_hits</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.data_cache_hits" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.data_cache_requests">
+  <em class="property">property </em><code class="sig-name descname">data_cache_requests</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.data_cache_requests" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.flushes">
+  <em class="property">property </em><code class="sig-name descname">flushes</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.flushes" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getDataCacheHits">
+  <code class="sig-name descname">getDataCacheHits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getDataCacheHits" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets data cache hits against the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getDataCacheRequests">
+  <code class="sig-name descname">getDataCacheRequests</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getDataCacheRequests" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets data cache requests against the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getFlushes">
+  <code class="sig-name descname">getFlushes</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getFlushes" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the number of flushes on the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getHoldTime">
+  <code class="sig-name descname">getHoldTime</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getHoldTime" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the hold time</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getIndexCacheHits">
+  <code class="sig-name descname">getIndexCacheHits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getIndexCacheHits" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets index cache hits against the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getLastContact">
+  <code class="sig-name descname">getLastContact</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getLastContact" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the last contact time of the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getLogSorts">
+  <code class="sig-name descname">getLogSorts</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span><a class="reference internal" href="#pysharkbite.RecoveryStatus" title="pysharkbite.RecoveryStatus">pysharkbite.RecoveryStatus</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.TabletServerStatus.getLogSorts" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the number of log sorts</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getLookups">
+  <code class="sig-name descname">getLookups</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getLookups" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets lookups against the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getName">
+  <code class="sig-name descname">getName</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#pysharkbite.TabletServerStatus.getName" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the name of the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getOsLoad">
+  <code class="sig-name descname">getOsLoad</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; float<a class="headerlink" href="#pysharkbite.TabletServerStatus.getOsLoad" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the load of the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getSyncs">
+  <code class="sig-name descname">getSyncs</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.TabletServerStatus.getSyncs" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the number of syncs on the server</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.getTableMap">
+  <code class="sig-name descname">getTableMap</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TabletServerStatus" title="pysharkbite.TabletServerStatus">pysharkbite.TabletServerStatus</a></span></em><span class="sig-paren">)</span> &#x2192; Dict<span class="p">[</span>str<span class="p">, </span><a class="reference internal" href="#pysharkbite.TableInfo" title="pysharkbite.TableInfo">pysharkbite.TableInfo</a><span class="p">]</span><a class="headerlink" href="#pysharkbite.TabletServerStatus.getTableMap" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Gets the table map</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.hold_time">
+  <em class="property">property </em><code class="sig-name descname">hold_time</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.hold_time" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.index_cache_hits">
+  <em class="property">property </em><code class="sig-name descname">index_cache_hits</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.index_cache_hits" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.last_contact">
+  <em class="property">property </em><code class="sig-name descname">last_contact</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.last_contact" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.log_sorts">
+  <em class="property">property </em><code class="sig-name descname">log_sorts</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.log_sorts" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.lookups">
+  <em class="property">property </em><code class="sig-name descname">lookups</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.lookups" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.name">
+  <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.name" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.os_load">
+  <em class="property">property </em><code class="sig-name descname">os_load</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.os_load" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.syncs">
+  <em class="property">property </em><code class="sig-name descname">syncs</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.syncs" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.TabletServerStatus.table_map">
+  <em class="property">property </em><code class="sig-name descname">table_map</code><a class="headerlink" href="#pysharkbite.TabletServerStatus.table_map" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
 
   </dd></dl>
 
