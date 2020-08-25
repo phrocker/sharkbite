@@ -27,6 +27,7 @@
 #include "data/constructs/client/zookeeperinstance.h"
 #include "interconnect/Accumulo.h"
 #include "interconnect/tableOps/TableOperations.h"
+#include "interconnect/python/PythonStructures.h"
 #include "interconnect/namespaceOps/NamespaceOperations.h"
 #include "data/constructs/rfile/RFile.h"
 #include "data/constructs/rfile/SequentialRFile.h"
@@ -220,49 +221,49 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
-  .def("securityOps",&interconnect::AccumuloConnector::securityOps, "Return the security operations object")
-  .def("namespaceOps",&interconnect::AccumuloConnector::namespaceOps, "Allows the user to perform namespace operations")
+  .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
+  .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
   .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
-  .def("tableOps",&interconnect::AccumuloConnector::tableOps, "Return the table operations object");
+  .def("tableOps",&interconnect::AccumuloConnector::table_operations, "Return the table operations object");
 
- pybind11::class_<interconnect::NamespaceOperations, std::shared_ptr<interconnect::NamespaceOperations>>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
-  .def("list",&interconnect::NamespaceOperations::list, "Lists namespaces within this Accumulo instance")
-  .def("remove",&interconnect::NamespaceOperations::remove, "removes the namespace")
-  .def("exists",&interconnect::NamespaceOperations::exists, "Returns true if the namespace exists")
-  .def("rename",&interconnect::NamespaceOperations::rename, "Renames the namespace")
-  .def("setProperty", &interconnect::NamespaceOperations::setProperty, "Sets a namespace property")
-  .def("removeProperty", &interconnect::NamespaceOperations::removeProperty, "Remove the namespace property")
-  .def("create",&interconnect::NamespaceOperations::create, "Creates the namespace");
+ pybind11::class_<interconnect::PythonNamespaceOperations>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
+  .def("list",&interconnect::PythonNamespaceOperations::list, "Lists namespaces within this Accumulo instance")
+  .def("remove",&interconnect::PythonNamespaceOperations::remove, "removes the namespace")
+  .def("exists",&interconnect::PythonNamespaceOperations::exists, "Returns true if the namespace exists")
+  .def("rename",&interconnect::PythonNamespaceOperations::rename, "Renames the namespace")
+  .def("setProperty", &interconnect::PythonNamespaceOperations::setProperty, "Sets a namespace property")
+  .def("removeProperty", &interconnect::PythonNamespaceOperations::removeProperty, "Remove the namespace property")
+  .def("create",&interconnect::PythonNamespaceOperations::create, "Creates the namespace");
 
-  pybind11::class_<interconnect::AccumuloTableOperations, std::shared_ptr<interconnect::AccumuloTableOperations>>(s, "AccumuloTableOperations", "Accumulo table operations. Should be accessed through 'AccumuloConnector'")
-  .def("remove",&interconnect::AccumuloTableOperations::remove, "remove the table")
-  .def("exists",&interconnect::AccumuloTableOperations::exists, "Returns true if the table exists")
-  .def("import",&interconnect::AccumuloTableOperations::import, "import data into this directory")
-  .def("flush",&interconnect::AccumuloTableOperations::flush, "flush the table")
-  .def("compact", &interconnect::AccumuloTableOperations::compact, "compact the table")
-  .def("setProperty", &interconnect::AccumuloTableOperations::setProperty, "Set table property")
-  .def("removeProperty", &interconnect::AccumuloTableOperations::removeProperty, "Remove the table property")
-  .def("addSplits", &interconnect::AccumuloTableOperations::addSplits, "Add splits 44444444444for a table")
-  .def("addConstraint", &interconnect::AccumuloTableOperations::addConstraint, "Add table constraint")
-  .def("createScanner", &interconnect::AccumuloTableOperations::createSharedScanner, "Create scanner")
-  .def("createWriter", &interconnect::AccumuloTableOperations::createSharedWriter, "Create writer for table")
-  .def("create",&interconnect::AccumuloTableOperations::create, "Create the table");
+  pybind11::class_<interconnect::PythonTableOperations>(s, "AccumuloTableOperations", "Accumulo table operations. Should be accessed through 'AccumuloConnector'")
+  .def("remove",&interconnect::PythonTableOperations::remove, "remove the table")
+  .def("exists",&interconnect::PythonTableOperations::exists, "Returns true if the table exists")
+  .def("import",&interconnect::PythonTableOperations::import, "import data into this directory")
+  .def("flush",&interconnect::PythonTableOperations::flush, "flush the table")
+  .def("compact", &interconnect::PythonTableOperations::compact, "compact the table")
+  .def("setProperty", &interconnect::PythonTableOperations::setProperty, "Set table property")
+  .def("removeProperty", &interconnect::PythonTableOperations::removeProperty, "Remove the table property")
+  .def("addSplits", &interconnect::PythonTableOperations::addSplits, "Add splits for a table")
+  .def("addConstraint", &interconnect::PythonTableOperations::addConstraint, "Add table constraint")
+  .def("createScanner", &interconnect::PythonTableOperations::createScanner, "createWriter scanner")
+  .def("createWriter", &interconnect::PythonTableOperations::createWriter, "Create writer for table")
+  .def("create",&interconnect::PythonTableOperations::create, "Create the table");
 
-  pybind11::class_<interconnect::SecurityOperations, std::shared_ptr<interconnect::SecurityOperations>>(s, "SecurityOperations", "Basic security operations")
-  .def("create_user",&interconnect::SecurityOperations::createUser, "Creates a user")
-  .def("change_password",&interconnect::SecurityOperations::changeUserPassword, "Changes the user password")
-  .def("remove_user",&interconnect::SecurityOperations::dropUser, "Removes the user")
-  .def("get_auths",&interconnect::SecurityOperations::getAuths, "Returns the user's authorizations")
-  .def("has_system_permission",&interconnect::SecurityOperations::hasSystemPermission, "Returns true if the user has the system permission")
-  .def("has_table_permission",&interconnect::SecurityOperations::hasTablePermission, "Has table permission")
-  .def("has_namesapce_permission",&interconnect::SecurityOperations::hasNamespacePermission, "Has namespace permission")  
-  .def("grant_system_permission",&interconnect::SecurityOperations::grantSystemPermission, "Grants a system permission")
-  .def("revoke_system_permission",&interconnect::SecurityOperations::revokeSystemPermission, "Revokes a system permission")
-  .def("grant_table_permission",&interconnect::SecurityOperations::grantTablePermission, "Grants a table permission")
-  .def("revoke_table_permission",&interconnect::SecurityOperations::revokeTablePermission, "Revokes a table permission")
-  .def("grant_namespace_permission",&interconnect::SecurityOperations::grantNamespacePermission, "Grants a namespace permission")
-  .def("revoke_namesapce_permission",&interconnect::SecurityOperations::revokeNamespacePermission, "Revokes a namespace permission")
-  .def("grantAuthorizations",&interconnect::SecurityOperations::grantAuthorizations, "Get user authorizations");
+  pybind11::class_<interconnect::PythonSecurityOperations>(s, "SecurityOperations", "Basic security operations")
+  .def("create_user",&interconnect::PythonSecurityOperations::createUser, "Creates a user")
+  .def("change_password",&interconnect::PythonSecurityOperations::changeUserPassword, "Changes the user password")
+  .def("remove_user",&interconnect::PythonSecurityOperations::dropUser, "Removes the user")
+  .def("get_auths",&interconnect::PythonSecurityOperations::getAuths, "Returns the user's authorizations")
+  .def("has_system_permission",&interconnect::PythonSecurityOperations::hasSystemPermission, "Returns true if the user has the system permission")
+  .def("has_table_permission",&interconnect::PythonSecurityOperations::hasTablePermission, "Has table permission")
+  .def("has_namespace_permission",&interconnect::PythonSecurityOperations::hasNamespacePermission, "Has namespace permission")  
+  .def("grant_system_permission",&interconnect::PythonSecurityOperations::grantSystemPermission, "Grants a system permission")
+  .def("revoke_system_permission",&interconnect::PythonSecurityOperations::revokeSystemPermission, "Revokes a system permission")
+  .def("grant_table_permission",&interconnect::PythonSecurityOperations::grantTablePermission, "Grants a table permission")
+  .def("revoke_table_permission",&interconnect::PythonSecurityOperations::revokeTablePermission, "Revokes a table permission")
+  .def("grant_namespace_permission",&interconnect::PythonSecurityOperations::grantNamespacePermission, "Grants a namespace permission")
+  .def("revoke_namespace_permission",&interconnect::PythonSecurityOperations::revokeNamespacePermission, "Revokes a namespace permission")
+  .def("grantAuthorizations",&interconnect::PythonSecurityOperations::grantAuthorizations, "Get user authorizations");
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(s, "Value", "Accumulo value")
   .def(pybind11::init<>())

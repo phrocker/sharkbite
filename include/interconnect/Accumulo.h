@@ -43,6 +43,8 @@
 #include "../data/constructs/inputvalidation.h"
 #include "transport/AccumuloCoordinatorTransporter.h"
 #include "data/constructs/coordinator/AccumuloInfo.h"
+#include "python/PythonStructures.h"
+#include "python/PythonConnector.h"
 
 namespace interconnect {
 
@@ -51,7 +53,7 @@ static TransportPool<interconnect::AccumuloCoordinatorTransporter> ACCUMULO_COOR
  * Provides interconnect for coordinator.
  *
  */
-class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
+class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>, PythonConnector {
  public:
  
   explicit AccumuloConnector(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
@@ -64,6 +66,9 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
     explicit AccumuloConnector(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
         : AccumuloConnector(*credentials, instance) {
     }
+
+
+  
 
 
   /**
@@ -93,6 +98,19 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
    * @returns instance of security ops for this type of interface
    */
   std::shared_ptr<SecurityOperations> securityOps();
+
+
+  virtual PythonTableOperations table_operations(const std::string &table) override{
+    return PythonTableOperations(tableOps(table));
+  }
+
+  virtual PythonNamespaceOperations namespace_operations(const std::string &nm = "") override{
+    return PythonNamespaceOperations(namespaceOps(nm));
+  }
+
+  virtual PythonSecurityOperations security_operations() override {
+    return PythonSecurityOperations(securityOps());
+  }
 
   virtual ~AccumuloConnector();
 
