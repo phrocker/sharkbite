@@ -55,8 +55,6 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, std::shared_ptr<T>);
 PYBIND11_MODULE(pysharkbite, s) {
   s.doc() = "Accumulo connector plugin";
 
-
-
   pybind11::class_<cclient::impl::Configuration, std::shared_ptr<cclient::impl::Configuration>>(s, "Configuration" , "Sharkbite Configuration object.")
   .def(pybind11::init<>())
   .def("set", &cclient::impl::Configuration::set, "Set a configuration option")
@@ -440,6 +438,12 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<cclient::data::security::Authorizations>(s, "Authorizations", "Authorizations object")
   .def(pybind11::init<>())
+  .def(pybind11::init<const std::vector<std::string>&>())
+  .def(pybind11::init([](const std::string &arg){
+    std::vector<std::string> v;
+    v.emplace_back(arg);
+    return cclient::data::security::Authorizations(v);
+  }))
   .def("addAuthorization",&cclient::data::security::Authorizations::addAuthorization, "Add an authorization to be used for table operations")
   .def("contains",&cclient::data::security::Authorizations::contains, "Returns true if the set contains an authorization")
   .def("get_authorizations",&cclient::data::security::Authorizations::getAuthorizations, "Returns an iterable of authorizations")
