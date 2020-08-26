@@ -332,7 +332,25 @@ PYBIND11_MODULE(pysharkbite, s) {
       "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false)
   .def(pybind11::init<std::shared_ptr<cclient::data::Key>,bool>())
   .def(pybind11::init<const std::string&,bool,const std::string&,bool,bool>(),
-      "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false);
+      "start"_a, "startInclusive"_a,"end"_a,"endInclusive"_a,"update"_a=false)
+  .def("get_start_key", &cclient::data::Range::getStartKey, "Returns the start key of this range, if it exists")
+  .def("get_stop_key", &cclient::data::Range::getStopKey, "Returns the stop key of this range, if it exists")
+  .def("start_key_inclusive", &cclient::data::Range::getStartKeyInclusive, "Returns true if the start key is inclusive")
+  .def("stop_key_inclusive", &cclient::data::Range::getStopKeyInclusive, "Returns true if the stop key is inclusive")
+  .def("inifinite_start_key", &cclient::data::Range::getInfiniteStartKey, "Returns true if the start key is inclusive")
+  .def("inifinite_stop_key", &cclient::data::Range::getInfiniteStopKey, "Returns true if the stop key is inclusive")
+  .def("after_end_key", &cclient::data::Range::afterEndKey, "Returns true if the provided key is after this range's end key")
+  .def("before_start_key", &cclient::data::Range::beforeStartKey, "Returns true if the provided key is before this range's start key")
+  .def("__str__",[](const cclient::data::Range &si) {
+        std::stringstream strstr;
+        strstr << si;
+        return strstr.str();
+    })
+  .def("__repr__",[](const cclient::data::Range &si) {
+        std::stringstream strstr;
+        strstr << si;
+        return strstr.str();
+    });
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())
