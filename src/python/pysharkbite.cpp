@@ -556,4 +556,16 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("sequentialRead",&cclient::data::RFileOperations::openSequential, "Opens an RFile to read sequentially")
     .def("openManySequential",&cclient::data::RFileOperations::openManySequential, "Opens many RFiles sequentially.");
 
+
+
+
+  pybind11::register_exception<apache::thrift::TApplicationException>(s, "TApplicationException");
+  static pybind11::exception<cclient::exceptions::ClientException> exc(s, "ClientException");
+    pybind11::register_exception_translator([](std::exception_ptr p) {
+        try {
+            if (p) std::rethrow_exception(p);
+        } catch (const cclient::exceptions::ClientException &e) {
+            exc(e.what());
+        }
+    });
 }

@@ -18,7 +18,9 @@
 #include <set>
 #include <iterator>
 #include <iostream>
+#include <atomic>
 #include <string>
+#include <stdexcept>
 #ifdef PYTHON
 #include <pybind11/pybind11.h>
 #endif
@@ -48,6 +50,9 @@ protected:
 
 	bool isEnd;
 
+	std::exception_ptr result_excp;
+
+
 	virtual void setEnd(bool val) {
 		isEnd = val;
 	}
@@ -57,12 +62,12 @@ public:
 	ResultBlock(SourceConditions *conditionals,
 			moodycamel::ConcurrentQueue<std::shared_ptr<T>> *queue,
 			bool setEnd = false) :
-			isEnd(setEnd) {
+			isEnd(setEnd), result_excp(nullptr) {
 		resultSet = queue;
 		sourceConditionals = conditionals;
 	}
 
-	ResultBlock() {
+	ResultBlock() : result_excp(nullptr) {
 	}
 
 	ResultBlock<T> begin() {
@@ -72,6 +77,10 @@ public:
 
 	bool isEndOfRange() const {
 		return isEnd;
+	}
+
+	void setException(std::exception_ptr &e){
+		result_excp = e;
 	}
 
 	ResultBlock<T> end() {
@@ -113,7 +122,10 @@ public:
 				sourceConditionals->decrementCount();
 				break;
 			}
-		} while (sourceConditionals->isAlive());
+		} while (sourceConditionals->isAlive() && !result_excp);
+		if (result_excp){
+			std::rethrow_exception(result_excp);
+		}
 
 	}
 	ResultBlock& operator++() {
@@ -299,6 +311,10 @@ public:
 		iter = std::unique_ptr<BlockType>(
 				new BlockType(&conditions, &resultSet));
 		producers = 0;
+	}
+
+	void setException(std::exception_ptr e){
+		iter->setException(e);
 	}
 
 	void add(T *t) {

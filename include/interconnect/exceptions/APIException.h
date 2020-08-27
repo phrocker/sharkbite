@@ -26,6 +26,7 @@ class APIException : public std::exception {
   }
 };
 
+
 } /* namespace interconnect */
 
 #endif /* INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_ */

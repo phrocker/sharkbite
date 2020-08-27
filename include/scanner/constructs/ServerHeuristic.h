@@ -96,6 +96,12 @@ void disableRpcCalls(){
     started = false;
   }
 
+  void haltOnException(ScanPair<interconnect::ThriftTransporter> *scanResource, const std::shared_ptr<interconnect::ServerInterconnect> &server, interconnect::Scan *scan, std::exception_ptr e) {
+    // close the scanners
+    running = false;
+    scanResource->src->getResultSet()->setException(e);
+  }
+
   virtual uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
     acquireLock();
     std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
@@ -251,7 +257,19 @@ void disableRpcCalls(){
           failed = true;
 
           continue;
+        } catch (const cclient::exceptions::ClientException &te) {
+          logging::LOG_TRACE(((ScannerHeuristic*) scanResource->heuristic)->getLogger()) << "Client Exception " << te.what();
+          closeScan(source);
+
+          ((ScannerHeuristic*) scanResource->heuristic)->haltOnException(scanResource, conn, scan, std::current_exception());
+
+          conn.reset();
+
+          failed = true;
+
+          return 0;
         }
+        
 
       } else {
         logging::LOG_TRACE(((ScannerHeuristic*) scanResource->heuristic)->getLogger()) << "connection is null";
