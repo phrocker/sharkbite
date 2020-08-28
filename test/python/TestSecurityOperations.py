@@ -112,7 +112,8 @@ class TestWrites(TestRunner):
 			super().inity(replace=True)
 			print("Expected failure when setting user")
 			sys.exit(1)
-		except:
+		except pysharkbite.ClientException:
+			print("caught expected exception")
 			pass
 
 runner = TestWrites()
