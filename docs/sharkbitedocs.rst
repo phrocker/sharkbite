@@ -17,19 +17,19 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.AccumuloConnector.namespaceOps">
-  <code class="sig-name descname">namespaceOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; interconnect::NamespaceOperations<a class="headerlink" href="#pysharkbite.AccumuloConnector.namespaceOps" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">namespaceOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.AccumuloNamespaceOperations" title="pysharkbite.AccumuloNamespaceOperations">pysharkbite.AccumuloNamespaceOperations</a><a class="headerlink" href="#pysharkbite.AccumuloConnector.namespaceOps" title="Permalink to this definition">¶</a></dt>
   <dd><p>Allows the user to perform namespace operations</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.AccumuloConnector.securityOps">
-  <code class="sig-name descname">securityOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em><span class="sig-paren">)</span> &#x2192; interconnect::SecurityOperations<a class="headerlink" href="#pysharkbite.AccumuloConnector.securityOps" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">securityOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em><span class="sig-paren">)</span> &#x2192; interconnect::PythonSecurityOperations<a class="headerlink" href="#pysharkbite.AccumuloConnector.securityOps" title="Permalink to this definition">¶</a></dt>
   <dd><p>Return the security operations object</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.AccumuloConnector.tableOps">
-  <code class="sig-name descname">tableOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; interconnect::AccumuloTableOperations<a class="headerlink" href="#pysharkbite.AccumuloConnector.tableOps" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">tableOps</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloConnector" title="pysharkbite.AccumuloConnector">pysharkbite.AccumuloConnector</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.AccumuloTableOperations" title="pysharkbite.AccumuloTableOperations">pysharkbite.AccumuloTableOperations</a><a class="headerlink" href="#pysharkbite.AccumuloConnector.tableOps" title="Permalink to this definition">¶</a></dt>
   <dd><p>Return the table operations object</p>
   </dd></dl>
 
@@ -189,7 +189,7 @@ Sharkbite Documentation
   <dl class="py method">
   <dt id="pysharkbite.AccumuloTableOperations.addSplits">
   <code class="sig-name descname">addSplits</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.AccumuloTableOperations" title="pysharkbite.AccumuloTableOperations">pysharkbite.AccumuloTableOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">Set<span class="p">[</span>str<span class="p">]</span></span></em><span class="sig-paren">)</span> &#x2192; None<a class="headerlink" href="#pysharkbite.AccumuloTableOperations.addSplits" title="Permalink to this definition">¶</a></dt>
-  <dd><p>Add splits 44444444444for a table</p>
+  <dd><p>Add splits for a table</p>
   </dd></dl>
 
   <dl class="py method">
@@ -207,7 +207,7 @@ Sharkbite Documentation
   <dl class="py method">
   <dt id="pysharkbite.AccumuloTableOperations.createScanner">
   <code class="sig-name descname">createScanner</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.AccumuloTableOperations</em>, <em class="sig-param">arg0: cclient::data::security::Authorizations</em>, <em class="sig-param">arg1: int</em><span class="sig-paren">)</span> &#x2192; scanners::Source&lt;cclient::data::KeyValue, scanners::ResultBlock&lt;cclient::data::KeyValue&gt; &gt;<a class="headerlink" href="#pysharkbite.AccumuloTableOperations.createScanner" title="Permalink to this definition">¶</a></dt>
-  <dd><p>Create scanner</p>
+  <dd><p>createWriter scanner</p>
   </dd></dl>
 
   <dl class="py method">
@@ -393,6 +393,11 @@ Sharkbite Documentation
 
   </dd></dl>
 
+  <dl class="py exception">
+  <dt id="pysharkbite.ClientException">
+  <em class="property">exception </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">ClientException</code><a class="headerlink" href="#pysharkbite.ClientException" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py class">
   <dt id="pysharkbite.Compacting">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Compacting</code><a class="headerlink" href="#pysharkbite.Compacting" title="Permalink to this definition">¶</a></dt>
@@ -474,6 +479,11 @@ Sharkbite Documentation
   <code class="sig-name descname">SAFE_MODE</code><em class="property"> = CoordinatorGoalState.SAFE_MODE</em><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.SAFE_MODE" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorGoalState.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'CLEAN_STOP': (CoordinatorGoalState.CLEAN_STOP, 'CLEAN_STOP state'), 'NORMAL': (CoordinatorGoalState.NORMAL, 'NORMAL state'), 'SAFE_MODE': (CoordinatorGoalState.SAFE_MODE, 'SAFE_MODE state')}</em><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.__entries" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.CoordinatorGoalState.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.CoordinatorGoalState.name" title="Permalink to this definition">¶</a></dt>
@@ -526,6 +536,11 @@ Sharkbite Documentation
   <dl class="py attribute">
   <dt id="pysharkbite.CoordinatorState.UNLOAD_ROOT_TABLET">
   <code class="sig-name descname">UNLOAD_ROOT_TABLET</code><em class="property"> = CoordinatorState.UNLOAD_ROOT_TABLET</em><a class="headerlink" href="#pysharkbite.CoordinatorState.UNLOAD_ROOT_TABLET" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.CoordinatorState.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'HAVE_LOCK': (CoordinatorState.HAVE_LOCK, 'HAVE_LOCK state'), 'INITIAL': (CoordinatorState.INITIAL, 'INITIAL state'), 'NORMAL': (CoordinatorState.NORMAL, 'NORMAL state'), 'SAFE_MODE': (CoordinatorState.SAFE_MODE, 'SAFE_MODE state'), 'STOP': (CoordinatorState.STOP, 'STOP state'), 'UNLOAD_METADATA_TABLETS': (CoordinatorState.UNLOAD_METADATA_TABLETS, 'UNLOAD_METADATA_TABLETS state'), 'UNLOAD_ROOT_TABLET': (CoordinatorState.UNLOAD_ROOT_TABLET, 'UNLOAD_ROOT_TABLET state')}</em><a class="headerlink" href="#pysharkbite.CoordinatorState.__entries" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
   <dl class="py method">
@@ -984,6 +999,11 @@ Sharkbite Documentation
   <code class="sig-name descname">WRITE</code><em class="property"> = NamespacePermissions.WRITE</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.WRITE" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
+  <dl class="py attribute">
+  <dt id="pysharkbite.NamespacePermissions.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'ALTER_NAMESPACE': (NamespacePermissions.ALTER_NAMESPACE, 'Enables the alter namespace permissions for the user'), 'ALTER_TABLE': (NamespacePermissions.ALTER_TABLE, 'Enables alter table permissions on the namespace'), 'BULK_IMPORT': (NamespacePermissions.BULK_IMPORT, 'Enables bulk import permissions on the namespace'), 'CREATE_TABLE': (NamespacePermissions.CREATE_TABLE, 'Enables create table permissions on the namespace'), 'DROP_NAMESPACE': (NamespacePermissions.DROP_NAMESPACE, 'Enables drop namespace permissions on the namespace'), 'DROP_TABLE': (NamespacePermissions.DROP_TABLE, 'Enables drop table permissions on the namespace'), 'GRANT': (NamespacePermissions.GRANT, 'Enables grant permission on the namespace'), 'READ': (NamespacePermissions.READ, 'Enables read permission on the namespace'), 'WRITE': (NamespacePermissions.WRITE, 'Enables write permission on the namespace')}</em><a class="headerlink" href="#pysharkbite.NamespacePermissions.__entries" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.NamespacePermissions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.NamespacePermissions.name" title="Permalink to this definition">¶</a></dt>
@@ -1091,7 +1111,55 @@ Sharkbite Documentation
   <dl class="py class">
   <dt id="pysharkbite.Range">
   <em class="property">class </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">Range</code><a class="headerlink" href="#pysharkbite.Range" title="Permalink to this definition">¶</a></dt>
-  <dd></dd></dl>
+  <dd><dl class="py method">
+  <dt id="pysharkbite.Range.after_end_key">
+  <code class="sig-name descname">after_end_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Key" title="pysharkbite.Key">pysharkbite.Key</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.after_end_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the provided key is after this range’s end key</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.before_start_key">
+  <code class="sig-name descname">before_start_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Key" title="pysharkbite.Key">pysharkbite.Key</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.before_start_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the provided key is before this range’s start key</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.get_start_key">
+  <code class="sig-name descname">get_start_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Key" title="pysharkbite.Key">pysharkbite.Key</a><a class="headerlink" href="#pysharkbite.Range.get_start_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns the start key of this range, if it exists</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.get_stop_key">
+  <code class="sig-name descname">get_stop_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Key" title="pysharkbite.Key">pysharkbite.Key</a><a class="headerlink" href="#pysharkbite.Range.get_stop_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns the stop key of this range, if it exists</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.inifinite_start_key">
+  <code class="sig-name descname">inifinite_start_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.inifinite_start_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the start key is inclusive</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.inifinite_stop_key">
+  <code class="sig-name descname">inifinite_stop_key</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.inifinite_stop_key" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the stop key is inclusive</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.start_key_inclusive">
+  <code class="sig-name descname">start_key_inclusive</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.start_key_inclusive" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the start key is inclusive</p>
+  </dd></dl>
+
+  <dl class="py method">
+  <dt id="pysharkbite.Range.stop_key_inclusive">
+  <code class="sig-name descname">stop_key_inclusive</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Range" title="pysharkbite.Range">pysharkbite.Range</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.Range.stop_key_inclusive" title="Permalink to this definition">¶</a></dt>
+  <dd><p>Returns true if the stop key is inclusive</p>
+  </dd></dl>
+
+  </dd></dl>
 
   <dl class="py class">
   <dt id="pysharkbite.RecoveryStatus">
@@ -1152,6 +1220,11 @@ Sharkbite Documentation
   <code class="sig-name descname">RFileScanOnly</code><em class="property"> = ScannerOptions.RFileScanOnly</em><a class="headerlink" href="#pysharkbite.ScannerOptions.RFileScanOnly" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
+  <dl class="py attribute">
+  <dt id="pysharkbite.ScannerOptions.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'HedgedReads': (ScannerOptions.HedgedReads, 'Enables hedged reads'), 'RFileScanOnly': (ScannerOptions.RFileScanOnly, 'Enables the RFile Scanner')}</em><a class="headerlink" href="#pysharkbite.ScannerOptions.__entries" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.ScannerOptions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.ScannerOptions.name" title="Permalink to this definition">¶</a></dt>
@@ -1178,49 +1251,49 @@ Sharkbite Documentation
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.get_auths">
-  <code class="sig-name descname">get_auths</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; cclient::data::security::Authorizations<a class="headerlink" href="#pysharkbite.SecurityOperations.get_auths" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">get_auths</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference internal" href="#pysharkbite.Authorizations" title="pysharkbite.Authorizations">pysharkbite.Authorizations</a><a class="headerlink" href="#pysharkbite.SecurityOperations.get_auths" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns the user’s authorizations</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.grantAuthorizations">
-  <code class="sig-name descname">grantAuthorizations</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: cclient::data::security::Authorizations</em>, <em class="sig-param">arg1: str</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grantAuthorizations" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">grantAuthorizations</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.Authorizations" title="pysharkbite.Authorizations">pysharkbite.Authorizations</a></span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grantAuthorizations" title="Permalink to this definition">¶</a></dt>
   <dd><p>Get user authorizations</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.grant_namespace_permission">
-  <code class="sig-name descname">grant_namespace_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::NamespacePermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_namespace_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">grant_namespace_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.NamespacePermissions" title="pysharkbite.NamespacePermissions">pysharkbite.NamespacePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_namespace_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Grants a namespace permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.grant_system_permission">
-  <code class="sig-name descname">grant_system_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: cclient::data::SystemPermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_system_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">grant_system_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SystemPermissions" title="pysharkbite.SystemPermissions">pysharkbite.SystemPermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_system_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Grants a system permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.grant_table_permission">
-  <code class="sig-name descname">grant_table_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::TablePermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_table_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">grant_table_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TablePermissions" title="pysharkbite.TablePermissions">pysharkbite.TablePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.grant_table_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Grants a table permission</p>
   </dd></dl>
 
   <dl class="py method">
-  <dt id="pysharkbite.SecurityOperations.has_namesapce_permission">
-  <code class="sig-name descname">has_namesapce_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::NamespacePermissions</em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_namesapce_permission" title="Permalink to this definition">¶</a></dt>
+  <dt id="pysharkbite.SecurityOperations.has_namespace_permission">
+  <code class="sig-name descname">has_namespace_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.NamespacePermissions" title="pysharkbite.NamespacePermissions">pysharkbite.NamespacePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_namespace_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Has namespace permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.has_system_permission">
-  <code class="sig-name descname">has_system_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: cclient::data::SystemPermissions</em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_system_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">has_system_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SystemPermissions" title="pysharkbite.SystemPermissions">pysharkbite.SystemPermissions</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_system_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Returns true if the user has the system permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.has_table_permission">
-  <code class="sig-name descname">has_table_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::TablePermissions</em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_table_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">has_table_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TablePermissions" title="pysharkbite.TablePermissions">pysharkbite.TablePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; bool<a class="headerlink" href="#pysharkbite.SecurityOperations.has_table_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Has table permission</p>
   </dd></dl>
 
@@ -1231,20 +1304,20 @@ Sharkbite Documentation
   </dd></dl>
 
   <dl class="py method">
-  <dt id="pysharkbite.SecurityOperations.revoke_namesapce_permission">
-  <code class="sig-name descname">revoke_namesapce_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::NamespacePermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_namesapce_permission" title="Permalink to this definition">¶</a></dt>
+  <dt id="pysharkbite.SecurityOperations.revoke_namespace_permission">
+  <code class="sig-name descname">revoke_namespace_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.NamespacePermissions" title="pysharkbite.NamespacePermissions">pysharkbite.NamespacePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_namespace_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Revokes a namespace permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.revoke_system_permission">
-  <code class="sig-name descname">revoke_system_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: cclient::data::SystemPermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_system_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">revoke_system_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SystemPermissions" title="pysharkbite.SystemPermissions">pysharkbite.SystemPermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_system_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Revokes a system permission</p>
   </dd></dl>
 
   <dl class="py method">
   <dt id="pysharkbite.SecurityOperations.revoke_table_permission">
-  <code class="sig-name descname">revoke_table_permission</code><span class="sig-paren">(</span><em class="sig-param">self: pysharkbite.SecurityOperations</em>, <em class="sig-param">arg0: str</em>, <em class="sig-param">arg1: str</em>, <em class="sig-param">arg2: cclient::data::TablePermissions</em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_table_permission" title="Permalink to this definition">¶</a></dt>
+  <code class="sig-name descname">revoke_table_permission</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.SecurityOperations" title="pysharkbite.SecurityOperations">pysharkbite.SecurityOperations</a></span></em>, <em class="sig-param"><span class="n">arg0</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg1</span><span class="p">:</span> <span class="n">str</span></em>, <em class="sig-param"><span class="n">arg2</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.TablePermissions" title="pysharkbite.TablePermissions">pysharkbite.TablePermissions</a></span></em><span class="sig-paren">)</span> &#x2192; int<a class="headerlink" href="#pysharkbite.SecurityOperations.revoke_table_permission" title="Permalink to this definition">¶</a></dt>
   <dd><p>Revokes a table permission</p>
   </dd></dl>
 
@@ -1390,6 +1463,11 @@ Sharkbite Documentation
   <code class="sig-name descname">SYSTEM</code><em class="property"> = SystemPermissions.SYSTEM</em><a class="headerlink" href="#pysharkbite.SystemPermissions.SYSTEM" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
+  <dl class="py attribute">
+  <dt id="pysharkbite.SystemPermissions.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'ALTER_NAMESPACE': (SystemPermissions.ALTER_NAMESPACE, 'Enables the alter namespace permissions for the user'), 'ALTER_TABLE': (SystemPermissions.ALTER_TABLE, 'Enables alter table permissions on the system'), 'ALTER_USER': (SystemPermissions.ALTER_USER, 'Enables alter user permissions on the system'), 'CREATE_NAMESPACE': (SystemPermissions.CREATE_NAMESPACE, 'Enables create namespace permissions for the user'), 'CREATE_TABLE': (SystemPermissions.CREATE_TABLE, 'Enables create table permissions on the system'), 'CREATE_USER': (SystemPermissions.CREATE_USER, 'Enables create user permissions on the system'), 'DROP_NAMESPACE': (SystemPermissions.DROP_NAMESPACE, 'Enables drop namespace permissions for the user'), 'DROP_TABLE': (SystemPermissions.DROP_TABLE, 'Enables drop table permissions on the system'), 'GRANT': (SystemPermissions.GRANT, 'Enables grant permission on the system'), 'SYSTEM': (SystemPermissions.SYSTEM, 'Enables system permissions for the user')}</em><a class="headerlink" href="#pysharkbite.SystemPermissions.__entries" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
   <dl class="py method">
   <dt id="pysharkbite.SystemPermissions.name">
   <em class="property">property </em><code class="sig-name descname">name</code><a class="headerlink" href="#pysharkbite.SystemPermissions.name" title="Permalink to this definition">¶</a></dt>
@@ -1397,6 +1475,11 @@ Sharkbite Documentation
   </dd></dl>
 
   </dd></dl>
+
+  <dl class="py exception">
+  <dt id="pysharkbite.TApplicationException">
+  <em class="property">exception </em><code class="sig-prename descclassname">pysharkbite.</code><code class="sig-name descname">TApplicationException</code><a class="headerlink" href="#pysharkbite.TApplicationException" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
 
   <dl class="py class">
   <dt id="pysharkbite.TableCompactions">
@@ -1545,6 +1628,11 @@ Sharkbite Documentation
   <dl class="py attribute">
   <dt id="pysharkbite.TablePermissions.WRITE">
   <code class="sig-name descname">WRITE</code><em class="property"> = TablePermissions.WRITE</em><a class="headerlink" href="#pysharkbite.TablePermissions.WRITE" title="Permalink to this definition">¶</a></dt>
+  <dd></dd></dl>
+
+  <dl class="py attribute">
+  <dt id="pysharkbite.TablePermissions.__entries">
+  <code class="sig-name descname">__entries</code><em class="property"> = {'ALTER_TABLE': (TablePermissions.ALTER_TABLE, 'Enables alter table permissions on the table'), 'BULK_IMPORT': (TablePermissions.BULK_IMPORT, 'Enables bulk import permissions on the table'), 'DROP_TABLE': (TablePermissions.DROP_TABLE, 'Enables drop table permissions on the table'), 'GRANT': (TablePermissions.GRANT, 'Enables grant permission on the table'), 'READ': (TablePermissions.READ, 'Enables read permission on the table'), 'WRITE': (TablePermissions.WRITE, 'Enables write permission on the table')}</em><a class="headerlink" href="#pysharkbite.TablePermissions.__entries" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
 
   <dl class="py method">
@@ -1768,5 +1856,8 @@ Sharkbite Documentation
   <dt id="pysharkbite.ZookeeperInstance.getInstanceName">
   <code class="sig-name descname">getInstanceName</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">self</span><span class="p">:</span> <span class="n"><a class="reference internal" href="#pysharkbite.ZookeeperInstance" title="pysharkbite.ZookeeperInstance">pysharkbite.ZookeeperInstance</a></span></em><span class="sig-paren">)</span> &#x2192; str<a class="headerlink" href="#pysharkbite.ZookeeperInstance.getInstanceName" title="Permalink to this definition">¶</a></dt>
   <dd></dd></dl>
+
+  </dd></dl>
+
     
   </embed>

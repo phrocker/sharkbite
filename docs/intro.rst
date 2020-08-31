@@ -14,7 +14,7 @@ Capabilities That will be supported in V0.6 :
  * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
  * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
  
-Current Master progress 
+Current Main branch progress 
   * Development is focusing on abstracting out 2.x changes for Apache Accumulo.
   * Help is desired in abstracting these thrift changes.  
 
