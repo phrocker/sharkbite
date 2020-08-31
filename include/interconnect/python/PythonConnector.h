@@ -11,22 +11,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 
-#ifndef INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
-#define INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
-
-#include <iostream>
-#include <exception>
 
 namespace interconnect {
 
-class APIException : public std::exception {
-  const char* what() const throw () {
-    return "API Exception";
-  }
+#include "PythonStructures.h"
+
+
+
+
+/**
+ * Provides interconnect for python integration.
+ *
+ */
+class PythonConnector  {
+
+  virtual PythonTableOperations table_operations(const std::string &table) = 0;
+
+  virtual PythonNamespaceOperations namespace_operations(const std::string &nm = "") = 0;
+
+  virtual PythonSecurityOperations security_operations() = 0;
+
+
 };
 
-
-} /* namespace interconnect */
-
-#endif /* INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_ */
+}

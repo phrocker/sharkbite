@@ -11,22 +11,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 
-#ifndef INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
-#define INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
-
-#include <iostream>
-#include <exception>
-
-namespace interconnect {
-
-class APIException : public std::exception {
-  const char* what() const throw () {
-    return "API Exception";
-  }
-};
-
-
-} /* namespace interconnect */
-
-#endif /* INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_ */
+#include "interconnect/"

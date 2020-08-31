@@ -167,8 +167,12 @@ Scan *AccumuloServerFacadeV1::v1_singleScan(std::atomic<bool> *isRunning,ScanReq
   std::shared_ptr<cclient::data::KeyExtent> extent = ident->getGlobalMapping().at(0);
   auto range = ident->getIdentifiers(extent).at(0);
   org::apache::accumulo::core::security::thrift::TCredentials creds = getOrSetCredentials(request->getCredentials());
-  tserverClient->startScan(scan, scanId, creds, ThriftWrapper::convert(extent), ThriftWrapper::convert(range), ThriftWrapper::convert(request->getColumns()), 1024, ThriftWrapper::convert(iters),
+  try{
+    tserverClient->startScan(scan, scanId, creds, ThriftWrapper::convert(extent), ThriftWrapper::convert(range), ThriftWrapper::convert(request->getColumns()), 1024, ThriftWrapper::convert(iters),
                            iterOptions, request->getAuthorizations()->getAuthorizations(), true, false, 1024);
+  } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
+    throw cclient::exceptions::ClientException(tse.what());
+  }
 
   org::apache::accumulo::core::data::thrift::ScanResult results = scan.result;
 
@@ -213,8 +217,12 @@ Scan *AccumuloServerFacadeV1::v1_multiScan(std::atomic<bool> *isRunning,ScanRequ
       }
     }
 
-  tserverClient->startMultiScan(scan, scanId, ThriftWrapper::convert(request->getCredentials()), ThriftWrapper::convert(request->getRangeIdentifiers()), ThriftWrapper::convert(request->getColumns()),
+  try{
+    tserverClient->startMultiScan(scan, scanId, ThriftWrapper::convert(request->getCredentials()), ThriftWrapper::convert(request->getRangeIdentifiers()), ThriftWrapper::convert(request->getColumns()),
                                 ThriftWrapper::convert(iters), iterOptions, request->getAuthorizations()->getAuthorizations(), true);
+  } catch (const org::apache::accumulo::core::client::impl::thrift::ThriftSecurityException &tse) {
+    throw cclient::exceptions::ClientException(tse.what());
+  }
 
   org::apache::accumulo::core::data::thrift::MultiScanResult results = scan.result;
 

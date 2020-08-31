@@ -185,6 +185,8 @@ Scan* AccumuloServerFacadeV2::v2_singleScan(std::atomic<bool> *isRunning, ScanRe
   } catch (const org::apache::accumulov2::core::tabletserver::thrift::NotServingTabletException &te) {
     throw cclient::exceptions::NotServingException("Not serving exception");
 
+  } catch (const org::apache::accumulov2::core::clientImpl::thrift::ThriftSecurityException &tse) {
+    throw cclient::exceptions::ClientException(tse.what());
   } catch (const apache::thrift::TApplicationException &te) {
     logging::LOG_DEBUG(logger) << "Error on extent" << extent << " and range is " << range;
     throw te;
@@ -258,6 +260,8 @@ Scan* AccumuloServerFacadeV2::v2_multiScan(std::atomic<bool> *isRunning, ScanReq
       }
     }
     throw te;
+  } catch (const org::apache::accumulov2::core::clientImpl::thrift::ThriftSecurityException &tse) {
+    throw cclient::exceptions::ClientException(tse.what());
   }
 
   org::apache::accumulov2::core::dataImpl::thrift::MultiScanResult results = scan.result;
