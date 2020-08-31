@@ -217,12 +217,6 @@ PYBIND11_MODULE(pysharkbite, s) {
     .def_readonly("dead_servers",&cclient::data::AccumuloInfo::deadTabletServers);
 
 
-  pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
-  .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
-  .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
-  .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
-  .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
-  .def("tableOps",&interconnect::AccumuloConnector::table_operations, "Return the table operations object");
 
  pybind11::class_<interconnect::PythonNamespaceOperations>(s, "AccumuloNamespaceOperations", "Accumulo namespace operations. Should be accessed through 'AccumuloConnector'")
   .def("list",&interconnect::PythonNamespaceOperations::list, "Lists namespaces within this Accumulo instance")
@@ -247,21 +241,12 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("createWriter", &interconnect::PythonTableOperations::createWriter, "Create writer for table")
   .def("create",&interconnect::PythonTableOperations::create, "Create the table");
 
-  pybind11::class_<interconnect::PythonSecurityOperations>(s, "SecurityOperations", "Basic security operations")
-  .def("create_user",&interconnect::PythonSecurityOperations::createUser, "Creates a user")
-  .def("change_password",&interconnect::PythonSecurityOperations::changeUserPassword, "Changes the user password")
-  .def("remove_user",&interconnect::PythonSecurityOperations::dropUser, "Removes the user")
-  .def("get_auths",&interconnect::PythonSecurityOperations::getAuths, "Returns the user's authorizations")
-  .def("has_system_permission",&interconnect::PythonSecurityOperations::hasSystemPermission, "Returns true if the user has the system permission")
-  .def("has_table_permission",&interconnect::PythonSecurityOperations::hasTablePermission, "Has table permission")
-  .def("has_namespace_permission",&interconnect::PythonSecurityOperations::hasNamespacePermission, "Has namespace permission")  
-  .def("grant_system_permission",&interconnect::PythonSecurityOperations::grantSystemPermission, "Grants a system permission")
-  .def("revoke_system_permission",&interconnect::PythonSecurityOperations::revokeSystemPermission, "Revokes a system permission")
-  .def("grant_table_permission",&interconnect::PythonSecurityOperations::grantTablePermission, "Grants a table permission")
-  .def("revoke_table_permission",&interconnect::PythonSecurityOperations::revokeTablePermission, "Revokes a table permission")
-  .def("grant_namespace_permission",&interconnect::PythonSecurityOperations::grantNamespacePermission, "Grants a namespace permission")
-  .def("revoke_namespace_permission",&interconnect::PythonSecurityOperations::revokeNamespacePermission, "Revokes a namespace permission")
-  .def("grantAuthorizations",&interconnect::PythonSecurityOperations::grantAuthorizations, "Get user authorizations");
+    pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
+  .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
+  .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
+  .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
+  .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
+  .def("tableOps",&interconnect::AccumuloConnector::table_operations, "Return the table operations object");
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(s, "Value", "Accumulo value")
   .def(pybind11::init<>())
@@ -556,6 +541,22 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("sequentialRead",&cclient::data::RFileOperations::openSequential, "Opens an RFile to read sequentially")
     .def("openManySequential",&cclient::data::RFileOperations::openManySequential, "Opens many RFiles sequentially.");
 
+
+pybind11::class_<interconnect::PythonSecurityOperations>(s, "SecurityOperations", "Basic security operations")
+  .def("create_user",&interconnect::PythonSecurityOperations::createUser, "Creates a user")
+  .def("change_password",&interconnect::PythonSecurityOperations::changeUserPassword, "Changes the user password")
+  .def("remove_user",&interconnect::PythonSecurityOperations::dropUser, "Removes the user")
+  .def("get_auths",&interconnect::PythonSecurityOperations::getAuths, "Returns the user's authorizations")
+  .def("has_system_permission",&interconnect::PythonSecurityOperations::hasSystemPermission, "Returns true if the user has the system permission")
+  .def("has_table_permission",&interconnect::PythonSecurityOperations::hasTablePermission, "Has table permission")
+  .def("has_namespace_permission",&interconnect::PythonSecurityOperations::hasNamespacePermission, "Has namespace permission")  
+  .def("grant_system_permission",&interconnect::PythonSecurityOperations::grantSystemPermission, "Grants a system permission")
+  .def("revoke_system_permission",&interconnect::PythonSecurityOperations::revokeSystemPermission, "Revokes a system permission")
+  .def("grant_table_permission",&interconnect::PythonSecurityOperations::grantTablePermission, "Grants a table permission")
+  .def("revoke_table_permission",&interconnect::PythonSecurityOperations::revokeTablePermission, "Revokes a table permission")
+  .def("grant_namespace_permission",&interconnect::PythonSecurityOperations::grantNamespacePermission, "Grants a namespace permission")
+  .def("revoke_namespace_permission",&interconnect::PythonSecurityOperations::revokeNamespacePermission, "Revokes a namespace permission")
+  .def("grantAuthorizations",&interconnect::PythonSecurityOperations::grantAuthorizations, "Get user authorizations");
 
 
 
