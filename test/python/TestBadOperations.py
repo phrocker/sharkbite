@@ -1,6 +1,7 @@
 from testmodule import *
 import sys
 import time
+import traceback
 
 class TestWrites(TestRunner):
 		
@@ -76,9 +77,24 @@ class TestWrites(TestRunner):
 			print("Expected error passing None")
 			sys.exit(1)
 		except (pysharkbite.ClientException,RuntimeError, TypeError, NameError):
-			print("Caught expected error")
+			print("Caught expected error on write")
 			# this is okay
 		
+
+		try:
+
+			super().setUser("roots","secret")
+			super().inity(replace=True)
+
+			auths = pysharkbite.Authorizations()
+
+			writer = tableOperations.createWriter(auths, 10)
+			print("Expected error passing None")
+			sys.exit(1)
+		except (pysharkbite.ClientException,RuntimeError, TypeError, NameError):
+			print("Caught expected error on write")
+			# this is okay
+
 		tableOperations.remove()
 
 
