@@ -19,49 +19,52 @@
 #include <mutex>
 #include "ExtentLocator.h"
 
-namespace cclient {
-namespace impl {
+namespace cclient
+{
+    namespace impl
+    {
 
-
-
-/**
+        /**
  * Tablet Locator cache
  **/
-class LocatorCache {
-public:
-    /**
+        class LocatorCache
+        {
+        public:
+            /**
      * Constructor that creates the mutex
      **/
-    LocatorCache();
-    /**
+            LocatorCache();
+            /**
      * Destructor
      **/
-    virtual ~LocatorCache();
-    /**
+            virtual ~LocatorCache();
+            /**
      * Puts a tablet locator into the cache
      * @param key cached key
      * @param locator locator to cache
      **/
-    void put(LocatorKey key, TabletLocator *locator) {
-	std::lock_guard<std::recursive_mutex> lock(locatorMutex);
-        locatorCache->insert(std::make_pair(key, locator));
-    }
+            void put(LocatorKey key, TabletLocator *locator)
+            {
+                std::lock_guard<std::recursive_mutex> lock(locatorMutex);
+                locatorCache->insert(std::make_pair(key, locator));
+            }
 
-    /**
+            /**
      * Obtains a tablet locator or NULL if one does not exist
      * @param key locator key
      **/
-    TabletLocator *getLocator(LocatorKey key);
-protected:
-    // locator map
-    std::map<LocatorKey, TabletLocator*> *locatorCache;
-    // locator mutex
-    std::recursive_mutex locatorMutex;
-};
+            TabletLocator *getLocator(LocatorKey key);
 
-extern LocatorCache cachedLocators;
+        protected:
+            // locator map
+            std::map<LocatorKey, TabletLocator *> *locatorCache;
+            // locator mutex
+            std::recursive_mutex locatorMutex;
+        };
 
-} /* namespace impl */
+        extern LocatorCache cachedLocators;
+
+    } /* namespace impl */
 } /* namespace cclient */
 
 #endif /* SRC_DATA_CLIENT_LOCATORCACHE_H_ */

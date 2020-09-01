@@ -19,38 +19,44 @@
 #include "../KeyExtent.h"
 #include "../Mutation.h"
 
-namespace cclient {
-namespace data {
+namespace cclient
+{
+  namespace data
+  {
 
-class TabletServerMutations {
- public:
-  explicit TabletServerMutations(std::string sessionId);
-  TabletServerMutations(std::string sessionId, uint32_t fails);
-  virtual ~TabletServerMutations();
+    class TabletServerMutations
+    {
+    public:
+      explicit TabletServerMutations(std::string sessionId);
+      TabletServerMutations(std::string sessionId, uint32_t fails);
+      virtual ~TabletServerMutations();
 
-  void addMutation(KeyExtent extent, const std::shared_ptr<Mutation> &m) {
-    mutations[extent].push_back(m);
-  }
+      void addMutation(KeyExtent extent, const std::shared_ptr<Mutation> &m)
+      {
+        mutations[extent].push_back(m);
+      }
 
-  std::map<KeyExtent, std::vector<std::shared_ptr<Mutation>> > *getMutations() {
-    return &mutations;
-  }
+      std::map<KeyExtent, std::vector<std::shared_ptr<Mutation>>> *getMutations()
+      {
+        return &mutations;
+      }
 
-  void setMaxFailures(uint32_t failures) {
-    failuresAllowed = failures;
-  }
+      void setMaxFailures(uint32_t failures)
+      {
+        failuresAllowed = failures;
+      }
 
-  uint32_t getMaxFailures() {
-    return failuresAllowed;
-  }
+      uint32_t getMaxFailures()
+      {
+        return failuresAllowed;
+      }
 
- protected:
-  uint32_t failuresAllowed;
-  std::map<KeyExtent, std::vector<std::shared_ptr<Mutation>> > mutations;
-  std::string session;
+    protected:
+      uint32_t failuresAllowed;
+      std::map<KeyExtent, std::vector<std::shared_ptr<Mutation>>> mutations;
+      std::string session;
+    };
 
-};
-
-} /* namespace data */
+  } /* namespace data */
 } /* namespace cclient */
 #endif /* TABLETSERVERMUTATIONS_H_ */

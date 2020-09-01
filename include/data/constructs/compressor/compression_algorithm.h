@@ -15,60 +15,48 @@
 #define COMPRESSION_ALGO
 #include <string>
 
-
-
 #include "algorithm.h"
-
 
 namespace cclient
 {
-namespace data
-{
-namespace compression
-{
-
-class CompressionAlgorithm : public Algorithm
-{
-public:
-    CompressionAlgorithm () :
-        Algorithm ("")
+    namespace data
     {
+        namespace compression
+        {
 
-    }
+            class CompressionAlgorithm : public Algorithm
+            {
+            public:
+                CompressionAlgorithm() : Algorithm("")
+                {
+                }
 
-    explicit CompressionAlgorithm (const std::string compressionName) :
-        Algorithm (compressionName)
-    {
+                explicit CompressionAlgorithm(const std::string compressionName) : Algorithm(compressionName)
+                {
+                }
 
-    }
+                explicit CompressionAlgorithm(const Algorithm &other) : Algorithm(other.getAlgorithm())
+                {
+                }
 
-    explicit CompressionAlgorithm (const Algorithm &other) :
-        Algorithm (other.getAlgorithm())
-    {
+                CompressionAlgorithm(const CompressionAlgorithm &other) = default;
 
-    }
+                CompressionAlgorithm(CompressionAlgorithm &&other) = default;
 
+                CompressionAlgorithm &
+                operator=(const Algorithm &other)
+                {
+                    this->setAlgorithm(other.getAlgorithm());
+                    return *this;
+                }
 
-    CompressionAlgorithm(const CompressionAlgorithm &other) = default;
+                CompressionAlgorithm &
+                operator=(const CompressionAlgorithm &other) = default;
 
-    CompressionAlgorithm(CompressionAlgorithm &&other) = default;
-
-    CompressionAlgorithm &
-    operator= (const Algorithm &other)
-    {
-        this->setAlgorithm( other.getAlgorithm() );
-        return *this;
-    }
-
-    CompressionAlgorithm &
-    operator= (const CompressionAlgorithm &other) = default;
-
-    CompressionAlgorithm &
-    operator= (CompressionAlgorithm &&other) = default;
-
-};
-}
-}
-}
+                CompressionAlgorithm &
+                operator=(CompressionAlgorithm &&other) = default;
+            };
+        } // namespace compression
+    }     // namespace data
+} // namespace cclient
 #endif
-

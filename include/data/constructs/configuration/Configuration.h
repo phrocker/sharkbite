@@ -19,44 +19,48 @@
 #include <string>
 #include <map>
 
-namespace cclient {
-namespace impl {
+namespace cclient
+{
+  namespace impl
+  {
 
-/**
+    /**
  * Purpose & Design: Based on the hadoop configuration object
  */
-class Configuration : public std::enable_shared_from_this<Configuration> {
- public:
-  Configuration() {
-  }
-  /**
+    class Configuration : public std::enable_shared_from_this<Configuration>
+    {
+    public:
+      Configuration()
+      {
+      }
+      /**
    * Constructor
    */
-  virtual ~Configuration();
-  /**
+      virtual ~Configuration();
+      /**
    * Sets the value of the name
    * @param name config option name
    * @param value
    */
-  void set(const std::string &name, const std::string &value);
-  /**
+      void set(const std::string &name, const std::string &value);
+      /**
    * Returns the config option
    * @param name
    */
-  std::string get(const std::string &name) const;
+      std::string get(const std::string &name) const;
 
-  /**
+      /**
    * Returns the config option using default if the map option isn't set
    */
-  std::string get(const std::string &name, const std::string &def) const;
+      std::string get(const std::string &name, const std::string &def) const;
 
-  uint32_t getLong(const std::string &name) const;
-  uint32_t getLong(const std::string &name, uint32_t def) const;
+      uint32_t getLong(const std::string &name) const;
+      uint32_t getLong(const std::string &name, uint32_t def) const;
 
- protected:
-  std::map<std::string, std::string> configurationMap;
-};
+    protected:
+      std::map<std::string, std::string> configurationMap;
+    };
 
-} /* namespace impl */
+  } /* namespace impl */
 } /* namespace cclient */
 #endif /* CONFIGURATION_H_ */

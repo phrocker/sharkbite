@@ -28,225 +28,231 @@
 #include "../configuration/Configuration.h"
 #include "../../../interconnect/Master.h"
 
-namespace cclient {
-namespace data {
-namespace zookeeper {
+namespace cclient
+{
+  namespace data
+  {
+    namespace zookeeper
+    {
 
-/**
+      /**
  * Instance that uses zookeeper
  * 
  * Purpose: provides connecting capabilities through zookeeper
  * 
  * Design: Simply inherits Instance, which is a purely virtual class.
  **/
-class ZookeeperInstance : public Instance {
- private:
-  void clear() {
-    if (NULL != myZooCache)
-      delete myZooCache;
-    if (NULL != myKeeper)
-      delete myKeeper;
-    myZooCache = nullptr;
-    myKeeper = nullptr;
-  }
- public:
+      class ZookeeperInstance : public Instance
+      {
+      private:
+        void clear()
+        {
+          if (NULL != myZooCache)
+            delete myZooCache;
+          if (NULL != myKeeper)
+            delete myKeeper;
+          myZooCache = nullptr;
+          myKeeper = nullptr;
+        }
 
-  /**
+      public:
+        /**
    * ZK constructor
    * @param in instance name
    * @param zks zookeepers
    * @param zkTimeoutMs timeout for zookeeper
    * @param conf configuration object
    **/
-  explicit ZookeeperInstance(const ZookeeperInstance *zki)
-      :ZookeeperInstance( zki->instanceName, zki->zookeeperList, zki->timeoutMs, zki->myConfiguration){
-  }
+        explicit ZookeeperInstance(const ZookeeperInstance *zki)
+            : ZookeeperInstance(zki->instanceName, zki->zookeeperList, zki->timeoutMs, zki->myConfiguration)
+        {
+        }
 
-  /**
+        /**
    * ZK constructor
    * @param in instance name
    * @param zks zookeepers
    * @param zkTimeoutMs timeout for zookeeper
    * @param conf configuration object
    **/
-  explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs, const std::shared_ptr<cclient::impl::Configuration> &conf)
-      :
-      instanceName(in),
-      zookeeperList(zks),
-      timeoutMs(zkTimeoutMs),
-      myConfiguration(conf) {
-    if (IsEmpty(&in) || IsEmpty(&zks)) {
-      throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
-    }
+        explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs, const std::shared_ptr<cclient::impl::Configuration> &conf)
+            : instanceName(in),
+              zookeeperList(zks),
+              timeoutMs(zkTimeoutMs),
+              myConfiguration(conf)
+        {
+          if (IsEmpty(&in) || IsEmpty(&zks))
+          {
+            throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
+          }
 
-    myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+          myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
 
-    myKeeper->init(&myWatch);
+          myKeeper->init(&myWatch);
 
-    myZooCache = new ZooCache(myKeeper);
+          myZooCache = new ZooCache(myKeeper);
 
-    uint8_t failcount = 0;
+          uint8_t failcount = 0;
 
-    while (getInstanceId(true).empty() && failcount++ < 10) {
+          while (getInstanceId(true).empty() && failcount++ < 10)
+          {
 
-      clear();
+            clear();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
 
-      myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
+            myKeeper = new ZooKeeper(zookeeperList.c_str(), timeoutMs);
 
-      myKeeper->init(&myWatch);
+            myKeeper->init(&myWatch);
 
-      myZooCache = new ZooCache(myKeeper);
+            myZooCache = new ZooCache(myKeeper);
+          }
 
-    }
+          getInstanceId();
+        }
 
-    getInstanceId();
-
-  }
-
-  /**
+        /**
    * ZK constructor
    * @param in instance name
    * @param zks zookeepers
    * @param zkTimeoutMs timeout for zookeeper
    **/
-  explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs)
-      :
-      instanceName(in),
-      zookeeperList(zks),
-      timeoutMs(zkTimeoutMs) {
-    myConfiguration->set("FILE_SYSTEM_ROOT", "/accumulo");
+        explicit ZookeeperInstance(std::string in, std::string zks, uint32_t zkTimeoutMs)
+            : instanceName(in),
+              zookeeperList(zks),
+              timeoutMs(zkTimeoutMs)
+        {
+          myConfiguration->set("FILE_SYSTEM_ROOT", "/accumulo");
 
-    if (IsEmpty(&in) || IsEmpty(&zks)) {
-      throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
-    }
+          if (IsEmpty(&in) || IsEmpty(&zks))
+          {
+            throw cclient::exceptions::ClientException("instance name or zookeeper list is empty");
+          }
 
-    myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+          myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
 
-    myKeeper->init(&myWatch);
+          myKeeper->init(&myWatch);
 
-    myZooCache = new ZooCache(myKeeper);
+          myZooCache = new ZooCache(myKeeper);
 
-    if (getInstanceId(true).empty()) {
+          if (getInstanceId(true).empty())
+          {
 
-      clear();
+            clear();
 
-      std::this_thread::sleep_for(std::chrono::milliseconds(zkTimeoutMs));
+            std::this_thread::sleep_for(std::chrono::milliseconds(zkTimeoutMs));
 
-      myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
+            myKeeper = new ZooKeeper(zks.c_str(), zkTimeoutMs);
 
-      myKeeper->init(&myWatch);
+            myKeeper->init(&myWatch);
 
-      myZooCache = new ZooCache(myKeeper);
+            myZooCache = new ZooCache(myKeeper);
 
-      getInstanceId();
+            getInstanceId();
+          }
+        }
 
-    }
-
-  }
-
-  /**
+        /**
    * ZK Destructor
    **/
-  ~ZookeeperInstance() {
-    if (NULL != myZooCache)
-      delete myZooCache;
-    if (NULL != myKeeper)
-      delete myKeeper;
+        ~ZookeeperInstance()
+        {
+          if (NULL != myZooCache)
+            delete myZooCache;
+          if (NULL != myKeeper)
+            delete myKeeper;
+        }
 
-  }
-
-  /**
+        /**
    * Returns the controller
    * @return root location
    **/
-  std::string getRootTabletLocation();
+        std::string getRootTabletLocation();
 
-  /**
+        /**
    * Returns the controller
    * @return root location
    **/
-  std::vector<std::string> getMasterLocations();
+        std::vector<std::string> getMasterLocations();
 
-  /**
+        /**
    * return instance ID
    * @return instance ID
    **/
-  std::string getInstanceId(bool retry = false);
-  /**
+        std::string getInstanceId(bool retry = false);
+        /**
    * Return instance namespace
    * @return instance name
    **/
-  std::string getInstanceName() const;
+        std::string getInstanceName() const;
 
-
-  std::string getZookeepers() const;
-  /**
+        std::string getZookeepers() const;
+        /**
    * Returns configuration
    * @return configuration reference
    **/
-  const cclient::impl::Configuration* getConfiguration();
-  /**
+        const cclient::impl::Configuration *getConfiguration();
+        /**
    * Sets configuration object
    * @param configuration object
    **/
-  //void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf);
-  /**
+        //void setConfiguration(std::unique_ptr<cclient::impl::Configuration> conf);
+        /**
    * Returns a reference to zoocache
    * @return zoo cache ptr
    **/
-  ZooCache* getZooCache() {
-    return myZooCache;
-  }
+        ZooCache *getZooCache()
+        {
+          return myZooCache;
+        }
 
-  /**
+        /**
    * Return link to instance instance cache
    * @return instance cache
    **/
-  InstanceCache* getInstanceCache() {
-    return myZooCache;
-  }
+        InstanceCache *getInstanceCache()
+        {
+          return myZooCache;
+        }
 
-  /**
+        /**
    * Returns a list of server that will do work
    * @return a vector of serverconnections
    **/
-  virtual std::vector<std::shared_ptr<interconnect::ServerConnection>> getServers();
+        virtual std::vector<std::shared_ptr<interconnect::ServerConnection>> getServers();
 
-  /**
+        /**
    * Gets the root node
    * @return root node.
    **/
-  std::string getRoot();
+        std::string getRoot();
 
- protected:
-  // zoo cache ptr
-  ZooCache *myZooCache;
+      protected:
+        // zoo cache ptr
+        ZooCache *myZooCache;
 
-  // zookeeper reference.
-  ZooKeeper *myKeeper;
+        // zookeeper reference.
+        ZooKeeper *myKeeper;
 
-  // watch for the current zk
-  Watch myWatch;
+        // watch for the current zk
+        Watch myWatch;
 
-  // configuration object
-  std::shared_ptr<cclient::impl::Configuration> myConfiguration;
+        // configuration object
+        std::shared_ptr<cclient::impl::Configuration> myConfiguration;
 
-  // instance id
-  std::string instanceId;
-  // instance name
-  std::string instanceName;
-  // zk list
-  std::string zookeeperList;
+        // instance id
+        std::string instanceId;
+        // instance name
+        std::string instanceName;
+        // zk list
+        std::string zookeeperList;
 
-  // time out in ms
-  uint32_t timeoutMs;
+        // time out in ms
+        uint32_t timeoutMs;
+      };
 
-};
-
-}
-}
-}
+    } // namespace zookeeper
+  }   // namespace data
+} // namespace cclient
 
 #endif // ZOOKEEPERINSTANCE_H

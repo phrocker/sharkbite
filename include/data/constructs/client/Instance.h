@@ -19,8 +19,6 @@
 
 #include <vector>
 
-
-
 #include "../security/AuthInfo.h"
 #include "InstanceCache.h"
 #include "../configuration/Configuration.h"
@@ -28,69 +26,67 @@
 
 #include <string>
 
+namespace cclient
+{
+  namespace data
+  {
 
-
-namespace cclient {
-namespace data {
-
-
-
-/**
+    /**
  * Instance represents a connecting object for the key value store
  * Nearly all key value stores follow a root/worker paradigm.
  * This class is meant to facilitate that paradigm.
  * 
  **/
-class Instance {
-public:
-    Instance() {
-
-    }
-    /**
+    class Instance
+    {
+    public:
+      Instance()
+      {
+      }
+      /**
      * Returns the controller
      * @return root location
      **/
-    virtual std::string getRootTabletLocation() = 0;
-    /**
+      virtual std::string getRootTabletLocation() = 0;
+      /**
      * Returns the controller
      * @return root location
      **/
-    virtual std::vector<std::string> getMasterLocations() = 0;
-    /**
+      virtual std::vector<std::string> getMasterLocations() = 0;
+      /**
      * Returns a list of server that will do work
      * @return a vector of serverconnections
      **/
-    virtual std::vector<std::shared_ptr<interconnect::ServerConnection>> getServers() = 0;
-    /**
+      virtual std::vector<std::shared_ptr<interconnect::ServerConnection>> getServers() = 0;
+      /**
       * return instance ID
       * @return instance ID
       **/
-    virtual std::string getInstanceId(bool retry = false) = 0;
-    /**
+      virtual std::string getInstanceId(bool retry = false) = 0;
+      /**
      * Return instance namespace
      * @return instance name
      **/
-    virtual std::string getInstanceName() const = 0;
-    /**
+      virtual std::string getInstanceName() const = 0;
+      /**
       * Return link to instance instance cache
       * @return instance cache
       **/
-    virtual InstanceCache *getInstanceCache() =0;
-    /**
+      virtual InstanceCache *getInstanceCache() = 0;
+      /**
      * Returns configuration
      * @return configuration reference
      **/
-    virtual const cclient::impl::Configuration *getConfiguration() = 0;
+      virtual const cclient::impl::Configuration *getConfiguration() = 0;
 
-    /**
+      /**
      * Destructor
      **/
-    virtual ~Instance() {
+      virtual ~Instance()
+      {
+      }
+    };
 
-    }
-};
-
-} /* namespace impl */
+  } // namespace data
 } /* namespace cclient */
 #endif /* INSTANCE_H_ */
-

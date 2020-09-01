@@ -12,138 +12,149 @@
  * limitations under the License.
  */
 
-
 #pragma once
 
 #include <map>
 #include <vector>
 #include <set>
 #include <string>
-namespace cclient {
-namespace data {
-
-class TableRates{
-public:
-    double ingestRate;
-    double ingestByteRate;
-    double queryRate;
-    double queryByteRate;
-    double scanRate;
-
-    explicit TableRates(double ingestRate, double ingestByteRate, double queryRate, double queryByteRate, double scanRate):
-        ingestRate(ingestRate),ingestByteRate(ingestByteRate),queryRate(queryRate),queryByteRate(queryByteRate),scanRate(scanRate)
+namespace cclient
+{
+    namespace data
     {
-    }
 
+        class TableRates
+        {
+        public:
+            double ingestRate;
+            double ingestByteRate;
+            double queryRate;
+            double queryByteRate;
+            double scanRate;
 
-    auto getIngestRate() const{
-        return ingestRate;
-    }
+            explicit TableRates(double ingestRate, double ingestByteRate, double queryRate, double queryByteRate, double scanRate) : ingestRate(ingestRate), ingestByteRate(ingestByteRate), queryRate(queryRate), queryByteRate(queryByteRate), scanRate(scanRate)
+            {
+            }
 
-    auto getIngestRateByte() const{
-        return ingestByteRate;
-    }
+            auto getIngestRate() const
+            {
+                return ingestRate;
+            }
 
-    auto getQueryRate() const{
-        return queryRate;
-    }
+            auto getIngestRateByte() const
+            {
+                return ingestByteRate;
+            }
 
-    auto getQueryRateByte() const {
-        return queryByteRate;
-    }
+            auto getQueryRate() const
+            {
+                return queryRate;
+            }
 
-     auto getScanRate() const{
-        return scanRate;
-    }
+            auto getQueryRateByte() const
+            {
+                return queryByteRate;
+            }
 
+            auto getScanRate() const
+            {
+                return scanRate;
+            }
+        };
 
+        class Compacting
+        {
+        public:
+            int32_t running;
+            int32_t queued;
 
-};
+            explicit Compacting(int32_t running, int32_t queued) : running(running), queued(queued)
+            {
+            }
 
-class Compacting{
-public:
-    int32_t running;
-    int32_t queued;
+            auto getRunning() const
+            {
+                return running;
+            }
 
-    explicit Compacting(int32_t running, int32_t queued) : running(running), queued(queued){
+            auto getQueued() const
+            {
+                return queued;
+            }
+        };
 
-    }
+        class TableCompactions
+        {
+        public:
+            Compacting minors;
+            Compacting majors;
+            Compacting scans;
 
-    auto getRunning() const {
-        return running;
-    }
+            explicit TableCompactions(Compacting minors, Compacting majors, Compacting scans) : minors(minors), majors(majors), scans(scans)
+            {
+            }
 
-    auto getQueued() const {
-        return queued;
-    }
-};
+            auto getMinorCompactions() const
+            {
+                return minors;
+            }
 
-class TableCompactions{
-public:
-    Compacting minors;
-    Compacting majors;
-    Compacting scans;
+            auto getMajorCompactions() const
+            {
+                return majors;
+            }
 
-    explicit TableCompactions(Compacting minors, Compacting majors, Compacting scans) : minors(minors),majors(majors),scans(scans){
-    }
-    
-    auto getMinorCompactions() const {
-        return minors;
-    }
+            auto getScans() const
+            {
+                return scans;
+            }
+        };
 
-    auto getMajorCompactions() const {
-        return majors;
-    }
+        class TableInfo
+        {
+        public:
+            int64_t recs;
+            int64_t recsInMemory;
+            int32_t tablets;
+            int32_t onlineTablets;
+            TableRates rates;
+            TableCompactions compactionInfo;
 
-    auto getScans() const{
-        return scans;
-    }
+            explicit TableInfo(
+                int64_t recs, int64_t recsInMemory, int32_t tablets, int32_t onlineTablets, TableRates rates, TableCompactions compactions) : recs(recs), recsInMemory(recsInMemory), tablets(tablets), onlineTablets(onlineTablets), rates(rates), compactionInfo(compactions)
+            {
+            }
 
-};
-    
+            auto getRecords() const
+            {
+                return recs;
+            }
 
-class TableInfo{
-public:
-    int64_t recs;
-    int64_t recsInMemory;
-    int32_t tablets;
-    int32_t onlineTablets;
-    TableRates rates;
-    TableCompactions compactionInfo;
-    
-    explicit TableInfo( 
-        int64_t recs, int64_t recsInMemory, int32_t tablets, int32_t onlineTablets, TableRates rates, TableCompactions compactions) :
-            recs(recs),recsInMemory(recsInMemory),tablets(tablets),onlineTablets(onlineTablets),rates(rates),compactionInfo(compactions){
-    }
+            auto getRecordsInMemory() const
+            {
+                return recsInMemory;
+            }
 
+            auto getTablets() const
+            {
+                return tablets;
+            }
 
-    auto getRecords() const {
-        return recs;
-    }
+            auto getOnlineTablets() const
+            {
+                return onlineTablets;
+            }
 
-    auto getRecordsInMemory() const { 
-        return recsInMemory;
-    }
+            auto getTableRates() const
+            {
+                return rates;
+            }
 
-    auto getTablets() const {
-        return tablets;
-    }
+            auto getCompactioninfo() const
+            {
+                return compactionInfo;
+            }
+        };
 
-    auto getOnlineTablets() const {
-        return onlineTablets;
-    }
-
-    auto getTableRates() const {
-        return rates;
-    }
-
-    auto getCompactioninfo() const{
-        return compactionInfo;
-    }
-
-   
-
-};
-
-
-}}
+    } // namespace data
+} // namespace cclient

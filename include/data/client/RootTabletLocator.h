@@ -27,62 +27,72 @@
 #include "../constructs/client/zookeeperinstance.h"
 #include "TabletLocationObtainer.h"
 #include "../constructs/security/AuthInfo.h"
-namespace cclient {
-namespace impl {
+namespace cclient
+{
+  namespace impl
+  {
 
-static std::shared_ptr<cclient::data::KeyExtent> ROOT_EXTENT = std::make_shared<cclient::data::KeyExtent>("+r", "", "");
+    static std::shared_ptr<cclient::data::KeyExtent> ROOT_EXTENT = std::make_shared<cclient::data::KeyExtent>("+r", "", "");
 
-class RootTabletLocator : public TabletLocator {
- public:
-  explicit RootTabletLocator(std::shared_ptr<cclient::data::Instance> instance);
-  ~RootTabletLocator();
+    class RootTabletLocator : public TabletLocator
+    {
+    public:
+      explicit RootTabletLocator(std::shared_ptr<cclient::data::Instance> instance);
+      ~RootTabletLocator();
 
-  cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry) {
-    cclient::data::TabletLocation *location = getRootTabletLocation();
+      cclient::data::TabletLocation locateTablet(cclient::data::security::AuthInfo *creds, std::string row, bool skipRow, bool retry)
+      {
+        cclient::data::TabletLocation *location = getRootTabletLocation();
 
-    while (retry && location == NULL) {
-      std::this_thread::yield();
+        while (retry && location == NULL)
+        {
+          std::this_thread::yield();
 
-      location = getRootTabletLocation();
+          location = getRootTabletLocation();
+        }
+        if (location)
+        {
+          cclient::data::TabletLocation te(location);
+          delete location;
+          return te;
+        }
+        else
+        {
+          throw std::runtime_error("Could not locate root tablet");
+        }
+      }
 
-    }
-    if (location) {
-      cclient::data::TabletLocation te(location);
-      delete location;
-      return te;
-    } else {
-      throw std::runtime_error("Could not locate root tablet");
-    }
+      void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations,
+                        std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations, std::set<std::string> *locations,
+                        std::vector<std::shared_ptr<cclient::data::Mutation>> *failures)
+      {
+      }
 
-  }
+      virtual std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
+          cclient::data::security::AuthInfo *credentials,
+          std::vector<std::shared_ptr<cclient::data::Range>> *ranges,
+          std::set<std::string> *locations,
+          std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>>>> *binnedRanges)
+      {
+        return std::vector<std::shared_ptr<cclient::data::Range>>();
+      }
 
-  void binMutations(cclient::data::security::AuthInfo *credentials, std::vector<std::shared_ptr<cclient::data::Mutation>> *mutations,
-                    std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> *binnedMutations, std::set<std::string> *locations,
-                    std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
-  }
+      void invalidateCache(cclient::data::KeyExtent failedExtent)
+      {
+      }
 
-  virtual std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
-      cclient::data::security::AuthInfo *credentials,
-      std::vector<std::shared_ptr<cclient::data::Range>> *ranges,
-      std::set<std::string> *locations,
-      std::map<std::string, std::map<std::shared_ptr<cclient::data::KeyExtent>, std::vector<std::shared_ptr<cclient::data::Range>>, pointer_comparator<std::shared_ptr<cclient::data::KeyExtent>> > > *binnedRanges) {
-    return std::vector<std::shared_ptr<cclient::data::Range>>();
-  }
+      void invalidateCache()
+      {
+      }
 
-  void invalidateCache(cclient::data::KeyExtent failedExtent) {
-  }
+      void invalidateCache(std::vector<cclient::data::KeyExtent> keySet)
+      {
+      }
 
-  void invalidateCache() {
-  }
-
-  void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) {
-  }
-
- protected:
-
-  cclient::data::TabletLocation* getRootTabletLocation();
-  std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> myInstance;
-};
-}
-}
+    protected:
+      cclient::data::TabletLocation *getRootTabletLocation();
+      std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance> myInstance;
+    };
+  } // namespace impl
+} // namespace cclient
 #endif /* DATA_CLIENT_IMPL_METADATA_ROOTTABLETLOCATOR_H_ */

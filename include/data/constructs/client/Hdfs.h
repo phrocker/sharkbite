@@ -24,89 +24,98 @@
 #include "data/streaming/ByteOutputStream.h"
 #include "data/streaming/input/InputStream.h"
 
-namespace cclient {
-namespace data {
-namespace hdfs {
+namespace cclient
+{
+  namespace data
+  {
+    namespace hdfs
+    {
 
-class HdfsDirEnt {
- private:
-  bool isDir;
-  std::string name;
-  size_t size;
-  uint8_t repFactor;
-  std::string owner;
-  std::string group;
-  uint16_t permissions;
-  uint64_t lastAccess;
+      class HdfsDirEnt
+      {
+      private:
+        bool isDir;
+        std::string name;
+        size_t size;
+        uint8_t repFactor;
+        std::string owner;
+        std::string group;
+        uint16_t permissions;
+        uint64_t lastAccess;
 
- public:
+      public:
+        explicit HdfsDirEnt(const hdfsFileInfo *);
 
-  explicit HdfsDirEnt(const hdfsFileInfo*);
+        bool isDirectory() const
+        {
+          return isDir;
+        }
 
-  bool isDirectory() const {
-    return isDir;
-  }
+        std::string getName() const
+        {
+          return name;
+        }
 
-  std::string getName() const {
-    return name;
-  }
+        size_t getSize() const
+        {
+          return size;
+        }
 
-  size_t getSize() const {
-    return size;
-  }
+        uint8_t getreplication() const
+        {
+          return repFactor;
+        }
 
-  uint8_t getreplication() const {
-    return repFactor;
-  }
+        std::string getOwner() const
+        {
+          return owner;
+        }
 
-  std::string getOwner() const {
-    return owner;
-  }
+        std::string getGroup() const
+        {
+          return group;
+        }
 
-  std::string getGroup() const {
-    return group;
-  }
+        uint16_t getPermissions() const
+        {
+          return permissions;
+        }
+      };
 
-  uint16_t getPermissions() const {
-    return permissions;
-  }
+      class HdfsLink : public std::enable_shared_from_this<HdfsLink>
+      {
+      public:
+        explicit HdfsLink(std::string nn, int port);
+        explicit HdfsLink(std::string nn);
 
-};
+        ~HdfsLink();
 
-class HdfsLink : public std::enable_shared_from_this<HdfsLink> {
- public:
+        int mkdir(const std::string &dir);
 
-  explicit HdfsLink(std::string nn, int port);
-  explicit HdfsLink(std::string nn);
+        int remove(const std::string &dir, bool recursive);
 
-  ~HdfsLink();
+        int rename(const std::string &fromName, const std::string toName);
 
-  int mkdir(const std::string &dir);
+        int move(const std::string &from_path, const std::string &to_path);
 
-  int remove(const std::string &dir, bool recursive);
+        int chmod(const std::string &path, int perm);
 
-  int rename(const std::string &fromName, const std::string toName);
+        int chown(const std::string &path, const std::string &user, const std::string &group);
 
-  int move(const std::string &from_path, const std::string &to_path);
+        std::shared_ptr<cclient::data::streams::ByteOutputStream> write(const std::string &path);
+        std::shared_ptr<cclient::data::streams::InputStream> read(const std::string &path);
 
-  int chmod(const std::string &path,int perm);
+        std::vector<HdfsDirEnt> list(const std::string &dir);
 
-  int chown(const std::string &path,const std::string &user, const std::string &group);
+        hdfsFS getHdfsReference();
 
-  std::shared_ptr<cclient::data::streams::ByteOutputStream> write(const std::string &path);
-  std::shared_ptr<cclient::data::streams::InputStream> read(const std::string &path);
+      private:
+        std::string nn;
+        int port;
+        hdfsFS reference;
+      };
 
-  std::vector<HdfsDirEnt> list(const std::string &dir);
-
-  hdfsFS getHdfsReference();
-
- private:
-  std::string nn;
-  int port;
-  hdfsFS reference;
-};
-
-}
-} 
-}
+    } // namespace hdfs
+  }   // namespace data
+} // namespace cclient
 #endif

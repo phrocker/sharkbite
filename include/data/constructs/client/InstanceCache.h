@@ -16,23 +16,26 @@
 
 #include <string>
 
+namespace cclient
+{
+    namespace data
+    {
 
+        class InstanceCache
+        {
+        public:
+            InstanceCache()
+            {
+            }
+            virtual ~InstanceCache()
+            {
+            }
 
-namespace cclient {
-namespace data {
+            virtual uint8_t *getData(std::string path) = 0;
+            virtual std::vector<std::string> getChildren(const std::string path, bool force = false) = 0;
+        };
 
-class InstanceCache {
-public:
-    InstanceCache() {
-    }
-    virtual ~InstanceCache() {
-    }
-
-    virtual uint8_t *getData(std::string path) = 0;
-    virtual std::vector<std::string> getChildren(const std::string path, bool force=false) = 0;
-};
-
-} /* namespace impl */
+    } // namespace data
 } /* namespace cclient */
 
 #endif /* SRC_DATA_CONSTRUCTS_CLIENT_INSTANCECACHE_H_ */

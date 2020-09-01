@@ -16,79 +16,72 @@
 #include <string>
 
 #ifndef SH_UNLIKELY
-    #ifdef __GNUC__
-    #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
-    #define SH_LIKELY(val) (__builtin_expect((val), 1))
-    #else
-    #define SH_UNLIKELY(val) (val)
-    #define SH_LIKELY(val) (val)
-    #endif
+#ifdef __GNUC__
+#define SH_UNLIKELY(val) (__builtin_expect((val), 0))
+#define SH_LIKELY(val) (__builtin_expect((val), 1))
+#else
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
 #endif
-
+#endif
 
 namespace cclient
 {
-namespace data
-{
-namespace compression
-{
-
-class Algorithm
-{
-public:
-    Algorithm () :
-        compressionAlgo ("")
+    namespace data
     {
+        namespace compression
+        {
 
-    }
+            class Algorithm
+            {
+            public:
+                Algorithm() : compressionAlgo("")
+                {
+                }
 
-    explicit Algorithm (const std::string &compressionName) :
-        compressionAlgo (compressionName)
-    {
+                explicit Algorithm(const std::string &compressionName) : compressionAlgo(compressionName)
+                {
+                }
 
-    }
+                Algorithm(const Algorithm &other) = default;
 
-    Algorithm(const Algorithm &other) = default;
+                Algorithm(Algorithm &&other) = default;
 
-    Algorithm(Algorithm &&other) = default;
-
-    /**
+                /**
      * Set the algorithm name
      * @param algorithm algorithm name
      */
-    void
-    setAlgorithm (const std::string &algorithm)
-    {
-        compressionAlgo = algorithm;
-    }
+                void
+                setAlgorithm(const std::string &algorithm)
+                {
+                    compressionAlgo = algorithm;
+                }
 
-    /**
+                /**
      * Get the algorithm name
      * @returns algorith name
      */
-    std::string
-    getName () const
-    {
-        return compressionAlgo;
-    }
+                std::string
+                getName() const
+                {
+                    return compressionAlgo;
+                }
 
-    Algorithm &
-    operator= (const Algorithm &other) = default;
+                Algorithm &
+                operator=(const Algorithm &other) = default;
 
-    Algorithm &
-    operator= (Algorithm &&other) = default;
+                Algorithm &
+                operator=(Algorithm &&other) = default;
 
-    std::string getAlgorithm() const
-    {
-        return compressionAlgo;
-    }
-    
+                std::string getAlgorithm() const
+                {
+                    return compressionAlgo;
+                }
 
-protected:
-    std::string compressionAlgo;
-
-};
-}
-}
-}
+            protected:
+                std::string compressionAlgo;
+            };
+        } // namespace compression
+    }     // namespace data
+} // namespace cclient
 #endif /* INCLUDE_DATA_CONSTRUCTS_COMPRESSOR_ALGORITHM_H_ */

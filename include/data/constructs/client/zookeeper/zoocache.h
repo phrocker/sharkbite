@@ -31,188 +31,210 @@
 #include <time.h>
 #include <mutex>
 
-namespace cclient {
-namespace data {
-namespace zookeeper {
+namespace cclient
+{
+  namespace data
+  {
+    namespace zookeeper
+    {
 
-/**
+      /**
  Zoo cache that mimics the one within Accumulo
  **/
-class ZooCache : public cclient::data::InstanceCache {
- public:
-  explicit ZooCache(ZooKeeper *zk)
-      :
-      myZk(zk) {
-    cache = new std::map<std::string, uint8_t*>();
-    childrenCache = new std::map<std::string, std::vector<std::string>*>();
-  }
+      class ZooCache : public cclient::data::InstanceCache
+      {
+      public:
+        explicit ZooCache(ZooKeeper *zk)
+            : myZk(zk)
+        {
+        }
 
-  ~ZooCache() {
+        ~ZooCache()
+        {
 
-    clear();
-    std::lock_guard<std::mutex> lock(syncBarrier);
-    for (auto fn : fns) {
-      delete fn;
-    }
-    fns.clear();
-    delete cache;
-    delete childrenCache;
+          clear();
+          std::lock_guard<std::mutex> lock(syncBarrier);
+          for (auto fn : fns)
+          {
+            delete fn;
+          }
+          fns.clear();
+        }
 
-  }
+        inline static void cache_watcher(zhandle_t *, int type, int state, const char *path, void *v)
+        {
 
-  inline static void cache_watcher(zhandle_t*, int type, int state, const char *path, void *v) {
+          WatchFn *ctx = (WatchFn *)v;
+          ZooCache *cacheRef = (ZooCache *)ctx->Fn;
+          Event *event = new Event();
+          event->path = path;
+          event->type = type;
+          if (type == ZOO_CHANGED_EVENT || type == ZOO_CHILD_EVENT || type == ZOO_CREATED_EVENT || type == ZOO_DELETED_EVENT)
+          {
+            cacheRef->removePath(event);
+          }
+          else if (type == ZOO_SESSION_EVENT)
+          {
+            if (state != ZOO_CONNECTED_STATE)
+            {
+              cacheRef->clear();
+            }
+          }
+          else
+          {
+            // do nothing
+          }
 
-    WatchFn *ctx = (WatchFn*) v;
-    ZooCache *cacheRef = (ZooCache*) ctx->Fn;
-    Event *event = new Event();
-    event->path = path;
-    event->type = type;
-    if (type == ZOO_CHANGED_EVENT || type == ZOO_CHILD_EVENT || type == ZOO_CREATED_EVENT || type == ZOO_DELETED_EVENT) {
-      cacheRef->removePath(event);
-    } else if (type == ZOO_SESSION_EVENT) {
-      if (state != ZOO_CONNECTED_STATE) {
-        cacheRef->clear();
-      }
+          std::lock_guard<std::mutex> lock(cacheRef->syncBarrier);
+          std::set<WatchFn *>::iterator it = cacheRef->fns.find(ctx);
+          cacheRef->fns.erase(it);
 
-    } else {
-      // do nothing
-    }
+          if (ctx == nullptr)
+          {
+            throw std::runtime_error("Zoo context is null");
+          }
+          delete ctx;
+        }
 
-    std::lock_guard<std::mutex> lock(cacheRef->syncBarrier);
-    std::set<WatchFn*>::iterator it = cacheRef->fns.find(ctx);
-    cacheRef->fns.erase(it);
+        uint8_t *getData(std::string path)
+        {
 
-    if (ctx == nullptr) {
-      throw std::runtime_error("Zoo context is null");
-    }
-    delete ctx;
+          if (IsEmpty(&path))
+          {
+            return NULL;
+          }
+          std::lock_guard<std::mutex> lock(syncBarrier);
 
-  }
+          std::map<std::string, uint8_t *>::iterator cachedData = cache.find(path);
 
-  uint8_t* getData(std::string path) {
+          if (cachedData == cache.end())
+          {
 
-    if (IsEmpty(&path)) {
-      return NULL;
-    }
-    std::lock_guard<std::mutex> lock(syncBarrier);
+            WatchFn *watchFp = new WatchFn();
+            fns.insert(watchFp);
+            watchFp->Fn = this;
+            if (myZk->exists(path, cache_watcher, watchFp))
+            {
+              watchFp = new WatchFn();
+              fns.insert(watchFp);
+              watchFp->Fn = this;
 
-    std::map<std::string, uint8_t*>::iterator cachedData = cache->find(path);
+              uint8_t *data = (uint8_t *)myZk->getData(path, cache_watcher, watchFp);
+              cache.insert(std::pair<std::string, uint8_t *>(std::string(path), (uint8_t *)data));
 
-    if (cachedData == cache->end()) {
+              return data;
+            }
+            else
+            {
 
-      WatchFn *watchFp = new WatchFn();
-      fns.insert(watchFp);
-      watchFp->Fn = this;
-      if (myZk->exists(path, cache_watcher, watchFp)) {
-        watchFp = new WatchFn();
-        fns.insert(watchFp);
-        watchFp->Fn = this;
+              return NULL;
+            }
 
-        uint8_t *data = (uint8_t*) myZk->getData(path, cache_watcher, watchFp);
-        cache->insert(std::pair<std::string, uint8_t*>(std::string(path), (uint8_t*) data));
+            cachedData = cache.find(path);
+          }
 
-        return data;
-      } else {
+          uint8_t *ptr = cachedData->second;
 
-        return NULL;
-      }
+          return ptr;
+        }
 
-      cachedData = cache->find(path);
-    }
+        std::vector<std::string> getChildren(const std::string path, bool force = false)
+        {
 
-    uint8_t *ptr = cachedData->second;
+          if (IsEmpty(&path))
+          {
+            return std::vector<std::string>();
+          }
+          if (force)
+            clear();
+          std::lock_guard<std::mutex> lock(syncBarrier);
 
-    return ptr;
-  }
+          std::map<std::string, std::vector<std::string> *>::iterator children = childrenCache.find(path);
 
-  std::vector<std::string> getChildren(const std::string path, bool force = false) {
+          if (children == childrenCache.end())
+          {
+            WatchFn *watchFp = new WatchFn();
+            fns.insert(watchFp);
+            watchFp->Fn = this;
 
-    if (IsEmpty(&path)) {
-      return std::vector<std::string>();
-    }
-    if (force)
-      clear();
-    std::lock_guard<std::mutex> lock(syncBarrier);
+            std::vector<std::string> *results = myZk->getChildren(path, cache_watcher, watchFp);
 
-    std::map<std::string, std::vector<std::string>*>::iterator children = childrenCache->find(path);
+            if (NULL != results)
+            {
+              childrenCache.insert(std::pair<std::string, std::vector<std::string> *>(std::string(path), results));
+            }
 
-    if (children == childrenCache->end()) {
-      WatchFn *watchFp = new WatchFn();
-      fns.insert(watchFp);
-      watchFp->Fn = this;
+            children = childrenCache.find(path);
+          }
 
-      std::vector<std::string> *results = myZk->getChildren(path, cache_watcher, watchFp);
+          if (children == childrenCache.end())
+          {
 
-      if (NULL != results) {
-        childrenCache->insert(std::pair<std::string, std::vector<std::string>*>(std::string(path), results));
-      }
+            return std::vector<std::string>();
+          }
+          std::vector<std::string> strings(*children->second);
 
-      children = childrenCache->find(path);
-    }
+          return strings;
+        }
 
-    if (children == childrenCache->end()) {
+      protected:
+        void removePath(Event *event)
+        {
+          if (NULL == event || IsEmpty(&event->path))
+          {
+            delete event;
+            return;
+          }
+          std::lock_guard<std::mutex> lock(syncBarrier);
+          // critical section
 
-      return std::vector<std::string>();
-    }
-    std::vector<std::string> strings(*children->second);
+          std::map<std::string, uint8_t *>::iterator find = cache.find(event->path);
+          if (find != std::end(cache))
+          {
+            uint8_t *prevMemory = find->second;
+            cache.erase(find);
+            delete[] prevMemory;
+          }
+          std::map<std::string, std::vector<std::string> *>::iterator childFind = childrenCache.find(event->path);
+          if (childFind != std::end(childrenCache))
+          {
+            std::vector<std::string> *children = childFind->second;
+            childrenCache.erase(childFind);
+            delete children;
+          }
 
-    return strings;
-  }
+          delete event;
+        }
 
- protected:
+        void clear()
+        {
 
-  void removePath(Event *event) {
-    if (NULL == event || IsEmpty(&event->path)) {
-      delete event;
-      return;
-    }
-    std::lock_guard<std::mutex> lock(syncBarrier);
-    // critical section
+          std::lock_guard<std::mutex> lock(syncBarrier);
+          // critical section
 
-    std::map<std::string, uint8_t*>::iterator find = cache->find(event->path);
-    if (find != std::end(*cache)) {
-      uint8_t *prevMemory = find->second;
-      cache->erase(find);
-      delete[] prevMemory;
-    }
-    std::map<std::string, std::vector<std::string>*>::iterator childFind = childrenCache->find(event->path);
-    if (childFind != std::end(*childrenCache)) {
-      std::vector<std::string> *children = childFind->second;
-      childrenCache->erase(childFind);
-      delete children;
-    }
+          for (auto it = cache.begin(); it != cache.end(); it++)
+          {
+            delete[] it->second;
+          }
 
-    delete event;
+          cache.clear();
 
-  }
+          for (auto it = childrenCache.begin(); it != childrenCache.end(); it++)
+          {
+            delete it->second;
+          }
 
-  void clear() {
+          childrenCache.clear();
+        }
 
-    std::lock_guard<std::mutex> lock(syncBarrier);
-    // critical section
+        std::set<WatchFn *> fns;
+        ZooKeeper *myZk;
+        std::map<std::string, uint8_t *> cache;
+        std::map<std::string, std::vector<std::string> *> childrenCache;
+        std::mutex syncBarrier;
+      };
 
-    for (auto it = cache->begin(); it != cache->end(); it++) {
-      delete[] it->second;
-    }
-
-    cache->clear();
-
-    for (auto it = childrenCache->begin(); it != childrenCache->end(); it++) {
-      delete it->second;
-    }
-
-    childrenCache->clear();
-
-  }
-
-  std::set<WatchFn*> fns;
-  ZooKeeper *myZk;
-  std::map<std::string, uint8_t*> *cache;
-  std::map<std::string, std::vector<std::string>*> *childrenCache;
-  std::mutex syncBarrier;
-};
-
-}
-}
-}
+    } // namespace zookeeper
+  }   // namespace data
+} // namespace cclient
 #endif // ZOOCACHE\_H
