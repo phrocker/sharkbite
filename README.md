@@ -8,13 +8,13 @@ initial support for [Apache Accumulo][accumulo], the design can and has been use
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
 despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
 
-Capabilities That will be supported in V0.6 : 
+Capabilities That will be supported in V0.7 : 
 
  * **Pysharkbite**, the native python implementation can be installed via pip install sharkbite for linux and osx
  * Works with Accumulo 1.6.x, 1.7.x, 1.8.x, 1.9.x and 2.x
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
- * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
- * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
+ * **Table Operations** 
+ * **Security Operations** 
  * **Python Iterators**  : Python iterators run natively at the tablet server. They are supported either through the labmda iterators in Python or the typical python interfaces. 
  
 About the name
