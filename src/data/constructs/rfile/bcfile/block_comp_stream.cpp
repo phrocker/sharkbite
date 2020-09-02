@@ -11,31 +11,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "data/constructs/rfile/bcfile/block_comp_stream.h"
+
 #include <fstream>
 
-#include "data/constructs/rfile/bcfile/block_comp_stream.h"
 #include "data/constructs/compressor/compressor.h"
-#include "data/constructs/rfile/bcfile/../../../streaming/input/InputStream.h"
 #include "data/constructs/rfile/bcfile/../../../streaming/DataOutputStream.h"
-#include "data/constructs/rfile/bcfile/../../../streaming/input/NetworkOrderInputStream.h"
 #include "data/constructs/rfile/bcfile/../../../streaming/NetworkOrderStream.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/input/InputStream.h"
+#include "data/constructs/rfile/bcfile/../../../streaming/input/NetworkOrderInputStream.h"
 namespace cclient {
 namespace data {
 
-BlockCompressorStream::BlockCompressorStream(streams::OutputStream *out_stream, std::unique_ptr<cclient::data::compression::Compressor> compressor, BlockRegion *region)
+BlockCompressorStream::BlockCompressorStream(
+    streams::OutputStream *out_stream,
+    std::unique_ptr<cclient::data::compression::Compressor> compressor,
+    BlockRegion *region)
     : BlockStreambuffer(compressor->getBufferSize()),
-      cclient::data::streams::DataOutputStream(new streams::BigEndianOutStream(new OutputStream((std::ostream*) this, out_stream->getPos()))),
+      cclient::data::streams::DataOutputStream(new streams::BigEndianOutStream(
+          new OutputStream((std::ostream *)this, out_stream->getPos()))),
       compress(std::move(compressor)),
       output_stream(out_stream),
-      std::ostream((BlockStreambuffer*) this),
+      std::ostream((BlockStreambuffer *)this),
       std::istream(this),
       std::ios(0),
       blockLoc(0),
       writeStart(false),
-      associatedRegion(region) {
-}
+      associatedRegion(region) {}
 
-BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, std::unique_ptr<compression::Compressor> decompressor, BlockRegion *region)
+BlockCompressorStream::BlockCompressorStream(
+    InputStream *in_stream,
+    std::unique_ptr<compression::Compressor> decompressor, BlockRegion *region)
     : BlockStreambuffer(decompressor->getBufferSize()),
       cclient::data::streams::DataOutputStream(NULL),
       cclient::data::streams::EndianInputStream(),
@@ -54,9 +60,11 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, std::unique
 
   in_stream->readBytes(compressedValue, region->getCompressedSize());
 
-  compress->setInput((const char*) compressedValue, 0, region->getCompressedSize());
+  compress->setInput((const char *)compressedValue, 0,
+                     region->getCompressedSize());
 
-  streams::ByteOutputStream *outStream = new streams::ByteOutputStream(region->getRawSize());
+  streams::ByteOutputStream *outStream =
+      new streams::ByteOutputStream(region->getRawSize());
 
   compress->decompress(outStream);
 
@@ -69,11 +77,9 @@ BlockCompressorStream::BlockCompressorStream(InputStream *in_stream, std::unique
   delete[] compressedValue;
 
   delete outStream;
-
 }
 
-BlockCompressorStream::~BlockCompressorStream() {
-}
+BlockCompressorStream::~BlockCompressorStream() {}
 
-}
-}
+}  // namespace data
+}  // namespace cclient

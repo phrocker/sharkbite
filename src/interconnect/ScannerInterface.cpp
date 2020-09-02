@@ -15,10 +15,8 @@
 
 namespace interconnect {
 
-ScannerInterface::ScannerInterface() {
-}
+ScannerInterface::ScannerInterface() {}
 
-ScannerInterface::~ScannerInterface() {
-}
+ScannerInterface::~ScannerInterface() {}
 
-}
+}  // namespace interconnect

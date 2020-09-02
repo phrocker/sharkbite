@@ -14,14 +14,8 @@
 
 #include "data/streaming/DataStream.h"
 
-
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
-
-}
-}
-}
+namespace cclient {
+namespace data {
+namespace streams {}
+}  // namespace data
+}  // namespace cclient

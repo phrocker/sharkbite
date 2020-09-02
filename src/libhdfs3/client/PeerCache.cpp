@@ -19,9 +19,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <inttypes.h>
-
 #include "client/PeerCache.h"
+
+#include <inttypes.h>
 
 namespace Hdfs {
 namespace Internal {
@@ -72,5 +72,5 @@ void PeerCache::addConnection(shared_ptr<Socket> peer,
   LOG(DEBUG1, "PeerCache add for datanode %s uuid(%s).",
       datanode.formatAddress().c_str(), datanode.getDatanodeId().c_str());
 }
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

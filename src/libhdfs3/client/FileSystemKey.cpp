@@ -19,78 +19,79 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Exception.h"
-#include "ExceptionInternal.h"
 #include "FileSystemKey.h"
 
 #include <algorithm>
+
+#include "Exception.h"
+#include "ExceptionInternal.h"
 //#include <libxml/uri.h>
 #include <sstream>
 
 namespace Hdfs {
 namespace Internal {
 
-FileSystemKey::FileSystemKey(const std::string & uri, const char * u) {
-    //xmlURIPtr uriobj;
-    std::stringstream ss;
-    ss.imbue(std::locale::classic());
-    //uriobj = xmlParseURI(uri.c_str());
+FileSystemKey::FileSystemKey(const std::string& uri, const char* u) {
+  // xmlURIPtr uriobj;
+  std::stringstream ss;
+  ss.imbue(std::locale::classic());
+  // uriobj = xmlParseURI(uri.c_str());
 
-    ParserUri uriParser(uri);
+  ParserUri uriParser(uri);
 
-    try {
-        if (uriParser.getHost().empty()) {
-            THROW(InvalidParameter,
-                  "Invalid input: uri: %s is not a valid URI type.", uri.c_str());
-        }
-
-        host = uriParser.getHost();
-
-        if (uriParser.getProtocol().empty()) {
-            scheme = "hdfs";
-        } else {
-            scheme = uriParser.getProtocol();
-        }
-
-        if (strcasecmp(scheme.c_str(), "hdfs")) {
-            THROW(InvalidParameter,
-                  "Invalid input: uri is not a valid URI type.");
-        }
-
-        if (u && strlen(u) > 0) {
-            user = UserInfo(u);
-        }else// else if (NULL == uriobj->user || 0 == strlen(uriobj->user)) {
-
-            user = UserInfo::LocalUser();
-        //} else {
-        //    user = UserInfo(uriobj->user);
-       // }
-
-        ss << user.getEffectiveUser();
-
-        if (uriParser.getPort() == 0) {
-            ss << "@" << uriParser.getHost();
-        } else {
-            std::stringstream s;
-            s.imbue(std::locale::classic());
-            s << uriParser.getPort();
-            port = s.str();
-            ss << "@" << uriParser.getHost() << ":" << uriParser.getPort();
-        }
-
-        authority = ss.str();
-    } catch (...) {
-     //   if (uriobj) {
-       //     xmlFreeURI(uriobj);
-        //}
-
-        throw;
+  try {
+    if (uriParser.getHost().empty()) {
+      THROW(InvalidParameter, "Invalid input: uri: %s is not a valid URI type.",
+            uri.c_str());
     }
 
-    //xmlFreeURI(uriobj);
-    std::transform(authority.begin(), authority.end(), authority.begin(), tolower);
-    std::transform(scheme.begin(), scheme.end(), scheme.begin(), tolower);
+    host = uriParser.getHost();
+
+    if (uriParser.getProtocol().empty()) {
+      scheme = "hdfs";
+    } else {
+      scheme = uriParser.getProtocol();
+    }
+
+    if (strcasecmp(scheme.c_str(), "hdfs")) {
+      THROW(InvalidParameter, "Invalid input: uri is not a valid URI type.");
+    }
+
+    if (u && strlen(u) > 0) {
+      user = UserInfo(u);
+    } else  // else if (NULL == uriobj->user || 0 == strlen(uriobj->user)) {
+
+      user = UserInfo::LocalUser();
+    //} else {
+    //    user = UserInfo(uriobj->user);
+    // }
+
+    ss << user.getEffectiveUser();
+
+    if (uriParser.getPort() == 0) {
+      ss << "@" << uriParser.getHost();
+    } else {
+      std::stringstream s;
+      s.imbue(std::locale::classic());
+      s << uriParser.getPort();
+      port = s.str();
+      ss << "@" << uriParser.getHost() << ":" << uriParser.getPort();
+    }
+
+    authority = ss.str();
+  } catch (...) {
+    //   if (uriobj) {
+    //     xmlFreeURI(uriobj);
+    //}
+
+    throw;
+  }
+
+  // xmlFreeURI(uriobj);
+  std::transform(authority.begin(), authority.end(), authority.begin(),
+                 tolower);
+  std::transform(scheme.begin(), scheme.end(), scheme.begin(), tolower);
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

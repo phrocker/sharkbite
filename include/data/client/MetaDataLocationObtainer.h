@@ -15,49 +15,45 @@
 #ifndef METADATALOCATIONOBTAINER_H_
 #define METADATALOCATIONOBTAINER_H_
 
+#include <algorithm>
 #include <set>
 #include <vector>
-#include <algorithm>
 
-#include "TabletLocationObtainer.h"
-
-#include "../constructs/column.h"
 #include "../constructs/StructureDefinitions.h"
 #include "../constructs/client/Instance.h"
+#include "../constructs/column.h"
 #include "../constructs/security/AuthInfo.h"
+#include "TabletLocationObtainer.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 
-namespace cclient
-{
-  namespace impl
-  {
+namespace cclient {
+namespace impl {
 
-    /**
+/**
  * Location obtainer dedicated to retreiving metadata tablets
  **/
-    class MetaDataLocationObtainer : public TabletLocationObtainer
-    {
-
-    public:
-      /**
+class MetaDataLocationObtainer : public TabletLocationObtainer {
+ public:
+  /**
    * Constructor.
    * @param instance instance
    **/
-      explicit MetaDataLocationObtainer(std::shared_ptr<cclient::data::Instance> instance)
-          : instance(instance),
-            logger(logging::LoggerFactory<MetaDataLocationObtainer>::getLogger())
-      {
-        columns.emplace_back(cclient::data::Column(METADATA_CURRENT_LOCATION_COLUMN_FAMILY));
-        columns.emplace_back(cclient::data::Column(METADATA_TABLET_COLUMN_FAMILY,
-                                                   METADATA_PREV_ROW_COLUMN_CQ));
-        columns.emplace_back(cclient::data::Column(METADATA_FILE_COLUMN_FAMILY));
-        std::sort(columns.begin(), columns.end());
-      }
+  explicit MetaDataLocationObtainer(
+      std::shared_ptr<cclient::data::Instance> instance)
+      : instance(instance),
+        logger(logging::LoggerFactory<MetaDataLocationObtainer>::getLogger()) {
+    columns.emplace_back(
+        cclient::data::Column(METADATA_CURRENT_LOCATION_COLUMN_FAMILY));
+    columns.emplace_back(cclient::data::Column(METADATA_TABLET_COLUMN_FAMILY,
+                                               METADATA_PREV_ROW_COLUMN_CQ));
+    columns.emplace_back(cclient::data::Column(METADATA_FILE_COLUMN_FAMILY));
+    std::sort(columns.begin(), columns.end());
+  }
 
-      virtual ~MetaDataLocationObtainer();
+  virtual ~MetaDataLocationObtainer();
 
-      /**
+  /**
    * Finds tablet
    * @param credentials connecting user's credentials
    * @param source source tablet location
@@ -66,9 +62,11 @@ namespace cclient
    * @param parent parent location obtainer
    * @returns a list of tablet locations for the range
    **/
-      std::vector<cclient::data::TabletLocation> findTablet(cclient::data::security::AuthInfo *credentials, cclient::data::TabletLocation *source, std::string row, std::string stopRow,
-                                                            TabletLocator *parent);
-      /**
+  std::vector<cclient::data::TabletLocation> findTablet(
+      cclient::data::security::AuthInfo *credentials,
+      cclient::data::TabletLocation *source, std::string row,
+      std::string stopRow, TabletLocator *parent);
+  /**
    * Finds tablet
    * @param credentials connecting user's credentials
    * @param source source tablet location
@@ -77,22 +75,24 @@ namespace cclient
    * @param parent parent location obtainer
    * @returns a list of tablet locations for the range
    **/
-      std::vector<cclient::data::TabletLocation> findTablet(cclient::data::security::AuthInfo *credentials, std::string tabletserver,
-                                                            std::map<cclient::data::KeyExtent, std::vector<cclient::data::Range>> *map, TabletLocator *parent)
-      {
-        return std::vector<cclient::data::TabletLocation>();
-      }
+  std::vector<cclient::data::TabletLocation> findTablet(
+      cclient::data::security::AuthInfo *credentials, std::string tabletserver,
+      std::map<cclient::data::KeyExtent, std::vector<cclient::data::Range>>
+          *map,
+      TabletLocator *parent) {
+    return std::vector<cclient::data::TabletLocation>();
+  }
 
-    protected:
-      // columns to locate
-      std::vector<cclient::data::Column> columns;
-      // instance
-      std::shared_ptr<cclient::data::Instance> instance;
+ protected:
+  // columns to locate
+  std::vector<cclient::data::Column> columns;
+  // instance
+  std::shared_ptr<cclient::data::Instance> instance;
 
-    private:
-      std::shared_ptr<logging::Logger> logger;
-    };
+ private:
+  std::shared_ptr<logging::Logger> logger;
+};
 
-  } /* namespace impl */
+} /* namespace impl */
 } /* namespace cclient */
 #endif /* METADATALOCATIONOBTAINER_H_ */

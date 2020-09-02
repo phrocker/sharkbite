@@ -15,15 +15,14 @@
 #ifndef CLIENTRANSPORT_H_
 #define CLIENTTRANSPORT_H_
 
-#include "Transport.h"
 #include "ServerConnection.h"
+#include "Transport.h"
 
 namespace interconnect {
 
-template<typename T>
+template <typename T>
 class ClientTransport : public Transporter<T> {
  public:
-
 };
 
 } /* namespace interconnect */

@@ -13,21 +13,25 @@
  */
 #include "writer/impl/SinkImpl.h"
 
+#include "writer/impl/../../data/constructs/Key.h"
 #include "writer/impl/../../data/constructs/KeyValue.h"
 #include "writer/impl/../../data/constructs/Mutation.h"
-#include "writer/impl/../../data/exceptions/ClientException.h"
-#include "writer/impl/../../data/constructs/Key.h"
 #include "writer/impl/../../data/constructs/value.h"
+#include "writer/impl/../../data/exceptions/ClientException.h"
 #include "writer/impl/WriterHeuristic.h"
 
 namespace writer {
-Writer::Writer(std::shared_ptr<cclient::data::Instance> instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+Writer::Writer(std::shared_ptr<cclient::data::Instance> instance,
+               interconnect::TableOperations<
+                   cclient::data::KeyValue,
+                   scanners::ResultBlock<cclient::data::KeyValue>> *tops,
                cclient::data::security::Authorizations *auths, uint16_t threads)
-    : tops(tops),
-      Sink<cclient::data::KeyValue>(500),
-      mutationQueue(500 * 1.5) {
-  connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(instance);
-  tableLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tops->getTableId()));
+    : tops(tops), Sink<cclient::data::KeyValue>(500), mutationQueue(500 * 1.5) {
+  connectorInstance =
+      dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(
+          instance);
+  tableLocator = cclient::impl::cachedLocators.getLocator(
+      cclient::impl::LocatorKey(connectorInstance, tops->getTableId()));
   credentials = tops->getCredentials();
   writerHeuristic = new WriterHeuristic(threads);
 }
@@ -41,30 +45,34 @@ Writer::~Writer() {
   }
   delete writerHeuristic;
 }
-void Writer::handleFailures(std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
+void Writer::handleFailures(
+    std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) {
   std::vector<std::shared_ptr<cclient::data::Mutation>> newFailures;
 
-  std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
+  std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>>
+      binnedMutations;
   std::set<std::string> locations;
 
-  tableLocator->binMutations(credentials, failures, &binnedMutations, &locations, &newFailures);
+  tableLocator->binMutations(credentials, failures, &binnedMutations,
+                             &locations, &newFailures);
   for (std::string location : locations) {
     std::vector<std::string> locationSplit = split(location, ':');
-    std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef = std::make_shared<cclient::data::tserver::ServerDefinition>(credentials, nullptr, locationSplit.at(0),
-                                                                                                                                    atoi(locationSplit.at(1).c_str()));
-    writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
-
+    std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef =
+        std::make_shared<cclient::data::tserver::ServerDefinition>(
+            credentials, nullptr, locationSplit.at(0),
+            atoi(locationSplit.at(1).c_str()));
+    writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(),
+                           binnedMutations.at(location));
   }
 
   writerHeuristic->push_failures(failures);
-
 }
 void Writer::flush(bool override) {
   std::vector<std::shared_ptr<cclient::data::Mutation>> failures;
   writerHeuristic->restart_failures(&failures);
   handleFailures(&failures);
   while ((sinkQueue.size_approx() + mutationQueue.size_approx()) > 0) {
-    std::vector<std::shared_ptr<cclient::data::KeyValue> > kv;
+    std::vector<std::shared_ptr<cclient::data::KeyValue>> kv;
 
     size_t dequeued = 0;
     for (int i = 0; i < queueSize; i++) {
@@ -79,32 +87,33 @@ void Writer::flush(bool override) {
     std::shared_ptr<cclient::data::Mutation> prevMutation = nullptr;
     std::vector<std::shared_ptr<cclient::data::Mutation>> mutation;
     for (size_t i = 0; i < dequeued; i++) {
-
       std::shared_ptr<cclient::data::Key> key = kv.at(i)->getKey();
       std::shared_ptr<cclient::data::Value> value = kv.at(i)->getValue();
       if (nullptr != prevMutation) {
-        std::pair<char*, size_t> row = key->getRow();
+        std::pair<char *, size_t> row = key->getRow();
         if (row.second > 0) {
           std::string rowStr = std::string(row.first, row.second);
           if (prevMutation->getRow() == rowStr) {
-
-            prevMutation->put(key->getColFamilyStr(), key->getColQualifierStr(), key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(), value->data(), value->size());
+            prevMutation->put(key->getColFamilyStr(), key->getColQualifierStr(),
+                              key->getColVisibilityStr(), key->getTimeStamp(),
+                              key->isDeleted(), value->data(), value->size());
             continue;
           }
-
         }
-
       }
       auto m = std::make_shared<cclient::data::Mutation>(key->getRowStr());
-      m->put(key->getColFamilyStr(), key->getColQualifierStr(), key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(), value->data(), value->size());
+      m->put(key->getColFamilyStr(), key->getColQualifierStr(),
+             key->getColVisibilityStr(), key->getTimeStamp(), key->isDeleted(),
+             value->data(), value->size());
       prevMutation = m;
       mutation.push_back(m);
-
     }
 
-    //cclient::data::Mutation **mut = new std::shared_ptr<cclient::data::Mutation>[queueSize];
+    // cclient::data::Mutation **mut = new
+    // std::shared_ptr<cclient::data::Mutation>[queueSize];
     std::vector<std::shared_ptr<cclient::data::Mutation>> mut(queueSize);
-    //cclient::data::Mutation **mut = new std::shared_ptr<cclient::data::Mutation>[queueSize];
+    // cclient::data::Mutation **mut = new
+    // std::shared_ptr<cclient::data::Mutation>[queueSize];
 
     dequeued = 0;
     for (uint32_t i = 0; i < queueSize;) {
@@ -119,18 +128,23 @@ void Writer::flush(bool override) {
       mutation.push_back(mut.at(i));
     }
 
-    //delete kv;
+    // delete kv;
 
-    binning: std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>> binnedMutations;
+  binning:
+    std::map<std::string, std::shared_ptr<cclient::data::TabletServerMutations>>
+        binnedMutations;
     std::set<std::string> locations;
     try {
-      tableLocator->binMutations(credentials, &mutation, &binnedMutations, &locations, &failures);
+      tableLocator->binMutations(credentials, &mutation, &binnedMutations,
+                                 &locations, &failures);
       for (std::string location : locations) {
         std::vector<std::string> locationSplit = split(location, ':');
-        std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef = std::make_shared<cclient::data::tserver::ServerDefinition>(credentials, nullptr, locationSplit.at(0),
-                                                                                                                                        atoi(locationSplit.at(1).c_str()));
-        writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(), binnedMutations.at(location));
-
+        std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef =
+            std::make_shared<cclient::data::tserver::ServerDefinition>(
+                credentials, nullptr, locationSplit.at(0),
+                atoi(locationSplit.at(1).c_str()));
+        writerHeuristic->write(rangeDef, connectorInstance->getConfiguration(),
+                               binnedMutations.at(location));
       }
     } catch (const cclient::exceptions::ClientException &ce) {
       if (ce.getErrorCode() == NO_LOCATION_IDENTIFIED) {
@@ -153,19 +167,13 @@ void Writer::flush(bool override) {
         throw ce;
 
     } catch (const apache::thrift::transport::TTransportException &tpe) {
-
       flush(override);
-
     }
-
   }
 
   if (override) {
-    if (writerHeuristic->close() != 0)
-      flush(override);
+    if (writerHeuristic->close() != 0) flush(override);
   }
-
 }
 
-}
-
+}  // namespace writer

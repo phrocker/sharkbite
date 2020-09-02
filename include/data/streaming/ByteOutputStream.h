@@ -16,12 +16,13 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
-#include <vector>
-#include <iostream>
-#include <typeinfo>
-#include <stdexcept>
-#include <stdint.h>
 #include <arpa/inet.h>
+#include <stdint.h>
+
+#include <iostream>
+#include <stdexcept>
+#include <typeinfo>
+#include <vector>
 
 #include "OutputStream.h"
 
@@ -33,9 +34,7 @@ namespace streams {
  * Designed after hadoop output streams
  */
 class ByteOutputStream : public OutputStream {
-
  public:
-
   ByteOutputStream(size_t initial_size, OutputStream *out_stream = NULL);
 
   virtual ~ByteOutputStream();
@@ -44,9 +43,9 @@ class ByteOutputStream : public OutputStream {
 
   void getByteArray(char *inArray, size_t inArraySize);
 
-  char* getByteArray();
+  char *getByteArray();
 
-  char* getByteArrayAtPosition();
+  char *getByteArrayAtPosition();
   size_t getSize();
   void setOutputStreamRef(OutputStream *out_stream);
 
@@ -59,7 +58,7 @@ class ByteOutputStream : public OutputStream {
   virtual uint64_t write(const uint8_t *bytes, long cnt);
 
   virtual uint64_t writeBytes(const char *bytes, size_t cnt) {
-    return writeBytes((const uint8_t*) bytes, cnt);
+    return writeBytes((const uint8_t *)bytes, cnt);
   }
 
   virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt);
@@ -85,48 +84,41 @@ class ByteOutputStream : public OutputStream {
   // size of the steram.
   size_t size;
   // buffered array.
-  //char *array;
+  // char *array;
   std::vector<char> array;
   // output stream reference.
   OutputStream *output_stream_ref;
-
 };
 
 class BigEndianByteStream : public ByteOutputStream {
  public:
-
   BigEndianByteStream(size_t initial_size, OutputStream *out_stream = NULL)
-      :
-      ByteOutputStream(initial_size, out_stream) {
-
-  }
+      : ByteOutputStream(initial_size, out_stream) {}
 
   uint64_t writeShort(short shortVal) {
-
     return ByteOutputStream::writeShort(htons(shortVal));
   }
 
   uint64_t writeInt(int intVal) {
-
     return ByteOutputStream::writeInt(htonl(intVal));
   }
 
   uint64_t writeLong(uint64_t val) {
-
     return ByteOutputStream::writeLong(htonlw(val));
   }
 
   virtual uint64_t writeVLong(const int64_t n = 0) {
-    return ByteOutputStream::writeHadoopLong((int64_t) htonlw(n));
+    return ByteOutputStream::writeHadoopLong((int64_t)htonlw(n));
   }
 
   virtual uint64_t writeEncodedLong(const int64_t n = 0) {
-    return ByteOutputStream::writeEncodedLong((int64_t) htonlw(n));
+    return ByteOutputStream::writeEncodedLong((int64_t)htonlw(n));
   }
 
   virtual uint64_t writeBytes(const char *bytes, size_t cnt) {
     return ByteOutputStream::writeBytes(bytes, cnt);
   }
+
  private:
   /**
    Removed the check for endianness as we know
@@ -139,10 +131,9 @@ class BigEndianByteStream : public ByteOutputStream {
 
     return (static_cast<uint64_t>(low_part) << 32) | high_part;
   }
-
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 
 #endif

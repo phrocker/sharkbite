@@ -17,27 +17,19 @@
 
 #include <string>
 
-
-
 namespace cclient {
 namespace exceptions {
 
-class IterationInterruptedException: public std::exception {
-public:
-    explicit IterationInterruptedException(std::string excp) :
-        excp_str(excp) {
+class IterationInterruptedException : public std::exception {
+ public:
+  explicit IterationInterruptedException(std::string excp) : excp_str(excp) {}
 
-    }
+  ~IterationInterruptedException() throw() {}
+  const char *what() { return excp_str.c_str(); }
 
-    ~IterationInterruptedException() throw () {
-
-    }
-    const char *what() {
-        return excp_str.c_str();
-    }
-private:
-    std::string excp_str;
+ private:
+  std::string excp_str;
 };
-} /* namespace data */
+}  // namespace exceptions
 } /* namespace cclient */
 #endif /* ITERINTERRUPT_H */

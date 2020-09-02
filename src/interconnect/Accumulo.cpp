@@ -12,32 +12,29 @@
  * limitations under the License.
  */
 #include "interconnect/Accumulo.h"
-#include "interconnect/../data/constructs/security/AuthInfo.h"
-#include "interconnect/../scanner/constructs/Results.h"
-#include <string>
-
-#include <protocol/TBinaryProtocol.h>
-#include <protocol/TCompactProtocol.h>
-#include <server/TSimpleServer.h>
-
-#include <transport/TServerSocket.h>
-#include <transport/TServerTransport.h>
-
-#include <transport/TTransport.h>
-#include <transport/TSocket.h>
-#include <server/TNonblockingServer.h>
-#include <transport/TBufferTransports.h>
 
 #include <concurrency/ThreadManager.h>
+#include <protocol/TBinaryProtocol.h>
+#include <protocol/TCompactProtocol.h>
+#include <server/TNonblockingServer.h>
+#include <server/TSimpleServer.h>
+#include <stdio.h>  /* printf, scanf, puts, NULL */
+#include <stdlib.h> /* srand, rand */
+#include <time.h>   /* time */
+#include <transport/TBufferTransports.h>
+#include <transport/TServerSocket.h>
+#include <transport/TServerTransport.h>
+#include <transport/TSocket.h>
+#include <transport/TTransport.h>
 
-#include <stdio.h>      /* printf, scanf, puts, NULL */
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
+#include <string>
 
-#include "interconnect/../data/constructs/Mutation.h"
-#include "interconnect/TabletServer.h"
-#include "interconnect/../data/exceptions/ClientException.h"
 #include "data/constructs/client/zookeeperinstance.h"
+#include "interconnect/../data/constructs/Mutation.h"
+#include "interconnect/../data/constructs/security/AuthInfo.h"
+#include "interconnect/../data/exceptions/ClientException.h"
+#include "interconnect/../scanner/constructs/Results.h"
+#include "interconnect/TabletServer.h"
 
 namespace interconnect {
 
@@ -46,9 +43,13 @@ namespace interconnect {
  * @param credentials incoming user credentials
  * @param instance incoming instance
  */
-AccumuloConnector::AccumuloConnector(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> inst)
-    : RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(credentials, inst.get()){
-
+AccumuloConnector::AccumuloConnector(
+    cclient::data::security::AuthInfo &credentials,
+    std::shared_ptr<cclient::data::Instance> inst)
+    : RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                    cclient::data::KeyValue,
+                    scanners::ResultBlock<cclient::data::KeyValue>>(
+          credentials, inst.get()) {
   // copy the instance information
   instance = inst;
 
@@ -69,11 +70,14 @@ AccumuloConnector::AccumuloConnector(cclient::data::security::AuthInfo &credenti
   ConnectorService conn("master", masterSplit.at(0), port);
 
   // create time out from system configuration
-  uint64_t timeout = instance->getConfiguration()->getLong("MASTER_TIMEOUT", 60000);
+  uint64_t timeout =
+      instance->getConfiguration()->getLong("MASTER_TIMEOUT", 60000);
 
   // even though we're within the accumulo master, tserver object is just
   // a reference to the connecting server
-  tServer = std::make_shared<ServerConnection>(conn.getAddressString(interconnect::INTERCONNECT_TYPES::MASTER_CLIENT), port, timeout);
+  tServer = std::make_shared<ServerConnection>(
+      conn.getAddressString(interconnect::INTERCONNECT_TYPES::MASTER_CLIENT),
+      port, timeout);
 
   cachedTransport = myTransportPool->getTransporter(tServer);
 
@@ -81,23 +85,21 @@ AccumuloConnector::AccumuloConnector(cclient::data::security::AuthInfo &credenti
 
   findTservers();
 
-  auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
+  auto tserverConnection =
+      myTransportPool->getTransporter(&tabletServers, true).second;
 
   // let's authenticate the user early
   tserverConnection->getTransport()->closeAndCreateClient();
   tserverConnection->getTransport()->authenticate(&credentials);
 
   myTransportPool->freeTransport(tserverConnection);
-
 }
-
 
 void AccumuloConnector::findTservers() {
   tabletServers = instance->getServers();
 }
 
-
-cclient::data::AccumuloInfo AccumuloConnector::getStatistics(){
+cclient::data::AccumuloInfo AccumuloConnector::getStatistics() {
   return getTransport().get()->getStatistics(&credentials);
 }
 
@@ -106,12 +108,17 @@ cclient::data::AccumuloInfo AccumuloConnector::getStatistics(){
  * @param table incoming table
  * @returns instance of table ops for this type of interface
  */
-std::shared_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::string &table) {
+std::shared_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(
+    const std::string &table) {
   if (IsEmpty(&table))
     throw cclient::exceptions::ClientException(TABLE_OR_NAMESPACE_EMPTY);
-  auto tserverConnection = myTransportPool->getTransporter(&tabletServers, true).second;
+  auto tserverConnection =
+      myTransportPool->getTransporter(&tabletServers, true).second;
   tserverConnection->getTransport()->closeAndCreateClient();
-  return std::make_shared<AccumuloTableOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, table, this, tserverConnection, myTransportPool);
+  return std::make_shared<AccumuloTableOperations>(
+      AccumuloBaseConnector<
+          interconnect::AccumuloCoordinatorTransporter>::getCredentials(),
+      instance, table, this, tserverConnection, myTransportPool);
 }
 
 /**
@@ -119,8 +126,12 @@ std::shared_ptr<AccumuloTableOperations> AccumuloConnector::tableOps(const std::
  * @param nm namespace to create. optional argument.
  * @returns Namespace Operations.
  */
-std::shared_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(const std::string &nm) {
-  return std::make_shared<NamespaceOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), nm, instance, this, myTransportPool);
+std::shared_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(
+    const std::string &nm) {
+  return std::make_shared<NamespaceOperations>(
+      AccumuloBaseConnector<
+          interconnect::AccumuloCoordinatorTransporter>::getCredentials(),
+      nm, instance, this, myTransportPool);
 }
 
 /**
@@ -128,15 +139,16 @@ std::shared_ptr<NamespaceOperations> AccumuloConnector::namespaceOps(const std::
  * @returns new Security operations argument.
  */
 std::shared_ptr<SecurityOperations> AccumuloConnector::securityOps() {
-
   auto ptr = myTransportPool->getTransporter(&tabletServers, true).second;
   ptr->getTransport()->closeAndCreateClient();
-  return std::make_shared<SecurityOperations>(AccumuloBaseConnector<interconnect::AccumuloCoordinatorTransporter>::getCredentials(), instance, ptr, myTransportPool);
+  return std::make_shared<SecurityOperations>(
+      AccumuloBaseConnector<
+          interconnect::AccumuloCoordinatorTransporter>::getCredentials(),
+      instance, ptr, myTransportPool);
 }
 
 /**
  * Master connect destructor.
  */
-AccumuloConnector::~AccumuloConnector() {
-}
-}
+AccumuloConnector::~AccumuloConnector() {}
+}  // namespace interconnect

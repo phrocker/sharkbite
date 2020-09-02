@@ -18,6 +18,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+
 #include "data/constructs/inputvalidation.h"
 #include "data/exceptions/IllegalArgumentException.h"
 
@@ -25,49 +26,34 @@ namespace interconnect {
 
 class ServerConnection {
  public:
-
   explicit ServerConnection(const std::shared_ptr<ServerConnection> &other)
-      : host(other->host),
-        port(other->port),
-        timeout(other->timeout) {
+      : host(other->host), port(other->port), timeout(other->timeout) {
     hostAndPort = host + ":" + std::to_string(port);
   }
   ServerConnection(std::string loc, uint16_t port, uint64_t timeout)
-      : host(loc),
-        port(port),
-        timeout(timeout) {
+      : host(loc), port(port), timeout(timeout) {
     if (IsEmpty(&loc)) {
-      throw cclient::exceptions::IllegalArgumentException("Invalid Input; host name is empty");
+      throw cclient::exceptions::IllegalArgumentException(
+          "Invalid Input; host name is empty");
     }
     hostAndPort = host + ":" + std::to_string(port);
   }
 
-  virtual ~ServerConnection() {
+  virtual ~ServerConnection() {}
 
-  }
+  std::string getHost() const { return host; }
 
-  std::string getHost() const {
-    return host;
-  }
+  uint16_t getPort() const { return port; }
 
-  uint16_t getPort() const {
-    return port;
-  }
+  uint64_t getTimeout() const { return timeout; }
 
-  uint64_t getTimeout() const {
-    return timeout;
-  }
-
-  std::ostream& operator<<(std::ostream& os) {
+  std::ostream &operator<<(std::ostream &os) {
     return os << host << ":" << port << " " << timeout << std::endl;
   }
 
-  std::string toString() const {
-    return hostAndPort;
-  }
+  std::string toString() const { return hostAndPort; }
 
   ServerConnection &operator=(const ServerConnection &rhs) {
-
     host = rhs.host;
     port = rhs.port;
     timeout = rhs.timeout;
@@ -78,11 +64,9 @@ class ServerConnection {
   bool operator==(const ServerConnection &rhs) {
     bool result = true;
     result = (host == rhs.host);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (port == rhs.port);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (timeout == rhs.timeout);
     if (!result)
       return false;
@@ -90,18 +74,14 @@ class ServerConnection {
       return true;
   }
 
-  bool operator!=(const ServerConnection &rhs) {
-    return !(*this == rhs);
-  }
+  bool operator!=(const ServerConnection &rhs) { return !(*this == rhs); }
 
   bool operator<(const ServerConnection &rhs) const {
     bool result = true;
     result = (host < rhs.host);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (port < rhs.port);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (timeout < rhs.timeout);
     if (!result)
       return false;
@@ -112,11 +92,9 @@ class ServerConnection {
   bool operator<(const std::shared_ptr<ServerConnection> &rhs) const {
     bool result = true;
     result = (host < rhs->host);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (port < rhs->port);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (timeout < rhs->timeout);
     if (!result)
       return false;
@@ -127,11 +105,9 @@ class ServerConnection {
   bool operator>(const ServerConnection &rhs) const {
     bool result = true;
     result = (host > rhs.host);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (port > rhs.port);
-    if (!result)
-      return false;
+    if (!result) return false;
     result = (timeout > rhs.timeout);
     if (!result)
       return false;
@@ -147,7 +123,8 @@ class ServerConnection {
 };
 
 struct Cmp_ServerConnection {
-  bool operator()(const ServerConnection& first, const ServerConnection& second) {
+  bool operator()(const ServerConnection &first,
+                  const ServerConnection &second) {
     bool less = first.getHost() < second.getHost();
     if (less)
       return true;
@@ -171,10 +148,11 @@ struct Cmp_ServerConnection {
 };
 
 struct Cmp_ServerConnectionSP {
-  bool operator()(const std::shared_ptr<ServerConnection>& first, const std::shared_ptr<ServerConnection>& second) const {
+  bool operator()(const std::shared_ptr<ServerConnection> &first,
+                  const std::shared_ptr<ServerConnection> &second) const {
     return *first.get() < *second.get();
   }
 };
 
-}
+}  // namespace interconnect
 #endif /* SERVERCONNECTION_H_ */

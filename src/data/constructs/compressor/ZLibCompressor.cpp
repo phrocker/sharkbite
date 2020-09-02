@@ -11,13 +11,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdexcept>
+#include "data/constructs/compressor/zlibCompressor.h"
+
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include "data/constructs/compressor/../../streaming/OutputStream.h"
 #include "data/constructs/compressor/compressor.h"
-#include "data/constructs/compressor/zlibCompressor.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 
 typedef std::vector<char> buffer_t;
@@ -29,33 +30,32 @@ namespace compression {
  * Compression method.
  * @param out_stream.
  */
-void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) {
+void ZLibCompressor::compress(
+    cclient::data::streams::OutputStream *out_stream) {
   if (!init)
-    throw std::runtime_error("Failure during compression; compression not initialized");
+    throw std::runtime_error(
+        "Failure during compression; compression not initialized");
 
-  if (len == 0)
-    return;
+  if (len == 0) return;
 
   // variable used for the return code.
   int r = 0;
 
-  c_stream.zalloc = (alloc_func) 0;
-  c_stream.zfree = (free_func) 0;
-  c_stream.opaque = (voidpf) 0;
+  c_stream.zalloc = (alloc_func)0;
+  c_stream.zfree = (free_func)0;
+  c_stream.opaque = (voidpf)0;
 
   r = deflateInit(&c_stream, 6);
-  if (r != Z_OK)
-    throw std::runtime_error("Failure initializing compression");
+  if (r != Z_OK) throw std::runtime_error("Failure initializing compression");
 
   rawSize += len;
   // estimate the output buffer.
   output_length = len + len / 1000 + 12 + 1;
 
-  if (output_length > out_buf.size())
-    out_buf.resize(output_length);
-  //out_buf = new Bytef[output_length];
+  if (output_length > out_buf.size()) out_buf.resize(output_length);
+  // out_buf = new Bytef[output_length];
 
-  Bytef *casted_buffer = (Bytef*) ((char*) (buffer + off));
+  Bytef *casted_buffer = (Bytef *)((char *)(buffer + off));
 
   c_stream.next_in = casted_buffer;
   c_stream.next_out = out_buf.data();
@@ -71,7 +71,6 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
    * as many attempts at compression as the compressor will allow.
    */
   while (c_stream.total_in < len && c_stream.total_out < output_length) {
-
     r = deflate(&c_stream, Z_NO_FLUSH);
     if (r != Z_OK)
       throw std::runtime_error("Failure during compression; r != Z_OK");
@@ -82,7 +81,7 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
   if (r == Z_STREAM_END) {
     // if we have successful compression, write the data
     // to the output stream. and increment total_out.
-    out_stream->write((const char*) out_buf.data(), c_stream.total_out);
+    out_stream->write((const char *)out_buf.data(), c_stream.total_out);
 
     total_out += c_stream.total_out;
   } else {
@@ -94,51 +93,53 @@ void ZLibCompressor::compress(cclient::data::streams::OutputStream *out_stream) 
 
   deflateEnd(&c_stream);
   len = 0;
-
 }
 
-#define CHECK_ERR(err, msg) { \
-    if (err != Z_OK) { \
-        throw std::runtime_error ("Failure during decompression"); \
-    } \
-}
+#define CHECK_ERR(err, msg)                                     \
+  {                                                             \
+    if (err != Z_OK) {                                          \
+      throw std::runtime_error("Failure during decompression"); \
+    }                                                           \
+  }
 
 /**
  * Deompression method.
  * @param out_stream.
  */
-void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_stream, char *in_buf, size_t size) {
+void ZLibCompressor::decompress(
+    cclient::data::streams::ByteOutputStream *out_stream, char *in_buf,
+    size_t size) {
   if (!init)
-    throw std::runtime_error("Failure during compression; compression not initialized");
+    throw std::runtime_error(
+        "Failure during compression; compression not initialized");
 
   auto my_len = size == 0 ? len : size;
   char *ptr = in_buf == nullptr ? (buffer + off) : in_buf;
 
-  if (my_len == 0)
-    return;
+  if (my_len == 0) return;
 
   // variable used for the return code.
   int r = 0;
 
-  c_stream.zalloc = (alloc_func) 0;
-  c_stream.zfree = (free_func) 0;
-  c_stream.opaque = (voidpf) 0;
+  c_stream.zalloc = (alloc_func)0;
+  c_stream.zfree = (free_func)0;
+  c_stream.opaque = (voidpf)0;
 
   r = inflateInit(&c_stream);
-  if (r != Z_OK)
-    throw std::runtime_error("Failure initializing compression");
+  if (r != Z_OK) throw std::runtime_error("Failure initializing compression");
 
   rawSize += my_len;
   // estimate the output buffer.
 
   output_length = my_len + my_len / 1000 + 12 + 1;
-  
+
   out_stream->flush();
   out_stream->ensure(output_length);
-  Bytef *casted_buffer = (Bytef*) (ptr);
+  Bytef *casted_buffer = (Bytef *)(ptr);
 
   c_stream.next_in = casted_buffer;
-  c_stream.next_out = (Bytef*)out_stream->getByteArrayAtPosition();    //out_buf.data();
+  c_stream.next_out =
+      (Bytef *)out_stream->getByteArrayAtPosition();  // out_buf.data();
   c_stream.avail_in = my_len;
   c_stream.avail_out = output_length;
   c_stream.total_in = 0;
@@ -154,8 +155,8 @@ void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_st
     do {
       have = 0;
 
-      c_stream.avail_out = output_length;       // H
-      c_stream.next_out = (Bytef*)out_stream->getByteArrayAtPosition();
+      c_stream.avail_out = output_length;  // H
+      c_stream.next_out = (Bytef *)out_stream->getByteArrayAtPosition();
 
       ret = inflate(&c_stream, Z_NO_FLUSH);  // I
 
@@ -168,26 +169,23 @@ void ZLibCompressor::decompress(cclient::data::streams::ByteOutputStream *out_st
         case Z_DATA_ERROR:
         case Z_MEM_ERROR:
 
-          (void) inflateEnd(&c_stream);
-          CHECK_ERR(err, "Z_MEM_ERROR")
-          ;
+          (void)inflateEnd(&c_stream);
+          CHECK_ERR(err, "Z_MEM_ERROR");
       }
 
-      have = output_length - c_stream.avail_out;     // J
+      have = output_length - c_stream.avail_out;  // J
 
       out_stream->ensure(output_length, have);
 
-
-    } while (c_stream.avail_out == 0);         // K
+    } while (c_stream.avail_out == 0);  // K
   }
   total_out += c_stream.total_out;
   err = inflateEnd(&c_stream);
 
   len = 0;
-
 }
 
-}
+}  // namespace compression
 
-}
-}
+}  // namespace data
+}  // namespace cclient

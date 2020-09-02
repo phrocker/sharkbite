@@ -24,22 +24,17 @@ namespace streams {
 
 class EndianTranslationStream : public HadoopDataOutputStream {
  public:
-
   explicit EndianTranslationStream(OutputStream *os)
-      :
-      HadoopDataOutputStream(os) {
-
-  }
+      : HadoopDataOutputStream(os) {}
 
   explicit EndianTranslationStream(std::unique_ptr<OutputStream> os)
-      :
-      HadoopDataOutputStream(os.get()) {
+      : HadoopDataOutputStream(os.get()) {
     ref = std::move(os);
   }
 
   EndianTranslationStream(EndianTranslationStream &&) = delete;
 
-  EndianTranslationStream &operator=(EndianTranslationStream&&) = delete;
+  EndianTranslationStream &operator=(EndianTranslationStream &&) = delete;
 
   virtual ~EndianTranslationStream();
 
@@ -53,18 +48,14 @@ class EndianTranslationStream : public HadoopDataOutputStream {
 
   virtual uint64_t writeEncodedLong(const int64_t n);
 
- protected :
-  virtual bool canReclaim() {
-    return ref == nullptr;
-  }
+ protected:
+  virtual bool canReclaim() { return ref == nullptr; }
 
  private:
-
   std::unique_ptr<OutputStream> ref;
-
 };
 
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

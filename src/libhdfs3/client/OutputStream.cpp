@@ -19,33 +19,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "OutputStream.h"
+
 #include "Atomic.h"
 #include "FileSystemImpl.h"
 #include "Memory.h"
-#include "OutputStream.h"
 #include "OutputStreamImpl.h"
 
 using namespace Hdfs::Internal;
 
 namespace Hdfs {
 
-OutputStream::OutputStream() {
-    impl = new Internal::OutputStreamImpl;
-}
+OutputStream::OutputStream() { impl = new Internal::OutputStreamImpl; }
 
-OutputStream::~OutputStream() {
-    delete impl;
-}
+OutputStream::~OutputStream() { delete impl; }
 
-void OutputStream::open(FileSystem & fs, const char * path, int flag,
-                        const Permission permission, bool createParent, int replication,
-                        int64_t blockSize) {
-    if (!fs.impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void OutputStream::open(FileSystem& fs, const char* path, int flag,
+                        const Permission permission, bool createParent,
+                        int replication, int64_t blockSize) {
+  if (!fs.impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->open(fs.impl->filesystem, path, flag, permission, createParent, replication,
-               blockSize);
+  impl->open(fs.impl->filesystem, path, flag, permission, createParent,
+             replication, blockSize);
 }
 
 /**
@@ -53,38 +50,30 @@ void OutputStream::open(FileSystem & fs, const char * path, int flag,
  * @param buf the data used to append.
  * @param size the data size.
  */
-void OutputStream::append(const char * buf, int64_t size) {
-    impl->append(buf, size);
+void OutputStream::append(const char* buf, int64_t size) {
+  impl->append(buf, size);
 }
 
 /**
  * Flush all data in buffer and waiting for ack.
  * Will block until get all acks.
  */
-void OutputStream::flush() {
-    impl->flush();
-}
+void OutputStream::flush() { impl->flush(); }
 
 /**
  * return the current file length.
  * @return current file length.
  */
-int64_t OutputStream::tell() {
-    return impl->tell();
-}
+int64_t OutputStream::tell() { return impl->tell(); }
 
 /**
  * the same as flush right now.
  */
-void OutputStream::sync() {
-    impl->sync();
-}
+void OutputStream::sync() { impl->sync(); }
 
 /**
  * close the stream.
  */
-void OutputStream::close() {
-    impl->close();
-}
+void OutputStream::close() { impl->close(); }
 
-}
+}  // namespace Hdfs

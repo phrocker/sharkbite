@@ -14,27 +14,17 @@
 #ifndef INCLUDE_INTERCONNECT_STREAMING_STREAMENVIRONMENT_H_
 #define INCLUDE_INTERCONNECT_STREAMING_STREAMENVIRONMENT_H_
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
-class StreamConfiguration
-{
-
-public:
-
-    StreamConfiguration ()
-    {
-
-    }
-
+class StreamConfiguration {
+ public:
+  StreamConfiguration() {}
 };
 
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 
 #endif /* INCLUDE_INTERCONNECT_STREAMING_STREAMENVIRONMENT_H_ */

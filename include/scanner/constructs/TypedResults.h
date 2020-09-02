@@ -16,42 +16,27 @@
 #define TYPEDRESULTS_H_
 
 #include "Results.h"
-namespace scanners
-{
-template<class T, class TypeTo>
-class TypedResults : public ResultIter<T>
-{
+namespace scanners {
+template <class T, class TypeTo>
+class TypedResults : public ResultIter<T> {
+ protected:
+  friend class ResultIter<T>;
+  std::unique_ptr<TypeTo> myVal;
+  T *yourVal;
 
-protected:
-    friend class ResultIter<T>;
-    std::unique_ptr<TypeTo> myVal;
-    T *yourVal;
-public:
+ public:
+  explicit TypedResults(void *copyResultSet)
+      : ResultIter<T>(reinterpret_cast<ResultIter<T> *>(copyResultSet)) {}
 
-    explicit TypedResults (void *copyResultSet) :
-        ResultIter<T> (reinterpret_cast<ResultIter<T>*> (copyResultSet))
-    {
+  explicit TypedResults(ResultBlock<T> *copyResultSet)
+      : ResultIter<T>(copyResultSet) {}
 
-    }
-
-    explicit TypedResults (ResultBlock<T> *copyResultSet) :
-        ResultIter<T> (copyResultSet)
-    {
-
-    }
-
-    std::unique_ptr<TypeTo>
-    operator* ()
-    {
-        yourVal = (ResultIter<T>::operator* ()).release();
-        myVal = std::unique_ptr<TypeTo>( reinterpret_cast<TypeTo*> (&yourVal) );
-        return std::move(myVal);
-    }
-    virtual
-    ~TypedResults ()
-    {
-
-    }
+  std::unique_ptr<TypeTo> operator*() {
+    yourVal = (ResultIter<T>::operator*()).release();
+    myVal = std::unique_ptr<TypeTo>(reinterpret_cast<TypeTo *>(&yourVal));
+    return std::move(myVal);
+  }
+  virtual ~TypedResults() {}
 };
-}
+}  // namespace scanners
 #endif /* TYPEDRESULTS_H_ */

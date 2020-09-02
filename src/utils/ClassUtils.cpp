@@ -17,11 +17,14 @@
  */
 
 #include "utils/ClassUtils.h"
-#include "utils/StringUtils.h"
+
 #include <iostream>
 #include <string>
 
-bool ClassUtils::shortenClassName(const std::string &class_name, std::string &out) {
+#include "utils/StringUtils.h"
+
+bool ClassUtils::shortenClassName(const std::string &class_name,
+                                  std::string &out) {
   std::string class_delim = "::";
   auto class_split = utils::StringUtils::split(class_name, class_delim);
   // support . and ::
@@ -44,4 +47,3 @@ bool ClassUtils::shortenClassName(const std::string &class_name, std::string &ou
   out = utils::StringUtils::join(class_delim, class_split);
   return true;
 }
-

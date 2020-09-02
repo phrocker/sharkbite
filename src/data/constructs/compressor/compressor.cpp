@@ -11,34 +11,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <stdint.h>
-#include <stdexcept>
-#include <cstdio>
-#include <cstdlib>
-#include <vector>
-#include <cstring>
-
-
-
 #include "data/constructs/compressor/compressor.h"
 
+#include <stdint.h>
 
-void
-cclient::data::compression::Compressor::setInput (const char *b, uint32_t offset, uint32_t length)
-{
-    // grow the buffer, but do not remove it. 
-    if (buffer != nullptr){
-        if (length > size){
-            delete[] buffer;
-            buffer=nullptr;
-            size = length;
-            buffer = new char[length];
-        }
-    }else{
-        buffer = new char[length];
-        size = length;
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <stdexcept>
+#include <vector>
+
+void cclient::data::compression::Compressor::setInput(const char *b,
+                                                      uint32_t offset,
+                                                      uint32_t length) {
+  // grow the buffer, but do not remove it.
+  if (buffer != nullptr) {
+    if (length > size) {
+      delete[] buffer;
+      buffer = nullptr;
+      size = length;
+      buffer = new char[length];
     }
-    memcpy_fast (buffer, b, length);
-    off = offset;
-    len = length;
+  } else {
+    buffer = new char[length];
+    size = length;
+  }
+  memcpy_fast(buffer, b, length);
+  off = offset;
+  len = length;
 }

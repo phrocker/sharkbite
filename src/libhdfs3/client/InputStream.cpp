@@ -19,9 +19,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "InputStream.h"
+
 #include "FileSystemImpl.h"
 #include "FileSystemInter.h"
-#include "InputStream.h"
 #include "InputStreamImpl.h"
 #include "InputStreamInter.h"
 
@@ -29,13 +30,9 @@ using namespace Hdfs::Internal;
 
 namespace Hdfs {
 
-InputStream::InputStream() {
-    impl = new Internal::InputStreamImpl;
-}
+InputStream::InputStream() { impl = new Internal::InputStreamImpl; }
 
-InputStream::~InputStream() {
-    delete impl;
-}
+InputStream::~InputStream() { delete impl; }
 
 /**
  * Open a file to read
@@ -43,23 +40,23 @@ InputStream::~InputStream() {
  * @param path the file to be read.
  * @param verifyChecksum verify the checksum.
  */
-void InputStream::open(FileSystem & fs, const char * path,
-                       bool verifyChecksum) {
-    if (!fs.impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void InputStream::open(FileSystem& fs, const char* path, bool verifyChecksum) {
+  if (!fs.impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->open(fs.impl->filesystem, path, verifyChecksum);
+  impl->open(fs.impl->filesystem, path, verifyChecksum);
 }
 
 /**
  * To read data from hdfs.
  * @param buf the buffer used to filled.
  * @param size buffer size.
- * @return return the number of bytes filled in the buffer, it may less than size.
+ * @return return the number of bytes filled in the buffer, it may less than
+ * size.
  */
-int32_t InputStream::read(char * buf, int32_t size) {
-    return impl->read(buf, size);
+int32_t InputStream::read(char* buf, int32_t size) {
+  return impl->read(buf, size);
 }
 
 /**
@@ -67,35 +64,27 @@ int32_t InputStream::read(char * buf, int32_t size) {
  * @param buf the buffer used to filled.
  * @param size the number of bytes to be read.
  */
-void InputStream::readFully(char * buf, int64_t size) {
-    impl->readFully(buf, size);
+void InputStream::readFully(char* buf, int64_t size) {
+  impl->readFully(buf, size);
 }
 
-int64_t InputStream::available() {
-    return impl->available();
-}
+int64_t InputStream::available() { return impl->available(); }
 
 /**
  * To move the file point to the given position.
  * @param pos the given position.
  */
-void InputStream::seek(int64_t pos) {
-    impl->seek(pos);
-}
+void InputStream::seek(int64_t pos) { impl->seek(pos); }
 
 /**
  * To get the current file point position.
  * @return the position of current file point.
  */
-int64_t InputStream::tell() {
-    return impl->tell();
-}
+int64_t InputStream::tell() { return impl->tell(); }
 
 /**
  * Close the sthream.
  */
-void InputStream::close() {
-    impl->close();
-}
+void InputStream::close() { impl->close(); }
 
-}
+}  // namespace Hdfs

@@ -14,24 +14,16 @@
 
 #include "data/constructs/security/AuthInfo.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace security
-{
+namespace cclient {
+namespace data {
+namespace security {
 
-AuthInfo::AuthInfo (std::string user, std::string password, std::string instanceId) :
-    user (user), password (password), instanceId (instanceId)
-{
+AuthInfo::AuthInfo(std::string user, std::string password,
+                   std::string instanceId)
+    : user(user), password(password), instanceId(instanceId) {}
 
-}
+AuthInfo::~AuthInfo() {}
 
-AuthInfo::~AuthInfo ()
-{
-
-}
-
-}
+}  // namespace security
 } /* namespace data */
 } /* namespace cclient */

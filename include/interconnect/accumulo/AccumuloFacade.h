@@ -38,4 +38,3 @@ enum AccumuloFateOperation {
   NAMESPACE_DELETE = 14,
   NAMESPACE_RENAME = 15
 };
-

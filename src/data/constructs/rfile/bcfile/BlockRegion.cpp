@@ -13,9 +13,10 @@
  */
 
 #include "data/constructs/rfile/bcfile/BlockRegion.h"
-#include "data/streaming/ByteOutputStream.h"
 
 #include <iostream>
+
+#include "data/streaming/ByteOutputStream.h"
 
 namespace cclient {
 namespace data {
@@ -27,7 +28,8 @@ uint64_t BlockRegion::read(streams::InputStream *in) {
 }
 
 uint64_t BlockRegion::write(streams::OutputStream *out) {
-  cclient::data::streams::BigEndianByteStream *byteStream = dynamic_cast<cclient::data::streams::BigEndianByteStream*>(out);
+  cclient::data::streams::BigEndianByteStream *byteStream =
+      dynamic_cast<cclient::data::streams::BigEndianByteStream *>(out);
   uint64_t pos = -1;
   if (byteStream != nullptr) {
     byteStream->writeEncodedLong(offset);
@@ -39,8 +41,7 @@ uint64_t BlockRegion::write(streams::OutputStream *out) {
     pos = out->writeEncodedLong(rawSize);
   }
   return pos;
-
 }
 
-}
-}
+}  // namespace data
+}  // namespace cclient

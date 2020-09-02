@@ -14,9 +14,9 @@
 
 #include "data/constructs/security/Authorizations.h"
 
-#include <string>
-#include <set>
 #include <iostream>
+#include <set>
+#include <string>
 
 namespace cclient {
 namespace data {
@@ -45,18 +45,17 @@ int AuthsInit::buildDefaultAuths() {
   return 0;
 }
 
-Authorizations::Authorizations() {
-  AuthsInit::init();
-}
+Authorizations::Authorizations() { AuthsInit::init(); }
 
 bool Authorizations::isValidAuthCharacter(char c) {
-  return AuthsInit::init()->getDefaultAuths()[(int) c];
+  return AuthsInit::init()->getDefaultAuths()[(int)c];
 }
 
-Authorizations::Authorizations(std::string authorizations, char *validCharacters, int valid) {
+Authorizations::Authorizations(std::string authorizations,
+                               char *validCharacters, int valid) {
   AuthsInit::init();
   for (int i = 0; i < valid; i++) {
-    AuthsInit::init()->getDefaultAuths()[(uint8_t) validCharacters[i]] = true;
+    AuthsInit::init()->getDefaultAuths()[(uint8_t)validCharacters[i]] = true;
   }
   addAuthorization(authorizations);
 }
@@ -65,23 +64,19 @@ Authorizations::Authorizations(std::vector<std::string> *authorizations) {
   AuthsInit::init();
   for (auto it = authorizations->begin(); it != authorizations->end(); it++)
     addAuthorization(*it);
-
 }
 
 Authorizations::Authorizations(const std::vector<std::string> &authorizations) {
   AuthsInit::init();
   for (auto it = authorizations.begin(); it != authorizations.end(); it++)
     addAuthorization(*it);
-
 }
 
 void Authorizations::addAuthorization(std::string auth) {
   authStrings.insert(auth);
 }
 
-Authorizations::~Authorizations() {
-
-}
-}
-}
-}
+Authorizations::~Authorizations() {}
+}  // namespace security
+}  // namespace data
+}  // namespace cclient

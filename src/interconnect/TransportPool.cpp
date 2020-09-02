@@ -13,4 +13,3 @@
  */
 
 #include "interconnect/TransportPool.h"
-

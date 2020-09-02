@@ -12,31 +12,28 @@
  * limitations under the License.
  */
 
+#include "interconnect/namespaceOps/NamespaceOperations.h"
+
+#include <mutex>
 #include <sstream>
 #include <string>
-#include <mutex>
 
-#include "data/exceptions/ClientException.h"
-#include "interconnect/namespaceOps/NamespaceOperations.h"
 #include "data/constructs/ConfigurationOptions.h"
+#include "data/exceptions/ClientException.h"
 
 namespace interconnect {
 
-NamespaceOperations::~NamespaceOperations() {
-
-}
+NamespaceOperations::~NamespaceOperations() {}
 
 bool NamespaceOperations::exists(std::string name) {
-  if (IsEmpty(&name))
-    name = myNamespace;
+  if (IsEmpty(&name)) name = myNamespace;
   return namespaces.find(name) != std::end(namespaces);
 }
 
 void NamespaceOperations::create(std::string name) {
   auto baseTransport = clientInterface->getTransport().get();
 
-  if (IsEmpty(&name))
-    name = myNamespace;
+  if (IsEmpty(&name)) name = myNamespace;
   if (!baseTransport->createNamespace(credentials, name)) {
     throw cclient::exceptions::ClientException(COULD_NOT_CREATE_NAMESPACE);
   } else {
@@ -45,8 +42,7 @@ void NamespaceOperations::create(std::string name) {
 }
 
 bool NamespaceOperations::remove(std::string name) {
-  if (IsEmpty(&name))
-    name = myNamespace;
+  if (IsEmpty(&name)) name = myNamespace;
   std::string id = namespaces[name];
 
   if (IsEmpty(&id) || id == "accumulo") {
@@ -61,7 +57,6 @@ bool NamespaceOperations::remove(std::string name) {
       return true;
     }
   }
-
 }
 
 void NamespaceOperations::rename(std::string newName, std::string oldName) {
@@ -84,14 +79,9 @@ void NamespaceOperations::rename(std::string newName, std::string oldName) {
   }
 }
 
-std::string NamespaceOperations::systemNamespace() {
-  return "accumulo";
-}
+std::string NamespaceOperations::systemNamespace() { return "accumulo"; }
 
-std::vector<std::string> NamespaceOperations::list() {
-
-  return namespaceNames;
-}
+std::vector<std::string> NamespaceOperations::list() { return namespaceNames; }
 
 void NamespaceOperations::loadNamespaces(bool force) {
   std::lock_guard<std::recursive_mutex> lock(namesOpMutex);
@@ -101,7 +91,7 @@ void NamespaceOperations::loadNamespaces(bool force) {
 
   fsRoot.append("/");
   fsRoot.append(myInstance->getInstanceId());
-  fsRoot.append( TABLE_GET_NAMESPACES);
+  fsRoot.append(TABLE_GET_NAMESPACES);
 
   cclient::data::InstanceCache *cache = myInstance->getInstanceCache();
   std::vector<std::string> namespaceIds = cache->getChildren(fsRoot, force);
@@ -115,11 +105,9 @@ void NamespaceOperations::loadNamespaces(bool force) {
 
     std::string namePath = tablePath;
     namePath.append(TABLE_GET_NAME);
-    char *path = (char*) cache->getData(namePath);
+    char *path = (char *)cache->getData(namePath);
     if (IsEmpty(path)) {
-
       continue;
-
     }
     std::string namespaceName = std::string(path);
 
@@ -129,12 +117,11 @@ void NamespaceOperations::loadNamespaces(bool force) {
       namespaces.insert(std::make_pair(namespaceName, retrievedId));
       namespaceNames.push_back(namespaceName);
     }
-
   }
-
 }
 
-std::map<std::string, std::string> NamespaceOperations::getProperties(std::string namespaceName) {
+std::map<std::string, std::string> NamespaceOperations::getProperties(
+    std::string namespaceName) {
   std::string nm = namespaceName;
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
@@ -143,7 +130,8 @@ std::map<std::string, std::string> NamespaceOperations::getProperties(std::strin
   return baseTransport->getNamespaceConfiguration(credentials, nm);
 }
 
-void NamespaceOperations::removeProperty(std::string property, std::string namespaceName) {
+void NamespaceOperations::removeProperty(std::string property,
+                                         std::string namespaceName) {
   std::string nm = namespaceName;
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
@@ -151,7 +139,8 @@ void NamespaceOperations::removeProperty(std::string property, std::string names
   auto baseTransport = clientInterface->getTransport().get();
   baseTransport->removeNamespaceProperty(credentials, nm, property);
 }
-void NamespaceOperations::setProperty(std::string property, std::string value, std::string namespaceName) {
+void NamespaceOperations::setProperty(std::string property, std::string value,
+                                      std::string namespaceName) {
   std::string nm = namespaceName;
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
@@ -160,7 +149,9 @@ void NamespaceOperations::setProperty(std::string property, std::string value, s
   baseTransport->setNamespaceProperty(credentials, nm, property, value);
 }
 
-void NamespaceOperations::attachIterator(cclient::data::IterInfo setting, cclient::data::ITERATOR_TYPES scope, std::string namespaceName) {
+void NamespaceOperations::attachIterator(cclient::data::IterInfo setting,
+                                         cclient::data::ITERATOR_TYPES scope,
+                                         std::string namespaceName) {
   std::string nm = namespaceName;
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
@@ -182,7 +173,9 @@ void NamespaceOperations::attachIterator(cclient::data::IterInfo setting, cclien
   }
 }
 
-void NamespaceOperations::removeIterator(std::string name, cclient::data::ITERATOR_TYPES scope, std::string namespaceName) {
+void NamespaceOperations::removeIterator(std::string name,
+                                         cclient::data::ITERATOR_TYPES scope,
+                                         std::string namespaceName) {
   std::string nm = namespaceName;
   if (IsEmpty(&namespaceName)) {
     nm = myNamespace;
@@ -198,12 +191,12 @@ void NamespaceOperations::removeIterator(std::string name, cclient::data::ITERAT
     root << ".opt";
     std::string rootOptStr = root.str();
     for (auto prop : props) {
-
-      if (prop.first == rootStr || prop.first.find(rootOptStr) != std::string::npos) {
+      if (prop.first == rootStr ||
+          prop.first.find(rootOptStr) != std::string::npos) {
         removeProperty(prop.first, nm);
       }
     }
   }
 }
 
-}
+}  // namespace interconnect

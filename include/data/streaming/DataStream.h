@@ -19,63 +19,40 @@
 #include "StreamEnvironment.h"
 #include "StreamRelocation.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
-template<typename T>
-class DataStream : public std::iterator<std::forward_iterator_tag, T>
-{
-protected:
+template <typename T>
+class DataStream : public std::iterator<std::forward_iterator_tag, T> {
+ protected:
+  StreamConfiguration *myConfiguration;
 
-    StreamConfiguration *myConfiguration;
+ public:
+  DataStream() {}
 
-public:
+  void setConfiguration(StreamConfiguration *configuration) {
+    myConfiguration = configuration;
+  }
+  virtual ~DataStream() {}
 
-    DataStream ()
-    {
-    }
+  virtual bool hasNext() = 0;
 
-    void
-    setConfiguration (StreamConfiguration *configuration)
-    {
-        myConfiguration = configuration;
-    }
-    virtual
-    ~DataStream ()
-    {
-    }
+  virtual void relocate(StreamRelocation *location) = 0;
 
-    virtual bool
-    hasNext () = 0;
+  virtual DataStream *begin() = 0;
 
-    virtual void
-    relocate (StreamRelocation *location) = 0;
+  virtual DataStream *end() = 0;
 
-    virtual DataStream
-    *
-    begin () = 0;
+  virtual T operator*() = 0;
 
-    virtual DataStream
-    *
-    end () = 0;
+  virtual DataStream *operator++() = 0;
 
-    virtual T
-    operator* () = 0;
+  virtual void next() = 0;
 
-    virtual DataStream*
-    operator++ () = 0;
-
-    virtual void next() = 0;
-
-    virtual DataStream*
-    operator++ (int t) = 0;
-
+  virtual DataStream *operator++(int t) = 0;
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif /* INCLUDE_INTERCONNECT_STREAMING_DATASTREAM_H_ */

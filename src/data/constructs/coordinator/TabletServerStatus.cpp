@@ -16,7 +16,8 @@
 namespace cclient {
 namespace data {
 
-TabletServerStatusBuilder TabletServerStatus::make(){
-    return TabletServerStatusBuilder();
+TabletServerStatusBuilder TabletServerStatus::make() {
+  return TabletServerStatusBuilder();
 }
-}}
+}  // namespace data
+}  // namespace cclient

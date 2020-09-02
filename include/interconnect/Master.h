@@ -18,56 +18,58 @@
 //#define SIGNED_RIGHT_SHIFT_IS 5
 //#define ARITHMETIC_RIGHT_SHIFT 5
 
-#include "../data/constructs/client/Instance.h"
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
+
+#include "../data/constructs/client/Instance.h"
 //#include <server/TSimpleServer.h>
 
-#include <transport/TServerSocket.h>
-#include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
-#include <transport/TSocket.h>
+#include <concurrency/ThreadManager.h>
 #include <server/TNonblockingServer.h>
 #include <transport/TBufferTransports.h>
-#include <concurrency/ThreadManager.h>
+#include <transport/TServerSocket.h>
+#include <transport/TServerTransport.h>
+#include <transport/TSocket.h>
+#include <transport/TTransport.h>
 
-#include "TabletServer.h"
-
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include "ClientInterface.h"
 
-#include "tableOps/ClientTableOps.h"
+#include "../data/constructs/inputvalidation.h"
+#include "ClientInterface.h"
+#include "TabletServer.h"
 #include "namespaceOps/NamespaceOperations.h"
 #include "securityOps/SecurityOperations.h"
-#include "../data/constructs/inputvalidation.h"
+#include "tableOps/ClientTableOps.h"
 #include "transport/AccumuloCoordinatorTransporter.h"
 
 namespace interconnect {
 
-static TransportPool<interconnect::AccumuloCoordinatorTransporter> MASTER_COORDINATOR;
+static TransportPool<interconnect::AccumuloCoordinatorTransporter>
+    MASTER_COORDINATOR;
 /**
  * Provides interconnect for master.
  *
  */
-class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
+class MasterConnect
+    : public RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                           cclient::data::KeyValue,
+                           scanners::ResultBlock<cclient::data::KeyValue>> {
  public:
- 
-  explicit MasterConnect(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
+  explicit MasterConnect(cclient::data::security::AuthInfo &credentials,
+                         std::shared_ptr<cclient::data::Instance> instance);
 
-    /**
-     * Constructor
-     * @param credentials incoming user credentials
-     * @param instance incoming instance
-     */
-    explicit MasterConnect(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
-        : MasterConnect(*credentials, instance) {
-    }
+  /**
+   * Constructor
+   * @param credentials incoming user credentials
+   * @param instance incoming instance
+   */
+  explicit MasterConnect(cclient::data::security::AuthInfo *credentials,
+                         std::shared_ptr<cclient::data::Instance> instance)
+      : MasterConnect(*credentials, instance) {}
 
-  MasterConnect()
-      : instance(nullptr) {
-  }
+  MasterConnect() : instance(nullptr) {}
 
   /**
    * Returns an instance of table operations
@@ -105,7 +107,6 @@ class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTran
   }
 
  protected:
-
   /**
    * Locates tablet servers.
    **/
@@ -118,12 +119,12 @@ class MasterConnect : public RootInterface<interconnect::AccumuloCoordinatorTran
   std::vector<std::shared_ptr<ServerConnection>> tabletServers;
 
   // cached transport for the master.
-  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> cachedTransport;
+  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>>
+      cachedTransport;
 
   friend class AccumuloTableOperations;
 
   friend class SecurityOperations;
-
 };
-}
+}  // namespace interconnect
 #endif /* MASTER_H_ */

@@ -17,17 +17,13 @@ namespace cclient {
 namespace data {
 
 TabletServerMutations::TabletServerMutations(std::string sessionId)
-    : session(sessionId),
-      failuresAllowed(-1) {
-}
+    : session(sessionId), failuresAllowed(-1) {}
 
-TabletServerMutations::TabletServerMutations(std::string sessionId, uint32_t fails)
-    : session(sessionId),
-      failuresAllowed(fails) {
-}
+TabletServerMutations::TabletServerMutations(std::string sessionId,
+                                             uint32_t fails)
+    : session(sessionId), failuresAllowed(fails) {}
 
-TabletServerMutations::~TabletServerMutations() {
-}
+TabletServerMutations::~TabletServerMutations() {}
 
 } /* namespace data */
 } /* namespace cclient */

@@ -19,22 +19,16 @@
 
 #include "Scan.h"
 
-namespace interconnect
-{
+namespace interconnect {
 
+class ScannerInterface {
+ public:
+  ScannerInterface();
 
-
-class ScannerInterface
-{
-public:
-    ScannerInterface ();
-
-    virtual Scan
-    beginScan () = 0;
-    virtual
-    ~ScannerInterface ();
+  virtual Scan beginScan() = 0;
+  virtual ~ScannerInterface();
 };
 
-}
+}  // namespace interconnect
 
 #endif /* SCANNERINTERFACE_H_ */

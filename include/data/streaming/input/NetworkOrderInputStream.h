@@ -14,21 +14,24 @@
 #ifndef ENDIAN_IN_STREAM
 #define ENDIAN_IN_STREAM
 
-#include <stdexcept>
-#include <cstdio>
-#include <iostream>
-#include <cstring>
 #include <netinet/in.h>
 
-#include "InputStream.h"
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
+
 #include "ByteInputStream.h"
+#include "InputStream.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
 #ifndef ntohll
-  #define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#define ntohll(x)                                           \
+  (((uint64_t)(ntohl((uint32_t)((x << 32) >> 32))) << 32) | \
+   ntohl(((uint32_t)(x >> 32))))
 #endif
 
 /**
@@ -37,33 +40,17 @@ namespace streams {
  */
 class EndianInputStream : public ByteInputStream {
  public:
-
-  EndianInputStream(InputStream *out_stream)
-      :
-      ByteInputStream(out_stream) {
-
-  }
+  EndianInputStream(InputStream *out_stream) : ByteInputStream(out_stream) {}
 
   EndianInputStream(char *byteArray, size_t len)
-      :
-      ByteInputStream(byteArray, len) {
-
-  }
+      : ByteInputStream(byteArray, len) {}
 
   EndianInputStream(char *byteArray, size_t len, bool allocated)
-      :
-      ByteInputStream(byteArray, len, allocated) {
+      : ByteInputStream(byteArray, len, allocated) {}
 
-  }
+  EndianInputStream() : ByteInputStream() {}
 
-  EndianInputStream()
-      :
-      ByteInputStream() {
-  }
-
-  virtual ~EndianInputStream() {
-
-  }
+  virtual ~EndianInputStream() {}
 
   virtual short readShort() override {
     return ntohs(ByteInputStream::readShort());
@@ -71,25 +58,24 @@ class EndianInputStream : public ByteInputStream {
 
   virtual unsigned short readUnsignedShort() override {
     unsigned short shortVal;
-    readBytes((char*) &shortVal, 2);
+    readBytes((char *)&shortVal, 2);
     return ntohs(shortVal);
   }
 
   virtual int readInt() override {
     int intVal = 0;
-    readBytes((uint8_t*) &intVal, 4);
+    readBytes((uint8_t *)&intVal, 4);
     return ntohl(intVal);
   }
 
   virtual uint64_t readLong() override {
     uint64_t val;
-    readBytes((uint8_t*) &val, 8);
+    readBytes((uint8_t *)&val, 8);
     auto ret = ntohll(val);
     return ret;
   }
-
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

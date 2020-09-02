@@ -12,27 +12,24 @@
  * limitations under the License.
  */
 
+#include "data/client/RootTabletLocator.h"
+
 #include <sstream>
 
-#include "data/client/RootTabletLocator.h"
 #include "data/client/../constructs/client/Instance.h"
 #include "data/client/ExtentLocator.h"
 namespace cclient {
 namespace impl {
 
-RootTabletLocator::RootTabletLocator(std::shared_ptr<cclient::data::Instance> instance)
-    :
-    myInstance(dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(instance)) {
+RootTabletLocator::RootTabletLocator(
+    std::shared_ptr<cclient::data::Instance> instance)
+    : myInstance(
+          dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(
+              instance)) {}
 
-}
+RootTabletLocator::~RootTabletLocator() {}
 
-RootTabletLocator::~RootTabletLocator() {
-
-}
-
-cclient::data::TabletLocation*
-RootTabletLocator::getRootTabletLocation() {
-
+cclient::data::TabletLocation *RootTabletLocator::getRootTabletLocation() {
   cclient::data::zookeeper::ZooCache *cache = myInstance->getZooCache();
 
   std::stringstream zRootLocation;
@@ -40,15 +37,15 @@ RootTabletLocator::getRootTabletLocation() {
 
   uint8_t *rootLoc = cache->getData(zRootLocation.str());
 
-  if (IsEmpty((char*) rootLoc)) {
+  if (IsEmpty((char *)rootLoc)) {
     return 0;
   }
 
-  std::vector<std::string> tokens = split(std::string((char*) rootLoc), '|');
+  std::vector<std::string> tokens = split(std::string((char *)rootLoc), '|');
 
-  return new cclient::data::TabletLocation(ROOT_EXTENT, tokens.at(0), tokens.at(1));
-
+  return new cclient::data::TabletLocation(ROOT_EXTENT, tokens.at(0),
+                                           tokens.at(1));
 }
 
-}
-}
+}  // namespace impl
+}  // namespace cclient

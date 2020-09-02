@@ -13,19 +13,19 @@
  */
 
 #include "data/constructs/security/ColumnVisibility.h"
-#include "data/constructs/security/VisibilityNode.h"
-#include <string>
-#include <set>
+
 #include <iostream>
+#include <set>
+#include <string>
+
+#include "data/constructs/security/VisibilityNode.h"
 
 namespace cclient {
 namespace data {
 namespace security {
 
 ColumnVisibility::ColumnVisibility(const std::string &expr)
-    :
-    expression(expr),
-    index(0) {
+    : expression(expr), index(0) {
   node = parse_(expression);
 }
 
@@ -36,28 +36,31 @@ std::string ColumnVisibility::flatten() {
   return out;
 }
 
-void ColumnVisibility::astToSTring(VisibilityNode &root, std::string expression, std::string &out) {
+void ColumnVisibility::astToSTring(VisibilityNode &root, std::string expression,
+                                   std::string &out) {
   if (root.getType() == NodeType::TERM) {
     out += std::string(expression, root.start, root.getLength());
   } else {
     std::string sep = "";
     for (VisibilityNode c : root.getChildren()) {
       out += sep;
-      bool parens = (c.getType() != NodeType::TERM && root.getType() != c.getType());
-      if (parens)
-        out += "(";
+      bool parens =
+          (c.getType() != NodeType::TERM && root.getType() != c.getType());
+      if (parens) out += "(";
       astToSTring(c, expression, out);
-      if (parens)
-        out += ")";
+      if (parens) out += ")";
       sep = root.getType() == NodeType::AND ? "&" : "|";
     }
   }
 }
 
-VisibilityNode ColumnVisibility::processTerm(size_t start, size_t end, VisibilityNode &expr, std::string &expression) {
+VisibilityNode ColumnVisibility::processTerm(size_t start, size_t end,
+                                             VisibilityNode &expr,
+                                             std::string &expression) {
   if (start != end) {
     if (!expr.empty()) {
-      throw cclient::exceptions::IllegalArgumentException("expression needs | or &");
+      throw cclient::exceptions::IllegalArgumentException(
+          "expression needs | or &");
     }
     return VisibilityNode(&expression, start, end);
   }
@@ -80,7 +83,8 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
         expr = processTerm(subtermStart, index - 1, expr, expression);
         if (!result.empty()) {
           if (result.getType() != NodeType::AND) {
-            throw cclient::exceptions::IllegalArgumentException("cannot mix & and |");
+            throw cclient::exceptions::IllegalArgumentException(
+                "cannot mix & and |");
           }
         } else {
           result = VisibilityNode(&expression, NodeType::AND, wholeTermStart);
@@ -94,7 +98,8 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
         expr = processTerm(subtermStart, index - 1, expr, expression);
         if (!result.empty()) {
           if (result.getType() != NodeType::OR) {
-            throw cclient::exceptions::IllegalArgumentException("cannot mix | and &");
+            throw cclient::exceptions::IllegalArgumentException(
+                "cannot mix | and &");
           }
         } else {
           result = VisibilityNode(&expression, NodeType::OR, wholeTermStart);
@@ -107,7 +112,8 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
       case '(': {
         parens++;
         if (subtermStart != index - 1 || !expr.empty()) {
-          throw cclient::exceptions::IllegalArgumentException("expression needs & or |");
+          throw cclient::exceptions::IllegalArgumentException(
+              "expression needs & or |");
         }
         expr = parse_(expression);
         subtermStart = index;
@@ -118,13 +124,12 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
         parens--;
         auto child = processTerm(subtermStart, index - 1, expr, expression);
         if (child.empty() && result.empty()) {
-          throw cclient::exceptions::IllegalArgumentException("empty expression not allowed");
+          throw cclient::exceptions::IllegalArgumentException(
+              "empty expression not allowed");
         }
-        if (result.empty())
-          return child;
+        if (result.empty()) return child;
         if (result.getType() == child.getType())
-          for (const auto &c : child.getChildren())
-            result.add(c);
+          for (const auto &c : child.getChildren()) result.add(c);
         else
           result.add(child);
         result.end = index - 1;
@@ -132,14 +137,17 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
       }
       case '"': {
         if (subtermStart != index - 1) {
-          throw cclient::exceptions::IllegalArgumentException("expression needs & or |");
+          throw cclient::exceptions::IllegalArgumentException(
+              "expression needs & or |");
         }
 
         while (index < expression.length() && expression[index] != '"') {
           if (expression[index] == '\\') {
             index++;
-            if (index == expression.length() || (expression[index] != '\\' && expression[index] != '"')) {
-              throw cclient::exceptions::IllegalArgumentException("invalid escaping within quotes");
+            if (index == expression.length() ||
+                (expression[index] != '\\' && expression[index] != '"')) {
+              throw cclient::exceptions::IllegalArgumentException(
+                  "invalid escaping within quotes");
             }
           }
           index++;
@@ -161,12 +169,14 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
       }
       default:
         if (subtermComplete) {
-          throw cclient::exceptions::IllegalArgumentException("expression needs & or |");
+          throw cclient::exceptions::IllegalArgumentException(
+              "expression needs & or |");
         }
 
         char c = expression[index - 1];
         if (!Authorizations::isValidAuthCharacter(c)) {
-          throw cclient::exceptions::IllegalArgumentException("bad character (" + std::to_string(c) + ")");
+          throw cclient::exceptions::IllegalArgumentException(
+              "bad character (" + std::to_string(c) + ")");
         }
     }
   }
@@ -183,7 +193,8 @@ VisibilityNode ColumnVisibility::parse_(std::string &expression) {
   return result;
 }
 
-VisibilityNode ColumnVisibility::normalize(VisibilityNode &root, const std::string &expression) {
+VisibilityNode ColumnVisibility::normalize(VisibilityNode &root,
+                                           const std::string &expression) {
   if (root.type != NodeType::TERM) {
     std::set<VisibilityNode, ExpressionASTComparator> rolledUp;
 
@@ -198,11 +209,10 @@ VisibilityNode ColumnVisibility::normalize(VisibilityNode &root, const std::stri
         rolledUp.insert(children->begin(), children->end());
         children->erase(nxt);
       }
-
     }
 
     rolledUp.insert(children->begin(), children->end());
-    //rolledUp.addAll(root.children);
+    // rolledUp.addAll(root.children);
     children->clear();
     children->insert(children->begin(), rolledUp.begin(), rolledUp.end());
 
@@ -213,6 +223,6 @@ VisibilityNode ColumnVisibility::normalize(VisibilityNode &root, const std::stri
   return root;
 }
 
-}
-}
-}
+}  // namespace security
+}  // namespace data
+}  // namespace cclient

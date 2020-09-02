@@ -24,34 +24,33 @@
 #endif
 
 #include <chrono>
-#include <thread>
 #include <string>
-#include "InterConnect.h"
-#include "TransportPool.h"
-#include "interconnect/scanrequest/ScanRequest.h"
-#include "../data/constructs/inputvalidation.h"
-#include "../data/constructs/IterInfo.h"
-#include "../data/constructs/configuration/Configuration.h"
-#include "../data/extern/thrift/data_types.h"
-#include "../data/constructs/scanstate.h"
-#include "../data/exceptions/ClientException.h"
-#include "../data/exceptions/NotServingException.h"
-#include "../data/exceptions/IllegalArgumentException.h"
-#include "../data/constructs/tablet/TabletType.h"
-#include "../data/constructs/client/TabletServerMutations.h"
-#include "../interconnect/ClientInterface.h"
+#include <thread>
 
-#include "transport/ServerTransport.h"
-#include "transport/BaseTransport.h"
-#include "TransportPool.h"
-#include "AccumuloConnector.h"
+#include "../data/constructs/IterInfo.h"
+#include "../data/constructs/client/TabletServerMutations.h"
+#include "../data/constructs/configuration/Configuration.h"
+#include "../data/constructs/inputvalidation.h"
+#include "../data/constructs/scanstate.h"
 #include "../data/constructs/server/RangeDefinition.h"
 #include "../data/constructs/server/ServerDefinition.h"
+#include "../data/constructs/tablet/TabletType.h"
+#include "../data/exceptions/ClientException.h"
+#include "../data/exceptions/IllegalArgumentException.h"
+#include "../data/exceptions/NotServingException.h"
 #include "../data/extern/thrift/ClientService.h"
 #include "../data/extern/thrift/TabletClientService.h"
+#include "../data/extern/thrift/data_types.h"
+#include "../interconnect/ClientInterface.h"
+#include "AccumuloConnector.h"
+#include "InterConnect.h"
+#include "ScanArbiter.h"
+#include "TransportPool.h"
+#include "interconnect/scanrequest/ScanRequest.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
-#include "ScanArbiter.h"
+#include "transport/BaseTransport.h"
+#include "transport/ServerTransport.h"
 
 namespace interconnect {
 
@@ -59,11 +58,15 @@ static TransportPool<ThriftTransporter> CLUSTER_COORDINATOR;
 
 extern void closeAllThriftConnections();
 
-class ServerInterconnect : public AccumuloBaseConnector<interconnect::ThriftTransporter> {
+class ServerInterconnect
+    : public AccumuloBaseConnector<interconnect::ThriftTransporter> {
  private:
   std::shared_ptr<logging::Logger> logger;
+
  protected:
-  explicit ServerInterconnect(cclient::data::security::AuthInfo *creds, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR) {
+  explicit ServerInterconnect(cclient::data::security::AuthInfo *creds,
+                              TransportPool<ThriftTransporter> *
+                                  distributedConnector = &CLUSTER_COORDINATOR) {
     myTransportPool = distributedConnector;
     this->credentials = *creds;
     myTransport = NULL;
@@ -73,43 +76,52 @@ class ServerInterconnect : public AccumuloBaseConnector<interconnect::ThriftTran
   void recreateConnection(bool errorOcurred = false);
 
  public:
+  explicit ServerInterconnect(const std::string host, const int port,
+                              const cclient::impl::Configuration *conf,
+                              TransportPool<ThriftTransporter>
+                                  *distributedConnector = &CLUSTER_COORDINATOR);
 
-  explicit ServerInterconnect(const std::string host, const int port, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector = &CLUSTER_COORDINATOR);
+  explicit ServerInterconnect(
+      std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef,
+      const cclient::impl::Configuration *conf,
+      TransportPool<ThriftTransporter> *distributedConnector =
+          &CLUSTER_COORDINATOR);
 
-  explicit ServerInterconnect(std::shared_ptr<cclient::data::tserver::RangeDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
-                                  &CLUSTER_COORDINATOR);
+  Scan *hedgedScan(
+      std::shared_ptr<interconnect::ScanArbiter> &arbiter,
+      std::atomic<bool> *isRunning,
+      const std::vector<cclient::data::Column> &cols,
+      const std::vector<cclient::data::IterInfo> &serverSideIterators,
+      cclient::data::IterInfo &versioningIterator, uint32_t batchSize = 1000,
+      bool disableRpc = false);
 
-  Scan*
-  hedgedScan(std::shared_ptr<interconnect::ScanArbiter> &arbiter, std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols,
-             const std::vector<cclient::data::IterInfo> &serverSideIterators,cclient::data::IterInfo &versioningIterator, uint32_t batchSize = 1000, bool disableRpc = false);
+  Scan *scan(std::atomic<bool> *isRunning,
+             const std::vector<cclient::data::Column> &cols,
+             const std::vector<cclient::data::IterInfo> &serverSideIterators,
+             uint32_t batchSize = 1000);
 
-  Scan*
-  scan(std::atomic<bool> *isRunning, const std::vector<cclient::data::Column> &cols, const std::vector<cclient::data::IterInfo> &serverSideIterators, uint32_t batchSize = 1000);
+  explicit ServerInterconnect(
+      std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef,
+      const cclient::impl::Configuration *conf,
+      TransportPool<ThriftTransporter> *distributedConnector =
+          &CLUSTER_COORDINATOR);
 
-  explicit ServerInterconnect(std::shared_ptr<cclient::data::tserver::ServerDefinition> rangeDef, const cclient::impl::Configuration *conf, TransportPool<ThriftTransporter> *distributedConnector =
-                                  &CLUSTER_COORDINATOR);
+  Scan *scan(std::atomic<bool> *isRunning);
 
-  Scan* scan(std::atomic<bool> *isRunning);
+  Scan *continueScan(Scan *scan);
 
-  Scan* continueScan(Scan *scan);
+  std::shared_ptr<cclient::data::TabletServerMutations> write(
+      std::shared_ptr<cclient::data::TabletServerMutations> mutations);
 
-  std::shared_ptr<cclient::data::TabletServerMutations> write(std::shared_ptr<cclient::data::TabletServerMutations> mutations);
+  void halt() {}
 
-  void halt() {
+  void authenticate(cclient::data::security::AuthInfo *credentials);
 
-  }
+  virtual void authenticate(const std::string &username,
+                            const std::string &password) override {}
 
-  void
-  authenticate(cclient::data::security::AuthInfo *credentials);
-
-  virtual void authenticate(const std::string &username, const std::string &password) override {
-  }
-
-  virtual
-  ~ServerInterconnect();
-
+  virtual ~ServerInterconnect();
 };
 
-}
+}  // namespace interconnect
 #endif /* TABLETSERVER_H_ */
-

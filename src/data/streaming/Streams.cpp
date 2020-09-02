@@ -11,47 +11,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "data/streaming/ByteOutputStream.h"
-#include "data/streaming/OutputStream.h"
 #include "data/streaming/Streams.h"
 
+#include "data/streaming/ByteOutputStream.h"
+#include "data/streaming/OutputStream.h"
 #include "data/streaming/input/ByteInputStream.h"
 #include "data/streaming/input/InputStream.h"
 
 /*
  */
 
-namespace cclient{
-  namespace data{
-    namespace streams{
-StreamInterface::StreamInterface ()
-{
+namespace cclient {
+namespace data {
+namespace streams {
+StreamInterface::StreamInterface() {}
 
-}
+StreamInterface::~StreamInterface() {}
 
-StreamInterface::~StreamInterface ()
-{
+std::shared_ptr<StreamInterface> StreamInterface::getStream() { return NULL; }
 
-}
+uint64_t StreamInterface::write(OutputStream *out) { return 0; }
 
-std::shared_ptr<StreamInterface>
-StreamInterface::getStream ()
-{
-    return NULL;
-}
+uint64_t StreamInterface::read(InputStream *in) { return 0; }
 
-uint64_t
-StreamInterface::write (OutputStream *out)
-{
-    return 0;
-}
-
-uint64_t
-StreamInterface::read (InputStream *in)
-{
-    return 0;
-}
-
-    }
-  }
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient

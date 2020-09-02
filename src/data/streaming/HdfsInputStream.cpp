@@ -13,60 +13,54 @@
  */
 
 #include "data/streaming/input/HdfsInputStream.h"
-#include "data/exceptions/HDFSException.h"
+
 #include <iostream>
+
+#include "data/exceptions/HDFSException.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
-
-
 HdfsInputStream::HdfsInputStream(const std::string path)
-    :
-    InputStream(),
-    hdfs(nullptr),
-    file(path) {
-
+    : InputStream(), hdfs(nullptr), file(path) {
   utils::Uri uri(path);
 
   hdfs = std::make_shared<hdfs::HdfsLink>(file, uri.port());
 
   file = uri.path();
 
-  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  fileRef =
+      hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
   auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
-  if (!fileRef || !ret){
-      throw cclient::exceptions::HDFSException("File does not exist");
-    }
-  size = ret->mSize;
-  hdfsFreeFileInfo(ret, 1);
-}
-
-HdfsInputStream::HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path)
-    :
-    InputStream(),
-    hdfs(hdfs),
-    file(path) {
-
-  try{
-  utils::Uri uri(path);
-
-  file = uri.path();
-  }
-  catch(...){
-    file = path;
-  }
-    
-  fileRef = hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
-  auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
-  if (!fileRef || !ret){
+  if (!fileRef || !ret) {
     throw cclient::exceptions::HDFSException("File does not exist");
   }
   size = ret->mSize;
   hdfsFreeFileInfo(ret, 1);
 }
 
+HdfsInputStream::HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs,
+                                 const std::string &path)
+    : InputStream(), hdfs(hdfs), file(path) {
+  try {
+    utils::Uri uri(path);
+
+    file = uri.path();
+  } catch (...) {
+    file = path;
+  }
+
+  fileRef =
+      hdfsOpenFile(hdfs->getHdfsReference(), file.c_str(), O_RDONLY, 0, 0, 0);
+  auto ret = hdfsGetPathInfo(hdfs->getHdfsReference(), file.c_str());
+  if (!fileRef || !ret) {
+    throw cclient::exceptions::HDFSException("File does not exist");
+  }
+  size = ret->mSize;
+  hdfsFreeFileInfo(ret, 1);
 }
-}
-}
+
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient

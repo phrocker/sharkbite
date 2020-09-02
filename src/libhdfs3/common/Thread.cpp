@@ -20,29 +20,29 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
-
 #include "Thread.h"
+
+#include <unistd.h>
 
 namespace Hdfs {
 namespace Internal {
 
 sigset_t ThreadBlockSignal() {
-    sigset_t sigs;
-    sigset_t oldMask;
-    sigemptyset(&sigs);
-    sigaddset(&sigs, SIGHUP);
-    sigaddset(&sigs, SIGINT);
-    sigaddset(&sigs, SIGTERM);
-    sigaddset(&sigs, SIGUSR1);
-    sigaddset(&sigs, SIGUSR2);
-    pthread_sigmask(SIG_BLOCK, &sigs, &oldMask);
-    return oldMask;
+  sigset_t sigs;
+  sigset_t oldMask;
+  sigemptyset(&sigs);
+  sigaddset(&sigs, SIGHUP);
+  sigaddset(&sigs, SIGINT);
+  sigaddset(&sigs, SIGTERM);
+  sigaddset(&sigs, SIGUSR1);
+  sigaddset(&sigs, SIGUSR2);
+  pthread_sigmask(SIG_BLOCK, &sigs, &oldMask);
+  return oldMask;
 }
 
 void ThreadUnBlockSignal(sigset_t sigs) {
-    pthread_sigmask(SIG_SETMASK, &sigs, 0);
+  pthread_sigmask(SIG_SETMASK, &sigs, 0);
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

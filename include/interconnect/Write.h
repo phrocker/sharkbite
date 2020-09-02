@@ -14,20 +14,16 @@
 #ifndef SRC_INTERCONNECT_WRITE_H_
 #define SRC_INTERCONNECT_WRITE_H_
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
 /*
  *
  */
-class Write
-{
-public:
-	Write();
-	virtual ~Write();
-
+class Write {
+ public:
+  Write();
+  virtual ~Write();
 };
 
 } /* namespace data */

@@ -17,70 +17,56 @@
 
 #include <string>
 
-#include "ClientInterface.h"
-
-
-#include "tableOps/TableOperations.h"
-#include "AccumuloConnector.h"
-#include "../scanner/Source.h"
-#include "../scanner/constructs/Results.h"
 #include "../data/constructs/client/Instance.h"
 #include "../data/constructs/security/AuthInfo.h"
+#include "../scanner/Source.h"
+#include "../scanner/constructs/Results.h"
+#include "AccumuloConnector.h"
+#include "ClientInterface.h"
+#include "tableOps/TableOperations.h"
 
 namespace interconnect {
 
 /**
  * Provides base connectivity to accumulo services
  */
-template<class T, class S1, class S2>
+template <class T, class S1, class S2>
 class RootInterface : public AccumuloBaseConnector<T> {
  protected:
-
   /**
    * Default constructor
    **/
-  RootInterface()
-      : AccumuloBaseConnector<T>() {
+  RootInterface() : AccumuloBaseConnector<T>() {}
 
-  }
  public:
-
-  /**
-    * Constructor, requires credentials and base instance
-    * @param creds credential pointer
-    * @param instance pointer to the current instance
-    */
-   RootInterface(cclient::data::security::AuthInfo creds, cclient::data::Instance *instance)
-       : AccumuloBaseConnector<T>() {
-
-   }
   /**
    * Constructor, requires credentials and base instance
    * @param creds credential pointer
    * @param instance pointer to the current instance
    */
-  RootInterface(cclient::data::security::AuthInfo creds, std::shared_ptr<cclient::data::Instance> instance)
-      : AccumuloBaseConnector<T>() {
+  RootInterface(cclient::data::security::AuthInfo creds,
+                cclient::data::Instance *instance)
+      : AccumuloBaseConnector<T>() {}
+  /**
+   * Constructor, requires credentials and base instance
+   * @param creds credential pointer
+   * @param instance pointer to the current instance
+   */
+  RootInterface(cclient::data::security::AuthInfo creds,
+                std::shared_ptr<cclient::data::Instance> instance)
+      : AccumuloBaseConnector<T>() {}
 
-  }
-
-  virtual ~RootInterface() {
-
-  }
+  virtual ~RootInterface() {}
 
   /**
    * authenticate the user
    * @param username username to authenticate
    * @param password password used to authenticate username
    **/
-  virtual void authenticate(const std::string &username, const std::string &password) override
-  {
-
-  }
-
+  virtual void authenticate(const std::string &username,
+                            const std::string &password) override {}
 };
 
 } /* namespace interconnect */
 
 #endif /* SRC_INTERCONNECT_ROOTINTERFACE_H_ */
-

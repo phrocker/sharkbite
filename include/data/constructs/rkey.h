@@ -43,14 +43,14 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   /**
    * Constructor
    **/
-  RelativeKey(ArrayAllocatorPool *allocins);
+  explicit RelativeKey(ArrayAllocatorPool *allocins);
 
   /**
    * Constructor.
    * @param previous_key previous key
    * @param my_key current key.
    **/
-  RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key, ArrayAllocatorPool *allocins);
+  explicit RelativeKey(const std::shared_ptr<Key> &previous_key, const std::shared_ptr<Key> &my_key, ArrayAllocatorPool *allocins);
 
   /**
    * Returns the relative key.

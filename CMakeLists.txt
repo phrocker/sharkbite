@@ -351,6 +351,26 @@ message(STATUS "ZK Lib: ${ZOOKEEPER_LIBRARIES}")
 
 
 #However, the file(GLOB...) allows for wildcard additions:
+
+file(GLOB_RECURSE EXCEPTION_HEADERS "include/data/exceptions/*.h")
+file(GLOB_RECURSE DATA_HEADERS "include/data//*.h")
+file(GLOB_RECURSE STREAMING_HEADERS "include/data/streaming/*.h")
+file(GLOB_RECURSE ZK_HEADERS "include/data/zookeeper/*.h")
+file(GLOB_RECURSE CLIENT_HEADERS "include/data/client/*.h")
+file(GLOB_RECURSE CAPI_HEADERS "include/extern/*.h")
+file(GLOB_RECURSE LIBHDFS3_HEADERS "include/libhdfs3/client/*.h" "include/libhdfs3/common/*.h" "include/libhdfs3/proto/*.h"  "include/libhdfs3/network/*.h"  "include/libhdfs3/rpc/*.h" "include/libhdfs3/server/*.h")
+file(GLOB_RECURSE UTIL_HEADERS "include/utils/*.h")
+file(GLOB_RECURSE LOGGING_HEADERS "include/logging/*.h")
+file(GLOB_RECURSE THRIFT_HEADERS "include/data/extern/thrift/*.h")
+file(GLOB_RECURSE AVX_MOD_HEADERS "include/data/extern/knnspeed/*.h")
+file(GLOB_RECURSE THRIFTV2_HEADERS "include/data/extern/thriftv2/*.h")
+file(GLOB_RECURSE CWRAPPER_HEADERS "include/extern/*.h")
+file(GLOB_RECURSE CWRAPPER_HEADERS "include/extern/*.h")
+file(GLOB_RECURSE PYBIND_HEADERS "include/python/*.h")
+file(GLOB_RECURSE INTERCONNECT_HEADERS "include/interconnect/*.h")
+file(GLOB_RECURSE SCANNER_HEADERS "include/scanner/*.h")
+file(GLOB_RECURSE WRITER_HEADERS "include/writer/*.h")
+
 file(GLOB_RECURSE EXCEPTION_SOURCES "src/data/exceptions/*cpp")
 file(GLOB_RECURSE CONSTRUCT_SOURCES "src/data/constructs/*cpp")
 file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
@@ -750,6 +770,29 @@ ADD_CUSTOM_COMMAND(
 
 ADD_CUSTOM_TARGET(docs ${DOXYGEN_EXECUTABLE} ${DOXYGEN_INPUT})
 endif(DOXYGEN_FOUND)	
+
+list(APPEND ALL_SOURCES ${UTIL_HEADERS} ${LOGGING_HEADERS} ${ZK_HEADERS} ${CONSTRUCT_HEADERS} ${STREAMING_HEADERS} ${CLIENT_HEADERS} ${EXCEPTION_HEADERS} ${AVX_MOD_HEADERS} ${INTERCONNECT_HEADERS} ${SCANNER_HEADERS} ${WRITER_HEADERS} ${LIBHDFS3_HEADERS} ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${LIBHDFS3_SOURCES} )
+
+find_program( CLANG_FORMAT_EXE NAMES "clang-format" DOC "Path to clang-format executable" ) 
+
+if(NOT CLANG_FORMAT_EXE) 
+
+	message(STATUS "clang-format not found.") 
+
+else() 
+
+	message(STATUS "clang-format found: ${CLANG_FORMAT_EXE}") 
+
+	add_custom_target(
+			clangformat
+			COMMAND /usr/bin/clang-format
+			-style=Google
+			-i
+			${ALL_SOURCES}
+	)
+
+endif()
+
 # Install library headers
 
 include(GNUInstallDirs)

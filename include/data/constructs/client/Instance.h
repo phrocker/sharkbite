@@ -11,8 +11,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#ifndef INSTANCE_H_
-#define INSTANCE_H_
+#pragma once
 
 #include <memory>
 #include <string>
@@ -89,4 +88,3 @@ namespace cclient
 
   } // namespace data
 } /* namespace cclient */
-#endif /* INSTANCE_H_ */

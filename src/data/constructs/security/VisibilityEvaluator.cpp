@@ -13,43 +13,43 @@
  */
 
 #include "data/constructs/security/VisibilityEvaluator.h"
-#include <string>
-#include <set>
+
 #include <iostream>
+#include <set>
+#include <string>
 
 namespace cclient {
 namespace data {
 namespace security {
 
-
-
-bool VisibilityEvaluator::evaluate(const std::string &expression, const VisibilityNode &root) {
-   if (expression.length() == 0)
-     return true;
-   switch (root.getType()) {
-     case TERM:
-       return auths.contains(root.getTerm(expression).getTerm());
-     case AND:
-       if (root.getSize() < 2)
-         throw cclient::exceptions::VisibilityParseException("AND has less than 2 children", expression, root.getTermStart());
-       for (const auto &child : root.getChildren()) {
-         if (!evaluate(expression, child))
-           return false;
-       }
-       return true;
-     case OR:
-       if (root.getSize() < 2)
-         throw cclient::exceptions::VisibilityParseException("OR has less than 2 children", expression, root.getTermStart());
-       for (const auto &child : root.getChildren()) {
-         if (evaluate(expression, child))
-           return true;
-       }
-       return false;
-     default:
-       throw cclient::exceptions::VisibilityParseException("No such node type", expression, root.getTermStart());
-   }
- }
-
+bool VisibilityEvaluator::evaluate(const std::string &expression,
+                                   const VisibilityNode &root) {
+  if (expression.length() == 0) return true;
+  switch (root.getType()) {
+    case TERM:
+      return auths.contains(root.getTerm(expression).getTerm());
+    case AND:
+      if (root.getSize() < 2)
+        throw cclient::exceptions::VisibilityParseException(
+            "AND has less than 2 children", expression, root.getTermStart());
+      for (const auto &child : root.getChildren()) {
+        if (!evaluate(expression, child)) return false;
+      }
+      return true;
+    case OR:
+      if (root.getSize() < 2)
+        throw cclient::exceptions::VisibilityParseException(
+            "OR has less than 2 children", expression, root.getTermStart());
+      for (const auto &child : root.getChildren()) {
+        if (evaluate(expression, child)) return true;
+      }
+      return false;
+    default:
+      throw cclient::exceptions::VisibilityParseException(
+          "No such node type", expression, root.getTermStart());
+  }
 }
-}
-}
+
+}  // namespace security
+}  // namespace data
+}  // namespace cclient

@@ -14,43 +14,53 @@
 
 #ifndef SRC_INTERCONNECT_TABLEOPS_CLIENTTABLEOPS_H_
 #define SRC_INTERCONNECT_TABLEOPS_CLIENTTABLEOPS_H_
-#include "TableOperations.h"
-
 #include "../../data/constructs/KeyValue.h"
-#include "../../data/constructs/security/AuthInfo.h"
 #include "../../data/constructs/client/Instance.h"
+#include "../../data/constructs/security/AuthInfo.h"
 #include "../../scanner/Source.h"
 #include "../../scanner/constructs/Results.h"
-#include "../transport/AccumuloCoordinatorTransporter.h"
-#include "../RootInterface.h"
 #include "../../writer/Sink.h"
+#include "../RootInterface.h"
+#include "../transport/AccumuloCoordinatorTransporter.h"
+#include "TableOperations.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 
 namespace interconnect {
 
-#include <memory>
 #include <map>
-#include <vector>
+#include <memory>
 #include <string>
+#include <vector>
 
 /**
  * Accumulo Table Operations;
  */
-class AccumuloTableOperations : public interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> {
+class AccumuloTableOperations
+    : public interconnect::TableOperations<
+          cclient::data::KeyValue,
+          scanners::ResultBlock<cclient::data::KeyValue>> {
  public:
-  explicit AccumuloTableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table,
-                          RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                          std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> tserverConn, TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
-      :
-      TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>(creds, instance, table),
-      clientInterface(interface),
-      tserverConn(tserverConn),
-      distributedConnector(distributedConnector),
-      logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()) {
+  explicit AccumuloTableOperations(
+      cclient::data::security::AuthInfo *creds,
+      std::shared_ptr<cclient::data::Instance> instance, std::string table,
+      RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                    cclient::data::KeyValue,
+                    scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+      std::shared_ptr<
+          CachedTransport<interconnect::AccumuloCoordinatorTransporter>>
+          tserverConn,
+      TransportPool<interconnect::AccumuloCoordinatorTransporter>
+          *distributedConnector)
+      : TableOperations<cclient::data::KeyValue,
+                        scanners::ResultBlock<cclient::data::KeyValue>>(
+            creds, instance, table),
+        clientInterface(interface),
+        tserverConn(tserverConn),
+        distributedConnector(distributedConnector),
+        logger(logging::LoggerFactory<AccumuloTableOperations>::getLogger()) {
     loadTableOps();
     getTableId();
-
   }
   virtual ~AccumuloTableOperations();
 
@@ -81,7 +91,8 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param setTime Accumulo will set the time
    * @return status of create
    **/
-  virtual bool import(std::string dir, std::string fail_path, bool setTime = false);
+  virtual bool import(std::string dir, std::string fail_path,
+                      bool setTime = false);
 
   /**
    * Flushes the current table
@@ -103,7 +114,8 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * 0 failure
    * 1 success, compaction occurred
    **/
-  virtual int8_t compact(std::string startRow, std::string endRow, bool wait) override;
+  virtual int8_t compact(std::string startRow, std::string endRow,
+                         bool wait) override;
 
   /**
    * Returns the table ID
@@ -159,7 +171,10 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads current threads
    * @return new scanner
    **/
-  std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+  std::unique_ptr<scanners::Source<
+      cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>
+  createScanner(cclient::data::security::Authorizations *auths,
+                uint16_t threads) override;
 
   /**
    * Creates a writer for the current table
@@ -167,7 +182,9 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+  std::unique_ptr<writer::Sink<cclient::data::KeyValue>> createWriter(
+      cclient::data::security::Authorizations *auths,
+      uint16_t threads) override;
 
   /**
    * Creates a new scanner
@@ -175,7 +192,10 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads current threads
    * @return new scanner
    **/
-  std::shared_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> createSharedScanner(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+  std::shared_ptr<scanners::Source<
+      cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>
+  createSharedScanner(cclient::data::security::Authorizations *auths,
+                      uint16_t threads) override;
 
   /**
    * Creates a writer for the current table
@@ -183,17 +203,22 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  std::shared_ptr<writer::Sink<cclient::data::KeyValue>> createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) override;
+  std::shared_ptr<writer::Sink<cclient::data::KeyValue>> createSharedWriter(
+      cclient::data::security::Authorizations *auths,
+      uint16_t threads) override;
 
  protected:
-
   void loadNamespaces(bool force = false);
 
-  TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector;
+  TransportPool<interconnect::AccumuloCoordinatorTransporter>
+      *distributedConnector;
 
-  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> tserverConn;
+  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>>
+      tserverConn;
 
-  RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
+  RootInterface<
+      interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue,
+      scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
 
   void loadTableOps(bool force = false);
 
@@ -204,11 +229,10 @@ class AccumuloTableOperations : public interconnect::TableOperations<cclient::da
   // loaded namespaces
   std::map<std::string, std::string> namespaces;
   std::vector<std::string> namespaceNames;
-
 };
 
 extern std::map<std::string, std::string> nameSpaceIds;
 
-} /* namespace impl */
+}  // namespace interconnect
 
 #endif /* SRC_INTERCONNECT_TABLEOPS_CLIENTTABLEOPS_H_ */

@@ -15,26 +15,25 @@
 #ifndef SRC_INTERCONNECT_ACCUMULOBASECONNECTOR_H_
 #define SRC_INTERCONNECT_ACCUMULOBASECONNECTOR_H_
 
-#include "../data/constructs/inputvalidation.h"
 #include "../data/constructs/IterInfo.h"
 #include "../data/constructs/configuration/Configuration.h"
-#include "../data/extern/thrift/data_types.h"
+#include "../data/constructs/inputvalidation.h"
 #include "../data/constructs/scanstate.h"
+#include "../data/constructs/server/RangeDefinition.h"
+#include "../data/constructs/server/ServerDefinition.h"
+#include "../data/constructs/tablet/TabletType.h"
 #include "../data/exceptions/ClientException.h"
 #include "../data/exceptions/IllegalArgumentException.h"
-#include "../data/constructs/tablet/TabletType.h"
+#include "../data/extern/thrift/data_types.h"
 #include "../interconnect/ClientInterface.h"
-
-#include "../data/constructs/server/RangeDefinition.h"
 #include "TransportPool.h"
-#include "../data/constructs/server/ServerDefinition.h"
 
 namespace interconnect {
 
 /**
  * Accumulo Connector
  */
-template<typename Tr>
+template <typename Tr>
 class AccumuloBaseConnector : virtual public ClientInterface<Tr> {
  public:
   /**
@@ -45,9 +44,7 @@ class AccumuloBaseConnector : virtual public ClientInterface<Tr> {
         myTransportPool(NULL),
         rangeDef(NULL),
         tServer(NULL),
-        serverDef(NULL) {
-
-  }
+        serverDef(NULL) {}
   /**
    * Constructor accepting host and port
    * @param host host name
@@ -58,21 +55,16 @@ class AccumuloBaseConnector : virtual public ClientInterface<Tr> {
         myTransportPool(NULL),
         rangeDef(NULL),
         tServer(NULL),
-        serverDef(NULL) {
-
-  }
+        serverDef(NULL) {}
   /**
    * Destructor with no ownership guidelines
    **/
-  virtual ~AccumuloBaseConnector() {
+  virtual ~AccumuloBaseConnector() {}
 
-  }
+  cclient::data::security::AuthInfo *getCredentials() { return &credentials; }
 
-  cclient::data::security::AuthInfo *getCredentials() {
-    return &credentials;
-  }
-
-  std::shared_ptr<cclient::data::tserver::RangeDefinition> getRangesDefinition() {
+  std::shared_ptr<cclient::data::tserver::RangeDefinition>
+  getRangesDefinition() {
     return rangeDef;
   }
 

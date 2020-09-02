@@ -19,10 +19,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "Token.h"
+
 #include "Exception.h"
 #include "ExceptionInternal.h"
 #include "Hash.h"
-#include "Token.h"
 #include "WritableUtils.h"
 #ifdef USE_KRB5
 #include <gsasl.h>
@@ -32,150 +33,146 @@ using namespace Hdfs::Internal;
 namespace Hdfs {
 namespace Internal {
 #ifdef USE_KRB5
-static std::string Base64Encode(const char * input, size_t len) {
-    int rc = 0;
-    size_t outLen;
-    char * output = NULL;
-    std::string retval;
+static std::string Base64Encode(const char* input, size_t len) {
+  int rc = 0;
+  size_t outLen;
+  char* output = NULL;
+  std::string retval;
 
-    if (GSASL_OK != (rc = gsasl_base64_to(input, len, &output, &outLen))) {
-        assert(GSASL_MALLOC_ERROR == rc);
-        throw std::bad_alloc();
-    }
+  if (GSASL_OK != (rc = gsasl_base64_to(input, len, &output, &outLen))) {
+    assert(GSASL_MALLOC_ERROR == rc);
+    throw std::bad_alloc();
+  }
 
-    assert(NULL != output);
-    retval = output;
-    gsasl_free(output);
+  assert(NULL != output);
+  retval = output;
+  gsasl_free(output);
 
-    for (size_t i = 0 ; i < retval.length(); ++i) {
-        switch (retval[i]) {
-        case '+':
-            retval[i] = '-';
-            break;
+  for (size_t i = 0; i < retval.length(); ++i) {
+    switch (retval[i]) {
+      case '+':
+        retval[i] = '-';
+        break;
 
-        case '/':
-            retval[i] = '_';
-            break;
+      case '/':
+        retval[i] = '_';
+        break;
 
-        case '=':
-            retval.resize(i);
-            break;
+      case '=':
+        retval.resize(i);
+        break;
 
-        default:
-            break;
-        }
-    }
-
-    return retval;
-}
-
-static void Base64Decode(const std::string & urlSafe,
-                         std::vector<char> & buffer) {
-    int retval = 0, append = 0;
-    size_t outLen;
-    char * output = NULL;
-    std::string input = urlSafe;
-
-    for (size_t i = 0; i < input.length(); ++i) {
-        switch (input[i]) {
-        case '-':
-            input[i] = '+';
-            break;
-
-        case '_':
-            input[i] = '/';
-            break;
-
-        default:
-            break;
-        }
-    }
-
-    while (true) {
-        retval = gsasl_base64_from(&input[0], input.length(), &output, &outLen);
-
-        if (GSASL_OK != retval) {
-            switch (retval) {
-            case GSASL_BASE64_ERROR:
-                if (append++ < 2) {
-                    input.append("=");
-                    continue;
-                }
-
-                throw std::invalid_argument(
-                    "invalid input of gsasl_base64_from");
-
-            case GSASL_MALLOC_ERROR:
-                throw std::bad_alloc();
-
-            default:
-                assert(
-                    false
-                    && "unexpected return value from gsasl_base64_from");
-            }
-        }
-
+      default:
         break;
     }
+  }
 
-    assert(outLen >= 0);
-    buffer.resize(outLen);
-    memcpy(&buffer[0], output, outLen);
-    gsasl_free(output);
+  return retval;
+}
+
+static void Base64Decode(const std::string& urlSafe,
+                         std::vector<char>& buffer) {
+  int retval = 0, append = 0;
+  size_t outLen;
+  char* output = NULL;
+  std::string input = urlSafe;
+
+  for (size_t i = 0; i < input.length(); ++i) {
+    switch (input[i]) {
+      case '-':
+        input[i] = '+';
+        break;
+
+      case '_':
+        input[i] = '/';
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  while (true) {
+    retval = gsasl_base64_from(&input[0], input.length(), &output, &outLen);
+
+    if (GSASL_OK != retval) {
+      switch (retval) {
+        case GSASL_BASE64_ERROR:
+          if (append++ < 2) {
+            input.append("=");
+            continue;
+          }
+
+          throw std::invalid_argument("invalid input of gsasl_base64_from");
+
+        case GSASL_MALLOC_ERROR:
+          throw std::bad_alloc();
+
+        default:
+          assert(false && "unexpected return value from gsasl_base64_from");
+      }
+    }
+
+    break;
+  }
+
+  assert(outLen >= 0);
+  buffer.resize(outLen);
+  memcpy(&buffer[0], output, outLen);
+  gsasl_free(output);
 }
 #endif
 std::string Token::toString() const {
-    try {
-        size_t len = 0;
-        std::vector<char> buffer(1024);
-        WritableUtils out(&buffer[0], buffer.size());
-        len += out.WriteInt32(identifier.size());
-        len += out.WriteRaw(&identifier[0], identifier.size());
-        len += out.WriteInt32(password.size());
-        len += out.WriteRaw(&password[0], password.size());
-        len += out.WriteText(kind);
-        len += out.WriteText(service);
+  try {
+    size_t len = 0;
+    std::vector<char> buffer(1024);
+    WritableUtils out(&buffer[0], buffer.size());
+    len += out.WriteInt32(identifier.size());
+    len += out.WriteRaw(&identifier[0], identifier.size());
+    len += out.WriteInt32(password.size());
+    len += out.WriteRaw(&password[0], password.size());
+    len += out.WriteText(kind);
+    len += out.WriteText(service);
 #ifdef USE_KRB5
-        return Base64Encode(&buffer[0], len);
+    return Base64Encode(&buffer[0], len);
 #else
-         return std::string(buffer.data(),len);
+    return std::string(buffer.data(), len);
 #endif
 
-    } catch (...) {
-        NESTED_THROW(HdfsIOException, "cannot convert token to string");
-    }
+  } catch (...) {
+    NESTED_THROW(HdfsIOException, "cannot convert token to string");
+  }
 }
 
-Token & Token::fromString(const std::string & str) {
-    int32_t len;
+Token& Token::fromString(const std::string& str) {
+  int32_t len;
 
-    try {
-        std::vector<char> buffer;
+  try {
+    std::vector<char> buffer;
 #ifdef USE_KRB5
-        Base64Decode(str, buffer);
+    Base64Decode(str, buffer);
 #endif
-        WritableUtils in(&buffer[0], buffer.size());
-        len = in.ReadInt32();
-        identifier.resize(len);
-        in.ReadRaw(&identifier[0], len);
-        len = in.ReadInt32();
-        password.resize(len);
-        in.ReadRaw(&password[0], len);
-        kind = in.ReadText();
-        service = in.ReadText();
-        return *this;
-    } catch (...) {
-        NESTED_THROW(HdfsInvalidBlockToken,
-                     "cannot construct a token from the string");
-    }
+    WritableUtils in(&buffer[0], buffer.size());
+    len = in.ReadInt32();
+    identifier.resize(len);
+    in.ReadRaw(&identifier[0], len);
+    len = in.ReadInt32();
+    password.resize(len);
+    in.ReadRaw(&password[0], len);
+    kind = in.ReadText();
+    service = in.ReadText();
+    return *this;
+  } catch (...) {
+    NESTED_THROW(HdfsInvalidBlockToken,
+                 "cannot construct a token from the string");
+  }
 }
 
 size_t Token::hash_value() const {
-    size_t values[] = { StringHasher(identifier), StringHasher(password),
-                        StringHasher(kind), StringHasher(service)
-                      };
-    return CombineHasher(values, sizeof(values) / sizeof(values[0]));
+  size_t values[] = {StringHasher(identifier), StringHasher(password),
+                     StringHasher(kind), StringHasher(service)};
+  return CombineHasher(values, sizeof(values) / sizeof(values[0]));
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

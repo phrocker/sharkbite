@@ -14,52 +14,54 @@
 #ifndef BASE_TRANSPORT_H
 #define BASE_TRANSPORT_H
 
-#include <chrono>
-#include <thread>
-#include <map>
-#include <set>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <ctime>        // std::time
-#include <cstdlib>      // std::rand, std::srand
+#include <concurrency/ThreadManager.h>
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
-
-
+#include <sys/time.h>
+#include <transport/TBufferTransports.h>
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
 #include <transport/TSocket.h>
+#include <transport/TTransport.h>
 #include <transport/TTransportException.h>
-#include <transport/TBufferTransports.h>
 
-#include <concurrency/ThreadManager.h>
+#include <algorithm>  // std::random_shuffle
+#include <chrono>
+#include <cstdlib>  // std::rand, std::srand
+#include <ctime>    // std::time
+#include <map>
+#include <set>
+#include <thread>
+#include <vector>  // std::vector
 
-#include <sys/time.h>
-
+#include "../Scan.h"
+#include "../scanrequest/ScanIdentifier.h"
+#include "../scanrequest/ScanRequest.h"
+#include "ServerTransport.h"
 #include "Transport.h"
+#include "data/constructs/InstanceVersion.h"
+#include "data/constructs/security/AuthInfo.h"
 #include "data/constructs/security/Permissions.h"
+#include "data/extern/thrift/ClientService.h"
+#include "data/extern/thrift/TabletClientService.h"
+#include "data/extern/thrift/ThriftWrapper.h"
 #include "interconnect/accumulo/AccumuloServerFacade.h"
 #include "interconnect/accumulo/AccumuloServerOne.h"
 #include "interconnect/accumulo/AccumuloServerTwo.h"
-#include "data/extern/thrift/ClientService.h"
-#include "data/extern/thrift/TabletClientService.h"
-#include "../scanrequest/ScanRequest.h"
-#include "../scanrequest/ScanIdentifier.h"
-#include "ServerTransport.h"
-#include "data/extern/thrift/ThriftWrapper.h"
-#include "data/constructs/security/AuthInfo.h"
-#include "../Scan.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
-#include "data/constructs/InstanceVersion.h"
 
 namespace interconnect {
 
-class ThriftTransporter : virtual public ServerTransport<apache::thrift::transport::TTransport, cclient::data::KeyExtent,std::shared_ptr<cclient::data::Range>, std::shared_ptr<cclient::data::Mutation>> {
+class ThriftTransporter
+    : virtual public ServerTransport<apache::thrift::transport::TTransport,
+                                     cclient::data::KeyExtent,
+                                     std::shared_ptr<cclient::data::Range>,
+                                     std::shared_ptr<cclient::data::Mutation>> {
  private:
   std::shared_ptr<logging::Logger> logger;
+
  protected:
   std::shared_ptr<apache::thrift::transport::TTransport> underlyingTransport;
 
@@ -67,15 +69,25 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   std::shared_ptr<ServerConnection> clonedConnection;
 
-  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) override;
+  virtual void newTransporter(
+      const std::shared_ptr<ServerConnection> &conn) override;
 
-  std::shared_ptr<apache::thrift::transport::TFramedTransport> createTransporter();
+  std::shared_ptr<apache::thrift::transport::TFramedTransport>
+  createTransporter();
 
-  Scan* singleScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
+  Scan *singleScan(
+      std::atomic<bool> *isRunning,
+      ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+                                 std::shared_ptr<cclient::data::Range>>>
+          *request) {
     return server->singleScan(isRunning, request);
   }
 
-  Scan* multiScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) {
+  Scan *multiScan(
+      std::atomic<bool> *isRunning,
+      ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+                                 std::shared_ptr<cclient::data::Range>>>
+          *request) {
     return server->multiScan(isRunning, request);
   }
 
@@ -86,8 +98,7 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   /**
    * Self healing function to switch the interconnect if a failure occurs.
    */
-  virtual void switchInterconnect(int version = -1) {
-  }
+  virtual void switchInterconnect(int version = -1) {}
 
   void switchVersion(int suspectedVersion) {
     switch (suspectedVersion) {
@@ -107,32 +118,38 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
     underlyingTransport = createTransporter();
 
-    std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
+    std::shared_ptr<apache::thrift::protocol::TProtocol> protocolPtr(
+        new apache::thrift::protocol::TCompactProtocol(underlyingTransport));
 
     server->initialize(protocolPtr, true);
   }
 
-  void printUncaughtException(std::exception_ptr eptr, const std::string &appendStr) {
+  void printUncaughtException(std::exception_ptr eptr,
+                              const std::string &appendStr) {
     try {
       if (eptr) {
         std::rethrow_exception(eptr);
       }
     } catch (const std::exception &e) {
-      logging::LOG_TRACE(logger) << "Caught exception " << e.what() << " " << appendStr;
+      logging::LOG_TRACE(logger)
+          << "Caught exception " << e.what() << " " << appendStr;
     }
   }
 
-  template<typename T>
+  template <typename T>
   T callTabletServerApiWithReturn(std::function<T()> fx) {
     try {
       return fx();
     } catch (...) {
       auto eptr = std::current_exception();
-      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->toString()) + 1;
+      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(
+                                  getConnection()->toString()) +
+                              1;
       if (suspectedVersion <= 2) {
         switchVersion(suspectedVersion);
         T ret = fx();
-        cclient::data::InstanceVersion::setVersion(getConnection()->toString(), suspectedVersion);
+        cclient::data::InstanceVersion::setVersion(getConnection()->toString(),
+                                                   suspectedVersion);
         return ret;
       } else {
         std::rethrow_exception(eptr);
@@ -145,11 +162,14 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
       fx();
     } catch (...) {
       auto eptr = std::current_exception();
-      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(getConnection()->toString()) + 1;
+      auto suspectedVersion = cclient::data::InstanceVersion::getVersion(
+                                  getConnection()->toString()) +
+                              1;
       if (suspectedVersion <= 2) {
         switchVersion(suspectedVersion);
         fx();
-        cclient::data::InstanceVersion::setVersion(getConnection()->toString(), suspectedVersion);
+        cclient::data::InstanceVersion::setVersion(getConnection()->toString(),
+                                                   suspectedVersion);
       } else {
         std::rethrow_exception(eptr);
       }
@@ -157,12 +177,14 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
   }
 
  public:
-
-  explicit ThriftTransporter(const std::shared_ptr<ServerConnection> &conn, bool reg = true);
+  explicit ThriftTransporter(const std::shared_ptr<ServerConnection> &conn,
+                             bool reg = true);
 
   virtual ~ThriftTransporter();
 
-  std::map<std::string, std::string> getNamespaceConfiguration(cclient::data::security::AuthInfo *auth, const std::string &nameSpaceName);
+  std::map<std::string, std::string> getNamespaceConfiguration(
+      cclient::data::security::AuthInfo *auth,
+      const std::string &nameSpaceName);
 
   apache::thrift::transport::TTransport getTransport() override;
 
@@ -173,133 +195,142 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
 
   void createClientService(bool callRegistration = false);
 
-  virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
+  virtual void registerService(const std::string &instance,
+                               const std::string &clusterManagers) override {
     createClientService(true);
     server->registerService(instance, clusterManagers);
   }
 
-  Scan* beginScan(std::atomic<bool> *isRunning, ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>, std::shared_ptr<cclient::data::Range>> > *request) override {
-    return callTabletServerApiWithReturn<Scan*>([&]() -> Scan* {
-      return server->beginScan(isRunning, request);
-    });
-
+  Scan *beginScan(
+      std::atomic<bool> *isRunning,
+      ScanRequest<ScanIdentifier<std::shared_ptr<cclient::data::KeyExtent>,
+                                 std::shared_ptr<cclient::data::Range>>>
+          *request) override {
+    return callTabletServerApiWithReturn<Scan *>(
+        [&]() -> Scan * { return server->beginScan(isRunning, request); });
   }
 
-  Scan* continueScan(Scan *originalScan) {
-    return callTabletServerApiWithReturn<Scan*>([&]() -> Scan* {
-      return server->continueScan(originalScan);
-    });
+  Scan *continueScan(Scan *originalScan) {
+    return callTabletServerApiWithReturn<Scan *>(
+        [&]() -> Scan * { return server->continueScan(originalScan); });
   }
 
-  void* write(cclient::data::security::AuthInfo *auth, std::map<cclient::data::KeyExtent, std::vector<std::shared_ptr<cclient::data::Mutation>>> *request) override {
-
-    return callTabletServerApiWithReturn<void*>([&]() -> void* {
-      return server->write(auth, request);
-    });
-
+  void *write(cclient::data::security::AuthInfo *auth,
+              std::map<cclient::data::KeyExtent,
+                       std::vector<std::shared_ptr<cclient::data::Mutation>>>
+                  *request) override {
+    return callTabletServerApiWithReturn<void *>(
+        [&]() -> void * { return server->write(auth, request); });
   }
 
-  bool dropUser(cclient::data::security::AuthInfo *auth, const std::string &user) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool {
-      return server->dropUser(auth, user);
-    });
+  bool dropUser(cclient::data::security::AuthInfo *auth,
+                const std::string &user) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->dropUser(auth, user); });
   }
 
-  bool changeUserPassword(cclient::data::security::AuthInfo *auth, const std::string &user, const std::string &password) {
+  bool changeUserPassword(cclient::data::security::AuthInfo *auth,
+                          const std::string &user,
+                          const std::string &password) {
     return callTabletServerApiWithReturn<bool>([&]() -> bool {
       return server->changeUserPassword(auth, user, password);
     });
   }
 
-  bool createUser(cclient::data::security::AuthInfo *auth, const std::string &user, const std::string &password) {
+  bool createUser(cclient::data::security::AuthInfo *auth,
+                  const std::string &user, const std::string &password) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->createUser(auth, user, password); });
+  }
+
+  std::map<std::string, std::string> getTableConfiguration(
+      cclient::data::security::AuthInfo *auth, const std::string &table) {
+    return callTabletServerApiWithReturn<std::map<std::string, std::string>>(
+        [&]() -> std::map<std::string, std::string> {
+          return server->getTableConfiguration(auth, table);
+        });
+  }
+
+  cclient::data::security::Authorizations *getUserAuths(
+      cclient::data::security::AuthInfo *auth, const std::string &user) {
+    return callTabletServerApiWithReturn<
+        cclient::data::security::Authorizations *>(
+        [&]() -> cclient::data::security::Authorizations * {
+          return server->getUserAuths(auth, user);
+        });
+  }
+
+  void changeUserAuths(cclient::data::security::AuthInfo *auth,
+                       const std::string &user,
+                       cclient::data::security::Authorizations *auths) {
+    callTabletServerApi(
+        [&]() { return server->changeUserAuths(auth, user, auths); });
+  }
+
+  void splitTablet(cclient::data::security::AuthInfo *auth,
+                   std::shared_ptr<cclient::data::KeyExtent> extent,
+                   const std::string &split) {
+    callTabletServerApi(
+        [&]() { return server->splitTablet(auth, extent, split); });
+  }
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,
+             cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->grant(auth, user, perm); });
+  }
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,
+             const std::string &table, cclient::data::TablePermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->grant(auth, user, table, perm); });
+  }
+
+  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,
+             const std::string &nsp, cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->grant(auth, user, nsp, perm); });
+  }
+
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,
+              cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->revoke(auth, user, perm); });
+  }
+
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,
+              const std::string &table, cclient::data::TablePermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->revoke(auth, user, table, perm); });
+  }
+
+  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,
+              const std::string &nsp,
+              cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->revoke(auth, user, nsp, perm); });
+  }
+
+  bool hasPermission(cclient::data::security::AuthInfo *auth,
+                     const std::string &user,
+                     cclient::data::SystemPermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->hasPermission(auth, user, perm); });
+  }
+
+  bool hasPermission(cclient::data::security::AuthInfo *auth,
+                     const std::string &user, const std::string &table,
+                     cclient::data::TablePermissions perm) {
     return callTabletServerApiWithReturn<bool>([&]() -> bool {
-      return server->createUser(auth, user, password);
+      return server->hasPermission(auth, user, table, perm);
     });
   }
 
-  std::map<std::string, std::string> getTableConfiguration(cclient::data::security::AuthInfo *auth, const std::string &table) {
-    return callTabletServerApiWithReturn<std::map<std::string, std::string>>([&]() -> std::map<std::string, std::string> {
-      return server->getTableConfiguration(auth, table);
-    });
-  }
-
-  cclient::data::security::Authorizations* getUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user) {
-    return callTabletServerApiWithReturn<cclient::data::security::Authorizations*>([&]() -> cclient::data::security::Authorizations* {
-      return server->getUserAuths(auth, user);
-    });
-  }
-
-  void changeUserAuths(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::security::Authorizations *auths) {
-    callTabletServerApi([&]() {
-      return server->changeUserAuths(auth, user, auths);
-    });
-
-  }
-
-  void splitTablet(cclient::data::security::AuthInfo *auth, std::shared_ptr<cclient::data::KeyExtent> extent, const std::string &split) {
-    callTabletServerApi([&]() {
-      return server->splitTablet(auth, extent, split);
-    });
-
-  }
-
-
-
-  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->grant(auth,user,perm);
-    });
-  }
-
-  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->grant(auth,user,table,perm);
-    });
-  }
-
-  bool grant(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->grant(auth,user,nsp,perm);
-    });
-  }
-
-  
-  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->revoke(auth,user,perm);
-    });
-  }
-
-  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->revoke(auth,user,table,perm);
-    });
-  }
-
-  bool revoke(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->revoke(auth,user,nsp,perm);
-    });
-  }
-
-
-  
-  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user, cclient::data::SystemPermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]()-> bool {
-      return server->hasPermission(auth,user,perm);
-    });
-  }
-
-  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &table, cclient::data::TablePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->hasPermission(auth,user,table,perm);
-    });
-  }
-
-  bool hasPermission(cclient::data::security::AuthInfo *auth, const std::string &user,const std::string &nsp, cclient::data::NamespacePermissions perm) {
-    return callTabletServerApiWithReturn<bool>([&]() -> bool{
-      return server->hasPermission(auth,user,nsp,perm);
-    });
+  bool hasPermission(cclient::data::security::AuthInfo *auth,
+                     const std::string &user, const std::string &nsp,
+                     cclient::data::NamespacePermissions perm) {
+    return callTabletServerApiWithReturn<bool>(
+        [&]() -> bool { return server->hasPermission(auth, user, nsp, perm); });
   }
 
   void close() override {
@@ -308,17 +339,11 @@ class ThriftTransporter : virtual public ServerTransport<apache::thrift::transpo
     underlyingTransport->close();
   }
 
-  void close(Scan *scan) {
-  }
+  void close(Scan *scan) {}
 
-  bool open() override {
-    return underlyingTransport->isOpen();
-  }
+  bool open() override { return underlyingTransport->isOpen(); }
 
-  bool isOpen() override {
-    return underlyingTransport->isOpen();
-  }
-
+  bool isOpen() override { return underlyingTransport->isOpen(); }
 };
-}
+}  // namespace interconnect
 #endif

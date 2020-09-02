@@ -19,11 +19,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "FileSystem.h"
+
+#include <algorithm>
+#include <string>
+
 #include "DirectoryIterator.h"
 #include "EncryptionZoneIterator.h"
 #include "Exception.h"
 #include "ExceptionInternal.h"
-#include "FileSystem.h"
 #include "FileSystemImpl.h"
 #include "FileSystemKey.h"
 #include "Hash.h"
@@ -32,11 +36,8 @@
 #include "Token.h"
 #include "Unordered.h"
 #include "WritableUtils.h"
-
-#include <algorithm>
-#include <string>
 #ifdef USE_KRB5
-  #include <krb5/krb5.h>
+#include <krb5/krb5.h>
 #endif
 
 using namespace Hdfs::Internal;
@@ -46,165 +47,160 @@ namespace Hdfs {
 namespace Internal {
 
 static std::string ExtractPrincipalFromTicketCache(
-    const std::string & cachePath) {
+    const std::string& cachePath) {
 #ifdef USE_KRB5
-    krb5_context cxt = NULL;
-    krb5_ccache ccache = NULL;
-    krb5_principal principal = NULL;
-    krb5_error_code ec = 0;
-    std::string errmsg, retval;
-    char * priName = NULL;
+  krb5_context cxt = NULL;
+  krb5_ccache ccache = NULL;
+  krb5_principal principal = NULL;
+  krb5_error_code ec = 0;
+  std::string errmsg, retval;
+  char* priName = NULL;
 
-    if (!cachePath.empty()) {
-        if (0 != setenv("KRB5CCNAME", cachePath.c_str(), 1)) {
-            THROW(HdfsIOException, "Cannot set env parameter \"KRB5CCNAME\"");
-        }
+  if (!cachePath.empty()) {
+    if (0 != setenv("KRB5CCNAME", cachePath.c_str(), 1)) {
+      THROW(HdfsIOException, "Cannot set env parameter \"KRB5CCNAME\"");
+    }
+  }
+
+  do {
+    if (0 != (ec = krb5_init_context(&cxt))) {
+      break;
     }
 
-    do {
-        if (0 != (ec = krb5_init_context(&cxt))) {
-            break;
-        }
+    if (0 != (ec = krb5_cc_default(cxt, &ccache))) {
+      break;
+    }
 
-        if (0 != (ec = krb5_cc_default(cxt, &ccache))) {
-            break;
-        }
+    if (0 != (ec = krb5_cc_get_principal(cxt, ccache, &principal))) {
+      break;
+    }
 
-        if (0 != (ec = krb5_cc_get_principal(cxt, ccache, &principal))) {
-            break;
-        }
+    if (0 != (ec = krb5_unparse_name(cxt, principal, &priName))) {
+      break;
+    }
+  } while (0);
 
-        if (0 != (ec = krb5_unparse_name(cxt, principal, &priName))) {
-            break;
-        }
-    } while (0);
-
-    if (!ec) {
-        retval = priName;
+  if (!ec) {
+    retval = priName;
+  } else {
+    if (cxt) {
+      errmsg = krb5_get_error_message(cxt, ec);
     } else {
-        if (cxt) {
-            errmsg = krb5_get_error_message(cxt, ec);
-        } else {
-            errmsg = "Cannot initialize kerberos context";
-        }
+      errmsg = "Cannot initialize kerberos context";
     }
+  }
 
-    if (priName != NULL) {
-        krb5_free_unparsed_name(cxt, priName);
-    }
+  if (priName != NULL) {
+    krb5_free_unparsed_name(cxt, priName);
+  }
 
-    if (principal != NULL) {
-        krb5_free_principal(cxt, principal);
-    }
+  if (principal != NULL) {
+    krb5_free_principal(cxt, principal);
+  }
 
-    if (ccache != NULL) {
-        krb5_cc_close(cxt, ccache);
-    }
+  if (ccache != NULL) {
+    krb5_cc_close(cxt, ccache);
+  }
 
-    if (cxt != NULL) {
-        krb5_free_context(cxt);
-    }
+  if (cxt != NULL) {
+    krb5_free_context(cxt);
+  }
 
-    if (!errmsg.empty()) {
-        THROW(HdfsIOException,
-              "FileSystem: Failed to extract principal from ticket cache: %s",
-              errmsg.c_str());
-    }
-    return retval;
+  if (!errmsg.empty()) {
+    THROW(HdfsIOException,
+          "FileSystem: Failed to extract principal from ticket cache: %s",
+          errmsg.c_str());
+  }
+  return retval;
 #endif
-    THROW(HdfsIOException, "Do not have KRB library available");
-
+  THROW(HdfsIOException, "Do not have KRB library available");
 }
 
+static std::string ExtractPrincipalFromToken(const Token& token) {
+  std::string realUser, owner;
+  std::string identifier = token.getIdentifier();
+  WritableUtils cin(&identifier[0], identifier.size());
+  char version;
 
-static std::string ExtractPrincipalFromToken(const Token & token) {
-    std::string realUser, owner;
-    std::string identifier = token.getIdentifier();
-    WritableUtils cin(&identifier[0], identifier.size());
-    char version;
+  try {
+    version = cin.readByte();
 
-    try {
-        version = cin.readByte();
-
-        if (version != 0) {
-            THROW(HdfsIOException, "Unknown version of delegation token");
-        }
-
-        owner = cin.ReadText();
-        cin.ReadText();
-        realUser = cin.ReadText();
-        return realUser.empty() ? owner : realUser;
-    } catch (const std::range_error & e) {
+    if (version != 0) {
+      THROW(HdfsIOException, "Unknown version of delegation token");
     }
 
-    THROW(HdfsIOException, "Cannot extract principal from token");
-}
-}
+    owner = cin.ReadText();
+    cin.ReadText();
+    realUser = cin.ReadText();
+    return realUser.empty() ? owner : realUser;
+  } catch (const std::range_error& e) {
+  }
 
-FileSystem::FileSystem(const Config & conf) :
-    conf(conf), impl(NULL) {
+  THROW(HdfsIOException, "Cannot extract principal from token");
 }
+}  // namespace Internal
 
-FileSystem::FileSystem(const FileSystem & other) :
-    conf(other.conf), impl(NULL) {
-    if (other.impl) {
-        impl = new FileSystemWrapper(other.impl->filesystem);
-    }
+FileSystem::FileSystem(const Config& conf) : conf(conf), impl(NULL) {}
+
+FileSystem::FileSystem(const FileSystem& other) : conf(other.conf), impl(NULL) {
+  if (other.impl) {
+    impl = new FileSystemWrapper(other.impl->filesystem);
+  }
 }
 
-FileSystem & FileSystem::operator =(const FileSystem & other) {
-    if (this == &other) {
-        return *this;
-    }
-
-    conf = other.conf;
-
-    if (impl) {
-        delete impl;
-        impl = NULL;
-    }
-
-    if (other.impl) {
-        impl = new FileSystemWrapper(other.impl->filesystem);
-    }
-
+FileSystem& FileSystem::operator=(const FileSystem& other) {
+  if (this == &other) {
     return *this;
+  }
+
+  conf = other.conf;
+
+  if (impl) {
+    delete impl;
+    impl = NULL;
+  }
+
+  if (other.impl) {
+    impl = new FileSystemWrapper(other.impl->filesystem);
+  }
+
+  return *this;
 }
 
 FileSystem::~FileSystem() {
-    if (impl) {
-        try {
-            disconnect();
-        } catch (...) {
-        }
+  if (impl) {
+    try {
+      disconnect();
+    } catch (...) {
     }
+  }
 }
 
 void FileSystem::connect() {
-    Internal::SessionConfig sconf(conf);
-    connect(sconf.getDefaultUri().c_str(), NULL, NULL);
+  Internal::SessionConfig sconf(conf);
+  connect(sconf.getDefaultUri().c_str(), NULL, NULL);
 }
 
 /**
  * Connect to hdfs
  * @param uri hdfs connection uri, hdfs://host:port
  */
-void FileSystem::connect(const char * uri) {
-    connect(uri, NULL, NULL);
-}
+void FileSystem::connect(const char* uri) { connect(uri, NULL, NULL); }
 
-static FileSystemWrapper * ConnectInternal(const char * uri,
-        const std::string & principal, const Token * token, Config & conf) {
-    if (NULL == uri || 0 == strlen(uri)) {
-        THROW(InvalidParameter, "Invalid HDFS uri.");
-    }
-    FileSystemKey key(uri, principal.c_str());
+static FileSystemWrapper* ConnectInternal(const char* uri,
+                                          const std::string& principal,
+                                          const Token* token, Config& conf) {
+  if (NULL == uri || 0 == strlen(uri)) {
+    THROW(InvalidParameter, "Invalid HDFS uri.");
+  }
+  FileSystemKey key(uri, principal.c_str());
 
-    if (token) {
-        key.addToken(*token);
-    }
+  if (token) {
+    key.addToken(*token);
+  }
 
-    return new FileSystemWrapper(shared_ptr<FileSystemInter>(new FileSystemImpl(key, conf)));
+  return new FileSystemWrapper(
+      shared_ptr<FileSystemInter>(new FileSystemImpl(key, conf)));
 }
 
 /**
@@ -214,47 +210,48 @@ static FileSystemWrapper * ConnectInternal(const char * uri,
  * @param username user used to connect to hdfs
  * @param token token used to connect to hdfs
  */
-void FileSystem::connect(const char * uri, const char * username, const char * token) {
-    AuthMethod auth;
-    std::string principal;
+void FileSystem::connect(const char* uri, const char* username,
+                         const char* token) {
+  AuthMethod auth;
+  std::string principal;
 
-    if (impl) {
-        THROW(HdfsIOException, "FileSystem: already connected.");
+  if (impl) {
+    THROW(HdfsIOException, "FileSystem: already connected.");
+  }
+
+  try {
+    SessionConfig sconf(conf);
+    auth = RpcAuth::ParseMethod(sconf.getRpcAuthMethod());
+
+    if (token && auth != AuthMethod::SIMPLE) {
+      Token t;
+      t.fromString(token);
+      principal = ExtractPrincipalFromToken(t);
+      impl = ConnectInternal(uri, principal, &t, conf);
+      impl->filesystem->connect();
+      return;
+    } else if (username) {
+      principal = username;
     }
 
-    try {
-        SessionConfig sconf(conf);
-        auth = RpcAuth::ParseMethod(sconf.getRpcAuthMethod());
-
-        if (token && auth != AuthMethod::SIMPLE) {
-            Token t;
-            t.fromString(token);
-            principal = ExtractPrincipalFromToken(t);
-            impl = ConnectInternal(uri, principal, &t, conf);
-            impl->filesystem->connect();
-            return;
-        } else if (username) {
-            principal = username;
-        }
-
-        if (auth == AuthMethod::KERBEROS) {
-            principal = ExtractPrincipalFromTicketCache(sconf.getKerberosCachePath());
-        }
-        impl = ConnectInternal(uri, principal, NULL, conf);
-        impl->filesystem->connect();
-    } catch (...) {
-        delete impl;
-        impl = NULL;
-        throw;
+    if (auth == AuthMethod::KERBEROS) {
+      principal = ExtractPrincipalFromTicketCache(sconf.getKerberosCachePath());
     }
+    impl = ConnectInternal(uri, principal, NULL, conf);
+    impl->filesystem->connect();
+  } catch (...) {
+    delete impl;
+    impl = NULL;
+    throw;
+  }
 }
 
 /**
  * disconnect from hdfs
  */
 void FileSystem::disconnect() {
-    delete impl;
-    impl = NULL;
+  delete impl;
+  impl = NULL;
 }
 
 /**
@@ -262,11 +259,11 @@ void FileSystem::disconnect() {
  * @return the default number of replication.
  */
 int FileSystem::getDefaultReplication() const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getDefaultReplication();
+  return impl->filesystem->getDefaultReplication();
 }
 
 /**
@@ -274,11 +271,11 @@ int FileSystem::getDefaultReplication() const {
  * @return the default block size.
  */
 int64_t FileSystem::getDefaultBlockSize() const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getDefaultBlockSize();
+  return impl->filesystem->getDefaultBlockSize();
 }
 
 /**
@@ -286,11 +283,11 @@ int64_t FileSystem::getDefaultBlockSize() const {
  * @return home directory.
  */
 std::string FileSystem::getHomeDirectory() const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getHomeDirectory();
+  return impl->filesystem->getHomeDirectory();
 }
 
 /**
@@ -299,12 +296,12 @@ std::string FileSystem::getHomeDirectory() const {
  * @param recursive if path is a directory, delete the contents recursively.
  * @return return true if success.
  */
-bool FileSystem::deletePath(const char * path, bool recursive) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::deletePath(const char* path, bool recursive) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->deletePath(path, recursive);
+  return impl->filesystem->deletePath(path, recursive);
 }
 
 /**
@@ -313,12 +310,12 @@ bool FileSystem::deletePath(const char * path, bool recursive) {
  * @param permission directory permission.
  * @return return true if success.
  */
-bool FileSystem::mkdir(std::string  path, const Permission & permission) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::mkdir(std::string path, const Permission& permission) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->mkdir(path, permission);
+  return impl->filesystem->mkdir(path, permission);
 }
 
 /**
@@ -328,12 +325,12 @@ bool FileSystem::mkdir(std::string  path, const Permission & permission) {
  * @param permission directory permission.
  * @return return true if success.
  */
-bool FileSystem::mkdirs(std::string  path, const Permission & permission) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::mkdirs(std::string path, const Permission& permission) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->mkdirs(path, permission);
+  return impl->filesystem->mkdirs(path, permission);
 }
 
 /**
@@ -342,11 +339,11 @@ bool FileSystem::mkdirs(std::string  path, const Permission & permission) {
  * @return the path information.
  */
 FileStatus FileSystem::getFileStatus(std::string path) const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getFileStatus(path);
+  return impl->filesystem->getFileStatus(path);
 }
 
 /**
@@ -363,13 +360,14 @@ FileStatus FileSystem::getFileStatus(std::string path) const {
  * @param start offset into the given file
  * @param len length for which to get locations for
  */
-std::vector<BlockLocation> FileSystem::getFileBlockLocations(const char * path,
-        int64_t start, int64_t len) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+std::vector<BlockLocation> FileSystem::getFileBlockLocations(const char* path,
+                                                             int64_t start,
+                                                             int64_t len) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getFileBlockLocations(path, start, len);
+  return impl->filesystem->getFileBlockLocations(path, start, len);
 }
 
 /**
@@ -377,12 +375,12 @@ std::vector<BlockLocation> FileSystem::getFileBlockLocations(const char * path,
  * @param path the directory path.
  * @return Return a iterator to visit all elements in this directory.
  */
-DirectoryIterator FileSystem::listDirectory(std::string path)  {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+DirectoryIterator FileSystem::listDirectory(std::string path) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->listDirectory(path, false);
+  return impl->filesystem->listDirectory(path, false);
 }
 
 /**
@@ -391,11 +389,11 @@ DirectoryIterator FileSystem::listDirectory(std::string path)  {
  * @return Return a vector of file informations in the directory.
  */
 std::vector<FileStatus> FileSystem::listAllDirectoryItems(std::string path) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->listAllDirectoryItems(path, false);
+  return impl->filesystem->listAllDirectoryItems(path, false);
 }
 
 /**
@@ -405,13 +403,13 @@ std::vector<FileStatus> FileSystem::listAllDirectoryItems(std::string path) {
  * @param username new user name.
  * @param groupname new group.
  */
-void FileSystem::setOwner(const char * path, const char * username,
-                          const char * groupname) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void FileSystem::setOwner(const char* path, const char* username,
+                          const char* groupname) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->filesystem->setOwner(path, username, groupname);
+  impl->filesystem->setOwner(path, username, groupname);
 }
 
 /**
@@ -420,12 +418,12 @@ void FileSystem::setOwner(const char * path, const char * username,
  * @param mtime new modification time.
  * @param atime new access time.
  */
-void FileSystem::setTimes(const char * path, int64_t mtime, int64_t atime) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void FileSystem::setTimes(const char* path, int64_t mtime, int64_t atime) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->filesystem->setTimes(path, mtime, atime);
+  impl->filesystem->setTimes(path, mtime, atime);
 }
 
 /**
@@ -433,13 +431,12 @@ void FileSystem::setTimes(const char * path, int64_t mtime, int64_t atime) {
  * @param path the path which permission is to be changed.
  * @param permission new permission.
  */
-void FileSystem::setPermission(const char * path,
-                               const Permission & permission) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void FileSystem::setPermission(const char* path, const Permission& permission) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->filesystem->setPermission(path, permission);
+  impl->filesystem->setPermission(path, permission);
 }
 
 /**
@@ -448,12 +445,12 @@ void FileSystem::setPermission(const char * path,
  * @param replication new number of replication.
  * @return return true if success.
  */
-bool FileSystem::setReplication(const char * path, short replication) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::setReplication(const char* path, short replication) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->setReplication(path, replication);
+  return impl->filesystem->setReplication(path, replication);
 }
 
 /**
@@ -462,24 +459,24 @@ bool FileSystem::setReplication(const char * path, short replication) {
  * @param dst new path.
  * @return return true if success.
  */
-bool FileSystem::rename(const char * src, const char * dst) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::rename(const char* src, const char* dst) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->rename(src, dst);
+  return impl->filesystem->rename(src, dst);
 }
 
 /**
  * To set working directory.
  * @param path new working directory.
  */
-void FileSystem::setWorkingDirectory(const char * path) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void FileSystem::setWorkingDirectory(const char* path) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->filesystem->setWorkingDirectory(path);
+  impl->filesystem->setWorkingDirectory(path);
 }
 
 /**
@@ -487,11 +484,11 @@ void FileSystem::setWorkingDirectory(const char * path) {
  * @return working directory.
  */
 std::string FileSystem::getWorkingDirectory() const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getWorkingDirectory();
+  return impl->filesystem->getWorkingDirectory();
 }
 
 /**
@@ -499,12 +496,12 @@ std::string FileSystem::getWorkingDirectory() const {
  * @param path the path which is to be tested.
  * @return return true if the path exist.
  */
-bool FileSystem::exist(const char * path) const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::exist(const char* path) const {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->exist(path);
+  return impl->filesystem->exist(path);
 }
 
 /**
@@ -512,11 +509,11 @@ bool FileSystem::exist(const char * path) const {
  * @return the file system status.
  */
 FileSystemStats FileSystem::getStats() const {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getFsStats();
+  return impl->filesystem->getFsStats();
 }
 
 /**
@@ -527,20 +524,20 @@ FileSystemStats FileSystem::getStats() const {
  * @return true if and client does not need to wait for block recovery,
  * false if client needs to wait for block recovery.
  */
-bool FileSystem::truncate(const char * src, int64_t size) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::truncate(const char* src, int64_t size) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->truncate(src, size);
+  return impl->filesystem->truncate(src, size);
 }
 
-std::string FileSystem::getDelegationToken(const char * renewer) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+std::string FileSystem::getDelegationToken(const char* renewer) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getDelegationToken(renewer);
+  return impl->filesystem->getDelegationToken(renewer);
 }
 
 /**
@@ -550,11 +547,11 @@ std::string FileSystem::getDelegationToken(const char * renewer) {
  * @throws IOException
  */
 std::string FileSystem::getDelegationToken() {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->getDelegationToken();
+  return impl->filesystem->getDelegationToken();
 }
 
 /**
@@ -564,12 +561,12 @@ std::string FileSystem::getDelegationToken() {
  * @return the new expiration time
  * @throws IOException
  */
-int64_t FileSystem::renewDelegationToken(const std::string & token) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+int64_t FileSystem::renewDelegationToken(const std::string& token) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return  impl->filesystem->renewDelegationToken(token);
+  return impl->filesystem->renewDelegationToken(token);
 }
 
 /**
@@ -578,65 +575,64 @@ int64_t FileSystem::renewDelegationToken(const std::string & token) {
  * @param token delegation token
  * @throws IOException
  */
-void FileSystem::cancelDelegationToken(const std::string & token) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+void FileSystem::cancelDelegationToken(const std::string& token) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    impl->filesystem->cancelDelegationToken(token);
+  impl->filesystem->cancelDelegationToken(token);
 }
-
 
 /**
  * Create encryption zone for the directory with specific key name
  * @param path the directory path which is to be created.
- * @param keyname The key name of the encryption zone 
+ * @param keyname The key name of the encryption zone
  * @return return true if success.
  */
-bool FileSystem::createEncryptionZone(const char * path, const char * keyName) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+bool FileSystem::createEncryptionZone(const char* path, const char* keyName) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->createEncryptionZone(path, keyName);
+  return impl->filesystem->createEncryptionZone(path, keyName);
 }
 
 /**
-* To get encryption zone information.
-* @param path the path which information is to be returned.
-* @return the encryption zone information.
-*/
-EncryptionZoneInfo FileSystem::getEZForPath(const char * path) {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
-   
-    return impl->filesystem->getEZForPath(path);
+ * To get encryption zone information.
+ * @param path the path which information is to be returned.
+ * @return the encryption zone information.
+ */
+EncryptionZoneInfo FileSystem::getEZForPath(const char* path) {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
+
+  return impl->filesystem->getEZForPath(path);
 }
 
 /**
  * list the contents of an encryption zone.
  * @return Return a iterator to visit all elements in this encryption zone.
  */
-EncryptionZoneIterator FileSystem::listEncryptionZone()  {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+EncryptionZoneIterator FileSystem::listEncryptionZone() {
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->listEncryptionZone();
+  return impl->filesystem->listEncryptionZone();
 }
 
 /**
-* list all the contents of encryption zones.
-* @param id the index of encryption zones.
-* @return Return a vector of encryption zones information..
-*/
+ * list all the contents of encryption zones.
+ * @param id the index of encryption zones.
+ * @return Return a vector of encryption zones information..
+ */
 std::vector<EncryptionZoneInfo> FileSystem::listAllEncryptionZoneItems() {
-    if (!impl) {
-        THROW(HdfsIOException, "FileSystem: not connected.");
-    }
+  if (!impl) {
+    THROW(HdfsIOException, "FileSystem: not connected.");
+  }
 
-    return impl->filesystem->listAllEncryptionZoneItems();
+  return impl->filesystem->listAllEncryptionZoneItems();
 }
 
-}
+}  // namespace Hdfs

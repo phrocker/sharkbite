@@ -19,39 +19,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "PacketPool.h"
+
 #include "Logger.h"
 #include "Packet.h"
-#include "PacketPool.h"
 
 namespace Hdfs {
 namespace Internal {
 
-PacketPool::PacketPool(int size) :
-    maxSize(size) {
-}
+PacketPool::PacketPool(int size) : maxSize(size) {}
 
 shared_ptr<Packet> PacketPool::getPacket(int pktSize, int chunksPerPkt,
-        int64_t offsetInBlock, int64_t seqno, int checksumSize) {
-    if (packets.empty()) {
-        return shared_ptr<Packet>(
-                   new Packet(pktSize, chunksPerPkt, offsetInBlock, seqno,
-                              checksumSize));
-    } else {
-        shared_ptr<Packet> retval = packets.front();
-        packets.pop_front();
-        retval->reset(pktSize, chunksPerPkt, offsetInBlock, seqno,
-                      checksumSize);
-        return retval;
-    }
+                                         int64_t offsetInBlock, int64_t seqno,
+                                         int checksumSize) {
+  if (packets.empty()) {
+    return shared_ptr<Packet>(
+        new Packet(pktSize, chunksPerPkt, offsetInBlock, seqno, checksumSize));
+  } else {
+    shared_ptr<Packet> retval = packets.front();
+    packets.pop_front();
+    retval->reset(pktSize, chunksPerPkt, offsetInBlock, seqno, checksumSize);
+    return retval;
+  }
 }
 
 void PacketPool::relesePacket(shared_ptr<Packet> packet) {
-    if (static_cast<int>(packets.size()) >= maxSize) {
-        return;
-    }
+  if (static_cast<int>(packets.size()) >= maxSize) {
+    return;
+  }
 
-    packets.push_back(packet);
+  packets.push_back(packet);
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

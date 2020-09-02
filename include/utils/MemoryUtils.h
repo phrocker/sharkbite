@@ -22,14 +22,16 @@
 namespace cclient {
 namespace MemoryUtils {
 
-//void * AVX_memcpy(void *dest, void *src, size_t numbytes);
-//int AVX_memcmp(const void *str1, const void *str2, size_t numbytes, int equality);
-INLINE int compare(const void *str1, const void *str2, size_t numbytes, int equality = 0) {
+// void * AVX_memcpy(void *dest, void *src, size_t numbytes);
+// int AVX_memcmp(const void *str1, const void *str2, size_t numbytes, int
+// equality);
+INLINE int compare(const void *str1, const void *str2, size_t numbytes,
+                   int equality = 0) {
   return AVX_memcmp(str1, str2, numbytes, equality);
 }
 
-INLINE int compare(const void *str1, size_t str1_numbytes, const void *str2, size_t str2_numbytes, int equality = 0) {
-
+INLINE int compare(const void *str1, size_t str1_numbytes, const void *str2,
+                   size_t str2_numbytes, int equality = 0) {
   if (str1_numbytes < str2_numbytes) {
     return -1;
   } else if (str1_numbytes > str2_numbytes) {
@@ -38,7 +40,7 @@ INLINE int compare(const void *str1, size_t str1_numbytes, const void *str2, siz
   return AVX_memcmp(str1, str2, str1_numbytes, equality);
 }
 
-//static void* memcpy_fast(void *destination, const void *source, size_t size)
+// static void* memcpy_fast(void *destination, const void *source, size_t size)
 
-}
-}
+}  // namespace MemoryUtils
+}  // namespace cclient

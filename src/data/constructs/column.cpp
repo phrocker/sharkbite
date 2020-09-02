@@ -11,11 +11,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "data/constructs/column.h"
+
 #include <string>
 
 #include "data/constructs/inputvalidation.h"
-
-#include "data/constructs/column.h"
 
 namespace cclient {
 namespace data {
@@ -30,15 +30,14 @@ void Column::setColQualifier(const char *r, uint32_t size) {
 
 void Column::setColVisibility(const char *r, uint32_t size) {
   columnVisibility = std::string(r, size);
-
 }
 
-Column::~Column() {
-}
+Column::~Column() {}
 
-bool Column::operator <(const Column &rhs) const {
-
-  int compare = compareBytes(columnFamily.data(), 0, columnFamily.size(), rhs.columnFamily.data(), 0, rhs.columnFamily.size());
+bool Column::operator<(const Column &rhs) const {
+  int compare =
+      compareBytes(columnFamily.data(), 0, columnFamily.size(),
+                   rhs.columnFamily.data(), 0, rhs.columnFamily.size());
 
   if (compare < 0)
     return true;
@@ -46,44 +45,48 @@ bool Column::operator <(const Column &rhs) const {
     return false;
   ;
 
-  compare = compareBytes(columnQualifier.data(), 0, columnQualifier.size(), rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
+  compare =
+      compareBytes(columnQualifier.data(), 0, columnQualifier.size(),
+                   rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
 
   if (compare < 0)
     return true;
   else if (compare > 0)
     return false;
 
-  compare = compareBytes(columnVisibility.data(), 0, columnVisibility.size(), rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
+  compare =
+      compareBytes(columnVisibility.data(), 0, columnVisibility.size(),
+                   rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
 
-  if (compare < 0)
-    return true;
+  if (compare < 0) return true;
 
   return false;
-
 }
 
-bool Column::operator ==(const Column &rhs) const {
-  int compare = compareBytes(columnFamily.data(), 0, columnFamily.size(), rhs.columnFamily.data(), 0, rhs.columnFamily.size());
+bool Column::operator==(const Column &rhs) const {
+  int compare =
+      compareBytes(columnFamily.data(), 0, columnFamily.size(),
+                   rhs.columnFamily.data(), 0, rhs.columnFamily.size());
 
-  if (compare != 0)
-    return false;
+  if (compare != 0) return false;
 
-  compare = compareBytes(columnQualifier.data(), 0, columnQualifier.size(), rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
+  compare =
+      compareBytes(columnQualifier.data(), 0, columnQualifier.size(),
+                   rhs.columnQualifier.data(), 0, rhs.columnQualifier.size());
 
-  if (compare != 0)
-    return false;
+  if (compare != 0) return false;
 
-  compare = compareBytes(columnVisibility.data(), 0, columnVisibility.size(), rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
+  compare =
+      compareBytes(columnVisibility.data(), 0, columnVisibility.size(),
+                   rhs.columnVisibility.data(), 0, rhs.columnVisibility.size());
 
   if (compare != 0)
     return false;
   else
     return true;
-
 }
 
 uint64_t Column::write(cclient::data::streams::OutputStream *outStream) {
-
   if (columnFamily.empty()) {
     outStream->writeBoolean(false);
   } else {
@@ -102,10 +105,10 @@ uint64_t Column::write(cclient::data::streams::OutputStream *outStream) {
     return outStream->writeBoolean(false);
   } else {
     outStream->writeBoolean(true);
-    return outStream->writeBytes(columnVisibility.data(), columnVisibility.size());
+    return outStream->writeBytes(columnVisibility.data(),
+                                 columnVisibility.size());
   }
-
 }
 
-}
-}
+}  // namespace data
+}  // namespace cclient

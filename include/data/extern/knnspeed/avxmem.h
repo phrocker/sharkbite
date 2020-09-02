@@ -13,11 +13,14 @@
 // Minimum requirement:
 //  x86_64 CPU with SSE4.2, but AVX2 or later is *highly* recommended
 //
-// This file provides function prototypes for AVX_memmove, AVX_memcpy, AVX_memset, and AVX_memcmp
+// This file provides function prototypes for AVX_memmove, AVX_memcpy,
+// AVX_memset, and AVX_memcmp
 //
-// NOTE: If you need to move/copy memory between overlapping regions, use AVX_memmove instead of AVX_memcpy.
-// AVX_memcpy does contain a redirect to AVX_memmove if an overlapping region is found, but it is disabled by default
-// since it adds extra latency that really can be avoided by using AVX_memmove directly.
+// NOTE: If you need to move/copy memory between overlapping regions, use
+// AVX_memmove instead of AVX_memcpy. AVX_memcpy does contain a redirect to
+// AVX_memmove if an overlapping region is found, but it is disabled by default
+// since it adds extra latency that really can be avoided by using AVX_memmove
+// directly.
 //
 
 #ifndef _avxmem_H
@@ -28,16 +31,18 @@
 #ifdef NATIVE_ARCH
 #include <immintrin.h>
 #endif
-// Size limit (in bytes) before switching to non-temporal/streaming loads & stores
-// Applies to: AVX_memmove, AVX_memset, and AVX_memcpy
-#define CACHESIZELIMIT 3*1024*1024 // 3 MB
+// Size limit (in bytes) before switching to non-temporal/streaming loads &
+// stores Applies to: AVX_memmove, AVX_memset, and AVX_memcpy
+#define CACHESIZELIMIT 3 * 1024 * 1024  // 3 MB
 
 //-----------------------------------------------------------------------------
 // Main Functions:
 //-----------------------------------------------------------------------------
 
-// Calling the individual subfunctions directly is also OK. That's why this header is so huge!
-int AVX_memcmp(const void *str1, const void *str2, size_t numbytes, int equality);
+// Calling the individual subfunctions directly is also OK. That's why this
+// header is so huge!
+int AVX_memcmp(const void *str1, const void *str2, size_t numbytes,
+               int equality);
 
 #ifdef NATIVE_ARCH
 //-----------------------------------------------------------------------------
@@ -51,8 +56,8 @@ int memcmp_large_a(const void *str1, const void *str2, size_t numbytes);
 int memcmp_large_eq_a(const void *str1, const void *str2, size_t numbytes);
 
 // Scalar
-int memcmp (const void *str1, const void *str2, size_t count);
-int memcmp_eq (const void *str1, const void *str2, size_t count);
+int memcmp(const void *str1, const void *str2, size_t count);
+int memcmp_eq(const void *str1, const void *str2, size_t count);
 int memcmp_16bit(const void *str1, const void *str2, size_t count);
 int memcmp_16bit_eq(const void *str1, const void *str2, size_t count);
 int memcmp_32bit(const void *str1, const void *str2, size_t count);
