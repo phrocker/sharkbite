@@ -19,20 +19,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "client/DataTransferProtocolSender.h"
 #include "ReadShortCircuitInfo.h"
-#include "server/Datanode.h"
-#include "datatransfer.pb.h"
-#include "Exception.h"
-#include "ExceptionInternal.h"
-#include "network/DomainSocket.h"
-#include "SWCrc32c.h"
-#include "HWCrc32c.h"
-#include "StringUtil.h"
 
 #include <inttypes.h>
+
 #include <sstream>
 #include <vector>
+
+#include "Exception.h"
+#include "ExceptionInternal.h"
+#include "HWCrc32c.h"
+#include "SWCrc32c.h"
+#include "StringUtil.h"
+#include "client/DataTransferProtocolSender.h"
+#include "datatransfer.pb.h"
+#include "network/DomainSocket.h"
+#include "server/Datanode.h"
 
 namespace Hdfs {
 namespace Internal {
@@ -354,5 +356,5 @@ ReadShortCircuitInfoBuilder::createReadShortCircuitInfo(
 
   return retval;
 }
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

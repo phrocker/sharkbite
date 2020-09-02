@@ -16,11 +16,11 @@
 #include <string>
 #include <vector>
 
-#include "data/constructs/server/ServerDefinition.h"
-#include "data/constructs/server/../security/AuthInfo.h"
-#include "data/constructs/server/../Range.h"
-#include "data/constructs/server/../KeyExtent.h"
 #include "data/constructs/column.h"
+#include "data/constructs/server/../KeyExtent.h"
+#include "data/constructs/server/../Range.h"
+#include "data/constructs/server/../security/AuthInfo.h"
+#include "data/constructs/server/ServerDefinition.h"
 
 namespace cclient {
 
@@ -40,12 +40,14 @@ namespace tserver {
  *
  */
 
-RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port,
-                                 std::vector<std::shared_ptr<cclient::data::Range>> *keyRange, std::vector<std::shared_ptr<KeyExtent>> *keyExt, const std::vector<Column> &inCols)
-    :
-    ServerDefinition(creds, auths, host, port) {
+RangeDefinition::RangeDefinition(
+    cclient::data::security::AuthInfo *creds,
+    cclient::data::security::Authorizations *auths, std::string host,
+    uint32_t port, std::vector<std::shared_ptr<cclient::data::Range>> *keyRange,
+    std::vector<std::shared_ptr<KeyExtent>> *keyExt,
+    const std::vector<Column> &inCols)
+    : ServerDefinition(creds, auths, host, port) {
   if (NULL != keyRange) {
-
     ranges.insert(ranges.end(), keyRange->begin(), keyRange->end());
   }
 
@@ -53,21 +55,21 @@ RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclie
     extents.insert(extents.end(), keyExt->begin(), keyExt->end());
 
   columns.insert(columns.end(), inCols.begin(), inCols.end());
-
 }
 
-RangeDefinition::RangeDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host, uint32_t port,
-                                 std::vector<std::shared_ptr<cclient::data::Range>> *keyRange, std::vector<std::shared_ptr<KeyExtent>> *keyExt)
-    :
-    RangeDefinition(creds, auths, host, port, keyRange, keyExt, std::vector<Column>()) {
-}
+RangeDefinition::RangeDefinition(
+    cclient::data::security::AuthInfo *creds,
+    cclient::data::security::Authorizations *auths, std::string host,
+    uint32_t port, std::vector<std::shared_ptr<cclient::data::Range>> *keyRange,
+    std::vector<std::shared_ptr<KeyExtent>> *keyExt)
+    : RangeDefinition(creds, auths, host, port, keyRange, keyExt,
+                      std::vector<Column>()) {}
 
 /**
  * Returns ranges
  * @returns ranges
  */
-std::vector<std::shared_ptr<Range>>*
-RangeDefinition::getRanges() {
+std::vector<std::shared_ptr<Range>> *RangeDefinition::getRanges() {
   return &ranges;
 }
 
@@ -75,14 +77,12 @@ RangeDefinition::getRanges() {
  * Returns key extents
  * @returns key extents;
  */
-std::vector<std::shared_ptr<KeyExtent>>*
-RangeDefinition::getExtents() {
+std::vector<std::shared_ptr<KeyExtent>> *RangeDefinition::getExtents() {
   return &extents;
 }
 
 bool RangeDefinition::operator==(const RangeDefinition *rhs) const {
-  if (rhs == nullptr)
-    return false;
+  if (rhs == nullptr) return false;
   return *this == *rhs;
 }
 
@@ -138,6 +138,6 @@ bool RangeDefinition::operator==(const RangeDefinition &other) const {
   return true;
 }
 
-}
-}
-}
+}  // namespace tserver
+}  // namespace data
+}  // namespace cclient

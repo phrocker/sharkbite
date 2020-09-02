@@ -15,65 +15,58 @@
 #ifndef ACCUMULOSERVERTRANSPORT_H
 #define ACCUMULOSERVERTRANSPORT_H
 
+#include <algorithm>  // std::random_shuffle
+#include <cstdlib>    // std::rand, std::srand
+#include <ctime>      // std::time
 #include <map>
 #include <set>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <ctime>        // std::time
-#include <cstdlib>      // std::rand, std::srand
+#include <vector>  // std::vector
 //#include <protocol/TBinaryProtocol.h>
+#include <concurrency/ThreadManager.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
-
+#include <sys/time.h>
+#include <transport/TBufferTransports.h>
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
 #include <transport/TSocket.h>
+#include <transport/TTransport.h>
 #include <transport/TTransportException.h>
-#include <transport/TBufferTransports.h>
-
-#include <concurrency/ThreadManager.h>
 
 #include <chrono>
 #include <thread>
-#include <sys/time.h>
 
-#include "data/constructs/inputvalidation.h"
+#include "../scanrequest/ScanIdentifier.h"
+#include "BaseTransport.h"
+#include "Transport.h"
 #include "data/constructs/IterInfo.h"
 #include "data/constructs/configuration/Configuration.h"
-#include "data/extern/thrift/data_types.h"
+#include "data/constructs/inputvalidation.h"
 #include "data/constructs/scanstate.h"
+#include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/tablet/TabletType.h"
 #include "data/exceptions/ClientException.h"
 #include "data/exceptions/IllegalArgumentException.h"
-#include "data/constructs/tablet/TabletType.h"
-#include "../scanrequest/ScanIdentifier.h"
-
-#include "Transport.h"
-
 #include "data/extern/thrift/ClientService.h"
-#include "data/extern/thrift/master_types.h"
 #include "data/extern/thrift/MasterClientService.h"
 #include "data/extern/thrift/ThriftWrapper.h"
-#include "data/constructs/security/AuthInfo.h"
-
-#include "BaseTransport.h"
+#include "data/extern/thrift/data_types.h"
+#include "data/extern/thrift/master_types.h"
 namespace interconnect {
 
 class AccumuloServerFacade : public ThriftTransporter {
  protected:
-
  public:
-  explicit AccumuloServerFacade(const std::shared_ptr<ServerConnection> &conn) : ThriftTransporter(conn) {
-  }
+  explicit AccumuloServerFacade(const std::shared_ptr<ServerConnection> &conn)
+      : ThriftTransporter(conn) {}
 
-  virtual void newTransporter(const std::shared_ptr<ServerConnection> &conn) override {
+  virtual void newTransporter(
+      const std::shared_ptr<ServerConnection> &conn) override {}
 
-  }
-
-  virtual void registerService(const std::string &instance, const std::string &clusterManagers) override {
-  }
+  virtual void registerService(const std::string &instance,
+                               const std::string &clusterManagers) override {}
 };
 
-}
+}  // namespace interconnect
 
-#endif // ACCUMULOSERVERTRANSPORT_H
+#endif  // ACCUMULOSERVERTRANSPORT_H

@@ -13,46 +13,39 @@
  */
 
 #include "interconnect/ScanArbiter.h"
+
 #include "data/exceptions/ClientException.h"
 namespace interconnect {
 
 ScanArbiter::ScanArbiter(uint16_t desired, bool disableRpc)
-    :
-    max(desired), disableRpc(disableRpc) {
-}
+    : max(desired), disableRpc(disableRpc) {}
 
 ScanArbiter::~ScanArbiter() {
   for (auto scan : index) {
     delete scan;
   }
 }
-Scan* ScanArbiter::wait() {
+Scan *ScanArbiter::wait() {
   std::unique_lock<std::mutex> lk(m);
   bool hasResult = false;
   Scan *r = nullptr;
   do {
-    cv.wait(lk, [this] {
-      return !index.empty();
-    });
+    cv.wait(lk, [this] { return !index.empty(); });
     r = index.front();
     index.pop_front();
     if (r->hasException()) {
       if (!receivedException.empty()) {
         hasResult = false;
         receivedException = r->getException();
-      }
-      else {
+      } else {
         throw cclient::exceptions::ClientException(receivedException);
       }
-    }
-    else if (r->isRFileScan() && (!disableRpc && r->empty()))
-    {
+    } else if (r->isRFileScan() && (!disableRpc && r->empty())) {
       hasResult = false;
-    }
-    else {
+    } else {
       hasResult = true;
     }
-  }while(!hasResult);
+  } while (!hasResult);
   lk.unlock();
   return r;
 }
@@ -68,4 +61,4 @@ void ScanArbiter::add(Scan *scan) {
   cv.notify_one();
 }
 
-}
+}  // namespace interconnect

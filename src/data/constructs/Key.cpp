@@ -13,37 +13,35 @@
  */
 
 #include "data/constructs/Key.h"
+
 #include "data/constructs/compressor/algorithm.h"
 namespace cclient {
 namespace data {
 
-Key::Key(cclient::data::ObjectAllocatorPool<Text> *pool)
-    :
-    Key() {
+Key::Key(cclient::data::ObjectAllocatorPool<Text> *pool) : Key() {
   objectPool = pool;
 }
 
 Key::Key(const char *const userRow)
-    :
-    deleted(false),
-    timestamp(9223372036854775807L),
-    colVisSize(0),
-    rowMaxSize(0),
-    columnFamilySize(0),
-    colQualSize(0),
-    rowLength(0),
-    columnFamilyLength(0),
-    colQualLen(0),
-    colVisLen(0),
-    objectPool(nullptr),
-    row_ref(nullptr),
-    cf_ref(nullptr),
-    disownRow(false),
-    disownColumnFamily(false),
-    disownColumnQualifier(false),
-    disownColumnVisibility(false),
-    cq_ref(nullptr),
-    cv_ref(nullptr) {
+    : deleted(false),
+      timestamp(9223372036854775807L),
+      colVisSize(0),
+      rowMaxSize(0),
+      columnFamilySize(0),
+      colQualSize(0),
+      rowLength(0),
+      columnFamilyLength(0),
+      colQualLen(0),
+      colVisLen(0),
+      objectPool(nullptr),
+      row_ref(nullptr),
+      cf_ref(nullptr),
+      disownRow(false),
+      disownColumnFamily(false),
+      disownColumnQualifier(false),
+      disownColumnVisibility(false),
+      cq_ref(nullptr),
+      cv_ref(nullptr) {
   if (userRow)
     setRow(userRow, strlen(userRow));
   else {
@@ -55,7 +53,6 @@ Key::Key(const char *const userRow)
 
     keyVisibility = nullptr;
   }
-
 }
 
 Key::~Key() {
@@ -72,7 +69,7 @@ void Key::reclaim(char **val, size_t size, bool &disown) {
         objectPool->free(std::make_pair(*val, size));
         *val = nullptr;
       } else {
-        delete[] *val;
+        delete[] * val;
         *val = nullptr;
       }
     } else {
@@ -81,14 +78,15 @@ void Key::reclaim(char **val, size_t size, bool &disown) {
   }
 }
 
-void Key::reclaim(char **val, size_t size, bool &disown, std::function<void()> fun) {
+void Key::reclaim(char **val, size_t size, bool &disown,
+                  std::function<void()> fun) {
   if (*val) {
     if (!disown) {
       if (objectPool) {
         objectPool->free(std::make_pair(*val, size));
         *val = nullptr;
       } else {
-        delete[] *val;
+        delete[] * val;
         *val = nullptr;
       }
     } else {
@@ -100,9 +98,7 @@ void Key::reclaim(char **val, size_t size, bool &disown, std::function<void()> f
 
 void Key::setRow(const std::shared_ptr<Text> &rowRef) {
   if (SH_UNLIKELY(row != nullptr)) {
-    auto fn = [&](void) {
-      row_ref = rowRef;
-    };
+    auto fn = [&](void) { row_ref = rowRef; };
     reclaim(&row, rowMaxSize, disownRow, fn);
     disownRow = false;
   } else {
@@ -110,7 +106,8 @@ void Key::setRow(const std::shared_ptr<Text> &rowRef) {
   }
 }
 
-void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+void Key::setRow(const char *r, uint32_t size, uint32_t maxsize,
+                 bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > rowMaxSize) {
       delete[] row;
@@ -120,20 +117,18 @@ void Key::setRow(const char *r, uint32_t size, uint32_t maxsize, bool takeOwners
 
     memcpy_fast(row, r, size);
   } else {
-    auto fn = [&](void) {
-      row_ref = nullptr;
-    };
+    auto fn = [&](void) { row_ref = nullptr; };
     reclaim(&row, rowMaxSize, disownRow, fn);
     disownRow = false;
-    row = (char*) r;
+    row = (char *)r;
     rowMaxSize = maxsize;
   }
 
   rowLength = size;
-
 }
 
-void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
+void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize,
+                       bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > columnFamilySize) {
       delete[] colFamily;
@@ -143,23 +138,18 @@ void Key::setColFamily(const char *r, uint32_t size, uint32_t maxsize, bool take
 
     memcpy_fast(colFamily, r, size);
   } else {
-    auto fn = [&](void) {
-      cf_ref = nullptr;
-    };
+    auto fn = [&](void) { cf_ref = nullptr; };
     reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
     disownColumnFamily = false;
-    colFamily = (char*) r;
+    colFamily = (char *)r;
     columnFamilySize = maxsize;
   }
   columnFamilyLength = size;
-
 }
 
 void Key::setColumnFamily(const std::shared_ptr<Text> &col) {
   if (SH_UNLIKELY(colFamily != nullptr)) {
-    auto fn = [&](void) {
-      cf_ref = col;
-    };
+    auto fn = [&](void) { cf_ref = col; };
     reclaim(&colFamily, columnFamilySize, disownColumnFamily, fn);
     disownColumnFamily = false;
   } else {
@@ -167,36 +157,30 @@ void Key::setColumnFamily(const std::shared_ptr<Text> &col) {
   }
 }
 
-void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
-
+void Key::setColQualifier(const char *r, uint32_t size, uint32_t maxsize,
+                          bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > colQualSize) {
       char *nr = new char[maxsize + 1];
       delete[] colQualifier;
       colQualifier = nr;
       colQualSize = maxsize;
-
     }
 
     memcpy_fast(colQualifier, r, size);
   } else {
-    auto fn = [&](void) {
-      cq_ref = nullptr;
-    };
+    auto fn = [&](void) { cq_ref = nullptr; };
     reclaim(&colQualifier, colQualSize, disownColumnQualifier, fn);
     disownColumnQualifier = false;
-    colQualifier = (char*) r;
+    colQualifier = (char *)r;
     colQualSize = maxsize;
   }
   colQualLen = size;
-
 }
 
 void Key::setColumnQualifier(const std::shared_ptr<Text> &cq) {
   if (SH_UNLIKELY(colQualifier != nullptr)) {
-    auto fn = [&](void) {
-      cq_ref = cq;
-    };
+    auto fn = [&](void) { cq_ref = cq; };
     reclaim(&colQualifier, colQualSize, disownColumnQualifier, fn);
     disownColumnQualifier = false;
   } else {
@@ -204,8 +188,8 @@ void Key::setColumnQualifier(const std::shared_ptr<Text> &cq) {
   }
 }
 
-void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool takeOwnership) {
-
+void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize,
+                           bool takeOwnership) {
   if (!takeOwnership) {
     if (maxsize > colVisSize) {
       delete[] keyVisibility;
@@ -214,24 +198,20 @@ void Key::setColVisibility(const char *r, uint32_t size, uint32_t maxsize, bool 
     }
     memcpy_fast(keyVisibility, r, size);
   } else {
-    auto fn = [&](void) {
-      cv_ref = nullptr;
-    };
+    auto fn = [&](void) { cv_ref = nullptr; };
     reclaim(&keyVisibility, colVisSize, disownColumnVisibility, fn);
     disownColumnVisibility = false;
-    keyVisibility = (char*) r;
+    keyVisibility = (char *)r;
     colVisSize = maxsize;
   }
 
   colVisLen = size;
-
 }
 
 void Key::setColumnVisibility(const std::shared_ptr<Text> &cv) {
   if (keyVisibility) {
-    reclaim(&keyVisibility, colVisSize, disownColumnVisibility, [&](void) {
-      cv_ref = cv;
-    });
+    reclaim(&keyVisibility, colVisSize, disownColumnVisibility,
+            [&](void) { cv_ref = cv; });
     disownColumnVisibility = false;
   } else {
     cv_ref = cv;
@@ -241,7 +221,8 @@ void Key::setColumnVisibility(const std::shared_ptr<Text> &cv) {
 int Key::compare(const std::shared_ptr<Key> &other) {
   auto btr = other->getRow();
   auto btl = getRow();
-  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
+  int compare =
+      compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
 
   if (compare < 0)
     return compare;
@@ -259,8 +240,7 @@ int Key::compare(const std::shared_ptr<Key> &other) {
   auto qtl = getColQualifier();
   compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
 
-  if (compare < 0)
-    return compare;
+  if (compare < 0) return compare;
 
   return 0;
 }
@@ -268,7 +248,8 @@ int Key::compare(const std::shared_ptr<Key> &other) {
 int Key::compareToVisibility(const std::shared_ptr<Key> &other) {
   auto btr = other->getRow();
   auto btl = getRow();
-  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
+  int compare =
+      compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
 
   if (compare < 0)
     return compare;
@@ -294,16 +275,16 @@ int Key::compareToVisibility(const std::shared_ptr<Key> &other) {
   auto vtl = getColVisibility();
   compare = compareBytes(vtl.first, 0, vtl.second, vtr.first, 0, vtr.second);
 
-  if (compare < 0)
-    return compare;
+  if (compare < 0) return compare;
 
   return 0;
 }
 
-bool Key::operator <(const Key &rhs) const {
+bool Key::operator<(const Key &rhs) const {
   auto btr = rhs.getRow();
   auto btl = getRow();
-  int compare = compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
+  int compare =
+      compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
 
   if (compare < 0)
     return true;
@@ -321,60 +302,56 @@ bool Key::operator <(const Key &rhs) const {
   auto qtl = getColQualifier();
   compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
 
-  if (compare < 0)
-    return true;
+  if (compare < 0) return true;
 
   return false;
 }
 
-bool Key::operator ==(const Key &rhs) const {
-  int compare = compareBytes(row, 0, rowLength, rhs.row, 0, rhs.columnFamilyLength);
+bool Key::operator==(const Key &rhs) const {
+  int compare =
+      compareBytes(row, 0, rowLength, rhs.row, 0, rhs.columnFamilyLength);
 
-  if (compare != 0)
-    return false;
+  if (compare != 0) return false;
 
-  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0, rhs.columnFamilyLength);
+  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0,
+                         rhs.columnFamilyLength);
 
-  if (compare != 0)
-    return false;
+  if (compare != 0) return false;
 
-  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0, rhs.colQualLen);
+  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0,
+                         rhs.colQualLen);
 
-  if (compare != 0)
-    return false;
+  if (compare != 0) return false;
 
   return (timestamp < rhs.timestamp);
-
 }
 
 uint64_t Key::write(cclient::data::streams::OutputStream *outStream) {
-
   uint32_t offset = rowLength;
 
   outStream->writeHadoopLong(offset);
-  //outStream->writeHadoopLong( offset ); // cf offset
+  // outStream->writeHadoopLong( offset ); // cf offset
 
   offset += columnFamilyLength;
   outStream->writeHadoopLong(offset);
-  //outStream->writeHadoopLong( offset ); // cq offset
+  // outStream->writeHadoopLong( offset ); // cq offset
 
   offset += colQualLen;
   outStream->writeHadoopLong(offset);
-  //outStream->writeHadoopLong( offset ); // colvis offset
+  // outStream->writeHadoopLong( offset ); // colvis offset
 
   offset += colVisLen;
   outStream->writeHadoopLong(offset);
-  //outStream->writeHadoopLong( offset ); // total
+  // outStream->writeHadoopLong( offset ); // total
 
   outStream->writeBytes(row, rowLength);
   outStream->writeBytes(colFamily, columnFamilyLength);
   outStream->writeBytes(colQualifier, colQualLen);
   outStream->writeBytes(keyVisibility, colVisLen);
   outStream->writeHadoopLong(timestamp);
-  //outStream->writeHadoopLong( timestamp);
+  // outStream->writeHadoopLong( timestamp);
 
   return outStream->writeBoolean(deleted);
-
 }
 
 uint64_t Key::read(cclient::data::streams::InputStream *in) {

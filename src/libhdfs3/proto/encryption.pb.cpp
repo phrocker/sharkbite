@@ -3,320 +3,451 @@
 
 #include "encryption.pb.h"
 
-#include <algorithm>
-
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/extension_set.h>
-#include <google/protobuf/wire_format_lite.h>
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/extension_set.h>
 #include <google/protobuf/generated_message_reflection.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/reflection_ops.h>
 #include <google/protobuf/wire_format.h>
+#include <google/protobuf/wire_format_lite.h>
+
+#include <algorithm>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
-extern PROTOBUF_INTERNAL_EXPORT_encryption_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EncryptionZoneProto_encryption_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_encryption_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_EncryptionZoneProto_encryption_2eproto;
 namespace Hdfs {
 namespace Internal {
 class CreateEncryptionZoneRequestProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CreateEncryptionZoneRequestProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      CreateEncryptionZoneRequestProto>
+      _instance;
 } _CreateEncryptionZoneRequestProto_default_instance_;
 class CreateEncryptionZoneResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CreateEncryptionZoneResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      CreateEncryptionZoneResponseProto>
+      _instance;
 } _CreateEncryptionZoneResponseProto_default_instance_;
 class ListEncryptionZonesRequestProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ListEncryptionZonesRequestProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ListEncryptionZonesRequestProto>
+      _instance;
 } _ListEncryptionZonesRequestProto_default_instance_;
 class EncryptionZoneProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EncryptionZoneProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EncryptionZoneProto>
+      _instance;
 } _EncryptionZoneProto_default_instance_;
 class ListEncryptionZonesResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ListEncryptionZonesResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ListEncryptionZonesResponseProto>
+      _instance;
 } _ListEncryptionZonesResponseProto_default_instance_;
 class GetEZForPathRequestProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<GetEZForPathRequestProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      GetEZForPathRequestProto>
+      _instance;
 } _GetEZForPathRequestProto_default_instance_;
 class GetEZForPathResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<GetEZForPathResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      GetEZForPathResponseProto>
+      _instance;
 } _GetEZForPathResponseProto_default_instance_;
 }  // namespace Internal
 }  // namespace Hdfs
-static void InitDefaultsscc_info_CreateEncryptionZoneRequestProto_encryption_2eproto() {
+static void
+InitDefaultsscc_info_CreateEncryptionZoneRequestProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_CreateEncryptionZoneRequestProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CreateEncryptionZoneRequestProto();
+    void* ptr =
+        &::Hdfs::Internal::_CreateEncryptionZoneRequestProto_default_instance_;
+    new (ptr)::Hdfs::Internal::CreateEncryptionZoneRequestProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CreateEncryptionZoneRequestProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CreateEncryptionZoneRequestProto_encryption_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0,
+         InitDefaultsscc_info_CreateEncryptionZoneRequestProto_encryption_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_CreateEncryptionZoneResponseProto_encryption_2eproto() {
+static void
+InitDefaultsscc_info_CreateEncryptionZoneResponseProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_CreateEncryptionZoneResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CreateEncryptionZoneResponseProto();
+    void* ptr =
+        &::Hdfs::Internal::_CreateEncryptionZoneResponseProto_default_instance_;
+    new (ptr)::Hdfs::Internal::CreateEncryptionZoneResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CreateEncryptionZoneResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CreateEncryptionZoneResponseProto_encryption_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0,
+         InitDefaultsscc_info_CreateEncryptionZoneResponseProto_encryption_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_EncryptionZoneProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_EncryptionZoneProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::EncryptionZoneProto();
+    new (ptr)::Hdfs::Internal::EncryptionZoneProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::EncryptionZoneProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EncryptionZoneProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_EncryptionZoneProto_encryption_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_EncryptionZoneProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_EncryptionZoneProto_encryption_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_GetEZForPathRequestProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_GetEZForPathRequestProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::GetEZForPathRequestProto();
+    new (ptr)::Hdfs::Internal::GetEZForPathRequestProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::GetEZForPathRequestProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_GetEZForPathRequestProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_GetEZForPathRequestProto_encryption_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_GetEZForPathRequestProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0,
+         InitDefaultsscc_info_GetEZForPathRequestProto_encryption_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_GetEZForPathResponseProto_encryption_2eproto() {
+static void
+InitDefaultsscc_info_GetEZForPathResponseProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_GetEZForPathResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::GetEZForPathResponseProto();
+    new (ptr)::Hdfs::Internal::GetEZForPathResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::GetEZForPathResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_GetEZForPathResponseProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_GetEZForPathResponseProto_encryption_2eproto}, {
-      &scc_info_EncryptionZoneProto_encryption_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_GetEZForPathResponseProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_GetEZForPathResponseProto_encryption_2eproto},
+        {
+            &scc_info_EncryptionZoneProto_encryption_2eproto.base,
+        }};
 
-static void InitDefaultsscc_info_ListEncryptionZonesRequestProto_encryption_2eproto() {
+static void
+InitDefaultsscc_info_ListEncryptionZonesRequestProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_ListEncryptionZonesRequestProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ListEncryptionZonesRequestProto();
+    void* ptr =
+        &::Hdfs::Internal::_ListEncryptionZonesRequestProto_default_instance_;
+    new (ptr)::Hdfs::Internal::ListEncryptionZonesRequestProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ListEncryptionZonesRequestProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ListEncryptionZonesRequestProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ListEncryptionZonesRequestProto_encryption_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ListEncryptionZonesRequestProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0,
+         InitDefaultsscc_info_ListEncryptionZonesRequestProto_encryption_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_ListEncryptionZonesResponseProto_encryption_2eproto() {
+static void
+InitDefaultsscc_info_ListEncryptionZonesResponseProto_encryption_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_ListEncryptionZonesResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ListEncryptionZonesResponseProto();
+    void* ptr =
+        &::Hdfs::Internal::_ListEncryptionZonesResponseProto_default_instance_;
+    new (ptr)::Hdfs::Internal::ListEncryptionZonesResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ListEncryptionZonesResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ListEncryptionZonesResponseProto_encryption_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ListEncryptionZonesResponseProto_encryption_2eproto}, {
-      &scc_info_EncryptionZoneProto_encryption_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_ListEncryptionZonesResponseProto_encryption_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_ListEncryptionZonesResponseProto_encryption_2eproto},
+        {
+            &scc_info_EncryptionZoneProto_encryption_2eproto.base,
+        }};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_encryption_2eproto[7];
-static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const** file_level_enum_descriptors_encryption_2eproto = nullptr;
-static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_encryption_2eproto = nullptr;
+static ::PROTOBUF_NAMESPACE_ID::Metadata
+    file_level_metadata_encryption_2eproto[7];
+static constexpr ::PROTOBUF_NAMESPACE_ID::EnumDescriptor const**
+    file_level_enum_descriptors_encryption_2eproto = nullptr;
+static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const**
+    file_level_service_descriptors_encryption_2eproto = nullptr;
 
-const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_encryption_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneRequestProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneRequestProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneRequestProto, src_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneRequestProto, keyname_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CreateEncryptionZoneResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto, id_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, id_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, path_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, suite_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, cryptoprotocolversion_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, keyname_),
-  2,
-  0,
-  3,
-  4,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesResponseProto, zones_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesResponseProto, hasmore_),
-  ~0u,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto, src_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto, zone_),
-  0,
+const ::PROTOBUF_NAMESPACE_ID::uint32
+    TableStruct_encryption_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(
+        protodesc_cold) = {
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneRequestProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneRequestProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneRequestProto, src_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneRequestProto, keyname_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneResponseProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::CreateEncryptionZoneResponseProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ListEncryptionZonesRequestProto,
+                              id_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, id_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, path_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, suite_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto,
+                              cryptoprotocolversion_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::EncryptionZoneProto, keyname_),
+        2,
+        0,
+        3,
+        4,
+        1,
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::ListEncryptionZonesResponseProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::ListEncryptionZonesResponseProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::ListEncryptionZonesResponseProto, zones_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::ListEncryptionZonesResponseProto, hasmore_),
+        ~0u,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathRequestProto, src_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::GetEZForPathResponseProto,
+                              zone_),
+        0,
 };
-static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, 7, sizeof(::Hdfs::Internal::CreateEncryptionZoneRequestProto)},
-  { 9, 14, sizeof(::Hdfs::Internal::CreateEncryptionZoneResponseProto)},
-  { 14, 20, sizeof(::Hdfs::Internal::ListEncryptionZonesRequestProto)},
-  { 21, 31, sizeof(::Hdfs::Internal::EncryptionZoneProto)},
-  { 36, 43, sizeof(::Hdfs::Internal::ListEncryptionZonesResponseProto)},
-  { 45, 51, sizeof(::Hdfs::Internal::GetEZForPathRequestProto)},
-  { 52, 58, sizeof(::Hdfs::Internal::GetEZForPathResponseProto)},
+static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema
+    schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
+        {0, 7, sizeof(::Hdfs::Internal::CreateEncryptionZoneRequestProto)},
+        {9, 14, sizeof(::Hdfs::Internal::CreateEncryptionZoneResponseProto)},
+        {14, 20, sizeof(::Hdfs::Internal::ListEncryptionZonesRequestProto)},
+        {21, 31, sizeof(::Hdfs::Internal::EncryptionZoneProto)},
+        {36, 43, sizeof(::Hdfs::Internal::ListEncryptionZonesResponseProto)},
+        {45, 51, sizeof(::Hdfs::Internal::GetEZForPathRequestProto)},
+        {52, 58, sizeof(::Hdfs::Internal::GetEZForPathResponseProto)},
 };
 
-static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CreateEncryptionZoneRequestProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CreateEncryptionZoneResponseProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ListEncryptionZonesRequestProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_EncryptionZoneProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ListEncryptionZonesResponseProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_GetEZForPathRequestProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_GetEZForPathResponseProto_default_instance_),
+static ::PROTOBUF_NAMESPACE_ID::Message const* const file_default_instances[] =
+    {
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _CreateEncryptionZoneRequestProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _CreateEncryptionZoneResponseProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _ListEncryptionZonesRequestProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_EncryptionZoneProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _ListEncryptionZonesResponseProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_GetEZForPathRequestProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_GetEZForPathResponseProto_default_instance_),
 };
 
-const char descriptor_table_protodef_encryption_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\020encryption.proto\022\rHdfs.Internal\032\nhdfs."
-  "proto\"@\n CreateEncryptionZoneRequestProt"
-  "o\022\013\n\003src\030\001 \002(\t\022\017\n\007keyName\030\002 \001(\t\"#\n!Creat"
-  "eEncryptionZoneResponseProto\"-\n\037ListEncr"
-  "yptionZonesRequestProto\022\n\n\002id\030\001 \002(\003\"\272\001\n\023"
-  "EncryptionZoneProto\022\n\n\002id\030\001 \002(\003\022\014\n\004path\030"
-  "\002 \002(\t\022.\n\005suite\030\003 \002(\0162\037.Hdfs.Internal.Cip"
-  "herSuiteProto\022H\n\025cryptoProtocolVersion\030\004"
-  " \002(\0162).Hdfs.Internal.CryptoProtocolVersi"
-  "onProto\022\017\n\007keyName\030\005 \002(\t\"f\n ListEncrypti"
-  "onZonesResponseProto\0221\n\005zones\030\001 \003(\0132\".Hd"
-  "fs.Internal.EncryptionZoneProto\022\017\n\007hasMo"
-  "re\030\002 \002(\010\"\'\n\030GetEZForPathRequestProto\022\013\n\003"
-  "src\030\001 \002(\t\"M\n\031GetEZForPathResponseProto\0220"
-  "\n\004zone\030\001 \001(\0132\".Hdfs.Internal.EncryptionZ"
-  "oneProtoBA\n%org.apache.hadoop.hdfs.proto"
-  "col.protoB\025EncryptionZonesProtos\240\001\001"
-  ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_encryption_2eproto_deps[1] = {
-  &::descriptor_table_hdfs_2eproto,
+const char
+    descriptor_table_protodef_encryption_2eproto[] PROTOBUF_SECTION_VARIABLE(
+        protodesc_cold) =
+        "\n\020encryption.proto\022\rHdfs.Internal\032\nhdfs."
+        "proto\"@\n CreateEncryptionZoneRequestProt"
+        "o\022\013\n\003src\030\001 \002(\t\022\017\n\007keyName\030\002 "
+        "\001(\t\"#\n!Creat"
+        "eEncryptionZoneResponseProto\"-\n\037ListEncr"
+        "yptionZonesRequestProto\022\n\n\002id\030\001 "
+        "\002(\003\"\272\001\n\023"
+        "EncryptionZoneProto\022\n\n\002id\030\001 "
+        "\002(\003\022\014\n\004path\030"
+        "\002 \002(\t\022.\n\005suite\030\003 \002(\0162\037.Hdfs.Internal.Cip"
+        "herSuiteProto\022H\n\025cryptoProtocolVersion\030\004"
+        " \002(\0162).Hdfs.Internal.CryptoProtocolVersi"
+        "onProto\022\017\n\007keyName\030\005 \002(\t\"f\n ListEncrypti"
+        "onZonesResponseProto\0221\n\005zones\030\001 \003(\0132\".Hd"
+        "fs.Internal.EncryptionZoneProto\022\017\n\007hasMo"
+        "re\030\002 \002(\010\"\'\n\030GetEZForPathRequestProto\022\013\n\003"
+        "src\030\001 \002(\t\"M\n\031GetEZForPathResponseProto\0220"
+        "\n\004zone\030\001 \001(\0132\".Hdfs.Internal.EncryptionZ"
+        "oneProtoBA\n%org.apache.hadoop.hdfs.proto"
+        "col.protoB\025EncryptionZonesProtos\240\001\001";
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* const
+    descriptor_table_encryption_2eproto_deps[1] = {
+        &::descriptor_table_hdfs_2eproto,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_encryption_2eproto_sccs[7] = {
-  &scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base,
-  &scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto.base,
-  &scc_info_EncryptionZoneProto_encryption_2eproto.base,
-  &scc_info_GetEZForPathRequestProto_encryption_2eproto.base,
-  &scc_info_GetEZForPathResponseProto_encryption_2eproto.base,
-  &scc_info_ListEncryptionZonesRequestProto_encryption_2eproto.base,
-  &scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base,
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase* const
+    descriptor_table_encryption_2eproto_sccs[7] = {
+        &scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base,
+        &scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto.base,
+        &scc_info_EncryptionZoneProto_encryption_2eproto.base,
+        &scc_info_GetEZForPathRequestProto_encryption_2eproto.base,
+        &scc_info_GetEZForPathResponseProto_encryption_2eproto.base,
+        &scc_info_ListEncryptionZonesRequestProto_encryption_2eproto.base,
+        &scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_encryption_2eproto_once;
+static ::PROTOBUF_NAMESPACE_ID::internal::once_flag
+    descriptor_table_encryption_2eproto_once;
 static bool descriptor_table_encryption_2eproto_initialized = false;
-const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_encryption_2eproto = {
-  &descriptor_table_encryption_2eproto_initialized, descriptor_table_protodef_encryption_2eproto, "encryption.proto", 675,
-  &descriptor_table_encryption_2eproto_once, descriptor_table_encryption_2eproto_sccs, descriptor_table_encryption_2eproto_deps, 7, 1,
-  schemas, file_default_instances, TableStruct_encryption_2eproto::offsets,
-  file_level_metadata_encryption_2eproto, 7, file_level_enum_descriptors_encryption_2eproto, file_level_service_descriptors_encryption_2eproto,
+const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable
+    descriptor_table_encryption_2eproto = {
+        &descriptor_table_encryption_2eproto_initialized,
+        descriptor_table_protodef_encryption_2eproto,
+        "encryption.proto",
+        675,
+        &descriptor_table_encryption_2eproto_once,
+        descriptor_table_encryption_2eproto_sccs,
+        descriptor_table_encryption_2eproto_deps,
+        7,
+        1,
+        schemas,
+        file_default_instances,
+        TableStruct_encryption_2eproto::offsets,
+        file_level_metadata_encryption_2eproto,
+        7,
+        file_level_enum_descriptors_encryption_2eproto,
+        file_level_service_descriptors_encryption_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_encryption_2eproto = (  ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_encryption_2eproto), true);
+static bool dynamic_init_dummy_encryption_2eproto =
+    (::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(
+         &descriptor_table_encryption_2eproto),
+     true);
 namespace Hdfs {
 namespace Internal {
 
 // ===================================================================
 
-void CreateEncryptionZoneRequestProto::InitAsDefaultInstance() {
-}
+void CreateEncryptionZoneRequestProto::InitAsDefaultInstance() {}
 class CreateEncryptionZoneRequestProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<CreateEncryptionZoneRequestProto>()._has_bits_);
-  static void set_has_src(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_keyname(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  using HasBits =
+      decltype(std::declval<CreateEncryptionZoneRequestProto>()._has_bits_);
+  static void set_has_src(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_keyname(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 CreateEncryptionZoneRequestProto::CreateEncryptionZoneRequestProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CreateEncryptionZoneRequestProto)
 }
-CreateEncryptionZoneRequestProto::CreateEncryptionZoneRequestProto(const CreateEncryptionZoneRequestProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+CreateEncryptionZoneRequestProto::CreateEncryptionZoneRequestProto(
+    const CreateEncryptionZoneRequestProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  src_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  src_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_src()) {
-    src_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.src_);
+    src_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.src_);
   }
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_keyname()) {
-    keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+    keyname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.keyname_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CreateEncryptionZoneRequestProto)
 }
 
 void CreateEncryptionZoneRequestProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base);
-  src_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base);
+  src_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 CreateEncryptionZoneRequestProto::~CreateEncryptionZoneRequestProto() {
@@ -325,24 +456,27 @@ CreateEncryptionZoneRequestProto::~CreateEncryptionZoneRequestProto() {
 }
 
 void CreateEncryptionZoneRequestProto::SharedDtor() {
-  src_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  src_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void CreateEncryptionZoneRequestProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const CreateEncryptionZoneRequestProto& CreateEncryptionZoneRequestProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base);
+const CreateEncryptionZoneRequestProto&
+CreateEncryptionZoneRequestProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CreateEncryptionZoneRequestProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CreateEncryptionZoneRequestProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -357,8 +491,10 @@ void CreateEncryptionZoneRequestProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* CreateEncryptionZoneRequestProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CreateEncryptionZoneRequestProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -367,25 +503,33 @@ const char* CreateEncryptionZoneRequestProto::_InternalParse(const char* ptr, ::
     switch (tag >> 3) {
       // required string src = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_src();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.CreateEncryptionZoneRequestProto.src");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.CreateEncryptionZoneRequestProto.src");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string keyName = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_keyname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.CreateEncryptionZoneRequestProto.keyName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.CreateEncryptionZoneRequestProto.keyName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -398,7 +542,7 @@ const char* CreateEncryptionZoneRequestProto::_InternalParse(const char* ptr, ::
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -408,61 +552,65 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* CreateEncryptionZoneRequestProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+CreateEncryptionZoneRequestProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string src = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_src().data(), static_cast<int>(this->_internal_src().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.CreateEncryptionZoneRequestProto.src");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_src(), target);
+        this->_internal_src().data(),
+        static_cast<int>(this->_internal_src().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.CreateEncryptionZoneRequestProto.src");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_src(), target);
   }
 
   // optional string keyName = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_keyname().data(), static_cast<int>(this->_internal_keyname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.CreateEncryptionZoneRequestProto.keyName");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_keyname(), target);
+        this->_internal_keyname().data(),
+        static_cast<int>(this->_internal_keyname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.CreateEncryptionZoneRequestProto.keyName");
+    target =
+        stream->WriteStringMaybeAliased(2, this->_internal_keyname(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   return target;
 }
 
 size_t CreateEncryptionZoneRequestProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   size_t total_size = 0;
 
   // required string src = 1;
   if (_internal_has_src()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_src());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_src());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional string keyName = 2;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000002u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -474,50 +622,58 @@ size_t CreateEncryptionZoneRequestProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CreateEncryptionZoneRequestProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+void CreateEncryptionZoneRequestProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CreateEncryptionZoneRequestProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CreateEncryptionZoneRequestProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          CreateEncryptionZoneRequestProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CreateEncryptionZoneRequestProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CreateEncryptionZoneRequestProto)
     MergeFrom(*source);
   }
 }
 
-void CreateEncryptionZoneRequestProto::MergeFrom(const CreateEncryptionZoneRequestProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+void CreateEncryptionZoneRequestProto::MergeFrom(
+    const CreateEncryptionZoneRequestProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      src_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.src_);
+      src_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.src_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+      keyname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.keyname_);
     }
   }
 }
 
-void CreateEncryptionZoneRequestProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+void CreateEncryptionZoneRequestProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void CreateEncryptionZoneRequestProto::CopyFrom(const CreateEncryptionZoneRequestProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
+void CreateEncryptionZoneRequestProto::CopyFrom(
+    const CreateEncryptionZoneRequestProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CreateEncryptionZoneRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -528,86 +684,92 @@ bool CreateEncryptionZoneRequestProto::IsInitialized() const {
   return true;
 }
 
-void CreateEncryptionZoneRequestProto::InternalSwap(CreateEncryptionZoneRequestProto* other) {
+void CreateEncryptionZoneRequestProto::InternalSwap(
+    CreateEncryptionZoneRequestProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  src_.Swap(&other->src_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  keyname_.Swap(&other->keyname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  src_.Swap(&other->src_,
+            &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+            GetArenaNoVirtual());
+  keyname_.Swap(
+      &other->keyname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata CreateEncryptionZoneRequestProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+CreateEncryptionZoneRequestProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void CreateEncryptionZoneResponseProto::InitAsDefaultInstance() {
-}
+void CreateEncryptionZoneResponseProto::InitAsDefaultInstance() {}
 class CreateEncryptionZoneResponseProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<CreateEncryptionZoneResponseProto>()._has_bits_);
+  using HasBits =
+      decltype(std::declval<CreateEncryptionZoneResponseProto>()._has_bits_);
 };
 
 CreateEncryptionZoneResponseProto::CreateEncryptionZoneResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CreateEncryptionZoneResponseProto)
 }
-CreateEncryptionZoneResponseProto::CreateEncryptionZoneResponseProto(const CreateEncryptionZoneResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+CreateEncryptionZoneResponseProto::CreateEncryptionZoneResponseProto(
+    const CreateEncryptionZoneResponseProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CreateEncryptionZoneResponseProto)
 }
 
-void CreateEncryptionZoneResponseProto::SharedCtor() {
-}
+void CreateEncryptionZoneResponseProto::SharedCtor() {}
 
 CreateEncryptionZoneResponseProto::~CreateEncryptionZoneResponseProto() {
   // @@protoc_insertion_point(destructor:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   SharedDtor();
 }
 
-void CreateEncryptionZoneResponseProto::SharedDtor() {
-}
+void CreateEncryptionZoneResponseProto::SharedDtor() {}
 
 void CreateEncryptionZoneResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const CreateEncryptionZoneResponseProto& CreateEncryptionZoneResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto.base);
+const CreateEncryptionZoneResponseProto&
+CreateEncryptionZoneResponseProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CreateEncryptionZoneResponseProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CreateEncryptionZoneResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* CreateEncryptionZoneResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CreateEncryptionZoneResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
-        if ((tag & 7) == 4 || tag == 0) {
-          ctx->SetLastTag(tag);
-          goto success;
-        }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
-        CHK_(ptr != nullptr);
-        continue;
+    if ((tag & 7) == 4 || tag == 0) {
+      ctx->SetLastTag(tag);
+      goto success;
+    }
+    ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+    CHK_(ptr != nullptr);
+    continue;
   }  // while
 success:
   return ptr;
@@ -617,27 +779,30 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* CreateEncryptionZoneResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+CreateEncryptionZoneResponseProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   return target;
 }
 
 size_t CreateEncryptionZoneResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -648,78 +813,79 @@ size_t CreateEncryptionZoneResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CreateEncryptionZoneResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+void CreateEncryptionZoneResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CreateEncryptionZoneResponseProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CreateEncryptionZoneResponseProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          CreateEncryptionZoneResponseProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CreateEncryptionZoneResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CreateEncryptionZoneResponseProto)
     MergeFrom(*source);
   }
 }
 
-void CreateEncryptionZoneResponseProto::MergeFrom(const CreateEncryptionZoneResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+void CreateEncryptionZoneResponseProto::MergeFrom(
+    const CreateEncryptionZoneResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
-
+  (void)cached_has_bits;
 }
 
-void CreateEncryptionZoneResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+void CreateEncryptionZoneResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void CreateEncryptionZoneResponseProto::CopyFrom(const CreateEncryptionZoneResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
+void CreateEncryptionZoneResponseProto::CopyFrom(
+    const CreateEncryptionZoneResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CreateEncryptionZoneResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool CreateEncryptionZoneResponseProto::IsInitialized() const {
-  return true;
-}
+bool CreateEncryptionZoneResponseProto::IsInitialized() const { return true; }
 
-void CreateEncryptionZoneResponseProto::InternalSwap(CreateEncryptionZoneResponseProto* other) {
+void CreateEncryptionZoneResponseProto::InternalSwap(
+    CreateEncryptionZoneResponseProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata CreateEncryptionZoneResponseProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+CreateEncryptionZoneResponseProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ListEncryptionZonesRequestProto::InitAsDefaultInstance() {
-}
+void ListEncryptionZonesRequestProto::InitAsDefaultInstance() {}
 class ListEncryptionZonesRequestProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<ListEncryptionZonesRequestProto>()._has_bits_);
-  static void set_has_id(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  using HasBits =
+      decltype(std::declval<ListEncryptionZonesRequestProto>()._has_bits_);
+  static void set_has_id(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 ListEncryptionZonesRequestProto::ListEncryptionZonesRequestProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ListEncryptionZonesRequestProto)
 }
-ListEncryptionZonesRequestProto::ListEncryptionZonesRequestProto(const ListEncryptionZonesRequestProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ListEncryptionZonesRequestProto::ListEncryptionZonesRequestProto(
+    const ListEncryptionZonesRequestProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -736,31 +902,33 @@ ListEncryptionZonesRequestProto::~ListEncryptionZonesRequestProto() {
   SharedDtor();
 }
 
-void ListEncryptionZonesRequestProto::SharedDtor() {
-}
+void ListEncryptionZonesRequestProto::SharedDtor() {}
 
 void ListEncryptionZonesRequestProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ListEncryptionZonesRequestProto& ListEncryptionZonesRequestProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ListEncryptionZonesRequestProto_encryption_2eproto.base);
+const ListEncryptionZonesRequestProto&
+ListEncryptionZonesRequestProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ListEncryptionZonesRequestProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ListEncryptionZonesRequestProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   id_ = PROTOBUF_LONGLONG(0);
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ListEncryptionZonesRequestProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ListEncryptionZonesRequestProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -769,11 +937,13 @@ const char* ListEncryptionZonesRequestProto::_InternalParse(const char* ptr, ::P
     switch (tag >> 3) {
       // required int64 id = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_id(&has_bits);
           id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -786,7 +956,7 @@ const char* ListEncryptionZonesRequestProto::_InternalParse(const char* ptr, ::P
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -796,40 +966,45 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* ListEncryptionZonesRequestProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+ListEncryptionZonesRequestProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required int64 id = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(1, this->_internal_id(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(
+            1, this->_internal_id(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ListEncryptionZonesRequestProto)
   return target;
 }
 
 size_t ListEncryptionZonesRequestProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   size_t total_size = 0;
 
   // required int64 id = 1;
   if (_internal_has_id()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
-        this->_internal_id());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+                this->_internal_id());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -840,42 +1015,46 @@ size_t ListEncryptionZonesRequestProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ListEncryptionZonesRequestProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+void ListEncryptionZonesRequestProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ListEncryptionZonesRequestProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ListEncryptionZonesRequestProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          ListEncryptionZonesRequestProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ListEncryptionZonesRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ListEncryptionZonesRequestProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ListEncryptionZonesRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ListEncryptionZonesRequestProto)
     MergeFrom(*source);
   }
 }
 
-void ListEncryptionZonesRequestProto::MergeFrom(const ListEncryptionZonesRequestProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+void ListEncryptionZonesRequestProto::MergeFrom(
+    const ListEncryptionZonesRequestProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_id()) {
     _internal_set_id(from._internal_id());
   }
 }
 
-void ListEncryptionZonesRequestProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+void ListEncryptionZonesRequestProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void ListEncryptionZonesRequestProto::CopyFrom(const ListEncryptionZonesRequestProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
+void ListEncryptionZonesRequestProto::CopyFrom(
+    const ListEncryptionZonesRequestProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ListEncryptionZonesRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -886,70 +1065,73 @@ bool ListEncryptionZonesRequestProto::IsInitialized() const {
   return true;
 }
 
-void ListEncryptionZonesRequestProto::InternalSwap(ListEncryptionZonesRequestProto* other) {
+void ListEncryptionZonesRequestProto::InternalSwap(
+    ListEncryptionZonesRequestProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(id_, other->id_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ListEncryptionZonesRequestProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ListEncryptionZonesRequestProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void EncryptionZoneProto::InitAsDefaultInstance() {
-}
+void EncryptionZoneProto::InitAsDefaultInstance() {}
 class EncryptionZoneProto::_Internal {
  public:
   using HasBits = decltype(std::declval<EncryptionZoneProto>()._has_bits_);
-  static void set_has_id(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_path(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_suite(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_id(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_path(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_suite(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_cryptoprotocolversion(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
-  static void set_has_keyname(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_keyname(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 EncryptionZoneProto::EncryptionZoneProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.EncryptionZoneProto)
 }
 EncryptionZoneProto::EncryptionZoneProto(const EncryptionZoneProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  path_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  path_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_path()) {
-    path_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.path_);
+    path_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.path_);
   }
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_keyname()) {
-    keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+    keyname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.keyname_);
   }
-  ::memcpy(&id_, &from.id_,
-    static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
-    reinterpret_cast<char*>(&id_)) + sizeof(cryptoprotocolversion_));
+  ::memcpy(
+      &id_, &from.id_,
+      static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
+                          reinterpret_cast<char*>(&id_)) +
+          sizeof(cryptoprotocolversion_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.EncryptionZoneProto)
 }
 
 void EncryptionZoneProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_EncryptionZoneProto_encryption_2eproto.base);
-  path_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_EncryptionZoneProto_encryption_2eproto.base);
+  path_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   id_ = PROTOBUF_LONGLONG(0);
   suite_ = 1;
   cryptoprotocolversion_ = 1;
@@ -961,24 +1143,26 @@ EncryptionZoneProto::~EncryptionZoneProto() {
 }
 
 void EncryptionZoneProto::SharedDtor() {
-  path_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  path_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void EncryptionZoneProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const EncryptionZoneProto& EncryptionZoneProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_EncryptionZoneProto_encryption_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_EncryptionZoneProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void EncryptionZoneProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.EncryptionZoneProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.EncryptionZoneProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -998,8 +1182,10 @@ void EncryptionZoneProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* EncryptionZoneProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* EncryptionZoneProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1008,57 +1194,80 @@ const char* EncryptionZoneProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
     switch (tag >> 3) {
       // required int64 id = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_id(&has_bits);
           id_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string path = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_path();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.EncryptionZoneProto.path");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.EncryptionZoneProto.path");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.CipherSuiteProto suite = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
-            _internal_set_suite(static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
+            _internal_set_suite(
+                static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(3, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                3, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 4;
+      // required .Hdfs.Internal.CryptoProtocolVersionProto
+      // cryptoProtocolVersion = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
-            _internal_set_cryptoprotocolversion(static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
+            _internal_set_cryptoprotocolversion(
+                static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(4, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                4, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string keyName = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_keyname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.EncryptionZoneProto.keyName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.EncryptionZoneProto.keyName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1071,7 +1280,7 @@ const char* EncryptionZoneProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1082,133 +1291,148 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* EncryptionZoneProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.EncryptionZoneProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required int64 id = 1;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(1, this->_internal_id(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(
+            1, this->_internal_id(), target);
   }
 
   // required string path = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_path().data(), static_cast<int>(this->_internal_path().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.EncryptionZoneProto.path");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_path(), target);
+        this->_internal_path().data(),
+        static_cast<int>(this->_internal_path().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.EncryptionZoneProto.path");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_path(), target);
   }
 
   // required .Hdfs.Internal.CipherSuiteProto suite = 3;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      3, this->_internal_suite(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            3, this->_internal_suite(), target);
   }
 
-  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 4;
+  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion =
+  // 4;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      4, this->_internal_cryptoprotocolversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            4, this->_internal_cryptoprotocolversion(), target);
   }
 
   // required string keyName = 5;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_keyname().data(), static_cast<int>(this->_internal_keyname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.EncryptionZoneProto.keyName");
-    target = stream->WriteStringMaybeAliased(
-        5, this->_internal_keyname(), target);
+        this->_internal_keyname().data(),
+        static_cast<int>(this->_internal_keyname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.EncryptionZoneProto.keyName");
+    target =
+        stream->WriteStringMaybeAliased(5, this->_internal_keyname(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.EncryptionZoneProto)
   return target;
 }
 
 size_t EncryptionZoneProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.EncryptionZoneProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.EncryptionZoneProto)
   size_t total_size = 0;
 
   if (_internal_has_path()) {
     // required string path = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_path());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_path());
   }
 
   if (_internal_has_keyname()) {
     // required string keyName = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
   }
 
   if (_internal_has_id()) {
     // required int64 id = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
-        this->_internal_id());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+                this->_internal_id());
   }
 
   if (_internal_has_suite()) {
     // required .Hdfs.Internal.CipherSuiteProto suite = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
   }
 
   if (_internal_has_cryptoprotocolversion()) {
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 4;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
   }
 
   return total_size;
 }
 size_t EncryptionZoneProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.EncryptionZoneProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.EncryptionZoneProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) ==
+      0) {  // All required fields are present.
     // required string path = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_path());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_path());
 
     // required string keyName = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
 
     // required int64 id = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
-        this->_internal_id());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+                this->_internal_id());
 
     // required .Hdfs.Internal.CipherSuiteProto suite = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
 
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 4;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -1219,37 +1443,42 @@ size_t EncryptionZoneProto::ByteSizeLong() const {
   return total_size;
 }
 
-void EncryptionZoneProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.EncryptionZoneProto)
+void EncryptionZoneProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.EncryptionZoneProto)
   GOOGLE_DCHECK_NE(&from, this);
   const EncryptionZoneProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<EncryptionZoneProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.EncryptionZoneProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.EncryptionZoneProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.EncryptionZoneProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.EncryptionZoneProto)
     MergeFrom(*source);
   }
 }
 
 void EncryptionZoneProto::MergeFrom(const EncryptionZoneProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.EncryptionZoneProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.EncryptionZoneProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      path_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.path_);
+      path_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.path_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+      keyname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.keyname_);
     }
     if (cached_has_bits & 0x00000004u) {
       id_ = from.id_;
@@ -1264,15 +1493,16 @@ void EncryptionZoneProto::MergeFrom(const EncryptionZoneProto& from) {
   }
 }
 
-void EncryptionZoneProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.EncryptionZoneProto)
+void EncryptionZoneProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.EncryptionZoneProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void EncryptionZoneProto::CopyFrom(const EncryptionZoneProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.EncryptionZoneProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.EncryptionZoneProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1287,10 +1517,13 @@ void EncryptionZoneProto::InternalSwap(EncryptionZoneProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  path_.Swap(&other->path_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  keyname_.Swap(&other->keyname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  path_.Swap(&other->path_,
+             &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+             GetArenaNoVirtual());
+  keyname_.Swap(
+      &other->keyname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(id_, other->id_);
   swap(suite_, other->suite_);
   swap(cryptoprotocolversion_, other->cryptoprotocolversion_);
@@ -1300,26 +1533,24 @@ void EncryptionZoneProto::InternalSwap(EncryptionZoneProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ListEncryptionZonesResponseProto::InitAsDefaultInstance() {
-}
+void ListEncryptionZonesResponseProto::InitAsDefaultInstance() {}
 class ListEncryptionZonesResponseProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<ListEncryptionZonesResponseProto>()._has_bits_);
-  static void set_has_hasmore(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  using HasBits =
+      decltype(std::declval<ListEncryptionZonesResponseProto>()._has_bits_);
+  static void set_has_hasmore(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 ListEncryptionZonesResponseProto::ListEncryptionZonesResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ListEncryptionZonesResponseProto)
 }
-ListEncryptionZonesResponseProto::ListEncryptionZonesResponseProto(const ListEncryptionZonesResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ListEncryptionZonesResponseProto::ListEncryptionZonesResponseProto(
+    const ListEncryptionZonesResponseProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       zones_(from.zones_) {
@@ -1329,7 +1560,8 @@ ListEncryptionZonesResponseProto::ListEncryptionZonesResponseProto(const ListEnc
 }
 
 void ListEncryptionZonesResponseProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base);
   hasmore_ = false;
 }
 
@@ -1338,23 +1570,23 @@ ListEncryptionZonesResponseProto::~ListEncryptionZonesResponseProto() {
   SharedDtor();
 }
 
-void ListEncryptionZonesResponseProto::SharedDtor() {
-}
+void ListEncryptionZonesResponseProto::SharedDtor() {}
 
 void ListEncryptionZonesResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ListEncryptionZonesResponseProto& ListEncryptionZonesResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base);
+const ListEncryptionZonesResponseProto&
+ListEncryptionZonesResponseProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ListEncryptionZonesResponseProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ListEncryptionZonesResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   zones_.Clear();
   hasmore_ = false;
@@ -1362,8 +1594,10 @@ void ListEncryptionZonesResponseProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* ListEncryptionZonesResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ListEncryptionZonesResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1372,7 +1606,8 @@ const char* ListEncryptionZonesResponseProto::_InternalParse(const char* ptr, ::
     switch (tag >> 3) {
       // repeated .Hdfs.Internal.EncryptionZoneProto zones = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -1380,15 +1615,18 @@ const char* ListEncryptionZonesResponseProto::_InternalParse(const char* ptr, ::
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool hasMore = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_hasmore(&has_bits);
           hasmore_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1401,7 +1639,7 @@ const char* ListEncryptionZonesResponseProto::_InternalParse(const char* ptr, ::
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1411,37 +1649,44 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* ListEncryptionZonesResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+ListEncryptionZonesResponseProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.EncryptionZoneProto zones = 1;
   for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_zones_size()); i < n; i++) {
+                    n = static_cast<unsigned int>(this->_internal_zones_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_zones(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_zones(i), target, stream);
   }
 
   cached_has_bits = _has_bits_[0];
   // required bool hasMore = 2;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(2, this->_internal_hasmore(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            2, this->_internal_hasmore(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ListEncryptionZonesResponseProto)
   return target;
 }
 
 size_t ListEncryptionZonesResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   size_t total_size = 0;
 
   // required bool hasMore = 2;
@@ -1450,13 +1695,13 @@ size_t ListEncryptionZonesResponseProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.EncryptionZoneProto zones = 1;
   total_size += 1UL * this->_internal_zones_size();
   for (const auto& msg : this->zones_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1468,27 +1713,29 @@ size_t ListEncryptionZonesResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ListEncryptionZonesResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+void ListEncryptionZonesResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ListEncryptionZonesResponseProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ListEncryptionZonesResponseProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          ListEncryptionZonesResponseProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ListEncryptionZonesResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ListEncryptionZonesResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ListEncryptionZonesResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ListEncryptionZonesResponseProto)
     MergeFrom(*source);
   }
 }
 
-void ListEncryptionZonesResponseProto::MergeFrom(const ListEncryptionZonesResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+void ListEncryptionZonesResponseProto::MergeFrom(
+    const ListEncryptionZonesResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   zones_.MergeFrom(from.zones_);
   if (from._internal_has_hasmore()) {
@@ -1496,15 +1743,17 @@ void ListEncryptionZonesResponseProto::MergeFrom(const ListEncryptionZonesRespon
   }
 }
 
-void ListEncryptionZonesResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+void ListEncryptionZonesResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void ListEncryptionZonesResponseProto::CopyFrom(const ListEncryptionZonesResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
+void ListEncryptionZonesResponseProto::CopyFrom(
+    const ListEncryptionZonesResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ListEncryptionZonesResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1512,11 +1761,13 @@ void ListEncryptionZonesResponseProto::CopyFrom(const ListEncryptionZonesRespons
 
 bool ListEncryptionZonesResponseProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(zones_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(zones_))
+    return false;
   return true;
 }
 
-void ListEncryptionZonesResponseProto::InternalSwap(ListEncryptionZonesResponseProto* other) {
+void ListEncryptionZonesResponseProto::InternalSwap(
+    ListEncryptionZonesResponseProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
@@ -1524,43 +1775,46 @@ void ListEncryptionZonesResponseProto::InternalSwap(ListEncryptionZonesResponseP
   swap(hasmore_, other->hasmore_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ListEncryptionZonesResponseProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+ListEncryptionZonesResponseProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void GetEZForPathRequestProto::InitAsDefaultInstance() {
-}
+void GetEZForPathRequestProto::InitAsDefaultInstance() {}
 class GetEZForPathRequestProto::_Internal {
  public:
   using HasBits = decltype(std::declval<GetEZForPathRequestProto>()._has_bits_);
-  static void set_has_src(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_src(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 GetEZForPathRequestProto::GetEZForPathRequestProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.GetEZForPathRequestProto)
 }
-GetEZForPathRequestProto::GetEZForPathRequestProto(const GetEZForPathRequestProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+GetEZForPathRequestProto::GetEZForPathRequestProto(
+    const GetEZForPathRequestProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  src_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  src_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_src()) {
-    src_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.src_);
+    src_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.src_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.GetEZForPathRequestProto)
 }
 
 void GetEZForPathRequestProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_GetEZForPathRequestProto_encryption_2eproto.base);
-  src_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_GetEZForPathRequestProto_encryption_2eproto.base);
+  src_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 GetEZForPathRequestProto::~GetEZForPathRequestProto() {
@@ -1569,23 +1823,24 @@ GetEZForPathRequestProto::~GetEZForPathRequestProto() {
 }
 
 void GetEZForPathRequestProto::SharedDtor() {
-  src_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  src_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void GetEZForPathRequestProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const GetEZForPathRequestProto& GetEZForPathRequestProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_GetEZForPathRequestProto_encryption_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_GetEZForPathRequestProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void GetEZForPathRequestProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.GetEZForPathRequestProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.GetEZForPathRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -1595,8 +1850,10 @@ void GetEZForPathRequestProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* GetEZForPathRequestProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* GetEZForPathRequestProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1605,14 +1862,18 @@ const char* GetEZForPathRequestProto::_InternalParse(const char* ptr, ::PROTOBUF
     switch (tag >> 3) {
       // required string src = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_src();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.GetEZForPathRequestProto.src");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.GetEZForPathRequestProto.src");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1625,7 +1886,7 @@ const char* GetEZForPathRequestProto::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1636,43 +1897,45 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* GetEZForPathRequestProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.GetEZForPathRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string src = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_src().data(), static_cast<int>(this->_internal_src().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.GetEZForPathRequestProto.src");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_src(), target);
+        this->_internal_src().data(),
+        static_cast<int>(this->_internal_src().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.GetEZForPathRequestProto.src");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_src(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.GetEZForPathRequestProto)
   return target;
 }
 
 size_t GetEZForPathRequestProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.GetEZForPathRequestProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.GetEZForPathRequestProto)
   size_t total_size = 0;
 
   // required string src = 1;
   if (_internal_has_src()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_src());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_src());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -1683,43 +1946,47 @@ size_t GetEZForPathRequestProto::ByteSizeLong() const {
   return total_size;
 }
 
-void GetEZForPathRequestProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.GetEZForPathRequestProto)
+void GetEZForPathRequestProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.GetEZForPathRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   const GetEZForPathRequestProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<GetEZForPathRequestProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.GetEZForPathRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.GetEZForPathRequestProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.GetEZForPathRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.GetEZForPathRequestProto)
     MergeFrom(*source);
   }
 }
 
 void GetEZForPathRequestProto::MergeFrom(const GetEZForPathRequestProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.GetEZForPathRequestProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.GetEZForPathRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_src()) {
     _has_bits_[0] |= 0x00000001u;
-    src_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.src_);
+    src_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.src_);
   }
 }
 
-void GetEZForPathRequestProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.GetEZForPathRequestProto)
+void GetEZForPathRequestProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.GetEZForPathRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void GetEZForPathRequestProto::CopyFrom(const GetEZForPathRequestProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.GetEZForPathRequestProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.GetEZForPathRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1734,41 +2001,46 @@ void GetEZForPathRequestProto::InternalSwap(GetEZForPathRequestProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  src_.Swap(&other->src_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  src_.Swap(&other->src_,
+            &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+            GetArenaNoVirtual());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata GetEZForPathRequestProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata GetEZForPathRequestProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // ===================================================================
 
 void GetEZForPathResponseProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_GetEZForPathResponseProto_default_instance_._instance.get_mutable()->zone_ = const_cast< ::Hdfs::Internal::EncryptionZoneProto*>(
+  ::Hdfs::Internal::_GetEZForPathResponseProto_default_instance_._instance
+      .get_mutable()
+      ->zone_ = const_cast<::Hdfs::Internal::EncryptionZoneProto*>(
       ::Hdfs::Internal::EncryptionZoneProto::internal_default_instance());
 }
 class GetEZForPathResponseProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<GetEZForPathResponseProto>()._has_bits_);
-  static const ::Hdfs::Internal::EncryptionZoneProto& zone(const GetEZForPathResponseProto* msg);
-  static void set_has_zone(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  using HasBits =
+      decltype(std::declval<GetEZForPathResponseProto>()._has_bits_);
+  static const ::Hdfs::Internal::EncryptionZoneProto& zone(
+      const GetEZForPathResponseProto* msg);
+  static void set_has_zone(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::EncryptionZoneProto&
-GetEZForPathResponseProto::_Internal::zone(const GetEZForPathResponseProto* msg) {
+GetEZForPathResponseProto::_Internal::zone(
+    const GetEZForPathResponseProto* msg) {
   return *msg->zone_;
 }
 GetEZForPathResponseProto::GetEZForPathResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.GetEZForPathResponseProto)
 }
-GetEZForPathResponseProto::GetEZForPathResponseProto(const GetEZForPathResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+GetEZForPathResponseProto::GetEZForPathResponseProto(
+    const GetEZForPathResponseProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -1781,7 +2053,8 @@ GetEZForPathResponseProto::GetEZForPathResponseProto(const GetEZForPathResponseP
 }
 
 void GetEZForPathResponseProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_GetEZForPathResponseProto_encryption_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_GetEZForPathResponseProto_encryption_2eproto.base);
   zone_ = nullptr;
 }
 
@@ -1798,16 +2071,16 @@ void GetEZForPathResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const GetEZForPathResponseProto& GetEZForPathResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_GetEZForPathResponseProto_encryption_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_GetEZForPathResponseProto_encryption_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void GetEZForPathResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.GetEZForPathResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.GetEZForPathResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -1818,8 +2091,10 @@ void GetEZForPathResponseProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* GetEZForPathResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* GetEZForPathResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1828,10 +2103,12 @@ const char* GetEZForPathResponseProto::_InternalParse(const char* ptr, ::PROTOBU
     switch (tag >> 3) {
       // optional .Hdfs.Internal.EncryptionZoneProto zone = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_zone(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1844,7 +2121,7 @@ const char* GetEZForPathResponseProto::_InternalParse(const char* ptr, ::PROTOBU
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1855,42 +2132,44 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* GetEZForPathResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.GetEZForPathResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // optional .Hdfs.Internal.EncryptionZoneProto zone = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::zone(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::zone(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.GetEZForPathResponseProto)
   return target;
 }
 
 size_t GetEZForPathResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.GetEZForPathResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.GetEZForPathResponseProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional .Hdfs.Internal.EncryptionZoneProto zone = 1;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *zone_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*zone_);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1902,42 +2181,47 @@ size_t GetEZForPathResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void GetEZForPathResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.GetEZForPathResponseProto)
+void GetEZForPathResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.GetEZForPathResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const GetEZForPathResponseProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<GetEZForPathResponseProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          GetEZForPathResponseProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.GetEZForPathResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.GetEZForPathResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.GetEZForPathResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.GetEZForPathResponseProto)
     MergeFrom(*source);
   }
 }
 
-void GetEZForPathResponseProto::MergeFrom(const GetEZForPathResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.GetEZForPathResponseProto)
+void GetEZForPathResponseProto::MergeFrom(
+    const GetEZForPathResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.GetEZForPathResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_zone()) {
-    _internal_mutable_zone()->::Hdfs::Internal::EncryptionZoneProto::MergeFrom(from._internal_zone());
+    _internal_mutable_zone()->::Hdfs::Internal::EncryptionZoneProto::MergeFrom(
+        from._internal_zone());
   }
 }
 
-void GetEZForPathResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.GetEZForPathResponseProto)
+void GetEZForPathResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.GetEZForPathResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void GetEZForPathResponseProto::CopyFrom(const GetEZForPathResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.GetEZForPathResponseProto)
+void GetEZForPathResponseProto::CopyFrom(
+    const GetEZForPathResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.GetEZForPathResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1957,35 +2241,61 @@ void GetEZForPathResponseProto::InternalSwap(GetEZForPathResponseProto* other) {
   swap(zone_, other->zone_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata GetEZForPathResponseProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata GetEZForPathResponseProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace Internal
 }  // namespace Hdfs
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CreateEncryptionZoneRequestProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CreateEncryptionZoneRequestProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CreateEncryptionZoneRequestProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CreateEncryptionZoneRequestProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CreateEncryptionZoneRequestProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::CreateEncryptionZoneRequestProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CreateEncryptionZoneResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CreateEncryptionZoneResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CreateEncryptionZoneResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CreateEncryptionZoneResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CreateEncryptionZoneResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::CreateEncryptionZoneResponseProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ListEncryptionZonesRequestProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ListEncryptionZonesRequestProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ListEncryptionZonesRequestProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ListEncryptionZonesRequestProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ListEncryptionZonesRequestProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::ListEncryptionZonesRequestProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::EncryptionZoneProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::EncryptionZoneProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::EncryptionZoneProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::EncryptionZoneProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::EncryptionZoneProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::EncryptionZoneProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ListEncryptionZonesResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ListEncryptionZonesResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ListEncryptionZonesResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ListEncryptionZonesResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ListEncryptionZonesResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::ListEncryptionZonesResponseProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::GetEZForPathRequestProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::GetEZForPathRequestProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::GetEZForPathRequestProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::GetEZForPathRequestProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::GetEZForPathRequestProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::GetEZForPathRequestProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::GetEZForPathResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::GetEZForPathResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::GetEZForPathResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::GetEZForPathResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::GetEZForPathResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::GetEZForPathResponseProto>(
+      arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

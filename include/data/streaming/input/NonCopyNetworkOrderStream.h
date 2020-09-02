@@ -14,15 +14,17 @@
 #ifndef NC_ENDIAN_IN_STREAM
 #define NC_ENDIAN_IN_STREAM
 
-#include <stdexcept>
-#include <cstdio>
-#include <iostream>
-#include <cstring>
 #include <netinet/in.h>
-#include "InputStream.h"
+
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
+
 #include "ByteInputStream.h"
-#include "data/extern/concurrentqueue/concurrentqueue.h"
+#include "InputStream.h"
 #include "data/constructs/MovablePointer.h"
+#include "data/extern/concurrentqueue/concurrentqueue.h"
 namespace cclient {
 namespace data {
 namespace streams {
@@ -32,13 +34,15 @@ namespace streams {
 #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
 #define SH_LIKELY(val) (__builtin_expect((val), 1))
 #else
-    #define SH_UNLIKELY(val) (val)
-    #define SH_LIKELY(val) (val)
-    #endif
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
+#endif
 #endif
 
 #ifndef ntohll
-#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#define ntohll(x)                                           \
+  (((uint64_t)(ntohl((uint32_t)((x << 32) >> 32))) << 32) | \
+   ntohl(((uint32_t)(x >> 32))))
 #endif
 
 /**
@@ -48,61 +52,45 @@ namespace streams {
 class NonCopyEndianInputStream : public ByteInputStream {
  private:
   movable_ptr<cclient::data::streams::ByteOutputStream> bosref;
-  movable_ptr<moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*>> queueref;
+  movable_ptr<
+      moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream *>>
+      queueref;
 
  public:
-
   explicit NonCopyEndianInputStream(InputStream *out_stream)
-      :
-      ByteInputStream(out_stream),
-      bosref(nullptr),
-      queueref(nullptr) {
-
-  }
+      : ByteInputStream(out_stream), bosref(nullptr), queueref(nullptr) {}
 
   explicit NonCopyEndianInputStream(char *byteArray, size_t len)
-      :
-      ByteInputStream(byteArray, len),
-      bosref(nullptr),
-      queueref(nullptr) {
-
-  }
+      : ByteInputStream(byteArray, len), bosref(nullptr), queueref(nullptr) {}
 
   explicit NonCopyEndianInputStream(char *byteArray, size_t len, bool allocated)
-      :
-      ByteInputStream(byteArray, len, allocated),
-      bosref(nullptr),
-      queueref(nullptr) {
+      : ByteInputStream(byteArray, len, allocated),
+        bosref(nullptr),
+        queueref(nullptr) {}
 
-  }
-
-  explicit NonCopyEndianInputStream(cclient::data::streams::ByteOutputStream *ref, moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream*> *queueref)
-      :
-      ByteInputStream(ref->getByteArray(), ref->getSize(), false),
-      bosref(ref),
-      queueref(queueref) {
-
-  }
+  explicit NonCopyEndianInputStream(
+      cclient::data::streams::ByteOutputStream *ref,
+      moodycamel::ConcurrentQueue<cclient::data::streams::ByteOutputStream *>
+          *queueref)
+      : ByteInputStream(ref->getByteArray(), ref->getSize(), false),
+        bosref(ref),
+        queueref(queueref) {}
 
   NonCopyEndianInputStream()
-      :
-      ByteInputStream(),
-      bosref(nullptr),
-      queueref(nullptr) {
-  }
+      : ByteInputStream(), bosref(nullptr), queueref(nullptr) {}
 
   virtual ~NonCopyEndianInputStream() {
-    if (bosref.pointer != nullptr && queueref.pointer !=nullptr) {
+    if (bosref.pointer != nullptr && queueref.pointer != nullptr) {
       bosref->flush();
-      //deete
-     // delete bosref;
+      // deete
+      // delete bosref;
       queueref->enqueue(bosref.pointer);
     }
   }
 
   virtual INLINE short readShort() override {
     short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = iBytes[offset + 1];
@@ -113,7 +101,7 @@ class NonCopyEndianInputStream : public ByteInputStream {
 
   virtual INLINE unsigned short readUnsignedShort() override {
     unsigned short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = iBytes[offset + 1];
@@ -151,7 +139,7 @@ class NonCopyEndianInputStream : public ByteInputStream {
 
   virtual INLINE int readInt() override {
     int intVal;
-    char *ptr = (char*) &intVal;
+    char *ptr = (char *)&intVal;
     if (SH_UNLIKELY((4 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = iBytes[offset + 3];
@@ -164,7 +152,7 @@ class NonCopyEndianInputStream : public ByteInputStream {
 
   virtual INLINE uint64_t readLong() override {
     uint64_t longVal;
-    char *ptr = (char*) &longVal;
+    char *ptr = (char *)&longVal;
     if (SH_UNLIKELY((8 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = iBytes[offset + 7];
@@ -178,9 +166,8 @@ class NonCopyEndianInputStream : public ByteInputStream {
     offset += 8;
     return longVal;
   }
-
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

@@ -26,74 +26,87 @@
 
 using namespace std;
 
-class Event {
+class Event
+{
 public:
     std::string path;
     int type;
 };
 
-namespace cclient {
-namespace data {
-namespace zookeeper {
+namespace cclient
+{
+    namespace data
+    {
+        namespace zookeeper
+        {
 
-class Watch {
-public:
-    Watch() :
-        connected(false), zookeeperReference(NULL), state(0) {
+            class Watch
+            {
+            public:
+                Watch() : connected(false), zookeeperReference(NULL), state(0)
+                {
 
-        pthread_mutex_init(&mutex, 0);
-    }
-    ~Watch() {
-        pthread_mutex_destroy(&mutex);
-    }
+                    pthread_mutex_init(&mutex, 0);
+                }
+                ~Watch()
+                {
+                    pthread_mutex_destroy(&mutex);
+                }
 
-    Event popEvent();
+                Event popEvent();
 
-    void setHandle(zhandle_t *zh);
+                void setHandle(zhandle_t *zh);
 
-    bool isConnected() {
-        return connected;
-    }
+                bool isConnected() const
+                {
+                    return connected;
+                }
 
-    bool setConnected(bool val) {
-        connected = val;
-        return connected;
-    }
+                bool setConnected(bool val)
+                {
+                    connected = val;
+                    return connected;
+                }
 
-    int size();
+                int size() const;
 
-    void pushEvent(Event event);
+                void pushEvent(Event event);
 
-    bool waitForConnected(zhandle_t *zh);
+                bool waitForConnected(zhandle_t *zh);
 
-    bool waitForDisconnected(zhandle_t *zh);
+                bool waitForDisconnected(zhandle_t *zh);
 
-    void yield(zhandle_t *zh, int i) {
-        std::this_thread::yield();
-    }
+                void yield(zhandle_t *zh, int i)
+                {
+                    std::this_thread::yield();
+                }
 
-    void setState(int st) {
-        state = st;
-    }
+                void setState(int st)
+                {
+                    state = st;
+                }
 
-    int getState() {
-        return state;
-    }
+                int getState()
+                {
+                    return state;
+                }
 
-protected:
-    list<Event> events;
-    bool connected;
-    int state;
-    zhandle_t *zookeeperReference;
-private:
-    mutable pthread_mutex_t mutex;
-};
+            protected:
+                list<Event> events;
+                bool connected;
+                int state;
+                zhandle_t *zookeeperReference;
 
-struct WatchFn {
-    Watch *ptr;
-    void *Fn;
-};
-};
-}
-}
+            private:
+                mutable pthread_mutex_t mutex;
+            };
+
+            struct WatchFn
+            {
+                Watch *ptr;
+                void *Fn;
+            };
+        }; // namespace zookeeper
+    }      // namespace data
+} // namespace cclient
 #endif // WATCH_H

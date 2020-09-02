@@ -14,36 +14,31 @@
 
 #include "data/constructs/rfile/meta/IndexManager.h"
 
-namespace cclient{
-  namespace data{
+namespace cclient {
+namespace data {
 
-IndexManager::IndexManager (std::unique_ptr<cclient::data::compression::Compressor> compressorRef,cclient::data::streams::InputStream *blockReader, int version) :
-    blockReader (blockReader), version (version), indexBlock (NULL), compressorRef (
-        std::move(compressorRef))
-{
+IndexManager::IndexManager(
+    std::unique_ptr<cclient::data::compression::Compressor> compressorRef,
+    cclient::data::streams::InputStream *blockReader, int version)
+    : blockReader(blockReader),
+      version(version),
+      indexBlock(NULL),
+      compressorRef(std::move(compressorRef)) {}
 
-}
-
-uint64_t
-IndexManager::read (cclient::data::streams::InputStream *in)
-{
-    size = 0;
-    if (version == 6 || version == 7 || version == 8)
-    {
-        size = in->readInt ();
-    }
-
-    indexBlock = std::make_shared< IndexBlock> (version);
-    indexBlock->read (in);
-
-    if (version == 3 || version == 4)
-    {
-        size = indexBlock->getIndex ()->size ();
-
-    }
-
-    return in->getPos ();
-
-}
+uint64_t IndexManager::read(cclient::data::streams::InputStream *in) {
+  size = 0;
+  if (version == 6 || version == 7 || version == 8) {
+    size = in->readInt();
   }
+
+  indexBlock = std::make_shared<IndexBlock>(version);
+  indexBlock->read(in);
+
+  if (version == 3 || version == 4) {
+    size = indexBlock->getIndex()->size();
+  }
+
+  return in->getPos();
 }
+}  // namespace data
+}  // namespace cclient

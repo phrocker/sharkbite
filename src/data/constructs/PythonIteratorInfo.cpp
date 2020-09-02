@@ -28,38 +28,35 @@ namespace python {
  * @param pri iterator priority
  **/
 PythonIterInfo::PythonIterInfo(const std::string &name, uint32_t pri)
-    :
-    cclient::data::IterInfo(name, "", pri, "Python") {
+    : cclient::data::IterInfo(name, "", pri, "Python") {
   iterName = name;
   iterClass = "org.poma.accumulo.JythonIterator";
   addOption("DSL_CLASS", name);
   addOption("DSL_NAME", name);
 }
 
-PythonIterInfo::PythonIterInfo(const std::string &name, const std::string &idsl, uint32_t pri)
-    :
-    cclient::data::IterInfo(name, idsl, pri, "Python"), dsl(idsl) {
+PythonIterInfo::PythonIterInfo(const std::string &name, const std::string &idsl,
+                               uint32_t pri)
+    : cclient::data::IterInfo(name, idsl, pri, "Python"), dsl(idsl) {
   iterName = name;
   iterClass = "org.poma.accumulo.JythonIterator";
   addOption("DSL_CLASS", name);
   addOption("DSL_VALUE", dsl);
   addOption("DSL_NAME", name);
-
 }
 
 /**
  * Destructor
  **/
-PythonIterInfo::~PythonIterInfo() {
+PythonIterInfo::~PythonIterInfo() {}
 
-}
-
-PythonIterInfo& PythonIterInfo::onNext(const std::string &expr) {
+PythonIterInfo &PythonIterInfo::onNext(const std::string &expr) {
   if (dsl.empty()) {
     onNextLambda = expr;
     options["DSL_VALUE"] = getDSL();
   } else {
-    throw std::runtime_error("Cannot provide -onNext when a python script is provided");
+    throw std::runtime_error(
+        "Cannot provide -onNext when a python script is provided");
   }
   return *this;
 }
@@ -95,7 +92,8 @@ std::string PythonIterInfo::getDSL() const {
       str << "        return None" << std::endl;
       str << "      kv = None" << std::endl;
       str << "      if isinstance(userrez,KeyValue):" << std::endl;
-      str << "        kv = KeyValue(userrez.getKey(),userrez.getValue())" << std::endl;
+      str << "        kv = KeyValue(userrez.getKey(),userrez.getValue())"
+          << std::endl;
       str << "      else:" << std::endl;
       str << "        kv = KeyValue(userrez,pkv.getValue())" << std::endl;
       str << "      iterator.next()" << std::endl;
@@ -113,7 +111,8 @@ std::string PythonIterInfo::getDSL() const {
       str << "        return None" << std::endl;
       str << "      kv = None" << std::endl;
       str << "      if isinstance(userrez,KeyValue):" << std::endl;
-      str << "        kv = KeyValue(userrez.getKey(),userrez.getValue())" << std::endl;
+      str << "        kv = KeyValue(userrez.getKey(),userrez.getValue())"
+          << std::endl;
       str << "      else:" << std::endl;
       str << "        kv = KeyValue(userrez,pkv.getValue())" << std::endl;
       str << "      iterator.next()" << std::endl;
@@ -126,12 +125,13 @@ std::string PythonIterInfo::getDSL() const {
   } else {
     std::stringstream str;
     str << "from org.apache.accumulo.core.data import Range,Value" << std::endl;
-    str << "from org.poma.accumulo import Key,KeyValue" << std::endl << std::endl;
+    str << "from org.poma.accumulo import Key,KeyValue" << std::endl
+        << std::endl;
     str << formedDSL;
     formedDSL = str.str();
   }
   return formedDSL;
 }
-}
-}
-}
+}  // namespace python
+}  // namespace data
+}  // namespace cclient

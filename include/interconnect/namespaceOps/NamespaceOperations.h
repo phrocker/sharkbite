@@ -15,50 +15,61 @@
 #ifndef NAMEOPERATIONS_H
 #define NAMEOPERATIONS_H
 
-#include "../../data/constructs/security/Authorizations.h"
+#include <map>
+#include <mutex>
+#include <string>
 
-#include "../../data/constructs/KeyValue.h"
 #include "../../data/constructs/IterInfo.h"
-#include "../../data/constructs/security/AuthInfo.h"
+#include "../../data/constructs/KeyValue.h"
 #include "../../data/constructs/client/Instance.h"
+#include "../../data/constructs/security/AuthInfo.h"
+#include "../../data/constructs/security/Authorizations.h"
 #include "../../scanner/Source.h"
 #include "../../scanner/constructs/Results.h"
-#include "../transport/AccumuloCoordinatorTransporter.h"
 #include "../RootInterface.h"
-
-#include <map>
-
-#include <string>
-#include <mutex>
+#include "../transport/AccumuloCoordinatorTransporter.h"
 
 namespace interconnect {
 class NamespaceOperations {
  public:
   /**
-   * Namespaces constructor. Does not focus the namespace operations on a given instance.
+   * Namespaces constructor. Does not focus the namespace operations on a given
+   *instance.
    * @param creds credentials
    * @param instance instance provided by connector
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  explicit NamespaceOperations(cclient::data::security::AuthInfo *creds,  std::shared_ptr<cclient::data::Instance> instance,
-                      RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                      TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
-      : NamespaceOperations(creds, "", instance, interface, distributedConnector) {
+  explicit NamespaceOperations(
+      cclient::data::security::AuthInfo *creds,
+      std::shared_ptr<cclient::data::Instance> instance,
+      RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                    cclient::data::KeyValue,
+                    scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+      TransportPool<interconnect::AccumuloCoordinatorTransporter>
+          *distributedConnector)
+      : NamespaceOperations(creds, "", instance, interface,
+                            distributedConnector) {
     // simply calls the other constructor
   }
 
   /**
-   * Namespaces constructor. Does not focus the namespace operations on a given instance.
+   * Namespaces constructor. Does not focus the namespace operations on a given
+   *instance.
    * @param creds credentials
    * @param myNamespace namespace
    * @param instance instance provided by connector
    * @param interface connector interface
    * @param distributedConnector distributed interface for tablet servers
    **/
-  explicit NamespaceOperations(cclient::data::security::AuthInfo *creds, std::string myNamespace,  std::shared_ptr<cclient::data::Instance> instance,
-                      RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *interface,
-                      TransportPool<interconnect::AccumuloCoordinatorTransporter> *distributedConnector)
+  explicit NamespaceOperations(
+      cclient::data::security::AuthInfo *creds, std::string myNamespace,
+      std::shared_ptr<cclient::data::Instance> instance,
+      RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                    cclient::data::KeyValue,
+                    scanners::ResultBlock<cclient::data::KeyValue>> *interface,
+      TransportPool<interconnect::AccumuloCoordinatorTransporter>
+          *distributedConnector)
       : myNamespace(myNamespace),
         credentials(creds),
         myInstance(instance),
@@ -89,9 +100,7 @@ class NamespaceOperations {
    * Returns the default namesapce
    * @return returns ""
    **/
-  std::string defaultNamespace() {
-    return "";
-  }
+  std::string defaultNamespace() { return ""; }
 
   /**
    * Removes a namespace if specified, otherwise myNamespace is removed
@@ -125,7 +134,8 @@ class NamespaceOperations {
    * @param property property names
    * @param value property value
    */
-  virtual void setProperty(std::string property, std::string value, std::string nm = "");
+  virtual void setProperty(std::string property, std::string value,
+                           std::string nm = "");
 
   /**
    * Removes a property on this namespace.
@@ -145,7 +155,9 @@ class NamespaceOperations {
    * @param scope scope on which this will run
    * @param nm namespace. if not specified the object default is used
    **/
-  virtual void attachIterator(cclient::data::IterInfo setting, cclient::data::ITERATOR_TYPES scope, std::string nm = "");
+  virtual void attachIterator(cclient::data::IterInfo setting,
+                              cclient::data::ITERATOR_TYPES scope,
+                              std::string nm = "");
 
   /**
    * removes the iterator from the given scope
@@ -153,10 +165,11 @@ class NamespaceOperations {
    * @param scope scope on which this will run
    * @param nm namespace. if not specified the object default is used
    **/
-  virtual void removeIterator(std::string name, cclient::data::ITERATOR_TYPES scope, std::string nm = "");
+  virtual void removeIterator(std::string name,
+                              cclient::data::ITERATOR_TYPES scope,
+                              std::string nm = "");
 
  protected:
-
   /**
    * Loads the namespaces
    * @param force forces the load if necessary
@@ -164,7 +177,9 @@ class NamespaceOperations {
   void loadNamespaces(bool force = false);
 
   // client interface
-  RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
+  RootInterface<
+      interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue,
+      scanners::ResultBlock<cclient::data::KeyValue>> *clientInterface;
   // distributed connector to tservers
   TransportPool<interconnect::AccumuloCoordinatorTransporter> *refTransportPool;
   // instance ptr
@@ -179,7 +194,6 @@ class NamespaceOperations {
   // loaded namespaces
   std::map<std::string, std::string> namespaces;
   std::vector<std::string> namespaceNames;
-
 };
-}
-#endif // USEROPERATIONS_H
+}  // namespace interconnect
+#endif  // USEROPERATIONS_H

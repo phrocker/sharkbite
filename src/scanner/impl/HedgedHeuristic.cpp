@@ -16,11 +16,14 @@
 
 namespace scanners {
 
-void HedgedScannerHeuristic::setTableIterators(std::vector<cclient::data::IterInfo> iters) {
+void HedgedScannerHeuristic::setTableIterators(
+    std::vector<cclient::data::IterInfo> iters) {
   this->iters = std::move(iters);
 }
 
-uint16_t HedgedScannerHeuristic::scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) {
+uint16_t HedgedScannerHeuristic::scan(
+    Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
+        *source) {
   acquireLock();
   std::lock_guard<std::timed_mutex> lock(serverLock, std::adopt_lock);
   if (!started) {
@@ -29,12 +32,13 @@ uint16_t HedgedScannerHeuristic::scan(Source<cclient::data::KeyValue, ResultBloc
   }
   uint16_t scans = 0;
   for (int i = 0; i < threadCount; i++) {
-    ScanPair<interconnect::ThriftTransporter> *pair = new ScanPair<interconnect::ThriftTransporter>;
+    ScanPair<interconnect::ThriftTransporter> *pair =
+        new ScanPair<interconnect::ThriftTransporter>;
     pair->src = source;
     pair->heuristic = this;
     pair->runningFlag = &running;
-    pair->disableRpc=disableRpc;
-    pair->ownedAdditionalFeatures=(void*)&iters;
+    pair->disableRpc = disableRpc;
+    pair->ownedAdditionalFeatures = (void *)&iters;
     threads.push_back(std::thread(HedgedScannerHeuristic::hedgedScan, pair));
   }
   return scans;
@@ -45,11 +49,12 @@ void HedgedScannerHeuristic::close() {
   std::lock_guard<std::timed_mutex> lock(serverLock);
 
   if (started) {
-    for (std::vector<std::thread>::iterator iter = threads.begin(); iter != threads.end(); iter++) {
+    for (std::vector<std::thread>::iterator iter = threads.begin();
+         iter != threads.end(); iter++) {
       iter->join();
     }
   }
   started = false;
 }
 
-}
+}  // namespace scanners

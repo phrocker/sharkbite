@@ -18,23 +18,21 @@
 
 #include <algorithm>
 #include <cctype>
-
 #include <regex>
 
-namespace utils{
+namespace utils {
 
 std::string Uri::smatchBuild(const std::smatch& m, int idx) {
   const auto& sub = m[idx];
   return std::string(sub.first, sub.second);
 }
 
-
 Uri::Uri(std::string str) : hasAuthority_(false), port_(0) {
   static const std::regex uriRegex(
-      "([a-zA-Z][a-zA-Z0-9+.-]*):" // scheme:
-      "([^?#]*)" // authority and path
-      "(?:\\?([^#]*))?" // ?query
-      "(?:#(.*))?"); // #fragment
+      "([a-zA-Z][a-zA-Z0-9+.-]*):"  // scheme:
+      "([^?#]*)"                    // authority and path
+      "(?:\\?([^#]*))?"             // ?query
+      "(?:#(.*))?");                // #fragment
   static const std::regex authorityAndPathRegex("//([^/]*)(/.*)?");
 
   std::smatch match;
@@ -47,34 +45,28 @@ Uri::Uri(std::string str) : hasAuthority_(false), port_(0) {
 
   std::string authorityAndPath(match[2].first, match[2].second);
   std::smatch authorityAndPathMatch;
-  if (!std::regex_match(
-          authorityAndPath,
-          authorityAndPathMatch,
-          authorityAndPathRegex)) {
+  if (!std::regex_match(authorityAndPath, authorityAndPathMatch,
+                        authorityAndPathRegex)) {
     // Does not start with //, doesn't have authority
     hasAuthority_ = false;
     path_ = authorityAndPath;
   } else {
     static const std::regex authorityRegex(
-        "(?:([^@:]*)(?::([^@]*))?@)?" // username, password
-        "(\\[[^\\]]*\\]|[^\\[:]*)" // host (IP-literal (e.g. '['+IPv6+']',
-                                   // dotted-IPv4, or named host)
-        "(?::(\\d*))?"); // port
+        "(?:([^@:]*)(?::([^@]*))?@)?"  // username, password
+        "(\\[[^\\]]*\\]|[^\\[:]*)"     // host (IP-literal (e.g. '['+IPv6+']',
+                                       // dotted-IPv4, or named host)
+        "(?::(\\d*))?");               // port
 
     const auto authority = authorityAndPathMatch[1];
     std::smatch authorityMatch;
-    if (!std::regex_match(
-            authority.first,
-            authority.second,
-            authorityMatch,
-            authorityRegex)) {
-      throw std::invalid_argument(
-          "invalid URI authority ");
+    if (!std::regex_match(authority.first, authority.second, authorityMatch,
+                          authorityRegex)) {
+      throw std::invalid_argument("invalid URI authority ");
     }
 
     std::string port(authorityMatch[4].first, authorityMatch[4].second);
     if (!port.empty()) {
-        port_ = atoi(port.c_str());
+      port_ = atoi(port.c_str());
     }
 
     hasAuthority_ = true;
@@ -88,5 +80,4 @@ Uri::Uri(std::string str) : hasAuthority_(false), port_(0) {
   fragment_ = smatchBuild(match, 4);
 }
 
-
-}
+}  // namespace utils

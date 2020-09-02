@@ -14,13 +14,15 @@
 #ifndef RHNC_ENDIAN_IN_STREAM
 #define RHNC_ENDIAN_IN_STREAM
 
-#include <stdexcept>
-#include <cstdio>
-#include <iostream>
-#include <cstring>
 #include <netinet/in.h>
-#include "InputStream.h"
+
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
+
 #include "ByteInputStream.h"
+#include "InputStream.h"
 
 namespace cclient {
 namespace data {
@@ -31,9 +33,9 @@ namespace streams {
 #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
 #define SH_LIKELY(val) (__builtin_expect((val), 1))
 #else
-    #define SH_UNLIKELY(val) (val)
-    #define SH_LIKELY(val) (val)
-    #endif
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
+#endif
 #endif
 
 /**
@@ -43,23 +45,23 @@ namespace streams {
 class ReadAheadInputStream : public ByteInputStream {
  private:
   std::unique_ptr<InputStream> ownedStream;
- public:
 
-  explicit ReadAheadInputStream(std::unique_ptr<InputStream> out_stream, size_t readahead, size_t maxBuffer, size_t lng)
-      :
-      ReadAheadInputStream(out_stream.get(), readahead, maxBuffer, lng) {
+ public:
+  explicit ReadAheadInputStream(std::unique_ptr<InputStream> out_stream,
+                                size_t readahead, size_t maxBuffer, size_t lng)
+      : ReadAheadInputStream(out_stream.get(), readahead, maxBuffer, lng) {
     ownedStream = std::move(out_stream);
   }
 
-  explicit ReadAheadInputStream(InputStream *out_stream, size_t readahead, size_t maxBuffer, size_t lng)
-      :
-      ByteInputStream(out_stream),
-      readAheadSize(readahead),
-      readAheadStart(0),
-      currentReadAheadSize(0),
-      currentBatchOffset(0) {
-    if (dynamic_cast<std::ifstream*>(out_stream) != nullptr)
-      dynamic_cast<std::ifstream*>(out_stream)->rdbuf()->pubsetbuf(0, 0);
+  explicit ReadAheadInputStream(InputStream *out_stream, size_t readahead,
+                                size_t maxBuffer, size_t lng)
+      : ByteInputStream(out_stream),
+        readAheadSize(readahead),
+        readAheadStart(0),
+        currentReadAheadSize(0),
+        currentBatchOffset(0) {
+    if (dynamic_cast<std::ifstream *>(out_stream) != nullptr)
+      dynamic_cast<std::ifstream *>(out_stream)->rdbuf()->pubsetbuf(0, 0);
     readAheadSizeMax = maxBuffer;
     iBytes = new char[readAheadSizeMax];
     allocated = true;
@@ -67,8 +69,7 @@ class ReadAheadInputStream : public ByteInputStream {
     length = lng;
   }
 
-  virtual ~ReadAheadInputStream() {
-  }
+  virtual ~ReadAheadInputStream() {}
 
   virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) override {
     auto rem = currentReadAheadSize - currentBatchOffset;
@@ -96,11 +97,10 @@ class ReadAheadInputStream : public ByteInputStream {
     return cnt;
   }
 
-  virtual InputStream* seek(uint64_t pos) override {
+  virtual InputStream *seek(uint64_t pos) override {
     // readAheadStart to readAheadStart+readAhead
     if (pos < readAheadStart || pos >= readAheadStart + readAheadSize) {
       fillReadAhead(pos);
-
     }
     offset = pos;
 
@@ -109,7 +109,7 @@ class ReadAheadInputStream : public ByteInputStream {
 
   virtual INLINE short readShort() override {
     short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     if (SH_UNLIKELY((2 + offset) > (readAheadStart + currentReadAheadSize)))
@@ -123,7 +123,7 @@ class ReadAheadInputStream : public ByteInputStream {
 
   virtual INLINE unsigned short readUnsignedShort() override {
     unsigned short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     if (SH_UNLIKELY((2 + offset) > (readAheadStart + currentReadAheadSize)))
@@ -173,7 +173,7 @@ class ReadAheadInputStream : public ByteInputStream {
 
   virtual INLINE int readInt() override {
     int intVal;
-    char *ptr = (char*) &intVal;
+    char *ptr = (char *)&intVal;
     if (SH_UNLIKELY((4 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     if (SH_UNLIKELY((4 + offset) > (readAheadStart + currentReadAheadSize)))
@@ -189,7 +189,7 @@ class ReadAheadInputStream : public ByteInputStream {
 
   virtual INLINE uint64_t readLong() override {
     uint64_t longVal;
-    char *ptr = (char*) &longVal;
+    char *ptr = (char *)&longVal;
     if (SH_UNLIKELY((8 + offset) > length))
       throw std::runtime_error("Stream unavailable");
     if (SH_UNLIKELY((8 + offset) > (readAheadStart + currentReadAheadSize)))
@@ -206,10 +206,11 @@ class ReadAheadInputStream : public ByteInputStream {
     offset += 8;
     return longVal;
   }
+
  private:
   size_t readAheadStart;
   size_t currentReadAheadSize;
-  size_t readAheadSize;  // size of readahead
+  size_t readAheadSize;     // size of readahead
   size_t readAheadSizeMax;  // size of readahead
   size_t currentBatchOffset;
   void fillReadAhead(uint64_t whence = 0, size_t rqsize = 0) {
@@ -229,10 +230,9 @@ class ReadAheadInputStream : public ByteInputStream {
       currentReadAheadSize = size;
     }
     input_stream_ref->readBytes(iBytes, currentReadAheadSize);
-
   }
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

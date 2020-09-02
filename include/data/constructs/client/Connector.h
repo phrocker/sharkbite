@@ -27,79 +27,70 @@
 #include "../security/Authorizations.h"
 namespace cclient
 {
-namespace connector
-{
-namespace impl
-{
-
-class IConnector
-{
-
-public:
-    virtual Scanner *
-    createScanner (std::string tableName, cclient::data::security::Authorizations *authorizations,
-                   int numQueryThreads) = 0;
-    virtual
-    ~IConnector ()
+    namespace connector
     {
-    }
+        namespace impl
+        {
 
-};
+            class IConnector
+            {
 
-class AccumuloConnector : public IConnector
-{
-public:
-    AccumuloConnector (ZookeeperInstance *instance, cclient::data::security::AuthInfo *auths) :
-        myInstance (instance), credentials (NULL)
-    {
+            public:
+                virtual Scanner *createScanner(std::string tableName, cclient::data::security::Authorizations *authorizations,
+                                               int numQueryThreads) = 0;
+                virtual ~IConnector()
+                {
+                }
+            };
 
-    }
+            class AccumuloConnector : public IConnector
+            {
+            public:
+                explicit AccumuloConnector(ZookeeperInstance *instance, cclient::data::security::AuthInfo *auths) : myInstance(instance), credentials(NULL)
+                {
+                }
 
-    Scanner *
-    createScanner (std::string tableName, cclient::data::security::Authorizations *authorizations,
-                   int numQueryThreads)
-    {
-        return 0;
-    }
-protected:
-    cclient::data::Instance *myInstance;
-    cclient::data::security::AuthInfo *credentials;
-};
+                Scanner *createScanner(std::string tableName, cclient::data::security::Authorizations *authorizations,
+                                       int numQueryThreads)
+                {
+                    return 0;
+                }
 
-class Connector : public IConnector
-{
+            protected:
+                cclient::data::Instance *myInstance;
+                cclient::data::security::AuthInfo *credentials;
+            };
 
-public:
+            class Connector : public IConnector
+            {
 
-    Connector (ZookeeperInstance *instance, cclient::data::security::AuthInfo *auths)
-    {
-        base_connector = std::unique_ptr<IConnector> (
-                             new AccumuloConnector (instance, auths));
-    }
+            public:
+                Connector(ZookeeperInstance *instance, cclient::data::security::AuthInfo *auths)
+                {
+                    base_connector = std::unique_ptr<IConnector>(
+                        new AccumuloConnector(instance, auths));
+                }
 
-    Scanner *
-    createScanner (std::string tableName, cclient::data::security::Authorizations *authorizations,
-                   int numQueryThreads)
-    {
-        return base_connector->createScanner (tableName, authorizations,
-                                              numQueryThreads);
-    }
+                Scanner *
+                createScanner(std::string tableName, cclient::data::security::Authorizations *authorizations,
+                              int numQueryThreads)
+                {
+                    return base_connector->createScanner(tableName, authorizations,
+                                                         numQueryThreads);
+                }
 
-    virtual
-    ~Connector ()
-    {
+                virtual ~Connector()
+                {
+                }
 
-    }
-protected:
-    std::unique_ptr<IConnector> base_connector;
+            protected:
+                std::unique_ptr<IConnector> base_connector;
+            };
 
-};
-
-} /* namespace impl */
-} /* namespace cclient */
-}
+        } /* namespace impl */
+    }     // namespace connector
+} // namespace cclient
 
 #endif /* CONNECTOR_H_ */
 
 #endif // header guard
-

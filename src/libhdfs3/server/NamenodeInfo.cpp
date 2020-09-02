@@ -20,44 +20,44 @@
  * limitations under the License.
  */
 #include "NamenodeInfo.h"
+
+#include <iostream>
+#include <string>
+#include <vector>
+
 #include "StringUtil.h"
 #include "XmlConfig.h"
-
-#include <string>
-#include <iostream>
-#include <vector>
 
 using namespace Hdfs::Internal;
 
 namespace Hdfs {
 
-NamenodeInfo::NamenodeInfo() {
-}
+NamenodeInfo::NamenodeInfo() {}
 
-const char * DFS_NAMESERVICES = "dfs.nameservices";
-const char * DFS_NAMENODE_HA = "dfs.ha.namenodes";
-const char * DFS_NAMENODE_RPC_ADDRESS_KEY = "dfs.namenode.rpc-address";
-const char * DFS_NAMENODE_HTTP_ADDRESS_KEY = "dfs.namenode.http-address";
+const char* DFS_NAMESERVICES = "dfs.nameservices";
+const char* DFS_NAMENODE_HA = "dfs.ha.namenodes";
+const char* DFS_NAMENODE_RPC_ADDRESS_KEY = "dfs.namenode.rpc-address";
+const char* DFS_NAMENODE_HTTP_ADDRESS_KEY = "dfs.namenode.http-address";
 
 std::vector<NamenodeInfo> NamenodeInfo::GetHANamenodeInfo(
-    const std::string & service, const Config & conf) {
-    std::vector<NamenodeInfo> retval;
-    std::string strNameNodes = StringTrim(
-                                   conf.getString(std::string(DFS_NAMENODE_HA) + "." + service));
-    std::vector<std::string> nns = StringSplit(strNameNodes, ",");
-    retval.resize(nns.size());
+    const std::string& service, const Config& conf) {
+  std::vector<NamenodeInfo> retval;
+  std::string strNameNodes =
+      StringTrim(conf.getString(std::string(DFS_NAMENODE_HA) + "." + service));
+  std::vector<std::string> nns = StringSplit(strNameNodes, ",");
+  retval.resize(nns.size());
 
-    for (size_t i = 0; i < nns.size(); ++i) {
-        std::string dfsRpcAddress = StringTrim(
-                                        std::string(DFS_NAMENODE_RPC_ADDRESS_KEY) + "." + service + "."
-                                        + StringTrim(nns[i]));
-        std::string dfsHttpAddress = StringTrim(
-                                         std::string(DFS_NAMENODE_HTTP_ADDRESS_KEY) + "." + service + "."
-                                         + StringTrim(nns[i]));
-        retval[i].setRpcAddr(StringTrim(conf.getString(dfsRpcAddress, "")));
-        retval[i].setHttpAddr(StringTrim(conf.getString(dfsHttpAddress, "")));
-    }
+  for (size_t i = 0; i < nns.size(); ++i) {
+    std::string dfsRpcAddress =
+        StringTrim(std::string(DFS_NAMENODE_RPC_ADDRESS_KEY) + "." + service +
+                   "." + StringTrim(nns[i]));
+    std::string dfsHttpAddress =
+        StringTrim(std::string(DFS_NAMENODE_HTTP_ADDRESS_KEY) + "." + service +
+                   "." + StringTrim(nns[i]));
+    retval[i].setRpcAddr(StringTrim(conf.getString(dfsRpcAddress, "")));
+    retval[i].setHttpAddr(StringTrim(conf.getString(dfsHttpAddress, "")));
+  }
 
-    return retval;
+  return retval;
 }
-}
+}  // namespace Hdfs

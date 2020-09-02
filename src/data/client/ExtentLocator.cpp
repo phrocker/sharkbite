@@ -16,17 +16,12 @@
 namespace cclient {
 namespace impl {
 
-TabletLocator::TabletLocator() {
+TabletLocator::TabletLocator() {}
 
-}
+TabletLocator::~TabletLocator() {}
+LocatorKey::LocatorKey(std::shared_ptr<cclient::data::Instance> instance,
+                       std::string table)
+    : instance(instance), tableName(table) {}
 
-TabletLocator::~TabletLocator() {
-
-}
-LocatorKey::LocatorKey(std::shared_ptr<cclient::data::Instance>  instance, std::string table)
-    : instance(instance),
-      tableName(table) {
-}
-
-} /* namespace data */
+}  // namespace impl
 } /* namespace cclient */

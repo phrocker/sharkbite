@@ -16,7 +16,6 @@
 namespace cclient {
 namespace data {
 
-AccumuloInfoBuilder AccumuloInfo::make(){
-    return AccumuloInfoBuilder();
-}
-}}
+AccumuloInfoBuilder AccumuloInfo::make() { return AccumuloInfoBuilder(); }
+}  // namespace data
+}  // namespace cclient

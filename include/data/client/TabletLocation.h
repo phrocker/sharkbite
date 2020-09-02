@@ -14,11 +14,10 @@
 #ifndef TABLETLOCATION_H_
 #define TABLETLOCATION_H_
 
-#include <cstdlib>
 #include <cstdio>
-#include <string>
-
+#include <cstdlib>
 #include <map>
+#include <string>
 
 #include "../constructs/KeyExtent.h"
 
@@ -29,16 +28,11 @@ class TabletLocation {
  public:
   TabletLocation();
   TabletLocation(std::shared_ptr<KeyExtent> extent, std::string loc)
-      : tablet_extent(extent),
-        tablet_location(loc),
-        port(0) {
+      : tablet_extent(extent), tablet_location(loc), port(0) {}
 
-  }
-
-  TabletLocation(std::shared_ptr<KeyExtent> extent, std::string loc, std::string sesh)
-      : tablet_extent(extent),
-        tablet_location(loc),
-        session(sesh) {
+  TabletLocation(std::shared_ptr<KeyExtent> extent, std::string loc,
+                 std::string sesh)
+      : tablet_extent(extent), tablet_location(loc), session(sesh) {
     std::vector<std::string> tokens = split(tablet_location, ':');
     if (!IsEmpty(&tokens)) {
       server = tokens.at(0);
@@ -57,29 +51,19 @@ class TabletLocation {
     }
   }
 
-  std::shared_ptr<KeyExtent> getExtent() {
-    return tablet_extent;
-  }
+  std::shared_ptr<KeyExtent> getExtent() { return tablet_extent; }
 
   void setExtent(const std::shared_ptr<KeyExtent> &extent) {
     tablet_extent = extent;
   }
 
-  std::string getLocation() {
-    return tablet_location;
-  }
+  std::string getLocation() { return tablet_location; }
 
-  std::string getServer() {
-    return server;
-  }
+  std::string getServer() { return server; }
 
-  std::string getSession() {
-    return session;
-  }
+  std::string getSession() { return session; }
 
-  int getPort() {
-    return port;
-  }
+  int getPort() { return port; }
 
   bool operator!=(std::nullptr_t type) {
     return port > 0 && !tablet_location.empty();
@@ -89,8 +73,7 @@ class TabletLocation {
     return port == 0 && tablet_location.empty() && server.empty();
   }
 
-  TabletLocation &
-  operator=(const TabletLocation &te) {
+  TabletLocation &operator=(const TabletLocation &te) {
     tablet_extent = te.tablet_extent;
     tablet_location = te.tablet_location;
     server = te.server;
@@ -99,8 +82,8 @@ class TabletLocation {
     return *this;
   }
 
-  virtual
-  ~TabletLocation();
+  virtual ~TabletLocation();
+
  protected:
   std::shared_ptr<KeyExtent> tablet_extent;
   std::string tablet_location;

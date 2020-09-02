@@ -20,39 +20,36 @@
 #ifndef __PROPERTIES_H__
 #define __PROPERTIES_H__
 
-#include <stdio.h>
-#include <string>
-#include <map>
-#include <stdlib.h>
 #include <errno.h>
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <string>
+
 #include "Logger.h"
 
 #ifndef FILE_SEPARATOR
-	#ifdef WIN32
-		#define FILE_SEPARATOR '\\'
-	#else
-		#define FILE_SEPARATOR '/'
-	#endif
+#ifdef WIN32
+#define FILE_SEPARATOR '\\'
+#else
+#define FILE_SEPARATOR '/'
+#endif
 #endif
 
 #ifndef PATH_MAX
 #define PATH_MAX 2048
 #endif
 
-
 class Properties {
  public:
-  Properties(const std::string& name = "");
+  Properties(const std::string &name = "");
 
-  virtual ~Properties() {
+  virtual ~Properties() {}
 
-  }
-
-  virtual const std::string& getName() {
-    return name_;
-  }
+  virtual const std::string &getName() { return name_; }
 
   // Clear the load config
   void clear() {
@@ -87,7 +84,8 @@ class Properties {
    * @param value value in which to place the map's stored property value
    * @returns true if found, false otherwise.
    */
-  bool get(const std::string &key, const std::string &alternate_key, std::string &value);
+  bool get(const std::string &key, const std::string &alternate_key,
+           std::string &value);
 
   /**
    * Returns the configuration value or an empty string.
@@ -96,13 +94,12 @@ class Properties {
   int getInt(const std::string &key, int default_value);
 
   // Parse one line in configure file like key=value
-  bool parseConfigureFileLine(char *buf, std::string &prop_key, std::string &prop_value);
+  bool parseConfigureFileLine(char *buf, std::string &prop_key,
+                              std::string &prop_value);
   // Load Configure File
   void loadConfigurationFile(const char *fileName);
   // Set the determined MINIFI_HOME
-  void setHome(std::string minifiHome) {
-    minifi_home_ = minifiHome;
-  }
+  void setHome(std::string minifiHome) { minifi_home_ = minifiHome; }
 
   std::vector<std::string> getConfiguredKeys() {
     std::vector<std::string> keys;
@@ -113,21 +110,16 @@ class Properties {
   }
 
   // Get the determined MINIFI_HOME
-  std::string getHome() const {
-    return minifi_home_;
-  }
+  std::string getHome() const { return minifi_home_; }
   // Parse Command Line
   void parseCommandLine(int argc, char **argv);
 
  protected:
-
   bool validateConfigurationFile(const std::string &file);
 
   std::map<std::string, std::string> properties_;
 
-
  private:
-
   std::atomic<bool> dirty_;
 
   std::string properties_file_;
@@ -141,6 +133,5 @@ class Properties {
 
   std::string name_;
 };
-
 
 #endif

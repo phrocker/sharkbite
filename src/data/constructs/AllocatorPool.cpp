@@ -32,10 +32,9 @@ ArrayAllocatorPool::~ArrayAllocatorPool() {
   for (auto buf : buffers32) {
     delete[] buf.first;
   }
-
 }
 
-ArrayAllocatorPool::ArrayAllocatorPool() : keyPool(1000){
+ArrayAllocatorPool::ArrayAllocatorPool() : keyPool(1000) {
   for (int i = 0; i < 100; i++) {
     buffers256.push_front(std::make_pair(new char[256], 256));
     buffers128.push_front(std::make_pair(new char[128], 128));
@@ -44,18 +43,16 @@ ArrayAllocatorPool::ArrayAllocatorPool() : keyPool(1000){
     buffers64.push_front(std::make_pair(new char[64], 64));
     buffers32.push_front(std::make_pair(new char[32], 32));
   }
-
 }
 
-void ArrayAllocatorPool::free(std::pair<char*, size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr) {
+void ArrayAllocatorPool::free(
+    std::pair<char *, size_t> vec,
+    moodycamel::ConcurrentQueue<std::pair<char *, size_t>> *ptr) {}
+void ArrayAllocatorPool::reclaim(
+    moodycamel::ConcurrentQueue<std::pair<char *, size_t>> *ptr) {}
 
-}
-void ArrayAllocatorPool::reclaim(moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr) {
-
-}
-
-std::pair<char*, size_t> ArrayAllocatorPool::allocateBuffer(size_t size) {
-  std::pair<char*, size_t> ptr;
+std::pair<char *, size_t> ArrayAllocatorPool::allocateBuffer(size_t size) {
+  std::pair<char *, size_t> ptr;
   if (size <= 32) {
     if (!buffers32.empty()) {
       auto ret = buffers32.back();
@@ -101,7 +98,7 @@ std::pair<char*, size_t> ArrayAllocatorPool::allocateBuffer(size_t size) {
 }
 
 std::shared_ptr<Text> ArrayAllocatorPool::allocate(size_t size) {
-  std::pair<char*, size_t> ptr;
+  std::pair<char *, size_t> ptr;
   if (size <= 32) {
     if (!buffers32.empty()) {
       auto ret = buffers32.back();
@@ -146,17 +143,18 @@ std::shared_ptr<Text> ArrayAllocatorPool::allocate(size_t size) {
   return std::make_shared<Text>(this, ptr.first, size, ptr.second);
 }
 
-void ArrayAllocatorPool::disown(std::pair<char*, size_t> ptr) {
+void ArrayAllocatorPool::disown(std::pair<char *, size_t> ptr) {
   disownedBuffers.insert(ptr.first);
 }
 
-void ArrayAllocatorPool::free(std::pair<char*, size_t> &&ptr) {
-  if (!ptr.first){
+void ArrayAllocatorPool::free(std::pair<char *, size_t> &&ptr) {
+  if (!ptr.first) {
     return;
   }
 
   size_t size = ptr.second;
-  if (ptr.second > 256 || (size != 32 && size != 64 && size != 128 && size != 256)) {
+  if (ptr.second > 256 ||
+      (size != 32 && size != 64 && size != 128 && size != 256)) {
     delete[] ptr.first;
   } else {
     if (ptr.second <= 32) {
@@ -170,5 +168,5 @@ void ArrayAllocatorPool::free(std::pair<char*, size_t> &&ptr) {
     }
   }
 }
-}
-}
+}  // namespace data
+}  // namespace cclient

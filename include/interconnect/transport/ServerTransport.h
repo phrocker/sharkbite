@@ -15,32 +15,29 @@
 #ifndef SERVERTRANSPORT_H_
 #define SERVERTRANSPORT_H_
 
-#include "Transport.h"
-
-#include "../scanrequest/ScanRequest.h"
-#include "../Scan.h"
 #include "../../data/constructs/KeyExtent.h"
 #include "../../data/constructs/Range.h"
+#include "../Scan.h"
+#include "../scanrequest/ScanRequest.h"
+#include "Transport.h"
 
 namespace interconnect {
 
-template<class T, class K, class V, class W>
+template <class T, class K, class V, class W>
 class ServerTransport : public Transporter<T> {
  public:
-
   explicit ServerTransport(std::shared_ptr<ServerConnection> conn)
-      : Transporter<T>(conn) {
-
-  }
-  virtual ~ServerTransport() {
-
-  }
+      : Transporter<T>(conn) {}
+  virtual ~ServerTransport() {}
 
   virtual void authenticate(cclient::data::security::AuthInfo *auth) = 0;
 
-  virtual Scan *beginScan(std::atomic<bool> *isRunning,ScanRequest<ScanIdentifier<std::shared_ptr<K>, V> > *req) = 0;
+  virtual Scan *beginScan(
+      std::atomic<bool> *isRunning,
+      ScanRequest<ScanIdentifier<std::shared_ptr<K>, V>> *req) = 0;
 
-  virtual void *write(cclient::data::security::AuthInfo *auth, std::map<K, std::vector<W>> *request) = 0;
+  virtual void *write(cclient::data::security::AuthInfo *auth,
+                      std::map<K, std::vector<W>> *request) = 0;
 };
 
 } /* namespace interconnect */

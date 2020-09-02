@@ -14,10 +14,11 @@
 
 #ifndef SCANARBITER_H_
 #define SCANARBITER_H_
-#include "Scan.h"
+#include <deque>
 #include <future>
 #include <memory>
-#include <deque>
+
+#include "Scan.h"
 
 namespace interconnect {
 
@@ -31,17 +32,16 @@ class ScanArbiter {
   uint16_t count;
   uint16_t max;
   bool disableRpc;
- public:
 
-  explicit ScanArbiter(uint16_t desired,bool disableRpc);
+ public:
+  explicit ScanArbiter(uint16_t desired, bool disableRpc);
 
   ~ScanArbiter();
 
   Scan* wait();
 
-  void add(Scan *scan);
-
+  void add(Scan* scan);
 };
 
-}
+}  // namespace interconnect
 #endif

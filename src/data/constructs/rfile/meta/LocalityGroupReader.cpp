@@ -12,20 +12,26 @@
  * limitations under the License.
  */
 
-#include "data/constructs/Key.h"
 #include "data/constructs/rfile/meta/LocalityGroupReader.h"
-#include <thread>
+
 #include <chrono>
+#include <thread>
+
+#include "data/constructs/Key.h"
 namespace cclient {
 namespace data {
 
-void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *position) {
-  cclient::data::streams::StreamSeekable *newSeekRequest = dynamic_cast<cclient::data::streams::StreamSeekable*>(position);
+void LocalityGroupReader::seek(
+    cclient::data::streams::StreamRelocation *position) {
+  cclient::data::streams::StreamSeekable *newSeekRequest =
+      dynamic_cast<cclient::data::streams::StreamSeekable *>(position);
   if (closed) {
-    throw cclient::exceptions::IllegalArgumentException("Locality group reader closed");
+    throw cclient::exceptions::IllegalArgumentException(
+        "Locality group reader closed");
   }
 
-  if (newSeekRequest->getColumnFamilies()->size() > 0 || newSeekRequest->isInclusive()) {
+  if (newSeekRequest->getColumnFamilies()->size() > 0 ||
+      newSeekRequest->isInclusive()) {
     throw std::runtime_error("I do not know how to filter column families");
   }
 
@@ -53,20 +59,20 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
   bool reseek = true;
 
-  if (currentRange->getStopKey() != NULL && firstKey->compare(currentRange->getStopKey()) > 0) {
+  if (currentRange->getStopKey() != NULL &&
+      firstKey->compare(currentRange->getStopKey()) > 0) {
     // range is before the first key;
-    logging::LOG_TRACE(logger) << "reseek not needed for " << firstKey << " > " << currentRange->getStopKey();
+    logging::LOG_TRACE(logger) << "reseek not needed for " << firstKey << " > "
+                               << currentRange->getStopKey();
     reseek = false;
   }
 
   if (rKey != NULL) {
     // already done work
   } else {
-
   }
 
   if (reseek) {
-
     iiter = index->lookup(startKey);
 
     close();
@@ -89,13 +95,16 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
       entriesLeft = indexEntry->getNumEntries();
 
       if (version == 3 || version == 4) {
-        currentStream = std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
+        currentStream =
+            std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
       } else {
-        currentStream = std::move(getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize()));
+        currentStream = std::move(getDataBlock(indexEntry->getOffset(),
+                                               indexEntry->getCompressedSize(),
+                                               indexEntry->getRawSize()));
       }
-      checkRange = newSeekRequest->getRange()->afterEndKey(indexEntry->getKey());
-      if (!checkRange)
-        topExists = true;
+      checkRange =
+          newSeekRequest->getRange()->afterEndKey(indexEntry->getKey());
+      if (!checkRange) topExists = true;
 
       // don't concern ourselves with block indexing
 
@@ -105,28 +114,28 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 
       SkippedRelativeKey skipRR(&allocatorInstance);
       skipRR.filterVisibility(auths);
-      filtered = skipRR.skip(currentStream.get(), startKey, &valueArray, prevKey, currKey, entriesLeft);
+      filtered = skipRR.skip(currentStream.get(), startKey, &valueArray,
+                             prevKey, currKey, entriesLeft);
 
       if (skipRR.getPrevKey() != NULL) {
         prevKey = std::make_shared<Key>(skipRR.getPrevKey());
       } else
         prevKey = NULL;
-      logging::LOG_TRACE(logger) << "SRK skipped " << skipRR.getSkipped() << " keys of " << entriesLeft;
+      logging::LOG_TRACE(logger) << "SRK skipped " << skipRR.getSkipped()
+                                 << " keys of " << entriesLeft;
       auto skp = skipRR.getSkipped();
-      if (skp > entriesLeft)
-      {
+      if (skp > entriesLeft) {
         entriesLeft = 0;
-      }
-      else
+      } else
         entriesLeft -= skp;
-      if (skp > 1)
-        entriesSkipped += skp-1;
+      if (skp > 1) entriesSkipped += skp - 1;
       val = std::make_shared<Value>();
-      val->setValue((uint8_t*) valueArray.data(), valueArray.size(), 0);
+      val->setValue((uint8_t *)valueArray.data(), valueArray.size(), 0);
       rKey = skipRR.getRelativeKey();
       /**
-       * Visibility filtering when done at this level allows us to more efficiently skip index blocks.
-       * Since we'll be doing a merged read it is safe to
+       * Visibility filtering when done at this level allows us to more
+       * efficiently skip index blocks. Since we'll be doing a merged read it is
+       * safe to
        */
       if (!auths.empty()) {
         rKey->filterVisibility(auths);
@@ -147,8 +156,10 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
     }
   }
 
-  topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() || !currentRange->afterEndKey(getTopKey())));
-  while (hasTop() && !currentRange->getInfiniteStartKey() && currentRange->beforeStartKey(getTopKey())) {
+  topExists = (rKey != NULL && (currentRange->getInfiniteStopKey() ||
+                                !currentRange->afterEndKey(getTopKey())));
+  while (hasTop() && !currentRange->getInfiniteStartKey() &&
+         currentRange->beforeStartKey(getTopKey())) {
     next();
   }
   if (topExists && readAheadEnabled && iiter->hasNext()) {
@@ -160,39 +171,40 @@ void LocalityGroupReader::seek(cclient::data::streams::StreamRelocation *positio
 }
 
 void LocalityGroupReader::startReadAhead() {
-  if (readAheadRunning)
-    return;
+  if (readAheadRunning) return;
   readAhead = std::async(std::launch::async, [&] {
     readAheadResult.hasData = false;
     size_t count = 0;
     readAheadRunning = true;
-    while(readAheadRunning) {
+    while (readAheadRunning) {
       if (iiter->hasNext()) {
         (*iiter)++;
         std::shared_ptr<IndexEntry> indexEntry = iiter->get();
         readAheadResult.entries = indexEntry->getNumEntries();
 
         if (version == 3 || version == 4) {
-          readAheadResult.stream = std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
+          readAheadResult.stream =
+              std::move(getDataBlock(startBlock + iiter->getPreviousIndex()));
         } else {
-          readAheadResult.stream = std::move(getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize(), false));
+          readAheadResult.stream = std::move(getDataBlock(
+              indexEntry->getOffset(), indexEntry->getCompressedSize(),
+              indexEntry->getRawSize(), false));
         }
-        readAheadResult.checkRange = !currentRange->afterEndKey(indexEntry->getKey());
-      }
-      else {
+        readAheadResult.checkRange =
+            !currentRange->afterEndKey(indexEntry->getKey());
+      } else {
         readAheadResult.checkRange = false;
       }
       std::unique_lock<std::mutex> lock(readAheadMutex);
-      readAheadResult.hasData=true;
+      readAheadResult.hasData = true;
       readAheadConsumerCondition.notify_one();
       if (!readAheadResult.checkRange) {
         lock.unlock();
         break;
       }
 
-      readAheadCondition.wait(lock, [&] {
-            return !readAheadRunning || readAheadResult.interrupt;
-          });
+      readAheadCondition.wait(
+          lock, [&] { return !readAheadRunning || readAheadResult.interrupt; });
       readAheadResult.interrupt = false;
       lock.unlock();
 
@@ -200,7 +212,6 @@ void LocalityGroupReader::startReadAhead() {
     }
 
     return count;
-
   });
   while (!readAheadRunning) {
     // a long sleep isn't needed here and avoids starvation on
@@ -210,13 +221,11 @@ void LocalityGroupReader::startReadAhead() {
 }
 
 void LocalityGroupReader::next() {
-  if (!hasTop())
-    throw std::runtime_error("Illegal State Exception");
+  if (!hasTop()) throw std::runtime_error("Illegal State Exception");
   if (SH_UNLIKELY(entriesLeft == 0)) {
     currentStream->close();
     if (readAheadEnabled) {
-
-      readAheadLabel:
+    readAheadLabel:
       // data is available
       if (!readAheadResult.hasData) {
         std::unique_lock<std::mutex> lock(readAheadMutex);
@@ -251,11 +260,12 @@ void LocalityGroupReader::next() {
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
-          currentStream = getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize());
+          currentStream = getDataBlock(indexEntry->getOffset(),
+                                       indexEntry->getCompressedSize(),
+                                       indexEntry->getRawSize());
         }
         checkRange = !currentRange->afterEndKey(indexEntry->getKey());
-        if (!checkRange)
-        topExists = true;
+        if (!checkRange) topExists = true;
       } else {
         rKey = 0;
         val = 0;
@@ -294,38 +304,41 @@ void LocalityGroupReader::next() {
         if (version == 3 || version == 4) {
           currentStream = getDataBlock(startBlock + iiter->getPreviousIndex());
         } else {
-          currentStream = getDataBlock(indexEntry->getOffset(), indexEntry->getCompressedSize(), indexEntry->getRawSize());
+          currentStream = getDataBlock(indexEntry->getOffset(),
+                                       indexEntry->getCompressedSize(),
+                                       indexEntry->getRawSize());
         }
         checkRange = !currentRange->afterEndKey(indexEntry->getKey());
-        if (!checkRange)
-          topExists = true;
+        if (!checkRange) topExists = true;
       } else {
         rKey = 0;
         val = 0;
         topExists = false;
         return;
       }
-      if (!hasTop())
-        return;
+      if (!hasTop()) return;
     }
   } while (entriesLeft > 0);
   if (checkRange) {
     topExists = !currentRange->afterEndKey(getTopKey());
   }
-
 }
 
-std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint32_t index) {
-
+std::unique_ptr<cclient::data::streams::InputStream>
+LocalityGroupReader::getDataBlock(uint32_t index) {
   BlockRegion *region = bcFile->getDataIndex()->getBlockRegion(index);
-  region->setCompressor(cclient::data::compression::CompressorFactory::create(bcFile->getDataIndex()->getCompressionAlgorithm()));
+  region->setCompressor(cclient::data::compression::CompressorFactory::create(
+      bcFile->getDataIndex()->getCompressionAlgorithm()));
   auto stream = region->readDataStream(reader);
   return stream;
 }
 
-std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize, uint64_t rawSize, bool use_cached) {
-
-  std::unique_ptr<cclient::data::compression::Compressor> compressor = cclient::data::compression::CompressorFactory::create(bcFile->getDataIndex()->getCompressionAlgorithm());
+std::unique_ptr<cclient::data::streams::InputStream>
+LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize,
+                                  uint64_t rawSize, bool use_cached) {
+  std::unique_ptr<cclient::data::compression::Compressor> compressor =
+      cclient::data::compression::CompressorFactory::create(
+          bcFile->getDataIndex()->getCompressionAlgorithm());
 
   BlockRegion region(offset, compressedSize, rawSize, std::move(compressor));
   std::vector<uint8_t> *my_buf;
@@ -336,18 +349,18 @@ std::unique_ptr<cclient::data::streams::InputStream> LocalityGroupReader::getDat
 
   if (!outputBuffers.try_dequeue(bout)) {
     bout = new cclient::data::streams::ByteOutputStream(0);
-
   }
 
-  auto stream = region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
+  auto stream =
+      region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
-//  if (!use_cached)
+  //  if (!use_cached)
   //  compressors.enqueue(compressor);
 
   return stream;
 }
 
-}
+}  // namespace data
 
-}
+}  // namespace cclient

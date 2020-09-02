@@ -23,38 +23,35 @@
 
 namespace cclient
 {
-namespace data
-{
-namespace compression
-{
-class CompressorFactory{
-    public:
-
-    
-
-    static ZLibCompressor *getZlibCompressor(){
-        static ZLibCompressor *comp = new ZLibCompressor();
-        return comp;
-    }
-
-    static std::unique_ptr<Compressor> create (const CompressionAlgorithm &algo)
+    namespace data
     {
-        if (algo.getAlgorithm() == "gz")
+        namespace compression
         {
-            
-              return std::make_unique<ZLibCompressor>();
-            
-        }
-        else
-        {
-            std::runtime_error ("Unsupported compression algorithm");
-        }
-        return 0;
-    }
+            class CompressorFactory
+            {
+            public:
+                static ZLibCompressor *getZlibCompressor()
+                {
+                    static ZLibCompressor *comp = new ZLibCompressor();
+                    return comp;
+                }
 
-};
-}
-}
-}
+                static std::unique_ptr<Compressor> create(const CompressionAlgorithm &algo)
+                {
+                    if (algo.getAlgorithm() == "gz")
+                    {
+
+                        return std::make_unique<ZLibCompressor>();
+                    }
+                    else
+                    {
+                        std::runtime_error("Unsupported compression algorithm");
+                    }
+                    return 0;
+                }
+            };
+        } // namespace compression
+    }     // namespace data
+} // namespace cclient
 
 #endif

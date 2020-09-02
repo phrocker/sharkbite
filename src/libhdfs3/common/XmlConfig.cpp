@@ -19,19 +19,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Exception.h"
-#include "ExceptionInternal.h"
 #include "XmlConfig.h"
-#include "Hash.h"
+
+#include <errno.h>
 
 #include <cassert>
-#include <errno.h>
 #include <fstream>
+
+#include "Exception.h"
+#include "ExceptionInternal.h"
+#include "Hash.h"
 //#include <libxml/parser.h>
 //#include <libxml/tree.h>
-#include <limits>
 #include <string.h>
 #include <unistd.h>
+
+#include <limits>
 
 using namespace Hdfs::Internal;
 
@@ -385,5 +388,4 @@ size_t Config::hash_value() const {
     return CombineHasher(&values[0], values.size());
 }
 */
-}
-
+}  // namespace Hdfs

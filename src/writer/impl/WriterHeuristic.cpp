@@ -16,13 +16,10 @@
 namespace writer {
 
 WriterHeuristic::WriterHeuristic(short numThreads, uint32_t queueSize)
-    : threadCount(numThreads),
-      started(false),
-      queue(queueSize) {
+    : threadCount(numThreads), started(false), queue(queueSize) {
   closed = false;
 
   conditionals = new SinkConditions();
-
 }
 
 WriterHeuristic::~WriterHeuristic() {
@@ -40,4 +37,4 @@ WriterHeuristic::~WriterHeuristic() {
   delete conditionals;
 }
 
-} /* namespace data */
+}  // namespace writer

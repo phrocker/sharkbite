@@ -17,27 +17,19 @@
 
 #include <string>
 
-
-
 namespace cclient {
 namespace exceptions {
 
+class IllegalArgumentException : public std::exception {
+ public:
+  explicit IllegalArgumentException(std::string excp) : excp_str(excp) {}
 
-class IllegalArgumentException: public std::exception {
-public:
-    explicit IllegalArgumentException(std::string excp) :
-        excp_str(excp) {
-    }
+  ~IllegalArgumentException() throw() {}
+  const char *what() { return excp_str.c_str(); }
 
-    ~IllegalArgumentException() throw () {
-
-    }
-    const char *what() {
-        return excp_str.c_str();
-    }
-private:
-    std::string excp_str;
+ private:
+  std::string excp_str;
 };
-} /* namespace data */
+}  // namespace exceptions
 } /* namespace cclient */
 #endif /* CLIENTEXCEPTION_H_ */

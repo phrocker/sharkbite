@@ -19,11 +19,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "platform.h"
+#include "DomainSocket.h"
 
-#include <cassert>
-#include <cstddef>
-#include <cstring>
 #include <errno.h>
 #include <netinet/in.h>
 #include <stdint.h>
@@ -31,13 +28,17 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <cstddef>
+#include <cstring>
 #include <vector>
 
 #include "DateTime.h"
 #include "Exception.h"
 #include "ExceptionInternal.h"
-#include "DomainSocket.h"
 #include "Syscall.h"
+#include "platform.h"
 
 namespace Hdfs {
 namespace Internal {
@@ -149,5 +150,5 @@ int32_t DomainSocketImpl::receiveFileDescriptors(int fds[], size_t nfds,
 
   return rc;
 }
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

@@ -15,9 +15,10 @@
 #ifndef SCANNER_OPTS_H_
 #define SCANNER_OPTS_H_
 
-#include "utils/EnumClass.h"
 #include <cstdint>
 #include <type_traits>
+
+#include "utils/EnumClass.h"
 
 enum class ScannerOptions : unsigned int {
   BASIC_SCANNER = 0x0,
@@ -25,7 +26,7 @@ enum class ScannerOptions : unsigned int {
   ENABLE_RFILE_SCANNER
 };
 
-template<>
+template <>
 struct EnableBitMaskOperators<ScannerOptions> {
   static const bool enable = true;
 };

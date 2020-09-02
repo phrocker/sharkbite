@@ -13,4 +13,3 @@
  */
 
 #include "interconnect/AccumuloConnector.h"
-

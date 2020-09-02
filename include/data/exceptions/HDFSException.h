@@ -15,32 +15,22 @@
 #ifndef HDFSEXCEPTION_H_
 #define HDFSEXCEPTION_H_
 
-#include <string>
-
 #include <map>
+#include <string>
 
 namespace cclient {
 namespace exceptions {
 
-
 class HDFSException : public std::exception {
  public:
-  explicit HDFSException(std::string excp)
-      :excp_str(excp) {
+  explicit HDFSException(std::string excp) : excp_str(excp) {}
 
-  }
+  ~HDFSException() throw() {}
+  const char* what() const throw() { return excp_str.c_str(); }
 
-  ~HDFSException() throw () {
-
-  }
-  const char* what() const throw (){
-    return excp_str.c_str();
-  }
-  
  private:
-  
   std::string excp_str;
 };
-} /* namespace data */
+}  // namespace exceptions
 } /* namespace cclient */
 #endif /* HDFSEXCEPTION_H_ */

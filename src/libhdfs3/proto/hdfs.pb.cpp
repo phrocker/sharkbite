@@ -3,193 +3,288 @@
 
 #include "hdfs.pb.h"
 
-#include <algorithm>
-
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/extension_set.h>
-#include <google/protobuf/wire_format_lite.h>
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/extension_set.h>
 #include <google/protobuf/generated_message_reflection.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/reflection_ops.h>
 #include <google/protobuf/wire_format.h>
+#include <google/protobuf/wire_format_lite.h>
+
+#include <algorithm>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlockKeyProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlockProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlockWithLocationsProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_CheckpointCommandProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_CheckpointSignatureProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DatanodeIDProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DatanodeInfoProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExtendedBlockProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FileEncryptionInfoProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FsPermissionProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_HdfsFileStatusProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_LocatedBlockProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_LocatedBlocksProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NamespaceInfoProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RemoteEditLogProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StorageInfoProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_Security_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TokenProto_Security_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_BlockKeyProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_BlockProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_BlockWithLocationsProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_CheckpointCommandProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_CheckpointSignatureProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_DatanodeIDProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_DatanodeInfoProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_ExtendedBlockProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_FileEncryptionInfoProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_FsPermissionProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<3>
+        scc_info_HdfsFileStatusProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<3>
+        scc_info_LocatedBlockProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_LocatedBlocksProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_NamespaceInfoProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_RemoteEditLogProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_StorageInfoProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_Security_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_TokenProto_Security_2eproto;
 namespace Hdfs {
 namespace Internal {
 class ExtendedBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ExtendedBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ExtendedBlockProto>
+      _instance;
 } _ExtendedBlockProto_default_instance_;
 class DatanodeIDProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeIDProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeIDProto>
+      _instance;
 } _DatanodeIDProto_default_instance_;
 class DatanodeInfosProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeInfosProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeInfosProto>
+      _instance;
 } _DatanodeInfosProto_default_instance_;
 class DatanodeInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DatanodeInfoProto>
+      _instance;
 } _DatanodeInfoProto_default_instance_;
 class ContentSummaryProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ContentSummaryProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ContentSummaryProto>
+      _instance;
 } _ContentSummaryProto_default_instance_;
 class CorruptFileBlocksProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CorruptFileBlocksProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      CorruptFileBlocksProto>
+      _instance;
 } _CorruptFileBlocksProto_default_instance_;
 class FsPermissionProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FsPermissionProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FsPermissionProto>
+      _instance;
 } _FsPermissionProto_default_instance_;
 class StorageUuidsProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StorageUuidsProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StorageUuidsProto>
+      _instance;
 } _StorageUuidsProto_default_instance_;
 class LocatedBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LocatedBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LocatedBlockProto>
+      _instance;
 } _LocatedBlockProto_default_instance_;
 class DataEncryptionKeyProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DataEncryptionKeyProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      DataEncryptionKeyProto>
+      _instance;
 } _DataEncryptionKeyProto_default_instance_;
 class FileEncryptionInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FileEncryptionInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      FileEncryptionInfoProto>
+      _instance;
 } _FileEncryptionInfoProto_default_instance_;
 class PerFileEncryptionInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PerFileEncryptionInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      PerFileEncryptionInfoProto>
+      _instance;
 } _PerFileEncryptionInfoProto_default_instance_;
 class ZoneEncryptionInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ZoneEncryptionInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ZoneEncryptionInfoProto>
+      _instance;
 } _ZoneEncryptionInfoProto_default_instance_;
 class CipherOptionProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CipherOptionProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CipherOptionProto>
+      _instance;
 } _CipherOptionProto_default_instance_;
 class LocatedBlocksProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LocatedBlocksProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LocatedBlocksProto>
+      _instance;
 } _LocatedBlocksProto_default_instance_;
 class HdfsFileStatusProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<HdfsFileStatusProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<HdfsFileStatusProto>
+      _instance;
 } _HdfsFileStatusProto_default_instance_;
 class FsServerDefaultsProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FsServerDefaultsProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      FsServerDefaultsProto>
+      _instance;
 } _FsServerDefaultsProto_default_instance_;
 class DirectoryListingProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DirectoryListingProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      DirectoryListingProto>
+      _instance;
 } _DirectoryListingProto_default_instance_;
 class SnapshottableDirectoryStatusProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshottableDirectoryStatusProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      SnapshottableDirectoryStatusProto>
+      _instance;
 } _SnapshottableDirectoryStatusProto_default_instance_;
 class SnapshottableDirectoryListingProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshottableDirectoryListingProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      SnapshottableDirectoryListingProto>
+      _instance;
 } _SnapshottableDirectoryListingProto_default_instance_;
 class SnapshotDiffReportEntryProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshotDiffReportEntryProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      SnapshotDiffReportEntryProto>
+      _instance;
 } _SnapshotDiffReportEntryProto_default_instance_;
 class SnapshotDiffReportProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshotDiffReportProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      SnapshotDiffReportProto>
+      _instance;
 } _SnapshotDiffReportProto_default_instance_;
 class StorageInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StorageInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<StorageInfoProto>
+      _instance;
 } _StorageInfoProto_default_instance_;
 class NamenodeRegistrationProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NamenodeRegistrationProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      NamenodeRegistrationProto>
+      _instance;
 } _NamenodeRegistrationProto_default_instance_;
 class CheckpointSignatureProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CheckpointSignatureProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      CheckpointSignatureProto>
+      _instance;
 } _CheckpointSignatureProto_default_instance_;
 class NamenodeCommandProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NamenodeCommandProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NamenodeCommandProto>
+      _instance;
 } _NamenodeCommandProto_default_instance_;
 class CheckpointCommandProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CheckpointCommandProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      CheckpointCommandProto>
+      _instance;
 } _CheckpointCommandProto_default_instance_;
 class BlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockProto>
+      _instance;
 } _BlockProto_default_instance_;
 class BlockWithLocationsProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockWithLocationsProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      BlockWithLocationsProto>
+      _instance;
 } _BlockWithLocationsProto_default_instance_;
 class BlocksWithLocationsProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlocksWithLocationsProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      BlocksWithLocationsProto>
+      _instance;
 } _BlocksWithLocationsProto_default_instance_;
 class RemoteEditLogProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RemoteEditLogProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RemoteEditLogProto>
+      _instance;
 } _RemoteEditLogProto_default_instance_;
 class RemoteEditLogManifestProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RemoteEditLogManifestProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      RemoteEditLogManifestProto>
+      _instance;
 } _RemoteEditLogManifestProto_default_instance_;
 class NamespaceInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NamespaceInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NamespaceInfoProto>
+      _instance;
 } _NamespaceInfoProto_default_instance_;
 class BlockKeyProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockKeyProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockKeyProto>
+      _instance;
 } _BlockKeyProto_default_instance_;
 class ExportedBlockKeysProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ExportedBlockKeysProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ExportedBlockKeysProto>
+      _instance;
 } _ExportedBlockKeysProto_default_instance_;
 class RecoveringBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RecoveringBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RecoveringBlockProto>
+      _instance;
 } _RecoveringBlockProto_default_instance_;
 class VersionRequestProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<VersionRequestProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<VersionRequestProto>
+      _instance;
 } _VersionRequestProto_default_instance_;
 class VersionResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<VersionResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<VersionResponseProto>
+      _instance;
 } _VersionResponseProto_default_instance_;
 class SnapshotInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshotInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SnapshotInfoProto>
+      _instance;
 } _SnapshotInfoProto_default_instance_;
 }  // namespace Internal
 }  // namespace Hdfs
@@ -198,1384 +293,1832 @@ static void InitDefaultsscc_info_BlockKeyProto_hdfs_2eproto() {
 
   {
     void* ptr = &::Hdfs::Internal::_BlockKeyProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BlockKeyProto();
+    new (ptr)::Hdfs::Internal::BlockKeyProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BlockKeyProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlockKeyProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_BlockKeyProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_BlockKeyProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_BlockKeyProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_BlockProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_BlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BlockProto();
+    new (ptr)::Hdfs::Internal::BlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BlockProto::InitAsDefaultInstance();
 }
 
 ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlockProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_BlockProto_hdfs_2eproto}, {}};
+    {{ATOMIC_VAR_INIT(
+          ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+      0, 0, InitDefaultsscc_info_BlockProto_hdfs_2eproto},
+     {}};
 
 static void InitDefaultsscc_info_BlockWithLocationsProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_BlockWithLocationsProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BlockWithLocationsProto();
+    new (ptr)::Hdfs::Internal::BlockWithLocationsProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BlockWithLocationsProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlockWithLocationsProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BlockWithLocationsProto_hdfs_2eproto}, {
-      &scc_info_BlockProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_BlockWithLocationsProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_BlockWithLocationsProto_hdfs_2eproto},
+        {
+            &scc_info_BlockProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_BlocksWithLocationsProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_BlocksWithLocationsProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BlocksWithLocationsProto();
+    new (ptr)::Hdfs::Internal::BlocksWithLocationsProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BlocksWithLocationsProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlocksWithLocationsProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BlocksWithLocationsProto_hdfs_2eproto}, {
-      &scc_info_BlockWithLocationsProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_BlocksWithLocationsProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_BlocksWithLocationsProto_hdfs_2eproto},
+        {
+            &scc_info_BlockWithLocationsProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_CheckpointCommandProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_CheckpointCommandProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CheckpointCommandProto();
+    new (ptr)::Hdfs::Internal::CheckpointCommandProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CheckpointCommandProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_CheckpointCommandProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_CheckpointCommandProto_hdfs_2eproto}, {
-      &scc_info_CheckpointSignatureProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_CheckpointCommandProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_CheckpointCommandProto_hdfs_2eproto},
+        {
+            &scc_info_CheckpointSignatureProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_CheckpointSignatureProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_CheckpointSignatureProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CheckpointSignatureProto();
+    new (ptr)::Hdfs::Internal::CheckpointSignatureProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CheckpointSignatureProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_CheckpointSignatureProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_CheckpointSignatureProto_hdfs_2eproto}, {
-      &scc_info_StorageInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_CheckpointSignatureProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_CheckpointSignatureProto_hdfs_2eproto},
+        {
+            &scc_info_StorageInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_CipherOptionProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_CipherOptionProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CipherOptionProto();
+    new (ptr)::Hdfs::Internal::CipherOptionProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CipherOptionProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CipherOptionProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CipherOptionProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_CipherOptionProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_CipherOptionProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_ContentSummaryProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ContentSummaryProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ContentSummaryProto();
+    new (ptr)::Hdfs::Internal::ContentSummaryProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ContentSummaryProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ContentSummaryProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ContentSummaryProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ContentSummaryProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_ContentSummaryProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_CorruptFileBlocksProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_CorruptFileBlocksProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CorruptFileBlocksProto();
+    new (ptr)::Hdfs::Internal::CorruptFileBlocksProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CorruptFileBlocksProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CorruptFileBlocksProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CorruptFileBlocksProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_CorruptFileBlocksProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_CorruptFileBlocksProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_DataEncryptionKeyProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DataEncryptionKeyProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DataEncryptionKeyProto();
+    new (ptr)::Hdfs::Internal::DataEncryptionKeyProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DataEncryptionKeyProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DataEncryptionKeyProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DataEncryptionKeyProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_DataEncryptionKeyProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_DataEncryptionKeyProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_DatanodeIDProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DatanodeIDProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DatanodeIDProto();
+    new (ptr)::Hdfs::Internal::DatanodeIDProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DatanodeIDProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DatanodeIDProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DatanodeIDProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_DatanodeIDProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_DatanodeIDProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_DatanodeInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DatanodeInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DatanodeInfoProto();
+    new (ptr)::Hdfs::Internal::DatanodeInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DatanodeInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DatanodeInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_DatanodeInfoProto_hdfs_2eproto}, {
-      &scc_info_DatanodeIDProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_DatanodeInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_DatanodeInfoProto_hdfs_2eproto},
+        {
+            &scc_info_DatanodeIDProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_DatanodeInfosProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DatanodeInfosProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DatanodeInfosProto();
+    new (ptr)::Hdfs::Internal::DatanodeInfosProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DatanodeInfosProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DatanodeInfosProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_DatanodeInfosProto_hdfs_2eproto}, {
-      &scc_info_DatanodeInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_DatanodeInfosProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_DatanodeInfosProto_hdfs_2eproto},
+        {
+            &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_DirectoryListingProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DirectoryListingProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DirectoryListingProto();
+    new (ptr)::Hdfs::Internal::DirectoryListingProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DirectoryListingProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DirectoryListingProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_DirectoryListingProto_hdfs_2eproto}, {
-      &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_DirectoryListingProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_DirectoryListingProto_hdfs_2eproto},
+        {
+            &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_ExportedBlockKeysProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ExportedBlockKeysProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ExportedBlockKeysProto();
+    new (ptr)::Hdfs::Internal::ExportedBlockKeysProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ExportedBlockKeysProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ExportedBlockKeysProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ExportedBlockKeysProto_hdfs_2eproto}, {
-      &scc_info_BlockKeyProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_ExportedBlockKeysProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_ExportedBlockKeysProto_hdfs_2eproto},
+        {
+            &scc_info_BlockKeyProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_ExtendedBlockProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ExtendedBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ExtendedBlockProto();
+    new (ptr)::Hdfs::Internal::ExtendedBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ExtendedBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExtendedBlockProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ExtendedBlockProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ExtendedBlockProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_ExtendedBlockProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_FileEncryptionInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_FileEncryptionInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::FileEncryptionInfoProto();
+    new (ptr)::Hdfs::Internal::FileEncryptionInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::FileEncryptionInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FileEncryptionInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_FileEncryptionInfoProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_FileEncryptionInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_FileEncryptionInfoProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_FsPermissionProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_FsPermissionProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::FsPermissionProto();
+    new (ptr)::Hdfs::Internal::FsPermissionProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::FsPermissionProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FsPermissionProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_FsPermissionProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_FsPermissionProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_FsPermissionProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_FsServerDefaultsProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_FsServerDefaultsProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::FsServerDefaultsProto();
+    new (ptr)::Hdfs::Internal::FsServerDefaultsProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::FsServerDefaultsProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FsServerDefaultsProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_FsServerDefaultsProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_FsServerDefaultsProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_FsServerDefaultsProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_HdfsFileStatusProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_HdfsFileStatusProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::HdfsFileStatusProto();
+    new (ptr)::Hdfs::Internal::HdfsFileStatusProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::HdfsFileStatusProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_HdfsFileStatusProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 3, 0, InitDefaultsscc_info_HdfsFileStatusProto_hdfs_2eproto}, {
-      &scc_info_FsPermissionProto_hdfs_2eproto.base,
-      &scc_info_LocatedBlocksProto_hdfs_2eproto.base,
-      &scc_info_FileEncryptionInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3>
+    scc_info_HdfsFileStatusProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         3, 0, InitDefaultsscc_info_HdfsFileStatusProto_hdfs_2eproto},
+        {
+            &scc_info_FsPermissionProto_hdfs_2eproto.base,
+            &scc_info_LocatedBlocksProto_hdfs_2eproto.base,
+            &scc_info_FileEncryptionInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_LocatedBlockProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_LocatedBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::LocatedBlockProto();
+    new (ptr)::Hdfs::Internal::LocatedBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::LocatedBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_LocatedBlockProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 3, 0, InitDefaultsscc_info_LocatedBlockProto_hdfs_2eproto}, {
-      &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
-      &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
-      &scc_info_TokenProto_Security_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3>
+    scc_info_LocatedBlockProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         3, 0, InitDefaultsscc_info_LocatedBlockProto_hdfs_2eproto},
+        {
+            &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
+            &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+            &scc_info_TokenProto_Security_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_LocatedBlocksProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_LocatedBlocksProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::LocatedBlocksProto();
+    new (ptr)::Hdfs::Internal::LocatedBlocksProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::LocatedBlocksProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_LocatedBlocksProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_LocatedBlocksProto_hdfs_2eproto}, {
-      &scc_info_LocatedBlockProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_LocatedBlocksProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_LocatedBlocksProto_hdfs_2eproto},
+        {
+            &scc_info_LocatedBlockProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_NamenodeCommandProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_NamenodeCommandProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::NamenodeCommandProto();
+    new (ptr)::Hdfs::Internal::NamenodeCommandProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::NamenodeCommandProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NamenodeCommandProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_NamenodeCommandProto_hdfs_2eproto}, {
-      &scc_info_CheckpointCommandProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_NamenodeCommandProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_NamenodeCommandProto_hdfs_2eproto},
+        {
+            &scc_info_CheckpointCommandProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_NamenodeRegistrationProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_NamenodeRegistrationProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::NamenodeRegistrationProto();
+    new (ptr)::Hdfs::Internal::NamenodeRegistrationProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::NamenodeRegistrationProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NamenodeRegistrationProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_NamenodeRegistrationProto_hdfs_2eproto}, {
-      &scc_info_StorageInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_NamenodeRegistrationProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_NamenodeRegistrationProto_hdfs_2eproto},
+        {
+            &scc_info_StorageInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_NamespaceInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_NamespaceInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::NamespaceInfoProto();
+    new (ptr)::Hdfs::Internal::NamespaceInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::NamespaceInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NamespaceInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_NamespaceInfoProto_hdfs_2eproto}, {
-      &scc_info_StorageInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_NamespaceInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_NamespaceInfoProto_hdfs_2eproto},
+        {
+            &scc_info_StorageInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_PerFileEncryptionInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_PerFileEncryptionInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::PerFileEncryptionInfoProto();
+    void* ptr =
+        &::Hdfs::Internal::_PerFileEncryptionInfoProto_default_instance_;
+    new (ptr)::Hdfs::Internal::PerFileEncryptionInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::PerFileEncryptionInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PerFileEncryptionInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PerFileEncryptionInfoProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_PerFileEncryptionInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_PerFileEncryptionInfoProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_RecoveringBlockProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_RecoveringBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::RecoveringBlockProto();
+    new (ptr)::Hdfs::Internal::RecoveringBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::RecoveringBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RecoveringBlockProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_RecoveringBlockProto_hdfs_2eproto}, {
-      &scc_info_LocatedBlockProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_RecoveringBlockProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_RecoveringBlockProto_hdfs_2eproto},
+        {
+            &scc_info_LocatedBlockProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_RemoteEditLogManifestProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_RemoteEditLogManifestProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::RemoteEditLogManifestProto();
+    void* ptr =
+        &::Hdfs::Internal::_RemoteEditLogManifestProto_default_instance_;
+    new (ptr)::Hdfs::Internal::RemoteEditLogManifestProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::RemoteEditLogManifestProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RemoteEditLogManifestProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_RemoteEditLogManifestProto_hdfs_2eproto}, {
-      &scc_info_RemoteEditLogProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_RemoteEditLogManifestProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_RemoteEditLogManifestProto_hdfs_2eproto},
+        {
+            &scc_info_RemoteEditLogProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_RemoteEditLogProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_RemoteEditLogProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::RemoteEditLogProto();
+    new (ptr)::Hdfs::Internal::RemoteEditLogProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::RemoteEditLogProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RemoteEditLogProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_RemoteEditLogProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_RemoteEditLogProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_RemoteEditLogProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_SnapshotDiffReportEntryProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_SnapshotDiffReportEntryProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::SnapshotDiffReportEntryProto();
+    void* ptr =
+        &::Hdfs::Internal::_SnapshotDiffReportEntryProto_default_instance_;
+    new (ptr)::Hdfs::Internal::SnapshotDiffReportEntryProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::SnapshotDiffReportEntryProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SnapshotDiffReportEntryProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_SnapshotDiffReportEntryProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_SnapshotDiffReportProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_SnapshotDiffReportProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::SnapshotDiffReportProto();
+    new (ptr)::Hdfs::Internal::SnapshotDiffReportProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::SnapshotDiffReportProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SnapshotDiffReportProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SnapshotDiffReportProto_hdfs_2eproto}, {
-      &scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_SnapshotDiffReportProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_SnapshotDiffReportProto_hdfs_2eproto},
+        {
+            &scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_SnapshotInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_SnapshotInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::SnapshotInfoProto();
+    new (ptr)::Hdfs::Internal::SnapshotInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::SnapshotInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SnapshotInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SnapshotInfoProto_hdfs_2eproto}, {
-      &scc_info_FsPermissionProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_SnapshotInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_SnapshotInfoProto_hdfs_2eproto},
+        {
+            &scc_info_FsPermissionProto_hdfs_2eproto.base,
+        }};
 
-static void InitDefaultsscc_info_SnapshottableDirectoryListingProto_hdfs_2eproto() {
+static void
+InitDefaultsscc_info_SnapshottableDirectoryListingProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_SnapshottableDirectoryListingProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::SnapshottableDirectoryListingProto();
+    void* ptr = &::Hdfs::Internal::
+                    _SnapshottableDirectoryListingProto_default_instance_;
+    new (ptr)::Hdfs::Internal::SnapshottableDirectoryListingProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::SnapshottableDirectoryListingProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SnapshottableDirectoryListingProto_hdfs_2eproto}, {
-      &scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_SnapshottableDirectoryListingProto_hdfs_2eproto},
+        {
+            &scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base,
+        }};
 
-static void InitDefaultsscc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto() {
+static void
+InitDefaultsscc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_SnapshottableDirectoryStatusProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::SnapshottableDirectoryStatusProto();
+    void* ptr =
+        &::Hdfs::Internal::_SnapshottableDirectoryStatusProto_default_instance_;
+    new (ptr)::Hdfs::Internal::SnapshottableDirectoryStatusProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::SnapshottableDirectoryStatusProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto}, {
-      &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto},
+        {
+            &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_StorageInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_StorageInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::StorageInfoProto();
+    new (ptr)::Hdfs::Internal::StorageInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::StorageInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StorageInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_StorageInfoProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_StorageInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_StorageInfoProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_StorageUuidsProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_StorageUuidsProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::StorageUuidsProto();
+    new (ptr)::Hdfs::Internal::StorageUuidsProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::StorageUuidsProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_StorageUuidsProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_StorageUuidsProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_StorageUuidsProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_StorageUuidsProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_VersionRequestProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_VersionRequestProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::VersionRequestProto();
+    new (ptr)::Hdfs::Internal::VersionRequestProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::VersionRequestProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_VersionRequestProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_VersionRequestProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_VersionRequestProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_VersionRequestProto_hdfs_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_VersionResponseProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_VersionResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::VersionResponseProto();
+    new (ptr)::Hdfs::Internal::VersionResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::VersionResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_VersionResponseProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_VersionResponseProto_hdfs_2eproto}, {
-      &scc_info_NamespaceInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_VersionResponseProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_VersionResponseProto_hdfs_2eproto},
+        {
+            &scc_info_NamespaceInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_ZoneEncryptionInfoProto_hdfs_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ZoneEncryptionInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ZoneEncryptionInfoProto();
+    new (ptr)::Hdfs::Internal::ZoneEncryptionInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ZoneEncryptionInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ZoneEncryptionInfoProto_hdfs_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ZoneEncryptionInfoProto_hdfs_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ZoneEncryptionInfoProto_hdfs_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_ZoneEncryptionInfoProto_hdfs_2eproto},
+        {}};
 
 static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_hdfs_2eproto[39];
-static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_hdfs_2eproto[9];
-static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_hdfs_2eproto = nullptr;
+static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+    file_level_enum_descriptors_hdfs_2eproto[9];
+static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const**
+    file_level_service_descriptors_hdfs_2eproto = nullptr;
 
-const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_hdfs_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, poolid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, blockid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, generationstamp_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, numbytes_),
-  0,
-  1,
-  2,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, ipaddr_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, hostname_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, datanodeuuid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, xferport_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, infoport_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, ipcport_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, infosecureport_),
-  0,
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto, datanodes_),
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, id_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, capacity_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, dfsused_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, remaining_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, blockpoolused_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, lastupdate_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, xceivercount_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, location_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, adminstate_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, cachecapacity_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, cacheused_),
-  1,
-  2,
-  3,
-  4,
-  5,
-  6,
-  7,
-  0,
-  8,
-  9,
-  10,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, length_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, filecount_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, directorycount_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, quota_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, spaceconsumed_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, spacequota_),
-  0,
-  1,
-  2,
-  3,
-  4,
-  5,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto, files_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto, cookie_),
-  ~0u,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto, perm_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto, storageuuids_),
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, b_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, offset_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, locs_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, corrupt_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, blocktoken_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, iscached_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, storagetypes_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, storageids_),
-  0,
-  2,
-  ~0u,
-  3,
-  1,
-  ~0u,
-  ~0u,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, keyid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, blockpoolid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, nonce_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, encryptionkey_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, expirydate_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, encryptionalgorithm_),
-  5,
-  0,
-  1,
-  2,
-  4,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, suite_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, cryptoprotocolversion_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, key_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, iv_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, keyname_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, ezkeyversionname_),
-  4,
-  5,
-  0,
-  1,
-  2,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto, key_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto, iv_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto, ezkeyversionname_),
-  0,
-  1,
-  2,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto, suite_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto, cryptoprotocolversion_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto, keyname_),
-  1,
-  2,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, suite_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, inkey_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, iniv_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, outkey_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, outiv_),
-  4,
-  0,
-  1,
-  2,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, filelength_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, blocks_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, underconstruction_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, lastblock_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, islastblockcomplete_),
-  1,
-  ~0u,
-  2,
-  0,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, filetype_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, path_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, length_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, permission_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, owner_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, group_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, modification_time_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, access_time_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, symlink_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, block_replication_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, blocksize_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, locations_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, fileid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, childrennum_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, fileencryptioninfo_),
-  13,
-  0,
-  7,
-  4,
-  1,
-  2,
-  8,
-  9,
-  3,
-  12,
-  10,
-  5,
-  11,
-  14,
-  6,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, blocksize_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, bytesperchecksum_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, writepacketsize_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, replication_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, filebuffersize_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, encryptdatatransfer_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, trashinterval_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto, checksumtype_),
-  0,
-  1,
-  2,
-  3,
-  4,
-  6,
-  5,
-  7,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto, partiallisting_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto, remainingentries_),
-  ~0u,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, dirstatus_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, snapshot_quota_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, snapshot_number_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryStatusProto, parent_fullpath_),
-  1,
-  2,
-  3,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryListingProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryListingProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshottableDirectoryListingProto, snapshottabledirlisting_),
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto, fullpath_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto, modificationlabel_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, snapshotroot_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, fromsnapshot_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, tosnapshot_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto, diffreportentries_),
-  0,
-  1,
-  2,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, layoutversion_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, namespceid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, clusterid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, ctime_),
-  1,
-  2,
-  0,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, rpcaddress_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, httpaddress_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, storageinfo_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto, role_),
-  0,
-  1,
-  2,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, blockpoolid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, mostrecentcheckpointtxid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, cursegmenttxid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto, storageinfo_),
-  0,
-  2,
-  3,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, action_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, type_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, checkpointcmd_),
-  1,
-  2,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto, signature_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto, needtoreturnimage_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, blockid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, genstamp_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, numbytes_),
-  0,
-  1,
-  2,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto, block_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto, datanodeuuids_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto, storageuuids_),
-  0,
-  ~0u,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto, blocks_),
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, starttxid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, endtxid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, isinprogress_),
-  0,
-  1,
-  2,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto, logs_),
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, buildversion_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, unused_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, blockpoolid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, storageinfo_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, softwareversion_),
-  0,
-  4,
-  1,
-  3,
-  2,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, keyid_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, expirydate_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, keybytes_),
-  2,
-  1,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, isblocktokenenabled_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, keyupdateinterval_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, tokenlifetime_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, currentkey_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto, allkeys_),
-  3,
-  1,
-  2,
-  0,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto, newgenstamp_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto, block_),
-  1,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionRequestProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionRequestProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto, info_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, snapshotname_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, snapshotroot_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, permission_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, owner_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, group_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, createtime_),
-  0,
-  1,
-  5,
-  2,
-  3,
-  4,
+const ::PROTOBUF_NAMESPACE_ID::uint32
+    TableStruct_hdfs_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(
+        protodesc_cold) = {
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, poolid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, blockid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto,
+                              generationstamp_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExtendedBlockProto, numbytes_),
+        0,
+        1,
+        2,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, ipaddr_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, hostname_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, datanodeuuid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, xferport_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, infoport_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto, ipcport_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeIDProto,
+                              infosecureport_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfosProto, datanodes_),
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, id_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, capacity_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, dfsused_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, remaining_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto,
+                              blockpoolused_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, lastupdate_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto,
+                              xceivercount_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, location_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, adminstate_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto,
+                              cachecapacity_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DatanodeInfoProto, cacheused_),
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        0,
+        8,
+        9,
+        10,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, length_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              filecount_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              directorycount_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto, quota_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              spaceconsumed_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ContentSummaryProto,
+                              spacequota_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto, files_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CorruptFileBlocksProto,
+                              cookie_),
+        ~0u,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsPermissionProto, perm_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageUuidsProto,
+                              storageuuids_),
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, b_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, offset_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, locs_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, corrupt_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, blocktoken_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, iscached_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto,
+                              storagetypes_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlockProto, storageids_),
+        0,
+        2,
+        ~0u,
+        3,
+        1,
+        ~0u,
+        ~0u,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, keyid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              blockpoolid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto, nonce_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              encryptionkey_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              expirydate_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataEncryptionKeyProto,
+                              encryptionalgorithm_),
+        5,
+        0,
+        1,
+        2,
+        4,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              suite_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              cryptoprotocolversion_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, key_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto, iv_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              keyname_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FileEncryptionInfoProto,
+                              ezkeyversionname_),
+        4,
+        5,
+        0,
+        1,
+        2,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto,
+                              key_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto,
+                              iv_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PerFileEncryptionInfoProto,
+                              ezkeyversionname_),
+        0,
+        1,
+        2,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto,
+                              suite_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto,
+                              cryptoprotocolversion_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ZoneEncryptionInfoProto,
+                              keyname_),
+        1,
+        2,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, suite_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, inkey_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, iniv_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, outkey_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CipherOptionProto, outiv_),
+        4,
+        0,
+        1,
+        2,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto,
+                              filelength_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, blocks_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto,
+                              underconstruction_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto, lastblock_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::LocatedBlocksProto,
+                              islastblockcomplete_),
+        1,
+        ~0u,
+        2,
+        0,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, filetype_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, path_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, length_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              permission_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, owner_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, group_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              modification_time_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              access_time_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, symlink_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              block_replication_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              blocksize_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              locations_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto, fileid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              childrennum_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::HdfsFileStatusProto,
+                              fileencryptioninfo_),
+        13,
+        0,
+        7,
+        4,
+        1,
+        2,
+        8,
+        9,
+        3,
+        12,
+        10,
+        5,
+        11,
+        14,
+        6,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              blocksize_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              bytesperchecksum_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              writepacketsize_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              replication_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              filebuffersize_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              encryptdatatransfer_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              trashinterval_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::FsServerDefaultsProto,
+                              checksumtype_),
+        0,
+        1,
+        2,
+        3,
+        4,
+        6,
+        5,
+        7,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto,
+                              partiallisting_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DirectoryListingProto,
+                              remainingentries_),
+        ~0u,
+        0,
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto, dirstatus_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto,
+            snapshot_quota_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto,
+            snapshot_number_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryStatusProto,
+            parent_fullpath_),
+        1,
+        2,
+        3,
+        0,
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryListingProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryListingProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::SnapshottableDirectoryListingProto,
+            snapshottabledirlisting_),
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto,
+                              fullpath_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportEntryProto,
+                              modificationlabel_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              snapshotroot_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              fromsnapshot_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              tosnapshot_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotDiffReportProto,
+                              diffreportentries_),
+        0,
+        1,
+        2,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto,
+                              layoutversion_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, namespceid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, clusterid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::StorageInfoProto, ctime_),
+        1,
+        2,
+        0,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              rpcaddress_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              httpaddress_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              storageinfo_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeRegistrationProto,
+                              role_),
+        0,
+        1,
+        2,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              blockpoolid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              mostrecentcheckpointtxid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              cursegmenttxid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointSignatureProto,
+                              storageinfo_),
+        0,
+        2,
+        3,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, action_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto, type_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamenodeCommandProto,
+                              checkpointcmd_),
+        1,
+        2,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto,
+                              signature_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CheckpointCommandProto,
+                              needtoreturnimage_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, blockid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, genstamp_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockProto, numbytes_),
+        0,
+        1,
+        2,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto,
+                              block_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto,
+                              datanodeuuids_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockWithLocationsProto,
+                              storageuuids_),
+        0,
+        ~0u,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlocksWithLocationsProto,
+                              blocks_),
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, starttxid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto, endtxid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogProto,
+                              isinprogress_),
+        0,
+        1,
+        2,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RemoteEditLogManifestProto,
+                              logs_),
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto,
+                              buildversion_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto, unused_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto,
+                              blockpoolid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto,
+                              storageinfo_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::NamespaceInfoProto,
+                              softwareversion_),
+        0,
+        4,
+        1,
+        3,
+        2,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, keyid_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, expirydate_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockKeyProto, keybytes_),
+        2,
+        1,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              isblocktokenenabled_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              keyupdateinterval_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              tokenlifetime_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              currentkey_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ExportedBlockKeysProto,
+                              allkeys_),
+        3,
+        1,
+        2,
+        0,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto,
+                              newgenstamp_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::RecoveringBlockProto, block_),
+        1,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionRequestProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionRequestProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::VersionResponseProto, info_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto,
+                              snapshotname_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto,
+                              snapshotroot_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, permission_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, owner_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, group_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::SnapshotInfoProto, createtime_),
+        0,
+        1,
+        5,
+        2,
+        3,
+        4,
 };
-static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, 9, sizeof(::Hdfs::Internal::ExtendedBlockProto)},
-  { 13, 25, sizeof(::Hdfs::Internal::DatanodeIDProto)},
-  { 32, 38, sizeof(::Hdfs::Internal::DatanodeInfosProto)},
-  { 39, 55, sizeof(::Hdfs::Internal::DatanodeInfoProto)},
-  { 66, 77, sizeof(::Hdfs::Internal::ContentSummaryProto)},
-  { 83, 90, sizeof(::Hdfs::Internal::CorruptFileBlocksProto)},
-  { 92, 98, sizeof(::Hdfs::Internal::FsPermissionProto)},
-  { 99, 105, sizeof(::Hdfs::Internal::StorageUuidsProto)},
-  { 106, 119, sizeof(::Hdfs::Internal::LocatedBlockProto)},
-  { 127, 138, sizeof(::Hdfs::Internal::DataEncryptionKeyProto)},
-  { 144, 155, sizeof(::Hdfs::Internal::FileEncryptionInfoProto)},
-  { 161, 169, sizeof(::Hdfs::Internal::PerFileEncryptionInfoProto)},
-  { 172, 180, sizeof(::Hdfs::Internal::ZoneEncryptionInfoProto)},
-  { 183, 193, sizeof(::Hdfs::Internal::CipherOptionProto)},
-  { 198, 208, sizeof(::Hdfs::Internal::LocatedBlocksProto)},
-  { 213, 233, sizeof(::Hdfs::Internal::HdfsFileStatusProto)},
-  { 248, 261, sizeof(::Hdfs::Internal::FsServerDefaultsProto)},
-  { 269, 276, sizeof(::Hdfs::Internal::DirectoryListingProto)},
-  { 278, 287, sizeof(::Hdfs::Internal::SnapshottableDirectoryStatusProto)},
-  { 291, 297, sizeof(::Hdfs::Internal::SnapshottableDirectoryListingProto)},
-  { 298, 305, sizeof(::Hdfs::Internal::SnapshotDiffReportEntryProto)},
-  { 307, 316, sizeof(::Hdfs::Internal::SnapshotDiffReportProto)},
-  { 320, 329, sizeof(::Hdfs::Internal::StorageInfoProto)},
-  { 333, 342, sizeof(::Hdfs::Internal::NamenodeRegistrationProto)},
-  { 346, 355, sizeof(::Hdfs::Internal::CheckpointSignatureProto)},
-  { 359, 367, sizeof(::Hdfs::Internal::NamenodeCommandProto)},
-  { 370, 377, sizeof(::Hdfs::Internal::CheckpointCommandProto)},
-  { 379, 387, sizeof(::Hdfs::Internal::BlockProto)},
-  { 390, 398, sizeof(::Hdfs::Internal::BlockWithLocationsProto)},
-  { 401, 407, sizeof(::Hdfs::Internal::BlocksWithLocationsProto)},
-  { 408, 416, sizeof(::Hdfs::Internal::RemoteEditLogProto)},
-  { 419, 425, sizeof(::Hdfs::Internal::RemoteEditLogManifestProto)},
-  { 426, 436, sizeof(::Hdfs::Internal::NamespaceInfoProto)},
-  { 441, 449, sizeof(::Hdfs::Internal::BlockKeyProto)},
-  { 452, 462, sizeof(::Hdfs::Internal::ExportedBlockKeysProto)},
-  { 467, 474, sizeof(::Hdfs::Internal::RecoveringBlockProto)},
-  { 476, 481, sizeof(::Hdfs::Internal::VersionRequestProto)},
-  { 481, 487, sizeof(::Hdfs::Internal::VersionResponseProto)},
-  { 488, 499, sizeof(::Hdfs::Internal::SnapshotInfoProto)},
+static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema
+    schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
+        {0, 9, sizeof(::Hdfs::Internal::ExtendedBlockProto)},
+        {13, 25, sizeof(::Hdfs::Internal::DatanodeIDProto)},
+        {32, 38, sizeof(::Hdfs::Internal::DatanodeInfosProto)},
+        {39, 55, sizeof(::Hdfs::Internal::DatanodeInfoProto)},
+        {66, 77, sizeof(::Hdfs::Internal::ContentSummaryProto)},
+        {83, 90, sizeof(::Hdfs::Internal::CorruptFileBlocksProto)},
+        {92, 98, sizeof(::Hdfs::Internal::FsPermissionProto)},
+        {99, 105, sizeof(::Hdfs::Internal::StorageUuidsProto)},
+        {106, 119, sizeof(::Hdfs::Internal::LocatedBlockProto)},
+        {127, 138, sizeof(::Hdfs::Internal::DataEncryptionKeyProto)},
+        {144, 155, sizeof(::Hdfs::Internal::FileEncryptionInfoProto)},
+        {161, 169, sizeof(::Hdfs::Internal::PerFileEncryptionInfoProto)},
+        {172, 180, sizeof(::Hdfs::Internal::ZoneEncryptionInfoProto)},
+        {183, 193, sizeof(::Hdfs::Internal::CipherOptionProto)},
+        {198, 208, sizeof(::Hdfs::Internal::LocatedBlocksProto)},
+        {213, 233, sizeof(::Hdfs::Internal::HdfsFileStatusProto)},
+        {248, 261, sizeof(::Hdfs::Internal::FsServerDefaultsProto)},
+        {269, 276, sizeof(::Hdfs::Internal::DirectoryListingProto)},
+        {278, 287, sizeof(::Hdfs::Internal::SnapshottableDirectoryStatusProto)},
+        {291, 297,
+         sizeof(::Hdfs::Internal::SnapshottableDirectoryListingProto)},
+        {298, 305, sizeof(::Hdfs::Internal::SnapshotDiffReportEntryProto)},
+        {307, 316, sizeof(::Hdfs::Internal::SnapshotDiffReportProto)},
+        {320, 329, sizeof(::Hdfs::Internal::StorageInfoProto)},
+        {333, 342, sizeof(::Hdfs::Internal::NamenodeRegistrationProto)},
+        {346, 355, sizeof(::Hdfs::Internal::CheckpointSignatureProto)},
+        {359, 367, sizeof(::Hdfs::Internal::NamenodeCommandProto)},
+        {370, 377, sizeof(::Hdfs::Internal::CheckpointCommandProto)},
+        {379, 387, sizeof(::Hdfs::Internal::BlockProto)},
+        {390, 398, sizeof(::Hdfs::Internal::BlockWithLocationsProto)},
+        {401, 407, sizeof(::Hdfs::Internal::BlocksWithLocationsProto)},
+        {408, 416, sizeof(::Hdfs::Internal::RemoteEditLogProto)},
+        {419, 425, sizeof(::Hdfs::Internal::RemoteEditLogManifestProto)},
+        {426, 436, sizeof(::Hdfs::Internal::NamespaceInfoProto)},
+        {441, 449, sizeof(::Hdfs::Internal::BlockKeyProto)},
+        {452, 462, sizeof(::Hdfs::Internal::ExportedBlockKeysProto)},
+        {467, 474, sizeof(::Hdfs::Internal::RecoveringBlockProto)},
+        {476, 481, sizeof(::Hdfs::Internal::VersionRequestProto)},
+        {481, 487, sizeof(::Hdfs::Internal::VersionResponseProto)},
+        {488, 499, sizeof(::Hdfs::Internal::SnapshotInfoProto)},
 };
 
-static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ExtendedBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DatanodeIDProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DatanodeInfosProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DatanodeInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ContentSummaryProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CorruptFileBlocksProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_FsPermissionProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_StorageUuidsProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_LocatedBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DataEncryptionKeyProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_FileEncryptionInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_PerFileEncryptionInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ZoneEncryptionInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CipherOptionProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_LocatedBlocksProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_HdfsFileStatusProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_FsServerDefaultsProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DirectoryListingProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_SnapshottableDirectoryStatusProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_SnapshottableDirectoryListingProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_SnapshotDiffReportEntryProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_SnapshotDiffReportProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_StorageInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_NamenodeRegistrationProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CheckpointSignatureProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_NamenodeCommandProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CheckpointCommandProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BlockWithLocationsProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BlocksWithLocationsProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_RemoteEditLogProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_RemoteEditLogManifestProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_NamespaceInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BlockKeyProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ExportedBlockKeysProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_RecoveringBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_VersionRequestProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_VersionResponseProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_SnapshotInfoProto_default_instance_),
+static ::PROTOBUF_NAMESPACE_ID::Message const* const file_default_instances[] =
+    {
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ExtendedBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DatanodeIDProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DatanodeInfosProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DatanodeInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ContentSummaryProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_CorruptFileBlocksProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_FsPermissionProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_StorageUuidsProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_LocatedBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DataEncryptionKeyProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_FileEncryptionInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_PerFileEncryptionInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ZoneEncryptionInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_CipherOptionProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_LocatedBlocksProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_HdfsFileStatusProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_FsServerDefaultsProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DirectoryListingProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _SnapshottableDirectoryStatusProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _SnapshottableDirectoryListingProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_SnapshotDiffReportEntryProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_SnapshotDiffReportProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_StorageInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_NamenodeRegistrationProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_CheckpointSignatureProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_NamenodeCommandProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_CheckpointCommandProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BlockWithLocationsProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BlocksWithLocationsProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_RemoteEditLogProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_RemoteEditLogManifestProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_NamespaceInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BlockKeyProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ExportedBlockKeysProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_RecoveringBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_VersionRequestProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_VersionResponseProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_SnapshotInfoProto_default_instance_),
 };
 
-const char descriptor_table_protodef_hdfs_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\nhdfs.proto\022\rHdfs.Internal\032\016Security.pr"
-  "oto\"c\n\022ExtendedBlockProto\022\016\n\006poolId\030\001 \002("
-  "\t\022\017\n\007blockId\030\002 \002(\004\022\027\n\017generationStamp\030\003 "
-  "\002(\004\022\023\n\010numBytes\030\004 \001(\004:\0010\"\231\001\n\017DatanodeIDP"
-  "roto\022\016\n\006ipAddr\030\001 \002(\t\022\020\n\010hostName\030\002 \002(\t\022\024"
-  "\n\014datanodeUuid\030\003 \002(\t\022\020\n\010xferPort\030\004 \002(\r\022\020"
-  "\n\010infoPort\030\005 \002(\r\022\017\n\007ipcPort\030\006 \002(\r\022\031\n\016inf"
-  "oSecurePort\030\007 \001(\r:\0010\"I\n\022DatanodeInfosPro"
-  "to\0223\n\tdatanodes\030\001 \003(\0132 .Hdfs.Internal.Da"
-  "tanodeInfoProto\"\236\003\n\021DatanodeInfoProto\022*\n"
-  "\002id\030\001 \002(\0132\036.Hdfs.Internal.DatanodeIDProt"
-  "o\022\023\n\010capacity\030\002 \001(\004:\0010\022\022\n\007dfsUsed\030\003 \001(\004:"
-  "\0010\022\024\n\tremaining\030\004 \001(\004:\0010\022\030\n\rblockPoolUse"
-  "d\030\005 \001(\004:\0010\022\025\n\nlastUpdate\030\006 \001(\004:\0010\022\027\n\014xce"
-  "iverCount\030\007 \001(\r:\0010\022\020\n\010location\030\010 \001(\t\022G\n\n"
-  "adminState\030\n \001(\0162+.Hdfs.Internal.Datanod"
-  "eInfoProto.AdminState:\006NORMAL\022\030\n\rcacheCa"
-  "pacity\030\013 \001(\004:\0010\022\024\n\tcacheUsed\030\014 \001(\004:\0010\"I\n"
-  "\nAdminState\022\n\n\006NORMAL\020\000\022\033\n\027DECOMMISSION_"
-  "INPROGRESS\020\001\022\022\n\016DECOMMISSIONED\020\002\"\212\001\n\023Con"
-  "tentSummaryProto\022\016\n\006length\030\001 \002(\004\022\021\n\tfile"
-  "Count\030\002 \002(\004\022\026\n\016directoryCount\030\003 \002(\004\022\r\n\005q"
-  "uota\030\004 \002(\004\022\025\n\rspaceConsumed\030\005 \002(\004\022\022\n\nspa"
-  "ceQuota\030\006 \002(\004\"7\n\026CorruptFileBlocksProto\022"
-  "\r\n\005files\030\001 \003(\t\022\016\n\006cookie\030\002 \002(\t\"!\n\021FsPerm"
-  "issionProto\022\014\n\004perm\030\001 \002(\r\")\n\021StorageUuid"
-  "sProto\022\024\n\014storageUuids\030\001 \003(\t\"\242\002\n\021Located"
-  "BlockProto\022,\n\001b\030\001 \002(\0132!.Hdfs.Internal.Ex"
-  "tendedBlockProto\022\016\n\006offset\030\002 \002(\004\022.\n\004locs"
-  "\030\003 \003(\0132 .Hdfs.Internal.DatanodeInfoProto"
-  "\022\017\n\007corrupt\030\004 \002(\010\022-\n\nblockToken\030\005 \002(\0132\031."
-  "Hdfs.Internal.TokenProto\022\024\n\010isCached\030\006 \003"
-  "(\010B\002\020\001\0225\n\014storageTypes\030\007 \003(\0162\037.Hdfs.Inte"
-  "rnal.StorageTypeProto\022\022\n\nstorageIDs\030\010 \003("
-  "\t\"\223\001\n\026DataEncryptionKeyProto\022\r\n\005keyId\030\001 "
-  "\002(\r\022\023\n\013blockPoolId\030\002 \002(\t\022\r\n\005nonce\030\003 \002(\014\022"
-  "\025\n\rencryptionKey\030\004 \002(\014\022\022\n\nexpiryDate\030\005 \002"
-  "(\004\022\033\n\023encryptionAlgorithm\030\006 \001(\t\"\327\001\n\027File"
-  "EncryptionInfoProto\022.\n\005suite\030\001 \002(\0162\037.Hdf"
-  "s.Internal.CipherSuiteProto\022H\n\025cryptoPro"
-  "tocolVersion\030\002 \002(\0162).Hdfs.Internal.Crypt"
-  "oProtocolVersionProto\022\013\n\003key\030\003 \002(\014\022\n\n\002iv"
-  "\030\004 \002(\014\022\017\n\007keyName\030\005 \002(\t\022\030\n\020ezKeyVersionN"
-  "ame\030\006 \002(\t\"O\n\032PerFileEncryptionInfoProto\022"
-  "\013\n\003key\030\001 \002(\014\022\n\n\002iv\030\002 \002(\014\022\030\n\020ezKeyVersion"
-  "Name\030\003 \002(\t\"\244\001\n\027ZoneEncryptionInfoProto\022."
-  "\n\005suite\030\001 \002(\0162\037.Hdfs.Internal.CipherSuit"
-  "eProto\022H\n\025cryptoProtocolVersion\030\002 \002(\0162)."
-  "Hdfs.Internal.CryptoProtocolVersionProto"
-  "\022\017\n\007keyName\030\003 \002(\t\"\177\n\021CipherOptionProto\022."
-  "\n\005suite\030\001 \002(\0162\037.Hdfs.Internal.CipherSuit"
-  "eProto\022\r\n\005inKey\030\002 \001(\014\022\014\n\004inIv\030\003 \001(\014\022\016\n\006o"
-  "utKey\030\004 \001(\014\022\r\n\005outIv\030\005 \001(\014\"\307\001\n\022LocatedBl"
-  "ocksProto\022\022\n\nfileLength\030\001 \002(\004\0220\n\006blocks\030"
-  "\002 \003(\0132 .Hdfs.Internal.LocatedBlockProto\022"
-  "\031\n\021underConstruction\030\003 \002(\010\0223\n\tlastBlock\030"
-  "\004 \001(\0132 .Hdfs.Internal.LocatedBlockProto\022"
-  "\033\n\023isLastBlockComplete\030\005 \002(\010\"\226\004\n\023HdfsFil"
-  "eStatusProto\022=\n\010fileType\030\001 \002(\0162+.Hdfs.In"
-  "ternal.HdfsFileStatusProto.FileType\022\014\n\004p"
-  "ath\030\002 \002(\014\022\016\n\006length\030\003 \002(\004\0224\n\npermission\030"
-  "\004 \002(\0132 .Hdfs.Internal.FsPermissionProto\022"
-  "\r\n\005owner\030\005 \002(\t\022\r\n\005group\030\006 \002(\t\022\031\n\021modific"
-  "ation_time\030\007 \002(\004\022\023\n\013access_time\030\010 \002(\004\022\017\n"
-  "\007symlink\030\t \001(\014\022\034\n\021block_replication\030\n \001("
-  "\r:\0010\022\024\n\tblocksize\030\013 \001(\004:\0010\0224\n\tlocations\030"
-  "\014 \001(\0132!.Hdfs.Internal.LocatedBlocksProto"
-  "\022\021\n\006fileId\030\r \001(\004:\0010\022\027\n\013childrenNum\030\016 \001(\005"
-  ":\002-1\022B\n\022fileEncryptionInfo\030\017 \001(\0132&.Hdfs."
-  "Internal.FileEncryptionInfoProto\"3\n\010File"
-  "Type\022\n\n\006IS_DIR\020\001\022\013\n\007IS_FILE\020\002\022\016\n\nIS_SYML"
-  "INK\020\003\"\220\002\n\025FsServerDefaultsProto\022\021\n\tblock"
-  "Size\030\001 \002(\004\022\030\n\020bytesPerChecksum\030\002 \002(\r\022\027\n\017"
-  "writePacketSize\030\003 \002(\r\022\023\n\013replication\030\004 \002"
-  "(\r\022\026\n\016fileBufferSize\030\005 \002(\r\022\"\n\023encryptDat"
-  "aTransfer\030\006 \001(\010:\005false\022\030\n\rtrashInterval\030"
-  "\007 \001(\004:\0010\022F\n\014checksumType\030\010 \001(\0162 .Hdfs.In"
-  "ternal.ChecksumTypeProto:\016CHECKSUM_CRC32"
-  "\"m\n\025DirectoryListingProto\022:\n\016partialList"
-  "ing\030\001 \003(\0132\".Hdfs.Internal.HdfsFileStatus"
-  "Proto\022\030\n\020remainingEntries\030\002 \002(\r\"\244\001\n!Snap"
-  "shottableDirectoryStatusProto\0225\n\tdirStat"
-  "us\030\001 \002(\0132\".Hdfs.Internal.HdfsFileStatusP"
-  "roto\022\026\n\016snapshot_quota\030\002 \002(\r\022\027\n\017snapshot"
-  "_number\030\003 \002(\r\022\027\n\017parent_fullpath\030\004 \002(\014\"w"
-  "\n\"SnapshottableDirectoryListingProto\022Q\n\027"
-  "snapshottableDirListing\030\001 \003(\01320.Hdfs.Int"
-  "ernal.SnapshottableDirectoryStatusProto\""
-  "K\n\034SnapshotDiffReportEntryProto\022\020\n\010fullp"
-  "ath\030\001 \002(\014\022\031\n\021modificationLabel\030\002 \002(\t\"\241\001\n"
-  "\027SnapshotDiffReportProto\022\024\n\014snapshotRoot"
-  "\030\001 \002(\t\022\024\n\014fromSnapshot\030\002 \002(\t\022\022\n\ntoSnapsh"
-  "ot\030\003 \002(\t\022F\n\021diffReportEntries\030\004 \003(\0132+.Hd"
-  "fs.Internal.SnapshotDiffReportEntryProto"
-  "\"_\n\020StorageInfoProto\022\025\n\rlayoutVersion\030\001 "
-  "\002(\r\022\022\n\nnamespceID\030\002 \002(\r\022\021\n\tclusterID\030\003 \002"
-  "(\t\022\r\n\005cTime\030\004 \002(\004\"\215\002\n\031NamenodeRegistrati"
-  "onProto\022\022\n\nrpcAddress\030\001 \002(\t\022\023\n\013httpAddre"
-  "ss\030\002 \002(\t\0224\n\013storageInfo\030\003 \002(\0132\037.Hdfs.Int"
-  "ernal.StorageInfoProto\022R\n\004role\030\004 \001(\0162:.H"
-  "dfs.Internal.NamenodeRegistrationProto.N"
-  "amenodeRoleProto:\010NAMENODE\"=\n\021NamenodeRo"
-  "leProto\022\014\n\010NAMENODE\020\001\022\n\n\006BACKUP\020\002\022\016\n\nCHE"
-  "CKPOINT\020\003\"\237\001\n\030CheckpointSignatureProto\022\023"
-  "\n\013blockPoolId\030\001 \002(\t\022 \n\030mostRecentCheckpo"
-  "intTxId\030\002 \002(\004\022\026\n\016curSegmentTxId\030\003 \002(\004\0224\n"
-  "\013storageInfo\030\004 \002(\0132\037.Hdfs.Internal.Stora"
-  "geInfoProto\"\320\001\n\024NamenodeCommandProto\022\016\n\006"
-  "action\030\001 \002(\r\0226\n\004type\030\002 \002(\0162(.Hdfs.Intern"
-  "al.NamenodeCommandProto.Type\022<\n\rcheckpoi"
-  "ntCmd\030\003 \001(\0132%.Hdfs.Internal.CheckpointCo"
-  "mmandProto\"2\n\004Type\022\023\n\017NamenodeCommand\020\000\022"
-  "\025\n\021CheckPointCommand\020\001\"o\n\026CheckpointComm"
-  "andProto\022:\n\tsignature\030\001 \002(\0132\'.Hdfs.Inter"
-  "nal.CheckpointSignatureProto\022\031\n\021needToRe"
-  "turnImage\030\002 \002(\010\"D\n\nBlockProto\022\017\n\007blockId"
-  "\030\001 \002(\004\022\020\n\010genStamp\030\002 \002(\004\022\023\n\010numBytes\030\003 \001"
-  "(\004:\0010\"p\n\027BlockWithLocationsProto\022(\n\005bloc"
-  "k\030\001 \002(\0132\031.Hdfs.Internal.BlockProto\022\025\n\rda"
-  "tanodeUuids\030\002 \003(\t\022\024\n\014storageUuids\030\003 \003(\t\""
-  "R\n\030BlocksWithLocationsProto\0226\n\006blocks\030\001 "
-  "\003(\0132&.Hdfs.Internal.BlockWithLocationsPr"
-  "oto\"U\n\022RemoteEditLogProto\022\021\n\tstartTxId\030\001"
-  " \002(\004\022\017\n\007endTxId\030\002 \002(\004\022\033\n\014isInProgress\030\003 "
-  "\001(\010:\005false\"M\n\032RemoteEditLogManifestProto"
-  "\022/\n\004logs\030\001 \003(\0132!.Hdfs.Internal.RemoteEdi"
-  "tLogProto\"\236\001\n\022NamespaceInfoProto\022\024\n\014buil"
-  "dVersion\030\001 \002(\t\022\016\n\006unused\030\002 \002(\r\022\023\n\013blockP"
-  "oolID\030\003 \002(\t\0224\n\013storageInfo\030\004 \002(\0132\037.Hdfs."
-  "Internal.StorageInfoProto\022\027\n\017softwareVer"
-  "sion\030\005 \002(\t\"D\n\rBlockKeyProto\022\r\n\005keyId\030\001 \002"
-  "(\r\022\022\n\nexpiryDate\030\002 \002(\004\022\020\n\010keyBytes\030\003 \001(\014"
-  "\"\310\001\n\026ExportedBlockKeysProto\022\033\n\023isBlockTo"
-  "kenEnabled\030\001 \002(\010\022\031\n\021keyUpdateInterval\030\002 "
-  "\002(\004\022\025\n\rtokenLifeTime\030\003 \002(\004\0220\n\ncurrentKey"
-  "\030\004 \002(\0132\034.Hdfs.Internal.BlockKeyProto\022-\n\007"
-  "allKeys\030\005 \003(\0132\034.Hdfs.Internal.BlockKeyPr"
-  "oto\"\\\n\024RecoveringBlockProto\022\023\n\013newGenSta"
-  "mp\030\001 \002(\004\022/\n\005block\030\002 \002(\0132 .Hdfs.Internal."
-  "LocatedBlockProto\"\025\n\023VersionRequestProto"
-  "\"G\n\024VersionResponseProto\022/\n\004info\030\001 \002(\0132!"
-  ".Hdfs.Internal.NamespaceInfoProto\"\247\001\n\021Sn"
-  "apshotInfoProto\022\024\n\014snapshotName\030\001 \002(\t\022\024\n"
-  "\014snapshotRoot\030\002 \002(\t\0224\n\npermission\030\003 \002(\0132"
-  " .Hdfs.Internal.FsPermissionProto\022\r\n\005own"
-  "er\030\004 \002(\t\022\r\n\005group\030\005 \002(\t\022\022\n\ncreateTime\030\006 "
-  "\002(\t*%\n\020StorageTypeProto\022\010\n\004DISK\020\001\022\007\n\003SSD"
-  "\020\002*6\n\020CipherSuiteProto\022\013\n\007UNKNOWN\020\001\022\025\n\021A"
-  "ES_CTR_NOPADDING\020\002*P\n\032CryptoProtocolVers"
-  "ionProto\022\034\n\030UNKNOWN_PROTOCOL_VERSION\020\001\022\024"
-  "\n\020ENCRYPTION_ZONES\020\002*O\n\021ChecksumTypeProt"
-  "o\022\021\n\rCHECKSUM_NULL\020\000\022\022\n\016CHECKSUM_CRC32\020\001"
-  "\022\023\n\017CHECKSUM_CRC32C\020\002*L\n\021ReplicaStatePro"
-  "to\022\r\n\tFINALIZED\020\000\022\007\n\003RBW\020\001\022\007\n\003RWR\020\002\022\007\n\003R"
-  "UR\020\003\022\r\n\tTEMPORARY\020\004B6\n%org.apache.hadoop"
-  ".hdfs.protocol.protoB\nHdfsProtos\240\001\001"
-  ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_hdfs_2eproto_deps[1] = {
-  &::descriptor_table_Security_2eproto,
+const char descriptor_table_protodef_hdfs_2eproto[] PROTOBUF_SECTION_VARIABLE(
+    protodesc_cold) =
+    "\n\nhdfs.proto\022\rHdfs.Internal\032\016Security.pr"
+    "oto\"c\n\022ExtendedBlockProto\022\016\n\006poolId\030\001 \002("
+    "\t\022\017\n\007blockId\030\002 "
+    "\002(\004\022\027\n\017generationStamp\030\003 "
+    "\002(\004\022\023\n\010numBytes\030\004 "
+    "\001(\004:\0010\"\231\001\n\017DatanodeIDP"
+    "roto\022\016\n\006ipAddr\030\001 \002(\t\022\020\n\010hostName\030\002 "
+    "\002(\t\022\024"
+    "\n\014datanodeUuid\030\003 \002(\t\022\020\n\010xferPort\030\004 "
+    "\002(\r\022\020"
+    "\n\010infoPort\030\005 \002(\r\022\017\n\007ipcPort\030\006 "
+    "\002(\r\022\031\n\016inf"
+    "oSecurePort\030\007 \001(\r:\0010\"I\n\022DatanodeInfosPro"
+    "to\0223\n\tdatanodes\030\001 \003(\0132 .Hdfs.Internal.Da"
+    "tanodeInfoProto\"\236\003\n\021DatanodeInfoProto\022*\n"
+    "\002id\030\001 \002(\0132\036.Hdfs.Internal.DatanodeIDProt"
+    "o\022\023\n\010capacity\030\002 "
+    "\001(\004:\0010\022\022\n\007dfsUsed\030\003 \001(\004:"
+    "\0010\022\024\n\tremaining\030\004 \001(\004:\0010\022\030\n\rblockPoolUse"
+    "d\030\005 \001(\004:\0010\022\025\n\nlastUpdate\030\006 "
+    "\001(\004:\0010\022\027\n\014xce"
+    "iverCount\030\007 \001(\r:\0010\022\020\n\010location\030\010 "
+    "\001(\t\022G\n\n"
+    "adminState\030\n \001(\0162+.Hdfs.Internal.Datanod"
+    "eInfoProto.AdminState:\006NORMAL\022\030\n\rcacheCa"
+    "pacity\030\013 \001(\004:\0010\022\024\n\tcacheUsed\030\014 "
+    "\001(\004:\0010\"I\n"
+    "\nAdminState\022\n\n\006NORMAL\020\000\022\033\n\027DECOMMISSION_"
+    "INPROGRESS\020\001\022\022\n\016DECOMMISSIONED\020\002\"\212\001\n\023Con"
+    "tentSummaryProto\022\016\n\006length\030\001 \002(\004\022\021\n\tfile"
+    "Count\030\002 \002(\004\022\026\n\016directoryCount\030\003 "
+    "\002(\004\022\r\n\005q"
+    "uota\030\004 \002(\004\022\025\n\rspaceConsumed\030\005 "
+    "\002(\004\022\022\n\nspa"
+    "ceQuota\030\006 \002(\004\"7\n\026CorruptFileBlocksProto\022"
+    "\r\n\005files\030\001 \003(\t\022\016\n\006cookie\030\002 "
+    "\002(\t\"!\n\021FsPerm"
+    "issionProto\022\014\n\004perm\030\001 \002(\r\")\n\021StorageUuid"
+    "sProto\022\024\n\014storageUuids\030\001 \003(\t\"\242\002\n\021Located"
+    "BlockProto\022,\n\001b\030\001 \002(\0132!.Hdfs.Internal.Ex"
+    "tendedBlockProto\022\016\n\006offset\030\002 \002(\004\022.\n\004locs"
+    "\030\003 \003(\0132 .Hdfs.Internal.DatanodeInfoProto"
+    "\022\017\n\007corrupt\030\004 \002(\010\022-\n\nblockToken\030\005 "
+    "\002(\0132\031."
+    "Hdfs.Internal.TokenProto\022\024\n\010isCached\030\006 \003"
+    "(\010B\002\020\001\0225\n\014storageTypes\030\007 \003(\0162\037.Hdfs.Inte"
+    "rnal.StorageTypeProto\022\022\n\nstorageIDs\030\010 \003("
+    "\t\"\223\001\n\026DataEncryptionKeyProto\022\r\n\005keyId\030\001 "
+    "\002(\r\022\023\n\013blockPoolId\030\002 \002(\t\022\r\n\005nonce\030\003 "
+    "\002(\014\022"
+    "\025\n\rencryptionKey\030\004 \002(\014\022\022\n\nexpiryDate\030\005 \002"
+    "(\004\022\033\n\023encryptionAlgorithm\030\006 \001(\t\"\327\001\n\027File"
+    "EncryptionInfoProto\022.\n\005suite\030\001 \002(\0162\037.Hdf"
+    "s.Internal.CipherSuiteProto\022H\n\025cryptoPro"
+    "tocolVersion\030\002 \002(\0162).Hdfs.Internal.Crypt"
+    "oProtocolVersionProto\022\013\n\003key\030\003 \002(\014\022\n\n\002iv"
+    "\030\004 \002(\014\022\017\n\007keyName\030\005 "
+    "\002(\t\022\030\n\020ezKeyVersionN"
+    "ame\030\006 \002(\t\"O\n\032PerFileEncryptionInfoProto\022"
+    "\013\n\003key\030\001 \002(\014\022\n\n\002iv\030\002 "
+    "\002(\014\022\030\n\020ezKeyVersion"
+    "Name\030\003 \002(\t\"\244\001\n\027ZoneEncryptionInfoProto\022."
+    "\n\005suite\030\001 \002(\0162\037.Hdfs.Internal.CipherSuit"
+    "eProto\022H\n\025cryptoProtocolVersion\030\002 \002(\0162)."
+    "Hdfs.Internal.CryptoProtocolVersionProto"
+    "\022\017\n\007keyName\030\003 \002(\t\"\177\n\021CipherOptionProto\022."
+    "\n\005suite\030\001 \002(\0162\037.Hdfs.Internal.CipherSuit"
+    "eProto\022\r\n\005inKey\030\002 \001(\014\022\014\n\004inIv\030\003 "
+    "\001(\014\022\016\n\006o"
+    "utKey\030\004 \001(\014\022\r\n\005outIv\030\005 "
+    "\001(\014\"\307\001\n\022LocatedBl"
+    "ocksProto\022\022\n\nfileLength\030\001 \002(\004\0220\n\006blocks\030"
+    "\002 \003(\0132 .Hdfs.Internal.LocatedBlockProto\022"
+    "\031\n\021underConstruction\030\003 \002(\010\0223\n\tlastBlock\030"
+    "\004 \001(\0132 .Hdfs.Internal.LocatedBlockProto\022"
+    "\033\n\023isLastBlockComplete\030\005 \002(\010\"\226\004\n\023HdfsFil"
+    "eStatusProto\022=\n\010fileType\030\001 \002(\0162+.Hdfs.In"
+    "ternal.HdfsFileStatusProto.FileType\022\014\n\004p"
+    "ath\030\002 \002(\014\022\016\n\006length\030\003 "
+    "\002(\004\0224\n\npermission\030"
+    "\004 \002(\0132 .Hdfs.Internal.FsPermissionProto\022"
+    "\r\n\005owner\030\005 \002(\t\022\r\n\005group\030\006 "
+    "\002(\t\022\031\n\021modific"
+    "ation_time\030\007 \002(\004\022\023\n\013access_time\030\010 "
+    "\002(\004\022\017\n"
+    "\007symlink\030\t \001(\014\022\034\n\021block_replication\030\n \001("
+    "\r:\0010\022\024\n\tblocksize\030\013 "
+    "\001(\004:\0010\0224\n\tlocations\030"
+    "\014 \001(\0132!.Hdfs.Internal.LocatedBlocksProto"
+    "\022\021\n\006fileId\030\r "
+    "\001(\004:\0010\022\027\n\013childrenNum\030\016 \001(\005"
+    ":\002-1\022B\n\022fileEncryptionInfo\030\017 \001(\0132&.Hdfs."
+    "Internal.FileEncryptionInfoProto\"3\n\010File"
+    "Type\022\n\n\006IS_DIR\020\001\022\013\n\007IS_FILE\020\002\022\016\n\nIS_"
+    "SYML"
+    "INK\020\003\"\220\002\n\025FsServerDefaultsProto\022\021\n\tblock"
+    "Size\030\001 \002(\004\022\030\n\020bytesPerChecksum\030\002 "
+    "\002(\r\022\027\n\017"
+    "writePacketSize\030\003 \002(\r\022\023\n\013replication\030\004 \002"
+    "(\r\022\026\n\016fileBufferSize\030\005 \002(\r\022\"\n\023encryptDat"
+    "aTransfer\030\006 \001(\010:\005false\022\030\n\rtrashInterval\030"
+    "\007 \001(\004:\0010\022F\n\014checksumType\030\010 \001(\0162 .Hdfs.In"
+    "ternal.ChecksumTypeProto:\016CHECKSUM_CRC32"
+    "\"m\n\025DirectoryListingProto\022:\n\016partialList"
+    "ing\030\001 \003(\0132\".Hdfs.Internal.HdfsFileStatus"
+    "Proto\022\030\n\020remainingEntries\030\002 \002(\r\"\244\001\n!Snap"
+    "shottableDirectoryStatusProto\0225\n\tdirStat"
+    "us\030\001 \002(\0132\".Hdfs.Internal.HdfsFileStatusP"
+    "roto\022\026\n\016snapshot_quota\030\002 \002(\r\022\027\n\017snapshot"
+    "_number\030\003 \002(\r\022\027\n\017parent_fullpath\030\004 \002(\014\"w"
+    "\n\"SnapshottableDirectoryListingProto\022Q\n\027"
+    "snapshottableDirListing\030\001 \003(\01320.Hdfs.Int"
+    "ernal.SnapshottableDirectoryStatusProto\""
+    "K\n\034SnapshotDiffReportEntryProto\022\020\n\010fullp"
+    "ath\030\001 \002(\014\022\031\n\021modificationLabel\030\002 "
+    "\002(\t\"\241\001\n"
+    "\027SnapshotDiffReportProto\022\024\n\014snapshotRoot"
+    "\030\001 \002(\t\022\024\n\014fromSnapshot\030\002 "
+    "\002(\t\022\022\n\ntoSnapsh"
+    "ot\030\003 \002(\t\022F\n\021diffReportEntries\030\004 \003(\0132+.Hd"
+    "fs.Internal.SnapshotDiffReportEntryProto"
+    "\"_\n\020StorageInfoProto\022\025\n\rlayoutVersion\030\001 "
+    "\002(\r\022\022\n\nnamespceID\030\002 "
+    "\002(\r\022\021\n\tclusterID\030\003 \002"
+    "(\t\022\r\n\005cTime\030\004 \002(\004\"\215\002\n\031NamenodeRegistrati"
+    "onProto\022\022\n\nrpcAddress\030\001 \002(\t\022\023\n\013httpAddre"
+    "ss\030\002 \002(\t\0224\n\013storageInfo\030\003 \002(\0132\037.Hdfs.Int"
+    "ernal.StorageInfoProto\022R\n\004role\030\004 \001(\0162:.H"
+    "dfs.Internal.NamenodeRegistrationProto.N"
+    "amenodeRoleProto:\010NAMENODE\"=\n\021NamenodeRo"
+    "leProto\022\014\n\010NAMENODE\020\001\022\n\n\006BACKUP\020\002\022\016\n"
+    "\nCHE"
+    "CKPOINT\020\003\"\237\001\n\030CheckpointSignatureProto\022\023"
+    "\n\013blockPoolId\030\001 \002(\t\022 \n\030mostRecentCheckpo"
+    "intTxId\030\002 \002(\004\022\026\n\016curSegmentTxId\030\003 "
+    "\002(\004\0224\n"
+    "\013storageInfo\030\004 \002(\0132\037.Hdfs.Internal.Stora"
+    "geInfoProto\"\320\001\n\024NamenodeCommandProto\022\016\n\006"
+    "action\030\001 \002(\r\0226\n\004type\030\002 \002(\0162(.Hdfs.Intern"
+    "al.NamenodeCommandProto.Type\022<\n\rcheckpoi"
+    "ntCmd\030\003 \001(\0132%.Hdfs.Internal.CheckpointCo"
+    "mmandProto\"2\n\004Type\022\023\n\017NamenodeCommand\020\000\022"
+    "\025\n\021CheckPointCommand\020\001\"o\n\026CheckpointComm"
+    "andProto\022:\n\tsignature\030\001 \002(\0132\'.Hdfs.Inter"
+    "nal.CheckpointSignatureProto\022\031\n\021needToRe"
+    "turnImage\030\002 \002(\010\"D\n\nBlockProto\022\017\n\007blockId"
+    "\030\001 \002(\004\022\020\n\010genStamp\030\002 "
+    "\002(\004\022\023\n\010numBytes\030\003 \001"
+    "(\004:\0010\"p\n\027BlockWithLocationsProto\022(\n\005bloc"
+    "k\030\001 \002(\0132\031.Hdfs.Internal.BlockProto\022\025\n\rda"
+    "tanodeUuids\030\002 \003(\t\022\024\n\014storageUuids\030\003 \003(\t\""
+    "R\n\030BlocksWithLocationsProto\0226\n\006blocks\030\001 "
+    "\003(\0132&.Hdfs.Internal.BlockWithLocationsPr"
+    "oto\"U\n\022RemoteEditLogProto\022\021\n\tstartTxId\030\001"
+    " \002(\004\022\017\n\007endTxId\030\002 "
+    "\002(\004\022\033\n\014isInProgress\030\003 "
+    "\001(\010:\005false\"M\n\032RemoteEditLogManifestProto"
+    "\022/\n\004logs\030\001 \003(\0132!.Hdfs.Internal.RemoteEdi"
+    "tLogProto\"\236\001\n\022NamespaceInfoProto\022\024\n\014buil"
+    "dVersion\030\001 \002(\t\022\016\n\006unused\030\002 "
+    "\002(\r\022\023\n\013blockP"
+    "oolID\030\003 \002(\t\0224\n\013storageInfo\030\004 \002(\0132\037.Hdfs."
+    "Internal.StorageInfoProto\022\027\n\017softwareVer"
+    "sion\030\005 \002(\t\"D\n\rBlockKeyProto\022\r\n\005keyId\030\001 \002"
+    "(\r\022\022\n\nexpiryDate\030\002 \002(\004\022\020\n\010keyBytes\030\003 "
+    "\001(\014"
+    "\"\310\001\n\026ExportedBlockKeysProto\022\033\n\023isBlockTo"
+    "kenEnabled\030\001 \002(\010\022\031\n\021keyUpdateInterval\030\002 "
+    "\002(\004\022\025\n\rtokenLifeTime\030\003 \002(\004\0220\n\ncurrentKey"
+    "\030\004 \002(\0132\034.Hdfs.Internal.BlockKeyProto\022-\n\007"
+    "allKeys\030\005 \003(\0132\034.Hdfs.Internal.BlockKeyPr"
+    "oto\"\\\n\024RecoveringBlockProto\022\023\n\013newGenSta"
+    "mp\030\001 \002(\004\022/\n\005block\030\002 \002(\0132 .Hdfs.Internal."
+    "LocatedBlockProto\"\025\n\023VersionRequestProto"
+    "\"G\n\024VersionResponseProto\022/\n\004info\030\001 \002(\0132!"
+    ".Hdfs.Internal.NamespaceInfoProto\"\247\001\n\021Sn"
+    "apshotInfoProto\022\024\n\014snapshotName\030\001 \002(\t\022\024\n"
+    "\014snapshotRoot\030\002 \002(\t\0224\n\npermission\030\003 \002(\0132"
+    " .Hdfs.Internal.FsPermissionProto\022\r\n\005own"
+    "er\030\004 \002(\t\022\r\n\005group\030\005 "
+    "\002(\t\022\022\n\ncreateTime\030\006 "
+    "\002(\t*%\n\020StorageTypeProto\022\010\n\004DISK\020\001\022\007\n\003SSD"
+    "\020\002*"
+    "6\n\020CipherSuiteProto\022\013\n\007UNKNOWN\020\001\022\025\n\021A"
+    "ES_CTR_NOPADDING\020\002*P\n\032CryptoProtocolVers"
+    "ionProto\022\034\n\030UNKNOWN_PROTOCOL_VERSION\020\001\022\024"
+    "\n\020ENCRYPTION_ZONES\020\002*O\n\021ChecksumTypeProt"
+    "o\022\021\n\rCHECKSUM_NULL\020\000\022\022\n\016CHECKSUM_CRC32\020\001"
+    "\022\023\n\017CHECKSUM_CRC32C\020\002*L\n\021ReplicaStatePro"
+    "to\022\r\n\tFINALIZED\020\000\022\007\n\003RBW\020\001\022\007\n\003RWR"
+    "\020\002\022\007\n\003R"
+    "UR\020\003\022\r\n\tTEMPORARY\020\004B6\n%org.apache.hadoop"
+    ".hdfs.protocol.protoB\nHdfsProtos\240\001\001";
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* const
+    descriptor_table_hdfs_2eproto_deps[1] = {
+        &::descriptor_table_Security_2eproto,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_hdfs_2eproto_sccs[39] = {
-  &scc_info_BlockKeyProto_hdfs_2eproto.base,
-  &scc_info_BlockProto_hdfs_2eproto.base,
-  &scc_info_BlockWithLocationsProto_hdfs_2eproto.base,
-  &scc_info_BlocksWithLocationsProto_hdfs_2eproto.base,
-  &scc_info_CheckpointCommandProto_hdfs_2eproto.base,
-  &scc_info_CheckpointSignatureProto_hdfs_2eproto.base,
-  &scc_info_CipherOptionProto_hdfs_2eproto.base,
-  &scc_info_ContentSummaryProto_hdfs_2eproto.base,
-  &scc_info_CorruptFileBlocksProto_hdfs_2eproto.base,
-  &scc_info_DataEncryptionKeyProto_hdfs_2eproto.base,
-  &scc_info_DatanodeIDProto_hdfs_2eproto.base,
-  &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
-  &scc_info_DatanodeInfosProto_hdfs_2eproto.base,
-  &scc_info_DirectoryListingProto_hdfs_2eproto.base,
-  &scc_info_ExportedBlockKeysProto_hdfs_2eproto.base,
-  &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
-  &scc_info_FileEncryptionInfoProto_hdfs_2eproto.base,
-  &scc_info_FsPermissionProto_hdfs_2eproto.base,
-  &scc_info_FsServerDefaultsProto_hdfs_2eproto.base,
-  &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,
-  &scc_info_LocatedBlockProto_hdfs_2eproto.base,
-  &scc_info_LocatedBlocksProto_hdfs_2eproto.base,
-  &scc_info_NamenodeCommandProto_hdfs_2eproto.base,
-  &scc_info_NamenodeRegistrationProto_hdfs_2eproto.base,
-  &scc_info_NamespaceInfoProto_hdfs_2eproto.base,
-  &scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base,
-  &scc_info_RecoveringBlockProto_hdfs_2eproto.base,
-  &scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base,
-  &scc_info_RemoteEditLogProto_hdfs_2eproto.base,
-  &scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base,
-  &scc_info_SnapshotDiffReportProto_hdfs_2eproto.base,
-  &scc_info_SnapshotInfoProto_hdfs_2eproto.base,
-  &scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base,
-  &scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base,
-  &scc_info_StorageInfoProto_hdfs_2eproto.base,
-  &scc_info_StorageUuidsProto_hdfs_2eproto.base,
-  &scc_info_VersionRequestProto_hdfs_2eproto.base,
-  &scc_info_VersionResponseProto_hdfs_2eproto.base,
-  &scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base,
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase* const
+    descriptor_table_hdfs_2eproto_sccs[39] = {
+        &scc_info_BlockKeyProto_hdfs_2eproto.base,
+        &scc_info_BlockProto_hdfs_2eproto.base,
+        &scc_info_BlockWithLocationsProto_hdfs_2eproto.base,
+        &scc_info_BlocksWithLocationsProto_hdfs_2eproto.base,
+        &scc_info_CheckpointCommandProto_hdfs_2eproto.base,
+        &scc_info_CheckpointSignatureProto_hdfs_2eproto.base,
+        &scc_info_CipherOptionProto_hdfs_2eproto.base,
+        &scc_info_ContentSummaryProto_hdfs_2eproto.base,
+        &scc_info_CorruptFileBlocksProto_hdfs_2eproto.base,
+        &scc_info_DataEncryptionKeyProto_hdfs_2eproto.base,
+        &scc_info_DatanodeIDProto_hdfs_2eproto.base,
+        &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+        &scc_info_DatanodeInfosProto_hdfs_2eproto.base,
+        &scc_info_DirectoryListingProto_hdfs_2eproto.base,
+        &scc_info_ExportedBlockKeysProto_hdfs_2eproto.base,
+        &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
+        &scc_info_FileEncryptionInfoProto_hdfs_2eproto.base,
+        &scc_info_FsPermissionProto_hdfs_2eproto.base,
+        &scc_info_FsServerDefaultsProto_hdfs_2eproto.base,
+        &scc_info_HdfsFileStatusProto_hdfs_2eproto.base,
+        &scc_info_LocatedBlockProto_hdfs_2eproto.base,
+        &scc_info_LocatedBlocksProto_hdfs_2eproto.base,
+        &scc_info_NamenodeCommandProto_hdfs_2eproto.base,
+        &scc_info_NamenodeRegistrationProto_hdfs_2eproto.base,
+        &scc_info_NamespaceInfoProto_hdfs_2eproto.base,
+        &scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base,
+        &scc_info_RecoveringBlockProto_hdfs_2eproto.base,
+        &scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base,
+        &scc_info_RemoteEditLogProto_hdfs_2eproto.base,
+        &scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base,
+        &scc_info_SnapshotDiffReportProto_hdfs_2eproto.base,
+        &scc_info_SnapshotInfoProto_hdfs_2eproto.base,
+        &scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base,
+        &scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base,
+        &scc_info_StorageInfoProto_hdfs_2eproto.base,
+        &scc_info_StorageUuidsProto_hdfs_2eproto.base,
+        &scc_info_VersionRequestProto_hdfs_2eproto.base,
+        &scc_info_VersionResponseProto_hdfs_2eproto.base,
+        &scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_hdfs_2eproto_once;
+static ::PROTOBUF_NAMESPACE_ID::internal::once_flag
+    descriptor_table_hdfs_2eproto_once;
 static bool descriptor_table_hdfs_2eproto_initialized = false;
-const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_hdfs_2eproto = {
-  &descriptor_table_hdfs_2eproto_initialized, descriptor_table_protodef_hdfs_2eproto, "hdfs.proto", 6235,
-  &descriptor_table_hdfs_2eproto_once, descriptor_table_hdfs_2eproto_sccs, descriptor_table_hdfs_2eproto_deps, 39, 1,
-  schemas, file_default_instances, TableStruct_hdfs_2eproto::offsets,
-  file_level_metadata_hdfs_2eproto, 39, file_level_enum_descriptors_hdfs_2eproto, file_level_service_descriptors_hdfs_2eproto,
+const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable
+    descriptor_table_hdfs_2eproto = {
+        &descriptor_table_hdfs_2eproto_initialized,
+        descriptor_table_protodef_hdfs_2eproto,
+        "hdfs.proto",
+        6235,
+        &descriptor_table_hdfs_2eproto_once,
+        descriptor_table_hdfs_2eproto_sccs,
+        descriptor_table_hdfs_2eproto_deps,
+        39,
+        1,
+        schemas,
+        file_default_instances,
+        TableStruct_hdfs_2eproto::offsets,
+        file_level_metadata_hdfs_2eproto,
+        39,
+        file_level_enum_descriptors_hdfs_2eproto,
+        file_level_service_descriptors_hdfs_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_hdfs_2eproto = (  ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_hdfs_2eproto), true);
+static bool dynamic_init_dummy_hdfs_2eproto =
+    (::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(
+         &descriptor_table_hdfs_2eproto),
+     true);
 namespace Hdfs {
 namespace Internal {
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* DatanodeInfoProto_AdminState_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+DatanodeInfoProto_AdminState_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[0];
 }
 bool DatanodeInfoProto_AdminState_IsValid(int value) {
@@ -1591,14 +2134,17 @@ bool DatanodeInfoProto_AdminState_IsValid(int value) {
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
 constexpr DatanodeInfoProto_AdminState DatanodeInfoProto::NORMAL;
-constexpr DatanodeInfoProto_AdminState DatanodeInfoProto::DECOMMISSION_INPROGRESS;
+constexpr DatanodeInfoProto_AdminState
+    DatanodeInfoProto::DECOMMISSION_INPROGRESS;
 constexpr DatanodeInfoProto_AdminState DatanodeInfoProto::DECOMMISSIONED;
 constexpr DatanodeInfoProto_AdminState DatanodeInfoProto::AdminState_MIN;
 constexpr DatanodeInfoProto_AdminState DatanodeInfoProto::AdminState_MAX;
 constexpr int DatanodeInfoProto::AdminState_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* HdfsFileStatusProto_FileType_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+HdfsFileStatusProto_FileType_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[1];
 }
 bool HdfsFileStatusProto_FileType_IsValid(int value) {
@@ -1620,8 +2166,10 @@ constexpr HdfsFileStatusProto_FileType HdfsFileStatusProto::FileType_MIN;
 constexpr HdfsFileStatusProto_FileType HdfsFileStatusProto::FileType_MAX;
 constexpr int HdfsFileStatusProto::FileType_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* NamenodeRegistrationProto_NamenodeRoleProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+NamenodeRegistrationProto_NamenodeRoleProto_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[2];
 }
 bool NamenodeRegistrationProto_NamenodeRoleProto_IsValid(int value) {
@@ -1636,15 +2184,22 @@ bool NamenodeRegistrationProto_NamenodeRoleProto_IsValid(int value) {
 }
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-constexpr NamenodeRegistrationProto_NamenodeRoleProto NamenodeRegistrationProto::NAMENODE;
-constexpr NamenodeRegistrationProto_NamenodeRoleProto NamenodeRegistrationProto::BACKUP;
-constexpr NamenodeRegistrationProto_NamenodeRoleProto NamenodeRegistrationProto::CHECKPOINT;
-constexpr NamenodeRegistrationProto_NamenodeRoleProto NamenodeRegistrationProto::NamenodeRoleProto_MIN;
-constexpr NamenodeRegistrationProto_NamenodeRoleProto NamenodeRegistrationProto::NamenodeRoleProto_MAX;
+constexpr NamenodeRegistrationProto_NamenodeRoleProto
+    NamenodeRegistrationProto::NAMENODE;
+constexpr NamenodeRegistrationProto_NamenodeRoleProto
+    NamenodeRegistrationProto::BACKUP;
+constexpr NamenodeRegistrationProto_NamenodeRoleProto
+    NamenodeRegistrationProto::CHECKPOINT;
+constexpr NamenodeRegistrationProto_NamenodeRoleProto
+    NamenodeRegistrationProto::NamenodeRoleProto_MIN;
+constexpr NamenodeRegistrationProto_NamenodeRoleProto
+    NamenodeRegistrationProto::NamenodeRoleProto_MAX;
 constexpr int NamenodeRegistrationProto::NamenodeRoleProto_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* NamenodeCommandProto_Type_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+NamenodeCommandProto_Type_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[3];
 }
 bool NamenodeCommandProto_Type_IsValid(int value) {
@@ -1665,7 +2220,8 @@ constexpr NamenodeCommandProto_Type NamenodeCommandProto::Type_MAX;
 constexpr int NamenodeCommandProto::Type_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* StorageTypeProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[4];
 }
 bool StorageTypeProto_IsValid(int value) {
@@ -1679,7 +2235,8 @@ bool StorageTypeProto_IsValid(int value) {
 }
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* CipherSuiteProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[5];
 }
 bool CipherSuiteProto_IsValid(int value) {
@@ -1692,8 +2249,10 @@ bool CipherSuiteProto_IsValid(int value) {
   }
 }
 
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* CryptoProtocolVersionProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+CryptoProtocolVersionProto_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[6];
 }
 bool CryptoProtocolVersionProto_IsValid(int value) {
@@ -1707,7 +2266,8 @@ bool CryptoProtocolVersionProto_IsValid(int value) {
 }
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ChecksumTypeProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[7];
 }
 bool ChecksumTypeProto_IsValid(int value) {
@@ -1722,7 +2282,8 @@ bool ChecksumTypeProto_IsValid(int value) {
 }
 
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* ReplicaStateProto_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_hdfs_2eproto);
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_hdfs_2eproto);
   return file_level_enum_descriptors_hdfs_2eproto[8];
 }
 bool ReplicaStateProto_IsValid(int value) {
@@ -1738,54 +2299,53 @@ bool ReplicaStateProto_IsValid(int value) {
   }
 }
 
-
 // ===================================================================
 
-void ExtendedBlockProto::InitAsDefaultInstance() {
-}
+void ExtendedBlockProto::InitAsDefaultInstance() {}
 class ExtendedBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ExtendedBlockProto>()._has_bits_);
-  static void set_has_poolid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_blockid(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_poolid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_blockid(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_generationstamp(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static void set_has_numbytes(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_numbytes(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
 };
 
 ExtendedBlockProto::ExtendedBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ExtendedBlockProto)
 }
 ExtendedBlockProto::ExtendedBlockProto(const ExtendedBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  poolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  poolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_poolid()) {
-    poolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.poolid_);
+    poolid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.poolid_);
   }
   ::memcpy(&blockid_, &from.blockid_,
-    static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
-    reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+           static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                               reinterpret_cast<char*>(&blockid_)) +
+               sizeof(numbytes_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ExtendedBlockProto)
 }
 
 void ExtendedBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ExtendedBlockProto_hdfs_2eproto.base);
-  poolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&blockid_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&numbytes_) -
-      reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ExtendedBlockProto_hdfs_2eproto.base);
+  poolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&blockid_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                               reinterpret_cast<char*>(&blockid_)) +
+               sizeof(numbytes_));
 }
 
 ExtendedBlockProto::~ExtendedBlockProto() {
@@ -1794,39 +2354,43 @@ ExtendedBlockProto::~ExtendedBlockProto() {
 }
 
 void ExtendedBlockProto::SharedDtor() {
-  poolid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  poolid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void ExtendedBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ExtendedBlockProto& ExtendedBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ExtendedBlockProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ExtendedBlockProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ExtendedBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ExtendedBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ExtendedBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     poolid_.ClearNonDefaultToEmptyNoArena();
   }
   if (cached_has_bits & 0x0000000eu) {
-    ::memset(&blockid_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&numbytes_) -
-        reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+    ::memset(&blockid_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                                 reinterpret_cast<char*>(&blockid_)) +
+                 sizeof(numbytes_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ExtendedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ExtendedBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1835,38 +2399,49 @@ const char* ExtendedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // required string poolId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_poolid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.ExtendedBlockProto.poolId");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.ExtendedBlockProto.poolId");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 blockId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_blockid(&has_bits);
           blockid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 generationStamp = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_generationstamp(&has_bits);
-          generationstamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          generationstamp_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 numBytes = 4 [default = 0];
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_numbytes(&has_bits);
           numbytes_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1879,7 +2454,7 @@ const char* ExtendedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1890,108 +2465,118 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ExtendedBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ExtendedBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string poolId = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_poolid().data(), static_cast<int>(this->_internal_poolid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.ExtendedBlockProto.poolId");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_poolid(), target);
+        this->_internal_poolid().data(),
+        static_cast<int>(this->_internal_poolid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.ExtendedBlockProto.poolId");
+    target =
+        stream->WriteStringMaybeAliased(1, this->_internal_poolid(), target);
   }
 
   // required uint64 blockId = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_blockid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_blockid(), target);
   }
 
   // required uint64 generationStamp = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_generationstamp(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_generationstamp(), target);
   }
 
   // optional uint64 numBytes = 4 [default = 0];
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(4, this->_internal_numbytes(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            4, this->_internal_numbytes(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ExtendedBlockProto)
   return target;
 }
 
 size_t ExtendedBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ExtendedBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ExtendedBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_poolid()) {
     // required string poolId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_poolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_poolid());
   }
 
   if (_internal_has_blockid()) {
     // required uint64 blockId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blockid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blockid());
   }
 
   if (_internal_has_generationstamp()) {
     // required uint64 generationStamp = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_generationstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_generationstamp());
   }
 
   return total_size;
 }
 size_t ExtendedBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ExtendedBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ExtendedBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required string poolId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_poolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_poolid());
 
     // required uint64 blockId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blockid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blockid());
 
     // required uint64 generationStamp = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_generationstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_generationstamp());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional uint64 numBytes = 4 [default = 0];
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_numbytes());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_numbytes());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2003,33 +2588,36 @@ size_t ExtendedBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ExtendedBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ExtendedBlockProto)
+void ExtendedBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ExtendedBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ExtendedBlockProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ExtendedBlockProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ExtendedBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ExtendedBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ExtendedBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ExtendedBlockProto)
     MergeFrom(*source);
   }
 }
 
 void ExtendedBlockProto::MergeFrom(const ExtendedBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ExtendedBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ExtendedBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      poolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.poolid_);
+      poolid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.poolid_);
     }
     if (cached_has_bits & 0x00000002u) {
       blockid_ = from.blockid_;
@@ -2044,15 +2632,16 @@ void ExtendedBlockProto::MergeFrom(const ExtendedBlockProto& from) {
   }
 }
 
-void ExtendedBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ExtendedBlockProto)
+void ExtendedBlockProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ExtendedBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ExtendedBlockProto::CopyFrom(const ExtendedBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ExtendedBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ExtendedBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2067,8 +2656,10 @@ void ExtendedBlockProto::InternalSwap(ExtendedBlockProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  poolid_.Swap(&other->poolid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  poolid_.Swap(
+      &other->poolid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(blockid_, other->blockid_);
   swap(generationstamp_, other->generationstamp_);
   swap(numbytes_, other->numbytes_);
@@ -2078,73 +2669,74 @@ void ExtendedBlockProto::InternalSwap(ExtendedBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void DatanodeIDProto::InitAsDefaultInstance() {
-}
+void DatanodeIDProto::InitAsDefaultInstance() {}
 class DatanodeIDProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DatanodeIDProto>()._has_bits_);
-  static void set_has_ipaddr(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_hostname(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_datanodeuuid(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_xferport(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
-  static void set_has_infoport(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_ipcport(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
+  static void set_has_ipaddr(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_hostname(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_datanodeuuid(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_xferport(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
+  static void set_has_infoport(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_ipcport(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
   static void set_has_infosecureport(HasBits* has_bits) {
     (*has_bits)[0] |= 64u;
   }
 };
 
 DatanodeIDProto::DatanodeIDProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DatanodeIDProto)
 }
 DatanodeIDProto::DatanodeIDProto(const DatanodeIDProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  ipaddr_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ipaddr_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_ipaddr()) {
-    ipaddr_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ipaddr_);
+    ipaddr_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.ipaddr_);
   }
-  hostname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  hostname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_hostname()) {
-    hostname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.hostname_);
+    hostname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.hostname_);
   }
-  datanodeuuid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  datanodeuuid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_datanodeuuid()) {
-    datanodeuuid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.datanodeuuid_);
+    datanodeuuid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.datanodeuuid_);
   }
   ::memcpy(&xferport_, &from.xferport_,
-    static_cast<size_t>(reinterpret_cast<char*>(&infosecureport_) -
-    reinterpret_cast<char*>(&xferport_)) + sizeof(infosecureport_));
+           static_cast<size_t>(reinterpret_cast<char*>(&infosecureport_) -
+                               reinterpret_cast<char*>(&xferport_)) +
+               sizeof(infosecureport_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.DatanodeIDProto)
 }
 
 void DatanodeIDProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DatanodeIDProto_hdfs_2eproto.base);
-  ipaddr_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  hostname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  datanodeuuid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&xferport_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&infosecureport_) -
-      reinterpret_cast<char*>(&xferport_)) + sizeof(infosecureport_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DatanodeIDProto_hdfs_2eproto.base);
+  ipaddr_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  hostname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  datanodeuuid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&xferport_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&infosecureport_) -
+                               reinterpret_cast<char*>(&xferport_)) +
+               sizeof(infosecureport_));
 }
 
 DatanodeIDProto::~DatanodeIDProto() {
@@ -2153,25 +2745,26 @@ DatanodeIDProto::~DatanodeIDProto() {
 }
 
 void DatanodeIDProto::SharedDtor() {
-  ipaddr_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  hostname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  datanodeuuid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ipaddr_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  hostname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  datanodeuuid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-void DatanodeIDProto::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
+void DatanodeIDProto::SetCachedSize(int size) const { _cached_size_.Set(size); }
 const DatanodeIDProto& DatanodeIDProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DatanodeIDProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DatanodeIDProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DatanodeIDProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeIDProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -2186,16 +2779,19 @@ void DatanodeIDProto::Clear() {
     }
   }
   if (cached_has_bits & 0x00000078u) {
-    ::memset(&xferport_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&infosecureport_) -
-        reinterpret_cast<char*>(&xferport_)) + sizeof(infosecureport_));
+    ::memset(&xferport_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&infosecureport_) -
+                                 reinterpret_cast<char*>(&xferport_)) +
+                 sizeof(infosecureport_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* DatanodeIDProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DatanodeIDProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -2204,68 +2800,88 @@ const char* DatanodeIDProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
     switch (tag >> 3) {
       // required string ipAddr = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_ipaddr();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DatanodeIDProto.ipAddr");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DatanodeIDProto.ipAddr");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string hostName = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_hostname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DatanodeIDProto.hostName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DatanodeIDProto.hostName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string datanodeUuid = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_datanodeuuid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DatanodeIDProto.datanodeUuid");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DatanodeIDProto.datanodeUuid");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 xferPort = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_xferport(&has_bits);
           xferport_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 infoPort = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_infoport(&has_bits);
           infoport_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 ipcPort = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_ipcport(&has_bits);
           ipcport_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint32 infoSecurePort = 7 [default = 0];
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           _Internal::set_has_infosecureport(&has_bits);
           infosecureport_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2278,7 +2894,7 @@ const char* DatanodeIDProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -2289,170 +2905,184 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DatanodeIDProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DatanodeIDProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string ipAddr = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_ipaddr().data(), static_cast<int>(this->_internal_ipaddr().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DatanodeIDProto.ipAddr");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_ipaddr(), target);
+        this->_internal_ipaddr().data(),
+        static_cast<int>(this->_internal_ipaddr().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DatanodeIDProto.ipAddr");
+    target =
+        stream->WriteStringMaybeAliased(1, this->_internal_ipaddr(), target);
   }
 
   // required string hostName = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_hostname().data(), static_cast<int>(this->_internal_hostname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DatanodeIDProto.hostName");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_hostname(), target);
+        this->_internal_hostname().data(),
+        static_cast<int>(this->_internal_hostname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DatanodeIDProto.hostName");
+    target =
+        stream->WriteStringMaybeAliased(2, this->_internal_hostname(), target);
   }
 
   // required string datanodeUuid = 3;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_datanodeuuid().data(), static_cast<int>(this->_internal_datanodeuuid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DatanodeIDProto.datanodeUuid");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_datanodeuuid(), target);
+        this->_internal_datanodeuuid().data(),
+        static_cast<int>(this->_internal_datanodeuuid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DatanodeIDProto.datanodeUuid");
+    target = stream->WriteStringMaybeAliased(3, this->_internal_datanodeuuid(),
+                                             target);
   }
 
   // required uint32 xferPort = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(4, this->_internal_xferport(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            4, this->_internal_xferport(), target);
   }
 
   // required uint32 infoPort = 5;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(5, this->_internal_infoport(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            5, this->_internal_infoport(), target);
   }
 
   // required uint32 ipcPort = 6;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(6, this->_internal_ipcport(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            6, this->_internal_ipcport(), target);
   }
 
   // optional uint32 infoSecurePort = 7 [default = 0];
   if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(7, this->_internal_infosecureport(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            7, this->_internal_infosecureport(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DatanodeIDProto)
   return target;
 }
 
 size_t DatanodeIDProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.DatanodeIDProto)
   size_t total_size = 0;
 
   if (_internal_has_ipaddr()) {
     // required string ipAddr = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ipaddr());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ipaddr());
   }
 
   if (_internal_has_hostname()) {
     // required string hostName = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_hostname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_hostname());
   }
 
   if (_internal_has_datanodeuuid()) {
     // required string datanodeUuid = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_datanodeuuid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_datanodeuuid());
   }
 
   if (_internal_has_xferport()) {
     // required uint32 xferPort = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_xferport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_xferport());
   }
 
   if (_internal_has_infoport()) {
     // required uint32 infoPort = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_infoport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_infoport());
   }
 
   if (_internal_has_ipcport()) {
     // required uint32 ipcPort = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_ipcport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_ipcport());
   }
 
   return total_size;
 }
 size_t DatanodeIDProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeIDProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) ==
+      0) {  // All required fields are present.
     // required string ipAddr = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ipaddr());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ipaddr());
 
     // required string hostName = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_hostname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_hostname());
 
     // required string datanodeUuid = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_datanodeuuid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_datanodeuuid());
 
     // required uint32 xferPort = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_xferport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_xferport());
 
     // required uint32 infoPort = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_infoport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_infoport());
 
     // required uint32 ipcPort = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_ipcport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_ipcport());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional uint32 infoSecurePort = 7 [default = 0];
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000040u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_infosecureport());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_infosecureport());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2465,40 +3095,45 @@ size_t DatanodeIDProto::ByteSizeLong() const {
 }
 
 void DatanodeIDProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeIDProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DatanodeIDProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DatanodeIDProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DatanodeIDProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeIDProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeIDProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeIDProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeIDProto)
     MergeFrom(*source);
   }
 }
 
 void DatanodeIDProto::MergeFrom(const DatanodeIDProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeIDProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000007fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      ipaddr_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ipaddr_);
+      ipaddr_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.ipaddr_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      hostname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.hostname_);
+      hostname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.hostname_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      datanodeuuid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.datanodeuuid_);
+      datanodeuuid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.datanodeuuid_);
     }
     if (cached_has_bits & 0x00000008u) {
       xferport_ = from.xferport_;
@@ -2517,14 +3152,14 @@ void DatanodeIDProto::MergeFrom(const DatanodeIDProto& from) {
 }
 
 void DatanodeIDProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeIDProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DatanodeIDProto::CopyFrom(const DatanodeIDProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeIDProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeIDProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2539,12 +3174,18 @@ void DatanodeIDProto::InternalSwap(DatanodeIDProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  ipaddr_.Swap(&other->ipaddr_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  hostname_.Swap(&other->hostname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  datanodeuuid_.Swap(&other->datanodeuuid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  ipaddr_.Swap(
+      &other->ipaddr_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  hostname_.Swap(
+      &other->hostname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  datanodeuuid_.Swap(
+      &other->datanodeuuid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(xferport_, other->xferport_);
   swap(infoport_, other->infoport_);
   swap(ipcport_, other->ipcport_);
@@ -2555,23 +3196,21 @@ void DatanodeIDProto::InternalSwap(DatanodeIDProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void DatanodeInfosProto::InitAsDefaultInstance() {
-}
+void DatanodeInfosProto::InitAsDefaultInstance() {}
 class DatanodeInfosProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DatanodeInfosProto>()._has_bits_);
 };
 
 DatanodeInfosProto::DatanodeInfosProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DatanodeInfosProto)
 }
 DatanodeInfosProto::DatanodeInfosProto(const DatanodeInfosProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       datanodes_(from.datanodes_) {
@@ -2580,7 +3219,8 @@ DatanodeInfosProto::DatanodeInfosProto(const DatanodeInfosProto& from)
 }
 
 void DatanodeInfosProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DatanodeInfosProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DatanodeInfosProto_hdfs_2eproto.base);
 }
 
 DatanodeInfosProto::~DatanodeInfosProto() {
@@ -2588,31 +3228,32 @@ DatanodeInfosProto::~DatanodeInfosProto() {
   SharedDtor();
 }
 
-void DatanodeInfosProto::SharedDtor() {
-}
+void DatanodeInfosProto::SharedDtor() {}
 
 void DatanodeInfosProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const DatanodeInfosProto& DatanodeInfosProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DatanodeInfosProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DatanodeInfosProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DatanodeInfosProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeInfosProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeInfosProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   datanodes_.Clear();
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* DatanodeInfosProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DatanodeInfosProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
@@ -2620,7 +3261,8 @@ const char* DatanodeInfosProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // repeated .Hdfs.Internal.DatanodeInfoProto datanodes = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -2628,7 +3270,8 @@ const char* DatanodeInfosProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2641,7 +3284,7 @@ const char* DatanodeInfosProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   return ptr;
 failure:
@@ -2651,40 +3294,44 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DatanodeInfosProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DatanodeInfosProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.DatanodeInfoProto datanodes = 1;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_datanodes_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_datanodes_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_datanodes(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_datanodes(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DatanodeInfosProto)
   return target;
 }
 
 size_t DatanodeInfosProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeInfosProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeInfosProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.DatanodeInfoProto datanodes = 1;
   total_size += 1UL * this->_internal_datanodes_size();
   for (const auto& msg : this->datanodes_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -2696,47 +3343,50 @@ size_t DatanodeInfosProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DatanodeInfosProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeInfosProto)
+void DatanodeInfosProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeInfosProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DatanodeInfosProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DatanodeInfosProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeInfosProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeInfosProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeInfosProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeInfosProto)
     MergeFrom(*source);
   }
 }
 
 void DatanodeInfosProto::MergeFrom(const DatanodeInfosProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeInfosProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeInfosProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   datanodes_.MergeFrom(from.datanodes_);
 }
 
-void DatanodeInfosProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeInfosProto)
+void DatanodeInfosProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeInfosProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DatanodeInfosProto::CopyFrom(const DatanodeInfosProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeInfosProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeInfosProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool DatanodeInfosProto::IsInitialized() const {
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(datanodes_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(datanodes_))
+    return false;
   return true;
 }
 
@@ -2751,69 +3401,58 @@ void DatanodeInfosProto::InternalSwap(DatanodeInfosProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void DatanodeInfoProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_DatanodeInfoProto_default_instance_._instance.get_mutable()->id_ = const_cast< ::Hdfs::Internal::DatanodeIDProto*>(
+  ::Hdfs::Internal::_DatanodeInfoProto_default_instance_._instance
+      .get_mutable()
+      ->id_ = const_cast<::Hdfs::Internal::DatanodeIDProto*>(
       ::Hdfs::Internal::DatanodeIDProto::internal_default_instance());
 }
 class DatanodeInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DatanodeInfoProto>()._has_bits_);
-  static const ::Hdfs::Internal::DatanodeIDProto& id(const DatanodeInfoProto* msg);
-  static void set_has_id(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_capacity(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_dfsused(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
-  static void set_has_remaining(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
+  static const ::Hdfs::Internal::DatanodeIDProto& id(
+      const DatanodeInfoProto* msg);
+  static void set_has_id(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_capacity(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_dfsused(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
+  static void set_has_remaining(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
   static void set_has_blockpoolused(HasBits* has_bits) {
     (*has_bits)[0] |= 32u;
   }
-  static void set_has_lastupdate(HasBits* has_bits) {
-    (*has_bits)[0] |= 64u;
-  }
+  static void set_has_lastupdate(HasBits* has_bits) { (*has_bits)[0] |= 64u; }
   static void set_has_xceivercount(HasBits* has_bits) {
     (*has_bits)[0] |= 128u;
   }
-  static void set_has_location(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_adminstate(HasBits* has_bits) {
-    (*has_bits)[0] |= 256u;
-  }
+  static void set_has_location(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_adminstate(HasBits* has_bits) { (*has_bits)[0] |= 256u; }
   static void set_has_cachecapacity(HasBits* has_bits) {
     (*has_bits)[0] |= 512u;
   }
-  static void set_has_cacheused(HasBits* has_bits) {
-    (*has_bits)[0] |= 1024u;
-  }
+  static void set_has_cacheused(HasBits* has_bits) { (*has_bits)[0] |= 1024u; }
 };
 
-const ::Hdfs::Internal::DatanodeIDProto&
-DatanodeInfoProto::_Internal::id(const DatanodeInfoProto* msg) {
+const ::Hdfs::Internal::DatanodeIDProto& DatanodeInfoProto::_Internal::id(
+    const DatanodeInfoProto* msg) {
   return *msg->id_;
 }
 DatanodeInfoProto::DatanodeInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DatanodeInfoProto)
 }
 DatanodeInfoProto::DatanodeInfoProto(const DatanodeInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  location_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  location_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_location()) {
-    location_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.location_);
+    location_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.location_);
   }
   if (from._internal_has_id()) {
     id_ = new ::Hdfs::Internal::DatanodeIDProto(*from.id_);
@@ -2821,17 +3460,21 @@ DatanodeInfoProto::DatanodeInfoProto(const DatanodeInfoProto& from)
     id_ = nullptr;
   }
   ::memcpy(&capacity_, &from.capacity_,
-    static_cast<size_t>(reinterpret_cast<char*>(&cacheused_) -
-    reinterpret_cast<char*>(&capacity_)) + sizeof(cacheused_));
+           static_cast<size_t>(reinterpret_cast<char*>(&cacheused_) -
+                               reinterpret_cast<char*>(&capacity_)) +
+               sizeof(cacheused_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.DatanodeInfoProto)
 }
 
 void DatanodeInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DatanodeInfoProto_hdfs_2eproto.base);
-  location_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&id_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&cacheused_) -
-      reinterpret_cast<char*>(&id_)) + sizeof(cacheused_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DatanodeInfoProto_hdfs_2eproto.base);
+  location_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&id_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&cacheused_) -
+                               reinterpret_cast<char*>(&id_)) +
+               sizeof(cacheused_));
 }
 
 DatanodeInfoProto::~DatanodeInfoProto() {
@@ -2840,7 +3483,8 @@ DatanodeInfoProto::~DatanodeInfoProto() {
 }
 
 void DatanodeInfoProto::SharedDtor() {
-  location_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  location_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete id_;
 }
 
@@ -2848,16 +3492,16 @@ void DatanodeInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const DatanodeInfoProto& DatanodeInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DatanodeInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DatanodeInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DatanodeInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DatanodeInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -2870,21 +3514,25 @@ void DatanodeInfoProto::Clear() {
     }
   }
   if (cached_has_bits & 0x000000fcu) {
-    ::memset(&capacity_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&xceivercount_) -
-        reinterpret_cast<char*>(&capacity_)) + sizeof(xceivercount_));
+    ::memset(&capacity_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&xceivercount_) -
+                                 reinterpret_cast<char*>(&capacity_)) +
+                 sizeof(xceivercount_));
   }
   if (cached_has_bits & 0x00000700u) {
-    ::memset(&adminstate_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&cacheused_) -
-        reinterpret_cast<char*>(&adminstate_)) + sizeof(cacheused_));
+    ::memset(&adminstate_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&cacheused_) -
+                                 reinterpret_cast<char*>(&adminstate_)) +
+                 sizeof(cacheused_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* DatanodeInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DatanodeInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -2893,97 +3541,128 @@ const char* DatanodeInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required .Hdfs.Internal.DatanodeIDProto id = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_id(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 capacity = 2 [default = 0];
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_capacity(&has_bits);
           capacity_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 dfsUsed = 3 [default = 0];
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_dfsused(&has_bits);
           dfsused_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 remaining = 4 [default = 0];
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_remaining(&has_bits);
           remaining_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 blockPoolUsed = 5 [default = 0];
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_blockpoolused(&has_bits);
           blockpoolused_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 lastUpdate = 6 [default = 0];
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_lastupdate(&has_bits);
           lastupdate_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint32 xceiverCount = 7 [default = 0];
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           _Internal::set_has_xceivercount(&has_bits);
           xceivercount_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string location = 8;
       case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
           auto str = _internal_mutable_location();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DatanodeInfoProto.location");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DatanodeInfoProto.location");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10 [default = NORMAL];
+      // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10
+      // [default = NORMAL];
       case 10:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::DatanodeInfoProto_AdminState_IsValid(val))) {
-            _internal_set_adminstate(static_cast<::Hdfs::Internal::DatanodeInfoProto_AdminState>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::DatanodeInfoProto_AdminState_IsValid(
+                      val))) {
+            _internal_set_adminstate(
+                static_cast<::Hdfs::Internal::DatanodeInfoProto_AdminState>(
+                    val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(10, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                10, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 cacheCapacity = 11 [default = 0];
       case 11:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 88)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 88)) {
           _Internal::set_has_cachecapacity(&has_bits);
           cachecapacity_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 cacheUsed = 12 [default = 0];
       case 12:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 96)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 96)) {
           _Internal::set_has_cacheused(&has_bits);
           cacheused_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2996,7 +3675,7 @@ const char* DatanodeInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3007,180 +3686,201 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DatanodeInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DatanodeInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.DatanodeIDProto id = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::id(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::id(this), target, stream);
   }
 
   // optional uint64 capacity = 2 [default = 0];
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_capacity(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_capacity(), target);
   }
 
   // optional uint64 dfsUsed = 3 [default = 0];
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_dfsused(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_dfsused(), target);
   }
 
   // optional uint64 remaining = 4 [default = 0];
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(4, this->_internal_remaining(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            4, this->_internal_remaining(), target);
   }
 
   // optional uint64 blockPoolUsed = 5 [default = 0];
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_blockpoolused(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            5, this->_internal_blockpoolused(), target);
   }
 
   // optional uint64 lastUpdate = 6 [default = 0];
   if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(6, this->_internal_lastupdate(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            6, this->_internal_lastupdate(), target);
   }
 
   // optional uint32 xceiverCount = 7 [default = 0];
   if (cached_has_bits & 0x00000080u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(7, this->_internal_xceivercount(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            7, this->_internal_xceivercount(), target);
   }
 
   // optional string location = 8;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_location().data(), static_cast<int>(this->_internal_location().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DatanodeInfoProto.location");
-    target = stream->WriteStringMaybeAliased(
-        8, this->_internal_location(), target);
+        this->_internal_location().data(),
+        static_cast<int>(this->_internal_location().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DatanodeInfoProto.location");
+    target =
+        stream->WriteStringMaybeAliased(8, this->_internal_location(), target);
   }
 
-  // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10 [default = NORMAL];
+  // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10
+  // [default = NORMAL];
   if (cached_has_bits & 0x00000100u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      10, this->_internal_adminstate(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            10, this->_internal_adminstate(), target);
   }
 
   // optional uint64 cacheCapacity = 11 [default = 0];
   if (cached_has_bits & 0x00000200u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(11, this->_internal_cachecapacity(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            11, this->_internal_cachecapacity(), target);
   }
 
   // optional uint64 cacheUsed = 12 [default = 0];
   if (cached_has_bits & 0x00000400u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(12, this->_internal_cacheused(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            12, this->_internal_cacheused(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DatanodeInfoProto)
   return target;
 }
 
 size_t DatanodeInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DatanodeInfoProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.DatanodeIDProto id = 1;
   if (_internal_has_id()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *id_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*id_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional string location = 8;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_location());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_location());
   }
 
   if (cached_has_bits & 0x000000fcu) {
     // optional uint64 capacity = 2 [default = 0];
     if (cached_has_bits & 0x00000004u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_capacity());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_capacity());
     }
 
     // optional uint64 dfsUsed = 3 [default = 0];
     if (cached_has_bits & 0x00000008u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_dfsused());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_dfsused());
     }
 
     // optional uint64 remaining = 4 [default = 0];
     if (cached_has_bits & 0x00000010u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_remaining());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_remaining());
     }
 
     // optional uint64 blockPoolUsed = 5 [default = 0];
     if (cached_has_bits & 0x00000020u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_blockpoolused());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_blockpoolused());
     }
 
     // optional uint64 lastUpdate = 6 [default = 0];
     if (cached_has_bits & 0x00000040u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_lastupdate());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_lastupdate());
     }
 
     // optional uint32 xceiverCount = 7 [default = 0];
     if (cached_has_bits & 0x00000080u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-          this->_internal_xceivercount());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                  this->_internal_xceivercount());
     }
-
   }
   if (cached_has_bits & 0x00000700u) {
-    // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10 [default = NORMAL];
+    // optional .Hdfs.Internal.DatanodeInfoProto.AdminState adminState = 10
+    // [default = NORMAL];
     if (cached_has_bits & 0x00000100u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_adminstate());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                  this->_internal_adminstate());
     }
 
     // optional uint64 cacheCapacity = 11 [default = 0];
     if (cached_has_bits & 0x00000200u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_cachecapacity());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_cachecapacity());
     }
 
     // optional uint64 cacheUsed = 12 [default = 0];
     if (cached_has_bits & 0x00000400u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_cacheused());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_cacheused());
     }
-
   }
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -3191,36 +3891,39 @@ size_t DatanodeInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DatanodeInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeInfoProto)
+void DatanodeInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DatanodeInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DatanodeInfoProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DatanodeInfoProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DatanodeInfoProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DatanodeInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DatanodeInfoProto)
     MergeFrom(*source);
   }
 }
 
 void DatanodeInfoProto::MergeFrom(const DatanodeInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DatanodeInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      location_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.location_);
+      location_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.location_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_id()->::Hdfs::Internal::DatanodeIDProto::MergeFrom(from._internal_id());
+      _internal_mutable_id()->::Hdfs::Internal::DatanodeIDProto::MergeFrom(
+          from._internal_id());
     }
     if (cached_has_bits & 0x00000004u) {
       capacity_ = from.capacity_;
@@ -3257,14 +3960,14 @@ void DatanodeInfoProto::MergeFrom(const DatanodeInfoProto& from) {
 }
 
 void DatanodeInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeInfoProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DatanodeInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DatanodeInfoProto::CopyFrom(const DatanodeInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DatanodeInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3282,8 +3985,10 @@ void DatanodeInfoProto::InternalSwap(DatanodeInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  location_.Swap(&other->location_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  location_.Swap(
+      &other->location_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(id_, other->id_);
   swap(capacity_, other->capacity_);
   swap(dfsused_, other->dfsused_);
@@ -3300,54 +4005,46 @@ void DatanodeInfoProto::InternalSwap(DatanodeInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ContentSummaryProto::InitAsDefaultInstance() {
-}
+void ContentSummaryProto::InitAsDefaultInstance() {}
 class ContentSummaryProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ContentSummaryProto>()._has_bits_);
-  static void set_has_length(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_filecount(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_length(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_filecount(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_directorycount(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static void set_has_quota(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_quota(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_spaceconsumed(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
-  static void set_has_spacequota(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
+  static void set_has_spacequota(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
 };
 
 ContentSummaryProto::ContentSummaryProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ContentSummaryProto)
 }
 ContentSummaryProto::ContentSummaryProto(const ContentSummaryProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&length_, &from.length_,
-    static_cast<size_t>(reinterpret_cast<char*>(&spacequota_) -
-    reinterpret_cast<char*>(&length_)) + sizeof(spacequota_));
+           static_cast<size_t>(reinterpret_cast<char*>(&spacequota_) -
+                               reinterpret_cast<char*>(&length_)) +
+               sizeof(spacequota_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ContentSummaryProto)
 }
 
 void ContentSummaryProto::SharedCtor() {
-  ::memset(&length_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&spacequota_) -
-      reinterpret_cast<char*>(&length_)) + sizeof(spacequota_));
+  ::memset(&length_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&spacequota_) -
+                               reinterpret_cast<char*>(&length_)) +
+               sizeof(spacequota_));
 }
 
 ContentSummaryProto::~ContentSummaryProto() {
@@ -3355,36 +4052,38 @@ ContentSummaryProto::~ContentSummaryProto() {
   SharedDtor();
 }
 
-void ContentSummaryProto::SharedDtor() {
-}
+void ContentSummaryProto::SharedDtor() {}
 
 void ContentSummaryProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ContentSummaryProto& ContentSummaryProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ContentSummaryProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ContentSummaryProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ContentSummaryProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ContentSummaryProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ContentSummaryProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
-    ::memset(&length_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&spacequota_) -
-        reinterpret_cast<char*>(&length_)) + sizeof(spacequota_));
+    ::memset(&length_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&spacequota_) -
+                                 reinterpret_cast<char*>(&length_)) +
+                 sizeof(spacequota_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ContentSummaryProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ContentSummaryProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -3393,51 +4092,63 @@ const char* ContentSummaryProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
     switch (tag >> 3) {
       // required uint64 length = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_length(&has_bits);
           length_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 fileCount = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_filecount(&has_bits);
           filecount_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 directoryCount = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_directorycount(&has_bits);
           directorycount_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 quota = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_quota(&has_bits);
           quota_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 spaceConsumed = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_spaceconsumed(&has_bits);
           spaceconsumed_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 spaceQuota = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_spacequota(&has_bits);
           spacequota_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -3450,7 +4161,7 @@ const char* ContentSummaryProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3461,145 +4172,160 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ContentSummaryProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ContentSummaryProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 length = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_length(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_length(), target);
   }
 
   // required uint64 fileCount = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_filecount(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_filecount(), target);
   }
 
   // required uint64 directoryCount = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_directorycount(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_directorycount(), target);
   }
 
   // required uint64 quota = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(4, this->_internal_quota(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            4, this->_internal_quota(), target);
   }
 
   // required uint64 spaceConsumed = 5;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_spaceconsumed(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            5, this->_internal_spaceconsumed(), target);
   }
 
   // required uint64 spaceQuota = 6;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(6, this->_internal_spacequota(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            6, this->_internal_spacequota(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ContentSummaryProto)
   return target;
 }
 
 size_t ContentSummaryProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ContentSummaryProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ContentSummaryProto)
   size_t total_size = 0;
 
   if (_internal_has_length()) {
     // required uint64 length = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_length());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_length());
   }
 
   if (_internal_has_filecount()) {
     // required uint64 fileCount = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_filecount());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_filecount());
   }
 
   if (_internal_has_directorycount()) {
     // required uint64 directoryCount = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_directorycount());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_directorycount());
   }
 
   if (_internal_has_quota()) {
     // required uint64 quota = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_quota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_quota());
   }
 
   if (_internal_has_spaceconsumed()) {
     // required uint64 spaceConsumed = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_spaceconsumed());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_spaceconsumed());
   }
 
   if (_internal_has_spacequota()) {
     // required uint64 spaceQuota = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_spacequota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_spacequota());
   }
 
   return total_size;
 }
 size_t ContentSummaryProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ContentSummaryProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ContentSummaryProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) ==
+      0) {  // All required fields are present.
     // required uint64 length = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_length());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_length());
 
     // required uint64 fileCount = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_filecount());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_filecount());
 
     // required uint64 directoryCount = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_directorycount());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_directorycount());
 
     // required uint64 quota = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_quota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_quota());
 
     // required uint64 spaceConsumed = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_spaceconsumed());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_spaceconsumed());
 
     // required uint64 spaceQuota = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_spacequota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_spacequota());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -3610,27 +4336,28 @@ size_t ContentSummaryProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ContentSummaryProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ContentSummaryProto)
+void ContentSummaryProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ContentSummaryProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ContentSummaryProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ContentSummaryProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ContentSummaryProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ContentSummaryProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ContentSummaryProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ContentSummaryProto)
     MergeFrom(*source);
   }
 }
 
 void ContentSummaryProto::MergeFrom(const ContentSummaryProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ContentSummaryProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ContentSummaryProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
@@ -3656,15 +4383,16 @@ void ContentSummaryProto::MergeFrom(const ContentSummaryProto& from) {
   }
 }
 
-void ContentSummaryProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ContentSummaryProto)
+void ContentSummaryProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ContentSummaryProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ContentSummaryProto::CopyFrom(const ContentSummaryProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ContentSummaryProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ContentSummaryProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3691,40 +4419,42 @@ void ContentSummaryProto::InternalSwap(ContentSummaryProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void CorruptFileBlocksProto::InitAsDefaultInstance() {
-}
+void CorruptFileBlocksProto::InitAsDefaultInstance() {}
 class CorruptFileBlocksProto::_Internal {
  public:
   using HasBits = decltype(std::declval<CorruptFileBlocksProto>()._has_bits_);
-  static void set_has_cookie(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_cookie(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 CorruptFileBlocksProto::CorruptFileBlocksProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CorruptFileBlocksProto)
 }
-CorruptFileBlocksProto::CorruptFileBlocksProto(const CorruptFileBlocksProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+CorruptFileBlocksProto::CorruptFileBlocksProto(
+    const CorruptFileBlocksProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       files_(from.files_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  cookie_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  cookie_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_cookie()) {
-    cookie_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.cookie_);
+    cookie_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.cookie_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CorruptFileBlocksProto)
 }
 
 void CorruptFileBlocksProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CorruptFileBlocksProto_hdfs_2eproto.base);
-  cookie_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_CorruptFileBlocksProto_hdfs_2eproto.base);
+  cookie_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 CorruptFileBlocksProto::~CorruptFileBlocksProto() {
@@ -3733,23 +4463,24 @@ CorruptFileBlocksProto::~CorruptFileBlocksProto() {
 }
 
 void CorruptFileBlocksProto::SharedDtor() {
-  cookie_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  cookie_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void CorruptFileBlocksProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const CorruptFileBlocksProto& CorruptFileBlocksProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CorruptFileBlocksProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CorruptFileBlocksProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CorruptFileBlocksProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CorruptFileBlocksProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CorruptFileBlocksProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   files_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -3760,8 +4491,10 @@ void CorruptFileBlocksProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* CorruptFileBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CorruptFileBlocksProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -3770,30 +4503,38 @@ const char* CorruptFileBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_N
     switch (tag >> 3) {
       // repeated string files = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
             auto str = _internal_add_files();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            #ifndef NDEBUG
-            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.CorruptFileBlocksProto.files");
-            #endif  // !NDEBUG
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+                str, ptr, ctx);
+#ifndef NDEBUG
+            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+                str, "Hdfs.Internal.CorruptFileBlocksProto.files");
+#endif  // !NDEBUG
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string cookie = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_cookie();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.CorruptFileBlocksProto.cookie");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.CorruptFileBlocksProto.cookie");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -3806,7 +4547,7 @@ const char* CorruptFileBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3817,18 +4558,19 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* CorruptFileBlocksProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CorruptFileBlocksProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated string files = 1;
   for (int i = 0, n = this->_internal_files_size(); i < n; i++) {
     const auto& s = this->_internal_files(i);
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.CorruptFileBlocksProto.files");
+        s.data(), static_cast<int>(s.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.CorruptFileBlocksProto.files");
     target = stream->WriteString(1, s, target);
   }
 
@@ -3836,41 +4578,43 @@ failure:
   // required string cookie = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_cookie().data(), static_cast<int>(this->_internal_cookie().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.CorruptFileBlocksProto.cookie");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_cookie(), target);
+        this->_internal_cookie().data(),
+        static_cast<int>(this->_internal_cookie().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.CorruptFileBlocksProto.cookie");
+    target =
+        stream->WriteStringMaybeAliased(2, this->_internal_cookie(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CorruptFileBlocksProto)
   return target;
 }
 
 size_t CorruptFileBlocksProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CorruptFileBlocksProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CorruptFileBlocksProto)
   size_t total_size = 0;
 
   // required string cookie = 2;
   if (_internal_has_cookie()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_cookie());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_cookie());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated string files = 1;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(files_.size());
+  total_size +=
+      1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(files_.size());
   for (int i = 0, n = files_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      files_.Get(i));
+        files_.Get(i));
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3882,44 +4626,48 @@ size_t CorruptFileBlocksProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CorruptFileBlocksProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CorruptFileBlocksProto)
+void CorruptFileBlocksProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CorruptFileBlocksProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CorruptFileBlocksProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CorruptFileBlocksProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CorruptFileBlocksProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CorruptFileBlocksProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CorruptFileBlocksProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CorruptFileBlocksProto)
     MergeFrom(*source);
   }
 }
 
 void CorruptFileBlocksProto::MergeFrom(const CorruptFileBlocksProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CorruptFileBlocksProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CorruptFileBlocksProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   files_.MergeFrom(from.files_);
   if (from._internal_has_cookie()) {
     _has_bits_[0] |= 0x00000001u;
-    cookie_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.cookie_);
+    cookie_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.cookie_);
   }
 }
 
-void CorruptFileBlocksProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CorruptFileBlocksProto)
+void CorruptFileBlocksProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CorruptFileBlocksProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void CorruptFileBlocksProto::CopyFrom(const CorruptFileBlocksProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CorruptFileBlocksProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CorruptFileBlocksProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3935,34 +4683,32 @@ void CorruptFileBlocksProto::InternalSwap(CorruptFileBlocksProto* other) {
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   files_.InternalSwap(&other->files_);
-  cookie_.Swap(&other->cookie_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  cookie_.Swap(
+      &other->cookie_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata CorruptFileBlocksProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void FsPermissionProto::InitAsDefaultInstance() {
-}
+void FsPermissionProto::InitAsDefaultInstance() {}
 class FsPermissionProto::_Internal {
  public:
   using HasBits = decltype(std::declval<FsPermissionProto>()._has_bits_);
-  static void set_has_perm(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_perm(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 FsPermissionProto::FsPermissionProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.FsPermissionProto)
 }
 FsPermissionProto::FsPermissionProto(const FsPermissionProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -3970,40 +4716,39 @@ FsPermissionProto::FsPermissionProto(const FsPermissionProto& from)
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.FsPermissionProto)
 }
 
-void FsPermissionProto::SharedCtor() {
-  perm_ = 0u;
-}
+void FsPermissionProto::SharedCtor() { perm_ = 0u; }
 
 FsPermissionProto::~FsPermissionProto() {
   // @@protoc_insertion_point(destructor:Hdfs.Internal.FsPermissionProto)
   SharedDtor();
 }
 
-void FsPermissionProto::SharedDtor() {
-}
+void FsPermissionProto::SharedDtor() {}
 
 void FsPermissionProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const FsPermissionProto& FsPermissionProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_FsPermissionProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_FsPermissionProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void FsPermissionProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FsPermissionProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FsPermissionProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   perm_ = 0u;
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* FsPermissionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* FsPermissionProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4012,11 +4757,13 @@ const char* FsPermissionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required uint32 perm = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_perm(&has_bits);
           perm_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4029,7 +4776,7 @@ const char* FsPermissionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -4040,39 +4787,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* FsPermissionProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.FsPermissionProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 perm = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_perm(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_perm(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.FsPermissionProto)
   return target;
 }
 
 size_t FsPermissionProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FsPermissionProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FsPermissionProto)
   size_t total_size = 0;
 
   // required uint32 perm = 1;
   if (_internal_has_perm()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_perm());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_perm());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -4083,27 +4834,27 @@ size_t FsPermissionProto::ByteSizeLong() const {
   return total_size;
 }
 
-void FsPermissionProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FsPermissionProto)
+void FsPermissionProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FsPermissionProto)
   GOOGLE_DCHECK_NE(&from, this);
   const FsPermissionProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<FsPermissionProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<FsPermissionProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FsPermissionProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FsPermissionProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FsPermissionProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FsPermissionProto)
     MergeFrom(*source);
   }
 }
 
 void FsPermissionProto::MergeFrom(const FsPermissionProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FsPermissionProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FsPermissionProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_perm()) {
     _internal_set_perm(from._internal_perm());
@@ -4111,14 +4862,14 @@ void FsPermissionProto::MergeFrom(const FsPermissionProto& from) {
 }
 
 void FsPermissionProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FsPermissionProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FsPermissionProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void FsPermissionProto::CopyFrom(const FsPermissionProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FsPermissionProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FsPermissionProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4140,23 +4891,21 @@ void FsPermissionProto::InternalSwap(FsPermissionProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void StorageUuidsProto::InitAsDefaultInstance() {
-}
+void StorageUuidsProto::InitAsDefaultInstance() {}
 class StorageUuidsProto::_Internal {
  public:
   using HasBits = decltype(std::declval<StorageUuidsProto>()._has_bits_);
 };
 
 StorageUuidsProto::StorageUuidsProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.StorageUuidsProto)
 }
 StorageUuidsProto::StorageUuidsProto(const StorageUuidsProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       storageuuids_(from.storageuuids_) {
@@ -4165,7 +4914,8 @@ StorageUuidsProto::StorageUuidsProto(const StorageUuidsProto& from)
 }
 
 void StorageUuidsProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_StorageUuidsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_StorageUuidsProto_hdfs_2eproto.base);
 }
 
 StorageUuidsProto::~StorageUuidsProto() {
@@ -4173,31 +4923,32 @@ StorageUuidsProto::~StorageUuidsProto() {
   SharedDtor();
 }
 
-void StorageUuidsProto::SharedDtor() {
-}
+void StorageUuidsProto::SharedDtor() {}
 
 void StorageUuidsProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const StorageUuidsProto& StorageUuidsProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_StorageUuidsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_StorageUuidsProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void StorageUuidsProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.StorageUuidsProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.StorageUuidsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   storageuuids_.Clear();
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* StorageUuidsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* StorageUuidsProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
@@ -4205,19 +4956,23 @@ const char* StorageUuidsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // repeated string storageUuids = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
             auto str = _internal_add_storageuuids();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            #ifndef NDEBUG
-            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.StorageUuidsProto.storageUuids");
-            #endif  // !NDEBUG
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+                str, ptr, ctx);
+#ifndef NDEBUG
+            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+                str, "Hdfs.Internal.StorageUuidsProto.storageUuids");
+#endif  // !NDEBUG
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4230,7 +4985,7 @@ const char* StorageUuidsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   return ptr;
 failure:
@@ -4240,43 +4995,45 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* StorageUuidsProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.StorageUuidsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated string storageUuids = 1;
   for (int i = 0, n = this->_internal_storageuuids_size(); i < n; i++) {
     const auto& s = this->_internal_storageuuids(i);
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.StorageUuidsProto.storageUuids");
+        s.data(), static_cast<int>(s.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.StorageUuidsProto.storageUuids");
     target = stream->WriteString(1, s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.StorageUuidsProto)
   return target;
 }
 
 size_t StorageUuidsProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.StorageUuidsProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.StorageUuidsProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated string storageUuids = 1;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageuuids_.size());
+  total_size +=
+      1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageuuids_.size());
   for (int i = 0, n = storageuuids_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      storageuuids_.Get(i));
+        storageuuids_.Get(i));
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4288,48 +5045,46 @@ size_t StorageUuidsProto::ByteSizeLong() const {
   return total_size;
 }
 
-void StorageUuidsProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.StorageUuidsProto)
+void StorageUuidsProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.StorageUuidsProto)
   GOOGLE_DCHECK_NE(&from, this);
   const StorageUuidsProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StorageUuidsProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StorageUuidsProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.StorageUuidsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.StorageUuidsProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.StorageUuidsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.StorageUuidsProto)
     MergeFrom(*source);
   }
 }
 
 void StorageUuidsProto::MergeFrom(const StorageUuidsProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.StorageUuidsProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.StorageUuidsProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   storageuuids_.MergeFrom(from.storageuuids_);
 }
 
 void StorageUuidsProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.StorageUuidsProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.StorageUuidsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void StorageUuidsProto::CopyFrom(const StorageUuidsProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.StorageUuidsProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.StorageUuidsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool StorageUuidsProto::IsInitialized() const {
-  return true;
-}
+bool StorageUuidsProto::IsInitialized() const { return true; }
 
 void StorageUuidsProto::InternalSwap(StorageUuidsProto* other) {
   using std::swap;
@@ -4342,40 +5097,37 @@ void StorageUuidsProto::InternalSwap(StorageUuidsProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void LocatedBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_LocatedBlockProto_default_instance_._instance.get_mutable()->b_ = const_cast< ::Hdfs::Internal::ExtendedBlockProto*>(
+  ::Hdfs::Internal::_LocatedBlockProto_default_instance_._instance
+      .get_mutable()
+      ->b_ = const_cast<::Hdfs::Internal::ExtendedBlockProto*>(
       ::Hdfs::Internal::ExtendedBlockProto::internal_default_instance());
-  ::Hdfs::Internal::_LocatedBlockProto_default_instance_._instance.get_mutable()->blocktoken_ = const_cast< ::Hdfs::Internal::TokenProto*>(
+  ::Hdfs::Internal::_LocatedBlockProto_default_instance_._instance
+      .get_mutable()
+      ->blocktoken_ = const_cast<::Hdfs::Internal::TokenProto*>(
       ::Hdfs::Internal::TokenProto::internal_default_instance());
 }
 class LocatedBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<LocatedBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::ExtendedBlockProto& b(const LocatedBlockProto* msg);
-  static void set_has_b(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_offset(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_corrupt(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
-  static const ::Hdfs::Internal::TokenProto& blocktoken(const LocatedBlockProto* msg);
-  static void set_has_blocktoken(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static const ::Hdfs::Internal::ExtendedBlockProto& b(
+      const LocatedBlockProto* msg);
+  static void set_has_b(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_offset(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_corrupt(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
+  static const ::Hdfs::Internal::TokenProto& blocktoken(
+      const LocatedBlockProto* msg);
+  static void set_has_blocktoken(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
-const ::Hdfs::Internal::ExtendedBlockProto&
-LocatedBlockProto::_Internal::b(const LocatedBlockProto* msg) {
+const ::Hdfs::Internal::ExtendedBlockProto& LocatedBlockProto::_Internal::b(
+    const LocatedBlockProto* msg) {
   return *msg->b_;
 }
-const ::Hdfs::Internal::TokenProto&
-LocatedBlockProto::_Internal::blocktoken(const LocatedBlockProto* msg) {
+const ::Hdfs::Internal::TokenProto& LocatedBlockProto::_Internal::blocktoken(
+    const LocatedBlockProto* msg) {
   return *msg->blocktoken_;
 }
 void LocatedBlockProto::clear_blocktoken() {
@@ -4383,12 +5135,12 @@ void LocatedBlockProto::clear_blocktoken() {
   _has_bits_[0] &= ~0x00000002u;
 }
 LocatedBlockProto::LocatedBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.LocatedBlockProto)
 }
 LocatedBlockProto::LocatedBlockProto(const LocatedBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       locs_(from.locs_),
@@ -4407,16 +5159,19 @@ LocatedBlockProto::LocatedBlockProto(const LocatedBlockProto& from)
     blocktoken_ = nullptr;
   }
   ::memcpy(&offset_, &from.offset_,
-    static_cast<size_t>(reinterpret_cast<char*>(&corrupt_) -
-    reinterpret_cast<char*>(&offset_)) + sizeof(corrupt_));
+           static_cast<size_t>(reinterpret_cast<char*>(&corrupt_) -
+                               reinterpret_cast<char*>(&offset_)) +
+               sizeof(corrupt_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.LocatedBlockProto)
 }
 
 void LocatedBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LocatedBlockProto_hdfs_2eproto.base);
-  ::memset(&b_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&corrupt_) -
-      reinterpret_cast<char*>(&b_)) + sizeof(corrupt_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_LocatedBlockProto_hdfs_2eproto.base);
+  ::memset(&b_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&corrupt_) -
+                               reinterpret_cast<char*>(&b_)) +
+               sizeof(corrupt_));
 }
 
 LocatedBlockProto::~LocatedBlockProto() {
@@ -4433,16 +5188,16 @@ void LocatedBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const LocatedBlockProto& LocatedBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LocatedBlockProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_LocatedBlockProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void LocatedBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.LocatedBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   locs_.Clear();
   iscached_.Clear();
@@ -4460,16 +5215,19 @@ void LocatedBlockProto::Clear() {
     }
   }
   if (cached_has_bits & 0x0000000cu) {
-    ::memset(&offset_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&corrupt_) -
-        reinterpret_cast<char*>(&offset_)) + sizeof(corrupt_));
+    ::memset(&offset_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&corrupt_) -
+                                 reinterpret_cast<char*>(&offset_)) +
+                 sizeof(corrupt_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* LocatedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* LocatedBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4478,22 +5236,27 @@ const char* LocatedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required .Hdfs.Internal.ExtendedBlockProto b = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_b(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 offset = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_offset(&has_bits);
           offset_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.DatanodeInfoProto locs = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -4501,68 +5264,90 @@ const char* LocatedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool corrupt = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_corrupt(&has_bits);
           corrupt_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.TokenProto blockToken = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           ptr = ctx->ParseMessage(_internal_mutable_blocktoken(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated bool isCached = 6 [packed = true];
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedBoolParser(_internal_mutable_iscached(), ptr, ctx);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedBoolParser(
+              _internal_mutable_iscached(), ptr, ctx);
           CHK_(ptr);
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48) {
-          _internal_add_iscached(::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
+          _internal_add_iscached(
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr));
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.StorageTypeProto storageTypes = 7;
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           ptr -= 1;
           do {
             ptr += 1;
-            ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+            ::PROTOBUF_NAMESPACE_ID::uint64 val =
+                ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
             CHK_(ptr);
-            if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::StorageTypeProto_IsValid(val))) {
-              _internal_add_storagetypes(static_cast<::Hdfs::Internal::StorageTypeProto>(val));
+            if (PROTOBUF_PREDICT_TRUE(
+                    ::Hdfs::Internal::StorageTypeProto_IsValid(val))) {
+              _internal_add_storagetypes(
+                  static_cast<::Hdfs::Internal::StorageTypeProto>(val));
             } else {
-              ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(7, val, mutable_unknown_fields());
+              ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                  7, val, mutable_unknown_fields());
             }
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<56>(ptr));
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 58) {
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedEnumParser(_internal_mutable_storagetypes(), ptr, ctx, ::Hdfs::Internal::StorageTypeProto_IsValid, &_internal_metadata_, 7);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedEnumParser(
+              _internal_mutable_storagetypes(), ptr, ctx,
+              ::Hdfs::Internal::StorageTypeProto_IsValid, &_internal_metadata_,
+              7);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated string storageIDs = 8;
       case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 66)) {
           ptr -= 1;
           do {
             ptr += 1;
             auto str = _internal_add_storageids();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            #ifndef NDEBUG
-            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.LocatedBlockProto.storageIDs");
-            #endif  // !NDEBUG
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+                str, ptr, ctx);
+#ifndef NDEBUG
+            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+                str, "Hdfs.Internal.LocatedBlockProto.storageIDs");
+#endif  // !NDEBUG
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<66>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4575,7 +5360,7 @@ const char* LocatedBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -4586,46 +5371,53 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* LocatedBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.LocatedBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ExtendedBlockProto b = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::b(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::b(this), target, stream);
   }
 
   // required uint64 offset = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_offset(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_offset(), target);
   }
 
   // repeated .Hdfs.Internal.DatanodeInfoProto locs = 3;
   for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_locs_size()); i < n; i++) {
+                    n = static_cast<unsigned int>(this->_internal_locs_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(3, this->_internal_locs(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, this->_internal_locs(i), target, stream);
   }
 
   // required bool corrupt = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(4, this->_internal_corrupt(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            4, this->_internal_corrupt(), target);
   }
 
   // required .Hdfs.Internal.TokenProto blockToken = 5;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        5, _Internal::blocktoken(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            5, _Internal::blocktoken(this), target, stream);
   }
 
   // repeated bool isCached = 6 [packed = true];
@@ -4636,51 +5428,52 @@ failure:
   // repeated .Hdfs.Internal.StorageTypeProto storageTypes = 7;
   for (int i = 0, n = this->_internal_storagetypes_size(); i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-        7, this->_internal_storagetypes(i), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            7, this->_internal_storagetypes(i), target);
   }
 
   // repeated string storageIDs = 8;
   for (int i = 0, n = this->_internal_storageids_size(); i < n; i++) {
     const auto& s = this->_internal_storageids(i);
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.LocatedBlockProto.storageIDs");
+        s.data(), static_cast<int>(s.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.LocatedBlockProto.storageIDs");
     target = stream->WriteString(8, s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.LocatedBlockProto)
   return target;
 }
 
 size_t LocatedBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.LocatedBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_b()) {
     // required .Hdfs.Internal.ExtendedBlockProto b = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *b_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*b_);
   }
 
   if (_internal_has_blocktoken()) {
     // required .Hdfs.Internal.TokenProto blockToken = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *blocktoken_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *blocktoken_);
   }
 
   if (_internal_has_offset()) {
     // required uint64 offset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_offset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_offset());
   }
 
   if (_internal_has_corrupt()) {
@@ -4691,24 +5484,24 @@ size_t LocatedBlockProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t LocatedBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.LocatedBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.ExtendedBlockProto b = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *b_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*b_);
 
     // required .Hdfs.Internal.TokenProto blockToken = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *blocktoken_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *blocktoken_);
 
     // required uint64 offset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_offset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_offset());
 
     // required bool corrupt = 4;
     total_size += 1 + 1;
@@ -4718,46 +5511,49 @@ size_t LocatedBlockProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.DatanodeInfoProto locs = 3;
   total_size += 1UL * this->_internal_locs_size();
   for (const auto& msg : this->locs_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   // repeated bool isCached = 6 [packed = true];
   {
-    unsigned int count = static_cast<unsigned int>(this->_internal_iscached_size());
+    unsigned int count =
+        static_cast<unsigned int>(this->_internal_iscached_size());
     size_t data_size = 1UL * count;
     if (data_size > 0) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
-            static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+                  static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
     }
-    int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
-    _iscached_cached_byte_size_.store(cached_size,
-                                    std::memory_order_relaxed);
+    int cached_size =
+        ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
+    _iscached_cached_byte_size_.store(cached_size, std::memory_order_relaxed);
     total_size += data_size;
   }
 
   // repeated .Hdfs.Internal.StorageTypeProto storageTypes = 7;
   {
     size_t data_size = 0;
-    unsigned int count = static_cast<unsigned int>(this->_internal_storagetypes_size());for (unsigned int i = 0; i < count; i++) {
+    unsigned int count =
+        static_cast<unsigned int>(this->_internal_storagetypes_size());
+    for (unsigned int i = 0; i < count; i++) {
       data_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
-        this->_internal_storagetypes(static_cast<int>(i)));
+          this->_internal_storagetypes(static_cast<int>(i)));
     }
     total_size += (1UL * count) + data_size;
   }
 
   // repeated string storageIDs = 8;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageids_.size());
+  total_size +=
+      1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageids_.size());
   for (int i = 0, n = storageids_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      storageids_.Get(i));
+        storageids_.Get(i));
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -4769,27 +5565,27 @@ size_t LocatedBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void LocatedBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.LocatedBlockProto)
+void LocatedBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.LocatedBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const LocatedBlockProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LocatedBlockProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LocatedBlockProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.LocatedBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.LocatedBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.LocatedBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.LocatedBlockProto)
     MergeFrom(*source);
   }
 }
 
 void LocatedBlockProto::MergeFrom(const LocatedBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.LocatedBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   locs_.MergeFrom(from.locs_);
   iscached_.MergeFrom(from.iscached_);
@@ -4798,10 +5594,12 @@ void LocatedBlockProto::MergeFrom(const LocatedBlockProto& from) {
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_b()->::Hdfs::Internal::ExtendedBlockProto::MergeFrom(from._internal_b());
+      _internal_mutable_b()->::Hdfs::Internal::ExtendedBlockProto::MergeFrom(
+          from._internal_b());
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_blocktoken()->::Hdfs::Internal::TokenProto::MergeFrom(from._internal_blocktoken());
+      _internal_mutable_blocktoken()->::Hdfs::Internal::TokenProto::MergeFrom(
+          from._internal_blocktoken());
     }
     if (cached_has_bits & 0x00000004u) {
       offset_ = from.offset_;
@@ -4814,14 +5612,14 @@ void LocatedBlockProto::MergeFrom(const LocatedBlockProto& from) {
 }
 
 void LocatedBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.LocatedBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void LocatedBlockProto::CopyFrom(const LocatedBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.LocatedBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.LocatedBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4829,7 +5627,8 @@ void LocatedBlockProto::CopyFrom(const LocatedBlockProto& from) {
 
 bool LocatedBlockProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x0000000f) != 0x0000000f) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(locs_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(locs_))
+    return false;
   if (_internal_has_b()) {
     if (!b_->IsInitialized()) return false;
   }
@@ -4857,75 +5656,83 @@ void LocatedBlockProto::InternalSwap(LocatedBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void DataEncryptionKeyProto::InitAsDefaultInstance() {
-}
+void DataEncryptionKeyProto::InitAsDefaultInstance() {}
 class DataEncryptionKeyProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DataEncryptionKeyProto>()._has_bits_);
-  static void set_has_keyid(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
-  static void set_has_blockpoolid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_nonce(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_encryptionkey(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_expirydate(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
+  static void set_has_keyid(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
+  static void set_has_blockpoolid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_nonce(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_encryptionkey(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_expirydate(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
   static void set_has_encryptionalgorithm(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
 };
 
 DataEncryptionKeyProto::DataEncryptionKeyProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DataEncryptionKeyProto)
 }
-DataEncryptionKeyProto::DataEncryptionKeyProto(const DataEncryptionKeyProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+DataEncryptionKeyProto::DataEncryptionKeyProto(
+    const DataEncryptionKeyProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_blockpoolid()) {
-    blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+    blockpoolid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.blockpoolid_);
   }
-  nonce_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  nonce_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_nonce()) {
-    nonce_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.nonce_);
+    nonce_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.nonce_);
   }
-  encryptionkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_encryptionkey()) {
-    encryptionkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.encryptionkey_);
+    encryptionkey_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.encryptionkey_);
   }
-  encryptionalgorithm_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionalgorithm_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_encryptionalgorithm()) {
-    encryptionalgorithm_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.encryptionalgorithm_);
+    encryptionalgorithm_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.encryptionalgorithm_);
   }
   ::memcpy(&expirydate_, &from.expirydate_,
-    static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
-    reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+           static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                               reinterpret_cast<char*>(&expirydate_)) +
+               sizeof(keyid_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.DataEncryptionKeyProto)
 }
 
 void DataEncryptionKeyProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DataEncryptionKeyProto_hdfs_2eproto.base);
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  nonce_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  encryptionkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  encryptionalgorithm_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&expirydate_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&keyid_) -
-      reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DataEncryptionKeyProto_hdfs_2eproto.base);
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  nonce_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionalgorithm_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&expirydate_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                               reinterpret_cast<char*>(&expirydate_)) +
+               sizeof(keyid_));
 }
 
 DataEncryptionKeyProto::~DataEncryptionKeyProto() {
@@ -4934,26 +5741,30 @@ DataEncryptionKeyProto::~DataEncryptionKeyProto() {
 }
 
 void DataEncryptionKeyProto::SharedDtor() {
-  blockpoolid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  nonce_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  encryptionkey_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  encryptionalgorithm_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  nonce_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionkey_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  encryptionalgorithm_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void DataEncryptionKeyProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const DataEncryptionKeyProto& DataEncryptionKeyProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DataEncryptionKeyProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DataEncryptionKeyProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DataEncryptionKeyProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DataEncryptionKeyProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DataEncryptionKeyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
@@ -4971,16 +5782,19 @@ void DataEncryptionKeyProto::Clear() {
     }
   }
   if (cached_has_bits & 0x00000030u) {
-    ::memset(&expirydate_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&keyid_) -
-        reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+    ::memset(&expirydate_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                                 reinterpret_cast<char*>(&expirydate_)) +
+                 sizeof(keyid_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* DataEncryptionKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DataEncryptionKeyProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4989,57 +5803,75 @@ const char* DataEncryptionKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_N
     switch (tag >> 3) {
       // required uint32 keyId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_keyid(&has_bits);
           keyid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string blockPoolId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_blockpoolid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DataEncryptionKeyProto.blockPoolId");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DataEncryptionKeyProto.blockPoolId");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes nonce = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_nonce();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes encryptionKey = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_encryptionkey();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 expiryDate = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_expirydate(&has_bits);
           expirydate_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string encryptionAlgorithm = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           auto str = _internal_mutable_encryptionalgorithm();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DataEncryptionKeyProto.encryptionAlgorithm");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DataEncryptionKeyProto.encryptionAlgorithm");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5052,7 +5884,7 @@ const char* DataEncryptionKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5063,148 +5895,156 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DataEncryptionKeyProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DataEncryptionKeyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 keyId = 1;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_keyid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_keyid(), target);
   }
 
   // required string blockPoolId = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_blockpoolid().data(), static_cast<int>(this->_internal_blockpoolid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DataEncryptionKeyProto.blockPoolId");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_blockpoolid(), target);
+        this->_internal_blockpoolid().data(),
+        static_cast<int>(this->_internal_blockpoolid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DataEncryptionKeyProto.blockPoolId");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_blockpoolid(),
+                                             target);
   }
 
   // required bytes nonce = 3;
   if (cached_has_bits & 0x00000002u) {
-    target = stream->WriteBytesMaybeAliased(
-        3, this->_internal_nonce(), target);
+    target = stream->WriteBytesMaybeAliased(3, this->_internal_nonce(), target);
   }
 
   // required bytes encryptionKey = 4;
   if (cached_has_bits & 0x00000004u) {
-    target = stream->WriteBytesMaybeAliased(
-        4, this->_internal_encryptionkey(), target);
+    target = stream->WriteBytesMaybeAliased(4, this->_internal_encryptionkey(),
+                                            target);
   }
 
   // required uint64 expiryDate = 5;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(5, this->_internal_expirydate(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            5, this->_internal_expirydate(), target);
   }
 
   // optional string encryptionAlgorithm = 6;
   if (cached_has_bits & 0x00000008u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_encryptionalgorithm().data(), static_cast<int>(this->_internal_encryptionalgorithm().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DataEncryptionKeyProto.encryptionAlgorithm");
+        this->_internal_encryptionalgorithm().data(),
+        static_cast<int>(this->_internal_encryptionalgorithm().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DataEncryptionKeyProto.encryptionAlgorithm");
     target = stream->WriteStringMaybeAliased(
         6, this->_internal_encryptionalgorithm(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DataEncryptionKeyProto)
   return target;
 }
 
 size_t DataEncryptionKeyProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.DataEncryptionKeyProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.DataEncryptionKeyProto)
   size_t total_size = 0;
 
   if (_internal_has_blockpoolid()) {
     // required string blockPoolId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
   }
 
   if (_internal_has_nonce()) {
     // required bytes nonce = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_nonce());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_nonce());
   }
 
   if (_internal_has_encryptionkey()) {
     // required bytes encryptionKey = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_encryptionkey());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_encryptionkey());
   }
 
   if (_internal_has_expirydate()) {
     // required uint64 expiryDate = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_expirydate());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_expirydate());
   }
 
   if (_internal_has_keyid()) {
     // required uint32 keyId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_keyid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_keyid());
   }
 
   return total_size;
 }
 size_t DataEncryptionKeyProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DataEncryptionKeyProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DataEncryptionKeyProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000037) ^ 0x00000037) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000037) ^ 0x00000037) ==
+      0) {  // All required fields are present.
     // required string blockPoolId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
 
     // required bytes nonce = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_nonce());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_nonce());
 
     // required bytes encryptionKey = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_encryptionkey());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_encryptionkey());
 
     // required uint64 expiryDate = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_expirydate());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_expirydate());
 
     // required uint32 keyId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_keyid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_keyid());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional string encryptionAlgorithm = 6;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_encryptionalgorithm());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_encryptionalgorithm());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5216,45 +6056,54 @@ size_t DataEncryptionKeyProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DataEncryptionKeyProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DataEncryptionKeyProto)
+void DataEncryptionKeyProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DataEncryptionKeyProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DataEncryptionKeyProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DataEncryptionKeyProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DataEncryptionKeyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DataEncryptionKeyProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DataEncryptionKeyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DataEncryptionKeyProto)
     MergeFrom(*source);
   }
 }
 
 void DataEncryptionKeyProto::MergeFrom(const DataEncryptionKeyProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DataEncryptionKeyProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DataEncryptionKeyProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+      blockpoolid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.blockpoolid_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      nonce_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.nonce_);
+      nonce_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.nonce_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      encryptionkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.encryptionkey_);
+      encryptionkey_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.encryptionkey_);
     }
     if (cached_has_bits & 0x00000008u) {
       _has_bits_[0] |= 0x00000008u;
-      encryptionalgorithm_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.encryptionalgorithm_);
+      encryptionalgorithm_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.encryptionalgorithm_);
     }
     if (cached_has_bits & 0x00000010u) {
       expirydate_ = from.expirydate_;
@@ -5266,15 +6115,16 @@ void DataEncryptionKeyProto::MergeFrom(const DataEncryptionKeyProto& from) {
   }
 }
 
-void DataEncryptionKeyProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DataEncryptionKeyProto)
+void DataEncryptionKeyProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DataEncryptionKeyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DataEncryptionKeyProto::CopyFrom(const DataEncryptionKeyProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DataEncryptionKeyProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DataEncryptionKeyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5289,14 +6139,21 @@ void DataEncryptionKeyProto::InternalSwap(DataEncryptionKeyProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  blockpoolid_.Swap(&other->blockpoolid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  nonce_.Swap(&other->nonce_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  encryptionkey_.Swap(&other->encryptionkey_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  encryptionalgorithm_.Swap(&other->encryptionalgorithm_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  blockpoolid_.Swap(
+      &other->blockpoolid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  nonce_.Swap(&other->nonce_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  encryptionkey_.Swap(
+      &other->encryptionkey_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  encryptionalgorithm_.Swap(
+      &other->encryptionalgorithm_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(expirydate_, other->expirydate_);
   swap(keyid_, other->keyid_);
 }
@@ -5305,72 +6162,82 @@ void DataEncryptionKeyProto::InternalSwap(DataEncryptionKeyProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void FileEncryptionInfoProto::InitAsDefaultInstance() {
-}
+void FileEncryptionInfoProto::InitAsDefaultInstance() {}
 class FileEncryptionInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<FileEncryptionInfoProto>()._has_bits_);
-  static void set_has_suite(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
+  static void set_has_suite(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
   static void set_has_cryptoprotocolversion(HasBits* has_bits) {
     (*has_bits)[0] |= 32u;
   }
-  static void set_has_key(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_iv(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_keyname(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static void set_has_key(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_iv(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_keyname(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
   static void set_has_ezkeyversionname(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
 };
 
 FileEncryptionInfoProto::FileEncryptionInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.FileEncryptionInfoProto)
 }
-FileEncryptionInfoProto::FileEncryptionInfoProto(const FileEncryptionInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+FileEncryptionInfoProto::FileEncryptionInfoProto(
+    const FileEncryptionInfoProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  key_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  key_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_key()) {
-    key_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.key_);
+    key_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.key_);
   }
-  iv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_iv()) {
-    iv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iv_);
+    iv_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.iv_);
   }
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_keyname()) {
-    keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+    keyname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.keyname_);
   }
-  ezkeyversionname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_ezkeyversionname()) {
-    ezkeyversionname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ezkeyversionname_);
+    ezkeyversionname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.ezkeyversionname_);
   }
-  ::memcpy(&suite_, &from.suite_,
-    static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
-    reinterpret_cast<char*>(&suite_)) + sizeof(cryptoprotocolversion_));
+  ::memcpy(
+      &suite_, &from.suite_,
+      static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
+                          reinterpret_cast<char*>(&suite_)) +
+          sizeof(cryptoprotocolversion_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.FileEncryptionInfoProto)
 }
 
 void FileEncryptionInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_FileEncryptionInfoProto_hdfs_2eproto.base);
-  key_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ezkeyversionname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_FileEncryptionInfoProto_hdfs_2eproto.base);
+  key_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   suite_ = 1;
   cryptoprotocolversion_ = 1;
 }
@@ -5381,26 +6248,30 @@ FileEncryptionInfoProto::~FileEncryptionInfoProto() {
 }
 
 void FileEncryptionInfoProto::SharedDtor() {
-  key_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iv_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  keyname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ezkeyversionname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  key_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void FileEncryptionInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const FileEncryptionInfoProto& FileEncryptionInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_FileEncryptionInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_FileEncryptionInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void FileEncryptionInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FileEncryptionInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FileEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
@@ -5423,8 +6294,10 @@ void FileEncryptionInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* FileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* FileEncryptionInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5433,65 +6306,92 @@ const char* FileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
     switch (tag >> 3) {
       // required .Hdfs.Internal.CipherSuiteProto suite = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
-            _internal_set_suite(static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
+            _internal_set_suite(
+                static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
+      // required .Hdfs.Internal.CryptoProtocolVersionProto
+      // cryptoProtocolVersion = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
-            _internal_set_cryptoprotocolversion(static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
+            _internal_set_cryptoprotocolversion(
+                static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(2, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                2, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes key = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_key();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes iv = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_iv();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string keyName = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_keyname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.FileEncryptionInfoProto.keyName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.FileEncryptionInfoProto.keyName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string ezKeyVersionName = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           auto str = _internal_mutable_ezkeyversionname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.FileEncryptionInfoProto.ezKeyVersionName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.FileEncryptionInfoProto.ezKeyVersionName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5504,7 +6404,7 @@ const char* FileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5515,151 +6415,163 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* FileEncryptionInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.FileEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.CipherSuiteProto suite = 1;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_suite(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_suite(), target);
   }
 
-  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
+  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion =
+  // 2;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      2, this->_internal_cryptoprotocolversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            2, this->_internal_cryptoprotocolversion(), target);
   }
 
   // required bytes key = 3;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        3, this->_internal_key(), target);
+    target = stream->WriteBytesMaybeAliased(3, this->_internal_key(), target);
   }
 
   // required bytes iv = 4;
   if (cached_has_bits & 0x00000002u) {
-    target = stream->WriteBytesMaybeAliased(
-        4, this->_internal_iv(), target);
+    target = stream->WriteBytesMaybeAliased(4, this->_internal_iv(), target);
   }
 
   // required string keyName = 5;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_keyname().data(), static_cast<int>(this->_internal_keyname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.FileEncryptionInfoProto.keyName");
-    target = stream->WriteStringMaybeAliased(
-        5, this->_internal_keyname(), target);
+        this->_internal_keyname().data(),
+        static_cast<int>(this->_internal_keyname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.FileEncryptionInfoProto.keyName");
+    target =
+        stream->WriteStringMaybeAliased(5, this->_internal_keyname(), target);
   }
 
   // required string ezKeyVersionName = 6;
   if (cached_has_bits & 0x00000008u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_ezkeyversionname().data(), static_cast<int>(this->_internal_ezkeyversionname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.FileEncryptionInfoProto.ezKeyVersionName");
+        this->_internal_ezkeyversionname().data(),
+        static_cast<int>(this->_internal_ezkeyversionname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.FileEncryptionInfoProto.ezKeyVersionName");
     target = stream->WriteStringMaybeAliased(
         6, this->_internal_ezkeyversionname(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.FileEncryptionInfoProto)
   return target;
 }
 
 size_t FileEncryptionInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.FileEncryptionInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.FileEncryptionInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_key()) {
     // required bytes key = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_key());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_key());
   }
 
   if (_internal_has_iv()) {
     // required bytes iv = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_iv());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_iv());
   }
 
   if (_internal_has_keyname()) {
     // required string keyName = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
   }
 
   if (_internal_has_ezkeyversionname()) {
     // required string ezKeyVersionName = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ezkeyversionname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ezkeyversionname());
   }
 
   if (_internal_has_suite()) {
     // required .Hdfs.Internal.CipherSuiteProto suite = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
   }
 
   if (_internal_has_cryptoprotocolversion()) {
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 2;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
   }
 
   return total_size;
 }
 size_t FileEncryptionInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FileEncryptionInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FileEncryptionInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) ==
+      0) {  // All required fields are present.
     // required bytes key = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_key());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_key());
 
     // required bytes iv = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_iv());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_iv());
 
     // required string keyName = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
 
     // required string ezKeyVersionName = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ezkeyversionname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ezkeyversionname());
 
     // required .Hdfs.Internal.CipherSuiteProto suite = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
 
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 2;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -5670,45 +6582,54 @@ size_t FileEncryptionInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void FileEncryptionInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FileEncryptionInfoProto)
+void FileEncryptionInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FileEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const FileEncryptionInfoProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<FileEncryptionInfoProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FileEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FileEncryptionInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FileEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FileEncryptionInfoProto)
     MergeFrom(*source);
   }
 }
 
 void FileEncryptionInfoProto::MergeFrom(const FileEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FileEncryptionInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FileEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      key_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.key_);
+      key_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.key_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      iv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iv_);
+      iv_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.iv_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+      keyname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.keyname_);
     }
     if (cached_has_bits & 0x00000008u) {
       _has_bits_[0] |= 0x00000008u;
-      ezkeyversionname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ezkeyversionname_);
+      ezkeyversionname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.ezkeyversionname_);
     }
     if (cached_has_bits & 0x00000010u) {
       suite_ = from.suite_;
@@ -5720,15 +6641,16 @@ void FileEncryptionInfoProto::MergeFrom(const FileEncryptionInfoProto& from) {
   }
 }
 
-void FileEncryptionInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FileEncryptionInfoProto)
+void FileEncryptionInfoProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FileEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void FileEncryptionInfoProto::CopyFrom(const FileEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FileEncryptionInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FileEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5743,14 +6665,20 @@ void FileEncryptionInfoProto::InternalSwap(FileEncryptionInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  key_.Swap(&other->key_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  iv_.Swap(&other->iv_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  keyname_.Swap(&other->keyname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  ezkeyversionname_.Swap(&other->ezkeyversionname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  key_.Swap(&other->key_,
+            &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+            GetArenaNoVirtual());
+  iv_.Swap(&other->iv_,
+           &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+           GetArenaNoVirtual());
+  keyname_.Swap(
+      &other->keyname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  ezkeyversionname_.Swap(
+      &other->ezkeyversionname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(suite_, other->suite_);
   swap(cryptoprotocolversion_, other->cryptoprotocolversion_);
 }
@@ -5759,55 +6687,64 @@ void FileEncryptionInfoProto::InternalSwap(FileEncryptionInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void PerFileEncryptionInfoProto::InitAsDefaultInstance() {
-}
+void PerFileEncryptionInfoProto::InitAsDefaultInstance() {}
 class PerFileEncryptionInfoProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<PerFileEncryptionInfoProto>()._has_bits_);
-  static void set_has_key(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_iv(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  using HasBits =
+      decltype(std::declval<PerFileEncryptionInfoProto>()._has_bits_);
+  static void set_has_key(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_iv(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_ezkeyversionname(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
 };
 
 PerFileEncryptionInfoProto::PerFileEncryptionInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.PerFileEncryptionInfoProto)
 }
-PerFileEncryptionInfoProto::PerFileEncryptionInfoProto(const PerFileEncryptionInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+PerFileEncryptionInfoProto::PerFileEncryptionInfoProto(
+    const PerFileEncryptionInfoProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  key_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  key_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_key()) {
-    key_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.key_);
+    key_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.key_);
   }
-  iv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_iv()) {
-    iv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iv_);
+    iv_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.iv_);
   }
-  ezkeyversionname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_ezkeyversionname()) {
-    ezkeyversionname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ezkeyversionname_);
+    ezkeyversionname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.ezkeyversionname_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.PerFileEncryptionInfoProto)
 }
 
 void PerFileEncryptionInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base);
-  key_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ezkeyversionname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base);
+  key_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 PerFileEncryptionInfoProto::~PerFileEncryptionInfoProto() {
@@ -5816,25 +6753,29 @@ PerFileEncryptionInfoProto::~PerFileEncryptionInfoProto() {
 }
 
 void PerFileEncryptionInfoProto::SharedDtor() {
-  key_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iv_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ezkeyversionname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  key_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iv_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ezkeyversionname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void PerFileEncryptionInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PerFileEncryptionInfoProto& PerFileEncryptionInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base);
+const PerFileEncryptionInfoProto&
+PerFileEncryptionInfoProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_PerFileEncryptionInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void PerFileEncryptionInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -5852,8 +6793,10 @@ void PerFileEncryptionInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* PerFileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* PerFileEncryptionInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5862,30 +6805,40 @@ const char* PerFileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOB
     switch (tag >> 3) {
       // required bytes key = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_key();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes iv = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_iv();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string ezKeyVersionName = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_ezkeyversionname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.PerFileEncryptionInfoProto.ezKeyVersionName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.PerFileEncryptionInfoProto.ezKeyVersionName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5898,7 +6851,7 @@ const char* PerFileEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOB
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5909,95 +6862,97 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* PerFileEncryptionInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required bytes key = 1;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        1, this->_internal_key(), target);
+    target = stream->WriteBytesMaybeAliased(1, this->_internal_key(), target);
   }
 
   // required bytes iv = 2;
   if (cached_has_bits & 0x00000002u) {
-    target = stream->WriteBytesMaybeAliased(
-        2, this->_internal_iv(), target);
+    target = stream->WriteBytesMaybeAliased(2, this->_internal_iv(), target);
   }
 
   // required string ezKeyVersionName = 3;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_ezkeyversionname().data(), static_cast<int>(this->_internal_ezkeyversionname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.PerFileEncryptionInfoProto.ezKeyVersionName");
+        this->_internal_ezkeyversionname().data(),
+        static_cast<int>(this->_internal_ezkeyversionname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.PerFileEncryptionInfoProto.ezKeyVersionName");
     target = stream->WriteStringMaybeAliased(
         3, this->_internal_ezkeyversionname(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.PerFileEncryptionInfoProto)
   return target;
 }
 
 size_t PerFileEncryptionInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_key()) {
     // required bytes key = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_key());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_key());
   }
 
   if (_internal_has_iv()) {
     // required bytes iv = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_iv());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_iv());
   }
 
   if (_internal_has_ezkeyversionname()) {
     // required string ezKeyVersionName = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ezkeyversionname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ezkeyversionname());
   }
 
   return total_size;
 }
 size_t PerFileEncryptionInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required bytes key = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_key());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_key());
 
     // required bytes iv = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_iv());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_iv());
 
     // required string ezKeyVersionName = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_ezkeyversionname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_ezkeyversionname());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -6008,54 +6963,64 @@ size_t PerFileEncryptionInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void PerFileEncryptionInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+void PerFileEncryptionInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const PerFileEncryptionInfoProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PerFileEncryptionInfoProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          PerFileEncryptionInfoProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PerFileEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PerFileEncryptionInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PerFileEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PerFileEncryptionInfoProto)
     MergeFrom(*source);
   }
 }
 
-void PerFileEncryptionInfoProto::MergeFrom(const PerFileEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+void PerFileEncryptionInfoProto::MergeFrom(
+    const PerFileEncryptionInfoProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      key_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.key_);
+      key_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.key_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      iv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iv_);
+      iv_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.iv_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      ezkeyversionname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.ezkeyversionname_);
+      ezkeyversionname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.ezkeyversionname_);
     }
   }
 }
 
-void PerFileEncryptionInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+void PerFileEncryptionInfoProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void PerFileEncryptionInfoProto::CopyFrom(const PerFileEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
+void PerFileEncryptionInfoProto::CopyFrom(
+    const PerFileEncryptionInfoProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PerFileEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6066,64 +7031,72 @@ bool PerFileEncryptionInfoProto::IsInitialized() const {
   return true;
 }
 
-void PerFileEncryptionInfoProto::InternalSwap(PerFileEncryptionInfoProto* other) {
+void PerFileEncryptionInfoProto::InternalSwap(
+    PerFileEncryptionInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  key_.Swap(&other->key_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  iv_.Swap(&other->iv_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  ezkeyversionname_.Swap(&other->ezkeyversionname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  key_.Swap(&other->key_,
+            &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+            GetArenaNoVirtual());
+  iv_.Swap(&other->iv_,
+           &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+           GetArenaNoVirtual());
+  ezkeyversionname_.Swap(
+      &other->ezkeyversionname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata PerFileEncryptionInfoProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata PerFileEncryptionInfoProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ZoneEncryptionInfoProto::InitAsDefaultInstance() {
-}
+void ZoneEncryptionInfoProto::InitAsDefaultInstance() {}
 class ZoneEncryptionInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ZoneEncryptionInfoProto>()._has_bits_);
-  static void set_has_suite(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_suite(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_cryptoprotocolversion(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static void set_has_keyname(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_keyname(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 ZoneEncryptionInfoProto::ZoneEncryptionInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ZoneEncryptionInfoProto)
 }
-ZoneEncryptionInfoProto::ZoneEncryptionInfoProto(const ZoneEncryptionInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ZoneEncryptionInfoProto::ZoneEncryptionInfoProto(
+    const ZoneEncryptionInfoProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_keyname()) {
-    keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+    keyname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.keyname_);
   }
-  ::memcpy(&suite_, &from.suite_,
-    static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
-    reinterpret_cast<char*>(&suite_)) + sizeof(cryptoprotocolversion_));
+  ::memcpy(
+      &suite_, &from.suite_,
+      static_cast<size_t>(reinterpret_cast<char*>(&cryptoprotocolversion_) -
+                          reinterpret_cast<char*>(&suite_)) +
+          sizeof(cryptoprotocolversion_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ZoneEncryptionInfoProto)
 }
 
 void ZoneEncryptionInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base);
-  keyname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base);
+  keyname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   suite_ = 1;
   cryptoprotocolversion_ = 1;
 }
@@ -6134,23 +7107,24 @@ ZoneEncryptionInfoProto::~ZoneEncryptionInfoProto() {
 }
 
 void ZoneEncryptionInfoProto::SharedDtor() {
-  keyname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keyname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void ZoneEncryptionInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ZoneEncryptionInfoProto& ZoneEncryptionInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ZoneEncryptionInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ZoneEncryptionInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -6164,8 +7138,10 @@ void ZoneEncryptionInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* ZoneEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ZoneEncryptionInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -6174,38 +7150,55 @@ const char* ZoneEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
     switch (tag >> 3) {
       // required .Hdfs.Internal.CipherSuiteProto suite = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
-            _internal_set_suite(static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
+            _internal_set_suite(
+                static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
+      // required .Hdfs.Internal.CryptoProtocolVersionProto
+      // cryptoProtocolVersion = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
-            _internal_set_cryptoprotocolversion(static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CryptoProtocolVersionProto_IsValid(val))) {
+            _internal_set_cryptoprotocolversion(
+                static_cast<::Hdfs::Internal::CryptoProtocolVersionProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(2, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                2, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string keyName = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_keyname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.ZoneEncryptionInfoProto.keyName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.ZoneEncryptionInfoProto.keyName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6218,7 +7211,7 @@ const char* ZoneEncryptionInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6229,93 +7222,106 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ZoneEncryptionInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.CipherSuiteProto suite = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_suite(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_suite(), target);
   }
 
-  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
+  // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion =
+  // 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      2, this->_internal_cryptoprotocolversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            2, this->_internal_cryptoprotocolversion(), target);
   }
 
   // required string keyName = 3;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_keyname().data(), static_cast<int>(this->_internal_keyname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.ZoneEncryptionInfoProto.keyName");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_keyname(), target);
+        this->_internal_keyname().data(),
+        static_cast<int>(this->_internal_keyname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.ZoneEncryptionInfoProto.keyName");
+    target =
+        stream->WriteStringMaybeAliased(3, this->_internal_keyname(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ZoneEncryptionInfoProto)
   return target;
 }
 
 size_t ZoneEncryptionInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_keyname()) {
     // required string keyName = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
   }
 
   if (_internal_has_suite()) {
     // required .Hdfs.Internal.CipherSuiteProto suite = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
   }
 
   if (_internal_has_cryptoprotocolversion()) {
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 2;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
   }
 
   return total_size;
 }
 size_t ZoneEncryptionInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required string keyName = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_keyname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_keyname());
 
     // required .Hdfs.Internal.CipherSuiteProto suite = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
 
-    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_cryptoprotocolversion());
+    // required .Hdfs.Internal.CryptoProtocolVersionProto cryptoProtocolVersion
+    // = 2;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_cryptoprotocolversion());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -6326,33 +7332,36 @@ size_t ZoneEncryptionInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ZoneEncryptionInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+void ZoneEncryptionInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ZoneEncryptionInfoProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ZoneEncryptionInfoProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ZoneEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ZoneEncryptionInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ZoneEncryptionInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ZoneEncryptionInfoProto)
     MergeFrom(*source);
   }
 }
 
 void ZoneEncryptionInfoProto::MergeFrom(const ZoneEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      keyname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keyname_);
+      keyname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.keyname_);
     }
     if (cached_has_bits & 0x00000002u) {
       suite_ = from.suite_;
@@ -6364,15 +7373,16 @@ void ZoneEncryptionInfoProto::MergeFrom(const ZoneEncryptionInfoProto& from) {
   }
 }
 
-void ZoneEncryptionInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+void ZoneEncryptionInfoProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ZoneEncryptionInfoProto::CopyFrom(const ZoneEncryptionInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ZoneEncryptionInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6387,8 +7397,10 @@ void ZoneEncryptionInfoProto::InternalSwap(ZoneEncryptionInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  keyname_.Swap(&other->keyname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  keyname_.Swap(
+      &other->keyname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(suite_, other->suite_);
   swap(cryptoprotocolversion_, other->cryptoprotocolversion_);
 }
@@ -6397,67 +7409,72 @@ void ZoneEncryptionInfoProto::InternalSwap(ZoneEncryptionInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void CipherOptionProto::InitAsDefaultInstance() {
-}
+void CipherOptionProto::InitAsDefaultInstance() {}
 class CipherOptionProto::_Internal {
  public:
   using HasBits = decltype(std::declval<CipherOptionProto>()._has_bits_);
-  static void set_has_suite(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_inkey(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_iniv(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_outkey(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_outiv(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_suite(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_inkey(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_iniv(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_outkey(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_outiv(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
 };
 
 CipherOptionProto::CipherOptionProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CipherOptionProto)
 }
 CipherOptionProto::CipherOptionProto(const CipherOptionProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  inkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  inkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_inkey()) {
-    inkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.inkey_);
+    inkey_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.inkey_);
   }
-  iniv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iniv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_iniv()) {
-    iniv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iniv_);
+    iniv_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.iniv_);
   }
-  outkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_outkey()) {
-    outkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.outkey_);
+    outkey_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.outkey_);
   }
-  outiv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outiv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_outiv()) {
-    outiv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.outiv_);
+    outiv_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.outiv_);
   }
   suite_ = from.suite_;
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CipherOptionProto)
 }
 
 void CipherOptionProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CipherOptionProto_hdfs_2eproto.base);
-  inkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iniv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  outkey_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  outiv_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_CipherOptionProto_hdfs_2eproto.base);
+  inkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iniv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outkey_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outiv_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   suite_ = 1;
 }
 
@@ -6467,26 +7484,30 @@ CipherOptionProto::~CipherOptionProto() {
 }
 
 void CipherOptionProto::SharedDtor() {
-  inkey_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  iniv_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  outkey_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  outiv_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  inkey_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  iniv_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outkey_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  outiv_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void CipherOptionProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const CipherOptionProto& CipherOptionProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CipherOptionProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CipherOptionProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CipherOptionProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CipherOptionProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CipherOptionProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
@@ -6508,8 +7529,10 @@ void CipherOptionProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* CipherOptionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CipherOptionProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -6518,47 +7541,65 @@ const char* CipherOptionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required .Hdfs.Internal.CipherSuiteProto suite = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
-            _internal_set_suite(static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::CipherSuiteProto_IsValid(val))) {
+            _internal_set_suite(
+                static_cast<::Hdfs::Internal::CipherSuiteProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes inKey = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_inkey();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes inIv = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_iniv();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes outKey = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_outkey();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes outIv = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_outiv();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6571,7 +7612,7 @@ const char* CipherOptionProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6582,94 +7623,94 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* CipherOptionProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CipherOptionProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.CipherSuiteProto suite = 1;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_suite(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_suite(), target);
   }
 
   // optional bytes inKey = 2;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        2, this->_internal_inkey(), target);
+    target = stream->WriteBytesMaybeAliased(2, this->_internal_inkey(), target);
   }
 
   // optional bytes inIv = 3;
   if (cached_has_bits & 0x00000002u) {
-    target = stream->WriteBytesMaybeAliased(
-        3, this->_internal_iniv(), target);
+    target = stream->WriteBytesMaybeAliased(3, this->_internal_iniv(), target);
   }
 
   // optional bytes outKey = 4;
   if (cached_has_bits & 0x00000004u) {
-    target = stream->WriteBytesMaybeAliased(
-        4, this->_internal_outkey(), target);
+    target =
+        stream->WriteBytesMaybeAliased(4, this->_internal_outkey(), target);
   }
 
   // optional bytes outIv = 5;
   if (cached_has_bits & 0x00000008u) {
-    target = stream->WriteBytesMaybeAliased(
-        5, this->_internal_outiv(), target);
+    target = stream->WriteBytesMaybeAliased(5, this->_internal_outiv(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CipherOptionProto)
   return target;
 }
 
 size_t CipherOptionProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CipherOptionProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CipherOptionProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.CipherSuiteProto suite = 1;
   if (_internal_has_suite()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_suite());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_suite());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     // optional bytes inKey = 2;
     if (cached_has_bits & 0x00000001u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-          this->_internal_inkey());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                  this->_internal_inkey());
     }
 
     // optional bytes inIv = 3;
     if (cached_has_bits & 0x00000002u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-          this->_internal_iniv());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                  this->_internal_iniv());
     }
 
     // optional bytes outKey = 4;
     if (cached_has_bits & 0x00000004u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-          this->_internal_outkey());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                  this->_internal_outkey());
     }
 
     // optional bytes outIv = 5;
     if (cached_has_bits & 0x00000008u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-          this->_internal_outiv());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                  this->_internal_outiv());
     }
-
   }
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -6680,45 +7721,53 @@ size_t CipherOptionProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CipherOptionProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CipherOptionProto)
+void CipherOptionProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CipherOptionProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CipherOptionProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CipherOptionProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CipherOptionProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CipherOptionProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CipherOptionProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CipherOptionProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CipherOptionProto)
     MergeFrom(*source);
   }
 }
 
 void CipherOptionProto::MergeFrom(const CipherOptionProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CipherOptionProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CipherOptionProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      inkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.inkey_);
+      inkey_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.inkey_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      iniv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.iniv_);
+      iniv_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.iniv_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      outkey_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.outkey_);
+      outkey_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.outkey_);
     }
     if (cached_has_bits & 0x00000008u) {
       _has_bits_[0] |= 0x00000008u;
-      outiv_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.outiv_);
+      outiv_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.outiv_);
     }
     if (cached_has_bits & 0x00000010u) {
       suite_ = from.suite_;
@@ -6728,14 +7777,14 @@ void CipherOptionProto::MergeFrom(const CipherOptionProto& from) {
 }
 
 void CipherOptionProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CipherOptionProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CipherOptionProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void CipherOptionProto::CopyFrom(const CipherOptionProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CipherOptionProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CipherOptionProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6750,14 +7799,19 @@ void CipherOptionProto::InternalSwap(CipherOptionProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  inkey_.Swap(&other->inkey_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  iniv_.Swap(&other->iniv_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  outkey_.Swap(&other->outkey_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  outiv_.Swap(&other->outiv_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  inkey_.Swap(&other->inkey_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  iniv_.Swap(&other->iniv_,
+             &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+             GetArenaNoVirtual());
+  outkey_.Swap(
+      &other->outkey_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  outiv_.Swap(&other->outiv_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
   swap(suite_, other->suite_);
 }
 
@@ -6765,26 +7819,24 @@ void CipherOptionProto::InternalSwap(CipherOptionProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void LocatedBlocksProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_LocatedBlocksProto_default_instance_._instance.get_mutable()->lastblock_ = const_cast< ::Hdfs::Internal::LocatedBlockProto*>(
+  ::Hdfs::Internal::_LocatedBlocksProto_default_instance_._instance
+      .get_mutable()
+      ->lastblock_ = const_cast<::Hdfs::Internal::LocatedBlockProto*>(
       ::Hdfs::Internal::LocatedBlockProto::internal_default_instance());
 }
 class LocatedBlocksProto::_Internal {
  public:
   using HasBits = decltype(std::declval<LocatedBlocksProto>()._has_bits_);
-  static void set_has_filelength(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_filelength(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_underconstruction(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static const ::Hdfs::Internal::LocatedBlockProto& lastblock(const LocatedBlocksProto* msg);
-  static void set_has_lastblock(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::LocatedBlockProto& lastblock(
+      const LocatedBlocksProto* msg);
+  static void set_has_lastblock(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_islastblockcomplete(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
@@ -6795,12 +7847,12 @@ LocatedBlocksProto::_Internal::lastblock(const LocatedBlocksProto* msg) {
   return *msg->lastblock_;
 }
 LocatedBlocksProto::LocatedBlocksProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.LocatedBlocksProto)
 }
 LocatedBlocksProto::LocatedBlocksProto(const LocatedBlocksProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       blocks_(from.blocks_) {
@@ -6811,16 +7863,19 @@ LocatedBlocksProto::LocatedBlocksProto(const LocatedBlocksProto& from)
     lastblock_ = nullptr;
   }
   ::memcpy(&filelength_, &from.filelength_,
-    static_cast<size_t>(reinterpret_cast<char*>(&islastblockcomplete_) -
-    reinterpret_cast<char*>(&filelength_)) + sizeof(islastblockcomplete_));
+           static_cast<size_t>(reinterpret_cast<char*>(&islastblockcomplete_) -
+                               reinterpret_cast<char*>(&filelength_)) +
+               sizeof(islastblockcomplete_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.LocatedBlocksProto)
 }
 
 void LocatedBlocksProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LocatedBlocksProto_hdfs_2eproto.base);
-  ::memset(&lastblock_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&islastblockcomplete_) -
-      reinterpret_cast<char*>(&lastblock_)) + sizeof(islastblockcomplete_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_LocatedBlocksProto_hdfs_2eproto.base);
+  ::memset(&lastblock_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&islastblockcomplete_) -
+                               reinterpret_cast<char*>(&lastblock_)) +
+               sizeof(islastblockcomplete_));
 }
 
 LocatedBlocksProto::~LocatedBlocksProto() {
@@ -6836,16 +7891,16 @@ void LocatedBlocksProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const LocatedBlocksProto& LocatedBlocksProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LocatedBlocksProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_LocatedBlocksProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void LocatedBlocksProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.LocatedBlocksProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.LocatedBlocksProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   blocks_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -6854,16 +7909,20 @@ void LocatedBlocksProto::Clear() {
     lastblock_->Clear();
   }
   if (cached_has_bits & 0x0000000eu) {
-    ::memset(&filelength_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&islastblockcomplete_) -
-        reinterpret_cast<char*>(&filelength_)) + sizeof(islastblockcomplete_));
+    ::memset(
+        &filelength_, 0,
+        static_cast<size_t>(reinterpret_cast<char*>(&islastblockcomplete_) -
+                            reinterpret_cast<char*>(&filelength_)) +
+            sizeof(islastblockcomplete_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* LocatedBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* LocatedBlocksProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -6872,15 +7931,18 @@ const char* LocatedBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // required uint64 fileLength = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_filelength(&has_bits);
           filelength_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.LocatedBlockProto blocks = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -6888,30 +7950,39 @@ const char* LocatedBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool underConstruction = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_underconstruction(&has_bits);
-          underconstruction_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          underconstruction_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.LocatedBlockProto lastBlock = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_lastblock(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool isLastBlockComplete = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_islastblockcomplete(&has_bits);
-          islastblockcomplete_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          islastblockcomplete_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6924,7 +7995,7 @@ const char* LocatedBlocksProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6935,63 +8006,73 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* LocatedBlocksProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.LocatedBlocksProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 fileLength = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_filelength(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_filelength(), target);
   }
 
   // repeated .Hdfs.Internal.LocatedBlockProto blocks = 2;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_blocks_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_blocks_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(2, this->_internal_blocks(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            2, this->_internal_blocks(i), target, stream);
   }
 
   // required bool underConstruction = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(3, this->_internal_underconstruction(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            3, this->_internal_underconstruction(), target);
   }
 
   // optional .Hdfs.Internal.LocatedBlockProto lastBlock = 4;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::lastblock(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::lastblock(this), target, stream);
   }
 
   // required bool isLastBlockComplete = 5;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(5, this->_internal_islastblockcomplete(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            5, this->_internal_islastblockcomplete(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.LocatedBlocksProto)
   return target;
 }
 
 size_t LocatedBlocksProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.LocatedBlocksProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.LocatedBlocksProto)
   size_t total_size = 0;
 
   if (_internal_has_filelength()) {
     // required uint64 fileLength = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_filelength());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_filelength());
   }
 
   if (_internal_has_underconstruction()) {
@@ -7007,14 +8088,15 @@ size_t LocatedBlocksProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t LocatedBlocksProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.LocatedBlocksProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.LocatedBlocksProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000e) ^ 0x0000000e) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000e) ^ 0x0000000e) ==
+      0) {  // All required fields are present.
     // required uint64 fileLength = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_filelength());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_filelength());
 
     // required bool underConstruction = 3;
     total_size += 1 + 1;
@@ -7027,21 +8109,21 @@ size_t LocatedBlocksProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.LocatedBlockProto blocks = 2;
   total_size += 1UL * this->_internal_blocks_size();
   for (const auto& msg : this->blocks_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   // optional .Hdfs.Internal.LocatedBlockProto lastBlock = 4;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *lastblock_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *lastblock_);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -7053,33 +8135,36 @@ size_t LocatedBlocksProto::ByteSizeLong() const {
   return total_size;
 }
 
-void LocatedBlocksProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.LocatedBlocksProto)
+void LocatedBlocksProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.LocatedBlocksProto)
   GOOGLE_DCHECK_NE(&from, this);
   const LocatedBlocksProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<LocatedBlocksProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.LocatedBlocksProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.LocatedBlocksProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.LocatedBlocksProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.LocatedBlocksProto)
     MergeFrom(*source);
   }
 }
 
 void LocatedBlocksProto::MergeFrom(const LocatedBlocksProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.LocatedBlocksProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.LocatedBlocksProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   blocks_.MergeFrom(from.blocks_);
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_lastblock()->::Hdfs::Internal::LocatedBlockProto::MergeFrom(from._internal_lastblock());
+      _internal_mutable_lastblock()
+          ->::Hdfs::Internal::LocatedBlockProto::MergeFrom(
+              from._internal_lastblock());
     }
     if (cached_has_bits & 0x00000002u) {
       filelength_ = from.filelength_;
@@ -7094,15 +8179,16 @@ void LocatedBlocksProto::MergeFrom(const LocatedBlocksProto& from) {
   }
 }
 
-void LocatedBlocksProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.LocatedBlocksProto)
+void LocatedBlocksProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.LocatedBlocksProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void LocatedBlocksProto::CopyFrom(const LocatedBlocksProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.LocatedBlocksProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.LocatedBlocksProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -7110,7 +8196,8 @@ void LocatedBlocksProto::CopyFrom(const LocatedBlocksProto& from) {
 
 bool LocatedBlocksProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x0000000e) != 0x0000000e) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(blocks_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(blocks_))
+    return false;
   if (_internal_has_lastblock()) {
     if (!lastblock_->IsInitialized()) return false;
   }
@@ -7132,65 +8219,52 @@ void LocatedBlocksProto::InternalSwap(LocatedBlocksProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void HdfsFileStatusProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance.get_mutable()->permission_ = const_cast< ::Hdfs::Internal::FsPermissionProto*>(
+  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance
+      .get_mutable()
+      ->permission_ = const_cast<::Hdfs::Internal::FsPermissionProto*>(
       ::Hdfs::Internal::FsPermissionProto::internal_default_instance());
-  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance.get_mutable()->locations_ = const_cast< ::Hdfs::Internal::LocatedBlocksProto*>(
+  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance
+      .get_mutable()
+      ->locations_ = const_cast<::Hdfs::Internal::LocatedBlocksProto*>(
       ::Hdfs::Internal::LocatedBlocksProto::internal_default_instance());
-  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance.get_mutable()->fileencryptioninfo_ = const_cast< ::Hdfs::Internal::FileEncryptionInfoProto*>(
+  ::Hdfs::Internal::_HdfsFileStatusProto_default_instance_._instance
+      .get_mutable()
+      ->fileencryptioninfo_ = const_cast<
+      ::Hdfs::Internal::FileEncryptionInfoProto*>(
       ::Hdfs::Internal::FileEncryptionInfoProto::internal_default_instance());
 }
 class HdfsFileStatusProto::_Internal {
  public:
   using HasBits = decltype(std::declval<HdfsFileStatusProto>()._has_bits_);
-  static void set_has_filetype(HasBits* has_bits) {
-    (*has_bits)[0] |= 8192u;
-  }
-  static void set_has_path(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_length(HasBits* has_bits) {
-    (*has_bits)[0] |= 128u;
-  }
-  static const ::Hdfs::Internal::FsPermissionProto& permission(const HdfsFileStatusProto* msg);
-  static void set_has_permission(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_owner(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_group(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static void set_has_filetype(HasBits* has_bits) { (*has_bits)[0] |= 8192u; }
+  static void set_has_path(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_length(HasBits* has_bits) { (*has_bits)[0] |= 128u; }
+  static const ::Hdfs::Internal::FsPermissionProto& permission(
+      const HdfsFileStatusProto* msg);
+  static void set_has_permission(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_owner(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_group(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
   static void set_has_modification_time(HasBits* has_bits) {
     (*has_bits)[0] |= 256u;
   }
-  static void set_has_access_time(HasBits* has_bits) {
-    (*has_bits)[0] |= 512u;
-  }
-  static void set_has_symlink(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_access_time(HasBits* has_bits) { (*has_bits)[0] |= 512u; }
+  static void set_has_symlink(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_block_replication(HasBits* has_bits) {
     (*has_bits)[0] |= 4096u;
   }
-  static void set_has_blocksize(HasBits* has_bits) {
-    (*has_bits)[0] |= 1024u;
-  }
-  static const ::Hdfs::Internal::LocatedBlocksProto& locations(const HdfsFileStatusProto* msg);
-  static void set_has_locations(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
-  static void set_has_fileid(HasBits* has_bits) {
-    (*has_bits)[0] |= 2048u;
-  }
+  static void set_has_blocksize(HasBits* has_bits) { (*has_bits)[0] |= 1024u; }
+  static const ::Hdfs::Internal::LocatedBlocksProto& locations(
+      const HdfsFileStatusProto* msg);
+  static void set_has_locations(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
+  static void set_has_fileid(HasBits* has_bits) { (*has_bits)[0] |= 2048u; }
   static void set_has_childrennum(HasBits* has_bits) {
     (*has_bits)[0] |= 16384u;
   }
-  static const ::Hdfs::Internal::FileEncryptionInfoProto& fileencryptioninfo(const HdfsFileStatusProto* msg);
+  static const ::Hdfs::Internal::FileEncryptionInfoProto& fileencryptioninfo(
+      const HdfsFileStatusProto* msg);
   static void set_has_fileencryptioninfo(HasBits* has_bits) {
     (*has_bits)[0] |= 64u;
   }
@@ -7205,34 +8279,47 @@ HdfsFileStatusProto::_Internal::locations(const HdfsFileStatusProto* msg) {
   return *msg->locations_;
 }
 const ::Hdfs::Internal::FileEncryptionInfoProto&
-HdfsFileStatusProto::_Internal::fileencryptioninfo(const HdfsFileStatusProto* msg) {
+HdfsFileStatusProto::_Internal::fileencryptioninfo(
+    const HdfsFileStatusProto* msg) {
   return *msg->fileencryptioninfo_;
 }
 HdfsFileStatusProto::HdfsFileStatusProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.HdfsFileStatusProto)
 }
 HdfsFileStatusProto::HdfsFileStatusProto(const HdfsFileStatusProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  path_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  path_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_path()) {
-    path_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.path_);
+    path_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.path_);
   }
-  owner_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_owner()) {
-    owner_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.owner_);
+    owner_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.owner_);
   }
-  group_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_group()) {
-    group_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.group_);
+    group_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.group_);
   }
-  symlink_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  symlink_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_symlink()) {
-    symlink_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.symlink_);
+    symlink_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.symlink_);
   }
   if (from._internal_has_permission()) {
     permission_ = new ::Hdfs::Internal::FsPermissionProto(*from.permission_);
@@ -7245,25 +8332,33 @@ HdfsFileStatusProto::HdfsFileStatusProto(const HdfsFileStatusProto& from)
     locations_ = nullptr;
   }
   if (from._internal_has_fileencryptioninfo()) {
-    fileencryptioninfo_ = new ::Hdfs::Internal::FileEncryptionInfoProto(*from.fileencryptioninfo_);
+    fileencryptioninfo_ = new ::Hdfs::Internal::FileEncryptionInfoProto(
+        *from.fileencryptioninfo_);
   } else {
     fileencryptioninfo_ = nullptr;
   }
   ::memcpy(&length_, &from.length_,
-    static_cast<size_t>(reinterpret_cast<char*>(&childrennum_) -
-    reinterpret_cast<char*>(&length_)) + sizeof(childrennum_));
+           static_cast<size_t>(reinterpret_cast<char*>(&childrennum_) -
+                               reinterpret_cast<char*>(&length_)) +
+               sizeof(childrennum_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.HdfsFileStatusProto)
 }
 
 void HdfsFileStatusProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_HdfsFileStatusProto_hdfs_2eproto.base);
-  path_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  owner_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  group_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  symlink_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&permission_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&block_replication_) -
-      reinterpret_cast<char*>(&permission_)) + sizeof(block_replication_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_HdfsFileStatusProto_hdfs_2eproto.base);
+  path_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  symlink_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&permission_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&block_replication_) -
+                               reinterpret_cast<char*>(&permission_)) +
+               sizeof(block_replication_));
   filetype_ = 1;
   childrennum_ = -1;
 }
@@ -7274,10 +8369,14 @@ HdfsFileStatusProto::~HdfsFileStatusProto() {
 }
 
 void HdfsFileStatusProto::SharedDtor() {
-  path_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  owner_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  group_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  symlink_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  path_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  symlink_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete permission_;
   if (this != internal_default_instance()) delete locations_;
   if (this != internal_default_instance()) delete fileencryptioninfo_;
@@ -7287,16 +8386,16 @@ void HdfsFileStatusProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const HdfsFileStatusProto& HdfsFileStatusProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_HdfsFileStatusProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_HdfsFileStatusProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void HdfsFileStatusProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.HdfsFileStatusProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.HdfsFileStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000007fu) {
@@ -7327,9 +8426,10 @@ void HdfsFileStatusProto::Clear() {
   }
   length_ = PROTOBUF_ULONGLONG(0);
   if (cached_has_bits & 0x00007f00u) {
-    ::memset(&modification_time_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&block_replication_) -
-        reinterpret_cast<char*>(&modification_time_)) + sizeof(block_replication_));
+    ::memset(&modification_time_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&block_replication_) -
+                                 reinterpret_cast<char*>(&modification_time_)) +
+                 sizeof(block_replication_));
     filetype_ = 1;
     childrennum_ = -1;
   }
@@ -7337,8 +8437,10 @@ void HdfsFileStatusProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* HdfsFileStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* HdfsFileStatusProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -7347,130 +8449,175 @@ const char* HdfsFileStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
     switch (tag >> 3) {
       // required .Hdfs.Internal.HdfsFileStatusProto.FileType fileType = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::HdfsFileStatusProto_FileType_IsValid(val))) {
-            _internal_set_filetype(static_cast<::Hdfs::Internal::HdfsFileStatusProto_FileType>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::HdfsFileStatusProto_FileType_IsValid(
+                      val))) {
+            _internal_set_filetype(
+                static_cast<::Hdfs::Internal::HdfsFileStatusProto_FileType>(
+                    val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes path = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_path();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 length = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_length(&has_bits);
           length_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.FsPermissionProto permission = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_permission(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string owner = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_owner();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.HdfsFileStatusProto.owner");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.HdfsFileStatusProto.owner");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string group = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           auto str = _internal_mutable_group();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.HdfsFileStatusProto.group");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.HdfsFileStatusProto.group");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 modification_time = 7;
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           _Internal::set_has_modification_time(&has_bits);
-          modification_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          modification_time_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 access_time = 8;
       case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
           _Internal::set_has_access_time(&has_bits);
           access_time_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes symlink = 9;
       case 9:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 74)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 74)) {
           auto str = _internal_mutable_symlink();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint32 block_replication = 10 [default = 0];
       case 10:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 80)) {
           _Internal::set_has_block_replication(&has_bits);
-          block_replication_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          block_replication_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 blocksize = 11 [default = 0];
       case 11:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 88)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 88)) {
           _Internal::set_has_blocksize(&has_bits);
           blocksize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.LocatedBlocksProto locations = 12;
       case 12:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 98)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 98)) {
           ptr = ctx->ParseMessage(_internal_mutable_locations(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 fileId = 13 [default = 0];
       case 13:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 104)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 104)) {
           _Internal::set_has_fileid(&has_bits);
           fileid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional int32 childrenNum = 14 [default = -1];
       case 14:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 112)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 112)) {
           _Internal::set_has_childrennum(&has_bits);
           childrennum_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // optional .Hdfs.Internal.FileEncryptionInfoProto fileEncryptionInfo = 15;
+      // optional .Hdfs.Internal.FileEncryptionInfoProto fileEncryptionInfo =
+      // 15;
       case 15:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 122)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 122)) {
           ptr = ctx->ParseMessage(_internal_mutable_fileencryptioninfo(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -7483,7 +8630,7 @@ const char* HdfsFileStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -7494,289 +8641,308 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* HdfsFileStatusProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.HdfsFileStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.HdfsFileStatusProto.FileType fileType = 1;
   if (cached_has_bits & 0x00002000u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_filetype(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_filetype(), target);
   }
 
   // required bytes path = 2;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        2, this->_internal_path(), target);
+    target = stream->WriteBytesMaybeAliased(2, this->_internal_path(), target);
   }
 
   // required uint64 length = 3;
   if (cached_has_bits & 0x00000080u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_length(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_length(), target);
   }
 
   // required .Hdfs.Internal.FsPermissionProto permission = 4;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::permission(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::permission(this), target, stream);
   }
 
   // required string owner = 5;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_owner().data(), static_cast<int>(this->_internal_owner().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.HdfsFileStatusProto.owner");
-    target = stream->WriteStringMaybeAliased(
-        5, this->_internal_owner(), target);
+        this->_internal_owner().data(),
+        static_cast<int>(this->_internal_owner().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.HdfsFileStatusProto.owner");
+    target =
+        stream->WriteStringMaybeAliased(5, this->_internal_owner(), target);
   }
 
   // required string group = 6;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_group().data(), static_cast<int>(this->_internal_group().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.HdfsFileStatusProto.group");
-    target = stream->WriteStringMaybeAliased(
-        6, this->_internal_group(), target);
+        this->_internal_group().data(),
+        static_cast<int>(this->_internal_group().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.HdfsFileStatusProto.group");
+    target =
+        stream->WriteStringMaybeAliased(6, this->_internal_group(), target);
   }
 
   // required uint64 modification_time = 7;
   if (cached_has_bits & 0x00000100u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(7, this->_internal_modification_time(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            7, this->_internal_modification_time(), target);
   }
 
   // required uint64 access_time = 8;
   if (cached_has_bits & 0x00000200u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(8, this->_internal_access_time(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            8, this->_internal_access_time(), target);
   }
 
   // optional bytes symlink = 9;
   if (cached_has_bits & 0x00000008u) {
-    target = stream->WriteBytesMaybeAliased(
-        9, this->_internal_symlink(), target);
+    target =
+        stream->WriteBytesMaybeAliased(9, this->_internal_symlink(), target);
   }
 
   // optional uint32 block_replication = 10 [default = 0];
   if (cached_has_bits & 0x00001000u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(10, this->_internal_block_replication(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            10, this->_internal_block_replication(), target);
   }
 
   // optional uint64 blocksize = 11 [default = 0];
   if (cached_has_bits & 0x00000400u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(11, this->_internal_blocksize(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            11, this->_internal_blocksize(), target);
   }
 
   // optional .Hdfs.Internal.LocatedBlocksProto locations = 12;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        12, _Internal::locations(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            12, _Internal::locations(this), target, stream);
   }
 
   // optional uint64 fileId = 13 [default = 0];
   if (cached_has_bits & 0x00000800u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(13, this->_internal_fileid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            13, this->_internal_fileid(), target);
   }
 
   // optional int32 childrenNum = 14 [default = -1];
   if (cached_has_bits & 0x00004000u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(14, this->_internal_childrennum(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt32ToArray(
+            14, this->_internal_childrennum(), target);
   }
 
   // optional .Hdfs.Internal.FileEncryptionInfoProto fileEncryptionInfo = 15;
   if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        15, _Internal::fileencryptioninfo(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            15, _Internal::fileencryptioninfo(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.HdfsFileStatusProto)
   return target;
 }
 
 size_t HdfsFileStatusProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.HdfsFileStatusProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.HdfsFileStatusProto)
   size_t total_size = 0;
 
   if (_internal_has_path()) {
     // required bytes path = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_path());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_path());
   }
 
   if (_internal_has_owner()) {
     // required string owner = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_owner());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_owner());
   }
 
   if (_internal_has_group()) {
     // required string group = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_group());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_group());
   }
 
   if (_internal_has_permission()) {
     // required .Hdfs.Internal.FsPermissionProto permission = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *permission_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *permission_);
   }
 
   if (_internal_has_length()) {
     // required uint64 length = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_length());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_length());
   }
 
   if (_internal_has_modification_time()) {
     // required uint64 modification_time = 7;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_modification_time());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_modification_time());
   }
 
   if (_internal_has_access_time()) {
     // required uint64 access_time = 8;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_access_time());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_access_time());
   }
 
   if (_internal_has_filetype()) {
     // required .Hdfs.Internal.HdfsFileStatusProto.FileType fileType = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_filetype());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_filetype());
   }
 
   return total_size;
 }
 size_t HdfsFileStatusProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.HdfsFileStatusProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.HdfsFileStatusProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00002397) ^ 0x00002397) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00002397) ^ 0x00002397) ==
+      0) {  // All required fields are present.
     // required bytes path = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_path());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_path());
 
     // required string owner = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_owner());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_owner());
 
     // required string group = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_group());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_group());
 
     // required .Hdfs.Internal.FsPermissionProto permission = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *permission_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *permission_);
 
     // required uint64 length = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_length());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_length());
 
     // required uint64 modification_time = 7;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_modification_time());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_modification_time());
 
     // required uint64 access_time = 8;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_access_time());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_access_time());
 
     // required .Hdfs.Internal.HdfsFileStatusProto.FileType fileType = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_filetype());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_filetype());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional bytes symlink = 9;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_symlink());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_symlink());
   }
 
   if (cached_has_bits & 0x00000060u) {
     // optional .Hdfs.Internal.LocatedBlocksProto locations = 12;
     if (cached_has_bits & 0x00000020u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *locations_);
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                  *locations_);
     }
 
     // optional .Hdfs.Internal.FileEncryptionInfoProto fileEncryptionInfo = 15;
     if (cached_has_bits & 0x00000040u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *fileencryptioninfo_);
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                  *fileencryptioninfo_);
     }
-
   }
   if (cached_has_bits & 0x00001c00u) {
     // optional uint64 blocksize = 11 [default = 0];
     if (cached_has_bits & 0x00000400u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_blocksize());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_blocksize());
     }
 
     // optional uint64 fileId = 13 [default = 0];
     if (cached_has_bits & 0x00000800u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_fileid());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_fileid());
     }
 
     // optional uint32 block_replication = 10 [default = 0];
     if (cached_has_bits & 0x00001000u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-          this->_internal_block_replication());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                  this->_internal_block_replication());
     }
-
   }
   // optional int32 childrenNum = 14 [default = -1];
   if (cached_has_bits & 0x00004000u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
-        this->_internal_childrennum());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
+                this->_internal_childrennum());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -7788,54 +8954,69 @@ size_t HdfsFileStatusProto::ByteSizeLong() const {
   return total_size;
 }
 
-void HdfsFileStatusProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.HdfsFileStatusProto)
+void HdfsFileStatusProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.HdfsFileStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   const HdfsFileStatusProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<HdfsFileStatusProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.HdfsFileStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.HdfsFileStatusProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.HdfsFileStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.HdfsFileStatusProto)
     MergeFrom(*source);
   }
 }
 
 void HdfsFileStatusProto::MergeFrom(const HdfsFileStatusProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.HdfsFileStatusProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.HdfsFileStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      path_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.path_);
+      path_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.path_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      owner_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.owner_);
+      owner_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.owner_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      group_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.group_);
+      group_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.group_);
     }
     if (cached_has_bits & 0x00000008u) {
       _has_bits_[0] |= 0x00000008u;
-      symlink_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.symlink_);
+      symlink_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.symlink_);
     }
     if (cached_has_bits & 0x00000010u) {
-      _internal_mutable_permission()->::Hdfs::Internal::FsPermissionProto::MergeFrom(from._internal_permission());
+      _internal_mutable_permission()
+          ->::Hdfs::Internal::FsPermissionProto::MergeFrom(
+              from._internal_permission());
     }
     if (cached_has_bits & 0x00000020u) {
-      _internal_mutable_locations()->::Hdfs::Internal::LocatedBlocksProto::MergeFrom(from._internal_locations());
+      _internal_mutable_locations()
+          ->::Hdfs::Internal::LocatedBlocksProto::MergeFrom(
+              from._internal_locations());
     }
     if (cached_has_bits & 0x00000040u) {
-      _internal_mutable_fileencryptioninfo()->::Hdfs::Internal::FileEncryptionInfoProto::MergeFrom(from._internal_fileencryptioninfo());
+      _internal_mutable_fileencryptioninfo()
+          ->::Hdfs::Internal::FileEncryptionInfoProto::MergeFrom(
+              from._internal_fileencryptioninfo());
     }
     if (cached_has_bits & 0x00000080u) {
       length_ = from.length_;
@@ -7868,15 +9049,16 @@ void HdfsFileStatusProto::MergeFrom(const HdfsFileStatusProto& from) {
   }
 }
 
-void HdfsFileStatusProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.HdfsFileStatusProto)
+void HdfsFileStatusProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.HdfsFileStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void HdfsFileStatusProto::CopyFrom(const HdfsFileStatusProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.HdfsFileStatusProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.HdfsFileStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -7900,14 +9082,19 @@ void HdfsFileStatusProto::InternalSwap(HdfsFileStatusProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  path_.Swap(&other->path_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  owner_.Swap(&other->owner_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  group_.Swap(&other->group_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  symlink_.Swap(&other->symlink_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  path_.Swap(&other->path_,
+             &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+             GetArenaNoVirtual());
+  owner_.Swap(&other->owner_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  group_.Swap(&other->group_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  symlink_.Swap(
+      &other->symlink_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(permission_, other->permission_);
   swap(locations_, other->locations_);
   swap(fileencryptioninfo_, other->fileencryptioninfo_);
@@ -7925,26 +9112,20 @@ void HdfsFileStatusProto::InternalSwap(HdfsFileStatusProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void FsServerDefaultsProto::InitAsDefaultInstance() {
-}
+void FsServerDefaultsProto::InitAsDefaultInstance() {}
 class FsServerDefaultsProto::_Internal {
  public:
   using HasBits = decltype(std::declval<FsServerDefaultsProto>()._has_bits_);
-  static void set_has_blocksize(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_blocksize(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_bytesperchecksum(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
   static void set_has_writepacketsize(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static void set_has_replication(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_replication(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_filebuffersize(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
@@ -7960,25 +9141,27 @@ class FsServerDefaultsProto::_Internal {
 };
 
 FsServerDefaultsProto::FsServerDefaultsProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.FsServerDefaultsProto)
 }
 FsServerDefaultsProto::FsServerDefaultsProto(const FsServerDefaultsProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&blocksize_, &from.blocksize_,
-    static_cast<size_t>(reinterpret_cast<char*>(&checksumtype_) -
-    reinterpret_cast<char*>(&blocksize_)) + sizeof(checksumtype_));
+           static_cast<size_t>(reinterpret_cast<char*>(&checksumtype_) -
+                               reinterpret_cast<char*>(&blocksize_)) +
+               sizeof(checksumtype_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.FsServerDefaultsProto)
 }
 
 void FsServerDefaultsProto::SharedCtor() {
-  ::memset(&blocksize_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&encryptdatatransfer_) -
-      reinterpret_cast<char*>(&blocksize_)) + sizeof(encryptdatatransfer_));
+  ::memset(&blocksize_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&encryptdatatransfer_) -
+                               reinterpret_cast<char*>(&blocksize_)) +
+               sizeof(encryptdatatransfer_));
   checksumtype_ = 1;
 }
 
@@ -7987,37 +9170,40 @@ FsServerDefaultsProto::~FsServerDefaultsProto() {
   SharedDtor();
 }
 
-void FsServerDefaultsProto::SharedDtor() {
-}
+void FsServerDefaultsProto::SharedDtor() {}
 
 void FsServerDefaultsProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const FsServerDefaultsProto& FsServerDefaultsProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_FsServerDefaultsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_FsServerDefaultsProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void FsServerDefaultsProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FsServerDefaultsProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.FsServerDefaultsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
-    ::memset(&blocksize_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&encryptdatatransfer_) -
-        reinterpret_cast<char*>(&blocksize_)) + sizeof(encryptdatatransfer_));
+    ::memset(
+        &blocksize_, 0,
+        static_cast<size_t>(reinterpret_cast<char*>(&encryptdatatransfer_) -
+                            reinterpret_cast<char*>(&blocksize_)) +
+            sizeof(encryptdatatransfer_));
     checksumtype_ = 1;
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* FsServerDefaultsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* FsServerDefaultsProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -8026,71 +9212,95 @@ const char* FsServerDefaultsProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
     switch (tag >> 3) {
       // required uint64 blockSize = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_blocksize(&has_bits);
           blocksize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 bytesPerChecksum = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_bytesperchecksum(&has_bits);
-          bytesperchecksum_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          bytesperchecksum_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 writePacketSize = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_writepacketsize(&has_bits);
-          writepacketsize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          writepacketsize_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 replication = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_replication(&has_bits);
           replication_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 fileBufferSize = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_filebuffersize(&has_bits);
           filebuffersize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bool encryptDataTransfer = 6 [default = false];
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_encryptdatatransfer(&has_bits);
-          encryptdatatransfer_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          encryptdatatransfer_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 trashInterval = 7 [default = 0];
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           _Internal::set_has_trashinterval(&has_bits);
           trashinterval_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default = CHECKSUM_CRC32];
+      // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default =
+      // CHECKSUM_CRC32];
       case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
-            _internal_set_checksumtype(static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
+            _internal_set_checksumtype(
+                static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(8, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                8, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -8103,7 +9313,7 @@ const char* FsServerDefaultsProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -8114,154 +9324,173 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* FsServerDefaultsProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.FsServerDefaultsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 blockSize = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_blocksize(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_blocksize(), target);
   }
 
   // required uint32 bytesPerChecksum = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_bytesperchecksum(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_bytesperchecksum(), target);
   }
 
   // required uint32 writePacketSize = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(3, this->_internal_writepacketsize(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            3, this->_internal_writepacketsize(), target);
   }
 
   // required uint32 replication = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(4, this->_internal_replication(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            4, this->_internal_replication(), target);
   }
 
   // required uint32 fileBufferSize = 5;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(5, this->_internal_filebuffersize(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            5, this->_internal_filebuffersize(), target);
   }
 
   // optional bool encryptDataTransfer = 6 [default = false];
   if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(6, this->_internal_encryptdatatransfer(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            6, this->_internal_encryptdatatransfer(), target);
   }
 
   // optional uint64 trashInterval = 7 [default = 0];
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(7, this->_internal_trashinterval(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            7, this->_internal_trashinterval(), target);
   }
 
-  // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default = CHECKSUM_CRC32];
+  // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default =
+  // CHECKSUM_CRC32];
   if (cached_has_bits & 0x00000080u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      8, this->_internal_checksumtype(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            8, this->_internal_checksumtype(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.FsServerDefaultsProto)
   return target;
 }
 
 size_t FsServerDefaultsProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.FsServerDefaultsProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.FsServerDefaultsProto)
   size_t total_size = 0;
 
   if (_internal_has_blocksize()) {
     // required uint64 blockSize = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blocksize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blocksize());
   }
 
   if (_internal_has_bytesperchecksum()) {
     // required uint32 bytesPerChecksum = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytesperchecksum());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytesperchecksum());
   }
 
   if (_internal_has_writepacketsize()) {
     // required uint32 writePacketSize = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_writepacketsize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_writepacketsize());
   }
 
   if (_internal_has_replication()) {
     // required uint32 replication = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_replication());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_replication());
   }
 
   if (_internal_has_filebuffersize()) {
     // required uint32 fileBufferSize = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_filebuffersize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_filebuffersize());
   }
 
   return total_size;
 }
 size_t FsServerDefaultsProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FsServerDefaultsProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.FsServerDefaultsProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) ==
+      0) {  // All required fields are present.
     // required uint64 blockSize = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blocksize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blocksize());
 
     // required uint32 bytesPerChecksum = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytesperchecksum());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytesperchecksum());
 
     // required uint32 writePacketSize = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_writepacketsize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_writepacketsize());
 
     // required uint32 replication = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_replication());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_replication());
 
     // required uint32 fileBufferSize = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_filebuffersize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_filebuffersize());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x000000e0u) {
     // optional uint64 trashInterval = 7 [default = 0];
     if (cached_has_bits & 0x00000020u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-          this->_internal_trashinterval());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                  this->_internal_trashinterval());
     }
 
     // optional bool encryptDataTransfer = 6 [default = false];
@@ -8269,12 +9498,13 @@ size_t FsServerDefaultsProto::ByteSizeLong() const {
       total_size += 1 + 1;
     }
 
-    // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default = CHECKSUM_CRC32];
+    // optional .Hdfs.Internal.ChecksumTypeProto checksumType = 8 [default =
+    // CHECKSUM_CRC32];
     if (cached_has_bits & 0x00000080u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_checksumtype());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                  this->_internal_checksumtype());
     }
-
   }
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -8285,27 +9515,28 @@ size_t FsServerDefaultsProto::ByteSizeLong() const {
   return total_size;
 }
 
-void FsServerDefaultsProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FsServerDefaultsProto)
+void FsServerDefaultsProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.FsServerDefaultsProto)
   GOOGLE_DCHECK_NE(&from, this);
   const FsServerDefaultsProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<FsServerDefaultsProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FsServerDefaultsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.FsServerDefaultsProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FsServerDefaultsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.FsServerDefaultsProto)
     MergeFrom(*source);
   }
 }
 
 void FsServerDefaultsProto::MergeFrom(const FsServerDefaultsProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FsServerDefaultsProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.FsServerDefaultsProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
@@ -8337,15 +9568,16 @@ void FsServerDefaultsProto::MergeFrom(const FsServerDefaultsProto& from) {
   }
 }
 
-void FsServerDefaultsProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FsServerDefaultsProto)
+void FsServerDefaultsProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.FsServerDefaultsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void FsServerDefaultsProto::CopyFrom(const FsServerDefaultsProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FsServerDefaultsProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.FsServerDefaultsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -8374,11 +9606,9 @@ void FsServerDefaultsProto::InternalSwap(FsServerDefaultsProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void DirectoryListingProto::InitAsDefaultInstance() {
-}
+void DirectoryListingProto::InitAsDefaultInstance() {}
 class DirectoryListingProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DirectoryListingProto>()._has_bits_);
@@ -8388,12 +9618,12 @@ class DirectoryListingProto::_Internal {
 };
 
 DirectoryListingProto::DirectoryListingProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DirectoryListingProto)
 }
 DirectoryListingProto::DirectoryListingProto(const DirectoryListingProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       partiallisting_(from.partiallisting_) {
@@ -8403,7 +9633,8 @@ DirectoryListingProto::DirectoryListingProto(const DirectoryListingProto& from)
 }
 
 void DirectoryListingProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DirectoryListingProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DirectoryListingProto_hdfs_2eproto.base);
   remainingentries_ = 0u;
 }
 
@@ -8412,23 +9643,22 @@ DirectoryListingProto::~DirectoryListingProto() {
   SharedDtor();
 }
 
-void DirectoryListingProto::SharedDtor() {
-}
+void DirectoryListingProto::SharedDtor() {}
 
 void DirectoryListingProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const DirectoryListingProto& DirectoryListingProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DirectoryListingProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DirectoryListingProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DirectoryListingProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DirectoryListingProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DirectoryListingProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   partiallisting_.Clear();
   remainingentries_ = 0u;
@@ -8436,8 +9666,10 @@ void DirectoryListingProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* DirectoryListingProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DirectoryListingProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -8446,7 +9678,8 @@ const char* DirectoryListingProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
     switch (tag >> 3) {
       // repeated .Hdfs.Internal.HdfsFileStatusProto partialListing = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -8454,15 +9687,19 @@ const char* DirectoryListingProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 remainingEntries = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_remainingentries(&has_bits);
-          remainingentries_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          remainingentries_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -8475,7 +9712,7 @@ const char* DirectoryListingProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -8486,53 +9723,59 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DirectoryListingProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DirectoryListingProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.HdfsFileStatusProto partialListing = 1;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_partiallisting_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_partiallisting_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_partiallisting(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_partiallisting(i), target, stream);
   }
 
   cached_has_bits = _has_bits_[0];
   // required uint32 remainingEntries = 2;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_remainingentries(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_remainingentries(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DirectoryListingProto)
   return target;
 }
 
 size_t DirectoryListingProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DirectoryListingProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DirectoryListingProto)
   size_t total_size = 0;
 
   // required uint32 remainingEntries = 2;
   if (_internal_has_remainingentries()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_remainingentries());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_remainingentries());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.HdfsFileStatusProto partialListing = 1;
   total_size += 1UL * this->_internal_partiallisting_size();
   for (const auto& msg : this->partiallisting_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -8544,27 +9787,28 @@ size_t DirectoryListingProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DirectoryListingProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DirectoryListingProto)
+void DirectoryListingProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DirectoryListingProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DirectoryListingProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DirectoryListingProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DirectoryListingProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DirectoryListingProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DirectoryListingProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DirectoryListingProto)
     MergeFrom(*source);
   }
 }
 
 void DirectoryListingProto::MergeFrom(const DirectoryListingProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DirectoryListingProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DirectoryListingProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   partiallisting_.MergeFrom(from.partiallisting_);
   if (from._internal_has_remainingentries()) {
@@ -8572,15 +9816,16 @@ void DirectoryListingProto::MergeFrom(const DirectoryListingProto& from) {
   }
 }
 
-void DirectoryListingProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DirectoryListingProto)
+void DirectoryListingProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DirectoryListingProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DirectoryListingProto::CopyFrom(const DirectoryListingProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DirectoryListingProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DirectoryListingProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -8588,7 +9833,8 @@ void DirectoryListingProto::CopyFrom(const DirectoryListingProto& from) {
 
 bool DirectoryListingProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(partiallisting_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(partiallisting_))
+    return false;
   return true;
 }
 
@@ -8604,20 +9850,21 @@ void DirectoryListingProto::InternalSwap(DirectoryListingProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void SnapshottableDirectoryStatusProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_SnapshottableDirectoryStatusProto_default_instance_._instance.get_mutable()->dirstatus_ = const_cast< ::Hdfs::Internal::HdfsFileStatusProto*>(
+  ::Hdfs::Internal::_SnapshottableDirectoryStatusProto_default_instance_
+      ._instance.get_mutable()
+      ->dirstatus_ = const_cast<::Hdfs::Internal::HdfsFileStatusProto*>(
       ::Hdfs::Internal::HdfsFileStatusProto::internal_default_instance());
 }
 class SnapshottableDirectoryStatusProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<SnapshottableDirectoryStatusProto>()._has_bits_);
-  static const ::Hdfs::Internal::HdfsFileStatusProto& dirstatus(const SnapshottableDirectoryStatusProto* msg);
-  static void set_has_dirstatus(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  using HasBits =
+      decltype(std::declval<SnapshottableDirectoryStatusProto>()._has_bits_);
+  static const ::Hdfs::Internal::HdfsFileStatusProto& dirstatus(
+      const SnapshottableDirectoryStatusProto* msg);
+  static void set_has_dirstatus(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_snapshot_quota(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
@@ -8630,22 +9877,27 @@ class SnapshottableDirectoryStatusProto::_Internal {
 };
 
 const ::Hdfs::Internal::HdfsFileStatusProto&
-SnapshottableDirectoryStatusProto::_Internal::dirstatus(const SnapshottableDirectoryStatusProto* msg) {
+SnapshottableDirectoryStatusProto::_Internal::dirstatus(
+    const SnapshottableDirectoryStatusProto* msg) {
   return *msg->dirstatus_;
 }
 SnapshottableDirectoryStatusProto::SnapshottableDirectoryStatusProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.SnapshottableDirectoryStatusProto)
 }
-SnapshottableDirectoryStatusProto::SnapshottableDirectoryStatusProto(const SnapshottableDirectoryStatusProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+SnapshottableDirectoryStatusProto::SnapshottableDirectoryStatusProto(
+    const SnapshottableDirectoryStatusProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  parent_fullpath_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  parent_fullpath_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_parent_fullpath()) {
-    parent_fullpath_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.parent_fullpath_);
+    parent_fullpath_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.parent_fullpath_);
   }
   if (from._internal_has_dirstatus()) {
     dirstatus_ = new ::Hdfs::Internal::HdfsFileStatusProto(*from.dirstatus_);
@@ -8653,17 +9905,21 @@ SnapshottableDirectoryStatusProto::SnapshottableDirectoryStatusProto(const Snaps
     dirstatus_ = nullptr;
   }
   ::memcpy(&snapshot_quota_, &from.snapshot_quota_,
-    static_cast<size_t>(reinterpret_cast<char*>(&snapshot_number_) -
-    reinterpret_cast<char*>(&snapshot_quota_)) + sizeof(snapshot_number_));
+           static_cast<size_t>(reinterpret_cast<char*>(&snapshot_number_) -
+                               reinterpret_cast<char*>(&snapshot_quota_)) +
+               sizeof(snapshot_number_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.SnapshottableDirectoryStatusProto)
 }
 
 void SnapshottableDirectoryStatusProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base);
-  parent_fullpath_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&dirstatus_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&snapshot_number_) -
-      reinterpret_cast<char*>(&dirstatus_)) + sizeof(snapshot_number_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base);
+  parent_fullpath_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&dirstatus_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&snapshot_number_) -
+                               reinterpret_cast<char*>(&dirstatus_)) +
+               sizeof(snapshot_number_));
 }
 
 SnapshottableDirectoryStatusProto::~SnapshottableDirectoryStatusProto() {
@@ -8672,24 +9928,26 @@ SnapshottableDirectoryStatusProto::~SnapshottableDirectoryStatusProto() {
 }
 
 void SnapshottableDirectoryStatusProto::SharedDtor() {
-  parent_fullpath_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  parent_fullpath_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete dirstatus_;
 }
 
 void SnapshottableDirectoryStatusProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SnapshottableDirectoryStatusProto& SnapshottableDirectoryStatusProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base);
+const SnapshottableDirectoryStatusProto&
+SnapshottableDirectoryStatusProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_SnapshottableDirectoryStatusProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void SnapshottableDirectoryStatusProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -8702,16 +9960,19 @@ void SnapshottableDirectoryStatusProto::Clear() {
     }
   }
   if (cached_has_bits & 0x0000000cu) {
-    ::memset(&snapshot_quota_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&snapshot_number_) -
-        reinterpret_cast<char*>(&snapshot_quota_)) + sizeof(snapshot_number_));
+    ::memset(&snapshot_quota_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&snapshot_number_) -
+                                 reinterpret_cast<char*>(&snapshot_quota_)) +
+                 sizeof(snapshot_number_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* SnapshottableDirectoryStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* SnapshottableDirectoryStatusProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -8720,34 +9981,44 @@ const char* SnapshottableDirectoryStatusProto::_InternalParse(const char* ptr, :
     switch (tag >> 3) {
       // required .Hdfs.Internal.HdfsFileStatusProto dirStatus = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_dirstatus(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 snapshot_quota = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_snapshot_quota(&has_bits);
           snapshot_quota_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 snapshot_number = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_snapshot_number(&has_bits);
-          snapshot_number_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          snapshot_number_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes parent_fullpath = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_parent_fullpath();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -8760,7 +10031,7 @@ const char* SnapshottableDirectoryStatusProto::_InternalParse(const char* ptr, :
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -8770,31 +10041,37 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* SnapshottableDirectoryStatusProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+SnapshottableDirectoryStatusProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.HdfsFileStatusProto dirStatus = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::dirstatus(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::dirstatus(this), target, stream);
   }
 
   // required uint32 snapshot_quota = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_snapshot_quota(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_snapshot_quota(), target);
   }
 
   // required uint32 snapshot_number = 3;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(3, this->_internal_snapshot_number(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            3, this->_internal_snapshot_number(), target);
   }
 
   // required bytes parent_fullpath = 4;
@@ -8804,78 +10081,81 @@ failure:
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   return target;
 }
 
-size_t SnapshottableDirectoryStatusProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+size_t SnapshottableDirectoryStatusProto::RequiredFieldsByteSizeFallback()
+    const {
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   size_t total_size = 0;
 
   if (_internal_has_parent_fullpath()) {
     // required bytes parent_fullpath = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_parent_fullpath());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_parent_fullpath());
   }
 
   if (_internal_has_dirstatus()) {
     // required .Hdfs.Internal.HdfsFileStatusProto dirStatus = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *dirstatus_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *dirstatus_);
   }
 
   if (_internal_has_snapshot_quota()) {
     // required uint32 snapshot_quota = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_snapshot_quota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_snapshot_quota());
   }
 
   if (_internal_has_snapshot_number()) {
     // required uint32 snapshot_number = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_snapshot_number());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_snapshot_number());
   }
 
   return total_size;
 }
 size_t SnapshottableDirectoryStatusProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required bytes parent_fullpath = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_parent_fullpath());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_parent_fullpath());
 
     // required .Hdfs.Internal.HdfsFileStatusProto dirStatus = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *dirstatus_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *dirstatus_);
 
     // required uint32 snapshot_quota = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_snapshot_quota());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_snapshot_quota());
 
     // required uint32 snapshot_number = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_snapshot_number());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_snapshot_number());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -8886,36 +10166,42 @@ size_t SnapshottableDirectoryStatusProto::ByteSizeLong() const {
   return total_size;
 }
 
-void SnapshottableDirectoryStatusProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+void SnapshottableDirectoryStatusProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   const SnapshottableDirectoryStatusProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshottableDirectoryStatusProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          SnapshottableDirectoryStatusProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshottableDirectoryStatusProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshottableDirectoryStatusProto)
     MergeFrom(*source);
   }
 }
 
-void SnapshottableDirectoryStatusProto::MergeFrom(const SnapshottableDirectoryStatusProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+void SnapshottableDirectoryStatusProto::MergeFrom(
+    const SnapshottableDirectoryStatusProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      parent_fullpath_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.parent_fullpath_);
+      parent_fullpath_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.parent_fullpath_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_dirstatus()->::Hdfs::Internal::HdfsFileStatusProto::MergeFrom(from._internal_dirstatus());
+      _internal_mutable_dirstatus()
+          ->::Hdfs::Internal::HdfsFileStatusProto::MergeFrom(
+              from._internal_dirstatus());
     }
     if (cached_has_bits & 0x00000004u) {
       snapshot_quota_ = from.snapshot_quota_;
@@ -8927,15 +10213,17 @@ void SnapshottableDirectoryStatusProto::MergeFrom(const SnapshottableDirectorySt
   }
 }
 
-void SnapshottableDirectoryStatusProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+void SnapshottableDirectoryStatusProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void SnapshottableDirectoryStatusProto::CopyFrom(const SnapshottableDirectoryStatusProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
+void SnapshottableDirectoryStatusProto::CopyFrom(
+    const SnapshottableDirectoryStatusProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshottableDirectoryStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -8949,38 +10237,42 @@ bool SnapshottableDirectoryStatusProto::IsInitialized() const {
   return true;
 }
 
-void SnapshottableDirectoryStatusProto::InternalSwap(SnapshottableDirectoryStatusProto* other) {
+void SnapshottableDirectoryStatusProto::InternalSwap(
+    SnapshottableDirectoryStatusProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  parent_fullpath_.Swap(&other->parent_fullpath_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  parent_fullpath_.Swap(
+      &other->parent_fullpath_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(dirstatus_, other->dirstatus_);
   swap(snapshot_quota_, other->snapshot_quota_);
   swap(snapshot_number_, other->snapshot_number_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata SnapshottableDirectoryStatusProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+SnapshottableDirectoryStatusProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void SnapshottableDirectoryListingProto::InitAsDefaultInstance() {
-}
+void SnapshottableDirectoryListingProto::InitAsDefaultInstance() {}
 class SnapshottableDirectoryListingProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<SnapshottableDirectoryListingProto>()._has_bits_);
+  using HasBits =
+      decltype(std::declval<SnapshottableDirectoryListingProto>()._has_bits_);
 };
 
 SnapshottableDirectoryListingProto::SnapshottableDirectoryListingProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.SnapshottableDirectoryListingProto)
 }
-SnapshottableDirectoryListingProto::SnapshottableDirectoryListingProto(const SnapshottableDirectoryListingProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+SnapshottableDirectoryListingProto::SnapshottableDirectoryListingProto(
+    const SnapshottableDirectoryListingProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       snapshottabledirlisting_(from.snapshottabledirlisting_) {
@@ -8989,7 +10281,8 @@ SnapshottableDirectoryListingProto::SnapshottableDirectoryListingProto(const Sna
 }
 
 void SnapshottableDirectoryListingProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base);
 }
 
 SnapshottableDirectoryListingProto::~SnapshottableDirectoryListingProto() {
@@ -8997,47 +10290,53 @@ SnapshottableDirectoryListingProto::~SnapshottableDirectoryListingProto() {
   SharedDtor();
 }
 
-void SnapshottableDirectoryListingProto::SharedDtor() {
-}
+void SnapshottableDirectoryListingProto::SharedDtor() {}
 
 void SnapshottableDirectoryListingProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SnapshottableDirectoryListingProto& SnapshottableDirectoryListingProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base);
+const SnapshottableDirectoryListingProto&
+SnapshottableDirectoryListingProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_SnapshottableDirectoryListingProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void SnapshottableDirectoryListingProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   snapshottabledirlisting_.Clear();
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* SnapshottableDirectoryListingProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* SnapshottableDirectoryListingProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto snapshottableDirListing = 1;
+      // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto
+      // snapshottableDirListing = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
-            ptr = ctx->ParseMessage(_internal_add_snapshottabledirlisting(), ptr);
+            ptr =
+                ctx->ParseMessage(_internal_add_snapshottabledirlisting(), ptr);
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -9050,7 +10349,7 @@ const char* SnapshottableDirectoryListingProto::_InternalParse(const char* ptr, 
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   return ptr;
 failure:
@@ -9059,41 +10358,48 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* SnapshottableDirectoryListingProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+SnapshottableDirectoryListingProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
-  // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto snapshottableDirListing = 1;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_snapshottabledirlisting_size()); i < n; i++) {
+  // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto
+  // snapshottableDirListing = 1;
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_snapshottabledirlisting_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_snapshottabledirlisting(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_snapshottabledirlisting(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.SnapshottableDirectoryListingProto)
   return target;
 }
 
 size_t SnapshottableDirectoryListingProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
-  // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto snapshottableDirListing = 1;
+  // repeated .Hdfs.Internal.SnapshottableDirectoryStatusProto
+  // snapshottableDirListing = 1;
   total_size += 1UL * this->_internal_snapshottabledirlisting_size();
   for (const auto& msg : this->snapshottabledirlisting_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -9105,102 +10411,117 @@ size_t SnapshottableDirectoryListingProto::ByteSizeLong() const {
   return total_size;
 }
 
-void SnapshottableDirectoryListingProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+void SnapshottableDirectoryListingProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   GOOGLE_DCHECK_NE(&from, this);
   const SnapshottableDirectoryListingProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshottableDirectoryListingProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          SnapshottableDirectoryListingProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshottableDirectoryListingProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshottableDirectoryListingProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshottableDirectoryListingProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshottableDirectoryListingProto)
     MergeFrom(*source);
   }
 }
 
-void SnapshottableDirectoryListingProto::MergeFrom(const SnapshottableDirectoryListingProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+void SnapshottableDirectoryListingProto::MergeFrom(
+    const SnapshottableDirectoryListingProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   snapshottabledirlisting_.MergeFrom(from.snapshottabledirlisting_);
 }
 
-void SnapshottableDirectoryListingProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+void SnapshottableDirectoryListingProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void SnapshottableDirectoryListingProto::CopyFrom(const SnapshottableDirectoryListingProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
+void SnapshottableDirectoryListingProto::CopyFrom(
+    const SnapshottableDirectoryListingProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshottableDirectoryListingProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool SnapshottableDirectoryListingProto::IsInitialized() const {
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(snapshottabledirlisting_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(
+          snapshottabledirlisting_))
+    return false;
   return true;
 }
 
-void SnapshottableDirectoryListingProto::InternalSwap(SnapshottableDirectoryListingProto* other) {
+void SnapshottableDirectoryListingProto::InternalSwap(
+    SnapshottableDirectoryListingProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   snapshottabledirlisting_.InternalSwap(&other->snapshottabledirlisting_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata SnapshottableDirectoryListingProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+SnapshottableDirectoryListingProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void SnapshotDiffReportEntryProto::InitAsDefaultInstance() {
-}
+void SnapshotDiffReportEntryProto::InitAsDefaultInstance() {}
 class SnapshotDiffReportEntryProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<SnapshotDiffReportEntryProto>()._has_bits_);
-  static void set_has_fullpath(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  using HasBits =
+      decltype(std::declval<SnapshotDiffReportEntryProto>()._has_bits_);
+  static void set_has_fullpath(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_modificationlabel(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
 
 SnapshotDiffReportEntryProto::SnapshotDiffReportEntryProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.SnapshotDiffReportEntryProto)
 }
-SnapshotDiffReportEntryProto::SnapshotDiffReportEntryProto(const SnapshotDiffReportEntryProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+SnapshotDiffReportEntryProto::SnapshotDiffReportEntryProto(
+    const SnapshotDiffReportEntryProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  fullpath_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  fullpath_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_fullpath()) {
-    fullpath_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.fullpath_);
+    fullpath_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.fullpath_);
   }
-  modificationlabel_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  modificationlabel_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_modificationlabel()) {
-    modificationlabel_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.modificationlabel_);
+    modificationlabel_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.modificationlabel_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.SnapshotDiffReportEntryProto)
 }
 
 void SnapshotDiffReportEntryProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base);
-  fullpath_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  modificationlabel_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base);
+  fullpath_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  modificationlabel_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 SnapshotDiffReportEntryProto::~SnapshotDiffReportEntryProto() {
@@ -9209,24 +10530,27 @@ SnapshotDiffReportEntryProto::~SnapshotDiffReportEntryProto() {
 }
 
 void SnapshotDiffReportEntryProto::SharedDtor() {
-  fullpath_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  modificationlabel_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  fullpath_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  modificationlabel_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void SnapshotDiffReportEntryProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SnapshotDiffReportEntryProto& SnapshotDiffReportEntryProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base);
+const SnapshotDiffReportEntryProto&
+SnapshotDiffReportEntryProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_SnapshotDiffReportEntryProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void SnapshotDiffReportEntryProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -9241,8 +10565,10 @@ void SnapshotDiffReportEntryProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* SnapshotDiffReportEntryProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* SnapshotDiffReportEntryProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -9251,22 +10577,30 @@ const char* SnapshotDiffReportEntryProto::_InternalParse(const char* ptr, ::PROT
     switch (tag >> 3) {
       // required bytes fullpath = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_fullpath();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string modificationLabel = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_modificationlabel();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotDiffReportEntryProto.modificationLabel");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str,
+              "Hdfs.Internal.SnapshotDiffReportEntryProto.modificationLabel");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -9279,7 +10613,7 @@ const char* SnapshotDiffReportEntryProto::_InternalParse(const char* ptr, ::PROT
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -9289,78 +10623,83 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* SnapshotDiffReportEntryProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+SnapshotDiffReportEntryProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required bytes fullpath = 1;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        1, this->_internal_fullpath(), target);
+    target =
+        stream->WriteBytesMaybeAliased(1, this->_internal_fullpath(), target);
   }
 
   // required string modificationLabel = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_modificationlabel().data(), static_cast<int>(this->_internal_modificationlabel().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotDiffReportEntryProto.modificationLabel");
+        this->_internal_modificationlabel().data(),
+        static_cast<int>(this->_internal_modificationlabel().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotDiffReportEntryProto.modificationLabel");
     target = stream->WriteStringMaybeAliased(
         2, this->_internal_modificationlabel(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.SnapshotDiffReportEntryProto)
   return target;
 }
 
 size_t SnapshotDiffReportEntryProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   size_t total_size = 0;
 
   if (_internal_has_fullpath()) {
     // required bytes fullpath = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_fullpath());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_fullpath());
   }
 
   if (_internal_has_modificationlabel()) {
     // required string modificationLabel = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_modificationlabel());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_modificationlabel());
   }
 
   return total_size;
 }
 size_t SnapshotDiffReportEntryProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required bytes fullpath = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_fullpath());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_fullpath());
 
     // required string modificationLabel = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_modificationlabel());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_modificationlabel());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -9371,50 +10710,58 @@ size_t SnapshotDiffReportEntryProto::ByteSizeLong() const {
   return total_size;
 }
 
-void SnapshotDiffReportEntryProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+void SnapshotDiffReportEntryProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   GOOGLE_DCHECK_NE(&from, this);
   const SnapshotDiffReportEntryProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshotDiffReportEntryProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          SnapshotDiffReportEntryProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotDiffReportEntryProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotDiffReportEntryProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotDiffReportEntryProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotDiffReportEntryProto)
     MergeFrom(*source);
   }
 }
 
-void SnapshotDiffReportEntryProto::MergeFrom(const SnapshotDiffReportEntryProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+void SnapshotDiffReportEntryProto::MergeFrom(
+    const SnapshotDiffReportEntryProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      fullpath_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.fullpath_);
+      fullpath_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.fullpath_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      modificationlabel_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.modificationlabel_);
+      modificationlabel_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.modificationlabel_);
     }
   }
 }
 
-void SnapshotDiffReportEntryProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+void SnapshotDiffReportEntryProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void SnapshotDiffReportEntryProto::CopyFrom(const SnapshotDiffReportEntryProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
+void SnapshotDiffReportEntryProto::CopyFrom(
+    const SnapshotDiffReportEntryProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotDiffReportEntryProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -9425,70 +10772,82 @@ bool SnapshotDiffReportEntryProto::IsInitialized() const {
   return true;
 }
 
-void SnapshotDiffReportEntryProto::InternalSwap(SnapshotDiffReportEntryProto* other) {
+void SnapshotDiffReportEntryProto::InternalSwap(
+    SnapshotDiffReportEntryProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  fullpath_.Swap(&other->fullpath_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  modificationlabel_.Swap(&other->modificationlabel_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  fullpath_.Swap(
+      &other->fullpath_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  modificationlabel_.Swap(
+      &other->modificationlabel_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata SnapshotDiffReportEntryProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata SnapshotDiffReportEntryProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void SnapshotDiffReportProto::InitAsDefaultInstance() {
-}
+void SnapshotDiffReportProto::InitAsDefaultInstance() {}
 class SnapshotDiffReportProto::_Internal {
  public:
   using HasBits = decltype(std::declval<SnapshotDiffReportProto>()._has_bits_);
-  static void set_has_snapshotroot(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_fromsnapshot(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_tosnapshot(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static void set_has_snapshotroot(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_fromsnapshot(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_tosnapshot(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
 };
 
 SnapshotDiffReportProto::SnapshotDiffReportProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.SnapshotDiffReportProto)
 }
-SnapshotDiffReportProto::SnapshotDiffReportProto(const SnapshotDiffReportProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+SnapshotDiffReportProto::SnapshotDiffReportProto(
+    const SnapshotDiffReportProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       diffreportentries_(from.diffreportentries_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  snapshotroot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotroot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_snapshotroot()) {
-    snapshotroot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotroot_);
+    snapshotroot_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.snapshotroot_);
   }
-  fromsnapshot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  fromsnapshot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_fromsnapshot()) {
-    fromsnapshot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.fromsnapshot_);
+    fromsnapshot_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.fromsnapshot_);
   }
-  tosnapshot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  tosnapshot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_tosnapshot()) {
-    tosnapshot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.tosnapshot_);
+    tosnapshot_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.tosnapshot_);
   }
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.SnapshotDiffReportProto)
 }
 
 void SnapshotDiffReportProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SnapshotDiffReportProto_hdfs_2eproto.base);
-  snapshotroot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  fromsnapshot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  tosnapshot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_SnapshotDiffReportProto_hdfs_2eproto.base);
+  snapshotroot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  fromsnapshot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  tosnapshot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 SnapshotDiffReportProto::~SnapshotDiffReportProto() {
@@ -9497,25 +10856,28 @@ SnapshotDiffReportProto::~SnapshotDiffReportProto() {
 }
 
 void SnapshotDiffReportProto::SharedDtor() {
-  snapshotroot_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  fromsnapshot_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  tosnapshot_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotroot_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  fromsnapshot_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  tosnapshot_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void SnapshotDiffReportProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const SnapshotDiffReportProto& SnapshotDiffReportProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SnapshotDiffReportProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_SnapshotDiffReportProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void SnapshotDiffReportProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotDiffReportProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotDiffReportProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   diffreportentries_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -9534,8 +10896,10 @@ void SnapshotDiffReportProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* SnapshotDiffReportProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* SnapshotDiffReportProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -9544,40 +10908,54 @@ const char* SnapshotDiffReportProto::_InternalParse(const char* ptr, ::PROTOBUF_
     switch (tag >> 3) {
       // required string snapshotRoot = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_snapshotroot();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotDiffReportProto.snapshotRoot");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotDiffReportProto.snapshotRoot");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string fromSnapshot = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_fromsnapshot();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotDiffReportProto.fromSnapshot");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotDiffReportProto.fromSnapshot");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string toSnapshot = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_tosnapshot();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotDiffReportProto.toSnapshot");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotDiffReportProto.toSnapshot");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // repeated .Hdfs.Internal.SnapshotDiffReportEntryProto diffReportEntries = 4;
+      // repeated .Hdfs.Internal.SnapshotDiffReportEntryProto diffReportEntries
+      // = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -9585,7 +10963,8 @@ const char* SnapshotDiffReportProto::_InternalParse(const char* ptr, ::PROTOBUF_
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<34>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -9598,7 +10977,7 @@ const char* SnapshotDiffReportProto::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -9609,117 +10988,125 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* SnapshotDiffReportProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.SnapshotDiffReportProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string snapshotRoot = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_snapshotroot().data(), static_cast<int>(this->_internal_snapshotroot().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotDiffReportProto.snapshotRoot");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_snapshotroot(), target);
+        this->_internal_snapshotroot().data(),
+        static_cast<int>(this->_internal_snapshotroot().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotDiffReportProto.snapshotRoot");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_snapshotroot(),
+                                             target);
   }
 
   // required string fromSnapshot = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_fromsnapshot().data(), static_cast<int>(this->_internal_fromsnapshot().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotDiffReportProto.fromSnapshot");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_fromsnapshot(), target);
+        this->_internal_fromsnapshot().data(),
+        static_cast<int>(this->_internal_fromsnapshot().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotDiffReportProto.fromSnapshot");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_fromsnapshot(),
+                                             target);
   }
 
   // required string toSnapshot = 3;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_tosnapshot().data(), static_cast<int>(this->_internal_tosnapshot().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotDiffReportProto.toSnapshot");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_tosnapshot(), target);
+        this->_internal_tosnapshot().data(),
+        static_cast<int>(this->_internal_tosnapshot().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotDiffReportProto.toSnapshot");
+    target = stream->WriteStringMaybeAliased(3, this->_internal_tosnapshot(),
+                                             target);
   }
 
   // repeated .Hdfs.Internal.SnapshotDiffReportEntryProto diffReportEntries = 4;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_diffreportentries_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_diffreportentries_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(4, this->_internal_diffreportentries(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, this->_internal_diffreportentries(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.SnapshotDiffReportProto)
   return target;
 }
 
 size_t SnapshotDiffReportProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotDiffReportProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotDiffReportProto)
   size_t total_size = 0;
 
   if (_internal_has_snapshotroot()) {
     // required string snapshotRoot = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotroot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotroot());
   }
 
   if (_internal_has_fromsnapshot()) {
     // required string fromSnapshot = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_fromsnapshot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_fromsnapshot());
   }
 
   if (_internal_has_tosnapshot()) {
     // required string toSnapshot = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_tosnapshot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_tosnapshot());
   }
 
   return total_size;
 }
 size_t SnapshotDiffReportProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotDiffReportProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotDiffReportProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required string snapshotRoot = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotroot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotroot());
 
     // required string fromSnapshot = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_fromsnapshot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_fromsnapshot());
 
     // required string toSnapshot = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_tosnapshot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_tosnapshot());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.SnapshotDiffReportEntryProto diffReportEntries = 4;
   total_size += 1UL * this->_internal_diffreportentries_size();
   for (const auto& msg : this->diffreportentries_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -9731,55 +11118,63 @@ size_t SnapshotDiffReportProto::ByteSizeLong() const {
   return total_size;
 }
 
-void SnapshotDiffReportProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotDiffReportProto)
+void SnapshotDiffReportProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotDiffReportProto)
   GOOGLE_DCHECK_NE(&from, this);
   const SnapshotDiffReportProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshotDiffReportProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotDiffReportProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotDiffReportProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotDiffReportProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotDiffReportProto)
     MergeFrom(*source);
   }
 }
 
 void SnapshotDiffReportProto::MergeFrom(const SnapshotDiffReportProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotDiffReportProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotDiffReportProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   diffreportentries_.MergeFrom(from.diffreportentries_);
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      snapshotroot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotroot_);
+      snapshotroot_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.snapshotroot_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      fromsnapshot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.fromsnapshot_);
+      fromsnapshot_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.fromsnapshot_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      tosnapshot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.tosnapshot_);
+      tosnapshot_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.tosnapshot_);
     }
   }
 }
 
-void SnapshotDiffReportProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotDiffReportProto)
+void SnapshotDiffReportProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotDiffReportProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void SnapshotDiffReportProto::CopyFrom(const SnapshotDiffReportProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotDiffReportProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotDiffReportProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -9787,7 +11182,8 @@ void SnapshotDiffReportProto::CopyFrom(const SnapshotDiffReportProto& from) {
 
 bool SnapshotDiffReportProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(diffreportentries_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(diffreportentries_))
+    return false;
   return true;
 }
 
@@ -9796,66 +11192,69 @@ void SnapshotDiffReportProto::InternalSwap(SnapshotDiffReportProto* other) {
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   diffreportentries_.InternalSwap(&other->diffreportentries_);
-  snapshotroot_.Swap(&other->snapshotroot_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  fromsnapshot_.Swap(&other->fromsnapshot_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  tosnapshot_.Swap(&other->tosnapshot_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  snapshotroot_.Swap(
+      &other->snapshotroot_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  fromsnapshot_.Swap(
+      &other->fromsnapshot_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  tosnapshot_.Swap(
+      &other->tosnapshot_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SnapshotDiffReportProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void StorageInfoProto::InitAsDefaultInstance() {
-}
+void StorageInfoProto::InitAsDefaultInstance() {}
 class StorageInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<StorageInfoProto>()._has_bits_);
-  static void set_has_layoutversion(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_namespceid(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_clusterid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_ctime(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_layoutversion(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_namespceid(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_clusterid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_ctime(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
 };
 
 StorageInfoProto::StorageInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.StorageInfoProto)
 }
 StorageInfoProto::StorageInfoProto(const StorageInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  clusterid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  clusterid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_clusterid()) {
-    clusterid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.clusterid_);
+    clusterid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.clusterid_);
   }
   ::memcpy(&layoutversion_, &from.layoutversion_,
-    static_cast<size_t>(reinterpret_cast<char*>(&ctime_) -
-    reinterpret_cast<char*>(&layoutversion_)) + sizeof(ctime_));
+           static_cast<size_t>(reinterpret_cast<char*>(&ctime_) -
+                               reinterpret_cast<char*>(&layoutversion_)) +
+               sizeof(ctime_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.StorageInfoProto)
 }
 
 void StorageInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_StorageInfoProto_hdfs_2eproto.base);
-  clusterid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&layoutversion_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&ctime_) -
-      reinterpret_cast<char*>(&layoutversion_)) + sizeof(ctime_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_StorageInfoProto_hdfs_2eproto.base);
+  clusterid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&layoutversion_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&ctime_) -
+                               reinterpret_cast<char*>(&layoutversion_)) +
+               sizeof(ctime_));
 }
 
 StorageInfoProto::~StorageInfoProto() {
@@ -9864,39 +11263,43 @@ StorageInfoProto::~StorageInfoProto() {
 }
 
 void StorageInfoProto::SharedDtor() {
-  clusterid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  clusterid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void StorageInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const StorageInfoProto& StorageInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_StorageInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_StorageInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void StorageInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.StorageInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     clusterid_.ClearNonDefaultToEmptyNoArena();
   }
   if (cached_has_bits & 0x0000000eu) {
-    ::memset(&layoutversion_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&ctime_) -
-        reinterpret_cast<char*>(&layoutversion_)) + sizeof(ctime_));
+    ::memset(&layoutversion_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&ctime_) -
+                                 reinterpret_cast<char*>(&layoutversion_)) +
+                 sizeof(ctime_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* StorageInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* StorageInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -9905,38 +11308,48 @@ const char* StorageInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     switch (tag >> 3) {
       // required uint32 layoutVersion = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_layoutversion(&has_bits);
           layoutversion_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 namespceID = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_namespceid(&has_bits);
           namespceid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string clusterID = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_clusterid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.StorageInfoProto.clusterID");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.StorageInfoProto.clusterID");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 cTime = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_ctime(&has_bits);
           ctime_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -9949,7 +11362,7 @@ const char* StorageInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -9960,113 +11373,123 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* StorageInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.StorageInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 layoutVersion = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_layoutversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_layoutversion(), target);
   }
 
   // required uint32 namespceID = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_namespceid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_namespceid(), target);
   }
 
   // required string clusterID = 3;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_clusterid().data(), static_cast<int>(this->_internal_clusterid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.StorageInfoProto.clusterID");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_clusterid(), target);
+        this->_internal_clusterid().data(),
+        static_cast<int>(this->_internal_clusterid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.StorageInfoProto.clusterID");
+    target =
+        stream->WriteStringMaybeAliased(3, this->_internal_clusterid(), target);
   }
 
   // required uint64 cTime = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(4, this->_internal_ctime(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            4, this->_internal_ctime(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.StorageInfoProto)
   return target;
 }
 
 size_t StorageInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.StorageInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_clusterid()) {
     // required string clusterID = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_clusterid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_clusterid());
   }
 
   if (_internal_has_layoutversion()) {
     // required uint32 layoutVersion = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_layoutversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_layoutversion());
   }
 
   if (_internal_has_namespceid()) {
     // required uint32 namespceID = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_namespceid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_namespceid());
   }
 
   if (_internal_has_ctime()) {
     // required uint64 cTime = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_ctime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_ctime());
   }
 
   return total_size;
 }
 size_t StorageInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.StorageInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required string clusterID = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_clusterid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_clusterid());
 
     // required uint32 layoutVersion = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_layoutversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_layoutversion());
 
     // required uint32 namespceID = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_namespceid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_namespceid());
 
     // required uint64 cTime = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_ctime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_ctime());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -10078,32 +11501,33 @@ size_t StorageInfoProto::ByteSizeLong() const {
 }
 
 void StorageInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.StorageInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const StorageInfoProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StorageInfoProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<StorageInfoProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.StorageInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.StorageInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.StorageInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.StorageInfoProto)
     MergeFrom(*source);
   }
 }
 
 void StorageInfoProto::MergeFrom(const StorageInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.StorageInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      clusterid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.clusterid_);
+      clusterid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.clusterid_);
     }
     if (cached_has_bits & 0x00000002u) {
       layoutversion_ = from.layoutversion_;
@@ -10119,14 +11543,14 @@ void StorageInfoProto::MergeFrom(const StorageInfoProto& from) {
 }
 
 void StorageInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.StorageInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void StorageInfoProto::CopyFrom(const StorageInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.StorageInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.StorageInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -10141,8 +11565,10 @@ void StorageInfoProto::InternalSwap(StorageInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  clusterid_.Swap(&other->clusterid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  clusterid_.Swap(
+      &other->clusterid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(layoutversion_, other->layoutversion_);
   swap(namespceid_, other->namespceid_);
   swap(ctime_, other->ctime_);
@@ -10152,52 +11578,55 @@ void StorageInfoProto::InternalSwap(StorageInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void NamenodeRegistrationProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_NamenodeRegistrationProto_default_instance_._instance.get_mutable()->storageinfo_ = const_cast< ::Hdfs::Internal::StorageInfoProto*>(
+  ::Hdfs::Internal::_NamenodeRegistrationProto_default_instance_._instance
+      .get_mutable()
+      ->storageinfo_ = const_cast<::Hdfs::Internal::StorageInfoProto*>(
       ::Hdfs::Internal::StorageInfoProto::internal_default_instance());
 }
 class NamenodeRegistrationProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<NamenodeRegistrationProto>()._has_bits_);
-  static void set_has_rpcaddress(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_httpaddress(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(const NamenodeRegistrationProto* msg);
-  static void set_has_storageinfo(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_role(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  using HasBits =
+      decltype(std::declval<NamenodeRegistrationProto>()._has_bits_);
+  static void set_has_rpcaddress(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_httpaddress(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(
+      const NamenodeRegistrationProto* msg);
+  static void set_has_storageinfo(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_role(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
 };
 
 const ::Hdfs::Internal::StorageInfoProto&
-NamenodeRegistrationProto::_Internal::storageinfo(const NamenodeRegistrationProto* msg) {
+NamenodeRegistrationProto::_Internal::storageinfo(
+    const NamenodeRegistrationProto* msg) {
   return *msg->storageinfo_;
 }
 NamenodeRegistrationProto::NamenodeRegistrationProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.NamenodeRegistrationProto)
 }
-NamenodeRegistrationProto::NamenodeRegistrationProto(const NamenodeRegistrationProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+NamenodeRegistrationProto::NamenodeRegistrationProto(
+    const NamenodeRegistrationProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  rpcaddress_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  rpcaddress_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_rpcaddress()) {
-    rpcaddress_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.rpcaddress_);
+    rpcaddress_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.rpcaddress_);
   }
-  httpaddress_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  httpaddress_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_httpaddress()) {
-    httpaddress_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.httpaddress_);
+    httpaddress_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.httpaddress_);
   }
   if (from._internal_has_storageinfo()) {
     storageinfo_ = new ::Hdfs::Internal::StorageInfoProto(*from.storageinfo_);
@@ -10209,9 +11638,12 @@ NamenodeRegistrationProto::NamenodeRegistrationProto(const NamenodeRegistrationP
 }
 
 void NamenodeRegistrationProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NamenodeRegistrationProto_hdfs_2eproto.base);
-  rpcaddress_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  httpaddress_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_NamenodeRegistrationProto_hdfs_2eproto.base);
+  rpcaddress_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  httpaddress_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   storageinfo_ = nullptr;
   role_ = 1;
 }
@@ -10222,8 +11654,10 @@ NamenodeRegistrationProto::~NamenodeRegistrationProto() {
 }
 
 void NamenodeRegistrationProto::SharedDtor() {
-  rpcaddress_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  httpaddress_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  rpcaddress_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  httpaddress_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete storageinfo_;
 }
 
@@ -10231,16 +11665,16 @@ void NamenodeRegistrationProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const NamenodeRegistrationProto& NamenodeRegistrationProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NamenodeRegistrationProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_NamenodeRegistrationProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void NamenodeRegistrationProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamenodeRegistrationProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamenodeRegistrationProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
@@ -10260,8 +11694,10 @@ void NamenodeRegistrationProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* NamenodeRegistrationProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* NamenodeRegistrationProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -10270,44 +11706,65 @@ const char* NamenodeRegistrationProto::_InternalParse(const char* ptr, ::PROTOBU
     switch (tag >> 3) {
       // required string rpcAddress = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_rpcaddress();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.NamenodeRegistrationProto.rpcAddress");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.NamenodeRegistrationProto.rpcAddress");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string httpAddress = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_httpaddress();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.NamenodeRegistrationProto.httpAddress");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.NamenodeRegistrationProto.httpAddress");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.StorageInfoProto storageInfo = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_storageinfo(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto role = 4 [default = NAMENODE];
+      // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto
+      // role = 4 [default = NAMENODE];
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::NamenodeRegistrationProto_NamenodeRoleProto_IsValid(val))) {
-            _internal_set_role(static_cast<::Hdfs::Internal::NamenodeRegistrationProto_NamenodeRoleProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::
+                      NamenodeRegistrationProto_NamenodeRoleProto_IsValid(
+                          val))) {
+            _internal_set_role(
+                static_cast<::Hdfs::Internal::
+                                NamenodeRegistrationProto_NamenodeRoleProto>(
+                    val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(4, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                4, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -10320,7 +11777,7 @@ const char* NamenodeRegistrationProto::_InternalParse(const char* ptr, ::PROTOBU
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -10331,114 +11788,123 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* NamenodeRegistrationProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.NamenodeRegistrationProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string rpcAddress = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_rpcaddress().data(), static_cast<int>(this->_internal_rpcaddress().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.NamenodeRegistrationProto.rpcAddress");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_rpcaddress(), target);
+        this->_internal_rpcaddress().data(),
+        static_cast<int>(this->_internal_rpcaddress().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.NamenodeRegistrationProto.rpcAddress");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_rpcaddress(),
+                                             target);
   }
 
   // required string httpAddress = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_httpaddress().data(), static_cast<int>(this->_internal_httpaddress().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.NamenodeRegistrationProto.httpAddress");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_httpaddress(), target);
+        this->_internal_httpaddress().data(),
+        static_cast<int>(this->_internal_httpaddress().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.NamenodeRegistrationProto.httpAddress");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_httpaddress(),
+                                             target);
   }
 
   // required .Hdfs.Internal.StorageInfoProto storageInfo = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::storageinfo(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::storageinfo(this), target, stream);
   }
 
-  // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto role = 4 [default = NAMENODE];
+  // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto role =
+  // 4 [default = NAMENODE];
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      4, this->_internal_role(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            4, this->_internal_role(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.NamenodeRegistrationProto)
   return target;
 }
 
 size_t NamenodeRegistrationProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamenodeRegistrationProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamenodeRegistrationProto)
   size_t total_size = 0;
 
   if (_internal_has_rpcaddress()) {
     // required string rpcAddress = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_rpcaddress());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_rpcaddress());
   }
 
   if (_internal_has_httpaddress()) {
     // required string httpAddress = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_httpaddress());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_httpaddress());
   }
 
   if (_internal_has_storageinfo()) {
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
   }
 
   return total_size;
 }
 size_t NamenodeRegistrationProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamenodeRegistrationProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamenodeRegistrationProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required string rpcAddress = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_rpcaddress());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_rpcaddress());
 
     // required string httpAddress = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_httpaddress());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_httpaddress());
 
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
-  // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto role = 4 [default = NAMENODE];
+  // optional .Hdfs.Internal.NamenodeRegistrationProto.NamenodeRoleProto role =
+  // 4 [default = NAMENODE];
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_role());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_role());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -10450,40 +11916,48 @@ size_t NamenodeRegistrationProto::ByteSizeLong() const {
   return total_size;
 }
 
-void NamenodeRegistrationProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamenodeRegistrationProto)
+void NamenodeRegistrationProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamenodeRegistrationProto)
   GOOGLE_DCHECK_NE(&from, this);
   const NamenodeRegistrationProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<NamenodeRegistrationProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          NamenodeRegistrationProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamenodeRegistrationProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamenodeRegistrationProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamenodeRegistrationProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamenodeRegistrationProto)
     MergeFrom(*source);
   }
 }
 
-void NamenodeRegistrationProto::MergeFrom(const NamenodeRegistrationProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamenodeRegistrationProto)
+void NamenodeRegistrationProto::MergeFrom(
+    const NamenodeRegistrationProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamenodeRegistrationProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      rpcaddress_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.rpcaddress_);
+      rpcaddress_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.rpcaddress_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      httpaddress_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.httpaddress_);
+      httpaddress_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.httpaddress_);
     }
     if (cached_has_bits & 0x00000004u) {
-      _internal_mutable_storageinfo()->::Hdfs::Internal::StorageInfoProto::MergeFrom(from._internal_storageinfo());
+      _internal_mutable_storageinfo()
+          ->::Hdfs::Internal::StorageInfoProto::MergeFrom(
+              from._internal_storageinfo());
     }
     if (cached_has_bits & 0x00000008u) {
       role_ = from.role_;
@@ -10492,15 +11966,17 @@ void NamenodeRegistrationProto::MergeFrom(const NamenodeRegistrationProto& from)
   }
 }
 
-void NamenodeRegistrationProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamenodeRegistrationProto)
+void NamenodeRegistrationProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamenodeRegistrationProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void NamenodeRegistrationProto::CopyFrom(const NamenodeRegistrationProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamenodeRegistrationProto)
+void NamenodeRegistrationProto::CopyFrom(
+    const NamenodeRegistrationProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamenodeRegistrationProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -10518,78 +11994,91 @@ void NamenodeRegistrationProto::InternalSwap(NamenodeRegistrationProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  rpcaddress_.Swap(&other->rpcaddress_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  httpaddress_.Swap(&other->httpaddress_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  rpcaddress_.Swap(
+      &other->rpcaddress_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  httpaddress_.Swap(
+      &other->httpaddress_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(storageinfo_, other->storageinfo_);
   swap(role_, other->role_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata NamenodeRegistrationProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata NamenodeRegistrationProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // ===================================================================
 
 void CheckpointSignatureProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_CheckpointSignatureProto_default_instance_._instance.get_mutable()->storageinfo_ = const_cast< ::Hdfs::Internal::StorageInfoProto*>(
+  ::Hdfs::Internal::_CheckpointSignatureProto_default_instance_._instance
+      .get_mutable()
+      ->storageinfo_ = const_cast<::Hdfs::Internal::StorageInfoProto*>(
       ::Hdfs::Internal::StorageInfoProto::internal_default_instance());
 }
 class CheckpointSignatureProto::_Internal {
  public:
   using HasBits = decltype(std::declval<CheckpointSignatureProto>()._has_bits_);
-  static void set_has_blockpoolid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_blockpoolid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_mostrecentcheckpointtxid(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
   static void set_has_cursegmenttxid(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
-  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(const CheckpointSignatureProto* msg);
-  static void set_has_storageinfo(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(
+      const CheckpointSignatureProto* msg);
+  static void set_has_storageinfo(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 const ::Hdfs::Internal::StorageInfoProto&
-CheckpointSignatureProto::_Internal::storageinfo(const CheckpointSignatureProto* msg) {
+CheckpointSignatureProto::_Internal::storageinfo(
+    const CheckpointSignatureProto* msg) {
   return *msg->storageinfo_;
 }
 CheckpointSignatureProto::CheckpointSignatureProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CheckpointSignatureProto)
 }
-CheckpointSignatureProto::CheckpointSignatureProto(const CheckpointSignatureProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+CheckpointSignatureProto::CheckpointSignatureProto(
+    const CheckpointSignatureProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_blockpoolid()) {
-    blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+    blockpoolid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.blockpoolid_);
   }
   if (from._internal_has_storageinfo()) {
     storageinfo_ = new ::Hdfs::Internal::StorageInfoProto(*from.storageinfo_);
   } else {
     storageinfo_ = nullptr;
   }
-  ::memcpy(&mostrecentcheckpointtxid_, &from.mostrecentcheckpointtxid_,
-    static_cast<size_t>(reinterpret_cast<char*>(&cursegmenttxid_) -
-    reinterpret_cast<char*>(&mostrecentcheckpointtxid_)) + sizeof(cursegmenttxid_));
+  ::memcpy(
+      &mostrecentcheckpointtxid_, &from.mostrecentcheckpointtxid_,
+      static_cast<size_t>(reinterpret_cast<char*>(&cursegmenttxid_) -
+                          reinterpret_cast<char*>(&mostrecentcheckpointtxid_)) +
+          sizeof(cursegmenttxid_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CheckpointSignatureProto)
 }
 
 void CheckpointSignatureProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CheckpointSignatureProto_hdfs_2eproto.base);
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&storageinfo_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&cursegmenttxid_) -
-      reinterpret_cast<char*>(&storageinfo_)) + sizeof(cursegmenttxid_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_CheckpointSignatureProto_hdfs_2eproto.base);
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&storageinfo_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&cursegmenttxid_) -
+                               reinterpret_cast<char*>(&storageinfo_)) +
+               sizeof(cursegmenttxid_));
 }
 
 CheckpointSignatureProto::~CheckpointSignatureProto() {
@@ -10598,7 +12087,8 @@ CheckpointSignatureProto::~CheckpointSignatureProto() {
 }
 
 void CheckpointSignatureProto::SharedDtor() {
-  blockpoolid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete storageinfo_;
 }
 
@@ -10606,16 +12096,16 @@ void CheckpointSignatureProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const CheckpointSignatureProto& CheckpointSignatureProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CheckpointSignatureProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CheckpointSignatureProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CheckpointSignatureProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CheckpointSignatureProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CheckpointSignatureProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -10628,16 +12118,20 @@ void CheckpointSignatureProto::Clear() {
     }
   }
   if (cached_has_bits & 0x0000000cu) {
-    ::memset(&mostrecentcheckpointtxid_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&cursegmenttxid_) -
-        reinterpret_cast<char*>(&mostrecentcheckpointtxid_)) + sizeof(cursegmenttxid_));
+    ::memset(&mostrecentcheckpointtxid_, 0,
+             static_cast<size_t>(
+                 reinterpret_cast<char*>(&cursegmenttxid_) -
+                 reinterpret_cast<char*>(&mostrecentcheckpointtxid_)) +
+                 sizeof(cursegmenttxid_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* CheckpointSignatureProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CheckpointSignatureProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -10646,37 +12140,48 @@ const char* CheckpointSignatureProto::_InternalParse(const char* ptr, ::PROTOBUF
     switch (tag >> 3) {
       // required string blockPoolId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_blockpoolid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.CheckpointSignatureProto.blockPoolId");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.CheckpointSignatureProto.blockPoolId");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 mostRecentCheckpointTxId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_mostrecentcheckpointtxid(&has_bits);
-          mostrecentcheckpointtxid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          mostrecentcheckpointtxid_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 curSegmentTxId = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_cursegmenttxid(&has_bits);
           cursegmenttxid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_storageinfo(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -10689,7 +12194,7 @@ const char* CheckpointSignatureProto::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -10700,115 +12205,123 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* CheckpointSignatureProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CheckpointSignatureProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string blockPoolId = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_blockpoolid().data(), static_cast<int>(this->_internal_blockpoolid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.CheckpointSignatureProto.blockPoolId");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_blockpoolid(), target);
+        this->_internal_blockpoolid().data(),
+        static_cast<int>(this->_internal_blockpoolid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.CheckpointSignatureProto.blockPoolId");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_blockpoolid(),
+                                             target);
   }
 
   // required uint64 mostRecentCheckpointTxId = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_mostrecentcheckpointtxid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_mostrecentcheckpointtxid(), target);
   }
 
   // required uint64 curSegmentTxId = 3;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_cursegmenttxid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_cursegmenttxid(), target);
   }
 
   // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::storageinfo(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::storageinfo(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CheckpointSignatureProto)
   return target;
 }
 
 size_t CheckpointSignatureProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.CheckpointSignatureProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.CheckpointSignatureProto)
   size_t total_size = 0;
 
   if (_internal_has_blockpoolid()) {
     // required string blockPoolId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
   }
 
   if (_internal_has_storageinfo()) {
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
   }
 
   if (_internal_has_mostrecentcheckpointtxid()) {
     // required uint64 mostRecentCheckpointTxId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_mostrecentcheckpointtxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_mostrecentcheckpointtxid());
   }
 
   if (_internal_has_cursegmenttxid()) {
     // required uint64 curSegmentTxId = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_cursegmenttxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_cursegmenttxid());
   }
 
   return total_size;
 }
 size_t CheckpointSignatureProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CheckpointSignatureProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CheckpointSignatureProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required string blockPoolId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
 
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
 
     // required uint64 mostRecentCheckpointTxId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_mostrecentcheckpointtxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_mostrecentcheckpointtxid());
 
     // required uint64 curSegmentTxId = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_cursegmenttxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_cursegmenttxid());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -10819,36 +12332,41 @@ size_t CheckpointSignatureProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CheckpointSignatureProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CheckpointSignatureProto)
+void CheckpointSignatureProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CheckpointSignatureProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CheckpointSignatureProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CheckpointSignatureProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CheckpointSignatureProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CheckpointSignatureProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CheckpointSignatureProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CheckpointSignatureProto)
     MergeFrom(*source);
   }
 }
 
 void CheckpointSignatureProto::MergeFrom(const CheckpointSignatureProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CheckpointSignatureProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CheckpointSignatureProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+      blockpoolid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.blockpoolid_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_storageinfo()->::Hdfs::Internal::StorageInfoProto::MergeFrom(from._internal_storageinfo());
+      _internal_mutable_storageinfo()
+          ->::Hdfs::Internal::StorageInfoProto::MergeFrom(
+              from._internal_storageinfo());
     }
     if (cached_has_bits & 0x00000004u) {
       mostrecentcheckpointtxid_ = from.mostrecentcheckpointtxid_;
@@ -10860,15 +12378,16 @@ void CheckpointSignatureProto::MergeFrom(const CheckpointSignatureProto& from) {
   }
 }
 
-void CheckpointSignatureProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CheckpointSignatureProto)
+void CheckpointSignatureProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CheckpointSignatureProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void CheckpointSignatureProto::CopyFrom(const CheckpointSignatureProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CheckpointSignatureProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CheckpointSignatureProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -10886,69 +12405,73 @@ void CheckpointSignatureProto::InternalSwap(CheckpointSignatureProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  blockpoolid_.Swap(&other->blockpoolid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  blockpoolid_.Swap(
+      &other->blockpoolid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(storageinfo_, other->storageinfo_);
   swap(mostrecentcheckpointtxid_, other->mostrecentcheckpointtxid_);
   swap(cursegmenttxid_, other->cursegmenttxid_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata CheckpointSignatureProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata CheckpointSignatureProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // ===================================================================
 
 void NamenodeCommandProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_NamenodeCommandProto_default_instance_._instance.get_mutable()->checkpointcmd_ = const_cast< ::Hdfs::Internal::CheckpointCommandProto*>(
+  ::Hdfs::Internal::_NamenodeCommandProto_default_instance_._instance
+      .get_mutable()
+      ->checkpointcmd_ = const_cast<::Hdfs::Internal::CheckpointCommandProto*>(
       ::Hdfs::Internal::CheckpointCommandProto::internal_default_instance());
 }
 class NamenodeCommandProto::_Internal {
  public:
   using HasBits = decltype(std::declval<NamenodeCommandProto>()._has_bits_);
-  static void set_has_action(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_type(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static const ::Hdfs::Internal::CheckpointCommandProto& checkpointcmd(const NamenodeCommandProto* msg);
-  static void set_has_checkpointcmd(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_action(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_type(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static const ::Hdfs::Internal::CheckpointCommandProto& checkpointcmd(
+      const NamenodeCommandProto* msg);
+  static void set_has_checkpointcmd(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::CheckpointCommandProto&
-NamenodeCommandProto::_Internal::checkpointcmd(const NamenodeCommandProto* msg) {
+NamenodeCommandProto::_Internal::checkpointcmd(
+    const NamenodeCommandProto* msg) {
   return *msg->checkpointcmd_;
 }
 NamenodeCommandProto::NamenodeCommandProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.NamenodeCommandProto)
 }
 NamenodeCommandProto::NamenodeCommandProto(const NamenodeCommandProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from._internal_has_checkpointcmd()) {
-    checkpointcmd_ = new ::Hdfs::Internal::CheckpointCommandProto(*from.checkpointcmd_);
+    checkpointcmd_ =
+        new ::Hdfs::Internal::CheckpointCommandProto(*from.checkpointcmd_);
   } else {
     checkpointcmd_ = nullptr;
   }
   ::memcpy(&action_, &from.action_,
-    static_cast<size_t>(reinterpret_cast<char*>(&type_) -
-    reinterpret_cast<char*>(&action_)) + sizeof(type_));
+           static_cast<size_t>(reinterpret_cast<char*>(&type_) -
+                               reinterpret_cast<char*>(&action_)) +
+               sizeof(type_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.NamenodeCommandProto)
 }
 
 void NamenodeCommandProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NamenodeCommandProto_hdfs_2eproto.base);
-  ::memset(&checkpointcmd_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&type_) -
-      reinterpret_cast<char*>(&checkpointcmd_)) + sizeof(type_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_NamenodeCommandProto_hdfs_2eproto.base);
+  ::memset(&checkpointcmd_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&type_) -
+                               reinterpret_cast<char*>(&checkpointcmd_)) +
+               sizeof(type_));
 }
 
 NamenodeCommandProto::~NamenodeCommandProto() {
@@ -10964,16 +12487,16 @@ void NamenodeCommandProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const NamenodeCommandProto& NamenodeCommandProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NamenodeCommandProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_NamenodeCommandProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void NamenodeCommandProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamenodeCommandProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamenodeCommandProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -10981,16 +12504,19 @@ void NamenodeCommandProto::Clear() {
     checkpointcmd_->Clear();
   }
   if (cached_has_bits & 0x00000006u) {
-    ::memset(&action_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&type_) -
-        reinterpret_cast<char*>(&action_)) + sizeof(type_));
+    ::memset(&action_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&type_) -
+                                 reinterpret_cast<char*>(&action_)) +
+                 sizeof(type_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* NamenodeCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* NamenodeCommandProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -10999,30 +12525,40 @@ const char* NamenodeCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required uint32 action = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_action(&has_bits);
           action_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.NamenodeCommandProto.Type type = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::NamenodeCommandProto_Type_IsValid(val))) {
-            _internal_set_type(static_cast<::Hdfs::Internal::NamenodeCommandProto_Type>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::NamenodeCommandProto_Type_IsValid(val))) {
+            _internal_set_type(
+                static_cast<::Hdfs::Internal::NamenodeCommandProto_Type>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(2, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                2, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.CheckpointCommandProto checkpointCmd = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_checkpointcmd(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -11035,7 +12571,7 @@ const char* NamenodeCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -11046,87 +12582,95 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* NamenodeCommandProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.NamenodeCommandProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 action = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_action(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_action(), target);
   }
 
   // required .Hdfs.Internal.NamenodeCommandProto.Type type = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      2, this->_internal_type(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            2, this->_internal_type(), target);
   }
 
   // optional .Hdfs.Internal.CheckpointCommandProto checkpointCmd = 3;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::checkpointcmd(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::checkpointcmd(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.NamenodeCommandProto)
   return target;
 }
 
 size_t NamenodeCommandProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamenodeCommandProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamenodeCommandProto)
   size_t total_size = 0;
 
   if (_internal_has_action()) {
     // required uint32 action = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_action());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_action());
   }
 
   if (_internal_has_type()) {
     // required .Hdfs.Internal.NamenodeCommandProto.Type type = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_type());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_type());
   }
 
   return total_size;
 }
 size_t NamenodeCommandProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamenodeCommandProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamenodeCommandProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000006) ^ 0x00000006) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000006) ^ 0x00000006) ==
+      0) {  // All required fields are present.
     // required uint32 action = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_action());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_action());
 
     // required .Hdfs.Internal.NamenodeCommandProto.Type type = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_type());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_type());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional .Hdfs.Internal.CheckpointCommandProto checkpointCmd = 3;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *checkpointcmd_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *checkpointcmd_);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -11138,32 +12682,35 @@ size_t NamenodeCommandProto::ByteSizeLong() const {
   return total_size;
 }
 
-void NamenodeCommandProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamenodeCommandProto)
+void NamenodeCommandProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamenodeCommandProto)
   GOOGLE_DCHECK_NE(&from, this);
   const NamenodeCommandProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<NamenodeCommandProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamenodeCommandProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamenodeCommandProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamenodeCommandProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamenodeCommandProto)
     MergeFrom(*source);
   }
 }
 
 void NamenodeCommandProto::MergeFrom(const NamenodeCommandProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamenodeCommandProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamenodeCommandProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_checkpointcmd()->::Hdfs::Internal::CheckpointCommandProto::MergeFrom(from._internal_checkpointcmd());
+      _internal_mutable_checkpointcmd()
+          ->::Hdfs::Internal::CheckpointCommandProto::MergeFrom(
+              from._internal_checkpointcmd());
     }
     if (cached_has_bits & 0x00000002u) {
       action_ = from.action_;
@@ -11175,15 +12722,16 @@ void NamenodeCommandProto::MergeFrom(const NamenodeCommandProto& from) {
   }
 }
 
-void NamenodeCommandProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamenodeCommandProto)
+void NamenodeCommandProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamenodeCommandProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void NamenodeCommandProto::CopyFrom(const NamenodeCommandProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamenodeCommandProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamenodeCommandProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -11210,41 +12758,44 @@ void NamenodeCommandProto::InternalSwap(NamenodeCommandProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void CheckpointCommandProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_CheckpointCommandProto_default_instance_._instance.get_mutable()->signature_ = const_cast< ::Hdfs::Internal::CheckpointSignatureProto*>(
+  ::Hdfs::Internal::_CheckpointCommandProto_default_instance_._instance
+      .get_mutable()
+      ->signature_ = const_cast<::Hdfs::Internal::CheckpointSignatureProto*>(
       ::Hdfs::Internal::CheckpointSignatureProto::internal_default_instance());
 }
 class CheckpointCommandProto::_Internal {
  public:
   using HasBits = decltype(std::declval<CheckpointCommandProto>()._has_bits_);
-  static const ::Hdfs::Internal::CheckpointSignatureProto& signature(const CheckpointCommandProto* msg);
-  static void set_has_signature(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::CheckpointSignatureProto& signature(
+      const CheckpointCommandProto* msg);
+  static void set_has_signature(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_needtoreturnimage(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
 
 const ::Hdfs::Internal::CheckpointSignatureProto&
-CheckpointCommandProto::_Internal::signature(const CheckpointCommandProto* msg) {
+CheckpointCommandProto::_Internal::signature(
+    const CheckpointCommandProto* msg) {
   return *msg->signature_;
 }
 CheckpointCommandProto::CheckpointCommandProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CheckpointCommandProto)
 }
-CheckpointCommandProto::CheckpointCommandProto(const CheckpointCommandProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+CheckpointCommandProto::CheckpointCommandProto(
+    const CheckpointCommandProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   if (from._internal_has_signature()) {
-    signature_ = new ::Hdfs::Internal::CheckpointSignatureProto(*from.signature_);
+    signature_ =
+        new ::Hdfs::Internal::CheckpointSignatureProto(*from.signature_);
   } else {
     signature_ = nullptr;
   }
@@ -11253,10 +12804,12 @@ CheckpointCommandProto::CheckpointCommandProto(const CheckpointCommandProto& fro
 }
 
 void CheckpointCommandProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CheckpointCommandProto_hdfs_2eproto.base);
-  ::memset(&signature_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&needtoreturnimage_) -
-      reinterpret_cast<char*>(&signature_)) + sizeof(needtoreturnimage_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_CheckpointCommandProto_hdfs_2eproto.base);
+  ::memset(&signature_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&needtoreturnimage_) -
+                               reinterpret_cast<char*>(&signature_)) +
+               sizeof(needtoreturnimage_));
 }
 
 CheckpointCommandProto::~CheckpointCommandProto() {
@@ -11272,16 +12825,16 @@ void CheckpointCommandProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const CheckpointCommandProto& CheckpointCommandProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CheckpointCommandProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CheckpointCommandProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CheckpointCommandProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CheckpointCommandProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CheckpointCommandProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -11293,8 +12846,10 @@ void CheckpointCommandProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* CheckpointCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CheckpointCommandProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -11303,18 +12858,23 @@ const char* CheckpointCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_N
     switch (tag >> 3) {
       // required .Hdfs.Internal.CheckpointSignatureProto signature = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_signature(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool needToReturnImage = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_needtoreturnimage(&has_bits);
-          needtoreturnimage_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          needtoreturnimage_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -11327,7 +12887,7 @@ const char* CheckpointCommandProto::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -11338,43 +12898,47 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* CheckpointCommandProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CheckpointCommandProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.CheckpointSignatureProto signature = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::signature(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::signature(this), target, stream);
   }
 
   // required bool needToReturnImage = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(2, this->_internal_needtoreturnimage(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            2, this->_internal_needtoreturnimage(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CheckpointCommandProto)
   return target;
 }
 
 size_t CheckpointCommandProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.CheckpointCommandProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.CheckpointCommandProto)
   size_t total_size = 0;
 
   if (_internal_has_signature()) {
     // required .Hdfs.Internal.CheckpointSignatureProto signature = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *signature_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *signature_);
   }
 
   if (_internal_has_needtoreturnimage()) {
@@ -11385,14 +12949,15 @@ size_t CheckpointCommandProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t CheckpointCommandProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CheckpointCommandProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CheckpointCommandProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.CheckpointSignatureProto signature = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *signature_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *signature_);
 
     // required bool needToReturnImage = 2;
     total_size += 1 + 1;
@@ -11402,7 +12967,7 @@ size_t CheckpointCommandProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -11413,32 +12978,35 @@ size_t CheckpointCommandProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CheckpointCommandProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CheckpointCommandProto)
+void CheckpointCommandProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CheckpointCommandProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CheckpointCommandProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CheckpointCommandProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CheckpointCommandProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CheckpointCommandProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CheckpointCommandProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CheckpointCommandProto)
     MergeFrom(*source);
   }
 }
 
 void CheckpointCommandProto::MergeFrom(const CheckpointCommandProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CheckpointCommandProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CheckpointCommandProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_signature()->::Hdfs::Internal::CheckpointSignatureProto::MergeFrom(from._internal_signature());
+      _internal_mutable_signature()
+          ->::Hdfs::Internal::CheckpointSignatureProto::MergeFrom(
+              from._internal_signature());
     }
     if (cached_has_bits & 0x00000002u) {
       needtoreturnimage_ = from.needtoreturnimage_;
@@ -11447,15 +13015,16 @@ void CheckpointCommandProto::MergeFrom(const CheckpointCommandProto& from) {
   }
 }
 
-void CheckpointCommandProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CheckpointCommandProto)
+void CheckpointCommandProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CheckpointCommandProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void CheckpointCommandProto::CopyFrom(const CheckpointCommandProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CheckpointCommandProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CheckpointCommandProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -11481,45 +13050,39 @@ void CheckpointCommandProto::InternalSwap(CheckpointCommandProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void BlockProto::InitAsDefaultInstance() {
-}
+void BlockProto::InitAsDefaultInstance() {}
 class BlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlockProto>()._has_bits_);
-  static void set_has_blockid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_genstamp(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_numbytes(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static void set_has_blockid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_genstamp(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_numbytes(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
 };
 
 BlockProto::BlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BlockProto)
 }
 BlockProto::BlockProto(const BlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&blockid_, &from.blockid_,
-    static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
-    reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+           static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                               reinterpret_cast<char*>(&blockid_)) +
+               sizeof(numbytes_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.BlockProto)
 }
 
 void BlockProto::SharedCtor() {
-  ::memset(&blockid_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&numbytes_) -
-      reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+  ::memset(&blockid_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                               reinterpret_cast<char*>(&blockid_)) +
+               sizeof(numbytes_));
 }
 
 BlockProto::~BlockProto() {
@@ -11527,36 +13090,36 @@ BlockProto::~BlockProto() {
   SharedDtor();
 }
 
-void BlockProto::SharedDtor() {
-}
+void BlockProto::SharedDtor() {}
 
-void BlockProto::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
+void BlockProto::SetCachedSize(int size) const { _cached_size_.Set(size); }
 const BlockProto& BlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlockProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BlockProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
-    ::memset(&blockid_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&numbytes_) -
-        reinterpret_cast<char*>(&blockid_)) + sizeof(numbytes_));
+    ::memset(&blockid_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&numbytes_) -
+                                 reinterpret_cast<char*>(&blockid_)) +
+                 sizeof(numbytes_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* BlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -11565,27 +13128,33 @@ const char* BlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
     switch (tag >> 3) {
       // required uint64 blockId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_blockid(&has_bits);
           blockid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 genStamp = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_genstamp(&has_bits);
           genstamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 numBytes = 3 [default = 0];
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_numbytes(&has_bits);
           numbytes_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -11598,7 +13167,7 @@ const char* BlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -11609,86 +13178,95 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 blockId = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_blockid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_blockid(), target);
   }
 
   // required uint64 genStamp = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_genstamp(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_genstamp(), target);
   }
 
   // optional uint64 numBytes = 3 [default = 0];
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_numbytes(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_numbytes(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BlockProto)
   return target;
 }
 
 size_t BlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.BlockProto)
   size_t total_size = 0;
 
   if (_internal_has_blockid()) {
     // required uint64 blockId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blockid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blockid());
   }
 
   if (_internal_has_genstamp()) {
     // required uint64 genStamp = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_genstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_genstamp());
   }
 
   return total_size;
 }
 size_t BlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required uint64 blockId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_blockid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_blockid());
 
     // required uint64 genStamp = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_genstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_genstamp());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional uint64 numBytes = 3 [default = 0];
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000004u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_numbytes());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_numbytes());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -11701,26 +13279,25 @@ size_t BlockProto::ByteSizeLong() const {
 }
 
 void BlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BlockProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockProto)
     MergeFrom(*source);
   }
 }
 
 void BlockProto::MergeFrom(const BlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -11738,14 +13315,14 @@ void BlockProto::MergeFrom(const BlockProto& from) {
 }
 
 void BlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BlockProto::CopyFrom(const BlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -11769,33 +13346,34 @@ void BlockProto::InternalSwap(BlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void BlockWithLocationsProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_BlockWithLocationsProto_default_instance_._instance.get_mutable()->block_ = const_cast< ::Hdfs::Internal::BlockProto*>(
+  ::Hdfs::Internal::_BlockWithLocationsProto_default_instance_._instance
+      .get_mutable()
+      ->block_ = const_cast<::Hdfs::Internal::BlockProto*>(
       ::Hdfs::Internal::BlockProto::internal_default_instance());
 }
 class BlockWithLocationsProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlockWithLocationsProto>()._has_bits_);
-  static const ::Hdfs::Internal::BlockProto& block(const BlockWithLocationsProto* msg);
-  static void set_has_block(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::BlockProto& block(
+      const BlockWithLocationsProto* msg);
+  static void set_has_block(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
-const ::Hdfs::Internal::BlockProto&
-BlockWithLocationsProto::_Internal::block(const BlockWithLocationsProto* msg) {
+const ::Hdfs::Internal::BlockProto& BlockWithLocationsProto::_Internal::block(
+    const BlockWithLocationsProto* msg) {
   return *msg->block_;
 }
 BlockWithLocationsProto::BlockWithLocationsProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BlockWithLocationsProto)
 }
-BlockWithLocationsProto::BlockWithLocationsProto(const BlockWithLocationsProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+BlockWithLocationsProto::BlockWithLocationsProto(
+    const BlockWithLocationsProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       datanodeuuids_(from.datanodeuuids_),
@@ -11810,7 +13388,8 @@ BlockWithLocationsProto::BlockWithLocationsProto(const BlockWithLocationsProto& 
 }
 
 void BlockWithLocationsProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlockWithLocationsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_BlockWithLocationsProto_hdfs_2eproto.base);
   block_ = nullptr;
 }
 
@@ -11827,16 +13406,16 @@ void BlockWithLocationsProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const BlockWithLocationsProto& BlockWithLocationsProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlockWithLocationsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BlockWithLocationsProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BlockWithLocationsProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockWithLocationsProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockWithLocationsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   datanodeuuids_.Clear();
   storageuuids_.Clear();
@@ -11849,8 +13428,10 @@ void BlockWithLocationsProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* BlockWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BlockWithLocationsProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -11859,42 +13440,52 @@ const char* BlockWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF_
     switch (tag >> 3) {
       // required .Hdfs.Internal.BlockProto block = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_block(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated string datanodeUuids = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr -= 1;
           do {
             ptr += 1;
             auto str = _internal_add_datanodeuuids();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            #ifndef NDEBUG
-            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.BlockWithLocationsProto.datanodeUuids");
-            #endif  // !NDEBUG
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+                str, ptr, ctx);
+#ifndef NDEBUG
+            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+                str, "Hdfs.Internal.BlockWithLocationsProto.datanodeUuids");
+#endif  // !NDEBUG
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated string storageUuids = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr -= 1;
           do {
             ptr += 1;
             auto str = _internal_add_storageuuids();
-            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-            #ifndef NDEBUG
-            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.BlockWithLocationsProto.storageUuids");
-            #endif  // !NDEBUG
+            ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+                str, ptr, ctx);
+#ifndef NDEBUG
+            ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+                str, "Hdfs.Internal.BlockWithLocationsProto.storageUuids");
+#endif  // !NDEBUG
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<26>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -11907,7 +13498,7 @@ const char* BlockWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -11918,27 +13509,28 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BlockWithLocationsProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BlockWithLocationsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BlockProto block = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::block(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::block(this), target, stream);
   }
 
   // repeated string datanodeUuids = 2;
   for (int i = 0, n = this->_internal_datanodeuuids_size(); i < n; i++) {
     const auto& s = this->_internal_datanodeuuids(i);
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.BlockWithLocationsProto.datanodeUuids");
+        s.data(), static_cast<int>(s.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.BlockWithLocationsProto.datanodeUuids");
     target = stream->WriteString(2, s, target);
   }
 
@@ -11946,48 +13538,49 @@ failure:
   for (int i = 0, n = this->_internal_storageuuids_size(); i < n; i++) {
     const auto& s = this->_internal_storageuuids(i);
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      s.data(), static_cast<int>(s.length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.BlockWithLocationsProto.storageUuids");
+        s.data(), static_cast<int>(s.length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.BlockWithLocationsProto.storageUuids");
     target = stream->WriteString(3, s, target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BlockWithLocationsProto)
   return target;
 }
 
 size_t BlockWithLocationsProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockWithLocationsProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockWithLocationsProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.BlockProto block = 1;
   if (_internal_has_block()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *block_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*block_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated string datanodeUuids = 2;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(datanodeuuids_.size());
+  total_size +=
+      1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(datanodeuuids_.size());
   for (int i = 0, n = datanodeuuids_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      datanodeuuids_.Get(i));
+        datanodeuuids_.Get(i));
   }
 
   // repeated string storageUuids = 3;
-  total_size += 1 *
-      ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageuuids_.size());
+  total_size +=
+      1 * ::PROTOBUF_NAMESPACE_ID::internal::FromIntSize(storageuuids_.size());
   for (int i = 0, n = storageuuids_.size(); i < n; i++) {
     total_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-      storageuuids_.Get(i));
+        storageuuids_.Get(i));
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -11999,44 +13592,47 @@ size_t BlockWithLocationsProto::ByteSizeLong() const {
   return total_size;
 }
 
-void BlockWithLocationsProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockWithLocationsProto)
+void BlockWithLocationsProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockWithLocationsProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BlockWithLocationsProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockWithLocationsProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockWithLocationsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockWithLocationsProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockWithLocationsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockWithLocationsProto)
     MergeFrom(*source);
   }
 }
 
 void BlockWithLocationsProto::MergeFrom(const BlockWithLocationsProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockWithLocationsProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockWithLocationsProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   datanodeuuids_.MergeFrom(from.datanodeuuids_);
   storageuuids_.MergeFrom(from.storageuuids_);
   if (from._internal_has_block()) {
-    _internal_mutable_block()->::Hdfs::Internal::BlockProto::MergeFrom(from._internal_block());
+    _internal_mutable_block()->::Hdfs::Internal::BlockProto::MergeFrom(
+        from._internal_block());
   }
 }
 
-void BlockWithLocationsProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockWithLocationsProto)
+void BlockWithLocationsProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockWithLocationsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BlockWithLocationsProto::CopyFrom(const BlockWithLocationsProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockWithLocationsProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockWithLocationsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -12063,23 +13659,22 @@ void BlockWithLocationsProto::InternalSwap(BlockWithLocationsProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void BlocksWithLocationsProto::InitAsDefaultInstance() {
-}
+void BlocksWithLocationsProto::InitAsDefaultInstance() {}
 class BlocksWithLocationsProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlocksWithLocationsProto>()._has_bits_);
 };
 
 BlocksWithLocationsProto::BlocksWithLocationsProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BlocksWithLocationsProto)
 }
-BlocksWithLocationsProto::BlocksWithLocationsProto(const BlocksWithLocationsProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+BlocksWithLocationsProto::BlocksWithLocationsProto(
+    const BlocksWithLocationsProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       blocks_(from.blocks_) {
@@ -12088,7 +13683,8 @@ BlocksWithLocationsProto::BlocksWithLocationsProto(const BlocksWithLocationsProt
 }
 
 void BlocksWithLocationsProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlocksWithLocationsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_BlocksWithLocationsProto_hdfs_2eproto.base);
 }
 
 BlocksWithLocationsProto::~BlocksWithLocationsProto() {
@@ -12096,31 +13692,32 @@ BlocksWithLocationsProto::~BlocksWithLocationsProto() {
   SharedDtor();
 }
 
-void BlocksWithLocationsProto::SharedDtor() {
-}
+void BlocksWithLocationsProto::SharedDtor() {}
 
 void BlocksWithLocationsProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const BlocksWithLocationsProto& BlocksWithLocationsProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlocksWithLocationsProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BlocksWithLocationsProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BlocksWithLocationsProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlocksWithLocationsProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlocksWithLocationsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   blocks_.Clear();
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* BlocksWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BlocksWithLocationsProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
@@ -12128,7 +13725,8 @@ const char* BlocksWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF
     switch (tag >> 3) {
       // repeated .Hdfs.Internal.BlockWithLocationsProto blocks = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -12136,7 +13734,8 @@ const char* BlocksWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -12149,7 +13748,7 @@ const char* BlocksWithLocationsProto::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   return ptr;
 failure:
@@ -12159,40 +13758,44 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BlocksWithLocationsProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BlocksWithLocationsProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.BlockWithLocationsProto blocks = 1;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_blocks_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_blocks_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_blocks(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_blocks(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BlocksWithLocationsProto)
   return target;
 }
 
 size_t BlocksWithLocationsProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlocksWithLocationsProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlocksWithLocationsProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.BlockWithLocationsProto blocks = 1;
   total_size += 1UL * this->_internal_blocks_size();
   for (const auto& msg : this->blocks_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -12204,47 +13807,50 @@ size_t BlocksWithLocationsProto::ByteSizeLong() const {
   return total_size;
 }
 
-void BlocksWithLocationsProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlocksWithLocationsProto)
+void BlocksWithLocationsProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlocksWithLocationsProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BlocksWithLocationsProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlocksWithLocationsProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlocksWithLocationsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlocksWithLocationsProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlocksWithLocationsProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlocksWithLocationsProto)
     MergeFrom(*source);
   }
 }
 
 void BlocksWithLocationsProto::MergeFrom(const BlocksWithLocationsProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlocksWithLocationsProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlocksWithLocationsProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   blocks_.MergeFrom(from.blocks_);
 }
 
-void BlocksWithLocationsProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlocksWithLocationsProto)
+void BlocksWithLocationsProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlocksWithLocationsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BlocksWithLocationsProto::CopyFrom(const BlocksWithLocationsProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlocksWithLocationsProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlocksWithLocationsProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool BlocksWithLocationsProto::IsInitialized() const {
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(blocks_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(blocks_))
+    return false;
   return true;
 }
 
@@ -12255,49 +13861,44 @@ void BlocksWithLocationsProto::InternalSwap(BlocksWithLocationsProto* other) {
   blocks_.InternalSwap(&other->blocks_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata BlocksWithLocationsProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata BlocksWithLocationsProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void RemoteEditLogProto::InitAsDefaultInstance() {
-}
+void RemoteEditLogProto::InitAsDefaultInstance() {}
 class RemoteEditLogProto::_Internal {
  public:
   using HasBits = decltype(std::declval<RemoteEditLogProto>()._has_bits_);
-  static void set_has_starttxid(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_endtxid(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_isinprogress(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static void set_has_starttxid(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_endtxid(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_isinprogress(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
 };
 
 RemoteEditLogProto::RemoteEditLogProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.RemoteEditLogProto)
 }
 RemoteEditLogProto::RemoteEditLogProto(const RemoteEditLogProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&starttxid_, &from.starttxid_,
-    static_cast<size_t>(reinterpret_cast<char*>(&isinprogress_) -
-    reinterpret_cast<char*>(&starttxid_)) + sizeof(isinprogress_));
+           static_cast<size_t>(reinterpret_cast<char*>(&isinprogress_) -
+                               reinterpret_cast<char*>(&starttxid_)) +
+               sizeof(isinprogress_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.RemoteEditLogProto)
 }
 
 void RemoteEditLogProto::SharedCtor() {
-  ::memset(&starttxid_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&isinprogress_) -
-      reinterpret_cast<char*>(&starttxid_)) + sizeof(isinprogress_));
+  ::memset(&starttxid_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&isinprogress_) -
+                               reinterpret_cast<char*>(&starttxid_)) +
+               sizeof(isinprogress_));
 }
 
 RemoteEditLogProto::~RemoteEditLogProto() {
@@ -12305,36 +13906,38 @@ RemoteEditLogProto::~RemoteEditLogProto() {
   SharedDtor();
 }
 
-void RemoteEditLogProto::SharedDtor() {
-}
+void RemoteEditLogProto::SharedDtor() {}
 
 void RemoteEditLogProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const RemoteEditLogProto& RemoteEditLogProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RemoteEditLogProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_RemoteEditLogProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void RemoteEditLogProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RemoteEditLogProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RemoteEditLogProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
-    ::memset(&starttxid_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&isinprogress_) -
-        reinterpret_cast<char*>(&starttxid_)) + sizeof(isinprogress_));
+    ::memset(&starttxid_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&isinprogress_) -
+                                 reinterpret_cast<char*>(&starttxid_)) +
+                 sizeof(isinprogress_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* RemoteEditLogProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* RemoteEditLogProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -12343,27 +13946,33 @@ const char* RemoteEditLogProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // required uint64 startTxId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_starttxid(&has_bits);
           starttxid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 endTxId = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_endtxid(&has_bits);
           endtxid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bool isInProgress = 3 [default = false];
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_isinprogress(&has_bits);
           isinprogress_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -12376,7 +13985,7 @@ const char* RemoteEditLogProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -12387,79 +13996,88 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* RemoteEditLogProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.RemoteEditLogProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 startTxId = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_starttxid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_starttxid(), target);
   }
 
   // required uint64 endTxId = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_endtxid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_endtxid(), target);
   }
 
   // optional bool isInProgress = 3 [default = false];
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(3, this->_internal_isinprogress(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            3, this->_internal_isinprogress(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.RemoteEditLogProto)
   return target;
 }
 
 size_t RemoteEditLogProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.RemoteEditLogProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.RemoteEditLogProto)
   size_t total_size = 0;
 
   if (_internal_has_starttxid()) {
     // required uint64 startTxId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_starttxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_starttxid());
   }
 
   if (_internal_has_endtxid()) {
     // required uint64 endTxId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_endtxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_endtxid());
   }
 
   return total_size;
 }
 size_t RemoteEditLogProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RemoteEditLogProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RemoteEditLogProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required uint64 startTxId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_starttxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_starttxid());
 
     // required uint64 endTxId = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_endtxid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_endtxid());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional bool isInProgress = 3 [default = false];
   cached_has_bits = _has_bits_[0];
@@ -12476,27 +14094,28 @@ size_t RemoteEditLogProto::ByteSizeLong() const {
   return total_size;
 }
 
-void RemoteEditLogProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RemoteEditLogProto)
+void RemoteEditLogProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RemoteEditLogProto)
   GOOGLE_DCHECK_NE(&from, this);
   const RemoteEditLogProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<RemoteEditLogProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RemoteEditLogProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RemoteEditLogProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RemoteEditLogProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RemoteEditLogProto)
     MergeFrom(*source);
   }
 }
 
 void RemoteEditLogProto::MergeFrom(const RemoteEditLogProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RemoteEditLogProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RemoteEditLogProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -12513,15 +14132,16 @@ void RemoteEditLogProto::MergeFrom(const RemoteEditLogProto& from) {
   }
 }
 
-void RemoteEditLogProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RemoteEditLogProto)
+void RemoteEditLogProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RemoteEditLogProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void RemoteEditLogProto::CopyFrom(const RemoteEditLogProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RemoteEditLogProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RemoteEditLogProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -12545,23 +14165,23 @@ void RemoteEditLogProto::InternalSwap(RemoteEditLogProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void RemoteEditLogManifestProto::InitAsDefaultInstance() {
-}
+void RemoteEditLogManifestProto::InitAsDefaultInstance() {}
 class RemoteEditLogManifestProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<RemoteEditLogManifestProto>()._has_bits_);
+  using HasBits =
+      decltype(std::declval<RemoteEditLogManifestProto>()._has_bits_);
 };
 
 RemoteEditLogManifestProto::RemoteEditLogManifestProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.RemoteEditLogManifestProto)
 }
-RemoteEditLogManifestProto::RemoteEditLogManifestProto(const RemoteEditLogManifestProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+RemoteEditLogManifestProto::RemoteEditLogManifestProto(
+    const RemoteEditLogManifestProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       logs_(from.logs_) {
@@ -12570,7 +14190,8 @@ RemoteEditLogManifestProto::RemoteEditLogManifestProto(const RemoteEditLogManife
 }
 
 void RemoteEditLogManifestProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base);
 }
 
 RemoteEditLogManifestProto::~RemoteEditLogManifestProto() {
@@ -12578,31 +14199,33 @@ RemoteEditLogManifestProto::~RemoteEditLogManifestProto() {
   SharedDtor();
 }
 
-void RemoteEditLogManifestProto::SharedDtor() {
-}
+void RemoteEditLogManifestProto::SharedDtor() {}
 
 void RemoteEditLogManifestProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RemoteEditLogManifestProto& RemoteEditLogManifestProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base);
+const RemoteEditLogManifestProto&
+RemoteEditLogManifestProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_RemoteEditLogManifestProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void RemoteEditLogManifestProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RemoteEditLogManifestProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RemoteEditLogManifestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   logs_.Clear();
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* RemoteEditLogManifestProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* RemoteEditLogManifestProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
@@ -12610,7 +14233,8 @@ const char* RemoteEditLogManifestProto::_InternalParse(const char* ptr, ::PROTOB
     switch (tag >> 3) {
       // repeated .Hdfs.Internal.RemoteEditLogProto logs = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -12618,7 +14242,8 @@ const char* RemoteEditLogManifestProto::_InternalParse(const char* ptr, ::PROTOB
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<10>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -12631,7 +14256,7 @@ const char* RemoteEditLogManifestProto::_InternalParse(const char* ptr, ::PROTOB
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   return ptr;
 failure:
@@ -12641,40 +14266,44 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* RemoteEditLogManifestProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.RemoteEditLogManifestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.RemoteEditLogProto logs = 1;
   for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_logs_size()); i < n; i++) {
+                    n = static_cast<unsigned int>(this->_internal_logs_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(1, this->_internal_logs(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, this->_internal_logs(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.RemoteEditLogManifestProto)
   return target;
 }
 
 size_t RemoteEditLogManifestProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RemoteEditLogManifestProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RemoteEditLogManifestProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.RemoteEditLogProto logs = 1;
   total_size += 1UL * this->_internal_logs_size();
   for (const auto& msg : this->logs_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -12686,84 +14315,85 @@ size_t RemoteEditLogManifestProto::ByteSizeLong() const {
   return total_size;
 }
 
-void RemoteEditLogManifestProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
+void RemoteEditLogManifestProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
   GOOGLE_DCHECK_NE(&from, this);
   const RemoteEditLogManifestProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<RemoteEditLogManifestProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          RemoteEditLogManifestProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RemoteEditLogManifestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RemoteEditLogManifestProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RemoteEditLogManifestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RemoteEditLogManifestProto)
     MergeFrom(*source);
   }
 }
 
-void RemoteEditLogManifestProto::MergeFrom(const RemoteEditLogManifestProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
+void RemoteEditLogManifestProto::MergeFrom(
+    const RemoteEditLogManifestProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   logs_.MergeFrom(from.logs_);
 }
 
-void RemoteEditLogManifestProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
+void RemoteEditLogManifestProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void RemoteEditLogManifestProto::CopyFrom(const RemoteEditLogManifestProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
+void RemoteEditLogManifestProto::CopyFrom(
+    const RemoteEditLogManifestProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RemoteEditLogManifestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 bool RemoteEditLogManifestProto::IsInitialized() const {
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(logs_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(logs_))
+    return false;
   return true;
 }
 
-void RemoteEditLogManifestProto::InternalSwap(RemoteEditLogManifestProto* other) {
+void RemoteEditLogManifestProto::InternalSwap(
+    RemoteEditLogManifestProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   logs_.InternalSwap(&other->logs_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata RemoteEditLogManifestProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata RemoteEditLogManifestProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // ===================================================================
 
 void NamespaceInfoProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_NamespaceInfoProto_default_instance_._instance.get_mutable()->storageinfo_ = const_cast< ::Hdfs::Internal::StorageInfoProto*>(
+  ::Hdfs::Internal::_NamespaceInfoProto_default_instance_._instance
+      .get_mutable()
+      ->storageinfo_ = const_cast<::Hdfs::Internal::StorageInfoProto*>(
       ::Hdfs::Internal::StorageInfoProto::internal_default_instance());
 }
 class NamespaceInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<NamespaceInfoProto>()._has_bits_);
-  static void set_has_buildversion(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_unused(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_blockpoolid(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(const NamespaceInfoProto* msg);
-  static void set_has_storageinfo(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static void set_has_buildversion(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_unused(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_blockpoolid(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static const ::Hdfs::Internal::StorageInfoProto& storageinfo(
+      const NamespaceInfoProto* msg);
+  static void set_has_storageinfo(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_softwareversion(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
@@ -12774,26 +14404,35 @@ NamespaceInfoProto::_Internal::storageinfo(const NamespaceInfoProto* msg) {
   return *msg->storageinfo_;
 }
 NamespaceInfoProto::NamespaceInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.NamespaceInfoProto)
 }
 NamespaceInfoProto::NamespaceInfoProto(const NamespaceInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  buildversion_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  buildversion_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_buildversion()) {
-    buildversion_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.buildversion_);
+    buildversion_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.buildversion_);
   }
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_blockpoolid()) {
-    blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+    blockpoolid_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.blockpoolid_);
   }
-  softwareversion_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  softwareversion_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_softwareversion()) {
-    softwareversion_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.softwareversion_);
+    softwareversion_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.softwareversion_);
   }
   if (from._internal_has_storageinfo()) {
     storageinfo_ = new ::Hdfs::Internal::StorageInfoProto(*from.storageinfo_);
@@ -12805,13 +14444,18 @@ NamespaceInfoProto::NamespaceInfoProto(const NamespaceInfoProto& from)
 }
 
 void NamespaceInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NamespaceInfoProto_hdfs_2eproto.base);
-  buildversion_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  blockpoolid_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  softwareversion_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&storageinfo_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&unused_) -
-      reinterpret_cast<char*>(&storageinfo_)) + sizeof(unused_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_NamespaceInfoProto_hdfs_2eproto.base);
+  buildversion_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  softwareversion_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&storageinfo_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&unused_) -
+                               reinterpret_cast<char*>(&storageinfo_)) +
+               sizeof(unused_));
 }
 
 NamespaceInfoProto::~NamespaceInfoProto() {
@@ -12820,9 +14464,12 @@ NamespaceInfoProto::~NamespaceInfoProto() {
 }
 
 void NamespaceInfoProto::SharedDtor() {
-  buildversion_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  blockpoolid_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  softwareversion_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  buildversion_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  blockpoolid_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  softwareversion_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete storageinfo_;
 }
 
@@ -12830,16 +14477,16 @@ void NamespaceInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const NamespaceInfoProto& NamespaceInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NamespaceInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_NamespaceInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void NamespaceInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamespaceInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.NamespaceInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
@@ -12862,8 +14509,10 @@ void NamespaceInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* NamespaceInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* NamespaceInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -12872,51 +14521,67 @@ const char* NamespaceInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // required string buildVersion = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_buildversion();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.NamespaceInfoProto.buildVersion");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.NamespaceInfoProto.buildVersion");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 unused = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_unused(&has_bits);
           unused_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string blockPoolID = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_blockpoolid();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.NamespaceInfoProto.blockPoolID");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.NamespaceInfoProto.blockPoolID");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_storageinfo(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string softwareVersion = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_softwareversion();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.NamespaceInfoProto.softwareVersion");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.NamespaceInfoProto.softwareVersion");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -12929,7 +14594,7 @@ const char* NamespaceInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -12940,141 +14605,149 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* NamespaceInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.NamespaceInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string buildVersion = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_buildversion().data(), static_cast<int>(this->_internal_buildversion().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.NamespaceInfoProto.buildVersion");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_buildversion(), target);
+        this->_internal_buildversion().data(),
+        static_cast<int>(this->_internal_buildversion().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.NamespaceInfoProto.buildVersion");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_buildversion(),
+                                             target);
   }
 
   // required uint32 unused = 2;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_unused(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_unused(), target);
   }
 
   // required string blockPoolID = 3;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_blockpoolid().data(), static_cast<int>(this->_internal_blockpoolid().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.NamespaceInfoProto.blockPoolID");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_blockpoolid(), target);
+        this->_internal_blockpoolid().data(),
+        static_cast<int>(this->_internal_blockpoolid().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.NamespaceInfoProto.blockPoolID");
+    target = stream->WriteStringMaybeAliased(3, this->_internal_blockpoolid(),
+                                             target);
   }
 
   // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::storageinfo(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::storageinfo(this), target, stream);
   }
 
   // required string softwareVersion = 5;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_softwareversion().data(), static_cast<int>(this->_internal_softwareversion().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.NamespaceInfoProto.softwareVersion");
+        this->_internal_softwareversion().data(),
+        static_cast<int>(this->_internal_softwareversion().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.NamespaceInfoProto.softwareVersion");
     target = stream->WriteStringMaybeAliased(
         5, this->_internal_softwareversion(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.NamespaceInfoProto)
   return target;
 }
 
 size_t NamespaceInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamespaceInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.NamespaceInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_buildversion()) {
     // required string buildVersion = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_buildversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_buildversion());
   }
 
   if (_internal_has_blockpoolid()) {
     // required string blockPoolID = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
   }
 
   if (_internal_has_softwareversion()) {
     // required string softwareVersion = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_softwareversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_softwareversion());
   }
 
   if (_internal_has_storageinfo()) {
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
   }
 
   if (_internal_has_unused()) {
     // required uint32 unused = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_unused());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_unused());
   }
 
   return total_size;
 }
 size_t NamespaceInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamespaceInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.NamespaceInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000001f) ^ 0x0000001f) ==
+      0) {  // All required fields are present.
     // required string buildVersion = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_buildversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_buildversion());
 
     // required string blockPoolID = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_blockpoolid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_blockpoolid());
 
     // required string softwareVersion = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_softwareversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_softwareversion());
 
     // required .Hdfs.Internal.StorageInfoProto storageInfo = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *storageinfo_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *storageinfo_);
 
     // required uint32 unused = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_unused());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_unused());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -13085,44 +14758,53 @@ size_t NamespaceInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void NamespaceInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamespaceInfoProto)
+void NamespaceInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.NamespaceInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const NamespaceInfoProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<NamespaceInfoProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamespaceInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.NamespaceInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamespaceInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.NamespaceInfoProto)
     MergeFrom(*source);
   }
 }
 
 void NamespaceInfoProto::MergeFrom(const NamespaceInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamespaceInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.NamespaceInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      buildversion_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.buildversion_);
+      buildversion_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.buildversion_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      blockpoolid_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.blockpoolid_);
+      blockpoolid_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.blockpoolid_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      softwareversion_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.softwareversion_);
+      softwareversion_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.softwareversion_);
     }
     if (cached_has_bits & 0x00000008u) {
-      _internal_mutable_storageinfo()->::Hdfs::Internal::StorageInfoProto::MergeFrom(from._internal_storageinfo());
+      _internal_mutable_storageinfo()
+          ->::Hdfs::Internal::StorageInfoProto::MergeFrom(
+              from._internal_storageinfo());
     }
     if (cached_has_bits & 0x00000010u) {
       unused_ = from.unused_;
@@ -13131,15 +14813,16 @@ void NamespaceInfoProto::MergeFrom(const NamespaceInfoProto& from) {
   }
 }
 
-void NamespaceInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamespaceInfoProto)
+void NamespaceInfoProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.NamespaceInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void NamespaceInfoProto::CopyFrom(const NamespaceInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamespaceInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.NamespaceInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -13157,12 +14840,18 @@ void NamespaceInfoProto::InternalSwap(NamespaceInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  buildversion_.Swap(&other->buildversion_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  blockpoolid_.Swap(&other->blockpoolid_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  softwareversion_.Swap(&other->softwareversion_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  buildversion_.Swap(
+      &other->buildversion_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  blockpoolid_.Swap(
+      &other->blockpoolid_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  softwareversion_.Swap(
+      &other->softwareversion_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(storageinfo_, other->storageinfo_);
   swap(unused_, other->unused_);
 }
@@ -13171,51 +14860,50 @@ void NamespaceInfoProto::InternalSwap(NamespaceInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void BlockKeyProto::InitAsDefaultInstance() {
-}
+void BlockKeyProto::InitAsDefaultInstance() {}
 class BlockKeyProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlockKeyProto>()._has_bits_);
-  static void set_has_keyid(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_expirydate(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_keybytes(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_keyid(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_expirydate(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_keybytes(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 BlockKeyProto::BlockKeyProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BlockKeyProto)
 }
 BlockKeyProto::BlockKeyProto(const BlockKeyProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  keybytes_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keybytes_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_keybytes()) {
-    keybytes_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keybytes_);
+    keybytes_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.keybytes_);
   }
   ::memcpy(&expirydate_, &from.expirydate_,
-    static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
-    reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+           static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                               reinterpret_cast<char*>(&expirydate_)) +
+               sizeof(keyid_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.BlockKeyProto)
 }
 
 void BlockKeyProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlockKeyProto_hdfs_2eproto.base);
-  keybytes_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&expirydate_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&keyid_) -
-      reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_BlockKeyProto_hdfs_2eproto.base);
+  keybytes_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&expirydate_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                               reinterpret_cast<char*>(&expirydate_)) +
+               sizeof(keyid_));
 }
 
 BlockKeyProto::~BlockKeyProto() {
@@ -13224,39 +14912,41 @@ BlockKeyProto::~BlockKeyProto() {
 }
 
 void BlockKeyProto::SharedDtor() {
-  keybytes_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  keybytes_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
-void BlockKeyProto::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
+void BlockKeyProto::SetCachedSize(int size) const { _cached_size_.Set(size); }
 const BlockKeyProto& BlockKeyProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlockKeyProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BlockKeyProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BlockKeyProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockKeyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     keybytes_.ClearNonDefaultToEmptyNoArena();
   }
   if (cached_has_bits & 0x00000006u) {
-    ::memset(&expirydate_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&keyid_) -
-        reinterpret_cast<char*>(&expirydate_)) + sizeof(keyid_));
+    ::memset(&expirydate_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&keyid_) -
+                                 reinterpret_cast<char*>(&expirydate_)) +
+                 sizeof(keyid_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* BlockKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BlockKeyProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -13265,27 +14955,34 @@ const char* BlockKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
     switch (tag >> 3) {
       // required uint32 keyId = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_keyid(&has_bits);
           keyid_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 expiryDate = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_expirydate(&has_bits);
           expirydate_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes keyBytes = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_keybytes();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -13298,7 +14995,7 @@ const char* BlockKeyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -13309,86 +15006,93 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BlockKeyProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BlockKeyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 keyId = 1;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_keyid(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_keyid(), target);
   }
 
   // required uint64 expiryDate = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_expirydate(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_expirydate(), target);
   }
 
   // optional bytes keyBytes = 3;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        3, this->_internal_keybytes(), target);
+    target =
+        stream->WriteBytesMaybeAliased(3, this->_internal_keybytes(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BlockKeyProto)
   return target;
 }
 
 size_t BlockKeyProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.BlockKeyProto)
   size_t total_size = 0;
 
   if (_internal_has_expirydate()) {
     // required uint64 expiryDate = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_expirydate());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_expirydate());
   }
 
   if (_internal_has_keyid()) {
     // required uint32 keyId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_keyid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_keyid());
   }
 
   return total_size;
 }
 size_t BlockKeyProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockKeyProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000006) ^ 0x00000006) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000006) ^ 0x00000006) ==
+      0) {  // All required fields are present.
     // required uint64 expiryDate = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_expirydate());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_expirydate());
 
     // required uint32 keyId = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_keyid());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_keyid());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional bytes keyBytes = 3;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_keybytes());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_keybytes());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -13401,32 +15105,33 @@ size_t BlockKeyProto::ByteSizeLong() const {
 }
 
 void BlockKeyProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockKeyProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BlockKeyProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockKeyProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockKeyProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockKeyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockKeyProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockKeyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockKeyProto)
     MergeFrom(*source);
   }
 }
 
 void BlockKeyProto::MergeFrom(const BlockKeyProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockKeyProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      keybytes_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.keybytes_);
+      keybytes_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.keybytes_);
     }
     if (cached_has_bits & 0x00000002u) {
       expirydate_ = from.expirydate_;
@@ -13439,14 +15144,14 @@ void BlockKeyProto::MergeFrom(const BlockKeyProto& from) {
 }
 
 void BlockKeyProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockKeyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BlockKeyProto::CopyFrom(const BlockKeyProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockKeyProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockKeyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -13461,8 +15166,10 @@ void BlockKeyProto::InternalSwap(BlockKeyProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  keybytes_.Swap(&other->keybytes_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  keybytes_.Swap(
+      &other->keybytes_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(expirydate_, other->expirydate_);
   swap(keyid_, other->keyid_);
 }
@@ -13471,11 +15178,12 @@ void BlockKeyProto::InternalSwap(BlockKeyProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void ExportedBlockKeysProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_ExportedBlockKeysProto_default_instance_._instance.get_mutable()->currentkey_ = const_cast< ::Hdfs::Internal::BlockKeyProto*>(
+  ::Hdfs::Internal::_ExportedBlockKeysProto_default_instance_._instance
+      .get_mutable()
+      ->currentkey_ = const_cast<::Hdfs::Internal::BlockKeyProto*>(
       ::Hdfs::Internal::BlockKeyProto::internal_default_instance());
 }
 class ExportedBlockKeysProto::_Internal {
@@ -13487,26 +15195,25 @@ class ExportedBlockKeysProto::_Internal {
   static void set_has_keyupdateinterval(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
-  static void set_has_tokenlifetime(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static const ::Hdfs::Internal::BlockKeyProto& currentkey(const ExportedBlockKeysProto* msg);
-  static void set_has_currentkey(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_tokenlifetime(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static const ::Hdfs::Internal::BlockKeyProto& currentkey(
+      const ExportedBlockKeysProto* msg);
+  static void set_has_currentkey(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::BlockKeyProto&
-ExportedBlockKeysProto::_Internal::currentkey(const ExportedBlockKeysProto* msg) {
+ExportedBlockKeysProto::_Internal::currentkey(
+    const ExportedBlockKeysProto* msg) {
   return *msg->currentkey_;
 }
 ExportedBlockKeysProto::ExportedBlockKeysProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ExportedBlockKeysProto)
 }
-ExportedBlockKeysProto::ExportedBlockKeysProto(const ExportedBlockKeysProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ExportedBlockKeysProto::ExportedBlockKeysProto(
+    const ExportedBlockKeysProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       allkeys_(from.allkeys_) {
@@ -13517,16 +15224,19 @@ ExportedBlockKeysProto::ExportedBlockKeysProto(const ExportedBlockKeysProto& fro
     currentkey_ = nullptr;
   }
   ::memcpy(&keyupdateinterval_, &from.keyupdateinterval_,
-    static_cast<size_t>(reinterpret_cast<char*>(&isblocktokenenabled_) -
-    reinterpret_cast<char*>(&keyupdateinterval_)) + sizeof(isblocktokenenabled_));
+           static_cast<size_t>(reinterpret_cast<char*>(&isblocktokenenabled_) -
+                               reinterpret_cast<char*>(&keyupdateinterval_)) +
+               sizeof(isblocktokenenabled_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ExportedBlockKeysProto)
 }
 
 void ExportedBlockKeysProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ExportedBlockKeysProto_hdfs_2eproto.base);
-  ::memset(&currentkey_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&isblocktokenenabled_) -
-      reinterpret_cast<char*>(&currentkey_)) + sizeof(isblocktokenenabled_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ExportedBlockKeysProto_hdfs_2eproto.base);
+  ::memset(&currentkey_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&isblocktokenenabled_) -
+                               reinterpret_cast<char*>(&currentkey_)) +
+               sizeof(isblocktokenenabled_));
 }
 
 ExportedBlockKeysProto::~ExportedBlockKeysProto() {
@@ -13542,16 +15252,16 @@ void ExportedBlockKeysProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ExportedBlockKeysProto& ExportedBlockKeysProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ExportedBlockKeysProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ExportedBlockKeysProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ExportedBlockKeysProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ExportedBlockKeysProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ExportedBlockKeysProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   allkeys_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -13560,16 +15270,20 @@ void ExportedBlockKeysProto::Clear() {
     currentkey_->Clear();
   }
   if (cached_has_bits & 0x0000000eu) {
-    ::memset(&keyupdateinterval_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&isblocktokenenabled_) -
-        reinterpret_cast<char*>(&keyupdateinterval_)) + sizeof(isblocktokenenabled_));
+    ::memset(
+        &keyupdateinterval_, 0,
+        static_cast<size_t>(reinterpret_cast<char*>(&isblocktokenenabled_) -
+                            reinterpret_cast<char*>(&keyupdateinterval_)) +
+            sizeof(isblocktokenenabled_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ExportedBlockKeysProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ExportedBlockKeysProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -13578,38 +15292,49 @@ const char* ExportedBlockKeysProto::_InternalParse(const char* ptr, ::PROTOBUF_N
     switch (tag >> 3) {
       // required bool isBlockTokenEnabled = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_isblocktokenenabled(&has_bits);
-          isblocktokenenabled_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          isblocktokenenabled_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 keyUpdateInterval = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_keyupdateinterval(&has_bits);
-          keyupdateinterval_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          keyupdateinterval_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 tokenLifeTime = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_tokenlifetime(&has_bits);
           tokenlifetime_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.BlockKeyProto currentKey = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_currentkey(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.BlockKeyProto allKeys = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -13617,7 +15342,8 @@ const char* ExportedBlockKeysProto::_InternalParse(const char* ptr, ::PROTOBUF_N
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<42>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -13630,7 +15356,7 @@ const char* ExportedBlockKeysProto::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -13641,77 +15367,87 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ExportedBlockKeysProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ExportedBlockKeysProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required bool isBlockTokenEnabled = 1;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(1, this->_internal_isblocktokenenabled(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            1, this->_internal_isblocktokenenabled(), target);
   }
 
   // required uint64 keyUpdateInterval = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_keyupdateinterval(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_keyupdateinterval(), target);
   }
 
   // required uint64 tokenLifeTime = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_tokenlifetime(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_tokenlifetime(), target);
   }
 
   // required .Hdfs.Internal.BlockKeyProto currentKey = 4;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::currentkey(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::currentkey(this), target, stream);
   }
 
   // repeated .Hdfs.Internal.BlockKeyProto allKeys = 5;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_allkeys_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_allkeys_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(5, this->_internal_allkeys(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            5, this->_internal_allkeys(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ExportedBlockKeysProto)
   return target;
 }
 
 size_t ExportedBlockKeysProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ExportedBlockKeysProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ExportedBlockKeysProto)
   size_t total_size = 0;
 
   if (_internal_has_currentkey()) {
     // required .Hdfs.Internal.BlockKeyProto currentKey = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *currentkey_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *currentkey_);
   }
 
   if (_internal_has_keyupdateinterval()) {
     // required uint64 keyUpdateInterval = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_keyupdateinterval());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_keyupdateinterval());
   }
 
   if (_internal_has_tokenlifetime()) {
     // required uint64 tokenLifeTime = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_tokenlifetime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_tokenlifetime());
   }
 
   if (_internal_has_isblocktokenenabled()) {
@@ -13722,24 +15458,25 @@ size_t ExportedBlockKeysProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t ExportedBlockKeysProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ExportedBlockKeysProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ExportedBlockKeysProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.BlockKeyProto currentKey = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *currentkey_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *currentkey_);
 
     // required uint64 keyUpdateInterval = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_keyupdateinterval());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_keyupdateinterval());
 
     // required uint64 tokenLifeTime = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_tokenlifetime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_tokenlifetime());
 
     // required bool isBlockTokenEnabled = 1;
     total_size += 1 + 1;
@@ -13749,13 +15486,13 @@ size_t ExportedBlockKeysProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.BlockKeyProto allKeys = 5;
   total_size += 1UL * this->_internal_allkeys_size();
   for (const auto& msg : this->allkeys_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -13767,33 +15504,36 @@ size_t ExportedBlockKeysProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ExportedBlockKeysProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ExportedBlockKeysProto)
+void ExportedBlockKeysProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ExportedBlockKeysProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ExportedBlockKeysProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ExportedBlockKeysProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ExportedBlockKeysProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ExportedBlockKeysProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ExportedBlockKeysProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ExportedBlockKeysProto)
     MergeFrom(*source);
   }
 }
 
 void ExportedBlockKeysProto::MergeFrom(const ExportedBlockKeysProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ExportedBlockKeysProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ExportedBlockKeysProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   allkeys_.MergeFrom(from.allkeys_);
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_currentkey()->::Hdfs::Internal::BlockKeyProto::MergeFrom(from._internal_currentkey());
+      _internal_mutable_currentkey()
+          ->::Hdfs::Internal::BlockKeyProto::MergeFrom(
+              from._internal_currentkey());
     }
     if (cached_has_bits & 0x00000002u) {
       keyupdateinterval_ = from.keyupdateinterval_;
@@ -13808,15 +15548,16 @@ void ExportedBlockKeysProto::MergeFrom(const ExportedBlockKeysProto& from) {
   }
 }
 
-void ExportedBlockKeysProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ExportedBlockKeysProto)
+void ExportedBlockKeysProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ExportedBlockKeysProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ExportedBlockKeysProto::CopyFrom(const ExportedBlockKeysProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ExportedBlockKeysProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ExportedBlockKeysProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -13824,7 +15565,8 @@ void ExportedBlockKeysProto::CopyFrom(const ExportedBlockKeysProto& from) {
 
 bool ExportedBlockKeysProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x0000000f) != 0x0000000f) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(allkeys_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(allkeys_))
+    return false;
   if (_internal_has_currentkey()) {
     if (!currentkey_->IsInitialized()) return false;
   }
@@ -13846,23 +15588,21 @@ void ExportedBlockKeysProto::InternalSwap(ExportedBlockKeysProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void RecoveringBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_RecoveringBlockProto_default_instance_._instance.get_mutable()->block_ = const_cast< ::Hdfs::Internal::LocatedBlockProto*>(
+  ::Hdfs::Internal::_RecoveringBlockProto_default_instance_._instance
+      .get_mutable()
+      ->block_ = const_cast<::Hdfs::Internal::LocatedBlockProto*>(
       ::Hdfs::Internal::LocatedBlockProto::internal_default_instance());
 }
 class RecoveringBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<RecoveringBlockProto>()._has_bits_);
-  static void set_has_newgenstamp(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static const ::Hdfs::Internal::LocatedBlockProto& block(const RecoveringBlockProto* msg);
-  static void set_has_block(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_newgenstamp(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static const ::Hdfs::Internal::LocatedBlockProto& block(
+      const RecoveringBlockProto* msg);
+  static void set_has_block(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::LocatedBlockProto&
@@ -13870,12 +15610,12 @@ RecoveringBlockProto::_Internal::block(const RecoveringBlockProto* msg) {
   return *msg->block_;
 }
 RecoveringBlockProto::RecoveringBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.RecoveringBlockProto)
 }
 RecoveringBlockProto::RecoveringBlockProto(const RecoveringBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -13889,10 +15629,12 @@ RecoveringBlockProto::RecoveringBlockProto(const RecoveringBlockProto& from)
 }
 
 void RecoveringBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RecoveringBlockProto_hdfs_2eproto.base);
-  ::memset(&block_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&newgenstamp_) -
-      reinterpret_cast<char*>(&block_)) + sizeof(newgenstamp_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_RecoveringBlockProto_hdfs_2eproto.base);
+  ::memset(&block_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&newgenstamp_) -
+                               reinterpret_cast<char*>(&block_)) +
+               sizeof(newgenstamp_));
 }
 
 RecoveringBlockProto::~RecoveringBlockProto() {
@@ -13908,16 +15650,16 @@ void RecoveringBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const RecoveringBlockProto& RecoveringBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RecoveringBlockProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_RecoveringBlockProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void RecoveringBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RecoveringBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.RecoveringBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -13929,8 +15671,10 @@ void RecoveringBlockProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* RecoveringBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* RecoveringBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -13939,18 +15683,22 @@ const char* RecoveringBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required uint64 newGenStamp = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_newgenstamp(&has_bits);
           newgenstamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.LocatedBlockProto block = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_block(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -13963,7 +15711,7 @@ const char* RecoveringBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -13974,75 +15722,80 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* RecoveringBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.RecoveringBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint64 newGenStamp = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(1, this->_internal_newgenstamp(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            1, this->_internal_newgenstamp(), target);
   }
 
   // required .Hdfs.Internal.LocatedBlockProto block = 2;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        2, _Internal::block(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            2, _Internal::block(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.RecoveringBlockProto)
   return target;
 }
 
 size_t RecoveringBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.RecoveringBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.RecoveringBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_block()) {
     // required .Hdfs.Internal.LocatedBlockProto block = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *block_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*block_);
   }
 
   if (_internal_has_newgenstamp()) {
     // required uint64 newGenStamp = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_newgenstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_newgenstamp());
   }
 
   return total_size;
 }
 size_t RecoveringBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RecoveringBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.RecoveringBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.LocatedBlockProto block = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *block_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*block_);
 
     // required uint64 newGenStamp = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_newgenstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_newgenstamp());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -14053,32 +15806,34 @@ size_t RecoveringBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void RecoveringBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RecoveringBlockProto)
+void RecoveringBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.RecoveringBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const RecoveringBlockProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<RecoveringBlockProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RecoveringBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.RecoveringBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RecoveringBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.RecoveringBlockProto)
     MergeFrom(*source);
   }
 }
 
 void RecoveringBlockProto::MergeFrom(const RecoveringBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RecoveringBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.RecoveringBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_block()->::Hdfs::Internal::LocatedBlockProto::MergeFrom(from._internal_block());
+      _internal_mutable_block()->::Hdfs::Internal::LocatedBlockProto::MergeFrom(
+          from._internal_block());
     }
     if (cached_has_bits & 0x00000002u) {
       newgenstamp_ = from.newgenstamp_;
@@ -14087,15 +15842,16 @@ void RecoveringBlockProto::MergeFrom(const RecoveringBlockProto& from) {
   }
 }
 
-void RecoveringBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RecoveringBlockProto)
+void RecoveringBlockProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.RecoveringBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void RecoveringBlockProto::CopyFrom(const RecoveringBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RecoveringBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.RecoveringBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -14121,72 +15877,70 @@ void RecoveringBlockProto::InternalSwap(RecoveringBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void VersionRequestProto::InitAsDefaultInstance() {
-}
+void VersionRequestProto::InitAsDefaultInstance() {}
 class VersionRequestProto::_Internal {
  public:
   using HasBits = decltype(std::declval<VersionRequestProto>()._has_bits_);
 };
 
 VersionRequestProto::VersionRequestProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.VersionRequestProto)
 }
 VersionRequestProto::VersionRequestProto(const VersionRequestProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.VersionRequestProto)
 }
 
-void VersionRequestProto::SharedCtor() {
-}
+void VersionRequestProto::SharedCtor() {}
 
 VersionRequestProto::~VersionRequestProto() {
   // @@protoc_insertion_point(destructor:Hdfs.Internal.VersionRequestProto)
   SharedDtor();
 }
 
-void VersionRequestProto::SharedDtor() {
-}
+void VersionRequestProto::SharedDtor() {}
 
 void VersionRequestProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const VersionRequestProto& VersionRequestProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_VersionRequestProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_VersionRequestProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void VersionRequestProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.VersionRequestProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.VersionRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* VersionRequestProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* VersionRequestProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
-        if ((tag & 7) == 4 || tag == 0) {
-          ctx->SetLastTag(tag);
-          goto success;
-        }
-        ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
-        CHK_(ptr != nullptr);
-        continue;
+    if ((tag & 7) == 4 || tag == 0) {
+      ctx->SetLastTag(tag);
+      goto success;
+    }
+    ptr = UnknownFieldParse(tag, &_internal_metadata_, ptr, ctx);
+    CHK_(ptr != nullptr);
+    continue;
   }  // while
 success:
   return ptr;
@@ -14197,26 +15951,28 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* VersionRequestProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.VersionRequestProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.VersionRequestProto)
   return target;
 }
 
 size_t VersionRequestProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.VersionRequestProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.VersionRequestProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -14227,47 +15983,46 @@ size_t VersionRequestProto::ByteSizeLong() const {
   return total_size;
 }
 
-void VersionRequestProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.VersionRequestProto)
+void VersionRequestProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.VersionRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   const VersionRequestProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<VersionRequestProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.VersionRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.VersionRequestProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.VersionRequestProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.VersionRequestProto)
     MergeFrom(*source);
   }
 }
 
 void VersionRequestProto::MergeFrom(const VersionRequestProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.VersionRequestProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.VersionRequestProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
-
+  (void)cached_has_bits;
 }
 
-void VersionRequestProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.VersionRequestProto)
+void VersionRequestProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.VersionRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void VersionRequestProto::CopyFrom(const VersionRequestProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.VersionRequestProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.VersionRequestProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool VersionRequestProto::IsInitialized() const {
-  return true;
-}
+bool VersionRequestProto::IsInitialized() const { return true; }
 
 void VersionRequestProto::InternalSwap(VersionRequestProto* other) {
   using std::swap;
@@ -14279,20 +16034,20 @@ void VersionRequestProto::InternalSwap(VersionRequestProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void VersionResponseProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_VersionResponseProto_default_instance_._instance.get_mutable()->info_ = const_cast< ::Hdfs::Internal::NamespaceInfoProto*>(
+  ::Hdfs::Internal::_VersionResponseProto_default_instance_._instance
+      .get_mutable()
+      ->info_ = const_cast<::Hdfs::Internal::NamespaceInfoProto*>(
       ::Hdfs::Internal::NamespaceInfoProto::internal_default_instance());
 }
 class VersionResponseProto::_Internal {
  public:
   using HasBits = decltype(std::declval<VersionResponseProto>()._has_bits_);
-  static const ::Hdfs::Internal::NamespaceInfoProto& info(const VersionResponseProto* msg);
-  static void set_has_info(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::NamespaceInfoProto& info(
+      const VersionResponseProto* msg);
+  static void set_has_info(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::NamespaceInfoProto&
@@ -14300,12 +16055,12 @@ VersionResponseProto::_Internal::info(const VersionResponseProto* msg) {
   return *msg->info_;
 }
 VersionResponseProto::VersionResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.VersionResponseProto)
 }
 VersionResponseProto::VersionResponseProto(const VersionResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -14318,7 +16073,8 @@ VersionResponseProto::VersionResponseProto(const VersionResponseProto& from)
 }
 
 void VersionResponseProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_VersionResponseProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_VersionResponseProto_hdfs_2eproto.base);
   info_ = nullptr;
 }
 
@@ -14335,16 +16091,16 @@ void VersionResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const VersionResponseProto& VersionResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_VersionResponseProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_VersionResponseProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void VersionResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.VersionResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.VersionResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -14355,8 +16111,10 @@ void VersionResponseProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* VersionResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* VersionResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -14365,10 +16123,12 @@ const char* VersionResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required .Hdfs.Internal.NamespaceInfoProto info = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_info(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -14381,7 +16141,7 @@ const char* VersionResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -14392,41 +16152,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* VersionResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.VersionResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.NamespaceInfoProto info = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::info(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::info(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.VersionResponseProto)
   return target;
 }
 
 size_t VersionResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.VersionResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.VersionResponseProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.NamespaceInfoProto info = 1;
   if (_internal_has_info()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *info_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*info_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -14437,42 +16199,45 @@ size_t VersionResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void VersionResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.VersionResponseProto)
+void VersionResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.VersionResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const VersionResponseProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<VersionResponseProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.VersionResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.VersionResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.VersionResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.VersionResponseProto)
     MergeFrom(*source);
   }
 }
 
 void VersionResponseProto::MergeFrom(const VersionResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.VersionResponseProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.VersionResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_info()) {
-    _internal_mutable_info()->::Hdfs::Internal::NamespaceInfoProto::MergeFrom(from._internal_info());
+    _internal_mutable_info()->::Hdfs::Internal::NamespaceInfoProto::MergeFrom(
+        from._internal_info());
   }
 }
 
-void VersionResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.VersionResponseProto)
+void VersionResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.VersionResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void VersionResponseProto::CopyFrom(const VersionResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.VersionResponseProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.VersionResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -14497,35 +16262,25 @@ void VersionResponseProto::InternalSwap(VersionResponseProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void SnapshotInfoProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_SnapshotInfoProto_default_instance_._instance.get_mutable()->permission_ = const_cast< ::Hdfs::Internal::FsPermissionProto*>(
+  ::Hdfs::Internal::_SnapshotInfoProto_default_instance_._instance
+      .get_mutable()
+      ->permission_ = const_cast<::Hdfs::Internal::FsPermissionProto*>(
       ::Hdfs::Internal::FsPermissionProto::internal_default_instance());
 }
 class SnapshotInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<SnapshotInfoProto>()._has_bits_);
-  static void set_has_snapshotname(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_snapshotroot(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static const ::Hdfs::Internal::FsPermissionProto& permission(const SnapshotInfoProto* msg);
-  static void set_has_permission(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
-  static void set_has_owner(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_group(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
-  static void set_has_createtime(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
+  static void set_has_snapshotname(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_snapshotroot(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static const ::Hdfs::Internal::FsPermissionProto& permission(
+      const SnapshotInfoProto* msg);
+  static void set_has_permission(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
+  static void set_has_owner(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_group(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
+  static void set_has_createtime(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
 };
 
 const ::Hdfs::Internal::FsPermissionProto&
@@ -14533,34 +16288,49 @@ SnapshotInfoProto::_Internal::permission(const SnapshotInfoProto* msg) {
   return *msg->permission_;
 }
 SnapshotInfoProto::SnapshotInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.SnapshotInfoProto)
 }
 SnapshotInfoProto::SnapshotInfoProto(const SnapshotInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  snapshotname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_snapshotname()) {
-    snapshotname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotname_);
+    snapshotname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.snapshotname_);
   }
-  snapshotroot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotroot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_snapshotroot()) {
-    snapshotroot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotroot_);
+    snapshotroot_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.snapshotroot_);
   }
-  owner_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_owner()) {
-    owner_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.owner_);
+    owner_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.owner_);
   }
-  group_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_group()) {
-    group_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.group_);
+    group_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.group_);
   }
-  createtime_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  createtime_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_createtime()) {
-    createtime_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.createtime_);
+    createtime_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.createtime_);
   }
   if (from._internal_has_permission()) {
     permission_ = new ::Hdfs::Internal::FsPermissionProto(*from.permission_);
@@ -14571,12 +16341,18 @@ SnapshotInfoProto::SnapshotInfoProto(const SnapshotInfoProto& from)
 }
 
 void SnapshotInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SnapshotInfoProto_hdfs_2eproto.base);
-  snapshotname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  snapshotroot_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  owner_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  group_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  createtime_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_SnapshotInfoProto_hdfs_2eproto.base);
+  snapshotname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotroot_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  createtime_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   permission_ = nullptr;
 }
 
@@ -14586,11 +16362,16 @@ SnapshotInfoProto::~SnapshotInfoProto() {
 }
 
 void SnapshotInfoProto::SharedDtor() {
-  snapshotname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  snapshotroot_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  owner_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  group_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  createtime_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  snapshotroot_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  owner_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  group_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  createtime_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete permission_;
 }
 
@@ -14598,16 +16379,16 @@ void SnapshotInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const SnapshotInfoProto& SnapshotInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SnapshotInfoProto_hdfs_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_SnapshotInfoProto_hdfs_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void SnapshotInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.SnapshotInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
@@ -14635,8 +16416,10 @@ void SnapshotInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* SnapshotInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* SnapshotInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -14645,65 +16428,87 @@ const char* SnapshotInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required string snapshotName = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           auto str = _internal_mutable_snapshotname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotInfoProto.snapshotName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotInfoProto.snapshotName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string snapshotRoot = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_snapshotroot();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotInfoProto.snapshotRoot");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotInfoProto.snapshotRoot");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.FsPermissionProto permission = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_permission(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string owner = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           auto str = _internal_mutable_owner();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotInfoProto.owner");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotInfoProto.owner");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string group = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_group();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotInfoProto.group");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotInfoProto.group");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string createTime = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 50)) {
           auto str = _internal_mutable_createtime();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.SnapshotInfoProto.createTime");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.SnapshotInfoProto.createTime");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -14716,7 +16521,7 @@ const char* SnapshotInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -14727,167 +16532,175 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* SnapshotInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.SnapshotInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required string snapshotName = 1;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_snapshotname().data(), static_cast<int>(this->_internal_snapshotname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotInfoProto.snapshotName");
-    target = stream->WriteStringMaybeAliased(
-        1, this->_internal_snapshotname(), target);
+        this->_internal_snapshotname().data(),
+        static_cast<int>(this->_internal_snapshotname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotInfoProto.snapshotName");
+    target = stream->WriteStringMaybeAliased(1, this->_internal_snapshotname(),
+                                             target);
   }
 
   // required string snapshotRoot = 2;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_snapshotroot().data(), static_cast<int>(this->_internal_snapshotroot().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotInfoProto.snapshotRoot");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_snapshotroot(), target);
+        this->_internal_snapshotroot().data(),
+        static_cast<int>(this->_internal_snapshotroot().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotInfoProto.snapshotRoot");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_snapshotroot(),
+                                             target);
   }
 
   // required .Hdfs.Internal.FsPermissionProto permission = 3;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::permission(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::permission(this), target, stream);
   }
 
   // required string owner = 4;
   if (cached_has_bits & 0x00000004u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_owner().data(), static_cast<int>(this->_internal_owner().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotInfoProto.owner");
-    target = stream->WriteStringMaybeAliased(
-        4, this->_internal_owner(), target);
+        this->_internal_owner().data(),
+        static_cast<int>(this->_internal_owner().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotInfoProto.owner");
+    target =
+        stream->WriteStringMaybeAliased(4, this->_internal_owner(), target);
   }
 
   // required string group = 5;
   if (cached_has_bits & 0x00000008u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_group().data(), static_cast<int>(this->_internal_group().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotInfoProto.group");
-    target = stream->WriteStringMaybeAliased(
-        5, this->_internal_group(), target);
+        this->_internal_group().data(),
+        static_cast<int>(this->_internal_group().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotInfoProto.group");
+    target =
+        stream->WriteStringMaybeAliased(5, this->_internal_group(), target);
   }
 
   // required string createTime = 6;
   if (cached_has_bits & 0x00000010u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_createtime().data(), static_cast<int>(this->_internal_createtime().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.SnapshotInfoProto.createTime");
-    target = stream->WriteStringMaybeAliased(
-        6, this->_internal_createtime(), target);
+        this->_internal_createtime().data(),
+        static_cast<int>(this->_internal_createtime().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.SnapshotInfoProto.createTime");
+    target = stream->WriteStringMaybeAliased(6, this->_internal_createtime(),
+                                             target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.SnapshotInfoProto)
   return target;
 }
 
 size_t SnapshotInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.SnapshotInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_snapshotname()) {
     // required string snapshotName = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotname());
   }
 
   if (_internal_has_snapshotroot()) {
     // required string snapshotRoot = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotroot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotroot());
   }
 
   if (_internal_has_owner()) {
     // required string owner = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_owner());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_owner());
   }
 
   if (_internal_has_group()) {
     // required string group = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_group());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_group());
   }
 
   if (_internal_has_createtime()) {
     // required string createTime = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_createtime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_createtime());
   }
 
   if (_internal_has_permission()) {
     // required .Hdfs.Internal.FsPermissionProto permission = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *permission_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *permission_);
   }
 
   return total_size;
 }
 size_t SnapshotInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.SnapshotInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000003f) ^ 0x0000003f) ==
+      0) {  // All required fields are present.
     // required string snapshotName = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotname());
 
     // required string snapshotRoot = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_snapshotroot());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_snapshotroot());
 
     // required string owner = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_owner());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_owner());
 
     // required string group = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_group());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_group());
 
     // required string createTime = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_createtime());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_createtime());
 
     // required .Hdfs.Internal.FsPermissionProto permission = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *permission_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *permission_);
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -14898,65 +16711,77 @@ size_t SnapshotInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void SnapshotInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotInfoProto)
+void SnapshotInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.SnapshotInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const SnapshotInfoProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshotInfoProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<SnapshotInfoProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.SnapshotInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.SnapshotInfoProto)
     MergeFrom(*source);
   }
 }
 
 void SnapshotInfoProto::MergeFrom(const SnapshotInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.SnapshotInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      snapshotname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotname_);
+      snapshotname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.snapshotname_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      snapshotroot_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.snapshotroot_);
+      snapshotroot_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.snapshotroot_);
     }
     if (cached_has_bits & 0x00000004u) {
       _has_bits_[0] |= 0x00000004u;
-      owner_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.owner_);
+      owner_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.owner_);
     }
     if (cached_has_bits & 0x00000008u) {
       _has_bits_[0] |= 0x00000008u;
-      group_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.group_);
+      group_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.group_);
     }
     if (cached_has_bits & 0x00000010u) {
       _has_bits_[0] |= 0x00000010u;
-      createtime_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.createtime_);
+      createtime_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.createtime_);
     }
     if (cached_has_bits & 0x00000020u) {
-      _internal_mutable_permission()->::Hdfs::Internal::FsPermissionProto::MergeFrom(from._internal_permission());
+      _internal_mutable_permission()
+          ->::Hdfs::Internal::FsPermissionProto::MergeFrom(
+              from._internal_permission());
     }
   }
 }
 
 void SnapshotInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.SnapshotInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void SnapshotInfoProto::CopyFrom(const SnapshotInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.SnapshotInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -14974,16 +16799,24 @@ void SnapshotInfoProto::InternalSwap(SnapshotInfoProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  snapshotname_.Swap(&other->snapshotname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  snapshotroot_.Swap(&other->snapshotroot_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  owner_.Swap(&other->owner_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  group_.Swap(&other->group_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  createtime_.Swap(&other->createtime_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  snapshotname_.Swap(
+      &other->snapshotname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  snapshotroot_.Swap(
+      &other->snapshotroot_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  owner_.Swap(&other->owner_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  group_.Swap(&other->group_,
+              &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+              GetArenaNoVirtual());
+  createtime_.Swap(
+      &other->createtime_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(permission_, other->permission_);
 }
 
@@ -14991,127 +16824,237 @@ void SnapshotInfoProto::InternalSwap(SnapshotInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace Internal
 }  // namespace Hdfs
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ExtendedBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ExtendedBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ExtendedBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ExtendedBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ExtendedBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ExtendedBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeIDProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DatanodeIDProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DatanodeIDProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeIDProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DatanodeIDProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DatanodeIDProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeInfosProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DatanodeInfosProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DatanodeInfosProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeInfosProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DatanodeInfosProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DatanodeInfosProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DatanodeInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DatanodeInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DatanodeInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DatanodeInfoProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DatanodeInfoProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ContentSummaryProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ContentSummaryProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ContentSummaryProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ContentSummaryProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ContentSummaryProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ContentSummaryProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CorruptFileBlocksProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CorruptFileBlocksProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CorruptFileBlocksProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CorruptFileBlocksProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CorruptFileBlocksProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::CorruptFileBlocksProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::FsPermissionProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::FsPermissionProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::FsPermissionProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::FsPermissionProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::FsPermissionProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::FsPermissionProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::StorageUuidsProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::StorageUuidsProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::StorageUuidsProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::StorageUuidsProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::StorageUuidsProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::StorageUuidsProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::LocatedBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::LocatedBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::LocatedBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::LocatedBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::LocatedBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::LocatedBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DataEncryptionKeyProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DataEncryptionKeyProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DataEncryptionKeyProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DataEncryptionKeyProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DataEncryptionKeyProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DataEncryptionKeyProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::FileEncryptionInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::FileEncryptionInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::FileEncryptionInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::FileEncryptionInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::FileEncryptionInfoProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::FileEncryptionInfoProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::PerFileEncryptionInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::PerFileEncryptionInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::PerFileEncryptionInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::PerFileEncryptionInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::PerFileEncryptionInfoProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::PerFileEncryptionInfoProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ZoneEncryptionInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ZoneEncryptionInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ZoneEncryptionInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ZoneEncryptionInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ZoneEncryptionInfoProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ZoneEncryptionInfoProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CipherOptionProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CipherOptionProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CipherOptionProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CipherOptionProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CipherOptionProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::CipherOptionProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::LocatedBlocksProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::LocatedBlocksProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::LocatedBlocksProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::LocatedBlocksProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::LocatedBlocksProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::LocatedBlocksProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::HdfsFileStatusProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::HdfsFileStatusProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::HdfsFileStatusProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::HdfsFileStatusProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::HdfsFileStatusProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::HdfsFileStatusProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::FsServerDefaultsProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::FsServerDefaultsProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::FsServerDefaultsProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::FsServerDefaultsProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::FsServerDefaultsProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::FsServerDefaultsProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DirectoryListingProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DirectoryListingProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DirectoryListingProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DirectoryListingProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DirectoryListingProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DirectoryListingProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshottableDirectoryStatusProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::SnapshottableDirectoryStatusProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::SnapshottableDirectoryStatusProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshottableDirectoryStatusProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::SnapshottableDirectoryStatusProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::SnapshottableDirectoryStatusProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshottableDirectoryListingProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::SnapshottableDirectoryListingProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::SnapshottableDirectoryListingProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshottableDirectoryListingProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::SnapshottableDirectoryListingProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::SnapshottableDirectoryListingProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotDiffReportEntryProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::SnapshotDiffReportEntryProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::SnapshotDiffReportEntryProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotDiffReportEntryProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::SnapshotDiffReportEntryProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::SnapshotDiffReportEntryProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotDiffReportProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::SnapshotDiffReportProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::SnapshotDiffReportProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotDiffReportProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::SnapshotDiffReportProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::SnapshotDiffReportProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::StorageInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::StorageInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::StorageInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::StorageInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::StorageInfoProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::StorageInfoProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::NamenodeRegistrationProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::NamenodeRegistrationProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::NamenodeRegistrationProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::NamenodeRegistrationProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::NamenodeRegistrationProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::NamenodeRegistrationProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CheckpointSignatureProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CheckpointSignatureProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CheckpointSignatureProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CheckpointSignatureProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CheckpointSignatureProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::CheckpointSignatureProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::NamenodeCommandProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::NamenodeCommandProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::NamenodeCommandProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::NamenodeCommandProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::NamenodeCommandProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::NamenodeCommandProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CheckpointCommandProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CheckpointCommandProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CheckpointCommandProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CheckpointCommandProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CheckpointCommandProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::CheckpointCommandProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BlockWithLocationsProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BlockWithLocationsProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BlockWithLocationsProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BlockWithLocationsProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BlockWithLocationsProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BlockWithLocationsProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BlocksWithLocationsProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BlocksWithLocationsProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BlocksWithLocationsProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BlocksWithLocationsProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BlocksWithLocationsProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BlocksWithLocationsProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::RemoteEditLogProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::RemoteEditLogProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::RemoteEditLogProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::RemoteEditLogProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::RemoteEditLogProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::RemoteEditLogProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::RemoteEditLogManifestProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::RemoteEditLogManifestProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::RemoteEditLogManifestProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::RemoteEditLogManifestProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::RemoteEditLogManifestProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::RemoteEditLogManifestProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::NamespaceInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::NamespaceInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::NamespaceInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::NamespaceInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::NamespaceInfoProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::NamespaceInfoProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BlockKeyProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BlockKeyProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BlockKeyProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BlockKeyProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BlockKeyProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BlockKeyProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ExportedBlockKeysProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ExportedBlockKeysProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ExportedBlockKeysProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ExportedBlockKeysProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ExportedBlockKeysProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ExportedBlockKeysProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::RecoveringBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::RecoveringBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::RecoveringBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::RecoveringBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::RecoveringBlockProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::RecoveringBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::VersionRequestProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::VersionRequestProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::VersionRequestProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::VersionRequestProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::VersionRequestProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::VersionRequestProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::VersionResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::VersionResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::VersionResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::VersionResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::VersionResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::VersionResponseProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::SnapshotInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::SnapshotInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::SnapshotInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::SnapshotInfoProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::SnapshotInfoProto>(arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

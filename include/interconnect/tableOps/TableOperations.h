@@ -15,21 +15,21 @@
 #ifndef SRC_INTERCONNECT_TABLEOPS_TABLEOPERATIONS_H_
 #define SRC_INTERCONNECT_TABLEOPS_TABLEOPERATIONS_H_
 
-#include "../../data/constructs/inputvalidation.h"
 #include "../../data/constructs/client/Instance.h"
+#include "../../data/constructs/inputvalidation.h"
 #include "../../scanner/Source.h"
 #include "../../writer/Sink.h"
 
 namespace interconnect {
 
-#include <memory>
-#include <string>
 #include <map>
+#include <memory>
 #include <mutex>
+#include <string>
 
 extern std::set<std::string> tableNames;
 
-template<typename K, typename V>
+template <typename K, typename V>
 class TableOperations {
  public:
   /**
@@ -38,7 +38,9 @@ class TableOperations {
    * @param instance instance to use for connection
    * @param table table name
    **/
-  TableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table);
+  TableOperations(cclient::data::security::AuthInfo *creds,
+                  std::shared_ptr<cclient::data::Instance> instance,
+                  std::string table);
 
   /**
    * Create a table.
@@ -53,7 +55,8 @@ class TableOperations {
    * @param threads current threads
    * @return new scanner
    **/
-  virtual std::unique_ptr<scanners::Source<K, V>> createScanner(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
+  virtual std::unique_ptr<scanners::Source<K, V>> createScanner(
+      cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
 
   /**
    * Creates a writer for the current table
@@ -61,8 +64,8 @@ class TableOperations {
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  virtual std::unique_ptr<writer::Sink<K>> createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
-
+  virtual std::unique_ptr<writer::Sink<K>> createWriter(
+      cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
 
   /**
    * Creates a new scanner
@@ -70,7 +73,8 @@ class TableOperations {
    * @param threads current threads
    * @return new scanner
    **/
-  virtual std::shared_ptr<scanners::Source<K, V>> createSharedScanner(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
+  virtual std::shared_ptr<scanners::Source<K, V>> createSharedScanner(
+      cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
 
   /**
    * Creates a writer for the current table
@@ -78,7 +82,8 @@ class TableOperations {
    * @param threads number of threads for writer
    * @return new batch writer
    */
-  virtual std::shared_ptr<writer::Sink<K>> createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
+  virtual std::shared_ptr<writer::Sink<K>> createSharedWriter(
+      cclient::data::security::Authorizations *auths, uint16_t threads) = 0;
 
   virtual ~TableOperations();
 
@@ -128,31 +133,28 @@ class TableOperations {
    * @param wait wait on this operation before returning
    * @return status of compaction
    **/
-  virtual int8_t compact(std::string startRow, std::string endRow, bool wait) = 0;
+  virtual int8_t compact(std::string startRow, std::string endRow,
+                         bool wait) = 0;
 
   /**
    * Returns all table properties.
    * @return table properties
    */
-  virtual std::map<std::string, std::string> getProperties()=0;
+  virtual std::map<std::string, std::string> getProperties() = 0;
 
   /**
    * Lists tables
    * @return tables
    **/
-  virtual std::set<std::string> listTables() {
-    return tableNames;
-  }
+  virtual std::set<std::string> listTables() { return tableNames; }
 
   /**
    * Gets user credentials
    * @return credentials
    **/
-  cclient::data::security::AuthInfo *getCredentials() {
-    return credentials;
-  }
- protected:
+  cclient::data::security::AuthInfo *getCredentials() { return credentials; }
 
+ protected:
   // table mutex
   std::recursive_mutex tableOpMutex;
   // instance pointer
@@ -172,27 +174,21 @@ extern std::map<std::string, std::string> cachedTableIds;
  * @param recreate will recreate a table if necessary
  * @return whether or not the table was created.
  **/
-template<typename K, typename V>
-void TableOperations<K, V>::createTable(std::string table) {
-
-}
+template <typename K, typename V>
+void TableOperations<K, V>::createTable(std::string table) {}
 /**
  * Table Operations constructur
  * @param creds credentials
  * @param instance instance to use for connection
  * @param table table name
  **/
-template<typename K, typename V>
-TableOperations<K, V>::TableOperations(cclient::data::security::AuthInfo *creds, std::shared_ptr<cclient::data::Instance> instance, std::string table)
-    : myInstance(instance),
-      myTable(table),
-      credentials(creds) {
+template <typename K, typename V>
+TableOperations<K, V>::TableOperations(
+    cclient::data::security::AuthInfo *creds,
+    std::shared_ptr<cclient::data::Instance> instance, std::string table)
+    : myInstance(instance), myTable(table), credentials(creds) {}
 
-}
-
-template<typename K, typename V>
-TableOperations<K, V>::~TableOperations() {
-
-}
-}
+template <typename K, typename V>
+TableOperations<K, V>::~TableOperations() {}
+}  // namespace interconnect
 #endif /* SRC_INTERCONNECT_TABLEOPS_TABLEOPERATIONS_H_ */

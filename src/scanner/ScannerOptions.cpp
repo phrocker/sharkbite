@@ -13,10 +13,6 @@
  */
 
 #include "scanner/ScannerOptions.h"
+
 #include <cstdint>
-namespace scanners
-{
-
-
-
-}
+namespace scanners {}

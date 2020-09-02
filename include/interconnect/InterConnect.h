@@ -15,35 +15,32 @@
 #ifndef INTERCONNECT_H_
 #define INTERCONNECT_H_ 1
 
-#include <string>
-#include <map>
-#include <set>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <ctime>        // std::time
-#include <cstdlib>      // std::rand, std::srand
-
+#include <concurrency/ThreadManager.h>
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
-
+#include <sys/time.h>
+#include <transport/TBufferTransports.h>
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
 #include <transport/TSocket.h>
+#include <transport/TTransport.h>
 #include <transport/TTransportException.h>
-#include <transport/TBufferTransports.h>
 
-#include <concurrency/ThreadManager.h>
+#include <algorithm>  // std::random_shuffle
+#include <cstdlib>    // std::rand, std::srand
+#include <ctime>      // std::time
+#include <map>
+#include <set>
+#include <string>
+#include <vector>  // std::vector
 
-#include <sys/time.h>
-
+#include "../data/constructs/inputvalidation.h"
 #include "../data/exceptions/ClientException.h"
 #include "../data/exceptions/IllegalArgumentException.h"
-#include "../data/constructs/inputvalidation.h"
 #include "transport/BaseTransport.h"
-#include "transport/ServerConnection.h"
 #include "transport/CachedTransport.h"
+#include "transport/ServerConnection.h"
 
 namespace interconnect {
 
@@ -51,24 +48,20 @@ namespace interconnect {
 #define TSERVER_DEFAULT_PORT 9997
 
 #define GENERAL_RPC_TIMEOUT_OPT "general.rpc.timeout"
-#define GENERAL_RPC_TIMEOUT 120*1000
+#define GENERAL_RPC_TIMEOUT 120 * 1000
 
-enum INTERCONNECT_TYPES {
-  TSERV_CLIENT,
-  MASTER_CLIENT,
-  GC_CLIENT
-};
+enum INTERCONNECT_TYPES { TSERV_CLIENT, MASTER_CLIENT, GC_CLIENT };
 
 #define SERVICE_SEPARATOR ';'
 #define SEPARATOR_CHAR '='
 
-template<typename T>
+template <typename T>
 class EnumParser {
  protected:
   std::map<std::string, T> enumMap;
+
  public:
-  EnumParser() {
-  }
+  EnumParser() {}
 
   T ParseSomeEnum(const std::string &value) {
     auto iValue = enumMap.find(value);
@@ -103,8 +96,8 @@ class TYPE_PARSER : public EnumParser<INTERCONNECT_TYPES> {
 class ConnectorService {
  public:
   ConnectorService(std::string service, std::string server, uint16_t port) {
-    serviceMap.insert(std::pair<INTERCONNECT_TYPES, std::string>(parser.ParseSomeEnum(service), server));
-
+    serviceMap.insert(std::pair<INTERCONNECT_TYPES, std::string>(
+        parser.ParseSomeEnum(service), server));
   }
 
   std::string getAddressString(INTERCONNECT_TYPES type) {
@@ -117,7 +110,7 @@ class ConnectorService {
 };
 
 #define ERROR_THRESHOLD 20L
-#define STUCK_THRESHOLD 2*60*1000
+#define STUCK_THRESHOLD 2 * 60 * 1000
 
-}
+}  // namespace interconnect
 #endif

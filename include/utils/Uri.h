@@ -15,61 +15,42 @@
  */
 
 #pragma once
-#include <vector>
 #include <regex>
 #include <string>
+#include <vector>
 
-namespace utils{
+namespace utils {
 
 #ifndef SH_UNLIKELY
 #ifdef __GNUC__
 #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
 #define SH_LIKELY(val) (__builtin_expect((val), 1))
 #else
-    #define SH_UNLIKELY(val) (val)
-    #define SH_LIKELY(val) (val)
-    #endif
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
+#endif
 #endif
 
 class Uri {
  public:
-
   explicit Uri(std::string str);
 
-    std::string scheme() const {
-    return scheme_;
-  }
-  const std::string username() const {
-    return username_;
-  }
-  const std::string password() const {
-    return password_;
-  }
+  std::string scheme() const { return scheme_; }
+  const std::string username() const { return username_; }
+  const std::string password() const { return password_; }
 
   std::string smatchBuild(const std::smatch& m, int idx);
-  
-  std::string host() const {
-    return host_;
-  }
- 
+
+  std::string host() const { return host_; }
+
   std::string hostname() const;
 
-  uint16_t 
-  port() const {
-    return port_;
-  }
-  std::string path() const {
-    return path_;
-  }
-  std::string query() const {
-    return query_;
-  }
-  std::string fragment() const {
-    return fragment_;
-  }
+  uint16_t port() const { return port_; }
+  std::string path() const { return path_; }
+  std::string query() const { return query_; }
+  std::string fragment() const { return fragment_; }
 
   std::string authority() const;
-
 
   void setPort(uint16_t port) {
     hasAuthority_ = true;
@@ -88,4 +69,4 @@ class Uri {
   std::string fragment_;
   std::vector<std::pair<std::string, std::string>> queryParams_;
 };
-}
+}  // namespace utils

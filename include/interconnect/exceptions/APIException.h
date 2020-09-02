@@ -15,17 +15,14 @@
 #ifndef INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
 #define INCLUDE_INTERCONNECT_EXCEPTIONS_APIEXCEPTION_H_
 
-#include <iostream>
 #include <exception>
+#include <iostream>
 
 namespace interconnect {
 
 class APIException : public std::exception {
-  const char* what() const throw () {
-    return "API Exception";
-  }
+  const char* what() const throw() { return "API Exception"; }
 };
-
 
 } /* namespace interconnect */
 

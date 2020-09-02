@@ -17,13 +17,9 @@
 namespace cclient {
 namespace data {
 
-MetaIndex::MetaIndex() {
+MetaIndex::MetaIndex() {}
 
-}
-
-MetaIndex::~MetaIndex() {
-
-}
+MetaIndex::~MetaIndex() {}
 
 /**
  * Prepares a new MetaIndexEntry for this meta index table.
@@ -33,19 +29,22 @@ MetaIndex::~MetaIndex() {
  * modifying the internals of the compressor )
  * @returns newly allocated MetaIndexEntry
  */
-MetaIndexEntry* MetaIndex::prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp) {
-  std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(std::move(comp));
+MetaIndexEntry *MetaIndex::prepareNewEntry(
+    const std::string name,
+    std::unique_ptr<cclient::data::compression::Compressor> comp) {
+  std::shared_ptr<MetaIndexEntry> entry =
+      std::make_shared<MetaIndexEntry>(std::move(comp));
   entry->setName(name);
   addEntry(entry, NULL);
   return getEntry(name);
-
 }
 
 uint64_t MetaIndex::read(cclient::data::streams::InputStream *in) {
   uint64_t count = in->readHadoopLong();
 
   for (uint64_t i = 0; i < count; i++) {
-    std::shared_ptr<MetaIndexEntry> entry = std::make_shared<MetaIndexEntry>(in);
+    std::shared_ptr<MetaIndexEntry> entry =
+        std::make_shared<MetaIndexEntry>(in);
 
     index.insert(std::make_pair(entry->getMetaName(), entry));
   }
@@ -59,14 +58,16 @@ uint64_t MetaIndex::read(cclient::data::streams::InputStream *in) {
 uint64_t MetaIndex::write(cclient::data::streams::OutputStream *out) {
   out->writeEncodedLong(index.size());
   // write out all the meta index entries
-  for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it = index.begin(); it != index.end(); it++) {
-
+  for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it =
+           index.begin();
+       it != index.end(); it++) {
     (*it).second->write(out);
   }
   return out->getPos();
 }
 
-std::map<std::string, std::shared_ptr<MetaIndexEntry>>* MetaIndex::getEntries() {
+std::map<std::string, std::shared_ptr<MetaIndexEntry>>
+    *MetaIndex::getEntries() {
   return &index;
 }
 
@@ -76,7 +77,8 @@ std::map<std::string, std::shared_ptr<MetaIndexEntry>>* MetaIndex::getEntries() 
  * @param out output stream, from which we gather the region
  * offset
  */
-void MetaIndex::addEntry(const std::shared_ptr<MetaIndexEntry> &indexEntry, cclient::data::streams::DataOutputStream *out) {
+void MetaIndex::addEntry(const std::shared_ptr<MetaIndexEntry> &indexEntry,
+                         cclient::data::streams::DataOutputStream *out) {
   index[indexEntry->getMetaName()] = indexEntry;
   BlockRegion *region = index[indexEntry->getMetaName()]->getRegion();
   if (out != NULL) {
@@ -91,9 +93,9 @@ void MetaIndex::addEntry(const std::shared_ptr<MetaIndexEntry> &indexEntry, ccli
  * wish, and are allowed, to modify the index Entry. Note
  * that this may return null.
  */
-MetaIndexEntry* MetaIndex::getEntry(const std::string &name) {
+MetaIndexEntry *MetaIndex::getEntry(const std::string &name) {
   return index[name].get();
 }
 
-}
-}
+}  // namespace data
+}  // namespace cclient

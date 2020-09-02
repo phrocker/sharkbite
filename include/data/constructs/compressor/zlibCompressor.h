@@ -21,127 +21,137 @@
 #include "../../streaming/DataOutputStream.h"
 #define GZ_NAME "gz"
 
-namespace cclient {
-namespace data {
-namespace compression {
+namespace cclient
+{
+	namespace data
+	{
+		namespace compression
+		{
 
-class ZLibCompressor: public Compressor {
-public:
-	ZLibCompressor() :
-			Compressor(), rawSize(0), total_out(0) {
-		init = false;
-		// initialize with the defautl buffer size.
-		initialize(64 * 1024);
-		buffer = nullptr;
-	}
-	/**
-	 * Sets the input length and intializes the compressor
-	 * @param in_len input length
-	 */
-	explicit ZLibCompressor(uint32_t in_len) :
-			Compressor(), rawSize(0), total_out(0) {
-		init = false;
-		initialize(in_len);
-		buffer = nullptr;
-	}
+			class ZLibCompressor : public Compressor
+			{
+			public:
+				ZLibCompressor() : Compressor(), rawSize(0), total_out(0)
+				{
+					init = false;
+					// initialize with the defautl buffer size.
+					initialize(64 * 1024);
+					buffer = nullptr;
+				}
+				/**
+				 * Sets the input length and intializes the compressor
+				 * @param in_len input length
+				 */
+				explicit ZLibCompressor(uint32_t in_len) : Compressor(), rawSize(0), total_out(0)
+				{
+					init = false;
+					initialize(in_len);
+					buffer = nullptr;
+				}
 
-	virtual ~ZLibCompressor() {
-	}
+				virtual ~ZLibCompressor()
+				{
+				}
 
-	virtual std::unique_ptr<Compressor> newInstance() {
-		return std::make_unique<ZLibCompressor>();
-	}
+				virtual std::unique_ptr<Compressor> newInstance()
+				{
+					return std::make_unique<ZLibCompressor>();
+				}
 
-	/**
-	 * Returns the input length
-	 * @returns input length
-	 */
-	uint32_t getBufferSize() {
+				/**
+				 * Returns the input length
+				 * @returns input length
+				 */
+				uint32_t getBufferSize()
+				{
 
-		return input_length;
-	}
+					return input_length;
+				}
 
-	/**
-	 * Returns the compression overhead. Please ZLib for more info
-	 * @returns compression overhead
-	 */
-	uint32_t getCompressionOverHead() {
-		return (input_length >> 4) + 64 + 3;
-	}
+				/**
+				 * Returns the compression overhead. Please ZLib for more info
+				 * @returns compression overhead
+				 */
+				uint32_t getCompressionOverHead()
+				{
+					return (input_length >> 4) + 64 + 3;
+				}
 
-	/**
-	 * Returns the number of bytes written
-	 * @returns raw, uncompressed size, of the data
-	 *
-	 */
-	uint32_t bytesWritten() {
-		return rawSize;
-	}
+				/**
+				 * Returns the number of bytes written
+				 * @returns raw, uncompressed size, of the data
+				 *
+				 */
+				uint32_t bytesWritten()
+				{
+					return rawSize;
+				}
 
-	/**
-	 * Returns the compressed size of the data
-	 * @returns total_out
-	 */
-	uint32_t getCompressedSize() {
-		return total_out;
-	}
+				/**
+				 * Returns the compressed size of the data
+				 * @returns total_out
+				 */
+				uint32_t getCompressedSize()
+				{
+					return total_out;
+				}
 
-	/**
-	 * Compression method.
-	 * @param out_stream.
-	 */
-	void compress(cclient::data::streams::OutputStream *out_stream);
+				/**
+				 * Compression method.
+				 * @param out_stream.
+				 */
+				void compress(cclient::data::streams::OutputStream *out_stream);
 
-	/**
-	 * Deompression method.
-	 * @param out_stream.
-	 */
-	void decompress(cclient::data::streams::ByteOutputStream *out_stream,  char *in_buf = nullptr, size_t size = 0);
+				/**
+				 * Deompression method.
+				 * @param out_stream.
+				 */
+				void decompress(cclient::data::streams::ByteOutputStream *out_stream, char *in_buf = nullptr, size_t size = 0);
 
-protected:
+			protected:
+				/**
+				 * Initializes the Zlib compressor, accepts the input
+				 * length
+				 * @param in_len input length
+				 */
+				void initialize(uint32_t in_len)
+				{
 
-	/**
-	 * Initializes the Zlib compressor, accepts the input
-	 * length
-	 * @param in_len input length
-	 */
-	void initialize(uint32_t in_len) {
+					if (init) // do not re-initialize;
+						return;
 
-		if (init) // do not re-initialize;
-			return;
+					Compressor::algorithm.setAlgorithm("gz");
 
-		Compressor::algorithm.setAlgorithm("gz");
+					input_length = in_len;
 
-		input_length = in_len;
+					init = true;
+				}
 
-		init = true;
-	}
+				std::string getName()
+				{
+					return GZ_NAME;
+				}
 
-	std::string getName() {
-		return GZ_NAME;
-	}
+				bool init;
+				// z lib stream
+				z_stream c_stream;
+				// raw size of the uncompressed data.
+				uint32_t rawSize;
+				// input buffer.
+				//std::vector<Bytef> in_buf;
+				// total output size.
+				uint32_t total_out;
 
-	bool init;
-	// z lib stream
-	z_stream c_stream;
-	// raw size of the uncompressed data.
-	uint32_t rawSize;
-	// input buffer.
-	//std::vector<Bytef> in_buf;
-	// total output size.
-	uint32_t total_out;
+				// output buffer.
+				std::vector<Bytef> out_buf;
+				// input length.
+				uint32_t input_length;
+				// output length
+				uint32_t output_length;
 
-	// output buffer.
-	std::vector<Bytef> out_buf;
-	// input length.
-	uint32_t input_length;
-	// output length
-	uint32_t output_length;
-
-//	static DerivedCompressor<ZLibCompressor> reg;
-
-};
-}
-}
-}
+				//	static DerivedCompressor<ZLibCompressor> reg;
+			};
+		} // namespace compression
+	}	  // namespace data
+} // namespace cclient
 #endif

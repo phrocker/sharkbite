@@ -11,8 +11,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <arpa/inet.h>
 #include "data/streaming/EndianTranslation.h"
+
+#include <arpa/inet.h>
 
 namespace cclient {
 namespace data {
@@ -24,7 +25,8 @@ uint64_t EndianTranslationStream::htonlw(uint64_t value) {
   // Check the endianness
   if (*reinterpret_cast<const char*>(&num) == num) {
     const uint32_t high_part = htonl(static_cast<uint32_t>(value >> 32));
-    const uint32_t low_part = htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
+    const uint32_t low_part =
+        htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
 
     return (static_cast<uint64_t>(low_part) << 32) | high_part;
   } else {
@@ -32,28 +34,24 @@ uint64_t EndianTranslationStream::htonlw(uint64_t value) {
   }
 }
 
-EndianTranslationStream::~EndianTranslationStream(){
-}
+EndianTranslationStream::~EndianTranslationStream() {}
 
 uint64_t EndianTranslationStream::writeShort(short shortVal) {
-
   return HadoopDataOutputStream::writeShort(htons(shortVal));
 }
 
 uint64_t EndianTranslationStream::writeInt(int intVal) {
-
   return HadoopDataOutputStream::writeInt(htonl(intVal));
 }
 
 uint64_t EndianTranslationStream::writeLong(uint64_t val) {
-
   return HadoopDataOutputStream::writeLong(htonlw(val));
 }
 
 uint64_t EndianTranslationStream::writeEncodedLong(const int64_t val) {
-  return HadoopDataOutputStream::writeEncodedLong((int64_t) htonlw(val));
+  return HadoopDataOutputStream::writeEncodedLong((int64_t)htonlw(val));
 }
 
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient

@@ -15,21 +15,16 @@
 
 #include <string>
 
-
-
+#include "data/constructs/server/../KeyExtent.h"
+#include "data/constructs/server/../Range.h"
 #include "data/constructs/server/../security/AuthInfo.h"
 #include "data/constructs/server/../security/Authorizations.h"
-#include "data/constructs/server/../Range.h"
-#include "data/constructs/server/../KeyExtent.h"
 
-namespace cclient
-{
+namespace cclient {
 
-namespace data
-{
+namespace data {
 
-namespace tserver
-{
+namespace tserver {
 
 /**
  * Constructor
@@ -38,43 +33,27 @@ namespace tserver
  * @param host host name we're connecting to
  * @param port incoming port
  */
-ServerDefinition::ServerDefinition (cclient::data::security::AuthInfo *creds,
-                                    cclient::data::security::Authorizations *auths, std::string host,
-                                    uint32_t port) :
-    credentials (creds), auths (auths), server (host), port (port)
-{
-
-}
+ServerDefinition::ServerDefinition(
+    cclient::data::security::AuthInfo *creds,
+    cclient::data::security::Authorizations *auths, std::string host,
+    uint32_t port)
+    : credentials(creds), auths(auths), server(host), port(port) {}
 // default to a port
 
-ServerDefinition::~ServerDefinition ()
-{
+ServerDefinition::~ServerDefinition() {}
 
-}
-
-cclient::data::security::AuthInfo *
-ServerDefinition::getCredentials ()
-{
-    return credentials;
+cclient::data::security::AuthInfo *ServerDefinition::getCredentials() {
+  return credentials;
 }
 
-cclient::data::security::Authorizations *
-ServerDefinition::getAuthorizations () const
-{
-    return auths;
+cclient::data::security::Authorizations *ServerDefinition::getAuthorizations()
+    const {
+  return auths;
 }
 
-std::string
-ServerDefinition::getServer () const
-{
-    return server;
-}
+std::string ServerDefinition::getServer() const { return server; }
 
-uint32_t
-ServerDefinition::getPort () const
-{
-    return port;
-}
-}
-}
-}
+uint32_t ServerDefinition::getPort() const { return port; }
+}  // namespace tserver
+}  // namespace data
+}  // namespace cclient

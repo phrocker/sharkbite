@@ -13,27 +13,21 @@
  */
 #pragma once
 
-
-namespace interconnect {
-
 #include "PythonStructures.h"
 
-
-
+namespace interconnect {
 
 /**
  * Provides interconnect for python integration.
  *
  */
-class PythonConnector  {
-
+class PythonConnector {
   virtual PythonTableOperations table_operations(const std::string &table) = 0;
 
-  virtual PythonNamespaceOperations namespace_operations(const std::string &nm = "") = 0;
+  virtual PythonNamespaceOperations namespace_operations(
+      const std::string &nm = "") = 0;
 
   virtual PythonSecurityOperations security_operations() = 0;
-
-
 };
 
-}
+}  // namespace interconnect

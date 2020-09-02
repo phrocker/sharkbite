@@ -14,13 +14,15 @@
 #ifndef MM_NC_ENDIAN_IN_STREAM
 #define MM_NC_ENDIAN_IN_STREAM
 
-#include <stdexcept>
-#include <cstdio>
-#include <iostream>
-#include <cstring>
 #include <netinet/in.h>
-#include "InputStream.h"
+
+#include <cstdio>
+#include <cstring>
+#include <iostream>
+#include <stdexcept>
+
 #include "ByteInputStream.h"
+#include "InputStream.h"
 #include "MemorymappedInputStream.h"
 namespace cclient {
 namespace data {
@@ -31,13 +33,15 @@ namespace streams {
 #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
 #define SH_LIKELY(val) (__builtin_expect((val), 1))
 #else
-    #define SH_UNLIKELY(val) (val)
-    #define SH_LIKELY(val) (val)
-    #endif
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
+#endif
 #endif
 
 #ifndef ntohll
-#define ntohll(x) ( ( (uint64_t)(ntohl( (uint32_t)((x << 32) >> 32) )) << 32) | ntohl( ((uint32_t)(x >> 32)) ) )
+#define ntohll(x)                                           \
+  (((uint64_t)(ntohl((uint32_t)((x << 32) >> 32))) << 32) | \
+   ntohl(((uint32_t)(x >> 32))))
 #endif
 
 /**
@@ -46,19 +50,14 @@ namespace streams {
  */
 class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
  public:
-
   explicit NonCopyMemoryMappedInputStream(const std::string &file)
-      :
-      MemoryMappedInputStream(file) {
-  }
+      : MemoryMappedInputStream(file) {}
 
-  virtual ~NonCopyMemoryMappedInputStream() {
-
-  }
+  virtual ~NonCopyMemoryMappedInputStream() {}
 
   virtual short readShort() override {
     short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > filesize))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = ptr[offset + 1];
@@ -69,7 +68,7 @@ class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
 
   virtual unsigned short readUnsignedShort() override {
     unsigned short shortVal;
-    char *ptr = (char*) &shortVal;
+    char *ptr = (char *)&shortVal;
     if (SH_UNLIKELY((2 + offset) > filesize))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = ptr[offset + 1];
@@ -107,7 +106,7 @@ class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
 
   virtual int readInt() override {
     int intVal;
-    char *ptr = (char*) &intVal;
+    char *ptr = (char *)&intVal;
     if (SH_UNLIKELY((4 + offset) > filesize))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = ptr[offset + 3];
@@ -120,7 +119,7 @@ class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
 
   virtual uint64_t readLong() override {
     uint64_t longVal;
-    char *ptr = (char*) &longVal;
+    char *ptr = (char *)&longVal;
     if (SH_UNLIKELY((8 + offset) > filesize))
       throw std::runtime_error("Stream unavailable");
     ptr[0] = ptr[offset + 7];
@@ -134,9 +133,8 @@ class NonCopyMemoryMappedInputStream : public MemoryMappedInputStream {
     offset += 8;
     return longVal;
   }
-
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

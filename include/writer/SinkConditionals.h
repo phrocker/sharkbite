@@ -14,77 +14,62 @@
 #ifndef SRC_SCANNER_CONSTRUCTS_SOURCECONDITIONS_H_
 #define SRC_SCANNER_CONSTRUCTS_SOURCECONDITIONS_H_
 
-
-
-#include <thread>
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
 
 namespace writer {
 
 class SinkConditions {
-public:
-    SinkConditions() {
-        mutation_count = 0;
-        alive = true;
-	closing = false;
-    }
+ public:
+  SinkConditions() {
+    mutation_count = 0;
+    alive = true;
+    closing = false;
+  }
 
-    void waitForResults() {
-        std::unique_lock<std::recursive_mutex> lock(resultMutex);
-        if (alive && !closing) {
-	    moreResults.wait(lock, [&](){return !this->alive||this->closing||this->mutation_count>0;});
-        }
+  void waitForResults() {
+    std::unique_lock<std::recursive_mutex> lock(resultMutex);
+    if (alive && !closing) {
+      moreResults.wait(lock, [&]() {
+        return !this->alive || this->closing || this->mutation_count > 0;
+      });
     }
+  }
 
-    void awakeThreadsForResults() {
-      std::lock_guard<std::recursive_mutex> lock(resultMutex);
-        moreResults.notify_all();
-    }
+  void awakeThreadsForResults() {
+    std::lock_guard<std::recursive_mutex> lock(resultMutex);
+    moreResults.notify_all();
+  }
 
-    bool isAlive() {
-        return alive;
-    }
-    
-    bool isClosing()
-    {
-      return closing;
-    }
-    
-    void close()
-    {
-      closing = false;
-      alive = true;
-    }
-    
-    void incrementMutationCount(uint32_t count=1)
-    {
-      mutation_count+= count;
-    }
-    
-    uint64_t getMutationCount()
-    {
-      return mutation_count;
-    }
-    
-    void decrementMutationCount(uint32_t count=1)
-    {
-      mutation_count-=count;
-    }
+  bool isAlive() { return alive; }
 
-    void awakeThreadsFinished() {
-        std::lock_guard<std::recursive_mutex> lock(resultMutex);
-        closing = true;
-        awakeThreadsForResults();
-    }
-protected:
-    std::atomic_long mutation_count;
-    volatile bool closing;
-    volatile bool alive;
-    std::condition_variable_any moreResults;
-    std::recursive_mutex resultMutex;
+  bool isClosing() { return closing; }
 
+  void close() {
+    closing = false;
+    alive = true;
+  }
+
+  void incrementMutationCount(uint32_t count = 1) { mutation_count += count; }
+
+  uint64_t getMutationCount() { return mutation_count; }
+
+  void decrementMutationCount(uint32_t count = 1) { mutation_count -= count; }
+
+  void awakeThreadsFinished() {
+    std::lock_guard<std::recursive_mutex> lock(resultMutex);
+    closing = true;
+    awakeThreadsForResults();
+  }
+
+ protected:
+  std::atomic_long mutation_count;
+  volatile bool closing;
+  volatile bool alive;
+  std::condition_variable_any moreResults;
+  std::recursive_mutex resultMutex;
 };
 
-}
+}  // namespace writer
 #endif /* SRC_SCANNER_CONSTRUCTS_SOURCECONDITIONS_H_ */

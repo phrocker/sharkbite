@@ -14,21 +14,17 @@
 
 #include "data/constructs/rfile/meta/IndexEntry.h"
 
-namespace cclient{
-  namespace data{
+namespace cclient {
+namespace data {
 
-IndexEntry::IndexEntry (std::shared_ptr<cclient::data::Key> mKey, uint32_t entryCount) :
-    entries (entryCount), newFormat (false)
-{
-	key = std::make_shared<cclient::data::Key>(mKey);
+IndexEntry::IndexEntry(std::shared_ptr<cclient::data::Key> mKey,
+                       uint32_t entryCount)
+    : entries(entryCount), newFormat(false) {
+  key = std::make_shared<cclient::data::Key>(mKey);
 }
 
-IndexEntry::~IndexEntry ()
-{
-}
+IndexEntry::~IndexEntry() {}
 
-  }
-  
-  
-}
-  
+}  // namespace data
+
+}  // namespace cclient

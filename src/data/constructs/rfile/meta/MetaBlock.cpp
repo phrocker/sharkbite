@@ -13,38 +13,31 @@
  */
 
 #include "data/constructs/rfile/meta/MetaBlock.h"
-#include "data/constructs/rfile/meta/LocalityGroupMetaData.h"
+
 #include "data/constructs/rfile/meta/../../../streaming/DataOutputStream.h"
+#include "data/constructs/rfile/meta/LocalityGroupMetaData.h"
 
-namespace cclient{
-  namespace data{
-MetaBlock::MetaBlock ()
-{
+namespace cclient {
+namespace data {
+MetaBlock::MetaBlock() {}
 
-}
+MetaBlock::~MetaBlock() {}
 
-MetaBlock::~MetaBlock ()
-{
-}
-
-uint64_t
-MetaBlock::write (cclient::data::streams::DataOutputStream *outStream)
-{
-    // write the magic number.
-    outStream->writeInt (MAGIC_NUMBER);
-    // write version of the RFIle
-    outStream->writeInt (RFILE_VERSION);
-    // write the size of the locaity groups.
-    outStream->writeInt (localityGroups.size ());
-    uint64_t offset = 0;
-    for (std::vector<LocalityGroupMetaData*>::iterator it = localityGroups.begin ();
-            it != localityGroups.end (); it++)
-    {
-
-        offset = (*it)->write (outStream);
-    }
-    return offset;
-    //return outStream->getPos();
-}
+uint64_t MetaBlock::write(cclient::data::streams::DataOutputStream *outStream) {
+  // write the magic number.
+  outStream->writeInt(MAGIC_NUMBER);
+  // write version of the RFIle
+  outStream->writeInt(RFILE_VERSION);
+  // write the size of the locaity groups.
+  outStream->writeInt(localityGroups.size());
+  uint64_t offset = 0;
+  for (std::vector<LocalityGroupMetaData *>::iterator it =
+           localityGroups.begin();
+       it != localityGroups.end(); it++) {
+    offset = (*it)->write(outStream);
   }
+  return offset;
+  // return outStream->getPos();
 }
+}  // namespace data
+}  // namespace cclient

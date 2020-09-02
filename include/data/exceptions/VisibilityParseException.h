@@ -22,24 +22,18 @@ namespace exceptions {
 
 class VisibilityParseException : public std::exception {
  public:
-  explicit VisibilityParseException(std::string message, const std::string &expr, int32_t offset)
-      :
-      excp_str(std::move(message)),
-      terms(expr),
-      offset(offset) {
-  }
+  explicit VisibilityParseException(std::string message,
+                                    const std::string& expr, int32_t offset)
+      : excp_str(std::move(message)), terms(expr), offset(offset) {}
 
-  ~VisibilityParseException() throw () {
+  ~VisibilityParseException() throw() {}
+  const char* what() { return excp_str.c_str(); }
 
-  }
-  const char* what() {
-    return excp_str.c_str();
-  }
  private:
   std::string excp_str;
   std::string terms;
   int32_t offset;
 };
-} /* namespace data */
+}  // namespace exceptions
 } /* namespace cclient */
 #endif /* CLIENTEXCEPTION_H_ */

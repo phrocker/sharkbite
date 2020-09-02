@@ -12,8 +12,7 @@
  * limitations under the License.
  */
 #include "interconnect/tableOps/TableOperations.h"
-namespace interconnect
-{
-std::map<std::string,std::string> cachedTableIds;
+namespace interconnect {
+std::map<std::string, std::string> cachedTableIds;
 std::set<std::string> tableNames;
-}
+}  // namespace interconnect

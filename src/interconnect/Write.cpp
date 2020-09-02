@@ -16,11 +16,9 @@
 namespace cclient {
 namespace data {
 
-Write::Write() {
-}
+Write::Write() {}
 
-Write::~Write() {
-}
+Write::~Write() {}
 
 } /* namespace data */
 } /* namespace cclient */

@@ -14,46 +14,39 @@
 #ifndef DATA_WRITER
 #define DATA_WRITER
 
+#include <netinet/in.h>
+#include <stdint.h>
+
+#include <cstring>
 #include <memory>
 #include <string>
-#include <memory>
-#include <cstring>
 
-
-#include <stdint.h>
-#include <netinet/in.h>
-
-#include "input/InputStream.h"
-
-#include "OutputStream.h"
 #include "DataOutputStream.h"
 #include "HdfsOutputStream.h"
+#include "OutputStream.h"
+#include "input/InputStream.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
 class StreamInterface {
-public:
+ public:
+  StreamInterface();
+  virtual ~StreamInterface();
 
-    StreamInterface();
-    virtual ~StreamInterface();
+  virtual std::shared_ptr<StreamInterface> getStream();
 
-    virtual std::shared_ptr<StreamInterface> getStream();
+  virtual uint64_t write(cclient::data::streams::OutputStream *out);
+  virtual uint64_t read(cclient::data::streams::InputStream *in);
 
-    virtual uint64_t write (cclient::data::streams::OutputStream *out);
-    virtual uint64_t read (cclient::data::streams::InputStream *in);
-
-    virtual DataOutputStream *createDataStream(
-        DataOutputStream *out,
-        std::string name = "") {
-        return NULL;
-    }
-
+  virtual DataOutputStream *createDataStream(DataOutputStream *out,
+                                             std::string name = "") {
+    return NULL;
+  }
 };
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 
 #endif
-

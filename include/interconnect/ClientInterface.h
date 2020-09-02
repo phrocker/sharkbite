@@ -15,12 +15,11 @@
 #ifndef CLIENTINTERFACE_H_
 #define CLIENTINTERFACE_H_
 
-#include <type_traits>
 #include <string>
-
-#include "transport/Transport.h"
+#include <type_traits>
 
 #include "../data/constructs/security/AuthInfo.h"
+#include "transport/Transport.h"
 
 namespace interconnect {
 
@@ -28,7 +27,7 @@ namespace interconnect {
  * ClientInterface is the lowest level connecting transport mechanism
  * for clients.
  **/
-template<typename Tr>
+template <typename Tr>
 class ClientInterface {
  public:
   /**
@@ -39,10 +38,7 @@ class ClientInterface {
    **/
   explicit ClientInterface(const std::string &host, const int port);
 
-  ClientInterface()
-      : server_port(9997),
-        authenticated(false) {
-  }
+  ClientInterface() : server_port(9997), authenticated(false) {}
 
   virtual ~ClientInterface();
 
@@ -52,14 +48,16 @@ class ClientInterface {
    * @param username username
    * @param password username's password.
    **/
-  virtual void authenticate(const std::string &username, const std::string &password) = 0;
+  virtual void authenticate(const std::string &username,
+                            const std::string &password) = 0;
 
   /**
-   * A coupling mechanism that allows us to use cclient::data::security::AuthInfo vice the username
-   * and password authentication above.
+   * A coupling mechanism that allows us to use
+   *cclient::data::security::AuthInfo vice the username and password
+   *authentication above.
    * @param auth authorization info that contains the username and password.
    **/
-  void authenticate(const cclient::data::security::AuthInfo * const auth) {
+  void authenticate(const cclient::data::security::AuthInfo *const auth) {
     authenticate(auth->getUserName(), auth->getPassword());
   }
 
@@ -68,7 +66,6 @@ class ClientInterface {
    * @param transporty transporter, based on T.
    **/
   void setTransport(const std::shared_ptr<Tr> &transporty) {
-
     transport = transporty;
     transport->registerService(instanceId, zookeepers);
   }
@@ -90,16 +87,13 @@ class ClientInterface {
   void setCredentials(const std::string &user, const std::string &password) {
     authenticated_user = user;
     authenticated_password = password;
-
   }
 
   /**
    * Gets the transport used within this client connection.
    * @returns transport shared pointer.
    **/
-  std::shared_ptr<Tr> getTransport() {
-    return transport;
-  }
+  std::shared_ptr<Tr> getTransport() { return transport; }
 
  protected:
   std::shared_ptr<Tr> transport;
@@ -113,20 +107,14 @@ class ClientInterface {
   // info aboutt cluster
   std::string instanceId;
   std::string zookeepers;
-
 };
 
-template<typename Tr>
+template <typename Tr>
 ClientInterface<Tr>::ClientInterface(const std::string &host, const int port)
-    : authenticated(false),
-      server_host(host),
-      server_port(port) {
+    : authenticated(false), server_host(host), server_port(port) {}
 
-}
+template <typename Tr>
+ClientInterface<Tr>::~ClientInterface() {}
 
-template<typename Tr>
-ClientInterface<Tr>::~ClientInterface() {
-}
-
-}
+}  // namespace interconnect
 #endif /* CLIENTINTERFACE_H_ */

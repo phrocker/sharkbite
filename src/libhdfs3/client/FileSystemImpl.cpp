@@ -19,35 +19,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "FileSystemImpl.h"
+
+#include <inttypes.h>
+
+#include <cstring>
+
 #include "Atomic.h"
 #include "BlockLocation.h"
 #include "DirectoryIterator.h"
+#include "EncryptionZoneInfo.h"
 #include "EncryptionZoneIterator.h"
 #include "Exception.h"
 #include "ExceptionInternal.h"
 #include "FileStatus.h"
-#include "FileSystemImpl.h"
 #include "FileSystemStats.h"
-#include "EncryptionZoneInfo.h"
 #include "InputStream.h"
 #include "LeaseRenewer.h"
 #include "Logger.h"
 #include "OutputStream.h"
 #include "OutputStreamImpl.h"
+#include "StringUtil.h"
 #include "server/LocatedBlocks.h"
 #include "server/NamenodeInfo.h"
 #include "server/NamenodeProxy.h"
-#include "StringUtil.h"
-
-#include <cstring>
-#include <inttypes.h>
 //#include <libxml/uri.h>
 #include <strings.h>
 
 namespace Hdfs {
 namespace Internal {
 
-static const std::string GetAbsPath(const std::string &prefix, const std::string &path) {
+static const std::string GetAbsPath(const std::string &prefix,
+                                    const std::string &path) {
   if (path.empty()) {
     return prefix;
   }
@@ -65,11 +68,11 @@ static const std::string GetAbsPath(const std::string &prefix, const std::string
 
 /*
  * Return the canonical absolute name of file NAME.
- * A canonical name does not contain any `.', `..' components nor any repeated path separators ('/')
+ * A canonical name does not contain any `.', `..' components nor any repeated
+ * path separators ('/')
  */
 static const std::string CanonicalizePath(const std::string &path) {
-  if (path.find("hdfs://") != std::string::npos)
-    return path;
+  if (path.find("hdfs://") != std::string::npos) return path;
   int skip = 0;
   std::string retval;
   std::vector<std::string> components = StringSplit(path, "/");
@@ -102,25 +105,25 @@ static const std::string CanonicalizePath(const std::string &path) {
 }
 
 FileSystemImpl::FileSystemImpl(const FileSystemKey &key, const Config &c)
-    :
-    conf(c),
-    key(key),
-    openedOutputStream(0),
-    nn(NULL),
-    sconf(c),
-    user(key.getUser()) {
+    : conf(c),
+      key(key),
+      openedOutputStream(0),
+      nn(NULL),
+      sconf(c),
+      user(key.getUser()) {
   static atomic<uint32_t> count(0);
   std::stringstream ss;
   ss.imbue(std::locale::classic());
-  srand((unsigned int) time(NULL));
-  ss << "libhdfs3_client_random_" << rand() << "_count_" << ++count << "_pid_" << getpid() << "_tid_" << pthread_self();
+  srand((unsigned int)time(NULL));
+  ss << "libhdfs3_client_random_" << rand() << "_count_" << ++count << "_pid_"
+     << getpid() << "_tid_" << pthread_self();
   clientName = ss.str();
   workingDir = std::string("/user/") + user.getEffectiveUser();
   peerCache = shared_ptr<PeerCache>(new PeerCache(sconf));
 #ifdef MOCK
-    stub = NULL;
+  stub = NULL;
 #endif
-  //set log level
+  // set log level
   RootLogger.setLogSeverity(sconf.getLogSeverity());
 }
 
@@ -144,9 +147,7 @@ const std::string FileSystemImpl::getStandardPath(const std::string &path) {
   return canonicalpath;
 }
 
-const char* FileSystemImpl::getClientName() {
-  return clientName.c_str();
-}
+const char *FileSystemImpl::getClientName() { return clientName.c_str(); }
 
 void FileSystemImpl::connect() {
   std::string host, port, uri;
@@ -163,7 +164,10 @@ void FileSystemImpl::connect() {
     try {
       namenodeInfos = NamenodeInfo::GetHANamenodeInfo(key.getHost(), conf);
     } catch (const HdfsConfigNotFound &e) {
-      NESTED_THROW(InvalidParameter, "Cannot parse URI: %s, missing port or invalid HA configuration", uri.c_str());
+      NESTED_THROW(
+          InvalidParameter,
+          "Cannot parse URI: %s, missing port or invalid HA configuration",
+          uri.c_str());
     }
     tokenService = "ha-hdfs:";
     tokenService += host;
@@ -177,9 +181,11 @@ void FileSystemImpl::connect() {
   }
 
 #ifdef MOCK
-    nn = stub->getNamenode();
+  nn = stub->getNamenode();
 #else
-  nn = new NamenodeProxy(namenodeInfos, tokenService, sconf, RpcAuth(user, RpcAuth::ParseMethod(sconf.getRpcAuthMethod())));
+  nn = new NamenodeProxy(
+      namenodeInfos, tokenService, sconf,
+      RpcAuth(user, RpcAuth::ParseMethod(sconf.getRpcAuthMethod())));
 #endif
   /*
    * To test if the connection is ok
@@ -318,7 +324,8 @@ static void Convert(BlockLocation &bl, const LocatedBlock &lb) {
   bl.setTopologyPaths(topologyPaths);
 }
 
-std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(const char *path, int64_t start, int64_t len) {
+std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(
+    const char *path, int64_t start, int64_t len) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -352,7 +359,8 @@ std::vector<BlockLocation> FileSystemImpl::getFileBlockLocations(const char *pat
  * @param path the directory path.
  * @return return the path informations in the given directory.
  */
-DirectoryIterator FileSystemImpl::listDirectory(std::string path, bool needLocation) {
+DirectoryIterator FileSystemImpl::listDirectory(std::string path,
+                                                bool needLocation) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -369,7 +377,8 @@ DirectoryIterator FileSystemImpl::listDirectory(std::string path, bool needLocat
  * @param path The directory path.
  * @return Return a vector of file informations in the directory.
  */
-std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(std::string path, bool needLocation) {
+std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(
+    std::string path, bool needLocation) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -396,7 +405,8 @@ std::vector<FileStatus> FileSystemImpl::listAllDirectoryItems(std::string path, 
  * @param username new user name.
  * @param groupname new group.
  */
-void FileSystemImpl::setOwner(const char *path, const char *username, const char *groupname) {
+void FileSystemImpl::setOwner(const char *path, const char *username,
+                              const char *groupname) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -405,11 +415,14 @@ void FileSystemImpl::setOwner(const char *path, const char *username, const char
     THROW(InvalidParameter, "Invalid input: path should not be empty");
   }
 
-  if ((NULL == username || !strlen(username)) && (NULL == groupname || !strlen(groupname))) {
-    THROW(InvalidParameter, "Invalid input: username and groupname should not be empty");
+  if ((NULL == username || !strlen(username)) &&
+      (NULL == groupname || !strlen(groupname))) {
+    THROW(InvalidParameter,
+          "Invalid input: username and groupname should not be empty");
   }
 
-  nn->setOwner(getStandardPath(path), username != NULL ? username : "", groupname != NULL ? groupname : "");
+  nn->setOwner(getStandardPath(path), username != NULL ? username : "",
+               groupname != NULL ? groupname : "");
 }
 
 /**
@@ -435,7 +448,8 @@ void FileSystemImpl::setTimes(const char *path, int64_t mtime, int64_t atime) {
  * @param path the path which permission is to be changed.
  * @param permission new permission.
  */
-void FileSystemImpl::setPermission(const char *path, const Permission &permission) {
+void FileSystemImpl::setPermission(const char *path,
+                                   const Permission &permission) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -510,9 +524,7 @@ void FileSystemImpl::setWorkingDirectory(const char *path) {
  * To get working directory.
  * @return working directory.
  */
-std::string FileSystemImpl::getWorkingDirectory() const {
-  return workingDir;
-}
+std::string FileSystemImpl::getWorkingDirectory() const { return workingDir; }
 
 /**
  * To test if the path exist.
@@ -616,7 +628,8 @@ void FileSystemImpl::cancelDelegationToken(const std::string &token) {
   nn->cancelDelegationToken(t);
 }
 
-void FileSystemImpl::getBlockLocations(const std::string &src, int64_t offset, int64_t length, LocatedBlocks &lbs) {
+void FileSystemImpl::getBlockLocations(const std::string &src, int64_t offset,
+                                       int64_t length, LocatedBlocks &lbs) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -624,15 +637,19 @@ void FileSystemImpl::getBlockLocations(const std::string &src, int64_t offset, i
   nn->getBlockLocations(src, offset, length, lbs);
 }
 
-void FileSystemImpl::create(const std::string &src, const Permission &masked, int flag, bool createParent, short replication, int64_t blockSize) {
+void FileSystemImpl::create(const std::string &src, const Permission &masked,
+                            int flag, bool createParent, short replication,
+                            int64_t blockSize) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
 
-  nn->create(src, masked, clientName, flag, createParent, replication, blockSize);
+  nn->create(src, masked, clientName, flag, createParent, replication,
+             blockSize);
 }
 
-std::pair<shared_ptr<LocatedBlock>, shared_ptr<FileStatus> > FileSystemImpl::append(const std::string &src) {
+std::pair<shared_ptr<LocatedBlock>, shared_ptr<FileStatus> >
+FileSystemImpl::append(const std::string &src) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -640,7 +657,8 @@ std::pair<shared_ptr<LocatedBlock>, shared_ptr<FileStatus> > FileSystemImpl::app
   return nn->append(src, clientName);
 }
 
-void FileSystemImpl::abandonBlock(const ExtendedBlock &b, const std::string &src) {
+void FileSystemImpl::abandonBlock(const ExtendedBlock &b,
+                                  const std::string &src) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -648,7 +666,9 @@ void FileSystemImpl::abandonBlock(const ExtendedBlock &b, const std::string &src
   nn->abandonBlock(b, src, clientName);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::addBlock(const std::string &src, const ExtendedBlock *previous, const std::vector<DatanodeInfo> &excludeNodes) {
+shared_ptr<LocatedBlock> FileSystemImpl::addBlock(
+    const std::string &src, const ExtendedBlock *previous,
+    const std::vector<DatanodeInfo> &excludeNodes) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -656,16 +676,21 @@ shared_ptr<LocatedBlock> FileSystemImpl::addBlock(const std::string &src, const 
   return nn->addBlock(src, clientName, previous, excludeNodes);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::getAdditionalDatanode(const std::string &src, const ExtendedBlock &blk, const std::vector<DatanodeInfo> &existings, const std::vector<std::string> &storageIDs,
-                                                               const std::vector<DatanodeInfo> &excludes, int numAdditionalNodes) {
+shared_ptr<LocatedBlock> FileSystemImpl::getAdditionalDatanode(
+    const std::string &src, const ExtendedBlock &blk,
+    const std::vector<DatanodeInfo> &existings,
+    const std::vector<std::string> &storageIDs,
+    const std::vector<DatanodeInfo> &excludes, int numAdditionalNodes) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
 
-  return nn->getAdditionalDatanode(src, blk, existings, storageIDs, excludes, numAdditionalNodes, clientName);
+  return nn->getAdditionalDatanode(src, blk, existings, storageIDs, excludes,
+                                   numAdditionalNodes, clientName);
 }
 
-bool FileSystemImpl::complete(const std::string &src, const ExtendedBlock *last) {
+bool FileSystemImpl::complete(const std::string &src,
+                              const ExtendedBlock *last) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -673,9 +698,8 @@ bool FileSystemImpl::complete(const std::string &src, const ExtendedBlock *last)
   return nn->complete(src, clientName, last);
 }
 
-/*void FileSystemImpl::reportBadBlocks(const std::vector<LocatedBlock> & blocks) {
- if (!nn) {
- THROW(HdfsIOException, "FileSystemImpl: not connected.");
+/*void FileSystemImpl::reportBadBlocks(const std::vector<LocatedBlock> & blocks)
+ { if (!nn) { THROW(HdfsIOException, "FileSystemImpl: not connected.");
  }
 
  nn->reportBadBlocks(blocks);
@@ -689,7 +713,8 @@ void FileSystemImpl::fsync(const std::string &src) {
   nn->fsync(src, clientName);
 }
 
-shared_ptr<LocatedBlock> FileSystemImpl::updateBlockForPipeline(const ExtendedBlock &block) {
+shared_ptr<LocatedBlock> FileSystemImpl::updateBlockForPipeline(
+    const ExtendedBlock &block) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -697,7 +722,10 @@ shared_ptr<LocatedBlock> FileSystemImpl::updateBlockForPipeline(const ExtendedBl
   return nn->updateBlockForPipeline(block, clientName);
 }
 
-void FileSystemImpl::updatePipeline(const ExtendedBlock &oldBlock, const ExtendedBlock &newBlock, const std::vector<DatanodeInfo> &newNodes, const std::vector<std::string> &storageIDs) {
+void FileSystemImpl::updatePipeline(
+    const ExtendedBlock &oldBlock, const ExtendedBlock &newBlock,
+    const std::vector<DatanodeInfo> &newNodes,
+    const std::vector<std::string> &storageIDs) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -705,7 +733,10 @@ void FileSystemImpl::updatePipeline(const ExtendedBlock &oldBlock, const Extende
   nn->updatePipeline(clientName, oldBlock, newBlock, newNodes, storageIDs);
 }
 
-bool FileSystemImpl::getListing(const std::string &src, const std::string &startAfter, bool needLocation, std::vector<FileStatus> &dl) {
+bool FileSystemImpl::getListing(const std::string &src,
+                                const std::string &startAfter,
+                                bool needLocation,
+                                std::vector<FileStatus> &dl) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -718,7 +749,7 @@ bool FileSystemImpl::renewLease() {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
 
-  //protected by LeaseRenewer's lock
+  // protected by LeaseRenewer's lock
   if (0 == openedOutputStream) {
     return false;
   }
@@ -728,21 +759,27 @@ bool FileSystemImpl::renewLease() {
     return true;
   } catch (const HdfsException &e) {
     std::string buffer;
-    LOG(LOG_ERROR, "Failed to renew lease for filesystem which client name is %s, since:\n%s", getClientName(), GetExceptionDetail(e, buffer));
+    LOG(LOG_ERROR,
+        "Failed to renew lease for filesystem which client name is %s, "
+        "since:\n%s",
+        getClientName(), GetExceptionDetail(e, buffer));
   } catch (const std::exception &e) {
-    LOG(LOG_ERROR, "Failed to renew lease for filesystem which client name is %s, since:\n%s", getClientName(), e.what());
+    LOG(LOG_ERROR,
+        "Failed to renew lease for filesystem which client name is %s, "
+        "since:\n%s",
+        getClientName(), e.what());
   }
 
   return false;
 }
 
 void FileSystemImpl::registerOpenedOutputStream() {
-  //protected by LeaseRenewer's lock
+  // protected by LeaseRenewer's lock
   ++openedOutputStream;
 }
 
 bool FileSystemImpl::unregisterOpenedOutputStream() {
-  //protected by LeaseRenewer's lock
+  // protected by LeaseRenewer's lock
   if (openedOutputStream > 0) {
     --openedOutputStream;
   }
@@ -753,11 +790,12 @@ bool FileSystemImpl::unregisterOpenedOutputStream() {
 /**
  * Create encryption zone for the directory with specific key name
  * @param path the directory path which is to be created.
- * @param keyname The key name of the encryption zone 
+ * @param keyname The key name of the encryption zone
  * @return return true if success.
  */
 
-bool FileSystemImpl::createEncryptionZone(const char *path, const char *keyName) {
+bool FileSystemImpl::createEncryptionZone(const char *path,
+                                          const char *keyName) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -791,7 +829,8 @@ EncryptionZoneInfo FileSystemImpl::getEZForPath(const char *path) {
   return nn->getEncryptionZoneInfo(getStandardPath(path), NULL);
 }
 
-bool FileSystemImpl::listEncryptionZones(const int64_t id, std::vector<EncryptionZoneInfo> &ezl) {
+bool FileSystemImpl::listEncryptionZones(const int64_t id,
+                                         std::vector<EncryptionZoneInfo> &ezl) {
   if (!nn) {
     THROW(HdfsIOException, "FileSystemImpl: not connected.");
   }
@@ -834,5 +873,5 @@ std::vector<EncryptionZoneInfo> FileSystemImpl::listAllEncryptionZoneItems() {
   return retval;
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

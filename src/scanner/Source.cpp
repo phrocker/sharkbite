@@ -14,8 +14,7 @@
 
 #include "scanner/Source.h"
 
-namespace scanners
-{
+namespace scanners {
 #define ASDG
 
 }

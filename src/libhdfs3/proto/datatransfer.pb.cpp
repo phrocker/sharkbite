@@ -3,104 +3,149 @@
 
 #include "datatransfer.pb.h"
 
-#include <algorithm>
-
-#include <google/protobuf/io/coded_stream.h>
-#include <google/protobuf/extension_set.h>
-#include <google/protobuf/wire_format_lite.h>
 #include <google/protobuf/descriptor.h>
+#include <google/protobuf/extension_set.h>
 #include <google/protobuf/generated_message_reflection.h>
+#include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/reflection_ops.h>
 #include <google/protobuf/wire_format.h>
+#include <google/protobuf/wire_format_lite.h>
+
+#include <algorithm>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_BaseHeaderProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CachingStrategyProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ChecksumProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CipherOptionProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ClientOperationHeaderProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DatanodeInfoProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExtendedBlockProto_hdfs_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_Security_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TokenProto_Security_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<2>
+        scc_info_BaseHeaderProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_CachingStrategyProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_ChecksumProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_CipherOptionProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<1>
+        scc_info_ClientOperationHeaderProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<1>
+        scc_info_DatanodeInfoProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_hdfs_2eproto ::PROTOBUF_NAMESPACE_ID::internal::
+    SCCInfo<0>
+        scc_info_ExtendedBlockProto_hdfs_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_datatransfer_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<1>
+        scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto;
+extern PROTOBUF_INTERNAL_EXPORT_Security_2eproto ::PROTOBUF_NAMESPACE_ID::
+    internal::SCCInfo<0>
+        scc_info_TokenProto_Security_2eproto;
 namespace Hdfs {
 namespace Internal {
 class DataTransferEncryptorMessageProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DataTransferEncryptorMessageProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      DataTransferEncryptorMessageProto>
+      _instance;
 } _DataTransferEncryptorMessageProto_default_instance_;
 class BaseHeaderProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BaseHeaderProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BaseHeaderProto>
+      _instance;
 } _BaseHeaderProto_default_instance_;
 class ClientOperationHeaderProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ClientOperationHeaderProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ClientOperationHeaderProto>
+      _instance;
 } _ClientOperationHeaderProto_default_instance_;
 class CachingStrategyProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CachingStrategyProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CachingStrategyProto>
+      _instance;
 } _CachingStrategyProto_default_instance_;
 class OpReadBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpReadBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpReadBlockProto>
+      _instance;
 } _OpReadBlockProto_default_instance_;
 class ChecksumProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ChecksumProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ChecksumProto>
+      _instance;
 } _ChecksumProto_default_instance_;
 class OpWriteBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpWriteBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpWriteBlockProto>
+      _instance;
 } _OpWriteBlockProto_default_instance_;
 class OpTransferBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpTransferBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpTransferBlockProto>
+      _instance;
 } _OpTransferBlockProto_default_instance_;
 class OpReplaceBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpReplaceBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpReplaceBlockProto>
+      _instance;
 } _OpReplaceBlockProto_default_instance_;
 class OpCopyBlockProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpCopyBlockProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpCopyBlockProto>
+      _instance;
 } _OpCopyBlockProto_default_instance_;
 class OpBlockChecksumProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpBlockChecksumProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpBlockChecksumProto>
+      _instance;
 } _OpBlockChecksumProto_default_instance_;
 class OpRequestShortCircuitAccessProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpRequestShortCircuitAccessProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      OpRequestShortCircuitAccessProto>
+      _instance;
 } _OpRequestShortCircuitAccessProto_default_instance_;
 class PacketHeaderProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PacketHeaderProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PacketHeaderProto>
+      _instance;
 } _PacketHeaderProto_default_instance_;
 class PipelineAckProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PipelineAckProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PipelineAckProto>
+      _instance;
 } _PipelineAckProto_default_instance_;
 class ReadOpChecksumInfoProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReadOpChecksumInfoProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ReadOpChecksumInfoProto>
+      _instance;
 } _ReadOpChecksumInfoProto_default_instance_;
 class BlockOpResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockOpResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlockOpResponseProto>
+      _instance;
 } _BlockOpResponseProto_default_instance_;
 class ClientReadStatusProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ClientReadStatusProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      ClientReadStatusProto>
+      _instance;
 } _ClientReadStatusProto_default_instance_;
 class DNTransferAckProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DNTransferAckProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DNTransferAckProto>
+      _instance;
 } _DNTransferAckProto_default_instance_;
 class OpBlockChecksumResponseProtoDefaultTypeInternal {
  public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<OpBlockChecksumResponseProto> _instance;
+  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<
+      OpBlockChecksumResponseProto>
+      _instance;
 } _OpBlockChecksumResponseProto_default_instance_;
 }  // namespace Internal
 }  // namespace Hdfs
@@ -109,681 +154,912 @@ static void InitDefaultsscc_info_BaseHeaderProto_datatransfer_2eproto() {
 
   {
     void* ptr = &::Hdfs::Internal::_BaseHeaderProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BaseHeaderProto();
+    new (ptr)::Hdfs::Internal::BaseHeaderProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BaseHeaderProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_BaseHeaderProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_BaseHeaderProto_datatransfer_2eproto}, {
-      &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
-      &scc_info_TokenProto_Security_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2>
+    scc_info_BaseHeaderProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         2, 0, InitDefaultsscc_info_BaseHeaderProto_datatransfer_2eproto},
+        {
+            &scc_info_ExtendedBlockProto_hdfs_2eproto.base,
+            &scc_info_TokenProto_Security_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_BlockOpResponseProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_BlockOpResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::BlockOpResponseProto();
+    new (ptr)::Hdfs::Internal::BlockOpResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::BlockOpResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_BlockOpResponseProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_BlockOpResponseProto_datatransfer_2eproto}, {
-      &scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base,
-      &scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2>
+    scc_info_BlockOpResponseProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         2, 0, InitDefaultsscc_info_BlockOpResponseProto_datatransfer_2eproto},
+        {
+            &scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base,
+            &scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_CachingStrategyProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_CachingStrategyProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::CachingStrategyProto();
+    new (ptr)::Hdfs::Internal::CachingStrategyProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::CachingStrategyProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CachingStrategyProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CachingStrategyProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_CachingStrategyProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_CachingStrategyProto_datatransfer_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_ChecksumProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ChecksumProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ChecksumProto();
+    new (ptr)::Hdfs::Internal::ChecksumProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ChecksumProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ChecksumProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ChecksumProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ChecksumProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_ChecksumProto_datatransfer_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_ClientOperationHeaderProto_datatransfer_2eproto() {
+static void
+InitDefaultsscc_info_ClientOperationHeaderProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ClientOperationHeaderProto();
+    void* ptr =
+        &::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_;
+    new (ptr)::Hdfs::Internal::ClientOperationHeaderProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ClientOperationHeaderProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ClientOperationHeaderProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ClientOperationHeaderProto_datatransfer_2eproto}, {
-      &scc_info_BaseHeaderProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_ClientOperationHeaderProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_ClientOperationHeaderProto_datatransfer_2eproto},
+        {
+            &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_ClientReadStatusProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ClientReadStatusProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ClientReadStatusProto();
+    new (ptr)::Hdfs::Internal::ClientReadStatusProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ClientReadStatusProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ClientReadStatusProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ClientReadStatusProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_ClientReadStatusProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_ClientReadStatusProto_datatransfer_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_DNTransferAckProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_DNTransferAckProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DNTransferAckProto();
+    new (ptr)::Hdfs::Internal::DNTransferAckProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DNTransferAckProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DNTransferAckProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DNTransferAckProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_DNTransferAckProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_DNTransferAckProto_datatransfer_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto() {
+static void
+InitDefaultsscc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_DataTransferEncryptorMessageProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::DataTransferEncryptorMessageProto();
+    void* ptr =
+        &::Hdfs::Internal::_DataTransferEncryptorMessageProto_default_instance_;
+    new (ptr)::Hdfs::Internal::DataTransferEncryptorMessageProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::DataTransferEncryptorMessageProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto}, {
-      &scc_info_CipherOptionProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto},
+        {
+            &scc_info_CipherOptionProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_OpBlockChecksumProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpBlockChecksumProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpBlockChecksumProto();
+    new (ptr)::Hdfs::Internal::OpBlockChecksumProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpBlockChecksumProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_OpBlockChecksumProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_OpBlockChecksumProto_datatransfer_2eproto}, {
-      &scc_info_BaseHeaderProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_OpBlockChecksumProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_OpBlockChecksumProto_datatransfer_2eproto},
+        {
+            &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+        }};
 
-static void InitDefaultsscc_info_OpBlockChecksumResponseProto_datatransfer_2eproto() {
+static void
+InitDefaultsscc_info_OpBlockChecksumResponseProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_OpBlockChecksumResponseProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpBlockChecksumResponseProto();
+    void* ptr =
+        &::Hdfs::Internal::_OpBlockChecksumResponseProto_default_instance_;
+    new (ptr)::Hdfs::Internal::OpBlockChecksumResponseProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpBlockChecksumResponseProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_OpBlockChecksumResponseProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0,
+         InitDefaultsscc_info_OpBlockChecksumResponseProto_datatransfer_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_OpCopyBlockProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpCopyBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpCopyBlockProto();
+    new (ptr)::Hdfs::Internal::OpCopyBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpCopyBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_OpCopyBlockProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_OpCopyBlockProto_datatransfer_2eproto}, {
-      &scc_info_BaseHeaderProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_OpCopyBlockProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0, InitDefaultsscc_info_OpCopyBlockProto_datatransfer_2eproto},
+        {
+            &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_OpReadBlockProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpReadBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpReadBlockProto();
+    new (ptr)::Hdfs::Internal::OpReadBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpReadBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_OpReadBlockProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_OpReadBlockProto_datatransfer_2eproto}, {
-      &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
-      &scc_info_CachingStrategyProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2>
+    scc_info_OpReadBlockProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         2, 0, InitDefaultsscc_info_OpReadBlockProto_datatransfer_2eproto},
+        {
+            &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
+            &scc_info_CachingStrategyProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_OpReplaceBlockProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpReplaceBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpReplaceBlockProto();
+    new (ptr)::Hdfs::Internal::OpReplaceBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpReplaceBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_OpReplaceBlockProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_OpReplaceBlockProto_datatransfer_2eproto}, {
-      &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
-      &scc_info_DatanodeInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2>
+    scc_info_OpReplaceBlockProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         2, 0, InitDefaultsscc_info_OpReplaceBlockProto_datatransfer_2eproto},
+        {
+            &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+            &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+        }};
 
-static void InitDefaultsscc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto() {
+static void
+InitDefaultsscc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
-    void* ptr = &::Hdfs::Internal::_OpRequestShortCircuitAccessProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpRequestShortCircuitAccessProto();
+    void* ptr =
+        &::Hdfs::Internal::_OpRequestShortCircuitAccessProto_default_instance_;
+    new (ptr)::Hdfs::Internal::OpRequestShortCircuitAccessProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpRequestShortCircuitAccessProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto}, {
-      &scc_info_BaseHeaderProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto},
+        {
+            &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_OpTransferBlockProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpTransferBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpTransferBlockProto();
+    new (ptr)::Hdfs::Internal::OpTransferBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpTransferBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_OpTransferBlockProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_OpTransferBlockProto_datatransfer_2eproto}, {
-      &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
-      &scc_info_DatanodeInfoProto_hdfs_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2>
+    scc_info_OpTransferBlockProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         2, 0, InitDefaultsscc_info_OpTransferBlockProto_datatransfer_2eproto},
+        {
+            &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
+            &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_OpWriteBlockProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_OpWriteBlockProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::OpWriteBlockProto();
+    new (ptr)::Hdfs::Internal::OpWriteBlockProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::OpWriteBlockProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<4> scc_info_OpWriteBlockProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 4, 0, InitDefaultsscc_info_OpWriteBlockProto_datatransfer_2eproto}, {
-      &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
-      &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
-      &scc_info_ChecksumProto_datatransfer_2eproto.base,
-      &scc_info_CachingStrategyProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<4>
+    scc_info_OpWriteBlockProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         4, 0, InitDefaultsscc_info_OpWriteBlockProto_datatransfer_2eproto},
+        {
+            &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
+            &scc_info_DatanodeInfoProto_hdfs_2eproto.base,
+            &scc_info_ChecksumProto_datatransfer_2eproto.base,
+            &scc_info_CachingStrategyProto_datatransfer_2eproto.base,
+        }};
 
 static void InitDefaultsscc_info_PacketHeaderProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_PacketHeaderProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::PacketHeaderProto();
+    new (ptr)::Hdfs::Internal::PacketHeaderProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::PacketHeaderProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PacketHeaderProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PacketHeaderProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_PacketHeaderProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_PacketHeaderProto_datatransfer_2eproto},
+        {}};
 
 static void InitDefaultsscc_info_PipelineAckProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_PipelineAckProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::PipelineAckProto();
+    new (ptr)::Hdfs::Internal::PipelineAckProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::PipelineAckProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PipelineAckProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PipelineAckProto_datatransfer_2eproto}, {}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0>
+    scc_info_PipelineAckProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         0, 0, InitDefaultsscc_info_PipelineAckProto_datatransfer_2eproto},
+        {}};
 
-static void InitDefaultsscc_info_ReadOpChecksumInfoProto_datatransfer_2eproto() {
+static void
+InitDefaultsscc_info_ReadOpChecksumInfoProto_datatransfer_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   {
     void* ptr = &::Hdfs::Internal::_ReadOpChecksumInfoProto_default_instance_;
-    new (ptr) ::Hdfs::Internal::ReadOpChecksumInfoProto();
+    new (ptr)::Hdfs::Internal::ReadOpChecksumInfoProto();
     ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
   }
   ::Hdfs::Internal::ReadOpChecksumInfoProto::InitAsDefaultInstance();
 }
 
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ReadOpChecksumInfoProto_datatransfer_2eproto}, {
-      &scc_info_ChecksumProto_datatransfer_2eproto.base,}};
+::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1>
+    scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto = {
+        {ATOMIC_VAR_INIT(
+             ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized),
+         1, 0,
+         InitDefaultsscc_info_ReadOpChecksumInfoProto_datatransfer_2eproto},
+        {
+            &scc_info_ChecksumProto_datatransfer_2eproto.base,
+        }};
 
-static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_datatransfer_2eproto[19];
-static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_datatransfer_2eproto[3];
-static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_datatransfer_2eproto = nullptr;
+static ::PROTOBUF_NAMESPACE_ID::Metadata
+    file_level_metadata_datatransfer_2eproto[19];
+static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+    file_level_enum_descriptors_datatransfer_2eproto[3];
+static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const**
+    file_level_service_descriptors_datatransfer_2eproto = nullptr;
 
-const ::PROTOBUF_NAMESPACE_ID::uint32 TableStruct_datatransfer_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, status_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, payload_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, message_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DataTransferEncryptorMessageProto, cipheroption_),
-  2,
-  0,
-  1,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, block_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, token_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto, baseheader_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto, clientname_),
-  1,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto, dropbehind_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto, readahead_),
-  1,
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, header_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, offset_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, len_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, sendchecksums_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, cachingstrategy_),
-  0,
-  2,
-  3,
-  4,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, type_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, bytesperchecksum_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, header_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, targets_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, source_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, stage_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, pipelinesize_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, minbytesrcvd_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, maxbytesrcvd_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, latestgenerationstamp_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, requestedchecksum_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, cachingstrategy_),
-  0,
-  ~0u,
-  1,
-  4,
-  5,
-  6,
-  7,
-  8,
-  2,
-  3,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, header_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, targets_),
-  0,
-  ~0u,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, header_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, delhint_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, source_),
-  1,
-  0,
-  2,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto, header_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto, header_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpRequestShortCircuitAccessProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpRequestShortCircuitAccessProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpRequestShortCircuitAccessProto, header_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpRequestShortCircuitAccessProto, maxversion_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, offsetinblock_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, seqno_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, lastpacketinblock_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, datalen_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, syncblock_),
-  0,
-  1,
-  3,
-  2,
-  4,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, seqno_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, status_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, downstreamacktimenanos_),
-  0,
-  ~0u,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto, checksum_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto, chunkoffset_),
-  0,
-  1,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, status_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, firstbadlink_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, checksumresponse_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, readopchecksuminfo_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, message_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, shortcircuitaccessversion_),
-  4,
-  0,
-  2,
-  3,
-  1,
-  5,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto, status_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto, status_),
-  0,
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, _has_bits_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, _internal_metadata_),
-  ~0u,  // no _extensions_
-  ~0u,  // no _oneof_case_
-  ~0u,  // no _weak_field_map_
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, bytespercrc_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, crcperblock_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, md5_),
-  PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto, crctype_),
-  2,
-  1,
-  0,
-  3,
+const ::PROTOBUF_NAMESPACE_ID::uint32
+    TableStruct_datatransfer_2eproto::offsets[] PROTOBUF_SECTION_VARIABLE(
+        protodesc_cold) = {
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto, status_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto, payload_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto, message_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::DataTransferEncryptorMessageProto, cipheroption_),
+        2,
+        0,
+        1,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, block_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BaseHeaderProto, token_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto,
+                              baseheader_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientOperationHeaderProto,
+                              clientname_),
+        1,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto,
+                              dropbehind_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::CachingStrategyProto,
+                              readahead_),
+        1,
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, header_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, offset_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto, len_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto,
+                              sendchecksums_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReadBlockProto,
+                              cachingstrategy_),
+        0,
+        2,
+        3,
+        4,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto, type_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ChecksumProto,
+                              bytesperchecksum_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, header_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, targets_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, source_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto, stage_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              pipelinesize_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              minbytesrcvd_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              maxbytesrcvd_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              latestgenerationstamp_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              requestedchecksum_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpWriteBlockProto,
+                              cachingstrategy_),
+        0,
+        ~0u,
+        1,
+        4,
+        5,
+        6,
+        7,
+        8,
+        2,
+        3,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, header_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpTransferBlockProto, targets_),
+        0,
+        ~0u,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, header_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, delhint_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpReplaceBlockProto, source_),
+        1,
+        0,
+        2,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpCopyBlockProto, header_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumProto, header_),
+        0,
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::OpRequestShortCircuitAccessProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::OpRequestShortCircuitAccessProto,
+            _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::OpRequestShortCircuitAccessProto, header_),
+        PROTOBUF_FIELD_OFFSET(
+            ::Hdfs::Internal::OpRequestShortCircuitAccessProto, maxversion_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto,
+                              offsetinblock_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, seqno_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto,
+                              lastpacketinblock_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, datalen_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PacketHeaderProto, syncblock_),
+        0,
+        1,
+        3,
+        2,
+        4,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, seqno_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto, status_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::PipelineAckProto,
+                              downstreamacktimenanos_),
+        0,
+        ~0u,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto,
+                              checksum_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ReadOpChecksumInfoProto,
+                              chunkoffset_),
+        0,
+        1,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, status_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              firstbadlink_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              checksumresponse_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              readopchecksuminfo_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto, message_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::BlockOpResponseProto,
+                              shortcircuitaccessversion_),
+        4,
+        0,
+        2,
+        3,
+        1,
+        5,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::ClientReadStatusProto, status_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto, _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::DNTransferAckProto, status_),
+        0,
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              _has_bits_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              _internal_metadata_),
+        ~0u,  // no _extensions_
+        ~0u,  // no _oneof_case_
+        ~0u,  // no _weak_field_map_
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              bytespercrc_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              crcperblock_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              md5_),
+        PROTOBUF_FIELD_OFFSET(::Hdfs::Internal::OpBlockChecksumResponseProto,
+                              crctype_),
+        2,
+        1,
+        0,
+        3,
 };
-static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
-  { 0, 9, sizeof(::Hdfs::Internal::DataTransferEncryptorMessageProto)},
-  { 13, 20, sizeof(::Hdfs::Internal::BaseHeaderProto)},
-  { 22, 29, sizeof(::Hdfs::Internal::ClientOperationHeaderProto)},
-  { 31, 38, sizeof(::Hdfs::Internal::CachingStrategyProto)},
-  { 40, 50, sizeof(::Hdfs::Internal::OpReadBlockProto)},
-  { 55, 62, sizeof(::Hdfs::Internal::ChecksumProto)},
-  { 64, 79, sizeof(::Hdfs::Internal::OpWriteBlockProto)},
-  { 89, 96, sizeof(::Hdfs::Internal::OpTransferBlockProto)},
-  { 98, 106, sizeof(::Hdfs::Internal::OpReplaceBlockProto)},
-  { 109, 115, sizeof(::Hdfs::Internal::OpCopyBlockProto)},
-  { 116, 122, sizeof(::Hdfs::Internal::OpBlockChecksumProto)},
-  { 123, 130, sizeof(::Hdfs::Internal::OpRequestShortCircuitAccessProto)},
-  { 132, 142, sizeof(::Hdfs::Internal::PacketHeaderProto)},
-  { 147, 155, sizeof(::Hdfs::Internal::PipelineAckProto)},
-  { 158, 165, sizeof(::Hdfs::Internal::ReadOpChecksumInfoProto)},
-  { 167, 178, sizeof(::Hdfs::Internal::BlockOpResponseProto)},
-  { 184, 190, sizeof(::Hdfs::Internal::ClientReadStatusProto)},
-  { 191, 197, sizeof(::Hdfs::Internal::DNTransferAckProto)},
-  { 198, 207, sizeof(::Hdfs::Internal::OpBlockChecksumResponseProto)},
+static const ::PROTOBUF_NAMESPACE_ID::internal::MigrationSchema
+    schemas[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) = {
+        {0, 9, sizeof(::Hdfs::Internal::DataTransferEncryptorMessageProto)},
+        {13, 20, sizeof(::Hdfs::Internal::BaseHeaderProto)},
+        {22, 29, sizeof(::Hdfs::Internal::ClientOperationHeaderProto)},
+        {31, 38, sizeof(::Hdfs::Internal::CachingStrategyProto)},
+        {40, 50, sizeof(::Hdfs::Internal::OpReadBlockProto)},
+        {55, 62, sizeof(::Hdfs::Internal::ChecksumProto)},
+        {64, 79, sizeof(::Hdfs::Internal::OpWriteBlockProto)},
+        {89, 96, sizeof(::Hdfs::Internal::OpTransferBlockProto)},
+        {98, 106, sizeof(::Hdfs::Internal::OpReplaceBlockProto)},
+        {109, 115, sizeof(::Hdfs::Internal::OpCopyBlockProto)},
+        {116, 122, sizeof(::Hdfs::Internal::OpBlockChecksumProto)},
+        {123, 130, sizeof(::Hdfs::Internal::OpRequestShortCircuitAccessProto)},
+        {132, 142, sizeof(::Hdfs::Internal::PacketHeaderProto)},
+        {147, 155, sizeof(::Hdfs::Internal::PipelineAckProto)},
+        {158, 165, sizeof(::Hdfs::Internal::ReadOpChecksumInfoProto)},
+        {167, 178, sizeof(::Hdfs::Internal::BlockOpResponseProto)},
+        {184, 190, sizeof(::Hdfs::Internal::ClientReadStatusProto)},
+        {191, 197, sizeof(::Hdfs::Internal::DNTransferAckProto)},
+        {198, 207, sizeof(::Hdfs::Internal::OpBlockChecksumResponseProto)},
 };
 
-static ::PROTOBUF_NAMESPACE_ID::Message const * const file_default_instances[] = {
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DataTransferEncryptorMessageProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BaseHeaderProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_CachingStrategyProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpReadBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ChecksumProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpWriteBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpTransferBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpReplaceBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpCopyBlockProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpBlockChecksumProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpRequestShortCircuitAccessProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_PacketHeaderProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_PipelineAckProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ReadOpChecksumInfoProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_BlockOpResponseProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_ClientReadStatusProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_DNTransferAckProto_default_instance_),
-  reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(&::Hdfs::Internal::_OpBlockChecksumResponseProto_default_instance_),
+static ::PROTOBUF_NAMESPACE_ID::Message const* const file_default_instances[] =
+    {
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _DataTransferEncryptorMessageProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BaseHeaderProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_CachingStrategyProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpReadBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ChecksumProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpWriteBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpTransferBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpReplaceBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpCopyBlockProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpBlockChecksumProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::
+                _OpRequestShortCircuitAccessProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_PacketHeaderProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_PipelineAckProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ReadOpChecksumInfoProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_BlockOpResponseProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_ClientReadStatusProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_DNTransferAckProto_default_instance_),
+        reinterpret_cast<const ::PROTOBUF_NAMESPACE_ID::Message*>(
+            &::Hdfs::Internal::_OpBlockChecksumResponseProto_default_instance_),
 };
 
-const char descriptor_table_protodef_datatransfer_2eproto[] PROTOBUF_SECTION_VARIABLE(protodesc_cold) =
-  "\n\022datatransfer.proto\022\rHdfs.Internal\032\016Sec"
-  "urity.proto\032\nhdfs.proto\"\251\002\n!DataTransfer"
-  "EncryptorMessageProto\022\\\n\006status\030\001 \002(\0162L."
-  "Hdfs.Internal.DataTransferEncryptorMessa"
-  "geProto.DataTransferEncryptorStatus\022\017\n\007p"
-  "ayload\030\002 \001(\014\022\017\n\007message\030\003 \001(\t\0226\n\014cipherO"
-  "ption\030\004 \003(\0132 .Hdfs.Internal.CipherOption"
-  "Proto\"L\n\033DataTransferEncryptorStatus\022\013\n\007"
-  "SUCCESS\020\000\022\025\n\021ERROR_UNKNOWN_KEY\020\001\022\t\n\005ERRO"
-  "R\020\002\"m\n\017BaseHeaderProto\0220\n\005block\030\001 \002(\0132!."
-  "Hdfs.Internal.ExtendedBlockProto\022(\n\005toke"
-  "n\030\002 \001(\0132\031.Hdfs.Internal.TokenProto\"d\n\032Cl"
-  "ientOperationHeaderProto\0222\n\nbaseHeader\030\001"
-  " \002(\0132\036.Hdfs.Internal.BaseHeaderProto\022\022\n\n"
-  "clientName\030\002 \002(\t\"=\n\024CachingStrategyProto"
-  "\022\022\n\ndropBehind\030\001 \001(\010\022\021\n\treadahead\030\002 \001(\003\""
-  "\305\001\n\020OpReadBlockProto\0229\n\006header\030\001 \002(\0132).H"
-  "dfs.Internal.ClientOperationHeaderProto\022"
-  "\016\n\006offset\030\002 \002(\004\022\013\n\003len\030\003 \002(\004\022\033\n\rsendChec"
-  "ksums\030\004 \001(\010:\004true\022<\n\017cachingStrategy\030\005 \001"
-  "(\0132#.Hdfs.Internal.CachingStrategyProto\""
-  "Y\n\rChecksumProto\022.\n\004type\030\001 \002(\0162 .Hdfs.In"
-  "ternal.ChecksumTypeProto\022\030\n\020bytesPerChec"
-  "ksum\030\002 \002(\r\"\336\005\n\021OpWriteBlockProto\0229\n\006head"
-  "er\030\001 \002(\0132).Hdfs.Internal.ClientOperation"
-  "HeaderProto\0221\n\007targets\030\002 \003(\0132 .Hdfs.Inte"
-  "rnal.DatanodeInfoProto\0220\n\006source\030\003 \001(\0132 "
-  ".Hdfs.Internal.DatanodeInfoProto\022F\n\005stag"
-  "e\030\004 \002(\01627.Hdfs.Internal.OpWriteBlockProt"
-  "o.BlockConstructionStage\022\024\n\014pipelineSize"
-  "\030\005 \002(\r\022\024\n\014minBytesRcvd\030\006 \002(\004\022\024\n\014maxBytes"
-  "Rcvd\030\007 \002(\004\022\035\n\025latestGenerationStamp\030\010 \002("
-  "\004\0227\n\021requestedChecksum\030\t \002(\0132\034.Hdfs.Inte"
-  "rnal.ChecksumProto\022<\n\017cachingStrategy\030\n "
-  "\001(\0132#.Hdfs.Internal.CachingStrategyProto"
-  "\"\210\002\n\026BlockConstructionStage\022\031\n\025PIPELINE_"
-  "SETUP_APPEND\020\000\022\"\n\036PIPELINE_SETUP_APPEND_"
-  "RECOVERY\020\001\022\022\n\016DATA_STREAMING\020\002\022%\n!PIPELI"
-  "NE_SETUP_STREAMING_RECOVERY\020\003\022\022\n\016PIPELIN"
-  "E_CLOSE\020\004\022\033\n\027PIPELINE_CLOSE_RECOVERY\020\005\022\031"
-  "\n\025PIPELINE_SETUP_CREATE\020\006\022\020\n\014TRANSFER_RB"
-  "W\020\007\022\026\n\022TRANSFER_FINALIZED\020\010\"\204\001\n\024OpTransf"
-  "erBlockProto\0229\n\006header\030\001 \002(\0132).Hdfs.Inte"
-  "rnal.ClientOperationHeaderProto\0221\n\007targe"
-  "ts\030\002 \003(\0132 .Hdfs.Internal.DatanodeInfoPro"
-  "to\"\210\001\n\023OpReplaceBlockProto\022.\n\006header\030\001 \002"
-  "(\0132\036.Hdfs.Internal.BaseHeaderProto\022\017\n\007de"
-  "lHint\030\002 \002(\t\0220\n\006source\030\003 \002(\0132 .Hdfs.Inter"
-  "nal.DatanodeInfoProto\"B\n\020OpCopyBlockProt"
-  "o\022.\n\006header\030\001 \002(\0132\036.Hdfs.Internal.BaseHe"
-  "aderProto\"F\n\024OpBlockChecksumProto\022.\n\006hea"
-  "der\030\001 \002(\0132\036.Hdfs.Internal.BaseHeaderProt"
-  "o\"f\n OpRequestShortCircuitAccessProto\022.\n"
-  "\006header\030\001 \002(\0132\036.Hdfs.Internal.BaseHeader"
-  "Proto\022\022\n\nmaxVersion\030\002 \002(\r\"\177\n\021PacketHeade"
-  "rProto\022\025\n\roffsetInBlock\030\001 \002(\020\022\r\n\005seqno\030\002"
-  " \002(\020\022\031\n\021lastPacketInBlock\030\003 \002(\010\022\017\n\007dataL"
-  "en\030\004 \002(\017\022\030\n\tsyncBlock\030\005 \001(\010:\005false\"k\n\020Pi"
-  "pelineAckProto\022\r\n\005seqno\030\001 \002(\022\022%\n\006status\030"
-  "\002 \003(\0162\025.Hdfs.Internal.Status\022!\n\026downstre"
-  "amAckTimeNanos\030\003 \001(\004:\0010\"^\n\027ReadOpChecksu"
-  "mInfoProto\022.\n\010checksum\030\001 \002(\0132\034.Hdfs.Inte"
-  "rnal.ChecksumProto\022\023\n\013chunkOffset\030\002 \002(\004\""
-  "\222\002\n\024BlockOpResponseProto\022%\n\006status\030\001 \002(\016"
-  "2\025.Hdfs.Internal.Status\022\024\n\014firstBadLink\030"
-  "\002 \001(\t\022E\n\020checksumResponse\030\003 \001(\0132+.Hdfs.I"
-  "nternal.OpBlockChecksumResponseProto\022B\n\022"
-  "readOpChecksumInfo\030\004 \001(\0132&.Hdfs.Internal"
-  ".ReadOpChecksumInfoProto\022\017\n\007message\030\005 \001("
-  "\t\022!\n\031shortCircuitAccessVersion\030\006 \001(\r\">\n\025"
-  "ClientReadStatusProto\022%\n\006status\030\001 \002(\0162\025."
-  "Hdfs.Internal.Status\";\n\022DNTransferAckPro"
-  "to\022%\n\006status\030\001 \002(\0162\025.Hdfs.Internal.Statu"
-  "s\"\210\001\n\034OpBlockChecksumResponseProto\022\023\n\013by"
-  "tesPerCrc\030\001 \002(\r\022\023\n\013crcPerBlock\030\002 \002(\004\022\013\n\003"
-  "md5\030\003 \002(\014\0221\n\007crcType\030\004 \001(\0162 .Hdfs.Intern"
-  "al.ChecksumTypeProto*\351\002\n\006Status\022\024\n\020DT_PR"
-  "OTO_SUCCESS\020\000\022\022\n\016DT_PROTO_ERROR\020\001\022\033\n\027DT_"
-  "PROTO_ERROR_CHECKSUM\020\002\022\032\n\026DT_PROTO_ERROR"
-  "_INVALID\020\003\022\031\n\025DT_PROTO_ERROR_EXISTS\020\004\022\037\n"
-  "\033DT_PROTO_ERROR_ACCESS_TOKEN\020\005\022\030\n\024DT_PRO"
-  "TO_CHECKSUM_OK\020\006\022\036\n\032DT_PROTO_ERROR_UNSUP"
-  "PORTED\020\007\022\030\n\024DT_PROTO_OOB_RESTART\020\010\022\032\n\026DT"
-  "_PROTO_OOB_RESERVED1\020\t\022\032\n\026DT_PROTO_OOB_R"
-  "ESERVED2\020\n\022\032\n\026DT_PROTO_OOB_RESERVED3\020\013\022\030"
-  "\n\024DT_PROTO_IN_PROGRESS\020\014B>\n%org.apache.h"
-  "adoop.hdfs.protocol.protoB\022DataTransferP"
-  "rotos\240\001\001"
-  ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_datatransfer_2eproto_deps[2] = {
-  &::descriptor_table_Security_2eproto,
-  &::descriptor_table_hdfs_2eproto,
+const char
+    descriptor_table_protodef_datatransfer_2eproto[] PROTOBUF_SECTION_VARIABLE(
+        protodesc_cold) =
+        "\n\022datatransfer.proto\022\rHdfs.Internal\032\016Sec"
+        "urity.proto\032\nhdfs.proto\"\251\002\n!DataTransfer"
+        "EncryptorMessageProto\022\\\n\006status\030\001 \002(\0162L."
+        "Hdfs.Internal.DataTransferEncryptorMessa"
+        "geProto.DataTransferEncryptorStatus\022\017\n\007p"
+        "ayload\030\002 \001(\014\022\017\n\007message\030\003 "
+        "\001(\t\0226\n\014cipherO"
+        "ption\030\004 \003(\0132 .Hdfs.Internal.CipherOption"
+        "Proto\"L\n\033DataTransferEncryptorStatus\022\013\n\007"
+        "SUCCESS\020\000\022\025\n\021ERROR_UNKNOWN_KEY\020\001\022\t\n\005ERRO"
+        "R\020\002\"m\n\017BaseHeaderProto\0220\n\005block\030\001 \002(\0132!."
+        "Hdfs.Internal.ExtendedBlockProto\022(\n\005toke"
+        "n\030\002 \001(\0132\031.Hdfs.Internal.TokenProto\"d\n\032Cl"
+        "ientOperationHeaderProto\0222\n\nbaseHeader\030\001"
+        " \002(\0132\036.Hdfs.Internal.BaseHeaderProto\022\022\n\n"
+        "clientName\030\002 \002(\t\"=\n\024CachingStrategyProto"
+        "\022\022\n\ndropBehind\030\001 \001(\010\022\021\n\treadahead\030\002 "
+        "\001(\003\""
+        "\305\001\n\020OpReadBlockProto\0229\n\006header\030\001 \002(\0132).H"
+        "dfs.Internal.ClientOperationHeaderProto\022"
+        "\016\n\006offset\030\002 \002(\004\022\013\n\003len\030\003 "
+        "\002(\004\022\033\n\rsendChec"
+        "ksums\030\004 \001(\010:\004true\022<\n\017cachingStrategy\030\005 "
+        "\001"
+        "(\0132#.Hdfs.Internal.CachingStrategyProto\""
+        "Y\n\rChecksumProto\022.\n\004type\030\001 \002(\0162 .Hdfs.In"
+        "ternal.ChecksumTypeProto\022\030\n\020bytesPerChec"
+        "ksum\030\002 \002(\r\"\336\005\n\021OpWriteBlockProto\0229\n\006head"
+        "er\030\001 \002(\0132).Hdfs.Internal.ClientOperation"
+        "HeaderProto\0221\n\007targets\030\002 \003(\0132 .Hdfs.Inte"
+        "rnal.DatanodeInfoProto\0220\n\006source\030\003 \001(\0132 "
+        ".Hdfs.Internal.DatanodeInfoProto\022F\n\005stag"
+        "e\030\004 \002(\01627.Hdfs.Internal.OpWriteBlockProt"
+        "o.BlockConstructionStage\022\024\n\014pipelineSize"
+        "\030\005 \002(\r\022\024\n\014minBytesRcvd\030\006 "
+        "\002(\004\022\024\n\014maxBytes"
+        "Rcvd\030\007 \002(\004\022\035\n\025latestGenerationStamp\030\010 "
+        "\002("
+        "\004\0227\n\021requestedChecksum\030\t \002(\0132\034.Hdfs.Inte"
+        "rnal.ChecksumProto\022<\n\017cachingStrategy\030\n "
+        "\001(\0132#.Hdfs.Internal.CachingStrategyProto"
+        "\"\210\002\n\026BlockConstructionStage\022\031\n\025PIPELINE_"
+        "SETUP_APPEND\020\000\022\"\n\036PIPELINE_SETUP_APPEND_"
+        "RECOVERY\020\001\022\022\n\016DATA_STREAMING\020\002\022%\n!PIPELI"
+        "NE_SETUP_STREAMING_RECOVERY\020\003\022\022\n\016PIPELIN"
+        "E_CLOSE\020\004\022\033\n\027PIPELINE_CLOSE_RECOVERY\020\005\022\031"
+        "\n\025PIPELINE_SETUP_CREATE\020\006\022\020\n\014TRANSFER_RB"
+        "W\020\007\022\026\n\022TRANSFER_"
+        "FINALIZED\020\010\"\204\001\n\024OpTransf"
+        "erBlockProto\0229\n\006header\030\001 \002(\0132).Hdfs.Inte"
+        "rnal.ClientOperationHeaderProto\0221\n\007targe"
+        "ts\030\002 \003(\0132 .Hdfs.Internal.DatanodeInfoPro"
+        "to\"\210\001\n\023OpReplaceBlockProto\022.\n\006header\030\001 \002"
+        "(\0132\036.Hdfs.Internal.BaseHeaderProto\022\017\n\007de"
+        "lHint\030\002 \002(\t\0220\n\006source\030\003 \002(\0132 .Hdfs.Inter"
+        "nal.DatanodeInfoProto\"B\n\020OpCopyBlockProt"
+        "o\022.\n\006header\030\001 \002(\0132\036.Hdfs.Internal.BaseHe"
+        "aderProto\"F\n\024OpBlockChecksumProto\022.\n\006hea"
+        "der\030\001 \002(\0132\036.Hdfs.Internal.BaseHeaderProt"
+        "o\"f\n OpRequestShortCircuitAccessProto\022.\n"
+        "\006header\030\001 \002(\0132\036.Hdfs.Internal.BaseHeader"
+        "Proto\022\022\n\nmaxVersion\030\002 \002(\r\"\177\n\021PacketHeade"
+        "rProto\022\025\n\roffsetInBlock\030\001 "
+        "\002(\020\022\r\n\005seqno\030\002"
+        " \002(\020\022\031\n\021lastPacketInBlock\030\003 "
+        "\002(\010\022\017\n\007dataL"
+        "en\030\004 \002(\017\022\030\n\tsyncBlock\030\005 "
+        "\001(\010:\005false\"k\n\020Pi"
+        "pelineAckProto\022\r\n\005seqno\030\001 \002(\022\022%\n\006status\030"
+        "\002 \003(\0162\025.Hdfs.Internal.Status\022!\n\026downstre"
+        "amAckTimeNanos\030\003 \001(\004:\0010\"^\n\027ReadOpChecksu"
+        "mInfoProto\022.\n\010checksum\030\001 \002(\0132\034.Hdfs.Inte"
+        "rnal.ChecksumProto\022\023\n\013chunkOffset\030\002 \002(\004\""
+        "\222\002\n\024BlockOpResponseProto\022%\n\006status\030\001 \002(\016"
+        "2\025.Hdfs.Internal.Status\022\024\n\014firstBadLink\030"
+        "\002 \001(\t\022E\n\020checksumResponse\030\003 \001(\0132+.Hdfs.I"
+        "nternal.OpBlockChecksumResponseProto\022B\n\022"
+        "readOpChecksumInfo\030\004 \001(\0132&.Hdfs.Internal"
+        ".ReadOpChecksumInfoProto\022\017\n\007message\030\005 \001("
+        "\t\022!\n\031shortCircuitAccessVersion\030\006 \001(\r\">\n\025"
+        "ClientReadStatusProto\022%\n\006status\030\001 \002(\0162\025."
+        "Hdfs.Internal.Status\";\n\022DNTransferAckPro"
+        "to\022%\n\006status\030\001 \002(\0162\025.Hdfs.Internal.Statu"
+        "s\"\210\001\n\034OpBlockChecksumResponseProto\022\023\n\013by"
+        "tesPerCrc\030\001 \002(\r\022\023\n\013crcPerBlock\030\002 "
+        "\002(\004\022\013\n\003"
+        "md5\030\003 \002(\014\0221\n\007crcType\030\004 \001(\0162 "
+        ".Hdfs.Intern"
+        "al.ChecksumTypeProto*\351\002\n\006Status\022\024\n\020DT_PR"
+        "OTO_SUCCESS\020\000\022\022\n\016DT_PROTO_"
+        "ERROR\020\001\022\033\n\027DT_"
+        "PROTO_ERROR_CHECKSUM\020\002\022\032\n\026DT_PROTO_ERROR"
+        "_INVALID\020\003\022\031\n\025DT_PROTO_ERROR_EXISTS\020\004\022\037\n"
+        "\033DT_PROTO_ERROR_ACCESS_TOKEN\020\005\022\030\n\024DT_PRO"
+        "TO_CHECKSUM_OK\020\006\022\036\n\032DT_PROTO_ERROR_UNSUP"
+        "PORTED\020\007\022\030\n\024DT_PROTO_OOB_"
+        "RESTART\020\010\022\032\n\026DT"
+        "_PROTO_OOB_RESERVED1\020\t\022\032\n\026DT_PROTO_OOB_R"
+        "ESERVED2\020\n\022\032\n\026DT_PROTO_OOB_RESERVED3\020\013\022\030"
+        "\n\024DT_PROTO_IN_PROGRESS\020\014B>\n%org.apache.h"
+        "adoop.hdfs.protocol.protoB\022DataTransferP"
+        "rotos\240\001\001";
+static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* const
+    descriptor_table_datatransfer_2eproto_deps[2] = {
+        &::descriptor_table_Security_2eproto,
+        &::descriptor_table_hdfs_2eproto,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_datatransfer_2eproto_sccs[19] = {
-  &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
-  &scc_info_BlockOpResponseProto_datatransfer_2eproto.base,
-  &scc_info_CachingStrategyProto_datatransfer_2eproto.base,
-  &scc_info_ChecksumProto_datatransfer_2eproto.base,
-  &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
-  &scc_info_ClientReadStatusProto_datatransfer_2eproto.base,
-  &scc_info_DNTransferAckProto_datatransfer_2eproto.base,
-  &scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base,
-  &scc_info_OpBlockChecksumProto_datatransfer_2eproto.base,
-  &scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base,
-  &scc_info_OpCopyBlockProto_datatransfer_2eproto.base,
-  &scc_info_OpReadBlockProto_datatransfer_2eproto.base,
-  &scc_info_OpReplaceBlockProto_datatransfer_2eproto.base,
-  &scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base,
-  &scc_info_OpTransferBlockProto_datatransfer_2eproto.base,
-  &scc_info_OpWriteBlockProto_datatransfer_2eproto.base,
-  &scc_info_PacketHeaderProto_datatransfer_2eproto.base,
-  &scc_info_PipelineAckProto_datatransfer_2eproto.base,
-  &scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base,
+static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase* const
+    descriptor_table_datatransfer_2eproto_sccs[19] = {
+        &scc_info_BaseHeaderProto_datatransfer_2eproto.base,
+        &scc_info_BlockOpResponseProto_datatransfer_2eproto.base,
+        &scc_info_CachingStrategyProto_datatransfer_2eproto.base,
+        &scc_info_ChecksumProto_datatransfer_2eproto.base,
+        &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base,
+        &scc_info_ClientReadStatusProto_datatransfer_2eproto.base,
+        &scc_info_DNTransferAckProto_datatransfer_2eproto.base,
+        &scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base,
+        &scc_info_OpBlockChecksumProto_datatransfer_2eproto.base,
+        &scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base,
+        &scc_info_OpCopyBlockProto_datatransfer_2eproto.base,
+        &scc_info_OpReadBlockProto_datatransfer_2eproto.base,
+        &scc_info_OpReplaceBlockProto_datatransfer_2eproto.base,
+        &scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base,
+        &scc_info_OpTransferBlockProto_datatransfer_2eproto.base,
+        &scc_info_OpWriteBlockProto_datatransfer_2eproto.base,
+        &scc_info_PacketHeaderProto_datatransfer_2eproto.base,
+        &scc_info_PipelineAckProto_datatransfer_2eproto.base,
+        &scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base,
 };
-static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_datatransfer_2eproto_once;
+static ::PROTOBUF_NAMESPACE_ID::internal::once_flag
+    descriptor_table_datatransfer_2eproto_once;
 static bool descriptor_table_datatransfer_2eproto_initialized = false;
-const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_datatransfer_2eproto = {
-  &descriptor_table_datatransfer_2eproto_initialized, descriptor_table_protodef_datatransfer_2eproto, "datatransfer.proto", 3488,
-  &descriptor_table_datatransfer_2eproto_once, descriptor_table_datatransfer_2eproto_sccs, descriptor_table_datatransfer_2eproto_deps, 19, 2,
-  schemas, file_default_instances, TableStruct_datatransfer_2eproto::offsets,
-  file_level_metadata_datatransfer_2eproto, 19, file_level_enum_descriptors_datatransfer_2eproto, file_level_service_descriptors_datatransfer_2eproto,
+const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable
+    descriptor_table_datatransfer_2eproto = {
+        &descriptor_table_datatransfer_2eproto_initialized,
+        descriptor_table_protodef_datatransfer_2eproto,
+        "datatransfer.proto",
+        3488,
+        &descriptor_table_datatransfer_2eproto_once,
+        descriptor_table_datatransfer_2eproto_sccs,
+        descriptor_table_datatransfer_2eproto_deps,
+        19,
+        2,
+        schemas,
+        file_default_instances,
+        TableStruct_datatransfer_2eproto::offsets,
+        file_level_metadata_datatransfer_2eproto,
+        19,
+        file_level_enum_descriptors_datatransfer_2eproto,
+        file_level_service_descriptors_datatransfer_2eproto,
 };
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_datatransfer_2eproto = (  ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_datatransfer_2eproto), true);
+static bool dynamic_init_dummy_datatransfer_2eproto =
+    (::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(
+         &descriptor_table_datatransfer_2eproto),
+     true);
 namespace Hdfs {
 namespace Internal {
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_datatransfer_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_datatransfer_2eproto);
   return file_level_enum_descriptors_datatransfer_2eproto[0];
 }
-bool DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_IsValid(int value) {
+bool DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_IsValid(
+    int value) {
   switch (value) {
     case 0:
     case 1:
@@ -795,15 +1071,23 @@ bool DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_IsValid(int v
 }
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus DataTransferEncryptorMessageProto::SUCCESS;
-constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus DataTransferEncryptorMessageProto::ERROR_UNKNOWN_KEY;
-constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus DataTransferEncryptorMessageProto::ERROR;
-constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_MIN;
-constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_MAX;
-constexpr int DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_ARRAYSIZE;
+constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus
+    DataTransferEncryptorMessageProto::SUCCESS;
+constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus
+    DataTransferEncryptorMessageProto::ERROR_UNKNOWN_KEY;
+constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus
+    DataTransferEncryptorMessageProto::ERROR;
+constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus
+    DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_MIN;
+constexpr DataTransferEncryptorMessageProto_DataTransferEncryptorStatus
+    DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_MAX;
+constexpr int
+    DataTransferEncryptorMessageProto::DataTransferEncryptorStatus_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* OpWriteBlockProto_BlockConstructionStage_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_datatransfer_2eproto);
+const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor*
+OpWriteBlockProto_BlockConstructionStage_descriptor() {
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_datatransfer_2eproto);
   return file_level_enum_descriptors_datatransfer_2eproto[1];
 }
 bool OpWriteBlockProto_BlockConstructionStage_IsValid(int value) {
@@ -824,21 +1108,33 @@ bool OpWriteBlockProto_BlockConstructionStage_IsValid(int value) {
 }
 
 #if (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_SETUP_APPEND;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_SETUP_APPEND_RECOVERY;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::DATA_STREAMING;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_SETUP_STREAMING_RECOVERY;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_CLOSE;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_CLOSE_RECOVERY;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::PIPELINE_SETUP_CREATE;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::TRANSFER_RBW;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::TRANSFER_FINALIZED;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::BlockConstructionStage_MIN;
-constexpr OpWriteBlockProto_BlockConstructionStage OpWriteBlockProto::BlockConstructionStage_MAX;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_SETUP_APPEND;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_SETUP_APPEND_RECOVERY;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::DATA_STREAMING;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_SETUP_STREAMING_RECOVERY;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_CLOSE;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_CLOSE_RECOVERY;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::PIPELINE_SETUP_CREATE;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::TRANSFER_RBW;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::TRANSFER_FINALIZED;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::BlockConstructionStage_MIN;
+constexpr OpWriteBlockProto_BlockConstructionStage
+    OpWriteBlockProto::BlockConstructionStage_MAX;
 constexpr int OpWriteBlockProto::BlockConstructionStage_ARRAYSIZE;
 #endif  // (__cplusplus < 201703) && (!defined(_MSC_VER) || _MSC_VER >= 1900)
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* Status_descriptor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_datatransfer_2eproto);
+  ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_datatransfer_2eproto);
   return file_level_enum_descriptors_datatransfer_2eproto[2];
 }
 bool Status_IsValid(int value) {
@@ -862,55 +1158,58 @@ bool Status_IsValid(int value) {
   }
 }
 
-
 // ===================================================================
 
-void DataTransferEncryptorMessageProto::InitAsDefaultInstance() {
-}
+void DataTransferEncryptorMessageProto::InitAsDefaultInstance() {}
 class DataTransferEncryptorMessageProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<DataTransferEncryptorMessageProto>()._has_bits_);
-  static void set_has_status(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_payload(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_message(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  using HasBits =
+      decltype(std::declval<DataTransferEncryptorMessageProto>()._has_bits_);
+  static void set_has_status(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_payload(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_message(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 void DataTransferEncryptorMessageProto::clear_cipheroption() {
   cipheroption_.Clear();
 }
 DataTransferEncryptorMessageProto::DataTransferEncryptorMessageProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DataTransferEncryptorMessageProto)
 }
-DataTransferEncryptorMessageProto::DataTransferEncryptorMessageProto(const DataTransferEncryptorMessageProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+DataTransferEncryptorMessageProto::DataTransferEncryptorMessageProto(
+    const DataTransferEncryptorMessageProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       cipheroption_(from.cipheroption_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  payload_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  payload_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_payload()) {
-    payload_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.payload_);
+    payload_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.payload_);
   }
-  message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_message()) {
-    message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
+    message_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.message_);
   }
   status_ = from.status_;
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.DataTransferEncryptorMessageProto)
 }
 
 void DataTransferEncryptorMessageProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base);
-  payload_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base);
+  payload_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   status_ = 0;
 }
 
@@ -920,24 +1219,27 @@ DataTransferEncryptorMessageProto::~DataTransferEncryptorMessageProto() {
 }
 
 void DataTransferEncryptorMessageProto::SharedDtor() {
-  payload_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  payload_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void DataTransferEncryptorMessageProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DataTransferEncryptorMessageProto& DataTransferEncryptorMessageProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base);
+const DataTransferEncryptorMessageProto&
+DataTransferEncryptorMessageProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DataTransferEncryptorMessageProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DataTransferEncryptorMessageProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cipheroption_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -954,48 +1256,71 @@ void DataTransferEncryptorMessageProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* DataTransferEncryptorMessageProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DataTransferEncryptorMessageProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
     CHK_(ptr);
     switch (tag >> 3) {
-      // required .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus status = 1;
+      // required
+      // .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus
+      // status = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_IsValid(val))) {
-            _internal_set_status(static_cast<::Hdfs::Internal::DataTransferEncryptorMessageProto_DataTransferEncryptorStatus>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::
+                      DataTransferEncryptorMessageProto_DataTransferEncryptorStatus_IsValid(
+                          val))) {
+            _internal_set_status(
+                static_cast<
+                    ::Hdfs::Internal::
+                        DataTransferEncryptorMessageProto_DataTransferEncryptorStatus>(
+                    val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bytes payload = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_payload();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string message = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_message();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.DataTransferEncryptorMessageProto.message");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.DataTransferEncryptorMessageProto.message");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.CipherOptionProto cipherOption = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -1003,7 +1328,8 @@ const char* DataTransferEncryptorMessageProto::_InternalParse(const char* ptr, :
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<34>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1016,7 +1342,7 @@ const char* DataTransferEncryptorMessageProto::_InternalParse(const char* ptr, :
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1026,88 +1352,99 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* DataTransferEncryptorMessageProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+DataTransferEncryptorMessageProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
-  // required .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus status = 1;
+  // required
+  // .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus
+  // status = 1;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_status(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_status(), target);
   }
 
   // optional bytes payload = 2;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        2, this->_internal_payload(), target);
+    target =
+        stream->WriteBytesMaybeAliased(2, this->_internal_payload(), target);
   }
 
   // optional string message = 3;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_message().data(), static_cast<int>(this->_internal_message().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.DataTransferEncryptorMessageProto.message");
-    target = stream->WriteStringMaybeAliased(
-        3, this->_internal_message(), target);
+        this->_internal_message().data(),
+        static_cast<int>(this->_internal_message().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.DataTransferEncryptorMessageProto.message");
+    target =
+        stream->WriteStringMaybeAliased(3, this->_internal_message(), target);
   }
 
   // repeated .Hdfs.Internal.CipherOptionProto cipherOption = 4;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_cipheroption_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_cipheroption_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(4, this->_internal_cipheroption(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, this->_internal_cipheroption(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DataTransferEncryptorMessageProto)
   return target;
 }
 
 size_t DataTransferEncryptorMessageProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   size_t total_size = 0;
 
-  // required .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus status = 1;
+  // required
+  // .Hdfs.Internal.DataTransferEncryptorMessageProto.DataTransferEncryptorStatus
+  // status = 1;
   if (_internal_has_status()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_status());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_status());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.CipherOptionProto cipherOption = 4;
   total_size += 1UL * this->_internal_cipheroption_size();
   for (const auto& msg : this->cipheroption_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     // optional bytes payload = 2;
     if (cached_has_bits & 0x00000001u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-          this->_internal_payload());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                  this->_internal_payload());
     }
 
     // optional string message = 3;
     if (cached_has_bits & 0x00000002u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-          this->_internal_message());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                  this->_internal_message());
     }
-
   }
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -1118,38 +1455,44 @@ size_t DataTransferEncryptorMessageProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DataTransferEncryptorMessageProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+void DataTransferEncryptorMessageProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DataTransferEncryptorMessageProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DataTransferEncryptorMessageProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          DataTransferEncryptorMessageProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DataTransferEncryptorMessageProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DataTransferEncryptorMessageProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DataTransferEncryptorMessageProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DataTransferEncryptorMessageProto)
     MergeFrom(*source);
   }
 }
 
-void DataTransferEncryptorMessageProto::MergeFrom(const DataTransferEncryptorMessageProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+void DataTransferEncryptorMessageProto::MergeFrom(
+    const DataTransferEncryptorMessageProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cipheroption_.MergeFrom(from.cipheroption_);
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      payload_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.payload_);
+      payload_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.payload_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
+      message_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.message_);
     }
     if (cached_has_bits & 0x00000004u) {
       status_ = from.status_;
@@ -1158,15 +1501,17 @@ void DataTransferEncryptorMessageProto::MergeFrom(const DataTransferEncryptorMes
   }
 }
 
-void DataTransferEncryptorMessageProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+void DataTransferEncryptorMessageProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void DataTransferEncryptorMessageProto::CopyFrom(const DataTransferEncryptorMessageProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
+void DataTransferEncryptorMessageProto::CopyFrom(
+    const DataTransferEncryptorMessageProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DataTransferEncryptorMessageProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1174,54 +1519,59 @@ void DataTransferEncryptorMessageProto::CopyFrom(const DataTransferEncryptorMess
 
 bool DataTransferEncryptorMessageProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000004) != 0x00000004) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(cipheroption_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(cipheroption_))
+    return false;
   return true;
 }
 
-void DataTransferEncryptorMessageProto::InternalSwap(DataTransferEncryptorMessageProto* other) {
+void DataTransferEncryptorMessageProto::InternalSwap(
+    DataTransferEncryptorMessageProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   cipheroption_.InternalSwap(&other->cipheroption_);
-  payload_.Swap(&other->payload_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  payload_.Swap(
+      &other->payload_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  message_.Swap(
+      &other->message_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(status_, other->status_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata DataTransferEncryptorMessageProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+DataTransferEncryptorMessageProto::GetMetadata() const {
   return GetMetadataStatic();
 }
-
 
 // ===================================================================
 
 void BaseHeaderProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_BaseHeaderProto_default_instance_._instance.get_mutable()->block_ = const_cast< ::Hdfs::Internal::ExtendedBlockProto*>(
+  ::Hdfs::Internal::_BaseHeaderProto_default_instance_._instance.get_mutable()
+      ->block_ = const_cast<::Hdfs::Internal::ExtendedBlockProto*>(
       ::Hdfs::Internal::ExtendedBlockProto::internal_default_instance());
-  ::Hdfs::Internal::_BaseHeaderProto_default_instance_._instance.get_mutable()->token_ = const_cast< ::Hdfs::Internal::TokenProto*>(
+  ::Hdfs::Internal::_BaseHeaderProto_default_instance_._instance.get_mutable()
+      ->token_ = const_cast<::Hdfs::Internal::TokenProto*>(
       ::Hdfs::Internal::TokenProto::internal_default_instance());
 }
 class BaseHeaderProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BaseHeaderProto>()._has_bits_);
-  static const ::Hdfs::Internal::ExtendedBlockProto& block(const BaseHeaderProto* msg);
-  static void set_has_block(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::ExtendedBlockProto& block(
+      const BaseHeaderProto* msg);
+  static void set_has_block(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static const ::Hdfs::Internal::TokenProto& token(const BaseHeaderProto* msg);
-  static void set_has_token(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_token(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
-const ::Hdfs::Internal::ExtendedBlockProto&
-BaseHeaderProto::_Internal::block(const BaseHeaderProto* msg) {
+const ::Hdfs::Internal::ExtendedBlockProto& BaseHeaderProto::_Internal::block(
+    const BaseHeaderProto* msg) {
   return *msg->block_;
 }
-const ::Hdfs::Internal::TokenProto&
-BaseHeaderProto::_Internal::token(const BaseHeaderProto* msg) {
+const ::Hdfs::Internal::TokenProto& BaseHeaderProto::_Internal::token(
+    const BaseHeaderProto* msg) {
   return *msg->token_;
 }
 void BaseHeaderProto::clear_block() {
@@ -1233,12 +1583,12 @@ void BaseHeaderProto::clear_token() {
   _has_bits_[0] &= ~0x00000002u;
 }
 BaseHeaderProto::BaseHeaderProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BaseHeaderProto)
 }
 BaseHeaderProto::BaseHeaderProto(const BaseHeaderProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -1256,10 +1606,12 @@ BaseHeaderProto::BaseHeaderProto(const BaseHeaderProto& from)
 }
 
 void BaseHeaderProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BaseHeaderProto_datatransfer_2eproto.base);
-  ::memset(&block_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&token_) -
-      reinterpret_cast<char*>(&block_)) + sizeof(token_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_BaseHeaderProto_datatransfer_2eproto.base);
+  ::memset(&block_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&token_) -
+                               reinterpret_cast<char*>(&block_)) +
+               sizeof(token_));
 }
 
 BaseHeaderProto::~BaseHeaderProto() {
@@ -1272,20 +1624,18 @@ void BaseHeaderProto::SharedDtor() {
   if (this != internal_default_instance()) delete token_;
 }
 
-void BaseHeaderProto::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
+void BaseHeaderProto::SetCachedSize(int size) const { _cached_size_.Set(size); }
 const BaseHeaderProto& BaseHeaderProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BaseHeaderProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BaseHeaderProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BaseHeaderProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BaseHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -1302,8 +1652,10 @@ void BaseHeaderProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* BaseHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BaseHeaderProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1312,17 +1664,21 @@ const char* BaseHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
     switch (tag >> 3) {
       // required .Hdfs.Internal.ExtendedBlockProto block = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_block(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.TokenProto token = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr = ctx->ParseMessage(_internal_mutable_token(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1335,7 +1691,7 @@ const char* BaseHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1346,56 +1702,58 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BaseHeaderProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BaseHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ExtendedBlockProto block = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::block(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::block(this), target, stream);
   }
 
   // optional .Hdfs.Internal.TokenProto token = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        2, _Internal::token(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            2, _Internal::token(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BaseHeaderProto)
   return target;
 }
 
 size_t BaseHeaderProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BaseHeaderProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.ExtendedBlockProto block = 1;
   if (_internal_has_block()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *block_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*block_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional .Hdfs.Internal.TokenProto token = 2;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000002u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *token_);
+    total_size +=
+        1 +
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(*token_);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -1408,47 +1766,49 @@ size_t BaseHeaderProto::ByteSizeLong() const {
 }
 
 void BaseHeaderProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BaseHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BaseHeaderProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BaseHeaderProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BaseHeaderProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BaseHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BaseHeaderProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BaseHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BaseHeaderProto)
     MergeFrom(*source);
   }
 }
 
 void BaseHeaderProto::MergeFrom(const BaseHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BaseHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_block()->::Hdfs::Internal::ExtendedBlockProto::MergeFrom(from._internal_block());
+      _internal_mutable_block()
+          ->::Hdfs::Internal::ExtendedBlockProto::MergeFrom(
+              from._internal_block());
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_token()->::Hdfs::Internal::TokenProto::MergeFrom(from._internal_token());
+      _internal_mutable_token()->::Hdfs::Internal::TokenProto::MergeFrom(
+          from._internal_token());
     }
   }
 }
 
 void BaseHeaderProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BaseHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BaseHeaderProto::CopyFrom(const BaseHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BaseHeaderProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BaseHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1477,42 +1837,46 @@ void BaseHeaderProto::InternalSwap(BaseHeaderProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void ClientOperationHeaderProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_._instance.get_mutable()->baseheader_ = const_cast< ::Hdfs::Internal::BaseHeaderProto*>(
+  ::Hdfs::Internal::_ClientOperationHeaderProto_default_instance_._instance
+      .get_mutable()
+      ->baseheader_ = const_cast<::Hdfs::Internal::BaseHeaderProto*>(
       ::Hdfs::Internal::BaseHeaderProto::internal_default_instance());
 }
 class ClientOperationHeaderProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<ClientOperationHeaderProto>()._has_bits_);
-  static const ::Hdfs::Internal::BaseHeaderProto& baseheader(const ClientOperationHeaderProto* msg);
-  static void set_has_baseheader(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_clientname(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  using HasBits =
+      decltype(std::declval<ClientOperationHeaderProto>()._has_bits_);
+  static const ::Hdfs::Internal::BaseHeaderProto& baseheader(
+      const ClientOperationHeaderProto* msg);
+  static void set_has_baseheader(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_clientname(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::BaseHeaderProto&
-ClientOperationHeaderProto::_Internal::baseheader(const ClientOperationHeaderProto* msg) {
+ClientOperationHeaderProto::_Internal::baseheader(
+    const ClientOperationHeaderProto* msg) {
   return *msg->baseheader_;
 }
 ClientOperationHeaderProto::ClientOperationHeaderProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ClientOperationHeaderProto)
 }
-ClientOperationHeaderProto::ClientOperationHeaderProto(const ClientOperationHeaderProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ClientOperationHeaderProto::ClientOperationHeaderProto(
+    const ClientOperationHeaderProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  clientname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  clientname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_clientname()) {
-    clientname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.clientname_);
+    clientname_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.clientname_);
   }
   if (from._internal_has_baseheader()) {
     baseheader_ = new ::Hdfs::Internal::BaseHeaderProto(*from.baseheader_);
@@ -1523,8 +1887,10 @@ ClientOperationHeaderProto::ClientOperationHeaderProto(const ClientOperationHead
 }
 
 void ClientOperationHeaderProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base);
-  clientname_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base);
+  clientname_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   baseheader_ = nullptr;
 }
 
@@ -1534,24 +1900,26 @@ ClientOperationHeaderProto::~ClientOperationHeaderProto() {
 }
 
 void ClientOperationHeaderProto::SharedDtor() {
-  clientname_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  clientname_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete baseheader_;
 }
 
 void ClientOperationHeaderProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ClientOperationHeaderProto& ClientOperationHeaderProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base);
+const ClientOperationHeaderProto&
+ClientOperationHeaderProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ClientOperationHeaderProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ClientOperationHeaderProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ClientOperationHeaderProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ClientOperationHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -1567,8 +1935,10 @@ void ClientOperationHeaderProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* ClientOperationHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ClientOperationHeaderProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1577,21 +1947,27 @@ const char* ClientOperationHeaderProto::_InternalParse(const char* ptr, ::PROTOB
     switch (tag >> 3) {
       // required .Hdfs.Internal.BaseHeaderProto baseHeader = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_baseheader(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string clientName = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_clientname();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.ClientOperationHeaderProto.clientName");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.ClientOperationHeaderProto.clientName");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1604,7 +1980,7 @@ const char* ClientOperationHeaderProto::_InternalParse(const char* ptr, ::PROTOB
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1615,79 +1991,83 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ClientOperationHeaderProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ClientOperationHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BaseHeaderProto baseHeader = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::baseheader(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::baseheader(this), target, stream);
   }
 
   // required string clientName = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_clientname().data(), static_cast<int>(this->_internal_clientname().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.ClientOperationHeaderProto.clientName");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_clientname(), target);
+        this->_internal_clientname().data(),
+        static_cast<int>(this->_internal_clientname().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.ClientOperationHeaderProto.clientName");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_clientname(),
+                                             target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ClientOperationHeaderProto)
   return target;
 }
 
 size_t ClientOperationHeaderProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ClientOperationHeaderProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ClientOperationHeaderProto)
   size_t total_size = 0;
 
   if (_internal_has_clientname()) {
     // required string clientName = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_clientname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_clientname());
   }
 
   if (_internal_has_baseheader()) {
     // required .Hdfs.Internal.BaseHeaderProto baseHeader = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *baseheader_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *baseheader_);
   }
 
   return total_size;
 }
 size_t ClientOperationHeaderProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ClientOperationHeaderProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ClientOperationHeaderProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required string clientName = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_clientname());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_clientname());
 
     // required .Hdfs.Internal.BaseHeaderProto baseHeader = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *baseheader_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *baseheader_);
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -1698,49 +2078,57 @@ size_t ClientOperationHeaderProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ClientOperationHeaderProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ClientOperationHeaderProto)
+void ClientOperationHeaderProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ClientOperationHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ClientOperationHeaderProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ClientOperationHeaderProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          ClientOperationHeaderProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ClientOperationHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ClientOperationHeaderProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ClientOperationHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ClientOperationHeaderProto)
     MergeFrom(*source);
   }
 }
 
-void ClientOperationHeaderProto::MergeFrom(const ClientOperationHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ClientOperationHeaderProto)
+void ClientOperationHeaderProto::MergeFrom(
+    const ClientOperationHeaderProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ClientOperationHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      clientname_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.clientname_);
+      clientname_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.clientname_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_baseheader()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(from._internal_baseheader());
+      _internal_mutable_baseheader()
+          ->::Hdfs::Internal::BaseHeaderProto::MergeFrom(
+              from._internal_baseheader());
     }
   }
 }
 
-void ClientOperationHeaderProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ClientOperationHeaderProto)
+void ClientOperationHeaderProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ClientOperationHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void ClientOperationHeaderProto::CopyFrom(const ClientOperationHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ClientOperationHeaderProto)
+void ClientOperationHeaderProto::CopyFrom(
+    const ClientOperationHeaderProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ClientOperationHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -1754,55 +2142,55 @@ bool ClientOperationHeaderProto::IsInitialized() const {
   return true;
 }
 
-void ClientOperationHeaderProto::InternalSwap(ClientOperationHeaderProto* other) {
+void ClientOperationHeaderProto::InternalSwap(
+    ClientOperationHeaderProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  clientname_.Swap(&other->clientname_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  clientname_.Swap(
+      &other->clientname_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(baseheader_, other->baseheader_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata ClientOperationHeaderProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata ClientOperationHeaderProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void CachingStrategyProto::InitAsDefaultInstance() {
-}
+void CachingStrategyProto::InitAsDefaultInstance() {}
 class CachingStrategyProto::_Internal {
  public:
   using HasBits = decltype(std::declval<CachingStrategyProto>()._has_bits_);
-  static void set_has_dropbehind(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_readahead(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_dropbehind(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_readahead(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 CachingStrategyProto::CachingStrategyProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.CachingStrategyProto)
 }
 CachingStrategyProto::CachingStrategyProto(const CachingStrategyProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&readahead_, &from.readahead_,
-    static_cast<size_t>(reinterpret_cast<char*>(&dropbehind_) -
-    reinterpret_cast<char*>(&readahead_)) + sizeof(dropbehind_));
+           static_cast<size_t>(reinterpret_cast<char*>(&dropbehind_) -
+                               reinterpret_cast<char*>(&readahead_)) +
+               sizeof(dropbehind_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.CachingStrategyProto)
 }
 
 void CachingStrategyProto::SharedCtor() {
-  ::memset(&readahead_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&dropbehind_) -
-      reinterpret_cast<char*>(&readahead_)) + sizeof(dropbehind_));
+  ::memset(&readahead_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&dropbehind_) -
+                               reinterpret_cast<char*>(&readahead_)) +
+               sizeof(dropbehind_));
 }
 
 CachingStrategyProto::~CachingStrategyProto() {
@@ -1810,36 +2198,38 @@ CachingStrategyProto::~CachingStrategyProto() {
   SharedDtor();
 }
 
-void CachingStrategyProto::SharedDtor() {
-}
+void CachingStrategyProto::SharedDtor() {}
 
 void CachingStrategyProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const CachingStrategyProto& CachingStrategyProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CachingStrategyProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_CachingStrategyProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void CachingStrategyProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CachingStrategyProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.CachingStrategyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    ::memset(&readahead_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&dropbehind_) -
-        reinterpret_cast<char*>(&readahead_)) + sizeof(dropbehind_));
+    ::memset(&readahead_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&dropbehind_) -
+                                 reinterpret_cast<char*>(&readahead_)) +
+                 sizeof(dropbehind_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* CachingStrategyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* CachingStrategyProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -1848,19 +2238,23 @@ const char* CachingStrategyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // optional bool dropBehind = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_dropbehind(&has_bits);
           dropbehind_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional int64 readahead = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_readahead(&has_bits);
           readahead_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -1873,7 +2267,7 @@ const char* CachingStrategyProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -1884,54 +2278,59 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* CachingStrategyProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.CachingStrategyProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // optional bool dropBehind = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(1, this->_internal_dropbehind(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            1, this->_internal_dropbehind(), target);
   }
 
   // optional int64 readahead = 2;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(2, this->_internal_readahead(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteInt64ToArray(
+            2, this->_internal_readahead(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.CachingStrategyProto)
   return target;
 }
 
 size_t CachingStrategyProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CachingStrategyProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.CachingStrategyProto)
   size_t total_size = 0;
 
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     // optional int64 readahead = 2;
     if (cached_has_bits & 0x00000001u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
-          this->_internal_readahead());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int64Size(
+                  this->_internal_readahead());
     }
 
     // optional bool dropBehind = 1;
     if (cached_has_bits & 0x00000002u) {
       total_size += 1 + 1;
     }
-
   }
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -1942,27 +2341,28 @@ size_t CachingStrategyProto::ByteSizeLong() const {
   return total_size;
 }
 
-void CachingStrategyProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CachingStrategyProto)
+void CachingStrategyProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.CachingStrategyProto)
   GOOGLE_DCHECK_NE(&from, this);
   const CachingStrategyProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<CachingStrategyProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CachingStrategyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.CachingStrategyProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CachingStrategyProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.CachingStrategyProto)
     MergeFrom(*source);
   }
 }
 
 void CachingStrategyProto::MergeFrom(const CachingStrategyProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CachingStrategyProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.CachingStrategyProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -1976,23 +2376,22 @@ void CachingStrategyProto::MergeFrom(const CachingStrategyProto& from) {
   }
 }
 
-void CachingStrategyProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CachingStrategyProto)
+void CachingStrategyProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.CachingStrategyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void CachingStrategyProto::CopyFrom(const CachingStrategyProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CachingStrategyProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.CachingStrategyProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-bool CachingStrategyProto::IsInitialized() const {
-  return true;
-}
+bool CachingStrategyProto::IsInitialized() const { return true; }
 
 void CachingStrategyProto::InternalSwap(CachingStrategyProto* other) {
   using std::swap;
@@ -2006,32 +2405,30 @@ void CachingStrategyProto::InternalSwap(CachingStrategyProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpReadBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpReadBlockProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::ClientOperationHeaderProto*>(
-      ::Hdfs::Internal::ClientOperationHeaderProto::internal_default_instance());
-  ::Hdfs::Internal::_OpReadBlockProto_default_instance_._instance.get_mutable()->cachingstrategy_ = const_cast< ::Hdfs::Internal::CachingStrategyProto*>(
+  ::Hdfs::Internal::_OpReadBlockProto_default_instance_._instance.get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::ClientOperationHeaderProto*>(
+      ::Hdfs::Internal::ClientOperationHeaderProto::
+          internal_default_instance());
+  ::Hdfs::Internal::_OpReadBlockProto_default_instance_._instance.get_mutable()
+      ->cachingstrategy_ = const_cast<::Hdfs::Internal::CachingStrategyProto*>(
       ::Hdfs::Internal::CachingStrategyProto::internal_default_instance());
 }
 class OpReadBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpReadBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(const OpReadBlockProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_offset(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_len(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(
+      const OpReadBlockProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_offset(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_len(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
   static void set_has_sendchecksums(HasBits* has_bits) {
     (*has_bits)[0] |= 16u;
   }
-  static const ::Hdfs::Internal::CachingStrategyProto& cachingstrategy(const OpReadBlockProto* msg);
+  static const ::Hdfs::Internal::CachingStrategyProto& cachingstrategy(
+      const OpReadBlockProto* msg);
   static void set_has_cachingstrategy(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
@@ -2046,12 +2443,12 @@ OpReadBlockProto::_Internal::cachingstrategy(const OpReadBlockProto* msg) {
   return *msg->cachingstrategy_;
 }
 OpReadBlockProto::OpReadBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpReadBlockProto)
 }
 OpReadBlockProto::OpReadBlockProto(const OpReadBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -2061,21 +2458,25 @@ OpReadBlockProto::OpReadBlockProto(const OpReadBlockProto& from)
     header_ = nullptr;
   }
   if (from._internal_has_cachingstrategy()) {
-    cachingstrategy_ = new ::Hdfs::Internal::CachingStrategyProto(*from.cachingstrategy_);
+    cachingstrategy_ =
+        new ::Hdfs::Internal::CachingStrategyProto(*from.cachingstrategy_);
   } else {
     cachingstrategy_ = nullptr;
   }
   ::memcpy(&offset_, &from.offset_,
-    static_cast<size_t>(reinterpret_cast<char*>(&sendchecksums_) -
-    reinterpret_cast<char*>(&offset_)) + sizeof(sendchecksums_));
+           static_cast<size_t>(reinterpret_cast<char*>(&sendchecksums_) -
+                               reinterpret_cast<char*>(&offset_)) +
+               sizeof(sendchecksums_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.OpReadBlockProto)
 }
 
 void OpReadBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpReadBlockProto_datatransfer_2eproto.base);
-  ::memset(&header_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&len_) -
-      reinterpret_cast<char*>(&header_)) + sizeof(len_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpReadBlockProto_datatransfer_2eproto.base);
+  ::memset(&header_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&len_) -
+                               reinterpret_cast<char*>(&header_)) +
+               sizeof(len_));
   sendchecksums_ = true;
 }
 
@@ -2093,16 +2494,16 @@ void OpReadBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpReadBlockProto& OpReadBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpReadBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpReadBlockProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpReadBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpReadBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -2116,17 +2517,20 @@ void OpReadBlockProto::Clear() {
     }
   }
   if (cached_has_bits & 0x0000001cu) {
-    ::memset(&offset_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&len_) -
-        reinterpret_cast<char*>(&offset_)) + sizeof(len_));
+    ::memset(&offset_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&len_) -
+                                 reinterpret_cast<char*>(&offset_)) +
+                 sizeof(len_));
     sendchecksums_ = true;
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* OpReadBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpReadBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -2135,41 +2539,51 @@ const char* OpReadBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     switch (tag >> 3) {
       // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 offset = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_offset(&has_bits);
           offset_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 len = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_len(&has_bits);
           len_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bool sendChecksums = 4 [default = true];
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
           _Internal::set_has_sendchecksums(&has_bits);
           sendchecksums_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           ptr = ctx->ParseMessage(_internal_mutable_cachingstrategy(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2182,7 +2596,7 @@ const char* OpReadBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -2193,114 +2607,123 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpReadBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpReadBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   // required uint64 offset = 2;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_offset(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_offset(), target);
   }
 
   // required uint64 len = 3;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_len(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_len(), target);
   }
 
   // optional bool sendChecksums = 4 [default = true];
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(4, this->_internal_sendchecksums(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            4, this->_internal_sendchecksums(), target);
   }
 
   // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 5;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        5, _Internal::cachingstrategy(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            5, _Internal::cachingstrategy(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpReadBlockProto)
   return target;
 }
 
 size_t OpReadBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpReadBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_header()) {
     // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
 
   if (_internal_has_offset()) {
     // required uint64 offset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_offset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_offset());
   }
 
   if (_internal_has_len()) {
     // required uint64 len = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_len());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_len());
   }
 
   return total_size;
 }
 size_t OpReadBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpReadBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000d) ^ 0x0000000d) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000d) ^ 0x0000000d) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
 
     // required uint64 offset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_offset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_offset());
 
     // required uint64 len = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_len());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_len());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 5;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000002u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *cachingstrategy_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *cachingstrategy_);
   }
 
   // optional bool sendChecksums = 4 [default = true];
@@ -2318,34 +2741,37 @@ size_t OpReadBlockProto::ByteSizeLong() const {
 }
 
 void OpReadBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpReadBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpReadBlockProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpReadBlockProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpReadBlockProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpReadBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpReadBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpReadBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpReadBlockProto)
     MergeFrom(*source);
   }
 }
 
 void OpReadBlockProto::MergeFrom(const OpReadBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpReadBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_header()->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(from._internal_header());
+      _internal_mutable_header()
+          ->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(
+              from._internal_header());
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_cachingstrategy()->::Hdfs::Internal::CachingStrategyProto::MergeFrom(from._internal_cachingstrategy());
+      _internal_mutable_cachingstrategy()
+          ->::Hdfs::Internal::CachingStrategyProto::MergeFrom(
+              from._internal_cachingstrategy());
     }
     if (cached_has_bits & 0x00000004u) {
       offset_ = from.offset_;
@@ -2361,14 +2787,14 @@ void OpReadBlockProto::MergeFrom(const OpReadBlockProto& from) {
 }
 
 void OpReadBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpReadBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpReadBlockProto::CopyFrom(const OpReadBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpReadBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpReadBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2397,42 +2823,40 @@ void OpReadBlockProto::InternalSwap(OpReadBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ChecksumProto::InitAsDefaultInstance() {
-}
+void ChecksumProto::InitAsDefaultInstance() {}
 class ChecksumProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ChecksumProto>()._has_bits_);
-  static void set_has_type(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_type(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_bytesperchecksum(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
 
 ChecksumProto::ChecksumProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ChecksumProto)
 }
 ChecksumProto::ChecksumProto(const ChecksumProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&type_, &from.type_,
-    static_cast<size_t>(reinterpret_cast<char*>(&bytesperchecksum_) -
-    reinterpret_cast<char*>(&type_)) + sizeof(bytesperchecksum_));
+           static_cast<size_t>(reinterpret_cast<char*>(&bytesperchecksum_) -
+                               reinterpret_cast<char*>(&type_)) +
+               sizeof(bytesperchecksum_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ChecksumProto)
 }
 
 void ChecksumProto::SharedCtor() {
-  ::memset(&type_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&bytesperchecksum_) -
-      reinterpret_cast<char*>(&type_)) + sizeof(bytesperchecksum_));
+  ::memset(&type_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&bytesperchecksum_) -
+                               reinterpret_cast<char*>(&type_)) +
+               sizeof(bytesperchecksum_));
 }
 
 ChecksumProto::~ChecksumProto() {
@@ -2440,36 +2864,36 @@ ChecksumProto::~ChecksumProto() {
   SharedDtor();
 }
 
-void ChecksumProto::SharedDtor() {
-}
+void ChecksumProto::SharedDtor() {}
 
-void ChecksumProto::SetCachedSize(int size) const {
-  _cached_size_.Set(size);
-}
+void ChecksumProto::SetCachedSize(int size) const { _cached_size_.Set(size); }
 const ChecksumProto& ChecksumProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ChecksumProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ChecksumProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ChecksumProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ChecksumProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    ::memset(&type_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&bytesperchecksum_) -
-        reinterpret_cast<char*>(&type_)) + sizeof(bytesperchecksum_));
+    ::memset(&type_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&bytesperchecksum_) -
+                                 reinterpret_cast<char*>(&type_)) +
+                 sizeof(bytesperchecksum_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ChecksumProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -2478,23 +2902,32 @@ const char* ChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
     switch (tag >> 3) {
       // required .Hdfs.Internal.ChecksumTypeProto type = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
-            _internal_set_type(static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
+            _internal_set_type(
+                static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 bytesPerChecksum = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_bytesperchecksum(&has_bits);
-          bytesperchecksum_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          bytesperchecksum_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2507,7 +2940,7 @@ const char* ChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -2518,72 +2951,80 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ChecksumProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ChecksumProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ChecksumTypeProto type = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_type(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_type(), target);
   }
 
   // required uint32 bytesPerChecksum = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_bytesperchecksum(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_bytesperchecksum(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ChecksumProto)
   return target;
 }
 
 size_t ChecksumProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ChecksumProto)
   size_t total_size = 0;
 
   if (_internal_has_type()) {
     // required .Hdfs.Internal.ChecksumTypeProto type = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_type());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_type());
   }
 
   if (_internal_has_bytesperchecksum()) {
     // required uint32 bytesPerChecksum = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytesperchecksum());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytesperchecksum());
   }
 
   return total_size;
 }
 size_t ChecksumProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ChecksumProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.ChecksumTypeProto type = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_type());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_type());
 
     // required uint32 bytesPerChecksum = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytesperchecksum());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytesperchecksum());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -2595,26 +3036,25 @@ size_t ChecksumProto::ByteSizeLong() const {
 }
 
 void ChecksumProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ChecksumProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ChecksumProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ChecksumProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ChecksumProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ChecksumProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ChecksumProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ChecksumProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ChecksumProto)
     MergeFrom(*source);
   }
 }
 
 void ChecksumProto::MergeFrom(const ChecksumProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ChecksumProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
@@ -2629,14 +3069,14 @@ void ChecksumProto::MergeFrom(const ChecksumProto& from) {
 }
 
 void ChecksumProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ChecksumProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ChecksumProto::CopyFrom(const ChecksumProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ChecksumProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ChecksumProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -2659,50 +3099,52 @@ void ChecksumProto::InternalSwap(ChecksumProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpWriteBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::ClientOperationHeaderProto*>(
-      ::Hdfs::Internal::ClientOperationHeaderProto::internal_default_instance());
-  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance.get_mutable()->source_ = const_cast< ::Hdfs::Internal::DatanodeInfoProto*>(
+  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance
+      .get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::ClientOperationHeaderProto*>(
+      ::Hdfs::Internal::ClientOperationHeaderProto::
+          internal_default_instance());
+  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance
+      .get_mutable()
+      ->source_ = const_cast<::Hdfs::Internal::DatanodeInfoProto*>(
       ::Hdfs::Internal::DatanodeInfoProto::internal_default_instance());
-  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance.get_mutable()->requestedchecksum_ = const_cast< ::Hdfs::Internal::ChecksumProto*>(
+  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance
+      .get_mutable()
+      ->requestedchecksum_ = const_cast<::Hdfs::Internal::ChecksumProto*>(
       ::Hdfs::Internal::ChecksumProto::internal_default_instance());
-  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance.get_mutable()->cachingstrategy_ = const_cast< ::Hdfs::Internal::CachingStrategyProto*>(
+  ::Hdfs::Internal::_OpWriteBlockProto_default_instance_._instance
+      .get_mutable()
+      ->cachingstrategy_ = const_cast<::Hdfs::Internal::CachingStrategyProto*>(
       ::Hdfs::Internal::CachingStrategyProto::internal_default_instance());
 }
 class OpWriteBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpWriteBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(const OpWriteBlockProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static const ::Hdfs::Internal::DatanodeInfoProto& source(const OpWriteBlockProto* msg);
-  static void set_has_source(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_stage(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_pipelinesize(HasBits* has_bits) {
-    (*has_bits)[0] |= 32u;
-  }
-  static void set_has_minbytesrcvd(HasBits* has_bits) {
-    (*has_bits)[0] |= 64u;
-  }
+  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(
+      const OpWriteBlockProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static const ::Hdfs::Internal::DatanodeInfoProto& source(
+      const OpWriteBlockProto* msg);
+  static void set_has_source(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_stage(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_pipelinesize(HasBits* has_bits) { (*has_bits)[0] |= 32u; }
+  static void set_has_minbytesrcvd(HasBits* has_bits) { (*has_bits)[0] |= 64u; }
   static void set_has_maxbytesrcvd(HasBits* has_bits) {
     (*has_bits)[0] |= 128u;
   }
   static void set_has_latestgenerationstamp(HasBits* has_bits) {
     (*has_bits)[0] |= 256u;
   }
-  static const ::Hdfs::Internal::ChecksumProto& requestedchecksum(const OpWriteBlockProto* msg);
+  static const ::Hdfs::Internal::ChecksumProto& requestedchecksum(
+      const OpWriteBlockProto* msg);
   static void set_has_requestedchecksum(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static const ::Hdfs::Internal::CachingStrategyProto& cachingstrategy(const OpWriteBlockProto* msg);
+  static const ::Hdfs::Internal::CachingStrategyProto& cachingstrategy(
+      const OpWriteBlockProto* msg);
   static void set_has_cachingstrategy(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
@@ -2712,8 +3154,8 @@ const ::Hdfs::Internal::ClientOperationHeaderProto&
 OpWriteBlockProto::_Internal::header(const OpWriteBlockProto* msg) {
   return *msg->header_;
 }
-const ::Hdfs::Internal::DatanodeInfoProto&
-OpWriteBlockProto::_Internal::source(const OpWriteBlockProto* msg) {
+const ::Hdfs::Internal::DatanodeInfoProto& OpWriteBlockProto::_Internal::source(
+    const OpWriteBlockProto* msg) {
   return *msg->source_;
 }
 const ::Hdfs::Internal::ChecksumProto&
@@ -2724,20 +3166,18 @@ const ::Hdfs::Internal::CachingStrategyProto&
 OpWriteBlockProto::_Internal::cachingstrategy(const OpWriteBlockProto* msg) {
   return *msg->cachingstrategy_;
 }
-void OpWriteBlockProto::clear_targets() {
-  targets_.Clear();
-}
+void OpWriteBlockProto::clear_targets() { targets_.Clear(); }
 void OpWriteBlockProto::clear_source() {
   if (source_ != nullptr) source_->Clear();
   _has_bits_[0] &= ~0x00000002u;
 }
 OpWriteBlockProto::OpWriteBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpWriteBlockProto)
 }
 OpWriteBlockProto::OpWriteBlockProto(const OpWriteBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       targets_(from.targets_) {
@@ -2753,26 +3193,33 @@ OpWriteBlockProto::OpWriteBlockProto(const OpWriteBlockProto& from)
     source_ = nullptr;
   }
   if (from._internal_has_requestedchecksum()) {
-    requestedchecksum_ = new ::Hdfs::Internal::ChecksumProto(*from.requestedchecksum_);
+    requestedchecksum_ =
+        new ::Hdfs::Internal::ChecksumProto(*from.requestedchecksum_);
   } else {
     requestedchecksum_ = nullptr;
   }
   if (from._internal_has_cachingstrategy()) {
-    cachingstrategy_ = new ::Hdfs::Internal::CachingStrategyProto(*from.cachingstrategy_);
+    cachingstrategy_ =
+        new ::Hdfs::Internal::CachingStrategyProto(*from.cachingstrategy_);
   } else {
     cachingstrategy_ = nullptr;
   }
-  ::memcpy(&stage_, &from.stage_,
-    static_cast<size_t>(reinterpret_cast<char*>(&latestgenerationstamp_) -
-    reinterpret_cast<char*>(&stage_)) + sizeof(latestgenerationstamp_));
+  ::memcpy(
+      &stage_, &from.stage_,
+      static_cast<size_t>(reinterpret_cast<char*>(&latestgenerationstamp_) -
+                          reinterpret_cast<char*>(&stage_)) +
+          sizeof(latestgenerationstamp_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.OpWriteBlockProto)
 }
 
 void OpWriteBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpWriteBlockProto_datatransfer_2eproto.base);
-  ::memset(&header_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&latestgenerationstamp_) -
-      reinterpret_cast<char*>(&header_)) + sizeof(latestgenerationstamp_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpWriteBlockProto_datatransfer_2eproto.base);
+  ::memset(
+      &header_, 0,
+      static_cast<size_t>(reinterpret_cast<char*>(&latestgenerationstamp_) -
+                          reinterpret_cast<char*>(&header_)) +
+          sizeof(latestgenerationstamp_));
 }
 
 OpWriteBlockProto::~OpWriteBlockProto() {
@@ -2791,16 +3238,16 @@ void OpWriteBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpWriteBlockProto& OpWriteBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpWriteBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpWriteBlockProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpWriteBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpWriteBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   targets_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -2823,17 +3270,20 @@ void OpWriteBlockProto::Clear() {
     }
   }
   if (cached_has_bits & 0x000000f0u) {
-    ::memset(&stage_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&maxbytesrcvd_) -
-        reinterpret_cast<char*>(&stage_)) + sizeof(maxbytesrcvd_));
+    ::memset(&stage_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&maxbytesrcvd_) -
+                                 reinterpret_cast<char*>(&stage_)) +
+                 sizeof(maxbytesrcvd_));
   }
   latestgenerationstamp_ = PROTOBUF_ULONGLONG(0);
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* OpWriteBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpWriteBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -2842,14 +3292,17 @@ const char* OpWriteBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -2857,72 +3310,98 @@ const char* OpWriteBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.DatanodeInfoProto source = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_source(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage = 4;
+      // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage
+      // = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::OpWriteBlockProto_BlockConstructionStage_IsValid(val))) {
-            _internal_set_stage(static_cast<::Hdfs::Internal::OpWriteBlockProto_BlockConstructionStage>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::
+                      OpWriteBlockProto_BlockConstructionStage_IsValid(val))) {
+            _internal_set_stage(
+                static_cast<
+                    ::Hdfs::Internal::OpWriteBlockProto_BlockConstructionStage>(
+                    val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(4, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                4, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 pipelineSize = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_pipelinesize(&has_bits);
           pipelinesize_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 minBytesRcvd = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_minbytesrcvd(&has_bits);
           minbytesrcvd_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 maxBytesRcvd = 7;
       case 7:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 56)) {
           _Internal::set_has_maxbytesrcvd(&has_bits);
           maxbytesrcvd_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 latestGenerationStamp = 8;
       case 8:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 64)) {
           _Internal::set_has_latestgenerationstamp(&has_bits);
-          latestgenerationstamp_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          latestgenerationstamp_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.ChecksumProto requestedChecksum = 9;
       case 9:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 74)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 74)) {
           ptr = ctx->ParseMessage(_internal_mutable_requestedchecksum(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 10;
       case 10:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 82)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 82)) {
           ptr = ctx->ParseMessage(_internal_mutable_cachingstrategy(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -2935,7 +3414,7 @@ const char* OpWriteBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -2946,211 +3425,229 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpWriteBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpWriteBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_targets_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_targets_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(2, this->_internal_targets(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            2, this->_internal_targets(i), target, stream);
   }
 
   // optional .Hdfs.Internal.DatanodeInfoProto source = 3;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::source(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::source(this), target, stream);
   }
 
   // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage = 4;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      4, this->_internal_stage(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            4, this->_internal_stage(), target);
   }
 
   // required uint32 pipelineSize = 5;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(5, this->_internal_pipelinesize(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            5, this->_internal_pipelinesize(), target);
   }
 
   // required uint64 minBytesRcvd = 6;
   if (cached_has_bits & 0x00000040u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(6, this->_internal_minbytesrcvd(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            6, this->_internal_minbytesrcvd(), target);
   }
 
   // required uint64 maxBytesRcvd = 7;
   if (cached_has_bits & 0x00000080u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(7, this->_internal_maxbytesrcvd(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            7, this->_internal_maxbytesrcvd(), target);
   }
 
   // required uint64 latestGenerationStamp = 8;
   if (cached_has_bits & 0x00000100u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(8, this->_internal_latestgenerationstamp(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            8, this->_internal_latestgenerationstamp(), target);
   }
 
   // required .Hdfs.Internal.ChecksumProto requestedChecksum = 9;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        9, _Internal::requestedchecksum(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            9, _Internal::requestedchecksum(this), target, stream);
   }
 
   // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 10;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        10, _Internal::cachingstrategy(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            10, _Internal::cachingstrategy(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpWriteBlockProto)
   return target;
 }
 
 size_t OpWriteBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpWriteBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_header()) {
     // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
 
   if (_internal_has_requestedchecksum()) {
     // required .Hdfs.Internal.ChecksumProto requestedChecksum = 9;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *requestedchecksum_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *requestedchecksum_);
   }
 
   if (_internal_has_stage()) {
-    // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_stage());
+    // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage =
+    // 4;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_stage());
   }
 
   if (_internal_has_pipelinesize()) {
     // required uint32 pipelineSize = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_pipelinesize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_pipelinesize());
   }
 
   if (_internal_has_minbytesrcvd()) {
     // required uint64 minBytesRcvd = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_minbytesrcvd());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_minbytesrcvd());
   }
 
   if (_internal_has_maxbytesrcvd()) {
     // required uint64 maxBytesRcvd = 7;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_maxbytesrcvd());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_maxbytesrcvd());
   }
 
   if (_internal_has_latestgenerationstamp()) {
     // required uint64 latestGenerationStamp = 8;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_latestgenerationstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_latestgenerationstamp());
   }
 
   return total_size;
 }
 size_t OpWriteBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpWriteBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x000001f5) ^ 0x000001f5) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x000001f5) ^ 0x000001f5) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
 
     // required .Hdfs.Internal.ChecksumProto requestedChecksum = 9;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *requestedchecksum_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *requestedchecksum_);
 
-    // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage = 4;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_stage());
+    // required .Hdfs.Internal.OpWriteBlockProto.BlockConstructionStage stage =
+    // 4;
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_stage());
 
     // required uint32 pipelineSize = 5;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_pipelinesize());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_pipelinesize());
 
     // required uint64 minBytesRcvd = 6;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_minbytesrcvd());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_minbytesrcvd());
 
     // required uint64 maxBytesRcvd = 7;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_maxbytesrcvd());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_maxbytesrcvd());
 
     // required uint64 latestGenerationStamp = 8;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_latestgenerationstamp());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_latestgenerationstamp());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
   total_size += 1UL * this->_internal_targets_size();
   for (const auto& msg : this->targets_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   // optional .Hdfs.Internal.DatanodeInfoProto source = 3;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000002u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *source_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *source_);
   }
 
   // optional .Hdfs.Internal.CachingStrategyProto cachingStrategy = 10;
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *cachingstrategy_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *cachingstrategy_);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3162,42 +3659,50 @@ size_t OpWriteBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpWriteBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpWriteBlockProto)
+void OpWriteBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpWriteBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpWriteBlockProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpWriteBlockProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpWriteBlockProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpWriteBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpWriteBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpWriteBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpWriteBlockProto)
     MergeFrom(*source);
   }
 }
 
 void OpWriteBlockProto::MergeFrom(const OpWriteBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpWriteBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   targets_.MergeFrom(from.targets_);
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x000000ffu) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_header()->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(from._internal_header());
+      _internal_mutable_header()
+          ->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(
+              from._internal_header());
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_source()->::Hdfs::Internal::DatanodeInfoProto::MergeFrom(from._internal_source());
+      _internal_mutable_source()
+          ->::Hdfs::Internal::DatanodeInfoProto::MergeFrom(
+              from._internal_source());
     }
     if (cached_has_bits & 0x00000004u) {
-      _internal_mutable_requestedchecksum()->::Hdfs::Internal::ChecksumProto::MergeFrom(from._internal_requestedchecksum());
+      _internal_mutable_requestedchecksum()
+          ->::Hdfs::Internal::ChecksumProto::MergeFrom(
+              from._internal_requestedchecksum());
     }
     if (cached_has_bits & 0x00000008u) {
-      _internal_mutable_cachingstrategy()->::Hdfs::Internal::CachingStrategyProto::MergeFrom(from._internal_cachingstrategy());
+      _internal_mutable_cachingstrategy()
+          ->::Hdfs::Internal::CachingStrategyProto::MergeFrom(
+              from._internal_cachingstrategy());
     }
     if (cached_has_bits & 0x00000010u) {
       stage_ = from.stage_;
@@ -3219,14 +3724,14 @@ void OpWriteBlockProto::MergeFrom(const OpWriteBlockProto& from) {
 }
 
 void OpWriteBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpWriteBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpWriteBlockProto::CopyFrom(const OpWriteBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpWriteBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpWriteBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3234,7 +3739,8 @@ void OpWriteBlockProto::CopyFrom(const OpWriteBlockProto& from) {
 
 bool OpWriteBlockProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x000001f5) != 0x000001f5) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(targets_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(targets_))
+    return false;
   if (_internal_has_header()) {
     if (!header_->IsInitialized()) return false;
   }
@@ -3267,36 +3773,35 @@ void OpWriteBlockProto::InternalSwap(OpWriteBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpTransferBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpTransferBlockProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::ClientOperationHeaderProto*>(
-      ::Hdfs::Internal::ClientOperationHeaderProto::internal_default_instance());
+  ::Hdfs::Internal::_OpTransferBlockProto_default_instance_._instance
+      .get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::ClientOperationHeaderProto*>(
+      ::Hdfs::Internal::ClientOperationHeaderProto::
+          internal_default_instance());
 }
 class OpTransferBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpTransferBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(const OpTransferBlockProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::ClientOperationHeaderProto& header(
+      const OpTransferBlockProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::ClientOperationHeaderProto&
 OpTransferBlockProto::_Internal::header(const OpTransferBlockProto* msg) {
   return *msg->header_;
 }
-void OpTransferBlockProto::clear_targets() {
-  targets_.Clear();
-}
+void OpTransferBlockProto::clear_targets() { targets_.Clear(); }
 OpTransferBlockProto::OpTransferBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpTransferBlockProto)
 }
 OpTransferBlockProto::OpTransferBlockProto(const OpTransferBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       targets_(from.targets_) {
@@ -3310,7 +3815,8 @@ OpTransferBlockProto::OpTransferBlockProto(const OpTransferBlockProto& from)
 }
 
 void OpTransferBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpTransferBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpTransferBlockProto_datatransfer_2eproto.base);
   header_ = nullptr;
 }
 
@@ -3327,16 +3833,16 @@ void OpTransferBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpTransferBlockProto& OpTransferBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpTransferBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpTransferBlockProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpTransferBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpTransferBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpTransferBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   targets_.Clear();
   cached_has_bits = _has_bits_[0];
@@ -3348,8 +3854,10 @@ void OpTransferBlockProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* OpTransferBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpTransferBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -3358,14 +3866,17 @@ const char* OpTransferBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           ptr -= 1;
           do {
             ptr += 1;
@@ -3373,7 +3884,8 @@ const char* OpTransferBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
             CHK_(ptr);
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<18>(ptr));
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -3386,7 +3898,7 @@ const char* OpTransferBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3397,55 +3909,59 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpTransferBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpTransferBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
-  for (unsigned int i = 0,
-      n = static_cast<unsigned int>(this->_internal_targets_size()); i < n; i++) {
+  for (unsigned int i = 0, n = static_cast<unsigned int>(
+                               this->_internal_targets_size());
+       i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(2, this->_internal_targets(i), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            2, this->_internal_targets(i), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpTransferBlockProto)
   return target;
 }
 
 size_t OpTransferBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpTransferBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpTransferBlockProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.ClientOperationHeaderProto header = 1;
   if (_internal_has_header()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.DatanodeInfoProto targets = 2;
   total_size += 1UL * this->_internal_targets_size();
   for (const auto& msg : this->targets_) {
     total_size +=
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(msg);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -3457,43 +3973,47 @@ size_t OpTransferBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpTransferBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpTransferBlockProto)
+void OpTransferBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpTransferBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpTransferBlockProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpTransferBlockProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpTransferBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpTransferBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpTransferBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpTransferBlockProto)
     MergeFrom(*source);
   }
 }
 
 void OpTransferBlockProto::MergeFrom(const OpTransferBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpTransferBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpTransferBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   targets_.MergeFrom(from.targets_);
   if (from._internal_has_header()) {
-    _internal_mutable_header()->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(from._internal_header());
+    _internal_mutable_header()
+        ->::Hdfs::Internal::ClientOperationHeaderProto::MergeFrom(
+            from._internal_header());
   }
 }
 
-void OpTransferBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpTransferBlockProto)
+void OpTransferBlockProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpTransferBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpTransferBlockProto::CopyFrom(const OpTransferBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpTransferBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpTransferBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3501,7 +4021,8 @@ void OpTransferBlockProto::CopyFrom(const OpTransferBlockProto& from) {
 
 bool OpTransferBlockProto::IsInitialized() const {
   if ((_has_bits_[0] & 0x00000001) != 0x00000001) return false;
-  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(targets_)) return false;
+  if (!::PROTOBUF_NAMESPACE_ID::internal::AllAreInitialized(targets_))
+    return false;
   if (_internal_has_header()) {
     if (!header_->IsInitialized()) return false;
   }
@@ -3520,33 +4041,32 @@ void OpTransferBlockProto::InternalSwap(OpTransferBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpReplaceBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpReplaceBlockProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::BaseHeaderProto*>(
+  ::Hdfs::Internal::_OpReplaceBlockProto_default_instance_._instance
+      .get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::BaseHeaderProto*>(
       ::Hdfs::Internal::BaseHeaderProto::internal_default_instance());
-  ::Hdfs::Internal::_OpReplaceBlockProto_default_instance_._instance.get_mutable()->source_ = const_cast< ::Hdfs::Internal::DatanodeInfoProto*>(
+  ::Hdfs::Internal::_OpReplaceBlockProto_default_instance_._instance
+      .get_mutable()
+      ->source_ = const_cast<::Hdfs::Internal::DatanodeInfoProto*>(
       ::Hdfs::Internal::DatanodeInfoProto::internal_default_instance());
 }
 class OpReplaceBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpReplaceBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::BaseHeaderProto& header(const OpReplaceBlockProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_delhint(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static const ::Hdfs::Internal::DatanodeInfoProto& source(const OpReplaceBlockProto* msg);
-  static void set_has_source(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
+  static const ::Hdfs::Internal::BaseHeaderProto& header(
+      const OpReplaceBlockProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_delhint(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static const ::Hdfs::Internal::DatanodeInfoProto& source(
+      const OpReplaceBlockProto* msg);
+  static void set_has_source(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
 };
 
-const ::Hdfs::Internal::BaseHeaderProto&
-OpReplaceBlockProto::_Internal::header(const OpReplaceBlockProto* msg) {
+const ::Hdfs::Internal::BaseHeaderProto& OpReplaceBlockProto::_Internal::header(
+    const OpReplaceBlockProto* msg) {
   return *msg->header_;
 }
 const ::Hdfs::Internal::DatanodeInfoProto&
@@ -3558,18 +4078,21 @@ void OpReplaceBlockProto::clear_source() {
   _has_bits_[0] &= ~0x00000004u;
 }
 OpReplaceBlockProto::OpReplaceBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpReplaceBlockProto)
 }
 OpReplaceBlockProto::OpReplaceBlockProto(const OpReplaceBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  delhint_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  delhint_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_delhint()) {
-    delhint_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.delhint_);
+    delhint_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.delhint_);
   }
   if (from._internal_has_header()) {
     header_ = new ::Hdfs::Internal::BaseHeaderProto(*from.header_);
@@ -3585,11 +4108,14 @@ OpReplaceBlockProto::OpReplaceBlockProto(const OpReplaceBlockProto& from)
 }
 
 void OpReplaceBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpReplaceBlockProto_datatransfer_2eproto.base);
-  delhint_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&header_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&source_) -
-      reinterpret_cast<char*>(&header_)) + sizeof(source_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpReplaceBlockProto_datatransfer_2eproto.base);
+  delhint_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&header_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&source_) -
+                               reinterpret_cast<char*>(&header_)) +
+               sizeof(source_));
 }
 
 OpReplaceBlockProto::~OpReplaceBlockProto() {
@@ -3598,7 +4124,8 @@ OpReplaceBlockProto::~OpReplaceBlockProto() {
 }
 
 void OpReplaceBlockProto::SharedDtor() {
-  delhint_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  delhint_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete header_;
   if (this != internal_default_instance()) delete source_;
 }
@@ -3607,16 +4134,16 @@ void OpReplaceBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpReplaceBlockProto& OpReplaceBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpReplaceBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpReplaceBlockProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpReplaceBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpReplaceBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpReplaceBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
@@ -3636,8 +4163,10 @@ void OpReplaceBlockProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* OpReplaceBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpReplaceBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -3646,28 +4175,36 @@ const char* OpReplaceBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
     switch (tag >> 3) {
       // required .Hdfs.Internal.BaseHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required string delHint = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_delhint();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.OpReplaceBlockProto.delHint");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.OpReplaceBlockProto.delHint");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required .Hdfs.Internal.DatanodeInfoProto source = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_source(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -3680,7 +4217,7 @@ const char* OpReplaceBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3691,99 +4228,103 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpReplaceBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpReplaceBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   // required string delHint = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_delhint().data(), static_cast<int>(this->_internal_delhint().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.OpReplaceBlockProto.delHint");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_delhint(), target);
+        this->_internal_delhint().data(),
+        static_cast<int>(this->_internal_delhint().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.OpReplaceBlockProto.delHint");
+    target =
+        stream->WriteStringMaybeAliased(2, this->_internal_delhint(), target);
   }
 
   // required .Hdfs.Internal.DatanodeInfoProto source = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::source(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::source(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpReplaceBlockProto)
   return target;
 }
 
 size_t OpReplaceBlockProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpReplaceBlockProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpReplaceBlockProto)
   size_t total_size = 0;
 
   if (_internal_has_delhint()) {
     // required string delHint = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_delhint());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_delhint());
   }
 
   if (_internal_has_header()) {
     // required .Hdfs.Internal.BaseHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
 
   if (_internal_has_source()) {
     // required .Hdfs.Internal.DatanodeInfoProto source = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *source_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *source_);
   }
 
   return total_size;
 }
 size_t OpReplaceBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpReplaceBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpReplaceBlockProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required string delHint = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-        this->_internal_delhint());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                this->_internal_delhint());
 
     // required .Hdfs.Internal.BaseHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
 
     // required .Hdfs.Internal.DatanodeInfoProto source = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *source_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *source_);
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -3794,52 +4335,59 @@ size_t OpReplaceBlockProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpReplaceBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpReplaceBlockProto)
+void OpReplaceBlockProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpReplaceBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpReplaceBlockProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpReplaceBlockProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpReplaceBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpReplaceBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpReplaceBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpReplaceBlockProto)
     MergeFrom(*source);
   }
 }
 
 void OpReplaceBlockProto::MergeFrom(const OpReplaceBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpReplaceBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpReplaceBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      delhint_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.delhint_);
+      delhint_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.delhint_);
     }
     if (cached_has_bits & 0x00000002u) {
-      _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(from._internal_header());
+      _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(
+          from._internal_header());
     }
     if (cached_has_bits & 0x00000004u) {
-      _internal_mutable_source()->::Hdfs::Internal::DatanodeInfoProto::MergeFrom(from._internal_source());
+      _internal_mutable_source()
+          ->::Hdfs::Internal::DatanodeInfoProto::MergeFrom(
+              from._internal_source());
     }
   }
 }
 
-void OpReplaceBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpReplaceBlockProto)
+void OpReplaceBlockProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpReplaceBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpReplaceBlockProto::CopyFrom(const OpReplaceBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpReplaceBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpReplaceBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -3860,8 +4408,10 @@ void OpReplaceBlockProto::InternalSwap(OpReplaceBlockProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  delhint_.Swap(&other->delhint_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  delhint_.Swap(
+      &other->delhint_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(header_, other->header_);
   swap(source_, other->source_);
 }
@@ -3870,33 +4420,32 @@ void OpReplaceBlockProto::InternalSwap(OpReplaceBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpCopyBlockProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpCopyBlockProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::BaseHeaderProto*>(
+  ::Hdfs::Internal::_OpCopyBlockProto_default_instance_._instance.get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::BaseHeaderProto*>(
       ::Hdfs::Internal::BaseHeaderProto::internal_default_instance());
 }
 class OpCopyBlockProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpCopyBlockProto>()._has_bits_);
-  static const ::Hdfs::Internal::BaseHeaderProto& header(const OpCopyBlockProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::BaseHeaderProto& header(
+      const OpCopyBlockProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
-const ::Hdfs::Internal::BaseHeaderProto&
-OpCopyBlockProto::_Internal::header(const OpCopyBlockProto* msg) {
+const ::Hdfs::Internal::BaseHeaderProto& OpCopyBlockProto::_Internal::header(
+    const OpCopyBlockProto* msg) {
   return *msg->header_;
 }
 OpCopyBlockProto::OpCopyBlockProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpCopyBlockProto)
 }
 OpCopyBlockProto::OpCopyBlockProto(const OpCopyBlockProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -3909,7 +4458,8 @@ OpCopyBlockProto::OpCopyBlockProto(const OpCopyBlockProto& from)
 }
 
 void OpCopyBlockProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpCopyBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpCopyBlockProto_datatransfer_2eproto.base);
   header_ = nullptr;
 }
 
@@ -3926,16 +4476,16 @@ void OpCopyBlockProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpCopyBlockProto& OpCopyBlockProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpCopyBlockProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpCopyBlockProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpCopyBlockProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpCopyBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -3946,8 +4496,10 @@ void OpCopyBlockProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* OpCopyBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpCopyBlockProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -3956,10 +4508,12 @@ const char* OpCopyBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     switch (tag >> 3) {
       // required .Hdfs.Internal.BaseHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -3972,7 +4526,7 @@ const char* OpCopyBlockProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -3983,41 +4537,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpCopyBlockProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpCopyBlockProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpCopyBlockProto)
   return target;
 }
 
 size_t OpCopyBlockProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpCopyBlockProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (_internal_has_header()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -4029,41 +4585,41 @@ size_t OpCopyBlockProto::ByteSizeLong() const {
 }
 
 void OpCopyBlockProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpCopyBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpCopyBlockProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpCopyBlockProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpCopyBlockProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpCopyBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpCopyBlockProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpCopyBlockProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpCopyBlockProto)
     MergeFrom(*source);
   }
 }
 
 void OpCopyBlockProto::MergeFrom(const OpCopyBlockProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpCopyBlockProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_header()) {
-    _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(from._internal_header());
+    _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(
+        from._internal_header());
   }
 }
 
 void OpCopyBlockProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpCopyBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpCopyBlockProto::CopyFrom(const OpCopyBlockProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpCopyBlockProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpCopyBlockProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4088,20 +4644,20 @@ void OpCopyBlockProto::InternalSwap(OpCopyBlockProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpBlockChecksumProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpBlockChecksumProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::BaseHeaderProto*>(
+  ::Hdfs::Internal::_OpBlockChecksumProto_default_instance_._instance
+      .get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::BaseHeaderProto*>(
       ::Hdfs::Internal::BaseHeaderProto::internal_default_instance());
 }
 class OpBlockChecksumProto::_Internal {
  public:
   using HasBits = decltype(std::declval<OpBlockChecksumProto>()._has_bits_);
-  static const ::Hdfs::Internal::BaseHeaderProto& header(const OpBlockChecksumProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static const ::Hdfs::Internal::BaseHeaderProto& header(
+      const OpBlockChecksumProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 const ::Hdfs::Internal::BaseHeaderProto&
@@ -4109,12 +4665,12 @@ OpBlockChecksumProto::_Internal::header(const OpBlockChecksumProto* msg) {
   return *msg->header_;
 }
 OpBlockChecksumProto::OpBlockChecksumProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpBlockChecksumProto)
 }
 OpBlockChecksumProto::OpBlockChecksumProto(const OpBlockChecksumProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -4127,7 +4683,8 @@ OpBlockChecksumProto::OpBlockChecksumProto(const OpBlockChecksumProto& from)
 }
 
 void OpBlockChecksumProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpBlockChecksumProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpBlockChecksumProto_datatransfer_2eproto.base);
   header_ = nullptr;
 }
 
@@ -4144,16 +4701,16 @@ void OpBlockChecksumProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const OpBlockChecksumProto& OpBlockChecksumProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpBlockChecksumProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpBlockChecksumProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpBlockChecksumProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpBlockChecksumProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpBlockChecksumProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -4164,8 +4721,10 @@ void OpBlockChecksumProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* OpBlockChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpBlockChecksumProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4174,10 +4733,12 @@ const char* OpBlockChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required .Hdfs.Internal.BaseHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4190,7 +4751,7 @@ const char* OpBlockChecksumProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -4201,41 +4762,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* OpBlockChecksumProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpBlockChecksumProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpBlockChecksumProto)
   return target;
 }
 
 size_t OpBlockChecksumProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpBlockChecksumProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpBlockChecksumProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (_internal_has_header()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -4246,42 +4809,45 @@ size_t OpBlockChecksumProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpBlockChecksumProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpBlockChecksumProto)
+void OpBlockChecksumProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpBlockChecksumProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpBlockChecksumProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpBlockChecksumProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpBlockChecksumProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpBlockChecksumProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpBlockChecksumProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpBlockChecksumProto)
     MergeFrom(*source);
   }
 }
 
 void OpBlockChecksumProto::MergeFrom(const OpBlockChecksumProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpBlockChecksumProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpBlockChecksumProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_header()) {
-    _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(from._internal_header());
+    _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(
+        from._internal_header());
   }
 }
 
-void OpBlockChecksumProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpBlockChecksumProto)
+void OpBlockChecksumProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpBlockChecksumProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void OpBlockChecksumProto::CopyFrom(const OpBlockChecksumProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpBlockChecksumProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpBlockChecksumProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4306,36 +4872,37 @@ void OpBlockChecksumProto::InternalSwap(OpBlockChecksumProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void OpRequestShortCircuitAccessProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_OpRequestShortCircuitAccessProto_default_instance_._instance.get_mutable()->header_ = const_cast< ::Hdfs::Internal::BaseHeaderProto*>(
+  ::Hdfs::Internal::_OpRequestShortCircuitAccessProto_default_instance_
+      ._instance.get_mutable()
+      ->header_ = const_cast<::Hdfs::Internal::BaseHeaderProto*>(
       ::Hdfs::Internal::BaseHeaderProto::internal_default_instance());
 }
 class OpRequestShortCircuitAccessProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<OpRequestShortCircuitAccessProto>()._has_bits_);
-  static const ::Hdfs::Internal::BaseHeaderProto& header(const OpRequestShortCircuitAccessProto* msg);
-  static void set_has_header(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_maxversion(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  using HasBits =
+      decltype(std::declval<OpRequestShortCircuitAccessProto>()._has_bits_);
+  static const ::Hdfs::Internal::BaseHeaderProto& header(
+      const OpRequestShortCircuitAccessProto* msg);
+  static void set_has_header(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_maxversion(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 const ::Hdfs::Internal::BaseHeaderProto&
-OpRequestShortCircuitAccessProto::_Internal::header(const OpRequestShortCircuitAccessProto* msg) {
+OpRequestShortCircuitAccessProto::_Internal::header(
+    const OpRequestShortCircuitAccessProto* msg) {
   return *msg->header_;
 }
 OpRequestShortCircuitAccessProto::OpRequestShortCircuitAccessProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpRequestShortCircuitAccessProto)
 }
-OpRequestShortCircuitAccessProto::OpRequestShortCircuitAccessProto(const OpRequestShortCircuitAccessProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+OpRequestShortCircuitAccessProto::OpRequestShortCircuitAccessProto(
+    const OpRequestShortCircuitAccessProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -4349,10 +4916,12 @@ OpRequestShortCircuitAccessProto::OpRequestShortCircuitAccessProto(const OpReque
 }
 
 void OpRequestShortCircuitAccessProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base);
-  ::memset(&header_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&maxversion_) -
-      reinterpret_cast<char*>(&header_)) + sizeof(maxversion_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base);
+  ::memset(&header_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&maxversion_) -
+                               reinterpret_cast<char*>(&header_)) +
+               sizeof(maxversion_));
 }
 
 OpRequestShortCircuitAccessProto::~OpRequestShortCircuitAccessProto() {
@@ -4367,17 +4936,18 @@ void OpRequestShortCircuitAccessProto::SharedDtor() {
 void OpRequestShortCircuitAccessProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const OpRequestShortCircuitAccessProto& OpRequestShortCircuitAccessProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base);
+const OpRequestShortCircuitAccessProto&
+OpRequestShortCircuitAccessProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpRequestShortCircuitAccessProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpRequestShortCircuitAccessProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -4389,8 +4959,10 @@ void OpRequestShortCircuitAccessProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* OpRequestShortCircuitAccessProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpRequestShortCircuitAccessProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4399,18 +4971,22 @@ const char* OpRequestShortCircuitAccessProto::_InternalParse(const char* ptr, ::
     switch (tag >> 3) {
       // required .Hdfs.Internal.BaseHeaderProto header = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_header(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint32 maxVersion = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_maxversion(&has_bits);
           maxversion_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4423,7 +4999,7 @@ const char* OpRequestShortCircuitAccessProto::_InternalParse(const char* ptr, ::
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -4433,76 +5009,83 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* OpRequestShortCircuitAccessProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+OpRequestShortCircuitAccessProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.BaseHeaderProto header = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::header(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::header(this), target, stream);
   }
 
   // required uint32 maxVersion = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(2, this->_internal_maxversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            2, this->_internal_maxversion(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   return target;
 }
 
-size_t OpRequestShortCircuitAccessProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+size_t OpRequestShortCircuitAccessProto::RequiredFieldsByteSizeFallback()
+    const {
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   size_t total_size = 0;
 
   if (_internal_has_header()) {
     // required .Hdfs.Internal.BaseHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
   }
 
   if (_internal_has_maxversion()) {
     // required uint32 maxVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_maxversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_maxversion());
   }
 
   return total_size;
 }
 size_t OpRequestShortCircuitAccessProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.BaseHeaderProto header = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *header_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *header_);
 
     // required uint32 maxVersion = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_maxversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_maxversion());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -4513,32 +5096,35 @@ size_t OpRequestShortCircuitAccessProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpRequestShortCircuitAccessProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+void OpRequestShortCircuitAccessProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpRequestShortCircuitAccessProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpRequestShortCircuitAccessProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          OpRequestShortCircuitAccessProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpRequestShortCircuitAccessProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpRequestShortCircuitAccessProto)
     MergeFrom(*source);
   }
 }
 
-void OpRequestShortCircuitAccessProto::MergeFrom(const OpRequestShortCircuitAccessProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+void OpRequestShortCircuitAccessProto::MergeFrom(
+    const OpRequestShortCircuitAccessProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(from._internal_header());
+      _internal_mutable_header()->::Hdfs::Internal::BaseHeaderProto::MergeFrom(
+          from._internal_header());
     }
     if (cached_has_bits & 0x00000002u) {
       maxversion_ = from.maxversion_;
@@ -4547,15 +5133,17 @@ void OpRequestShortCircuitAccessProto::MergeFrom(const OpRequestShortCircuitAcce
   }
 }
 
-void OpRequestShortCircuitAccessProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+void OpRequestShortCircuitAccessProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void OpRequestShortCircuitAccessProto::CopyFrom(const OpRequestShortCircuitAccessProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
+void OpRequestShortCircuitAccessProto::CopyFrom(
+    const OpRequestShortCircuitAccessProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpRequestShortCircuitAccessProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4569,7 +5157,8 @@ bool OpRequestShortCircuitAccessProto::IsInitialized() const {
   return true;
 }
 
-void OpRequestShortCircuitAccessProto::InternalSwap(OpRequestShortCircuitAccessProto* other) {
+void OpRequestShortCircuitAccessProto::InternalSwap(
+    OpRequestShortCircuitAccessProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
@@ -4577,55 +5166,48 @@ void OpRequestShortCircuitAccessProto::InternalSwap(OpRequestShortCircuitAccessP
   swap(maxversion_, other->maxversion_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata OpRequestShortCircuitAccessProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata
+OpRequestShortCircuitAccessProto::GetMetadata() const {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void PacketHeaderProto::InitAsDefaultInstance() {
-}
+void PacketHeaderProto::InitAsDefaultInstance() {}
 class PacketHeaderProto::_Internal {
  public:
   using HasBits = decltype(std::declval<PacketHeaderProto>()._has_bits_);
-  static void set_has_offsetinblock(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_seqno(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_offsetinblock(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_seqno(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_lastpacketinblock(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
-  static void set_has_datalen(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_syncblock(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
+  static void set_has_datalen(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_syncblock(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
 };
 
 PacketHeaderProto::PacketHeaderProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.PacketHeaderProto)
 }
 PacketHeaderProto::PacketHeaderProto(const PacketHeaderProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::memcpy(&offsetinblock_, &from.offsetinblock_,
-    static_cast<size_t>(reinterpret_cast<char*>(&syncblock_) -
-    reinterpret_cast<char*>(&offsetinblock_)) + sizeof(syncblock_));
+           static_cast<size_t>(reinterpret_cast<char*>(&syncblock_) -
+                               reinterpret_cast<char*>(&offsetinblock_)) +
+               sizeof(syncblock_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.PacketHeaderProto)
 }
 
 void PacketHeaderProto::SharedCtor() {
-  ::memset(&offsetinblock_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&syncblock_) -
-      reinterpret_cast<char*>(&offsetinblock_)) + sizeof(syncblock_));
+  ::memset(&offsetinblock_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&syncblock_) -
+                               reinterpret_cast<char*>(&offsetinblock_)) +
+               sizeof(syncblock_));
 }
 
 PacketHeaderProto::~PacketHeaderProto() {
@@ -4633,36 +5215,38 @@ PacketHeaderProto::~PacketHeaderProto() {
   SharedDtor();
 }
 
-void PacketHeaderProto::SharedDtor() {
-}
+void PacketHeaderProto::SharedDtor() {}
 
 void PacketHeaderProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const PacketHeaderProto& PacketHeaderProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PacketHeaderProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_PacketHeaderProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void PacketHeaderProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PacketHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
-    ::memset(&offsetinblock_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&syncblock_) -
-        reinterpret_cast<char*>(&offsetinblock_)) + sizeof(syncblock_));
+    ::memset(&offsetinblock_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&syncblock_) -
+                                 reinterpret_cast<char*>(&offsetinblock_)) +
+                 sizeof(syncblock_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* PacketHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* PacketHeaderProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -4671,43 +5255,57 @@ const char* PacketHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
     switch (tag >> 3) {
       // required sfixed64 offsetInBlock = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 9)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 9)) {
           _Internal::set_has_offsetinblock(&has_bits);
-          offsetinblock_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<::PROTOBUF_NAMESPACE_ID::int64>(ptr);
+          offsetinblock_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<
+              ::PROTOBUF_NAMESPACE_ID::int64>(ptr);
           ptr += sizeof(::PROTOBUF_NAMESPACE_ID::int64);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required sfixed64 seqno = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 17)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 17)) {
           _Internal::set_has_seqno(&has_bits);
-          seqno_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<::PROTOBUF_NAMESPACE_ID::int64>(ptr);
+          seqno_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<
+              ::PROTOBUF_NAMESPACE_ID::int64>(ptr);
           ptr += sizeof(::PROTOBUF_NAMESPACE_ID::int64);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bool lastPacketInBlock = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_lastpacketinblock(&has_bits);
-          lastpacketinblock_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          lastpacketinblock_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required sfixed32 dataLen = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 37)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 37)) {
           _Internal::set_has_datalen(&has_bits);
-          datalen_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<::PROTOBUF_NAMESPACE_ID::int32>(ptr);
+          datalen_ = ::PROTOBUF_NAMESPACE_ID::internal::UnalignedLoad<
+              ::PROTOBUF_NAMESPACE_ID::int32>(ptr);
           ptr += sizeof(::PROTOBUF_NAMESPACE_ID::int32);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional bool syncBlock = 5 [default = false];
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 40)) {
           _Internal::set_has_syncblock(&has_bits);
           syncblock_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -4720,7 +5318,7 @@ const char* PacketHeaderProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -4731,52 +5329,64 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* PacketHeaderProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.PacketHeaderProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required sfixed64 offsetInBlock = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed64ToArray(1, this->_internal_offsetinblock(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed64ToArray(
+            1, this->_internal_offsetinblock(), target);
   }
 
   // required sfixed64 seqno = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed64ToArray(2, this->_internal_seqno(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed64ToArray(
+            2, this->_internal_seqno(), target);
   }
 
   // required bool lastPacketInBlock = 3;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(3, this->_internal_lastpacketinblock(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            3, this->_internal_lastpacketinblock(), target);
   }
 
   // required sfixed32 dataLen = 4;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed32ToArray(4, this->_internal_datalen(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSFixed32ToArray(
+            4, this->_internal_datalen(), target);
   }
 
   // optional bool syncBlock = 5 [default = false];
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(5, this->_internal_syncblock(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteBoolToArray(
+            5, this->_internal_syncblock(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.PacketHeaderProto)
   return target;
 }
 
 size_t PacketHeaderProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.PacketHeaderProto)
   size_t total_size = 0;
 
   if (_internal_has_offsetinblock()) {
@@ -4802,10 +5412,11 @@ size_t PacketHeaderProto::RequiredFieldsByteSizeFallback() const {
   return total_size;
 }
 size_t PacketHeaderProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PacketHeaderProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) ==
+      0) {  // All required fields are present.
     // required sfixed64 offsetInBlock = 1;
     total_size += 1 + 8;
 
@@ -4823,7 +5434,7 @@ size_t PacketHeaderProto::ByteSizeLong() const {
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional bool syncBlock = 5 [default = false];
   cached_has_bits = _has_bits_[0];
@@ -4840,27 +5451,27 @@ size_t PacketHeaderProto::ByteSizeLong() const {
   return total_size;
 }
 
-void PacketHeaderProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PacketHeaderProto)
+void PacketHeaderProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PacketHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   const PacketHeaderProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PacketHeaderProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PacketHeaderProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PacketHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PacketHeaderProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PacketHeaderProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PacketHeaderProto)
     MergeFrom(*source);
   }
 }
 
 void PacketHeaderProto::MergeFrom(const PacketHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PacketHeaderProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000001fu) {
@@ -4884,14 +5495,14 @@ void PacketHeaderProto::MergeFrom(const PacketHeaderProto& from) {
 }
 
 void PacketHeaderProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PacketHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void PacketHeaderProto::CopyFrom(const PacketHeaderProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PacketHeaderProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PacketHeaderProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -4917,43 +5528,43 @@ void PacketHeaderProto::InternalSwap(PacketHeaderProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void PipelineAckProto::InitAsDefaultInstance() {
-}
+void PipelineAckProto::InitAsDefaultInstance() {}
 class PipelineAckProto::_Internal {
  public:
   using HasBits = decltype(std::declval<PipelineAckProto>()._has_bits_);
-  static void set_has_seqno(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_seqno(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
   static void set_has_downstreamacktimenanos(HasBits* has_bits) {
     (*has_bits)[0] |= 2u;
   }
 };
 
 PipelineAckProto::PipelineAckProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.PipelineAckProto)
 }
 PipelineAckProto::PipelineAckProto(const PipelineAckProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_),
       status_(from.status_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  ::memcpy(&seqno_, &from.seqno_,
-    static_cast<size_t>(reinterpret_cast<char*>(&downstreamacktimenanos_) -
-    reinterpret_cast<char*>(&seqno_)) + sizeof(downstreamacktimenanos_));
+  ::memcpy(
+      &seqno_, &from.seqno_,
+      static_cast<size_t>(reinterpret_cast<char*>(&downstreamacktimenanos_) -
+                          reinterpret_cast<char*>(&seqno_)) +
+          sizeof(downstreamacktimenanos_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.PipelineAckProto)
 }
 
 void PipelineAckProto::SharedCtor() {
-  ::memset(&seqno_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&downstreamacktimenanos_) -
-      reinterpret_cast<char*>(&seqno_)) + sizeof(downstreamacktimenanos_));
+  ::memset(
+      &seqno_, 0,
+      static_cast<size_t>(reinterpret_cast<char*>(&downstreamacktimenanos_) -
+                          reinterpret_cast<char*>(&seqno_)) +
+          sizeof(downstreamacktimenanos_));
 }
 
 PipelineAckProto::~PipelineAckProto() {
@@ -4961,37 +5572,40 @@ PipelineAckProto::~PipelineAckProto() {
   SharedDtor();
 }
 
-void PipelineAckProto::SharedDtor() {
-}
+void PipelineAckProto::SharedDtor() {}
 
 void PipelineAckProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const PipelineAckProto& PipelineAckProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PipelineAckProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_PipelineAckProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void PipelineAckProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.PipelineAckProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   status_.Clear();
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
-    ::memset(&seqno_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&downstreamacktimenanos_) -
-        reinterpret_cast<char*>(&seqno_)) + sizeof(downstreamacktimenanos_));
+    ::memset(
+        &seqno_, 0,
+        static_cast<size_t>(reinterpret_cast<char*>(&downstreamacktimenanos_) -
+                            reinterpret_cast<char*>(&seqno_)) +
+            sizeof(downstreamacktimenanos_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* PipelineAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* PipelineAckProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5000,39 +5614,50 @@ const char* PipelineAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
     switch (tag >> 3) {
       // required sint64 seqno = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_seqno(&has_bits);
           seqno_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarintZigZag64(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // repeated .Hdfs.Internal.Status status = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           ptr -= 1;
           do {
             ptr += 1;
-            ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+            ::PROTOBUF_NAMESPACE_ID::uint64 val =
+                ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
             CHK_(ptr);
             if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::Status_IsValid(val))) {
               _internal_add_status(static_cast<::Hdfs::Internal::Status>(val));
             } else {
-              ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(2, val, mutable_unknown_fields());
+              ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                  2, val, mutable_unknown_fields());
             }
             if (!ctx->DataAvailable(ptr)) break;
           } while (::PROTOBUF_NAMESPACE_ID::internal::ExpectTag<16>(ptr));
         } else if (static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18) {
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedEnumParser(_internal_mutable_status(), ptr, ctx, ::Hdfs::Internal::Status_IsValid, &_internal_metadata_, 2);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::PackedEnumParser(
+              _internal_mutable_status(), ptr, ctx,
+              ::Hdfs::Internal::Status_IsValid, &_internal_metadata_, 2);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint64 downstreamAckTimeNanos = 3 [default = 0];
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 24)) {
           _Internal::set_has_downstreamacktimenanos(&has_bits);
-          downstreamacktimenanos_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          downstreamacktimenanos_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5045,7 +5670,7 @@ const char* PipelineAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5056,59 +5681,68 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* PipelineAckProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.PipelineAckProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required sint64 seqno = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSInt64ToArray(1, this->_internal_seqno(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteSInt64ToArray(
+            1, this->_internal_seqno(), target);
   }
 
   // repeated .Hdfs.Internal.Status status = 2;
   for (int i = 0, n = this->_internal_status_size(); i < n; i++) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-        2, this->_internal_status(i), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            2, this->_internal_status(i), target);
   }
 
   // optional uint64 downstreamAckTimeNanos = 3 [default = 0];
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(3, this->_internal_downstreamacktimenanos(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            3, this->_internal_downstreamacktimenanos(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.PipelineAckProto)
   return target;
 }
 
 size_t PipelineAckProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.PipelineAckProto)
   size_t total_size = 0;
 
   // required sint64 seqno = 1;
   if (_internal_has_seqno()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SInt64Size(
-        this->_internal_seqno());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::SInt64Size(
+                this->_internal_seqno());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // repeated .Hdfs.Internal.Status status = 2;
   {
     size_t data_size = 0;
-    unsigned int count = static_cast<unsigned int>(this->_internal_status_size());for (unsigned int i = 0; i < count; i++) {
+    unsigned int count =
+        static_cast<unsigned int>(this->_internal_status_size());
+    for (unsigned int i = 0; i < count; i++) {
       data_size += ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
-        this->_internal_status(static_cast<int>(i)));
+          this->_internal_status(static_cast<int>(i)));
     }
     total_size += (1UL * count) + data_size;
   }
@@ -5116,9 +5750,9 @@ size_t PipelineAckProto::ByteSizeLong() const {
   // optional uint64 downstreamAckTimeNanos = 3 [default = 0];
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000002u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_downstreamacktimenanos());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_downstreamacktimenanos());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5131,26 +5765,25 @@ size_t PipelineAckProto::ByteSizeLong() const {
 }
 
 void PipelineAckProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.PipelineAckProto)
   GOOGLE_DCHECK_NE(&from, this);
   const PipelineAckProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PipelineAckProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<PipelineAckProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PipelineAckProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.PipelineAckProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PipelineAckProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.PipelineAckProto)
     MergeFrom(*source);
   }
 }
 
 void PipelineAckProto::MergeFrom(const PipelineAckProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.PipelineAckProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   status_.MergeFrom(from.status_);
   cached_has_bits = from._has_bits_[0];
@@ -5166,14 +5799,14 @@ void PipelineAckProto::MergeFrom(const PipelineAckProto& from) {
 }
 
 void PipelineAckProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.PipelineAckProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void PipelineAckProto::CopyFrom(const PipelineAckProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PipelineAckProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.PipelineAckProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5197,36 +5830,36 @@ void PipelineAckProto::InternalSwap(PipelineAckProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void ReadOpChecksumInfoProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_ReadOpChecksumInfoProto_default_instance_._instance.get_mutable()->checksum_ = const_cast< ::Hdfs::Internal::ChecksumProto*>(
+  ::Hdfs::Internal::_ReadOpChecksumInfoProto_default_instance_._instance
+      .get_mutable()
+      ->checksum_ = const_cast<::Hdfs::Internal::ChecksumProto*>(
       ::Hdfs::Internal::ChecksumProto::internal_default_instance());
 }
 class ReadOpChecksumInfoProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ReadOpChecksumInfoProto>()._has_bits_);
-  static const ::Hdfs::Internal::ChecksumProto& checksum(const ReadOpChecksumInfoProto* msg);
-  static void set_has_checksum(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_chunkoffset(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static const ::Hdfs::Internal::ChecksumProto& checksum(
+      const ReadOpChecksumInfoProto* msg);
+  static void set_has_checksum(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_chunkoffset(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
 };
 
 const ::Hdfs::Internal::ChecksumProto&
-ReadOpChecksumInfoProto::_Internal::checksum(const ReadOpChecksumInfoProto* msg) {
+ReadOpChecksumInfoProto::_Internal::checksum(
+    const ReadOpChecksumInfoProto* msg) {
   return *msg->checksum_;
 }
 ReadOpChecksumInfoProto::ReadOpChecksumInfoProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ReadOpChecksumInfoProto)
 }
-ReadOpChecksumInfoProto::ReadOpChecksumInfoProto(const ReadOpChecksumInfoProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+ReadOpChecksumInfoProto::ReadOpChecksumInfoProto(
+    const ReadOpChecksumInfoProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -5240,10 +5873,12 @@ ReadOpChecksumInfoProto::ReadOpChecksumInfoProto(const ReadOpChecksumInfoProto& 
 }
 
 void ReadOpChecksumInfoProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base);
-  ::memset(&checksum_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&chunkoffset_) -
-      reinterpret_cast<char*>(&checksum_)) + sizeof(chunkoffset_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base);
+  ::memset(&checksum_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&chunkoffset_) -
+                               reinterpret_cast<char*>(&checksum_)) +
+               sizeof(chunkoffset_));
 }
 
 ReadOpChecksumInfoProto::~ReadOpChecksumInfoProto() {
@@ -5259,16 +5894,16 @@ void ReadOpChecksumInfoProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ReadOpChecksumInfoProto& ReadOpChecksumInfoProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ReadOpChecksumInfoProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ReadOpChecksumInfoProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
@@ -5280,8 +5915,10 @@ void ReadOpChecksumInfoProto::Clear() {
   _internal_metadata_.Clear();
 }
 
-const char* ReadOpChecksumInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ReadOpChecksumInfoProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5290,18 +5927,22 @@ const char* ReadOpChecksumInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
     switch (tag >> 3) {
       // required .Hdfs.Internal.ChecksumProto checksum = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 10)) {
           ptr = ctx->ParseMessage(_internal_mutable_checksum(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 chunkOffset = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_chunkoffset(&has_bits);
           chunkoffset_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5314,7 +5955,7 @@ const char* ReadOpChecksumInfoProto::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5325,75 +5966,80 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ReadOpChecksumInfoProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.ChecksumProto checksum = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        1, _Internal::checksum(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            1, _Internal::checksum(this), target, stream);
   }
 
   // required uint64 chunkOffset = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_chunkoffset(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_chunkoffset(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ReadOpChecksumInfoProto)
   return target;
 }
 
 size_t ReadOpChecksumInfoProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   size_t total_size = 0;
 
   if (_internal_has_checksum()) {
     // required .Hdfs.Internal.ChecksumProto checksum = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *checksum_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *checksum_);
   }
 
   if (_internal_has_chunkoffset()) {
     // required uint64 chunkOffset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_chunkoffset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_chunkoffset());
   }
 
   return total_size;
 }
 size_t ReadOpChecksumInfoProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000003) ^ 0x00000003) ==
+      0) {  // All required fields are present.
     // required .Hdfs.Internal.ChecksumProto checksum = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-        *checksum_);
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                *checksum_);
 
     // required uint64 chunkOffset = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_chunkoffset());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_chunkoffset());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -5404,32 +6050,34 @@ size_t ReadOpChecksumInfoProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ReadOpChecksumInfoProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+void ReadOpChecksumInfoProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ReadOpChecksumInfoProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ReadOpChecksumInfoProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ReadOpChecksumInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ReadOpChecksumInfoProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ReadOpChecksumInfoProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ReadOpChecksumInfoProto)
     MergeFrom(*source);
   }
 }
 
 void ReadOpChecksumInfoProto::MergeFrom(const ReadOpChecksumInfoProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x00000003u) {
     if (cached_has_bits & 0x00000001u) {
-      _internal_mutable_checksum()->::Hdfs::Internal::ChecksumProto::MergeFrom(from._internal_checksum());
+      _internal_mutable_checksum()->::Hdfs::Internal::ChecksumProto::MergeFrom(
+          from._internal_checksum());
     }
     if (cached_has_bits & 0x00000002u) {
       chunkoffset_ = from.chunkoffset_;
@@ -5438,15 +6086,16 @@ void ReadOpChecksumInfoProto::MergeFrom(const ReadOpChecksumInfoProto& from) {
   }
 }
 
-void ReadOpChecksumInfoProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+void ReadOpChecksumInfoProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ReadOpChecksumInfoProto::CopyFrom(const ReadOpChecksumInfoProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ReadOpChecksumInfoProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5472,89 +6121,108 @@ void ReadOpChecksumInfoProto::InternalSwap(ReadOpChecksumInfoProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
 void BlockOpResponseProto::InitAsDefaultInstance() {
-  ::Hdfs::Internal::_BlockOpResponseProto_default_instance_._instance.get_mutable()->checksumresponse_ = const_cast< ::Hdfs::Internal::OpBlockChecksumResponseProto*>(
-      ::Hdfs::Internal::OpBlockChecksumResponseProto::internal_default_instance());
-  ::Hdfs::Internal::_BlockOpResponseProto_default_instance_._instance.get_mutable()->readopchecksuminfo_ = const_cast< ::Hdfs::Internal::ReadOpChecksumInfoProto*>(
+  ::Hdfs::Internal::_BlockOpResponseProto_default_instance_._instance
+      .get_mutable()
+      ->checksumresponse_ =
+      const_cast<::Hdfs::Internal::OpBlockChecksumResponseProto*>(
+          ::Hdfs::Internal::OpBlockChecksumResponseProto::
+              internal_default_instance());
+  ::Hdfs::Internal::_BlockOpResponseProto_default_instance_._instance
+      .get_mutable()
+      ->readopchecksuminfo_ = const_cast<
+      ::Hdfs::Internal::ReadOpChecksumInfoProto*>(
       ::Hdfs::Internal::ReadOpChecksumInfoProto::internal_default_instance());
 }
 class BlockOpResponseProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlockOpResponseProto>()._has_bits_);
-  static void set_has_status(HasBits* has_bits) {
-    (*has_bits)[0] |= 16u;
-  }
-  static void set_has_firstbadlink(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static const ::Hdfs::Internal::OpBlockChecksumResponseProto& checksumresponse(const BlockOpResponseProto* msg);
+  static void set_has_status(HasBits* has_bits) { (*has_bits)[0] |= 16u; }
+  static void set_has_firstbadlink(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static const ::Hdfs::Internal::OpBlockChecksumResponseProto& checksumresponse(
+      const BlockOpResponseProto* msg);
   static void set_has_checksumresponse(HasBits* has_bits) {
     (*has_bits)[0] |= 4u;
   }
-  static const ::Hdfs::Internal::ReadOpChecksumInfoProto& readopchecksuminfo(const BlockOpResponseProto* msg);
+  static const ::Hdfs::Internal::ReadOpChecksumInfoProto& readopchecksuminfo(
+      const BlockOpResponseProto* msg);
   static void set_has_readopchecksuminfo(HasBits* has_bits) {
     (*has_bits)[0] |= 8u;
   }
-  static void set_has_message(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
+  static void set_has_message(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
   static void set_has_shortcircuitaccessversion(HasBits* has_bits) {
     (*has_bits)[0] |= 32u;
   }
 };
 
 const ::Hdfs::Internal::OpBlockChecksumResponseProto&
-BlockOpResponseProto::_Internal::checksumresponse(const BlockOpResponseProto* msg) {
+BlockOpResponseProto::_Internal::checksumresponse(
+    const BlockOpResponseProto* msg) {
   return *msg->checksumresponse_;
 }
 const ::Hdfs::Internal::ReadOpChecksumInfoProto&
-BlockOpResponseProto::_Internal::readopchecksuminfo(const BlockOpResponseProto* msg) {
+BlockOpResponseProto::_Internal::readopchecksuminfo(
+    const BlockOpResponseProto* msg) {
   return *msg->readopchecksuminfo_;
 }
 BlockOpResponseProto::BlockOpResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.BlockOpResponseProto)
 }
 BlockOpResponseProto::BlockOpResponseProto(const BlockOpResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  firstbadlink_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  firstbadlink_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_firstbadlink()) {
-    firstbadlink_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.firstbadlink_);
+    firstbadlink_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.firstbadlink_);
   }
-  message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_message()) {
-    message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
+    message_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.message_);
   }
   if (from._internal_has_checksumresponse()) {
-    checksumresponse_ = new ::Hdfs::Internal::OpBlockChecksumResponseProto(*from.checksumresponse_);
+    checksumresponse_ = new ::Hdfs::Internal::OpBlockChecksumResponseProto(
+        *from.checksumresponse_);
   } else {
     checksumresponse_ = nullptr;
   }
   if (from._internal_has_readopchecksuminfo()) {
-    readopchecksuminfo_ = new ::Hdfs::Internal::ReadOpChecksumInfoProto(*from.readopchecksuminfo_);
+    readopchecksuminfo_ = new ::Hdfs::Internal::ReadOpChecksumInfoProto(
+        *from.readopchecksuminfo_);
   } else {
     readopchecksuminfo_ = nullptr;
   }
-  ::memcpy(&status_, &from.status_,
-    static_cast<size_t>(reinterpret_cast<char*>(&shortcircuitaccessversion_) -
-    reinterpret_cast<char*>(&status_)) + sizeof(shortcircuitaccessversion_));
+  ::memcpy(
+      &status_, &from.status_,
+      static_cast<size_t>(reinterpret_cast<char*>(&shortcircuitaccessversion_) -
+                          reinterpret_cast<char*>(&status_)) +
+          sizeof(shortcircuitaccessversion_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.BlockOpResponseProto)
 }
 
 void BlockOpResponseProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlockOpResponseProto_datatransfer_2eproto.base);
-  firstbadlink_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  message_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&checksumresponse_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&shortcircuitaccessversion_) -
-      reinterpret_cast<char*>(&checksumresponse_)) + sizeof(shortcircuitaccessversion_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_BlockOpResponseProto_datatransfer_2eproto.base);
+  firstbadlink_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(
+      &checksumresponse_, 0,
+      static_cast<size_t>(reinterpret_cast<char*>(&shortcircuitaccessversion_) -
+                          reinterpret_cast<char*>(&checksumresponse_)) +
+          sizeof(shortcircuitaccessversion_));
 }
 
 BlockOpResponseProto::~BlockOpResponseProto() {
@@ -5563,8 +6231,10 @@ BlockOpResponseProto::~BlockOpResponseProto() {
 }
 
 void BlockOpResponseProto::SharedDtor() {
-  firstbadlink_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  message_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  firstbadlink_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  message_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete checksumresponse_;
   if (this != internal_default_instance()) delete readopchecksuminfo_;
 }
@@ -5573,16 +6243,16 @@ void BlockOpResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const BlockOpResponseProto& BlockOpResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlockOpResponseProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_BlockOpResponseProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void BlockOpResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockOpResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.BlockOpResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
@@ -5602,16 +6272,20 @@ void BlockOpResponseProto::Clear() {
     }
   }
   if (cached_has_bits & 0x00000030u) {
-    ::memset(&status_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&shortcircuitaccessversion_) -
-        reinterpret_cast<char*>(&status_)) + sizeof(shortcircuitaccessversion_));
+    ::memset(&status_, 0,
+             static_cast<size_t>(
+                 reinterpret_cast<char*>(&shortcircuitaccessversion_) -
+                 reinterpret_cast<char*>(&status_)) +
+                 sizeof(shortcircuitaccessversion_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* BlockOpResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* BlockOpResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5620,59 +6294,79 @@ const char* BlockOpResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
     switch (tag >> 3) {
       // required .Hdfs.Internal.Status status = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
           if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::Status_IsValid(val))) {
             _internal_set_status(static_cast<::Hdfs::Internal::Status>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string firstBadLink = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 18)) {
           auto str = _internal_mutable_firstbadlink();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.BlockOpResponseProto.firstBadLink");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.BlockOpResponseProto.firstBadLink");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
-      // optional .Hdfs.Internal.OpBlockChecksumResponseProto checksumResponse = 3;
+      // optional .Hdfs.Internal.OpBlockChecksumResponseProto checksumResponse =
+      // 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           ptr = ctx->ParseMessage(_internal_mutable_checksumresponse(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.ReadOpChecksumInfoProto readOpChecksumInfo = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 34)) {
           ptr = ctx->ParseMessage(_internal_mutable_readopchecksuminfo(), ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional string message = 5;
       case 5:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 42)) {
           auto str = _internal_mutable_message();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
-          #ifndef NDEBUG
-          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(str, "Hdfs.Internal.BlockOpResponseProto.message");
-          #endif  // !NDEBUG
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
+#ifndef NDEBUG
+          ::PROTOBUF_NAMESPACE_ID::internal::VerifyUTF8(
+              str, "Hdfs.Internal.BlockOpResponseProto.message");
+#endif  // !NDEBUG
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional uint32 shortCircuitAccessVersion = 6;
       case 6:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 48)) {
           _Internal::set_has_shortcircuitaccessversion(&has_bits);
-          shortcircuitaccessversion_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+          shortcircuitaccessversion_ =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -5685,7 +6379,7 @@ const char* BlockOpResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -5696,118 +6390,126 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* BlockOpResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.BlockOpResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.Status status = 1;
   if (cached_has_bits & 0x00000010u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_status(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_status(), target);
   }
 
   // optional string firstBadLink = 2;
   if (cached_has_bits & 0x00000001u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_firstbadlink().data(), static_cast<int>(this->_internal_firstbadlink().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.BlockOpResponseProto.firstBadLink");
-    target = stream->WriteStringMaybeAliased(
-        2, this->_internal_firstbadlink(), target);
+        this->_internal_firstbadlink().data(),
+        static_cast<int>(this->_internal_firstbadlink().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.BlockOpResponseProto.firstBadLink");
+    target = stream->WriteStringMaybeAliased(2, this->_internal_firstbadlink(),
+                                             target);
   }
 
   // optional .Hdfs.Internal.OpBlockChecksumResponseProto checksumResponse = 3;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        3, _Internal::checksumresponse(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            3, _Internal::checksumresponse(this), target, stream);
   }
 
   // optional .Hdfs.Internal.ReadOpChecksumInfoProto readOpChecksumInfo = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::
-      InternalWriteMessage(
-        4, _Internal::readopchecksuminfo(this), target, stream);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::InternalWriteMessage(
+            4, _Internal::readopchecksuminfo(this), target, stream);
   }
 
   // optional string message = 5;
   if (cached_has_bits & 0x00000002u) {
     ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::VerifyUTF8StringNamedField(
-      this->_internal_message().data(), static_cast<int>(this->_internal_message().length()),
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
-      "Hdfs.Internal.BlockOpResponseProto.message");
-    target = stream->WriteStringMaybeAliased(
-        5, this->_internal_message(), target);
+        this->_internal_message().data(),
+        static_cast<int>(this->_internal_message().length()),
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::SERIALIZE,
+        "Hdfs.Internal.BlockOpResponseProto.message");
+    target =
+        stream->WriteStringMaybeAliased(5, this->_internal_message(), target);
   }
 
   // optional uint32 shortCircuitAccessVersion = 6;
   if (cached_has_bits & 0x00000020u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(6, this->_internal_shortcircuitaccessversion(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            6, this->_internal_shortcircuitaccessversion(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.BlockOpResponseProto)
   return target;
 }
 
 size_t BlockOpResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockOpResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.BlockOpResponseProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.Status status = 1;
   if (_internal_has_status()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_status());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_status());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     // optional string firstBadLink = 2;
     if (cached_has_bits & 0x00000001u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-          this->_internal_firstbadlink());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                  this->_internal_firstbadlink());
     }
 
     // optional string message = 5;
     if (cached_has_bits & 0x00000002u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
-          this->_internal_message());
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::StringSize(
+                  this->_internal_message());
     }
 
-    // optional .Hdfs.Internal.OpBlockChecksumResponseProto checksumResponse = 3;
+    // optional .Hdfs.Internal.OpBlockChecksumResponseProto checksumResponse =
+    // 3;
     if (cached_has_bits & 0x00000004u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *checksumresponse_);
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                  *checksumresponse_);
     }
 
     // optional .Hdfs.Internal.ReadOpChecksumInfoProto readOpChecksumInfo = 4;
     if (cached_has_bits & 0x00000008u) {
-      total_size += 1 +
-        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
-          *readopchecksuminfo_);
+      total_size +=
+          1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::MessageSize(
+                  *readopchecksuminfo_);
     }
-
   }
   // optional uint32 shortCircuitAccessVersion = 6;
   if (cached_has_bits & 0x00000020u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_shortcircuitaccessversion());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_shortcircuitaccessversion());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -5819,43 +6521,52 @@ size_t BlockOpResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void BlockOpResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockOpResponseProto)
+void BlockOpResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.BlockOpResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const BlockOpResponseProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<BlockOpResponseProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockOpResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.BlockOpResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockOpResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.BlockOpResponseProto)
     MergeFrom(*source);
   }
 }
 
 void BlockOpResponseProto::MergeFrom(const BlockOpResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockOpResponseProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.BlockOpResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000003fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      firstbadlink_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.firstbadlink_);
+      firstbadlink_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.firstbadlink_);
     }
     if (cached_has_bits & 0x00000002u) {
       _has_bits_[0] |= 0x00000002u;
-      message_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.message_);
+      message_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.message_);
     }
     if (cached_has_bits & 0x00000004u) {
-      _internal_mutable_checksumresponse()->::Hdfs::Internal::OpBlockChecksumResponseProto::MergeFrom(from._internal_checksumresponse());
+      _internal_mutable_checksumresponse()
+          ->::Hdfs::Internal::OpBlockChecksumResponseProto::MergeFrom(
+              from._internal_checksumresponse());
     }
     if (cached_has_bits & 0x00000008u) {
-      _internal_mutable_readopchecksuminfo()->::Hdfs::Internal::ReadOpChecksumInfoProto::MergeFrom(from._internal_readopchecksuminfo());
+      _internal_mutable_readopchecksuminfo()
+          ->::Hdfs::Internal::ReadOpChecksumInfoProto::MergeFrom(
+              from._internal_readopchecksuminfo());
     }
     if (cached_has_bits & 0x00000010u) {
       status_ = from.status_;
@@ -5867,15 +6578,16 @@ void BlockOpResponseProto::MergeFrom(const BlockOpResponseProto& from) {
   }
 }
 
-void BlockOpResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockOpResponseProto)
+void BlockOpResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.BlockOpResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void BlockOpResponseProto::CopyFrom(const BlockOpResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockOpResponseProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.BlockOpResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -5896,10 +6608,14 @@ void BlockOpResponseProto::InternalSwap(BlockOpResponseProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  firstbadlink_.Swap(&other->firstbadlink_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
-  message_.Swap(&other->message_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  firstbadlink_.Swap(
+      &other->firstbadlink_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
+  message_.Swap(
+      &other->message_,
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      GetArenaNoVirtual());
   swap(checksumresponse_, other->checksumresponse_);
   swap(readopchecksuminfo_, other->readopchecksuminfo_);
   swap(status_, other->status_);
@@ -5910,26 +6626,22 @@ void BlockOpResponseProto::InternalSwap(BlockOpResponseProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void ClientReadStatusProto::InitAsDefaultInstance() {
-}
+void ClientReadStatusProto::InitAsDefaultInstance() {}
 class ClientReadStatusProto::_Internal {
  public:
   using HasBits = decltype(std::declval<ClientReadStatusProto>()._has_bits_);
-  static void set_has_status(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_status(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 ClientReadStatusProto::ClientReadStatusProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.ClientReadStatusProto)
 }
 ClientReadStatusProto::ClientReadStatusProto(const ClientReadStatusProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -5937,40 +6649,39 @@ ClientReadStatusProto::ClientReadStatusProto(const ClientReadStatusProto& from)
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.ClientReadStatusProto)
 }
 
-void ClientReadStatusProto::SharedCtor() {
-  status_ = 0;
-}
+void ClientReadStatusProto::SharedCtor() { status_ = 0; }
 
 ClientReadStatusProto::~ClientReadStatusProto() {
   // @@protoc_insertion_point(destructor:Hdfs.Internal.ClientReadStatusProto)
   SharedDtor();
 }
 
-void ClientReadStatusProto::SharedDtor() {
-}
+void ClientReadStatusProto::SharedDtor() {}
 
 void ClientReadStatusProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const ClientReadStatusProto& ClientReadStatusProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ClientReadStatusProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_ClientReadStatusProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void ClientReadStatusProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ClientReadStatusProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.ClientReadStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   status_ = 0;
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* ClientReadStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* ClientReadStatusProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -5979,15 +6690,19 @@ const char* ClientReadStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
     switch (tag >> 3) {
       // required .Hdfs.Internal.Status status = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
           if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::Status_IsValid(val))) {
             _internal_set_status(static_cast<::Hdfs::Internal::Status>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6000,7 +6715,7 @@ const char* ClientReadStatusProto::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6011,39 +6726,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* ClientReadStatusProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.ClientReadStatusProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.Status status = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_status(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_status(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.ClientReadStatusProto)
   return target;
 }
 
 size_t ClientReadStatusProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ClientReadStatusProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.ClientReadStatusProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.Status status = 1;
   if (_internal_has_status()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_status());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_status());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -6054,42 +6773,44 @@ size_t ClientReadStatusProto::ByteSizeLong() const {
   return total_size;
 }
 
-void ClientReadStatusProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ClientReadStatusProto)
+void ClientReadStatusProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.ClientReadStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   const ClientReadStatusProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<ClientReadStatusProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ClientReadStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.ClientReadStatusProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ClientReadStatusProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.ClientReadStatusProto)
     MergeFrom(*source);
   }
 }
 
 void ClientReadStatusProto::MergeFrom(const ClientReadStatusProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ClientReadStatusProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.ClientReadStatusProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_status()) {
     _internal_set_status(from._internal_status());
   }
 }
 
-void ClientReadStatusProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ClientReadStatusProto)
+void ClientReadStatusProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.ClientReadStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void ClientReadStatusProto::CopyFrom(const ClientReadStatusProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ClientReadStatusProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.ClientReadStatusProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6111,26 +6832,22 @@ void ClientReadStatusProto::InternalSwap(ClientReadStatusProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void DNTransferAckProto::InitAsDefaultInstance() {
-}
+void DNTransferAckProto::InitAsDefaultInstance() {}
 class DNTransferAckProto::_Internal {
  public:
   using HasBits = decltype(std::declval<DNTransferAckProto>()._has_bits_);
-  static void set_has_status(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
+  static void set_has_status(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
 };
 
 DNTransferAckProto::DNTransferAckProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.DNTransferAckProto)
 }
 DNTransferAckProto::DNTransferAckProto(const DNTransferAckProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
@@ -6138,40 +6855,39 @@ DNTransferAckProto::DNTransferAckProto(const DNTransferAckProto& from)
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.DNTransferAckProto)
 }
 
-void DNTransferAckProto::SharedCtor() {
-  status_ = 0;
-}
+void DNTransferAckProto::SharedCtor() { status_ = 0; }
 
 DNTransferAckProto::~DNTransferAckProto() {
   // @@protoc_insertion_point(destructor:Hdfs.Internal.DNTransferAckProto)
   SharedDtor();
 }
 
-void DNTransferAckProto::SharedDtor() {
-}
+void DNTransferAckProto::SharedDtor() {}
 
 void DNTransferAckProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
 const DNTransferAckProto& DNTransferAckProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DNTransferAckProto_datatransfer_2eproto.base);
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_DNTransferAckProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void DNTransferAckProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DNTransferAckProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.DNTransferAckProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   status_ = 0;
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* DNTransferAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* DNTransferAckProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -6180,15 +6896,19 @@ const char* DNTransferAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
     switch (tag >> 3) {
       // required .Hdfs.Internal.Status status = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
           if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::Status_IsValid(val))) {
             _internal_set_status(static_cast<::Hdfs::Internal::Status>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(1, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                1, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6201,7 +6921,7 @@ const char* DNTransferAckProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6212,39 +6932,43 @@ failure:
 }
 
 ::PROTOBUF_NAMESPACE_ID::uint8* DNTransferAckProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.DNTransferAckProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required .Hdfs.Internal.Status status = 1;
   if (cached_has_bits & 0x00000001u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      1, this->_internal_status(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            1, this->_internal_status(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.DNTransferAckProto)
   return target;
 }
 
 size_t DNTransferAckProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DNTransferAckProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.DNTransferAckProto)
   size_t total_size = 0;
 
   // required .Hdfs.Internal.Status status = 1;
   if (_internal_has_status()) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_status());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_status());
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
     return ::PROTOBUF_NAMESPACE_ID::internal::ComputeUnknownFieldsSize(
@@ -6255,42 +6979,44 @@ size_t DNTransferAckProto::ByteSizeLong() const {
   return total_size;
 }
 
-void DNTransferAckProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DNTransferAckProto)
+void DNTransferAckProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.DNTransferAckProto)
   GOOGLE_DCHECK_NE(&from, this);
   const DNTransferAckProto* source =
       ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<DNTransferAckProto>(
           &from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DNTransferAckProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.DNTransferAckProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DNTransferAckProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.DNTransferAckProto)
     MergeFrom(*source);
   }
 }
 
 void DNTransferAckProto::MergeFrom(const DNTransferAckProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DNTransferAckProto)
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.DNTransferAckProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   if (from._internal_has_status()) {
     _internal_set_status(from._internal_status());
   }
 }
 
-void DNTransferAckProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DNTransferAckProto)
+void DNTransferAckProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.DNTransferAckProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
 void DNTransferAckProto::CopyFrom(const DNTransferAckProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DNTransferAckProto)
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.DNTransferAckProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6312,54 +7038,53 @@ void DNTransferAckProto::InternalSwap(DNTransferAckProto* other) {
   return GetMetadataStatic();
 }
 
-
 // ===================================================================
 
-void OpBlockChecksumResponseProto::InitAsDefaultInstance() {
-}
+void OpBlockChecksumResponseProto::InitAsDefaultInstance() {}
 class OpBlockChecksumResponseProto::_Internal {
  public:
-  using HasBits = decltype(std::declval<OpBlockChecksumResponseProto>()._has_bits_);
-  static void set_has_bytespercrc(HasBits* has_bits) {
-    (*has_bits)[0] |= 4u;
-  }
-  static void set_has_crcperblock(HasBits* has_bits) {
-    (*has_bits)[0] |= 2u;
-  }
-  static void set_has_md5(HasBits* has_bits) {
-    (*has_bits)[0] |= 1u;
-  }
-  static void set_has_crctype(HasBits* has_bits) {
-    (*has_bits)[0] |= 8u;
-  }
+  using HasBits =
+      decltype(std::declval<OpBlockChecksumResponseProto>()._has_bits_);
+  static void set_has_bytespercrc(HasBits* has_bits) { (*has_bits)[0] |= 4u; }
+  static void set_has_crcperblock(HasBits* has_bits) { (*has_bits)[0] |= 2u; }
+  static void set_has_md5(HasBits* has_bits) { (*has_bits)[0] |= 1u; }
+  static void set_has_crctype(HasBits* has_bits) { (*has_bits)[0] |= 8u; }
 };
 
 OpBlockChecksumResponseProto::OpBlockChecksumResponseProto()
-  : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
+    : ::PROTOBUF_NAMESPACE_ID::Message(), _internal_metadata_(nullptr) {
   SharedCtor();
   // @@protoc_insertion_point(constructor:Hdfs.Internal.OpBlockChecksumResponseProto)
 }
-OpBlockChecksumResponseProto::OpBlockChecksumResponseProto(const OpBlockChecksumResponseProto& from)
-  : ::PROTOBUF_NAMESPACE_ID::Message(),
+OpBlockChecksumResponseProto::OpBlockChecksumResponseProto(
+    const OpBlockChecksumResponseProto& from)
+    : ::PROTOBUF_NAMESPACE_ID::Message(),
       _internal_metadata_(nullptr),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom(from._internal_metadata_);
-  md5_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  md5_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_md5()) {
-    md5_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.md5_);
+    md5_.AssignWithDefault(
+        &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+        from.md5_);
   }
   ::memcpy(&crcperblock_, &from.crcperblock_,
-    static_cast<size_t>(reinterpret_cast<char*>(&crctype_) -
-    reinterpret_cast<char*>(&crcperblock_)) + sizeof(crctype_));
+           static_cast<size_t>(reinterpret_cast<char*>(&crctype_) -
+                               reinterpret_cast<char*>(&crcperblock_)) +
+               sizeof(crctype_));
   // @@protoc_insertion_point(copy_constructor:Hdfs.Internal.OpBlockChecksumResponseProto)
 }
 
 void OpBlockChecksumResponseProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base);
-  md5_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&crcperblock_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&crctype_) -
-      reinterpret_cast<char*>(&crcperblock_)) + sizeof(crctype_));
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base);
+  md5_.UnsafeSetDefault(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  ::memset(&crcperblock_, 0,
+           static_cast<size_t>(reinterpret_cast<char*>(&crctype_) -
+                               reinterpret_cast<char*>(&crcperblock_)) +
+               sizeof(crctype_));
 }
 
 OpBlockChecksumResponseProto::~OpBlockChecksumResponseProto() {
@@ -6368,39 +7093,44 @@ OpBlockChecksumResponseProto::~OpBlockChecksumResponseProto() {
 }
 
 void OpBlockChecksumResponseProto::SharedDtor() {
-  md5_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+  md5_.DestroyNoArena(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 void OpBlockChecksumResponseProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const OpBlockChecksumResponseProto& OpBlockChecksumResponseProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base);
+const OpBlockChecksumResponseProto&
+OpBlockChecksumResponseProto::default_instance() {
+  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(
+      &::scc_info_OpBlockChecksumResponseProto_datatransfer_2eproto.base);
   return *internal_default_instance();
 }
 
-
 void OpBlockChecksumResponseProto::Clear() {
-// @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+  // @@protoc_insertion_point(message_clear_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
     md5_.ClearNonDefaultToEmptyNoArena();
   }
   if (cached_has_bits & 0x0000000eu) {
-    ::memset(&crcperblock_, 0, static_cast<size_t>(
-        reinterpret_cast<char*>(&crctype_) -
-        reinterpret_cast<char*>(&crcperblock_)) + sizeof(crctype_));
+    ::memset(&crcperblock_, 0,
+             static_cast<size_t>(reinterpret_cast<char*>(&crctype_) -
+                                 reinterpret_cast<char*>(&crcperblock_)) +
+                 sizeof(crctype_));
   }
   _has_bits_.Clear();
   _internal_metadata_.Clear();
 }
 
-const char* OpBlockChecksumResponseProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
-#define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
+const char* OpBlockChecksumResponseProto::_InternalParse(
+    const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
+#define CHK_(x) \
+  if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
@@ -6409,39 +7139,52 @@ const char* OpBlockChecksumResponseProto::_InternalParse(const char* ptr, ::PROT
     switch (tag >> 3) {
       // required uint32 bytesPerCrc = 1;
       case 1:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 8)) {
           _Internal::set_has_bytespercrc(&has_bits);
           bytespercrc_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required uint64 crcPerBlock = 2;
       case 2:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 16)) {
           _Internal::set_has_crcperblock(&has_bits);
           crcperblock_ = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // required bytes md5 = 3;
       case 3:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 26)) {
           auto str = _internal_mutable_md5();
-          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(str, ptr, ctx);
+          ptr = ::PROTOBUF_NAMESPACE_ID::internal::InlineGreedyStringParser(
+              str, ptr, ctx);
           CHK_(ptr);
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       // optional .Hdfs.Internal.ChecksumTypeProto crcType = 4;
       case 4:
-        if (PROTOBUF_PREDICT_TRUE(static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
-          ::PROTOBUF_NAMESPACE_ID::uint64 val = ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
+        if (PROTOBUF_PREDICT_TRUE(
+                static_cast<::PROTOBUF_NAMESPACE_ID::uint8>(tag) == 32)) {
+          ::PROTOBUF_NAMESPACE_ID::uint64 val =
+              ::PROTOBUF_NAMESPACE_ID::internal::ReadVarint(&ptr);
           CHK_(ptr);
-          if (PROTOBUF_PREDICT_TRUE(::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
-            _internal_set_crctype(static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
+          if (PROTOBUF_PREDICT_TRUE(
+                  ::Hdfs::Internal::ChecksumTypeProto_IsValid(val))) {
+            _internal_set_crctype(
+                static_cast<::Hdfs::Internal::ChecksumTypeProto>(val));
           } else {
-            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(4, val, mutable_unknown_fields());
+            ::PROTOBUF_NAMESPACE_ID::internal::WriteVarint(
+                4, val, mutable_unknown_fields());
           }
-        } else goto handle_unusual;
+        } else
+          goto handle_unusual;
         continue;
       default: {
       handle_unusual:
@@ -6454,7 +7197,7 @@ const char* OpBlockChecksumResponseProto::_InternalParse(const char* ptr, ::PROT
         continue;
       }
     }  // switch
-  }  // while
+  }    // while
 success:
   _has_bits_.Or(has_bits);
   return ptr;
@@ -6464,105 +7207,114 @@ failure:
 #undef CHK_
 }
 
-::PROTOBUF_NAMESPACE_ID::uint8* OpBlockChecksumResponseProto::_InternalSerialize(
-    ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
+::PROTOBUF_NAMESPACE_ID::uint8*
+OpBlockChecksumResponseProto::_InternalSerialize(
+    ::PROTOBUF_NAMESPACE_ID::uint8* target,
+    ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const {
   // @@protoc_insertion_point(serialize_to_array_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = _has_bits_[0];
   // required uint32 bytesPerCrc = 1;
   if (cached_has_bits & 0x00000004u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(1, this->_internal_bytespercrc(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt32ToArray(
+            1, this->_internal_bytespercrc(), target);
   }
 
   // required uint64 crcPerBlock = 2;
   if (cached_has_bits & 0x00000002u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(2, this->_internal_crcperblock(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteUInt64ToArray(
+            2, this->_internal_crcperblock(), target);
   }
 
   // required bytes md5 = 3;
   if (cached_has_bits & 0x00000001u) {
-    target = stream->WriteBytesMaybeAliased(
-        3, this->_internal_md5(), target);
+    target = stream->WriteBytesMaybeAliased(3, this->_internal_md5(), target);
   }
 
   // optional .Hdfs.Internal.ChecksumTypeProto crcType = 4;
   if (cached_has_bits & 0x00000008u) {
     target = stream->EnsureSpace(target);
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
-      4, this->_internal_crctype(), target);
+    target =
+        ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::WriteEnumToArray(
+            4, this->_internal_crctype(), target);
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
-    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::InternalSerializeUnknownFieldsToArray(
-        _internal_metadata_.unknown_fields(), target, stream);
+    target = ::PROTOBUF_NAMESPACE_ID::internal::WireFormat::
+        InternalSerializeUnknownFieldsToArray(
+            _internal_metadata_.unknown_fields(), target, stream);
   }
   // @@protoc_insertion_point(serialize_to_array_end:Hdfs.Internal.OpBlockChecksumResponseProto)
   return target;
 }
 
 size_t OpBlockChecksumResponseProto::RequiredFieldsByteSizeFallback() const {
-// @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+  // @@protoc_insertion_point(required_fields_byte_size_fallback_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   size_t total_size = 0;
 
   if (_internal_has_md5()) {
     // required bytes md5 = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_md5());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_md5());
   }
 
   if (_internal_has_crcperblock()) {
     // required uint64 crcPerBlock = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_crcperblock());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_crcperblock());
   }
 
   if (_internal_has_bytespercrc()) {
     // required uint32 bytesPerCrc = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytespercrc());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytespercrc());
   }
 
   return total_size;
 }
 size_t OpBlockChecksumResponseProto::ByteSizeLong() const {
-// @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+  // @@protoc_insertion_point(message_byte_size_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   size_t total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
+  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) ==
+      0) {  // All required fields are present.
     // required bytes md5 = 3;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
-        this->_internal_md5());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::BytesSize(
+                this->_internal_md5());
 
     // required uint64 crcPerBlock = 2;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
-        this->_internal_crcperblock());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt64Size(
+                this->_internal_crcperblock());
 
     // required uint32 bytesPerCrc = 1;
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
-        this->_internal_bytespercrc());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::UInt32Size(
+                this->_internal_bytespercrc());
 
   } else {
     total_size += RequiredFieldsByteSizeFallback();
   }
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
   // Prevent compiler warnings about cached_has_bits being unused
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   // optional .Hdfs.Internal.ChecksumTypeProto crcType = 4;
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000008u) {
-    total_size += 1 +
-      ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(this->_internal_crctype());
+    total_size +=
+        1 + ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::EnumSize(
+                this->_internal_crctype());
   }
 
   if (PROTOBUF_PREDICT_FALSE(_internal_metadata_.have_unknown_fields())) {
@@ -6574,33 +7326,37 @@ size_t OpBlockChecksumResponseProto::ByteSizeLong() const {
   return total_size;
 }
 
-void OpBlockChecksumResponseProto::MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+void OpBlockChecksumResponseProto::MergeFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_merge_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   const OpBlockChecksumResponseProto* source =
-      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<OpBlockChecksumResponseProto>(
-          &from);
+      ::PROTOBUF_NAMESPACE_ID::DynamicCastToGenerated<
+          OpBlockChecksumResponseProto>(&from);
   if (source == nullptr) {
-  // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpBlockChecksumResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_fail:Hdfs.Internal.OpBlockChecksumResponseProto)
     ::PROTOBUF_NAMESPACE_ID::internal::ReflectionOps::Merge(from, this);
   } else {
-  // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpBlockChecksumResponseProto)
+    // @@protoc_insertion_point(generalized_merge_from_cast_success:Hdfs.Internal.OpBlockChecksumResponseProto)
     MergeFrom(*source);
   }
 }
 
-void OpBlockChecksumResponseProto::MergeFrom(const OpBlockChecksumResponseProto& from) {
-// @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+void OpBlockChecksumResponseProto::MergeFrom(
+    const OpBlockChecksumResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_merge_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   GOOGLE_DCHECK_NE(&from, this);
   _internal_metadata_.MergeFrom(from._internal_metadata_);
   ::PROTOBUF_NAMESPACE_ID::uint32 cached_has_bits = 0;
-  (void) cached_has_bits;
+  (void)cached_has_bits;
 
   cached_has_bits = from._has_bits_[0];
   if (cached_has_bits & 0x0000000fu) {
     if (cached_has_bits & 0x00000001u) {
       _has_bits_[0] |= 0x00000001u;
-      md5_.AssignWithDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from.md5_);
+      md5_.AssignWithDefault(
+          &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+          from.md5_);
     }
     if (cached_has_bits & 0x00000002u) {
       crcperblock_ = from.crcperblock_;
@@ -6615,15 +7371,17 @@ void OpBlockChecksumResponseProto::MergeFrom(const OpBlockChecksumResponseProto&
   }
 }
 
-void OpBlockChecksumResponseProto::CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) {
-// @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+void OpBlockChecksumResponseProto::CopyFrom(
+    const ::PROTOBUF_NAMESPACE_ID::Message& from) {
+  // @@protoc_insertion_point(generalized_copy_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
 }
 
-void OpBlockChecksumResponseProto::CopyFrom(const OpBlockChecksumResponseProto& from) {
-// @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
+void OpBlockChecksumResponseProto::CopyFrom(
+    const OpBlockChecksumResponseProto& from) {
+  // @@protoc_insertion_point(class_specific_copy_from_start:Hdfs.Internal.OpBlockChecksumResponseProto)
   if (&from == this) return;
   Clear();
   MergeFrom(from);
@@ -6634,82 +7392,137 @@ bool OpBlockChecksumResponseProto::IsInitialized() const {
   return true;
 }
 
-void OpBlockChecksumResponseProto::InternalSwap(OpBlockChecksumResponseProto* other) {
+void OpBlockChecksumResponseProto::InternalSwap(
+    OpBlockChecksumResponseProto* other) {
   using std::swap;
   _internal_metadata_.Swap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  md5_.Swap(&other->md5_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
-    GetArenaNoVirtual());
+  md5_.Swap(&other->md5_,
+            &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+            GetArenaNoVirtual());
   swap(crcperblock_, other->crcperblock_);
   swap(bytespercrc_, other->bytespercrc_);
   swap(crctype_, other->crctype_);
 }
 
-::PROTOBUF_NAMESPACE_ID::Metadata OpBlockChecksumResponseProto::GetMetadata() const {
+::PROTOBUF_NAMESPACE_ID::Metadata OpBlockChecksumResponseProto::GetMetadata()
+    const {
   return GetMetadataStatic();
 }
-
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace Internal
 }  // namespace Hdfs
 PROTOBUF_NAMESPACE_OPEN
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DataTransferEncryptorMessageProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DataTransferEncryptorMessageProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DataTransferEncryptorMessageProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DataTransferEncryptorMessageProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DataTransferEncryptorMessageProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::DataTransferEncryptorMessageProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BaseHeaderProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BaseHeaderProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BaseHeaderProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BaseHeaderProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BaseHeaderProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BaseHeaderProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ClientOperationHeaderProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ClientOperationHeaderProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ClientOperationHeaderProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ClientOperationHeaderProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ClientOperationHeaderProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ClientOperationHeaderProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::CachingStrategyProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::CachingStrategyProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::CachingStrategyProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::CachingStrategyProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::CachingStrategyProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::CachingStrategyProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpReadBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpReadBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpReadBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpReadBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpReadBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpReadBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ChecksumProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ChecksumProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ChecksumProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ChecksumProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ChecksumProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ChecksumProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpWriteBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpWriteBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpWriteBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpWriteBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpWriteBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpWriteBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpTransferBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpTransferBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpTransferBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpTransferBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpTransferBlockProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpTransferBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpReplaceBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpReplaceBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpReplaceBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpReplaceBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpReplaceBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpReplaceBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpCopyBlockProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpCopyBlockProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpCopyBlockProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpCopyBlockProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpCopyBlockProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpCopyBlockProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpBlockChecksumProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpBlockChecksumProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpBlockChecksumProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpBlockChecksumProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpBlockChecksumProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpBlockChecksumProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpRequestShortCircuitAccessProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpRequestShortCircuitAccessProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpRequestShortCircuitAccessProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpRequestShortCircuitAccessProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpRequestShortCircuitAccessProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<
+      ::Hdfs::Internal::OpRequestShortCircuitAccessProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::PacketHeaderProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::PacketHeaderProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::PacketHeaderProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::PacketHeaderProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::PacketHeaderProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::PacketHeaderProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::PipelineAckProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::PipelineAckProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::PipelineAckProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::PipelineAckProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::PipelineAckProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::PipelineAckProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ReadOpChecksumInfoProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ReadOpChecksumInfoProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ReadOpChecksumInfoProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ReadOpChecksumInfoProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ReadOpChecksumInfoProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ReadOpChecksumInfoProto>(
+      arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::BlockOpResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::BlockOpResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::BlockOpResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::BlockOpResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::BlockOpResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::BlockOpResponseProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::ClientReadStatusProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::ClientReadStatusProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::ClientReadStatusProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::ClientReadStatusProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::ClientReadStatusProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::ClientReadStatusProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::DNTransferAckProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::DNTransferAckProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::DNTransferAckProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::DNTransferAckProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::DNTransferAckProto>(Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::DNTransferAckProto>(arena);
 }
-template<> PROTOBUF_NOINLINE ::Hdfs::Internal::OpBlockChecksumResponseProto* Arena::CreateMaybeMessage< ::Hdfs::Internal::OpBlockChecksumResponseProto >(Arena* arena) {
-  return Arena::CreateInternal< ::Hdfs::Internal::OpBlockChecksumResponseProto >(arena);
+template <>
+PROTOBUF_NOINLINE ::Hdfs::Internal::OpBlockChecksumResponseProto*
+Arena::CreateMaybeMessage<::Hdfs::Internal::OpBlockChecksumResponseProto>(
+    Arena* arena) {
+  return Arena::CreateInternal<::Hdfs::Internal::OpBlockChecksumResponseProto>(
+      arena);
 }
 PROTOBUF_NAMESPACE_CLOSE
 

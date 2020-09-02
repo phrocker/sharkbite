@@ -15,10 +15,10 @@
 #define INCLUDE_DATA_STREAMING_ACCUMULO_STREAMSEEKABLE_H_
 
 #include <cstdlib>
-
 #include <vector>
-#include "../StreamRelocation.h"
+
 #include "../../constructs/Range.h"
+#include "../StreamRelocation.h"
 #include "data/constructs/security/Authorizations.h"
 
 namespace cclient {
@@ -31,63 +31,51 @@ class StreamSeekable : public StreamRelocation {
   std::vector<std::string> columnFamilies;
   bool inclusive;
   cclient::data::security::Authorizations auths;
+
  public:
-
   explicit StreamSeekable(Range &range)
-      :
-      range(std::move(range)),
-      inclusive(false) {
+      : range(std::move(range)), inclusive(false) {}
 
-  }
+  explicit StreamSeekable(Range &range,
+                          std::vector<std::string> &columnFamilies,
+                          bool inclusive)
+      : range(std::move(range)),
+        columnFamilies(columnFamilies),
+        inclusive(inclusive) {}
 
-  explicit StreamSeekable(Range &range, std::vector<std::string> &columnFamilies, bool inclusive)
-      :
-      range(std::move(range)),
-      columnFamilies(columnFamilies),
-      inclusive(inclusive) {
+  explicit StreamSeekable(Range &range,
+                          std::vector<std::string> &columnFamilies,
+                          cclient::data::security::Authorizations &in_auths,
+                          bool inclusive)
+      : range(std::move(range)),
+        columnFamilies(columnFamilies),
+        inclusive(inclusive),
+        auths(std::move(in_auths)) {}
 
-  }
+  explicit StreamSeekable(Range *rng, std::vector<std::string> &columnFamilies,
+                          cclient::data::security::Authorizations *in_auths,
+                          bool inclusive)
+      : range(rng->getStartKey(), rng->getStartKeyInclusive(),
+              rng->getStopKey(), rng->getStartKeyInclusive()),
+        columnFamilies(columnFamilies),
+        inclusive(inclusive),
+        auths(in_auths->getAuthorizations()) {}
 
-  explicit StreamSeekable(Range &range, std::vector<std::string> &columnFamilies, cclient::data::security::Authorizations &in_auths, bool inclusive)
-      :
-      range(std::move(range)),
-      columnFamilies(columnFamilies),
-      inclusive(inclusive),
-      auths(std::move(in_auths)) {
-
-  }
-
-  explicit StreamSeekable(Range *rng, std::vector<std::string> &columnFamilies, cclient::data::security::Authorizations *in_auths, bool inclusive)
-      :
-      range(rng->getStartKey(), rng->getStartKeyInclusive(), rng->getStopKey(), rng->getStartKeyInclusive()),
-      columnFamilies(columnFamilies),
-      inclusive(inclusive),
-      auths(in_auths->getAuthorizations()) {
-
-  }
-
-  virtual cclient::data::security::Authorizations* getAuths() override {
+  virtual cclient::data::security::Authorizations *getAuths() override {
     return &auths;
   }
 
-  virtual Range* getRange() override
-  {
-    return &range;
-  }
+  virtual Range *getRange() override { return &range; }
 
-  virtual std::vector<std::string>* getColumnFamilies() override
-  {
+  virtual std::vector<std::string> *getColumnFamilies() override {
     return &columnFamilies;
   }
 
-  virtual bool isInclusive() override
-  {
-    return inclusive;
-  }
+  virtual bool isInclusive() override { return inclusive; }
 };
 
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 
 #endif /* INCLUDE_DATA_STREAMING_ACCUMULO_STREAMSEEKABLE_H_ */

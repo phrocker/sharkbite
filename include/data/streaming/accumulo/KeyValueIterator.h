@@ -15,76 +15,56 @@
 #define INCLUDE_INTERCONNECT_ACCUMULO_KEYVALUEITERATOR_H_
 
 #include "../../constructs/Key.h"
-#include "../../constructs/value.h"
 #include "../../constructs/KeyValue.h"
+#include "../../constructs/value.h"
 #include "../DataStream.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
-class KeyValueIterator : public DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>> {
+class KeyValueIterator
+    : public DataStream<
+          std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>> {
  public:
-  explicit KeyValueIterator(KeyValueIterator *source, StreamConfiguration *configuration) {
+  explicit KeyValueIterator(KeyValueIterator* source,
+                            StreamConfiguration* configuration) {
     setConfiguration(configuration);
   }
 
-  KeyValueIterator() {
+  KeyValueIterator() {}
 
-  }
+  virtual ~KeyValueIterator() {}
 
-  virtual ~KeyValueIterator() {
-  }
+  virtual bool hasNext() { return false; }
 
-  virtual bool hasNext() {
-    return false;
-  }
+  virtual void relocate(StreamRelocation* location) {}
 
-  virtual void relocate(StreamRelocation *location) {
-  }
+  virtual DataStream* begin() { return this; }
 
-  virtual DataStream* begin() {
-    return this;
-  }
+  virtual DataStream* end() { return this; }
 
-  virtual DataStream* end() {
-    return this;
-  }
+  virtual std::shared_ptr<Key> getTopKey() { return nullptr; }
 
-  virtual std::shared_ptr<Key> getTopKey() {
-    return nullptr;
-  }
+  virtual std::shared_ptr<Value> getTopValue() { return nullptr; }
 
-  virtual std::shared_ptr<Value> getTopValue() {
-    return nullptr;
-  }
-
-  virtual std::shared_ptr<KeyValue> getTop(){
-    return std::make_shared<KeyValue>(getTopKey(),getTopValue());
+  virtual std::shared_ptr<KeyValue> getTop() {
+    return std::make_shared<KeyValue>(getTopKey(), getTopValue());
   }
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() {
     return std::make_pair(nullptr, nullptr);
   }
 
-  virtual void next() {
+  virtual void next() {}
 
-  }
+  virtual uint64_t getEntriesFiltered() { return 0; }
 
-  virtual uint64_t getEntriesFiltered(){
-    return 0;
-  }
+  virtual DataStream* operator++() { return this; }
 
-  virtual DataStream* operator++() {
-    return this;
-  }
-
-  virtual DataStream* operator++(int t) {
-    return this;
-  }
-}
-;
-}
-}
-}
+  virtual DataStream* operator++(int t) { return this; }
+};
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif /* INCLUDE_INTERCONNECT_ACCUMULO_KEYVALUEITERATOR_H_ */

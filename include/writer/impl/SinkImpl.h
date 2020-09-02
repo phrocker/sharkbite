@@ -14,21 +14,21 @@
 #ifndef SRC_WRITER_IMPL_SINKIMPL_H_
 #define SRC_WRITER_IMPL_SINKIMPL_H_
 
-#include "data/constructs/Key.h"
-#include "data/constructs/KeyValue.h"
-#include "data/constructs/security/AuthInfo.h"
-#include "data/constructs/security/Authorizations.h"
-#include "data/extern/concurrentqueue/concurrentqueue.h"
-#include "data/constructs/value.h"
-#include "scanner/constructs/Results.h"
-#include "data/constructs/inputvalidation.h"
-#include "data/client/ExtentLocator.h"
-#include "data/constructs/client/zookeeperinstance.h"
-#include "data/client/LocatorCache.h"
-#include "interconnect/ClientInterface.h"
-#include "interconnect/tableOps/TableOperations.h"
 #include "../Sink.h"
 #include "WriterHeuristic.h"
+#include "data/client/ExtentLocator.h"
+#include "data/client/LocatorCache.h"
+#include "data/constructs/Key.h"
+#include "data/constructs/KeyValue.h"
+#include "data/constructs/client/zookeeperinstance.h"
+#include "data/constructs/inputvalidation.h"
+#include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/Authorizations.h"
+#include "data/constructs/value.h"
+#include "data/extern/concurrentqueue/concurrentqueue.h"
+#include "interconnect/ClientInterface.h"
+#include "interconnect/tableOps/TableOperations.h"
+#include "scanner/constructs/Results.h"
 namespace writer {
 
 /*
@@ -36,30 +36,33 @@ namespace writer {
  */
 class Writer : public Sink<cclient::data::KeyValue> {
  public:
-  Writer(std::shared_ptr<cclient::data::Instance> instance, interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops,
+  Writer(std::shared_ptr<cclient::data::Instance> instance,
+         interconnect::TableOperations<
+             cclient::data::KeyValue,
+             scanners::ResultBlock<cclient::data::KeyValue>> *tops,
          cclient::data::security::Authorizations *auths, uint16_t threads);
-  virtual
-  ~Writer();
+  virtual ~Writer();
 
-  void
-  flush(bool override = false);
+  void flush(bool override = false);
 
-  void setHeuristic(scanners::Heuristic<interconnect::ThriftTransporter> *heuristic) {
-    writerHeuristic = (WriterHeuristic*) heuristic;
+  void setHeuristic(
+      scanners::Heuristic<interconnect::ThriftTransporter> *heuristic) {
+    writerHeuristic = (WriterHeuristic *)heuristic;
   }
 
-  virtual bool addMutation(const std::shared_ptr<cclient::data::Mutation> &mut) {
-	if (mut == nullptr){
-		return false;
-	}
+  virtual bool addMutation(
+      const std::shared_ptr<cclient::data::Mutation> &mut) {
+    if (mut == nullptr) {
+      return false;
+    }
     bool enqueued = mutationQueue.enqueue(mut);
     return enqueued;
   }
 
   virtual bool addMutation(std::unique_ptr<cclient::data::Mutation> obj) {
-	if (obj == nullptr){
-		return false;
-	}
+    if (obj == nullptr) {
+      return false;
+    }
     while (waitingSize() >= ((maxWait() + 1) * 1.5)) {
       std::this_thread::sleep_for(std::chrono::milliseconds(25));
     }
@@ -77,8 +80,8 @@ class Writer : public Sink<cclient::data::KeyValue> {
   }
 
  protected:
-
-  void handleFailures(std::vector<std::shared_ptr<cclient::data::Mutation>> *failures);
+  void handleFailures(
+      std::vector<std::shared_ptr<cclient::data::Mutation>> *failures);
 
   virtual uint64_t waitingSize() {
     // size of the heuristic is equivalent to the number of workers
@@ -86,22 +89,23 @@ class Writer : public Sink<cclient::data::KeyValue> {
     return writerHeuristic->size();
   }
 
-  virtual uint64_t maxWait() {
-    return writerHeuristic->maxThreads();
-  }
+  virtual uint64_t maxWait() { return writerHeuristic->maxThreads(); }
 
   WriterHeuristic *writerHeuristic;
   cclient::data::security::AuthInfo *credentials;
-  std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter>*> servers;
+  std::vector<interconnect::ClientInterface<interconnect::ThriftTransporter> *>
+      servers;
   std::shared_ptr<cclient::data::Instance> connectorInstance;
   cclient::impl::TabletLocator *tableLocator;
-  interconnect::TableOperations<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *tops;
-  moodycamel::ConcurrentQueue<std::shared_ptr<cclient::data::Mutation>> mutationQueue;
-
+  interconnect::TableOperations<cclient::data::KeyValue,
+                                scanners::ResultBlock<cclient::data::KeyValue>>
+      *tops;
+  moodycamel::ConcurrentQueue<std::shared_ptr<cclient::data::Mutation>>
+      mutationQueue;
 };
 
 using BatchWriter = writer::Sink<cclient::data::KeyValue>;
 
-} /* namespace data */
+}  // namespace writer
 
 #endif /* SRC_WRITER_IMPL_SINKIMPL_H_ */

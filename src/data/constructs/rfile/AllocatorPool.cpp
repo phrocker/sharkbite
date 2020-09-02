@@ -43,15 +43,14 @@ KeyAllocatorPool::KeyAllocatorPool() {
   }
 }
 
-void KeyAllocatorPool::free(std::pair<char*, size_t> vec, moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr) {
+void KeyAllocatorPool::free(
+    std::pair<char *, size_t> vec,
+    moodycamel::ConcurrentQueue<std::pair<char *, size_t>> *ptr) {}
+void KeyAllocatorPool::reclaim(
+    moodycamel::ConcurrentQueue<std::pair<char *, size_t>> *ptr) {}
 
-}
-void KeyAllocatorPool::reclaim(moodycamel::ConcurrentQueue<std::pair<char*, size_t>> *ptr) {
-
-}
-
-std::pair<char*, size_t> KeyAllocatorPool::allocate(size_t size) {
-  std::pair<char*, size_t> ptr;
+std::pair<char *, size_t> KeyAllocatorPool::allocate(size_t size) {
+  std::pair<char *, size_t> ptr;
   if (size <= 32) {
     if (!buffers32.empty()) {
       auto ret = buffers32.back();
@@ -96,95 +95,77 @@ std::pair<char*, size_t> KeyAllocatorPool::allocate(size_t size) {
   return ptr;
 }
 
-void KeyAllocatorPool::intern(std::pair<char*,size_t> pair){
+void KeyAllocatorPool::intern(std::pair<char *, size_t> pair) {
   auto loc = referenceCount.find(pair.first);
   size_t size = pair.second;
-    if (size < 32){
-      size = 32;
-    }
-    else if (size < 64){
-      size = 64;
-    }
-    else if (size < 128){
-      size = 128;
-    }
-    else if (size < 256 ){
-      size = 256;
-    }
-  if (loc != referenceCount.end()){
-    loc->second.first++;
+  if (size < 32) {
+    size = 32;
+  } else if (size < 64) {
+    size = 64;
+  } else if (size < 128) {
+    size = 128;
+  } else if (size < 256) {
+    size = 256;
   }
-  else{
-    referenceCount[ pair.first ] = std::make_pair(2,size);
+  if (loc != referenceCount.end()) {
+    loc->second.first++;
+  } else {
+    referenceCount[pair.first] = std::make_pair(2, size);
   }
 }
 
-bool KeyAllocatorPool::decrement(std::pair<char*,size_t> ptr){
+bool KeyAllocatorPool::decrement(std::pair<char *, size_t> ptr) {
   auto loc = referenceCount.find(ptr.first);
-  if (loc != referenceCount.end()){
-    
-    if (loc->second.first-1 <= 0){
+  if (loc != referenceCount.end()) {
+    if (loc->second.first - 1 <= 0) {
       if (ptr.second > 256) {
-       delete [] ptr.first;
+        delete[] ptr.first;
       } else {
-        if (ptr.second <= 32){
+        if (ptr.second <= 32) {
           buffers32.push_back(ptr);
-        }
-        else if (ptr.second <= 64){
+        } else if (ptr.second <= 64) {
           buffers64.push_back(ptr);
-        }
-        else if (ptr.second <= 128){
+        } else if (ptr.second <= 128) {
           buffers128.push_back(ptr);
-        }
-        else{
+        } else {
           buffers256.push_back(ptr);
         }
-        
-        }
-        referenceCount.erase(loc);
-        return true;
       }
+      referenceCount.erase(loc);
+      return true;
+    }
     loc->second.first--;
     return true;
   }
   return false;
 }
 
-
-void KeyAllocatorPool::free(std::pair<char*, size_t> &&ptr) {
-  if (!ptr.first)
-    return;
-    size_t size = ptr.second;
-    if (size < 32){
-      size = 32;
-    }
-    else if (size < 64){
-      size = 64;
-    }
-    else if (size < 128){
-      size = 128;
-    }
-    else if (size < 256 ){
-      size = 256;
-    }
-    ptr.second=size;
+void KeyAllocatorPool::free(std::pair<char *, size_t> &&ptr) {
+  if (!ptr.first) return;
+  size_t size = ptr.second;
+  if (size < 32) {
+    size = 32;
+  } else if (size < 64) {
+    size = 64;
+  } else if (size < 128) {
+    size = 128;
+  } else if (size < 256) {
+    size = 256;
+  }
+  ptr.second = size;
   if (ptr.second > 256) {
-      delete [] ptr.first;
+    delete[] ptr.first;
   } else {
-     if (ptr.second <= 32){
-       buffers32.push_back(ptr);
-     }
-     else if (ptr.second <= 64){
-       buffers64.push_back(ptr);
-     }
-     else if (ptr.second <= 128){
-       buffers128.push_back(ptr);
-     }
-     else{
-       buffers256.push_back(ptr);
-     }
-    
+    if (ptr.second <= 32) {
+      buffers32.push_back(ptr);
+    } else if (ptr.second <= 64) {
+      buffers64.push_back(ptr);
+    } else if (ptr.second <= 128) {
+      buffers128.push_back(ptr);
+    } else {
+      buffers256.push_back(ptr);
     }
   }
 }
-}
+}  // namespace data
+}  // namespace cclient

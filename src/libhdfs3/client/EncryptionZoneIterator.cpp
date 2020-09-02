@@ -20,67 +20,68 @@
  * limitations under the License.
  */
 #include "EncryptionZoneIterator.h"
+
+#include "EncryptionZoneInfo.h"
 #include "Exception.h"
 #include "ExceptionInternal.h"
-#include "EncryptionZoneInfo.h"
 #include "FileSystemImpl.h"
 
 namespace Hdfs {
-EncryptionZoneIterator::EncryptionZoneIterator() :filesystem(NULL), id(0), next(0) {
-}
+EncryptionZoneIterator::EncryptionZoneIterator()
+    : filesystem(NULL), id(0), next(0) {}
 
-EncryptionZoneIterator::EncryptionZoneIterator(Hdfs::Internal::FileSystemImpl * const fs, 
-                                               const int64_t id) :filesystem(fs), id(id), next(0) {
-}
+EncryptionZoneIterator::EncryptionZoneIterator(
+    Hdfs::Internal::FileSystemImpl* const fs, const int64_t id)
+    : filesystem(fs), id(id), next(0) {}
 
-EncryptionZoneIterator::EncryptionZoneIterator(const EncryptionZoneIterator & it) :
-    filesystem(it.filesystem), id(it.id), next(it.next), lists(it.lists) {
-}
+EncryptionZoneIterator::EncryptionZoneIterator(const EncryptionZoneIterator& it)
+    : filesystem(it.filesystem), id(it.id), next(it.next), lists(it.lists) {}
 
-EncryptionZoneIterator & EncryptionZoneIterator::operator =(const EncryptionZoneIterator & it) {
-    if (this == &it) {
-        return *this;
-    }
-
-    filesystem = it.filesystem;
-    id = it.id;
-    next = it.next;
-    lists = it.lists;
+EncryptionZoneIterator& EncryptionZoneIterator::operator=(
+    const EncryptionZoneIterator& it) {
+  if (this == &it) {
     return *this;
+  }
+
+  filesystem = it.filesystem;
+  id = it.id;
+  next = it.next;
+  lists = it.lists;
+  return *this;
 }
 
 bool EncryptionZoneIterator::listEncryptionZones() {
-    bool more;
+  bool more;
 
-    if (NULL == filesystem) {
-        return false;
-    }
+  if (NULL == filesystem) {
+    return false;
+  }
 
-    next = 0;
-    lists.clear();
-    more = filesystem->listEncryptionZones(id, lists);
-    if (!lists.empty()){
-        id = lists.back().getId();
-    }
+  next = 0;
+  lists.clear();
+  more = filesystem->listEncryptionZones(id, lists);
+  if (!lists.empty()) {
+    id = lists.back().getId();
+  }
 
-    return more || !lists.empty();
+  return more || !lists.empty();
 }
 
 bool EncryptionZoneIterator::hasNext() {
-    if (next >= lists.size()) {
-        return listEncryptionZones();
-    }
+  if (next >= lists.size()) {
+    return listEncryptionZones();
+  }
 
-    return true;
+  return true;
 }
 
 Hdfs::EncryptionZoneInfo EncryptionZoneIterator::getNext() {
-    if (next >= lists.size()) {
-        if (!listEncryptionZones()) {
-            THROW(HdfsIOException, "End of the dir flow");
-        }
+  if (next >= lists.size()) {
+    if (!listEncryptionZones()) {
+      THROW(HdfsIOException, "End of the dir flow");
     }
-    return lists[next++];
+  }
+  return lists[next++];
 }
 
-}
+}  // namespace Hdfs

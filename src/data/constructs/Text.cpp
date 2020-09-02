@@ -13,26 +13,20 @@
  */
 
 #include "data/constructs/Text.h"
+
 #include <iostream>
 namespace cclient {
 namespace data {
 
-Text::Text(ObjectAllocatorPool<Text> *pool)
-    :
-    Text(pool, nullptr, 0, 0) {
-
-}
+Text::Text(ObjectAllocatorPool<Text> *pool) : Text(pool, nullptr, 0, 0) {}
 Text::Text(char *buf, size_t currentSize, size_t originalSize)
-    :
-    Text(nullptr, buf, currentSize, originalSize) {
-}
-Text::Text(ObjectAllocatorPool<Text> *ref, char *buf, size_t currentSize, size_t originalSize)
-    :
-    reference(ref),
-    buffer(buf),
-    currentSize(currentSize),
-    originalSize(originalSize) {
-}
+    : Text(nullptr, buf, currentSize, originalSize) {}
+Text::Text(ObjectAllocatorPool<Text> *ref, char *buf, size_t currentSize,
+           size_t originalSize)
+    : reference(ref),
+      buffer(buf),
+      currentSize(currentSize),
+      originalSize(originalSize) {}
 
 Text::~Text() {
   if (buffer) {
@@ -74,24 +68,19 @@ void Text::reset() {
   currentSize = 0;
 }
 
-std::string Text::toString() const{
+std::string Text::toString() const {
   if (buffer && currentSize > 0)
     return std::string(buffer, currentSize);
   else
     return "";
-
 }
-std::pair<char*, size_t> Text::getBuffer() {
+std::pair<char *, size_t> Text::getBuffer() {
   return std::make_pair(buffer, currentSize);
 }
 
-size_t Text::getMaxSize() {
-  return originalSize;
-}
+size_t Text::getMaxSize() { return originalSize; }
 
-size_t Text::size() {
-  return currentSize;
-}
+size_t Text::size() { return currentSize; }
 
-}
-}
+}  // namespace data
+}  // namespace cclient

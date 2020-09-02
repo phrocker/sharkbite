@@ -15,43 +15,36 @@
 #ifndef CACHEDTRANSPORT_H_
 #define CACHEDTRANSPORT_H_
 
-#include <stdexcept>
 #include <memory>
-
+#include <stdexcept>
 #include <string>
 
-#include "Transport.h"
 #include "ServerConnection.h"
+#include "Transport.h"
 namespace interconnect {
 
-template<typename T>
+template <typename T>
 class CachedTransport {
  public:
-  CachedTransport(std::shared_ptr<T> transport, std::shared_ptr<ServerConnection> key)
+  CachedTransport(std::shared_ptr<T> transport,
+                  std::shared_ptr<ServerConnection> key)
       : ioCount(0),
         lastCount(-1),
         reserved(false),
         threadName(""),
         foundError(false),
         lastReturnTime(0) {
-
     srand(time(NULL));
     cacheKey = key;
 
     serverTransport = transport;
   }
 
-  ~CachedTransport() {
-	  close();
-  }
+  ~CachedTransport() { close(); }
 
-  void reserve(bool reserve = true) {
-    reserved = reserve;
-  }
+  void reserve(bool reserve = true) { reserved = reserve; }
 
-  bool isReserved() {
-    return reserved;
-  }
+  bool isReserved() { return reserved; }
 
   bool open() {
     try {
@@ -72,48 +65,31 @@ class CachedTransport {
       serverTransport->close();
   }
 
-  std::shared_ptr<T> getTransport() {
-    return serverTransport;
-  }
+  std::shared_ptr<T> getTransport() { return serverTransport; }
 
-  bool hasError() {
-    return foundError;
-  }
+  bool hasError() { return foundError; }
 
-  std::shared_ptr<ServerConnection> getCacheKey() {
-    return cacheKey;
-  }
+  std::shared_ptr<ServerConnection> getCacheKey() { return cacheKey; }
 
-  std::shared_ptr<T> getTransporter() {
-    return serverTransport;
-  }
+  std::shared_ptr<T> getTransporter() { return serverTransport; }
 
-  bool operator ==(const CachedTransport *rhs) const {
+  bool operator==(const CachedTransport *rhs) const {
     return std::addressof(this) == std::addressof(rhs);
-    //return *this == *rhs;
+    // return *this == *rhs;
   }
 
-  bool isOpen() {
-    return serverTransport->isOpen();
-  }
+  bool isOpen() { return serverTransport->isOpen(); }
 
   void registerService(std::string instance, std::string clusterManagers) {
     // no op
   }
 
-  void setReturnTime(uint64_t t) {
-    lastReturnTime = t;
-  }
+  void setReturnTime(uint64_t t) { lastReturnTime = t; }
 
-  uint64_t getLastReturnTime() {
-    return lastReturnTime;
-  }
-  void sawError(bool sawError) {
-    foundError = true;
-  }
+  uint64_t getLastReturnTime() { return lastReturnTime; }
+  void sawError(bool sawError) { foundError = true; }
 
  protected:
-
   bool foundError;
   std::string threadName;
   std::atomic<bool> reserved;
@@ -126,5 +102,5 @@ class CachedTransport {
   std::shared_ptr<ServerConnection> cacheKey;
   std::shared_ptr<T> serverTransport;
 };
-}
+}  // namespace interconnect
 #endif /* CACHEDTRANSPORT_H_ */

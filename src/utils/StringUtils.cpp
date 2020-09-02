@@ -29,17 +29,14 @@ bool StringUtils::StringToBool(std::string input, bool &output) {
   return output;
 }
 
-std::string StringUtils::trim(std::string s) {
-  return trimRight(trimLeft(s));
-}
+std::string StringUtils::trim(std::string s) { return trimRight(trimLeft(s)); }
 
-std::vector<std::string> StringUtils::split(const std::string &str, const std::string &delimiter) {
+std::vector<std::string> StringUtils::split(const std::string &str,
+                                            const std::string &delimiter) {
   std::vector<std::string> result;
   auto curr = str.begin();
   auto end = str.end();
-  auto is_func = [delimiter](int s) {
-    return delimiter.at(0) == s;
-  };
+  auto is_func = [delimiter](int s) { return delimiter.at(0) == s; };
   while (curr != end) {
     curr = std::find_if_not(curr, end, is_func);
     if (curr == end) {
@@ -65,7 +62,8 @@ bool StringUtils::StringToFloat(std::string input, float &output) {
   return true;
 }
 
-std::string StringUtils::replaceEnvironmentVariables(std::string& original_string) {
+std::string StringUtils::replaceEnvironmentVariables(
+    std::string &original_string) {
   int32_t beg_seq = 0;
   int32_t end_seq = 0;
   std::string source_string = original_string;
@@ -75,17 +73,17 @@ std::string StringUtils::replaceEnvironmentVariables(std::string& original_strin
       beg_seq += 2;
       continue;
     }
-    if (beg_seq < 0)
-      break;
+    if (beg_seq < 0) break;
     end_seq = source_string.find("}", beg_seq + 2);
-    if (end_seq < 0)
-      break;
+    if (end_seq < 0) break;
     if (end_seq - (beg_seq + 2) < 0) {
       beg_seq += 2;
       continue;
     }
-    const std::string env_field = source_string.substr(beg_seq + 2, end_seq - (beg_seq + 2));
-    const std::string env_field_wrapped = source_string.substr(beg_seq, end_seq + 1);
+    const std::string env_field =
+        source_string.substr(beg_seq + 2, end_seq - (beg_seq + 2));
+    const std::string env_field_wrapped =
+        source_string.substr(beg_seq, end_seq + 1);
     if (env_field.empty()) {
       continue;
     }
@@ -99,8 +97,7 @@ std::string StringUtils::replaceEnvironmentVariables(std::string& original_strin
     const auto strVal = std::getenv(env_field.c_str());
 #endif
     std::string env_value;
-    if (strVal != nullptr)
-      env_value = strVal;
+    if (strVal != nullptr) env_value = strVal;
     source_string = replaceAll(source_string, env_field_wrapped, env_value);
     beg_seq = 0;  // restart
   } while (beg_seq >= 0);
@@ -110,39 +107,48 @@ std::string StringUtils::replaceEnvironmentVariables(std::string& original_strin
   return source_string;
 }
 
-std::string& StringUtils::replaceAll(std::string& source_string, const std::string &from_string, const std::string &to_string) {
+std::string &StringUtils::replaceAll(std::string &source_string,
+                                     const std::string &from_string,
+                                     const std::string &to_string) {
   std::size_t loc = 0;
   std::size_t lastFound;
-  while ((lastFound = source_string.find(from_string, loc)) != std::string::npos) {
+  while ((lastFound = source_string.find(from_string, loc)) !=
+         std::string::npos) {
     source_string.replace(lastFound, from_string.size(), to_string);
     loc = lastFound + to_string.size();
   }
   return source_string;
 }
 
-std::string StringUtils::replaceMap(std::string source_string, const std::map<std::string, std::string> &replace_map) {
+std::string StringUtils::replaceMap(
+    std::string source_string,
+    const std::map<std::string, std::string> &replace_map) {
   auto result_string = source_string;
 
   std::vector<std::pair<size_t, std::pair<size_t, std::string>>> replacements;
   for (const auto &replace_pair : replace_map) {
     size_t replace_pos = 0;
-    while ((replace_pos = source_string.find(replace_pair.first, replace_pos)) != std::string::npos) {
-      replacements.emplace_back(std::make_pair(replace_pos, std::make_pair(replace_pair.first.length(), replace_pair.second)));
+    while ((replace_pos = source_string.find(
+                replace_pair.first, replace_pos)) != std::string::npos) {
+      replacements.emplace_back(std::make_pair(
+          replace_pos,
+          std::make_pair(replace_pair.first.length(), replace_pair.second)));
       replace_pos += replace_pair.first.length();
     }
   }
 
-  std::sort(replacements.begin(), replacements.end(), [](const std::pair<size_t, std::pair<size_t, std::string>> a,
-      const std::pair<size_t, std::pair<size_t, std::string>> &b) {
-    return a.first > b.first;
-  });
+  std::sort(replacements.begin(), replacements.end(),
+            [](const std::pair<size_t, std::pair<size_t, std::string>> a,
+               const std::pair<size_t, std::pair<size_t, std::string>> &b) {
+              return a.first > b.first;
+            });
 
   for (const auto &replacement : replacements) {
-    result_string = source_string.replace(replacement.first, replacement.second.first, replacement.second.second);
+    result_string = source_string.replace(
+        replacement.first, replacement.second.first, replacement.second.second);
   }
 
   return result_string;
 }
-
 
 } /* namespace utils */

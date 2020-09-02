@@ -19,10 +19,9 @@
 
 #include "../../data/constructs/IterInfo.h"
 #include "../../data/constructs/column.h"
-
+#include "../../data/constructs/inputvalidation.h"
 #include "../../data/constructs/security/AuthInfo.h"
 #include "../../data/constructs/security/Authorizations.h"
-#include "../../data/constructs/inputvalidation.h"
 #include "../../data/exceptions/IllegalArgumentException.h"
 #include "../transport/ServerConnection.h"
 #include "ScanIdentifier.h"
@@ -32,21 +31,20 @@ namespace interconnect {
  * Represents a scan request
  */
 
-template<typename I>
+template <typename I>
 class ScanRequest {
-
  public:
-  ScanRequest(cclient::data::security::AuthInfo *credentials, cclient::data::security::Authorizations *auths, std::shared_ptr<ServerConnection> server)
-      :
-      creds(credentials),
-      auths(auths),
-      connection(server),
-      singlebufferSize(1000) {
-
+  ScanRequest(cclient::data::security::AuthInfo *credentials,
+              cclient::data::security::Authorizations *auths,
+              std::shared_ptr<ServerConnection> server)
+      : creds(credentials),
+        auths(auths),
+        connection(server),
+        singlebufferSize(1000) {
     if (IsEmpty(credentials) || auths == nullptr || IsEmpty(server.get())) {
-      throw cclient::exceptions::IllegalArgumentException("credentials, authorizations, and server must not be empty");
+      throw cclient::exceptions::IllegalArgumentException(
+          "credentials, authorizations, and server must not be empty");
     }
-
   }
 
   virtual ~ScanRequest() {
@@ -55,63 +53,42 @@ class ScanRequest {
     }
   }
 
-  void setBufferSize(uint32_t size) {
-    singlebufferSize = size;
-  }
+  void setBufferSize(uint32_t size) { singlebufferSize = size; }
 
   virtual void setIters(const std::vector<cclient::data::IterInfo> &iters) {
     iterators.insert(iterators.end(), iters.begin(), iters.end());
   }
 
-  void addColumn(cclient::data::Column *col) {
-    columns.push_back(*col);
-  }
+  void addColumn(cclient::data::Column *col) { columns.push_back(*col); }
 
-  void addColumn(const cclient::data::Column &col) {
-    columns.push_back(col);
-  }
+  void addColumn(const cclient::data::Column &col) { columns.push_back(col); }
 
   void addColumns(const std::vector<cclient::data::Column> &cols) {
     columns.insert(columns.end(), cols.begin(), cols.end());
   }
 
-  std::vector<cclient::data::Column> getColumns() const {
-    return columns;
-  }
+  std::vector<cclient::data::Column> getColumns() const { return columns; }
 
-  cclient::data::security::AuthInfo* getCredentials() const {
-    return creds;
-  }
+  cclient::data::security::AuthInfo *getCredentials() const { return creds; }
 
-  cclient::data::security::Authorizations* getAuthorizations() const {
+  cclient::data::security::Authorizations *getAuthorizations() const {
     return auths;
   }
 
-  uint32_t getBuffersize() {
-    return singlebufferSize;
-  }
+  uint32_t getBuffersize() { return singlebufferSize; }
 
-  std::vector<cclient::data::IterInfo> getIterators() {
-    return iterators;
-  }
+  std::vector<cclient::data::IterInfo> getIterators() { return iterators; }
 
-  void putIdentifier(I *ident) {
-    identifiers.push_back(ident);
-  }
+  void putIdentifier(I *ident) { identifiers.push_back(ident); }
 
-  std::vector<I*>* getRangeIdentifiers() {
-    return &identifiers;
-  }
+  std::vector<I *> *getRangeIdentifiers() { return &identifiers; }
 
-  size_t size() const {
-    return identifiers.size();
-  }
+  size_t size() const { return identifiers.size(); }
 
  protected:
-
   uint32_t singlebufferSize;
 
-  std::vector<I*> identifiers;
+  std::vector<I *> identifiers;
   cclient::data::security::AuthInfo *creds;
   cclient::data::security::Authorizations *auths;
   std::vector<cclient::data::IterInfo> iterators;

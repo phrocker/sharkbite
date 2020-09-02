@@ -16,51 +16,48 @@
 #define SRC_INTERCONNECT_FATEINTERFACE_H_
 
 #include <concurrency/ThreadManager.h>
-
-#include <chrono>
-#include <thread>
 #include <sys/time.h>
 
+#include <algorithm>  // std::random_shuffle
+#include <chrono>
+#include <cstdlib>  // std::rand, std::srand
+#include <ctime>    // std::time
 #include <map>
 #include <set>
 #include <string>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <ctime>        // std::time
-#include <cstdlib>      // std::rand, std::srand
+#include <thread>
+#include <vector>  // std::vector
 
-#include "../../data/constructs/inputvalidation.h"
 #include "../../data/constructs/IterInfo.h"
 #include "../../data/constructs/configuration/Configuration.h"
-#include "../../data/extern/thrift/data_types.h"
-#include "../../data/extern/thrift/tabletserver_types.h"
+#include "../../data/constructs/inputvalidation.h"
 #include "../../data/constructs/scanstate.h"
+#include "../../data/constructs/security/AuthInfo.h"
+#include "../../data/constructs/tablet/TabletType.h"
 #include "../../data/exceptions/ClientException.h"
 #include "../../data/exceptions/IllegalArgumentException.h"
-#include "../../data/constructs/tablet/TabletType.h"
-#include "../scanrequest/ScanIdentifier.h"
-
-#include "Transport.h"
-
 #include "../../data/extern/thrift/ClientService.h"
-#include "../../data/extern/thrift/master_types.h"
 #include "../../data/extern/thrift/MasterClientService.h"
 #include "../../data/extern/thrift/ThriftWrapper.h"
-#include "../../data/constructs/security/AuthInfo.h"
+#include "../../data/extern/thrift/data_types.h"
+#include "../../data/extern/thrift/master_types.h"
+#include "../../data/extern/thrift/tabletserver_types.h"
 #include "../Scan.h"
+#include "../scanrequest/ScanIdentifier.h"
+#include "Transport.h"
 
 //#include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
-
+#include <transport/TBufferTransports.h>
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
 #include <transport/TSocket.h>
+#include <transport/TTransport.h>
 #include <transport/TTransportException.h>
-#include <transport/TBufferTransports.h>
-#include "interconnect/accumulo/AccumuloFacade.h"
+
 #include "CoordinatorInterface.h"
+#include "interconnect/accumulo/AccumuloFacade.h"
 namespace interconnect {
 
 /**
@@ -68,12 +65,11 @@ namespace interconnect {
  **/
 class FateInterface : public CoordinatorInterface {
  public:
-  virtual ~FateInterface() {
+  virtual ~FateInterface() {}
 
-  }
  protected:
   /**
-   * Executes fate operations. 
+   * Executes fate operations.
    * @param auth authorization info
    * @param type fate operation
    * @param tableArgs namespace or table arguments
@@ -81,10 +77,12 @@ class FateInterface : public CoordinatorInterface {
    * @param wait determines if we will wait on the fate operation
    * @return return value of the fate operation
    **/
-  virtual std::string doFateOperations(cclient::data::security::AuthInfo *auth, AccumuloFateOperation type, const std::vector<std::string> &tableArgs,
-                                       const std::map<std::string, std::string> &options, bool wait = false) = 0;
+  virtual std::string doFateOperations(
+      cclient::data::security::AuthInfo *auth, AccumuloFateOperation type,
+      const std::vector<std::string> &tableArgs,
+      const std::map<std::string, std::string> &options, bool wait = false) = 0;
 };
 
-}
+}  // namespace interconnect
 
 #endif

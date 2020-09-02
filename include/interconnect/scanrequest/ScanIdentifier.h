@@ -14,47 +14,40 @@
 #ifndef SCAN_IDENT_H_
 #define SCAN_IDENT_H_
 
-#include <vector>
 #include <algorithm>
 #include <map>
+#include <vector>
 
 namespace interconnect {
 struct CopyKey {
-  template<typename T>
+  template <typename T>
   typename T::first_type operator()(T keyValuePair) const {
     return keyValuePair.first;
   }
 };
 
 /**
- * Scan identifier is a mechanism by which we can identify 
+ * Scan identifier is a mechanism by which we can identify
  * scans.
- * 
+ *
  **/
-template<typename M, typename V>
+template <typename M, typename V>
 class ScanIdentifier {
  protected:
   std::map<M, std::vector<V> > globalIdentifierMapping;
   size_t identSize;
+
  public:
-  ScanIdentifier()
-      :
-      identSize(0) {
+  ScanIdentifier() : identSize(0) {}
 
-  }
-
-  size_t size() const {
-    return identSize;
-  }
+  size_t size() const { return identSize; }
 
   /**
    * Returns global identifiers for identifying scans
    * @param m key
    * @returns global identifiers for the provided key, m
    **/
-  std::vector<V> getIdentifiers(M m) {
-    return globalIdentifierMapping[m];
-  }
+  std::vector<V> getIdentifiers(M m) { return globalIdentifierMapping[m]; }
 
   /**
    * Puts an identifier into the associated global map
@@ -72,9 +65,11 @@ class ScanIdentifier {
    **/
   std::vector<M> getGlobalMapping() {
     std::vector<M> keys;
-    std::transform(globalIdentifierMapping.begin(), globalIdentifierMapping.end(), std::back_inserter(keys), CopyKey());
+    std::transform(globalIdentifierMapping.begin(),
+                   globalIdentifierMapping.end(), std::back_inserter(keys),
+                   CopyKey());
     return keys;
   }
 };
-}
+}  // namespace interconnect
 #endif

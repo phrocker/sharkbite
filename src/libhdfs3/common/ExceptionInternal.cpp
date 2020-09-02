@@ -19,15 +19,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "platform.h"
+#include "ExceptionInternal.h"
+
+#include <cassert>
+#include <cstring>
+#include <sstream>
 
 #include "Exception.h"
-#include "ExceptionInternal.h"
 #include "Thread.h"
-
-#include <cstring>
-#include <cassert>
-#include <sstream>
+#include "platform.h"
 
 namespace Hdfs {
 
@@ -36,150 +36,149 @@ function<bool(void)> ChecnOperationCanceledCallback;
 namespace Internal {
 
 bool CheckOperationCanceled() {
-    if (ChecnOperationCanceledCallback && ChecnOperationCanceledCallback()) {
-        THROW(HdfsCanceled, "Operation has been canceled by the user.");
-    }
+  if (ChecnOperationCanceledCallback && ChecnOperationCanceledCallback()) {
+    THROW(HdfsCanceled, "Operation has been canceled by the user.");
+  }
 
-    return false;
+  return false;
 }
 
-const char * GetSystemErrorInfo(int eno) {
-    static THREAD_LOCAL char message[64];
-    char buffer[64], *pbuffer;
-    pbuffer = buffer;
+const char* GetSystemErrorInfo(int eno) {
+  static THREAD_LOCAL char message[64];
+  char buffer[64], *pbuffer;
+  pbuffer = buffer;
 #ifdef STRERROR_R_RETURN_INT
-    strerror_r(eno, buffer, sizeof(buffer));
+  strerror_r(eno, buffer, sizeof(buffer));
 #else
-    pbuffer = strerror_r(eno, buffer, sizeof(buffer));
+  pbuffer = strerror_r(eno, buffer, sizeof(buffer));
 #endif
-    snprintf(message, sizeof(message), "(errno: %d) %s", eno, pbuffer);
-    return message;
+  snprintf(message, sizeof(message), "(errno: %d) %s", eno, pbuffer);
+  return message;
 }
 
-static void GetExceptionDetailInternal(const Hdfs::HdfsException & e,
-                                       std::stringstream & ss, bool topLevel);
+static void GetExceptionDetailInternal(const Hdfs::HdfsException& e,
+                                       std::stringstream& ss, bool topLevel);
 
-static void GetExceptionDetailInternal(const std::exception & e,
-                                       std::stringstream & ss, bool topLevel) {
-    try {
-        if (!topLevel) {
-            ss << "Caused by\n";
-        }
-
-        ss << e.what();
-    } catch (const std::bad_alloc & e) {
-        return;
+static void GetExceptionDetailInternal(const std::exception& e,
+                                       std::stringstream& ss, bool topLevel) {
+  try {
+    if (!topLevel) {
+      ss << "Caused by\n";
     }
 
-    try {
-        Hdfs::rethrow_if_nested(e);
-    } catch (const Hdfs::HdfsException & nested) {
-        GetExceptionDetailInternal(nested, ss, false);
-    } catch (const std::exception & nested) {
-        GetExceptionDetailInternal(nested, ss, false);
-    }
+    ss << e.what();
+  } catch (const std::bad_alloc& e) {
+    return;
+  }
+
+  try {
+    Hdfs::rethrow_if_nested(e);
+  } catch (const Hdfs::HdfsException& nested) {
+    GetExceptionDetailInternal(nested, ss, false);
+  } catch (const std::exception& nested) {
+    GetExceptionDetailInternal(nested, ss, false);
+  }
 }
 
-static void GetExceptionDetailInternal(const Hdfs::HdfsException & e,
-                                       std::stringstream & ss, bool topLevel) {
-    try {
-        if (!topLevel) {
-            ss << "Caused by\n";
-        }
-
-        ss << e.msg();
-    } catch (const std::bad_alloc & e) {
-        return;
+static void GetExceptionDetailInternal(const Hdfs::HdfsException& e,
+                                       std::stringstream& ss, bool topLevel) {
+  try {
+    if (!topLevel) {
+      ss << "Caused by\n";
     }
 
-    try {
-        Hdfs::rethrow_if_nested(e);
-    } catch (const Hdfs::HdfsException & nested) {
-        GetExceptionDetailInternal(nested, ss, false);
-    } catch (const std::exception & nested) {
-        GetExceptionDetailInternal(nested, ss, false);
-    }
+    ss << e.msg();
+  } catch (const std::bad_alloc& e) {
+    return;
+  }
+
+  try {
+    Hdfs::rethrow_if_nested(e);
+  } catch (const Hdfs::HdfsException& nested) {
+    GetExceptionDetailInternal(nested, ss, false);
+  } catch (const std::exception& nested) {
+    GetExceptionDetailInternal(nested, ss, false);
+  }
 }
 
 const char* GetExceptionDetail(const Hdfs::HdfsException& e,
                                std::string& buffer) {
-    try {
-        std::stringstream ss;
-        ss.imbue(std::locale::classic());
-        GetExceptionDetailInternal(e, ss, true);
-        buffer = ss.str();
-    } catch (const std::bad_alloc& e) {
-        return "Out of memory";
-    }
+  try {
+    std::stringstream ss;
+    ss.imbue(std::locale::classic());
+    GetExceptionDetailInternal(e, ss, true);
+    buffer = ss.str();
+  } catch (const std::bad_alloc& e) {
+    return "Out of memory";
+  }
 
-    return buffer.c_str();
+  return buffer.c_str();
 }
 
 const char* GetExceptionDetail(const exception_ptr e, std::string& buffer) {
-    std::stringstream ss;
-    ss.imbue(std::locale::classic());
+  std::stringstream ss;
+  ss.imbue(std::locale::classic());
 
-    try {
-        Hdfs::rethrow_exception(e);
-    } catch (const Hdfs::HdfsException& nested) {
-        GetExceptionDetailInternal(nested, ss, true);
-    } catch (const std::exception& nested) {
-        GetExceptionDetailInternal(nested, ss, true);
-    }
+  try {
+    Hdfs::rethrow_exception(e);
+  } catch (const Hdfs::HdfsException& nested) {
+    GetExceptionDetailInternal(nested, ss, true);
+  } catch (const std::exception& nested) {
+    GetExceptionDetailInternal(nested, ss, true);
+  }
 
-    try {
-        buffer = ss.str();
-    } catch (const std::bad_alloc& e) {
-        return "Out of memory";
-    }
+  try {
+    buffer = ss.str();
+  } catch (const std::bad_alloc& e) {
+    return "Out of memory";
+  }
 
-    return buffer.c_str();
+  return buffer.c_str();
 }
 
-static void GetExceptionMessage(const std::exception & e,
-                                std::stringstream & ss, int recursive) {
-    try {
-        for (int i = 0; i < recursive; ++i) {
-            ss << '\t';
-        }
-
-        if (recursive > 0) {
-            ss << "Caused by: ";
-        }
-
-        ss << e.what();
-    } catch (const std::bad_alloc & e) {
-        return;
+static void GetExceptionMessage(const std::exception& e, std::stringstream& ss,
+                                int recursive) {
+  try {
+    for (int i = 0; i < recursive; ++i) {
+      ss << '\t';
     }
 
-    try {
-        Hdfs::rethrow_if_nested(e);
-    } catch (const std::exception & nested) {
-        GetExceptionMessage(nested, ss, recursive + 1);
-    }
-}
-
-const char * GetExceptionMessage(const exception_ptr e, std::string & buffer) {
-    std::stringstream ss;
-    ss.imbue(std::locale::classic());
-
-    try {
-        Hdfs::rethrow_exception(e);
-    } catch (const std::bad_alloc & e) {
-        return "Out of memory";
-    } catch (const std::exception & e) {
-        GetExceptionMessage(e, ss, 0);
+    if (recursive > 0) {
+      ss << "Caused by: ";
     }
 
-    try {
-        buffer = ss.str();
-    } catch (const std::bad_alloc & e) {
-        return "Out of memory";
-    }
+    ss << e.what();
+  } catch (const std::bad_alloc& e) {
+    return;
+  }
 
-    return buffer.c_str();
+  try {
+    Hdfs::rethrow_if_nested(e);
+  } catch (const std::exception& nested) {
+    GetExceptionMessage(nested, ss, recursive + 1);
+  }
 }
 
-}
+const char* GetExceptionMessage(const exception_ptr e, std::string& buffer) {
+  std::stringstream ss;
+  ss.imbue(std::locale::classic());
+
+  try {
+    Hdfs::rethrow_exception(e);
+  } catch (const std::bad_alloc& e) {
+    return "Out of memory";
+  } catch (const std::exception& e) {
+    GetExceptionMessage(e, ss, 0);
+  }
+
+  try {
+    buffer = ss.str();
+  } catch (const std::bad_alloc& e) {
+    return "Out of memory";
+  }
+
+  return buffer.c_str();
 }
 
+}  // namespace Internal
+}  // namespace Hdfs

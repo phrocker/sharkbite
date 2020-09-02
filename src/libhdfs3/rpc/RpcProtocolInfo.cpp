@@ -25,9 +25,10 @@ namespace Hdfs {
 namespace Internal {
 
 size_t RpcProtocolInfo::hash_value() const {
-    size_t values[] = { Int32Hasher(version), StringHasher(protocol), StringHasher(tokenKind) };
-    return CombineHasher(values, sizeof(values) / sizeof(values[0]));
+  size_t values[] = {Int32Hasher(version), StringHasher(protocol),
+                     StringHasher(tokenKind)};
+  return CombineHasher(values, sizeof(values) / sizeof(values[0]));
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

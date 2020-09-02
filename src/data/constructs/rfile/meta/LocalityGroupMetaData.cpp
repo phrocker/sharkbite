@@ -12,19 +12,20 @@
  * limitations under the License.
  */
 
-#include "data/constructs/Key.h"
 #include "data/constructs/rfile/meta/LocalityGroupMetaData.h"
+
+#include "data/constructs/Key.h"
 #include "data/constructs/rfile/meta/../../../streaming/DataOutputStream.h"
 namespace cclient {
 namespace data {
 
-LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string name)
-    :
-    startBlock(startBlockVal),
-    firstKey(NULL),
-    isDefaultLG(false),
-    read_version(4),
-    indexManager(NULL) {
+LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal,
+                                             std::string name)
+    : startBlock(startBlockVal),
+      firstKey(NULL),
+      isDefaultLG(false),
+      read_version(4),
+      indexManager(NULL) {
   this->name = name;
   if (name == "") {
     isDefaultLG = true;
@@ -33,21 +34,21 @@ LocalityGroupMetaData::LocalityGroupMetaData(uint32_t startBlockVal, std::string
   }
 }
 
-LocalityGroupMetaData::LocalityGroupMetaData(std::unique_ptr<cclient::data::compression::Compressor> compressorRef, int version, cclient::data::streams::InputStream *reader)
-    :
-    firstKey(NULL),
-    isDefaultLG(false),
-    read_version(version),
-    compressorRef(std::move(compressorRef)) {
-  indexManager = std::make_shared<IndexManager>(this->compressorRef->newInstance(), reader, version);
+LocalityGroupMetaData::LocalityGroupMetaData(
+    std::unique_ptr<cclient::data::compression::Compressor> compressorRef,
+    int version, cclient::data::streams::InputStream *reader)
+    : firstKey(NULL),
+      isDefaultLG(false),
+      read_version(version),
+      compressorRef(std::move(compressorRef)) {
+  indexManager = std::make_shared<IndexManager>(
+      this->compressorRef->newInstance(), reader, version);
 }
 
 LocalityGroupMetaData::~LocalityGroupMetaData() {
-
   for (auto pair : columnFamilies) {
     delete[] pair.first.first;
   }
-
 }
 /**
  read function for the Locality Meta Data
@@ -60,14 +61,14 @@ uint64_t LocalityGroupMetaData::read(cclient::data::streams::InputStream *in) {
     name = in->readString();
   }
 
-  if (read_version == 3 || read_version == 4 || read_version == 6 || read_version == 7)
+  if (read_version == 3 || read_version == 4 || read_version == 6 ||
+      read_version == 7)
     startBlock = in->readInt();
 
   int size = in->readInt();
 
   if (size == -1) {
-    if (!isDefaultLG)
-      throw std::runtime_error("Non default LG");
+    if (!isDefaultLG) throw std::runtime_error("Non default LG");
 
   } else {
     columnFamilies.clear();
@@ -99,11 +100,10 @@ uint64_t LocalityGroupMetaData::read(cclient::data::streams::InputStream *in) {
  @param outStream output stream.
  @return position of output stream.
  **/
-uint64_t LocalityGroupMetaData::write(cclient::data::streams::DataOutputStream *outStream) {
-
+uint64_t LocalityGroupMetaData::write(
+    cclient::data::streams::DataOutputStream *outStream) {
   outStream->writeBoolean(isDefaultLG);
-  if (!isDefaultLG)
-    outStream->writeString(name);
+  if (!isDefaultLG) outStream->writeString(name);
 
   outStream->writeInt(startBlock);
   // write a -1 indicating that we're writing
@@ -117,26 +117,26 @@ uint64_t LocalityGroupMetaData::write(cclient::data::streams::DataOutputStream *
   }
   bool haveKey = (firstKey != NULL);
   outStream->writeBoolean(haveKey);
-  if (haveKey)
-    firstKey->write(outStream);
+  if (haveKey) firstKey->write(outStream);
   // retrieved the encoded indices.
-  std::pair<char*, size_t> indices = buildIndexArray();
+  std::pair<char *, size_t> indices = buildIndexArray();
 
   outStream->writeInt(offsets.size());
 
-  for (std::vector<int>::iterator it = offsets.begin(); it != offsets.end(); it++) {
+  for (std::vector<int>::iterator it = offsets.begin(); it != offsets.end();
+       it++) {
     outStream->writeInt((*it));
   }
 
   // write out the number of indices.
   outStream->writeInt(indices.second);
 
-  uint64_t pos = outStream->writeBytes((const uint8_t*) indices.first, indices.second);
+  uint64_t pos =
+      outStream->writeBytes((const uint8_t *)indices.first, indices.second);
 
   delete[] indices.first;
 
   return pos;
-
 }
-}
-}
+}  // namespace data
+}  // namespace cclient

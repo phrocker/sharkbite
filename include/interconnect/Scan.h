@@ -15,16 +15,17 @@
 #ifndef SCAN_H_
 #define SCAN_H_ 1
 
-#include <vector>
-#include <atomic>
-#include <stdio.h>      /* printf, scanf, puts, NULL */
-#include <stdlib.h>     /* srand, rand */
+#include <stdio.h>  /* printf, scanf, puts, NULL */
+#include <stdlib.h> /* srand, rand */
 #include <time.h>
+
+#include <atomic>
+#include <vector>
 
 #include "../data/constructs/KeyValue.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
 
-//http://sector.sourceforge.net/software.html
+// http://sector.sourceforge.net/software.html
 
 /**
  * Represents a running scan
@@ -34,11 +35,10 @@ namespace interconnect {
 
 /**
  * Scan representation
- * 
+ *
  **/
 class Scan {
  public:
-
   explicit Scan(std::atomic<bool> *isRunning);
 
   ~Scan();
@@ -48,11 +48,13 @@ class Scan {
    * @param resultSet result set to add to this object's results
    * @returns result of adding.
    **/
-  bool setNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
+  bool setNextResults(
+      std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
 
   bool isClientRunning();
 
-  void setMultiIterator(std::shared_ptr<cclient::data::streams::KeyValueIterator> &itr);
+  void setMultiIterator(
+      std::shared_ptr<cclient::data::streams::KeyValueIterator> &itr);
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> getMultiIterator();
 
@@ -60,7 +62,8 @@ class Scan {
    * Gets the next result and places it into resultSet
    * @param reference result set to add.
    **/
-  bool getNextResults(std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
+  bool getNextResults(
+      std::vector<std::shared_ptr<cclient::data::KeyValue> > *resultSet);
 
   /**
    * Set flag to identify that more results are available.
@@ -104,7 +107,6 @@ class Scan {
   std::shared_ptr<cclient::data::Key> getTopKey() const;
 
  protected:
-
   std::string clientException;
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> iter;
@@ -123,5 +125,5 @@ class Scan {
   // results
   std::vector<std::shared_ptr<cclient::data::KeyValue> > results;
 };
-}
+}  // namespace interconnect
 #endif /* SCAN_H_ */

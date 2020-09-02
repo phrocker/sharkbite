@@ -19,56 +19,57 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "Exception.h"
-#include "ExceptionInternal.h"
-#include "LocatedBlock.h"
 #include "LocatedBlocks.h"
 
 #include <algorithm>
 #include <cassert>
 #include <iostream>
 
+#include "Exception.h"
+#include "ExceptionInternal.h"
+#include "LocatedBlock.h"
+
 namespace Hdfs {
 namespace Internal {
 
-const LocatedBlock * LocatedBlocksImpl::findBlock(int64_t position) {
-    if (position < fileLength) {
-        LocatedBlock target(position);
-        std::vector<LocatedBlock>::iterator bound;
+const LocatedBlock* LocatedBlocksImpl::findBlock(int64_t position) {
+  if (position < fileLength) {
+    LocatedBlock target(position);
+    std::vector<LocatedBlock>::iterator bound;
 
-        if (blocks.empty() || position < blocks.begin()->getOffset()) {
-            return NULL;
-        }
-
-        /*
-         * bound is first block which start offset is larger than
-         * or equal to position
-         */
-        bound = std::lower_bound(blocks.begin(), blocks.end(), target,
-                                 std::less<LocatedBlock>());
-        assert(bound == blocks.end() || bound->getOffset() >= position);
-        LocatedBlock * retval = NULL;
-
-        if (bound == blocks.end()) {
-            retval = &blocks.back();
-        } else if (bound->getOffset() > position) {
-            assert(bound != blocks.begin());
-            --bound;
-            retval = &(*bound);
-        } else {
-            retval = &(*bound);
-        }
-
-        if (position < retval->getOffset()
-                || position >= retval->getOffset() + retval->getNumBytes()) {
-            return NULL;
-        }
-
-        return retval;
-    } else {
-        return lastBlock.get();
+    if (blocks.empty() || position < blocks.begin()->getOffset()) {
+      return NULL;
     }
+
+    /*
+     * bound is first block which start offset is larger than
+     * or equal to position
+     */
+    bound = std::lower_bound(blocks.begin(), blocks.end(), target,
+                             std::less<LocatedBlock>());
+    assert(bound == blocks.end() || bound->getOffset() >= position);
+    LocatedBlock* retval = NULL;
+
+    if (bound == blocks.end()) {
+      retval = &blocks.back();
+    } else if (bound->getOffset() > position) {
+      assert(bound != blocks.begin());
+      --bound;
+      retval = &(*bound);
+    } else {
+      retval = &(*bound);
+    }
+
+    if (position < retval->getOffset() ||
+        position >= retval->getOffset() + retval->getNumBytes()) {
+      return NULL;
+    }
+
+    return retval;
+  } else {
+    return lastBlock.get();
+  }
 }
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs

@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once 
+#pragma once
 
 #include <string>
 #ifdef _WIN32
@@ -28,12 +28,11 @@
 
 namespace ClassUtils {
 
-template<typename T>
+template <typename T>
 static inline std::string getClassName() {
 #ifndef WIN32
   char *b = abi::__cxa_demangle(typeid(T).name(), 0, 0, 0);
-  if (b == nullptr)
-    return std::string();
+  if (b == nullptr) return std::string();
   std::string name = b;
   std::free(b);
   return name;
@@ -43,7 +42,8 @@ static inline std::string getClassName() {
   const std::string clazz = "class ";
   auto haz_clazz = adjusted_name.find(clazz);
   if (haz_clazz == 0)
-  adjusted_name = adjusted_name.substr(clazz.length(), adjusted_name.length() - clazz.length());
+    adjusted_name = adjusted_name.substr(
+        clazz.length(), adjusted_name.length() - clazz.length());
   return adjusted_name;
 #endif
 }

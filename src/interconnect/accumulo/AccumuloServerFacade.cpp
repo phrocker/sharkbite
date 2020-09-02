@@ -12,6 +12,7 @@
  * limitations under the License.
  */
 #include "interconnect/accumulo/AccumuloServerFacade.h"
+
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 
@@ -19,7 +20,6 @@ namespace interconnect {
 
 AccumuloServerFacade::AccumuloServerFacade(int version)
     : accumuloVersion(version),
-      logger(logging::LoggerFactory<AccumuloServerFacade>::getLogger()) {
-}
+      logger(logging::LoggerFactory<AccumuloServerFacade>::getLogger()) {}
 
 } /* namespace interconnect */

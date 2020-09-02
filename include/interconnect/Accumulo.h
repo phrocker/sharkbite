@@ -17,59 +17,57 @@
 //#define SIGNED_RIGHT_SHIFT_IS 5
 //#define ARITHMETIC_RIGHT_SHIFT 5
 
-#include "../data/constructs/client/Instance.h"
+#include <concurrency/ThreadManager.h>
+#include <data/constructs/client/Instance.h>
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
-//#include <server/TSimpleServer.h>
-
-#include <transport/TServerSocket.h>
-#include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
-#include <transport/TSocket.h>
 #include <server/TNonblockingServer.h>
 #include <transport/TBufferTransports.h>
-#include <concurrency/ThreadManager.h>
+#include <transport/TServerSocket.h>
+#include <transport/TServerTransport.h>
+#include <transport/TSocket.h>
+#include <transport/TTransport.h>
 
-#include "TabletServer.h"
-
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
-#include "ClientInterface.h"
 
-#include "tableOps/ClientTableOps.h"
-#include "namespaceOps/NamespaceOperations.h"
-#include "securityOps/SecurityOperations.h"
-#include "../data/constructs/inputvalidation.h"
-#include "transport/AccumuloCoordinatorTransporter.h"
+#include <data/constructs/inputvalidation.h>
+#include "ClientInterface.h"
+#include "TabletServer.h"
 #include "data/constructs/coordinator/AccumuloInfo.h"
-#include "python/PythonStructures.h"
+#include "namespaceOps/NamespaceOperations.h"
 #include "python/PythonConnector.h"
+#include "python/PythonStructures.h"
+#include "securityOps/SecurityOperations.h"
+#include "tableOps/ClientTableOps.h"
+#include "transport/AccumuloCoordinatorTransporter.h"
 
 namespace interconnect {
 
-static TransportPool<interconnect::AccumuloCoordinatorTransporter> ACCUMULO_COORDINATOR;
+static TransportPool<interconnect::AccumuloCoordinatorTransporter>
+    ACCUMULO_COORDINATOR;
 /**
  * Provides interconnect for coordinator.
  *
  */
-class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinatorTransporter, cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>, PythonConnector {
+class AccumuloConnector
+    : public RootInterface<interconnect::AccumuloCoordinatorTransporter,
+                           cclient::data::KeyValue,
+                           scanners::ResultBlock<cclient::data::KeyValue>>,
+      PythonConnector {
  public:
- 
-  explicit AccumuloConnector(cclient::data::security::AuthInfo &credentials, std::shared_ptr<cclient::data::Instance> instance);
+  explicit AccumuloConnector(cclient::data::security::AuthInfo &credentials,
+                             std::shared_ptr<cclient::data::Instance> instance);
 
-    /**
-     * Constructor
-     * @param credentials incoming user credentials
-     * @param instance incoming instance
-     */
-    explicit AccumuloConnector(cclient::data::security::AuthInfo *credentials, std::shared_ptr<cclient::data::Instance> instance)
-        : AccumuloConnector(*credentials, instance) {
-    }
-
-
-  
-
+  /**
+   * Constructor
+   * @param credentials incoming user credentials
+   * @param instance incoming instance
+   */
+  explicit AccumuloConnector(cclient::data::security::AuthInfo *credentials,
+                             std::shared_ptr<cclient::data::Instance> instance)
+      : AccumuloConnector(*credentials, instance) {}
 
   /**
    * Returns an instance of table operations
@@ -85,13 +83,11 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
    */
   std::shared_ptr<NamespaceOperations> namespaceOps(const std::string &nm = "");
 
-
   /**
    * Gets statistics about the accumulo cluster
    * @returns AccumuloInfo object that contains statistics about the cluster
    */
   cclient::data::AccumuloInfo getStatistics();
-
 
   /**
    * Returns an instance of security operations
@@ -99,12 +95,13 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
    */
   std::shared_ptr<SecurityOperations> securityOps();
 
-
-  virtual PythonTableOperations table_operations(const std::string &table) override{
+  virtual PythonTableOperations table_operations(
+      const std::string &table) override {
     return PythonTableOperations(tableOps(table));
   }
 
-  virtual PythonNamespaceOperations namespace_operations(const std::string &nm = "") override{
+  virtual PythonNamespaceOperations namespace_operations(
+      const std::string &nm = "") override {
     return PythonNamespaceOperations(namespaceOps(nm));
   }
 
@@ -128,7 +125,6 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
   }
 
  protected:
-
   /**
    * Locates tablet servers.
    **/
@@ -141,13 +137,13 @@ class AccumuloConnector : public RootInterface<interconnect::AccumuloCoordinator
   std::vector<std::shared_ptr<ServerConnection>> tabletServers;
 
   // cached transport for the coordinator.
-  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>> cachedTransport;
+  std::shared_ptr<CachedTransport<interconnect::AccumuloCoordinatorTransporter>>
+      cachedTransport;
 
   friend class AccumuloTableOperations;
 
   friend class SecurityOperations;
-
 };
-}
+}  // namespace interconnect
 
 #endif

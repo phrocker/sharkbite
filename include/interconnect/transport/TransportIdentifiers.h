@@ -17,11 +17,7 @@
 
 #include <string>
 
-
-
 #include "../../data/constructs/KeyExtent.h"
 #include "../../data/constructs/Range.h"
-
-
 
 #endif /* TRANSPORTIDENTIFIERS_H_ */

@@ -52,8 +52,8 @@ boost::hash<size_t> SizeHasher;
  * A hash function object used to hash a std::string object.
  */
 boost::hash<std::string> StringHasher;
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs
 
 #else
 
@@ -87,7 +87,7 @@ std::hash<size_t> SizeHasher;
  */
 std::hash<std::string> StringHasher;
 
-}
-}
+}  // namespace Internal
+}  // namespace Hdfs
 
 #endif

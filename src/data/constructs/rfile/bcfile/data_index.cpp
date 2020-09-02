@@ -20,16 +20,17 @@ DataIndex::DataIndex(cclient::data::compression::Compressor *compressor) {
   compressionAlgorithm = compressor->getAlgorithm();
 }
 
-DataIndex::DataIndex() {
-}
+DataIndex::DataIndex() {}
 
 DataIndex::~DataIndex() {
-  for (std::vector<BlockRegion*>::iterator it = listRegions.begin(); it != listRegions.end(); it++)
+  for (std::vector<BlockRegion *>::iterator it = listRegions.begin();
+       it != listRegions.end(); it++)
     delete (*it);
 }
 
 uint64_t DataIndex::read(cclient::data::streams::InputStream *in) {
-  compressionAlgorithm = cclient::data::compression::CompressionAlgorithm(in->readString());
+  compressionAlgorithm =
+      cclient::data::compression::CompressionAlgorithm(in->readString());
   // TODO was encoded long
   uint64_t count = in->readHadoopLong();
 
@@ -41,16 +42,16 @@ uint64_t DataIndex::read(cclient::data::streams::InputStream *in) {
 }
 
 uint64_t DataIndex::write(cclient::data::streams::OutputStream *out) {
-
   out->writeString(compressionAlgorithm.getName());
   // TODO was encoded long
   out->writeEncodedLong(listRegions.size());
-  for (std::vector<BlockRegion*>::iterator it = listRegions.begin(); it != listRegions.end(); it++) {
+  for (std::vector<BlockRegion *>::iterator it = listRegions.begin();
+       it != listRegions.end(); it++) {
     (*it)->write(out);
   }
 
   return out->getPos();
 }
 
-}
-}
+}  // namespace data
+}  // namespace cclient

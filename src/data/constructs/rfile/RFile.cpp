@@ -12,31 +12,31 @@
  * limitations under the License.
  */
 
-#include "data/streaming/input/NetworkOrderInputStream.h"
 #include "data/constructs/rfile/RFile.h"
+
+#include "data/streaming/input/NetworkOrderInputStream.h"
 
 namespace cclient {
 namespace data {
 
-RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompressedFile> bWriter)
-    :
-    out_stream(output_stream),
-    blockWriter(std::move(bWriter)),
-    dataClosed(false),
-    currentBlockWriter(
-    NULL),
-    closed(false),
-    dataBlockCnt(0),
-    currentBlockStart(0),
-    entries(0),
-    currentLocalityGroup(
-    NULL),
-    max_size(128 * 1024),
-    in_stream(nullptr),
-    myInputStream(nullptr),
-    currentLocalityGroupReader(nullptr) {
+RFile::RFile(streams::OutputStream *output_stream,
+             std::unique_ptr<BlockCompressedFile> bWriter)
+    : out_stream(output_stream),
+      blockWriter(std::move(bWriter)),
+      dataClosed(false),
+      currentBlockWriter(NULL),
+      closed(false),
+      dataBlockCnt(0),
+      currentBlockStart(0),
+      entries(0),
+      currentLocalityGroup(NULL),
+      max_size(128 * 1024),
+      in_stream(nullptr),
+      myInputStream(nullptr),
+      currentLocalityGroupReader(nullptr) {
   if (output_stream == NULL || blockWriter == NULL) {
-    throw std::runtime_error("Output Stream and BC File Writer should not be NULL");
+    throw std::runtime_error(
+        "Output Stream and BC File Writer should not be NULL");
   }
 
   compressorRef = blockWriter->cloneCompressor();
@@ -49,19 +49,17 @@ RFile::RFile(streams::OutputStream *output_stream, std::unique_ptr<BlockCompress
 }
 
 RFile::RFile(streams::InputStream *input_stream, long fileLength)
-    :
-    in_stream(input_stream),
-    dataClosed(false),
-    currentBlockWriter(
-    NULL),
-    closed(false),
-    dataBlockCnt(0),
-    currentBlockStart(0),
-    entries(0),
-    currentLocalityGroup(
-    NULL) {
+    : in_stream(input_stream),
+      dataClosed(false),
+      currentBlockWriter(NULL),
+      closed(false),
+      dataBlockCnt(0),
+      currentBlockStart(0),
+      entries(0),
+      currentLocalityGroup(NULL) {
   if (input_stream == NULL) {
-    throw std::runtime_error("InputSTream Stream and BC Reader Writer should not be NULL");
+    throw std::runtime_error(
+        "InputSTream Stream and BC Reader Writer should not be NULL");
   }
 
   maxBlockSize = 128 * 1024;
@@ -76,17 +74,16 @@ RFile::RFile(streams::InputStream *input_stream, long fileLength)
 
   maxBlockSize = compressorRef->getBufferSize() * 8;
 
-  streams::InputStream *metaBlock = blockWriter->getMetaIndex()->getEntry("RFile.index")->readDataStream(in_stream);
+  streams::InputStream *metaBlock = blockWriter->getMetaIndex()
+                                        ->getEntry("RFile.index")
+                                        ->readDataStream(in_stream);
 
   readLocalityGroups(metaBlock);
 
   delete metaBlock;
-
 }
 
-bool RFile::hasNext() {
-  return currentLocalityGroupReader->hasTop();
-}
+bool RFile::hasNext() { return currentLocalityGroupReader->hasTop(); }
 
 void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   int magic = metaBlock->readInt();
@@ -94,7 +91,8 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   int version = metaBlock->readInt();
 
   if (magic != MAGIC_NUMBER && magic != MAGIC_NUMBER2) {
-    throw std::runtime_error("Did not see expected magic number. Saw " + std::to_string(magic));
+    throw std::runtime_error("Did not see expected magic number. Saw " +
+                             std::to_string(magic));
   }
 
   switch (version) {
@@ -113,26 +111,26 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   localityGroups.resize(size);
 
   for (int i = 0; i < size; i++) {
-    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(compressorRef->newInstance(), version, in_stream);
+    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(
+        compressorRef->newInstance(), version, in_stream);
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
-    localityGroupReaders.push_back(new LocalityGroupReader(blockWriter.get(), in_stream, meatadata, version));
-
+    localityGroupReaders.push_back(new LocalityGroupReader(
+        blockWriter.get(), in_stream, meatadata, version));
   }
 
   currentLocalityGroupReader = localityGroupReaders.front();
 
-  //if (!colvis.empty()) {
+  // if (!colvis.empty()) {
   //  currentLocalityGroupReader->limitVisibility(colvis);
-//  }
-
+  //  }
 }
 
-void RFile::next() {
-  currentLocalityGroupReader->next();
-}
+void RFile::next() { currentLocalityGroupReader->next(); }
 
-cclient::data::streams::DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* RFile::operator++() {
+cclient::data::streams::DataStream<
+    std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>
+    *RFile::operator++() {
   currentLocalityGroupReader->next();
   return this;
 }
@@ -143,15 +141,17 @@ std::shared_ptr<Key> RFile::getTopKey() {
 
 std::shared_ptr<Value> RFile::getTopValue() {
   return currentLocalityGroupReader->getTopValue();
-
 }
 
 std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> RFile::operator*() {
-  return std::make_pair(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
+  return std::make_pair(currentLocalityGroupReader->getTopKey(),
+                        currentLocalityGroupReader->getTopValue());
 }
 
 std::shared_ptr<cclient::data::KeyValue> RFile::getTop() {
-  return std::make_shared<cclient::data::KeyValue>(currentLocalityGroupReader->getTopKey(), currentLocalityGroupReader->getTopValue());
+  return std::make_shared<cclient::data::KeyValue>(
+      currentLocalityGroupReader->getTopKey(),
+      currentLocalityGroupReader->getTopValue());
 }
 
 RFile::~RFile() {
@@ -168,8 +168,8 @@ bool RFile::append(std::shared_ptr<KeyValue> kv) {
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
 
-  if (currentLocalityGroup == nullptr){
-    addLocalityGroup(); // add the default locality group.
+  if (currentLocalityGroup == nullptr) {
+    addLocalityGroup();  // add the default locality group.
   }
 
   if (currentLocalityGroup->getFirstKey() == NULL) {
@@ -185,8 +185,8 @@ bool RFile::append(std::shared_ptr<KeyValue> kv) {
   RelativeKey key(prevKey, kv->getKey(), ArrayAllocatorPool::getInstance());
 
   if (NULL == currentBlockWriter) {
-
-    currentBlockWriter = (BlockCompressorStream*) blockWriter->createDataStream(myDataStream);
+    currentBlockWriter =
+        (BlockCompressorStream *)blockWriter->createDataStream(myDataStream);
     currentBlockStart = currentBlockWriter->getPos();
     currentBlockCount = 0;
   }
@@ -199,7 +199,7 @@ bool RFile::append(std::shared_ptr<KeyValue> kv) {
   lastKeyValue = kv;
 
   // we've written all we can write doctor.
-  if (position-currentBlockStart >= maxBlockSize) {
+  if (position - currentBlockStart >= maxBlockSize) {
     currentBlockWriter->flush();
     closeBlock(kv->getKey());
 
@@ -208,34 +208,38 @@ bool RFile::append(std::shared_ptr<KeyValue> kv) {
   }
 
   return true;
-
 }
 
-bool RFile::append(std::vector<std::shared_ptr<streams::StreamInterface>> *keyValues, uint32_t average_recordSize, bool isSorted) {
-
+bool RFile::append(
+    std::vector<std::shared_ptr<streams::StreamInterface>> *keyValues,
+    uint32_t average_recordSize, bool isSorted) {
   if (dataClosed || closed)
     throw std::runtime_error("Appending data failed, data block closed");
 
-  if (keyValues == NULL || keyValues->size() == 0)
-    return false;
+  if (keyValues == NULL || keyValues->size() == 0) return false;
 
   uint32_t recordIncrement = (maxBlockSize / average_recordSize);
 
   std::shared_ptr<cclient::data::Key> key;
   std::shared_ptr<cclient::data::Key> firstKey = NULL;
-  firstKey =  std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(0))->getKey();;
+  firstKey = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(0))
+                 ->getKey();
+  ;
   // set the first key for the current locality group.
   setCurrentLocalityKey(firstKey);
 
   uint64_t j = 0;
   for (uint64_t i = 0; i < keyValues->size(); i += (j - i)) {
-    currentBlockWriter = (BlockCompressorStream*) blockWriter->createDataStream(myDataStream);
+    currentBlockWriter =
+        (BlockCompressorStream *)blockWriter->createDataStream(myDataStream);
     for (j = i; j < keyValues->size() && j < (i + recordIncrement); j++) {
       keyValues->at(j)->write(currentBlockWriter);
       entries++;
     }
     currentBlockWriter->flush();
-    auto ky = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(j - 1))->getKey();
+    auto ky =
+        std::static_pointer_cast<cclient::data::KeyValue>(keyValues->at(j - 1))
+            ->getKey();
     closeBlock(ky);
 
     delete currentBlockWriter;
@@ -246,11 +250,11 @@ bool RFile::append(std::vector<std::shared_ptr<streams::StreamInterface>> *keyVa
     currentBlockWriter->flush();
     delete currentBlockWriter;
   }
-  key = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->back())->getKey();
+  key = std::static_pointer_cast<cclient::data::KeyValue>(keyValues->back())
+            ->getKey();
   closeBlock(key);
 
   return true;
-
 }
 
 void RFile::close() {
@@ -258,7 +262,9 @@ void RFile::close() {
 
   // create  new compression stream.
 
-  BlockCompressorStream *outStream = (BlockCompressorStream*) blockWriter->createCompressorStream(myDataStream, blockWriter->prepareNewEntry("RFile.index"));
+  BlockCompressorStream *outStream =
+      (BlockCompressorStream *)blockWriter->createCompressorStream(
+          myDataStream, blockWriter->prepareNewEntry("RFile.index"));
   // prepare the RFile Index.
 
   MetaBlock block;
@@ -272,5 +278,5 @@ void RFile::close() {
   delete outStream;
   closed = true;
 }
-}
-}
+}  // namespace data
+}  // namespace cclient

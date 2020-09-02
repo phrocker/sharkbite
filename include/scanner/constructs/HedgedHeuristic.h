@@ -15,22 +15,24 @@
 #ifndef HEDGEDHEURISTIC_H
 #define HEDGEDHEURISTIC_H
 
-#include "ServerHeuristic.h"
-#include "../../interconnect/TabletServer.h"
 #include <thrift/TApplicationException.h>
-#include "data/exceptions/NotServingException.h"
+
+#include <chrono>
+#include <mutex>
+#include <thread>
+#include <vector>
+
 #include "../../data/client/ExtentLocator.h"
 #include "../../data/extern/thrift/tabletserver_types.h"
 #include "../../interconnect/Scan.h"
 #include "../../interconnect/ScanArbiter.h"
+#include "../../interconnect/TabletServer.h"
 #include "../Source.h"
+#include "ServerHeuristic.h"
+#include "data/constructs/IterInfo.h"
+#include "data/exceptions/NotServingException.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
-#include "data/constructs/IterInfo.h"
-#include <thread>
-#include <vector>
-#include <chrono>
-#include <mutex>
 
 namespace scanners {
 
@@ -45,39 +47,38 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
   std::vector<cclient::data::IterInfo> iters;
 
  public:
-
   explicit HedgedScannerHeuristic(short numThreads = 10)
-      :
-      ScannerHeuristic(numThreads),
-      logger(logging::LoggerFactory<HedgedScannerHeuristic>::getLogger()) {
+      : ScannerHeuristic(numThreads),
+        logger(logging::LoggerFactory<HedgedScannerHeuristic>::getLogger()) {}
 
-  }
-
-  ~HedgedScannerHeuristic() {
-    close();
-  }
+  ~HedgedScannerHeuristic() { close(); }
 
   virtual void close() override;
 
-  virtual uint16_t scan(Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source) override;
+  virtual uint16_t scan(
+      Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
+          *source) override;
 
   void setTableIterators(std::vector<cclient::data::IterInfo> iters);
 
  protected:
-
   virtual std::shared_ptr<logging::Logger> getLogger() override {
     return logger;
   }
 
-  static void* hedgedScan(ScanPair<interconnect::ThriftTransporter> *scanResource) {
-
-    Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>> *source = scanResource->src;
+  static void *hedgedScan(
+      ScanPair<interconnect::ThriftTransporter> *scanResource) {
+    Source<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
+        *source = scanResource->src;
 
     cclient::data::IterInfo versioningIterator;
     if (scanResource->ownedAdditionalFeatures) {
-      std::vector<cclient::data::IterInfo> *iterators = static_cast<std::vector<cclient::data::IterInfo>*>(scanResource->ownedAdditionalFeatures);
+      std::vector<cclient::data::IterInfo> *iterators =
+          static_cast<std::vector<cclient::data::IterInfo> *>(
+              scanResource->ownedAdditionalFeatures);
       for (const auto &iterator : *iterators) {
-        if (iterator.getClass() == "org.apache.accumulo.core.iterators.user.VersioningIterator") {
+        if (iterator.getClass() ==
+            "org.apache.accumulo.core.iterators.user.VersioningIterator") {
           versioningIterator = iterator;
         }
       }
@@ -88,31 +89,39 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
     std::shared_ptr<interconnect::ServerInterconnect> conn = 0;
 
     bool failed = false;
-    std::shared_ptr<interconnect::ScanArbiter> arbiter = std::make_shared<interconnect::ScanArbiter>(1, scanResource->disableRpc);
+    std::shared_ptr<interconnect::ScanArbiter> arbiter =
+        std::make_shared<interconnect::ScanArbiter>(1,
+                                                    scanResource->disableRpc);
     do {
-      conn = ((HedgedScannerHeuristic*) scanResource->heuristic)->next();
+      conn = ((HedgedScannerHeuristic *)scanResource->heuristic)->next();
 
       failed = false;
       interconnect::Scan *scan = 0;
       if (NULL != conn) {
-
         try {
-
-          scan = conn->hedgedScan(arbiter, scanResource->runningFlag, source->getColumns(), source->getIters(), versioningIterator, 1000, scanResource->disableRpc);
+          scan = conn->hedgedScan(arbiter, scanResource->runningFlag,
+                                  source->getColumns(), source->getIters(),
+                                  versioningIterator, 1000,
+                                  scanResource->disableRpc);
 
           do {
-
             if (!scanResource->runningFlag->load()) {
               break;
             }
 
             if (scan->isRFileScan()) {
-              logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "RFile scan completed first";
+              logging::LOG_TRACE(
+                  ((HedgedScannerHeuristic *)scanResource->heuristic)
+                      ->getLogger())
+                  << "RFile scan completed first";
             } else {
-              logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "Accumulo scan completed first";
+              logging::LOG_TRACE(
+                  ((HedgedScannerHeuristic *)scanResource->heuristic)
+                      ->getLogger())
+                  << "Accumulo scan completed first";
             }
 
-            std::vector<std::shared_ptr<cclient::data::KeyValue> > nextResults;
+            std::vector<std::shared_ptr<cclient::data::KeyValue>> nextResults;
 
             scan->getNextResults(&nextResults);
 
@@ -146,14 +155,19 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
           if (scanResource->runningFlag->load()) {
             throw te;
           }
-          ((HedgedScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
-        } catch (const org::apache::accumulov2::core::tabletserver::thrift::NoSuchScanIDException &te) {
+          ((HedgedScannerHeuristic *)scanResource->heuristic)
+              ->addFailedScan(scanResource, conn, scan);
+        } catch (const org::apache::accumulov2::core::tabletserver::thrift::
+                     NoSuchScanIDException &te) {
           if (scanResource->runningFlag->load()) {
             throw te;
           }
         } catch (const cclient::exceptions::NotServingException &te) {
-          logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "Not serving " << te.what();
-          ((HedgedScannerHeuristic*) scanResource->heuristic)->addFailedScan(scanResource, conn, scan);
+          logging::LOG_TRACE(
+              ((HedgedScannerHeuristic *)scanResource->heuristic)->getLogger())
+              << "Not serving " << te.what();
+          ((HedgedScannerHeuristic *)scanResource->heuristic)
+              ->addFailedScan(scanResource, conn, scan);
 
           conn.reset();
 
@@ -163,7 +177,9 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
         }
 
       } else {
-        logging::LOG_TRACE(((HedgedScannerHeuristic*) scanResource->heuristic)->getLogger()) << "connection is null";
+        logging::LOG_TRACE(
+            ((HedgedScannerHeuristic *)scanResource->heuristic)->getLogger())
+            << "connection is null";
         delete scanResource;
         break;
       }
@@ -172,9 +188,7 @@ class HedgedScannerHeuristic : public ScannerHeuristic {
     closeScan(source);
 
     return 0;
-
   }
-
 };
-}
+}  // namespace scanners
 #endif /* SERVERHEURISTIC_H_ */

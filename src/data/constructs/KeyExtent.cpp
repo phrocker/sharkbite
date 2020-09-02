@@ -14,20 +14,16 @@
 
 #include "data/constructs/KeyExtent.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-KeyExtent::KeyExtent (std::string flattenedText, std::shared_ptr<Value> prevEndRow)
-{
-    decodeMetadataRow (flattenedText);
-    setPrevEndRow (prevEndRow);
+KeyExtent::KeyExtent(std::string flattenedText,
+                     std::shared_ptr<Value> prevEndRow) {
+  decodeMetadataRow(flattenedText);
+  setPrevEndRow(prevEndRow);
 }
 
-KeyExtent::~KeyExtent ()
-{
-}
+KeyExtent::~KeyExtent() {}
 
 } /* namespace data */
 } /* namespace cclient */

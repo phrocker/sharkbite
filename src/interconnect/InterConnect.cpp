@@ -11,37 +11,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <string>
-#include <map>
-#include <set>
-#include <algorithm>    // std::random_shuffle
-#include <vector>       // std::vector
-#include <ctime>        // std::time
-#include <cstdlib>      // std::rand, std::srand
+#include "interconnect/InterConnect.h"
 
-
+#include <concurrency/ThreadManager.h>
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TSimpleServer.h>
-
+#include <sys/time.h>
+#include <transport/TBufferTransports.h>
 #include <transport/TServerSocket.h>
 #include <transport/TServerTransport.h>
-#include <transport/TTransport.h>
 #include <transport/TSocket.h>
+#include <transport/TTransport.h>
 #include <transport/TTransportException.h>
-#include <transport/TBufferTransports.h>
 
-#include <concurrency/ThreadManager.h>
+#include <algorithm>  // std::random_shuffle
+#include <cstdlib>    // std::rand, std::srand
+#include <ctime>      // std::time
+#include <map>
+#include <set>
+#include <string>
+#include <vector>  // std::vector
 
-#include <sys/time.h>
-
-
+#include "interconnect/../data/constructs/inputvalidation.h"
 #include "interconnect/../data/exceptions/ClientException.h"
 #include "interconnect/../data/exceptions/IllegalArgumentException.h"
-#include "interconnect/../data/constructs/inputvalidation.h"
 #include "interconnect/transport/BaseTransport.h"
-#include "interconnect/transport/ServerConnection.h"
 #include "interconnect/transport/CachedTransport.h"
-
-#include "interconnect/InterConnect.h"
-
+#include "interconnect/transport/ServerConnection.h"

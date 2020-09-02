@@ -12,60 +12,67 @@
  * limitations under the License.
  */
 
+#include "interconnect/tableOps/ClientTableOps.h"
+
 #include <string>
 
-#include "interconnect/tableOps/ClientTableOps.h"
-#include "interconnect/tableOps/TableOperations.h"
-#include "interconnect/tableOps/../accumulo/AccumuloStreams.h"
+#include "data/client/ExtentLocator.h"
+#include "data/client/LocatorCache.h"
+#include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
 #include "interconnect/tableOps/../../scanner/impl/Scanner.h"
 #include "interconnect/tableOps/../../writer/impl/SinkImpl.h"
-#include "interconnect/tableOps/../../data/constructs/ConfigurationOptions.h"
+#include "interconnect/tableOps/../accumulo/AccumuloStreams.h"
 #include "interconnect/tableOps/../transport/AccumuloCoordinatorTransporter.h"
-#include "data/client/LocatorCache.h"
-#include "data/client/ExtentLocator.h"
+#include "interconnect/tableOps/TableOperations.h"
 
 namespace interconnect {
 
 AccumuloTableOperations::~AccumuloTableOperations() {
   // we don't own client interface.
-//	delete clientInterface;
+  //	delete clientInterface;
   distributedConnector->freeTransport(tserverConn);
 }
 
-std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> AccumuloTableOperations::createScanner(cclient::data::security::Authorizations *auths,
-                                                                                                                                                  uint16_t threads) {
+std::unique_ptr<scanners::Source<
+    cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>
+AccumuloTableOperations::createScanner(
+    cclient::data::security::Authorizations *auths, uint16_t threads) {
   if (nullptr == auths)
     throw cclient::exceptions::ClientException(ARGUMENT_CANNOT_BE_NULL);
-  if (!exists())
-    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
-  auto scnr = std::unique_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(new AccumuloStreams(myInstance, this, auths, threads));
+  if (!exists()) throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+  auto scnr = std::unique_ptr<scanners::Source<
+      cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(
+      new AccumuloStreams(myInstance, this, auths, threads));
   scnr->setTableOptions(getProperties());
   return scnr;
 }
 
-std::unique_ptr<writer::Sink<cclient::data::KeyValue>> AccumuloTableOperations::createWriter(cclient::data::security::Authorizations *auths, uint16_t threads) {
-  if (!exists())
-    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
-  return std::unique_ptr<writer::Sink<cclient::data::KeyValue>>(new AccumuloStreams(myInstance, this, auths, threads));
-
+std::unique_ptr<writer::Sink<cclient::data::KeyValue>>
+AccumuloTableOperations::createWriter(
+    cclient::data::security::Authorizations *auths, uint16_t threads) {
+  if (!exists()) throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+  return std::unique_ptr<writer::Sink<cclient::data::KeyValue>>(
+      new AccumuloStreams(myInstance, this, auths, threads));
 }
 
-std::shared_ptr<scanners::Source<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> AccumuloTableOperations::createSharedScanner(cclient::data::security::Authorizations *auths,
-                                                                                                                                                  uint16_t threads) {
+std::shared_ptr<scanners::Source<
+    cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>
+AccumuloTableOperations::createSharedScanner(
+    cclient::data::security::Authorizations *auths, uint16_t threads) {
   if (nullptr == auths)
     throw cclient::exceptions::ClientException(ARGUMENT_CANNOT_BE_NULL);
-  if (!exists())
-    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
-  auto scnr = std::make_shared<AccumuloStreams>(myInstance, this, auths, threads);
+  if (!exists()) throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+  auto scnr =
+      std::make_shared<AccumuloStreams>(myInstance, this, auths, threads);
   scnr->setTableOptions(getProperties());
   return scnr;
 }
 
-std::shared_ptr<writer::Sink<cclient::data::KeyValue>> AccumuloTableOperations::createSharedWriter(cclient::data::security::Authorizations *auths, uint16_t threads) {
-  if (!exists())
-    throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
+std::shared_ptr<writer::Sink<cclient::data::KeyValue>>
+AccumuloTableOperations::createSharedWriter(
+    cclient::data::security::Authorizations *auths, uint16_t threads) {
+  if (!exists()) throw cclient::exceptions::ClientException(TABLE_NOT_FOUND);
   return std::make_shared<AccumuloStreams>(myInstance, this, auths, threads);
-
 }
 
 void AccumuloTableOperations::loadTableOps(bool force) {
@@ -76,7 +83,7 @@ void AccumuloTableOperations::loadTableOps(bool force) {
 
   fsRoot.append("/");
   fsRoot.append(myInstance->getInstanceId());
-  fsRoot.append( TABLE_SUFFIX);
+  fsRoot.append(TABLE_SUFFIX);
 
   cclient::data::InstanceCache *cache = myInstance->getInstanceCache();
   std::vector<std::string> tableIds = cache->getChildren(fsRoot, force);
@@ -91,24 +98,21 @@ void AccumuloTableOperations::loadTableOps(bool force) {
 
     std::string namePath = tablePath;
     namePath.append(TABLE_GET_NAME);
-    char *path = (char*) cache->getData(namePath);
+    char *path = (char *)cache->getData(namePath);
     if (IsEmpty(path)) {
-
       loadTableOps();
 
       return;
-
     }
     std::string tableName = std::string(path);
 
     std::string nameSpacePath = tablePath;
     nameSpacePath.append(TABLE_GET_NAMESPACE);
-    char *nmpath = (char*) cache->getData(nameSpacePath);
+    char *nmpath = (char *)cache->getData(nameSpacePath);
 
     std::string namespaceId = "";
 
-    if (!IsEmpty(nmpath))
-      namespaceId = nmpath;
+    if (!IsEmpty(nmpath)) namespaceId = nmpath;
 
     std::string namespaceName = "";
     if (!IsEmpty(&namespaceId)) {
@@ -130,7 +134,6 @@ void AccumuloTableOperations::loadTableOps(bool force) {
       cachedTableIds.insert(std::make_pair(tableName, retrievedId));
       tableNames.insert(tableName);
     }
-
   }
 
   cachedTableIds.insert(std::make_pair("!0", "accumulo.metadata"));
@@ -146,7 +149,7 @@ void AccumuloTableOperations::loadNamespaces(bool force) {
 
   fsRoot.append("/");
   fsRoot.append(myInstance->getInstanceId());
-  fsRoot.append( TABLE_GET_NAMESPACES);
+  fsRoot.append(TABLE_GET_NAMESPACES);
 
   cclient::data::InstanceCache *cache = myInstance->getInstanceCache();
   std::vector<std::string> namespaceIds = cache->getChildren(fsRoot, force);
@@ -160,11 +163,9 @@ void AccumuloTableOperations::loadNamespaces(bool force) {
 
     std::string namePath = tablePath;
     namePath.append(TABLE_GET_NAME);
-    char *path = (char*) cache->getData(namePath);
+    char *path = (char *)cache->getData(namePath);
     if (IsEmpty(path)) {
-
       continue;
-
     }
     std::string namespaceName = std::string(path);
 
@@ -174,16 +175,13 @@ void AccumuloTableOperations::loadNamespaces(bool force) {
       namespaces.insert(std::make_pair(namespaceName, retrievedId));
       namespaceNames.push_back(namespaceName);
     }
-
   }
-
 }
 
 std::string AccumuloTableOperations::getTableId() {
   std::string retTable = "";
   std::lock_guard<std::recursive_mutex> lock(tableOpMutex);
   if (IsEmpty(&tableId)) {
-
     std::string ephemeralTableId = "";
 
     try {
@@ -200,7 +198,6 @@ std::string AccumuloTableOperations::getTableId() {
         // table does not exist
         // do nothing
       }
-
     }
     tableId = ephemeralTableId;
   }
@@ -208,17 +205,20 @@ std::string AccumuloTableOperations::getTableId() {
   return retTable;
 }
 
-bool AccumuloTableOperations::import(std::string dir, std::string fail_path, bool setTime) {
+bool AccumuloTableOperations::import(std::string dir, std::string fail_path,
+                                     bool setTime) {
   auto baseTransport = clientInterface->getTransport().get();
 
-  if (!baseTransport->importDirectory(credentials, myTable, dir, fail_path, setTime)) {
+  if (!baseTransport->importDirectory(credentials, myTable, dir, fail_path,
+                                      setTime)) {
     return false;
   }
 
   return true;
 }
 
-int8_t AccumuloTableOperations::flush(std::string startRow, std::string endRow, bool wait) {
+int8_t AccumuloTableOperations::flush(std::string startRow, std::string endRow,
+                                      bool wait) {
   auto baseTransport = clientInterface->getTransport().get();
 
   if (!baseTransport->flush(credentials, tableId, startRow, endRow, wait)) {
@@ -228,7 +228,8 @@ int8_t AccumuloTableOperations::flush(std::string startRow, std::string endRow, 
   return 1;
 }
 
-int8_t AccumuloTableOperations::compact(std::string startRow, std::string endRow, bool wait) {
+int8_t AccumuloTableOperations::compact(std::string startRow,
+                                        std::string endRow, bool wait) {
   auto baseTransport = clientInterface->getTransport().get();
 
   if (!baseTransport->compact(credentials, tableId, startRow, endRow, wait)) {
@@ -259,87 +260,104 @@ std::vector<std::string> AccumuloTableOperations::listSplits() {
     loadTableOps();
   }
 
-  auto connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(myInstance);
+  auto connectorInstance =
+      dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(
+          myInstance);
 
-  cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId));
+  cclient::impl::TabletLocator *tabletLocator =
+      cclient::impl::cachedLocators.getLocator(
+          cclient::impl::LocatorKey(connectorInstance, tableId));
 
-  std::vector<cclient::data::TabletLocation> locations = tabletLocator->locations(credentials);
+  std::vector<cclient::data::TabletLocation> locations =
+      tabletLocator->locations(credentials);
 
   std::vector<std::string> tablets;
   for (auto location : locations) {
     std::shared_ptr<cclient::data::KeyExtent> extent = location.getExtent();
     tablets.push_back(extent->getEndRow());
-
   }
   return tablets;
 }
 
 void AccumuloTableOperations::addSplits(std::set<std::string> partitions) {
-  auto connectorInstance = dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(myInstance);
+  auto connectorInstance =
+      dynamic_pointer_cast<cclient::data::zookeeper::ZookeeperInstance>(
+          myInstance);
 
-// need better error handling here
+  // need better error handling here
   for (std::string partition : partitions) {
     bool success = false;
     while (!success) {
-      logging::LOG_DEBUG(logger) << "Adding split " << partition << " for table id " << tableId;
+      logging::LOG_DEBUG(logger)
+          << "Adding split " << partition << " for table id " << tableId;
       cclient::data::TabletLocation location;
       try {
-        cclient::impl::TabletLocator *tabletLocator = cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId));
+        cclient::impl::TabletLocator *tabletLocator =
+            cclient::impl::cachedLocators.getLocator(
+                cclient::impl::LocatorKey(connectorInstance, tableId));
 
-        location = tabletLocator->locateTablet(credentials, partition, false, false);
-        logging::LOG_DEBUG(logger) << "Located server for " << partition << " " << location.getServer() << ":" << location.getPort();
+        location =
+            tabletLocator->locateTablet(credentials, partition, false, false);
+        logging::LOG_DEBUG(logger)
+            << "Located server for " << partition << " " << location.getServer()
+            << ":" << location.getPort();
       } catch (...) {
         continue;
       }
-      std::shared_ptr<ServerConnection> connection = std::make_shared<ServerConnection>(location.getServer(), location.getPort(), -1);
+      std::shared_ptr<ServerConnection> connection =
+          std::make_shared<ServerConnection>(location.getServer(),
+                                             location.getPort(), -1);
 
       auto cachedTransport = distributedConnector->getTransporter(connection);
 
       try {
-
-        cachedTransport->getTransport()->splitTablet(credentials, location.getExtent(), partition);
+        cachedTransport->getTransport()->splitTablet(
+            credentials, location.getExtent(), partition);
         success = true;
       } catch (const apache::thrift::protocol::TProtocolException &tpe) {
-        logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " " << tpe.what();
+        logging::LOG_ERROR(logger) << "Received exception while adding split "
+                                   << partition << " " << tpe.what();
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
         success = false;
       } catch (const apache::thrift::transport::TTransportException &tpe) {
-        logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " " << tpe.what();
+        logging::LOG_ERROR(logger) << "Received exception while adding split "
+                                   << partition << " " << tpe.what();
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
         success = false;
       } catch (...) {
-        logging::LOG_ERROR(logger) << "Received exception while adding split " << partition << " ";
+        logging::LOG_ERROR(logger)
+            << "Received exception while adding split " << partition << " ";
         cachedTransport->sawError(true);
         distributedConnector->freeTransport(cachedTransport);
-        cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))->invalidateCache();
+        cclient::impl::cachedLocators
+            .getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))
+            ->invalidateCache();
         continue;
       }
 
       distributedConnector->freeTransport(cachedTransport);
 
-      cclient::impl::cachedLocators.getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))->invalidateCache();
+      cclient::impl::cachedLocators
+          .getLocator(cclient::impl::LocatorKey(connectorInstance, tableId))
+          ->invalidateCache();
     }
   }
 }
 
 int8_t AccumuloTableOperations::removeProperty(std::string property) {
-
-  if (IsEmpty(&property))
-    return -1;
+  if (IsEmpty(&property)) return -1;
   auto baseTransport = clientInterface->getTransport().get();
   baseTransport->removeTableProperty(credentials, myTable, property);
 
   return 0;
-
 }
 
-int8_t AccumuloTableOperations::setProperty(std::string property, std::string value) {
-  if (IsEmpty(&property))
-    return -1;
-  if (IsEmpty(&value))
-    return removeProperty(property);
+int8_t AccumuloTableOperations::setProperty(std::string property,
+                                            std::string value) {
+  if (IsEmpty(&property)) return -1;
+  if (IsEmpty(&value)) return removeProperty(property);
   auto baseTransport = clientInterface->getTransport().get();
   baseTransport->setTableProperty(credentials, myTable, property, value);
   return 0;
@@ -369,16 +387,15 @@ bool AccumuloTableOperations::exists(bool createIfNot) {
   bool contains = cachedTableIds.find(myTable) != std::end(cachedTableIds);
 
   if (!contains && createIfNot) {
-    if (create())
-      return true;
+    if (create()) return true;
   }
   return contains;
 }
 
 int AccumuloTableOperations::addConstraint(std::string constraintClassName) {
-// set the table prop for the constraint
+  // set the table prop for the constraint
   return 0;
 }
 
 std::map<std::string, std::string> nameSpaceIds;
-} /* namespace impl */
+}  // namespace interconnect

@@ -15,151 +15,131 @@
 #define HADOOP_DOUT_STREAM
 
 #include <cstdint>
+
+#include "ByteOutputStream.h"
+#include "OutputStream.h"
 #include "Streams.h"
+#include "data/constructs/client/Hdfs.h"
 #include "extern/libhdfs3/client/hdfs.h"
 #include "utils/Uri.h"
-#include "data/constructs/client/Hdfs.h"
-#include "OutputStream.h"
-#include "ByteOutputStream.h"
 
 namespace cclient {
 namespace data {
 namespace streams {
 
-class HadoopDataOutputStream: public DataOutputStream {
-public:
+class HadoopDataOutputStream : public DataOutputStream {
+ public:
+  explicit HadoopDataOutputStream(OutputStream *out_stream)
+      : DataOutputStream(out_stream), output_stream_ref(out_stream) {}
 
+  virtual ~HadoopDataOutputStream();
+  virtual uint64_t getPos();
+  uint64_t write(const char *bytes, long cnt);
+  virtual uint64_t writeByte(int byte);
+  virtual uint64_t writeString(std::string s);
+  virtual uint64_t write(const uint8_t *bytes, long cnt);
+  virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt);
+  virtual uint64_t writeByte(const uint8_t byte);
+  virtual uint64_t writeShort(const short shortVal);
+  virtual uint64_t writeInt(const int intVal);
+  virtual uint64_t writeLong(const uint64_t val);
+  virtual uint64_t writeBoolean(const bool val);
+  virtual uint64_t writeHadoopLong(const int64_t n);
 
-    explicit HadoopDataOutputStream(OutputStream *out_stream)  : DataOutputStream(out_stream), output_stream_ref( out_stream )
-    {
-
-    }
-
-
-    virtual ~HadoopDataOutputStream();
-    virtual uint64_t getPos();
-    uint64_t write(const char *bytes, long cnt);
-    virtual uint64_t writeByte(int byte);
-    virtual uint64_t writeString(std::string s);
-    virtual uint64_t write(const uint8_t *bytes, long cnt);
-    virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt);
-    virtual uint64_t writeByte(const uint8_t byte);
-    virtual uint64_t writeShort(const short shortVal);
-    virtual uint64_t writeInt(const int intVal);
-    virtual uint64_t writeLong(const uint64_t val);
-    virtual uint64_t writeBoolean(const bool val);
-    virtual uint64_t writeHadoopLong(const int64_t n);
-
-protected:
-    // output stream reference.
-    cclient::data::streams::OutputStream *output_stream_ref;
-
+ protected:
+  // output stream reference.
+  cclient::data::streams::OutputStream *output_stream_ref;
 };
 
+class HdfsOutputStream : public ByteOutputStream {
+ public:
+  explicit HdfsOutputStream(const std::string path);
 
-class HdfsOutputStream: public ByteOutputStream {
-public:
+  explicit HdfsOutputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs,
+                            const std::string &path);
 
-    explicit HdfsOutputStream(const std::string path);
+  ~HdfsOutputStream() { hdfsCloseFile(hdfs->getHdfsReference(), fileRef); }
 
-    explicit HdfsOutputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs, const std::string &path);
+  /**
+   * Copied from
+   * http://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
+   */
+  uint64_t htonlw(uint64_t value) {
+    // The answer is 42
+    static const int num = 42;
 
-    ~HdfsOutputStream(){
-        hdfsCloseFile(hdfs->getHdfsReference(), fileRef);
+    // Check the endianness
+    if (*reinterpret_cast<const char *>(&num) == num) {
+      const uint32_t high_part = htonl(static_cast<uint32_t>(value >> 32));
+      const uint32_t low_part =
+          htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
+
+      return (static_cast<uint64_t>(low_part) << 32) | high_part;
+    } else {
+      return value;
     }
+  }
 
-   /**
-     * Copied from
-     * http://stackoverflow.com/questions/3022552/is-there-any-standard-htonl-like-function-for-64-bits-integers-in-c
-     */
-    uint64_t htonlw(uint64_t value) {
-        // The answer is 42
-        static const int num = 42;
+  virtual uint64_t writeShort(short shortVal) override {
+    short sht = htons(shortVal);
+    return writeBytes(reinterpret_cast<uint8_t *>(&sht), 2);
+  }
 
-        // Check the endianness
-        if (*reinterpret_cast<const char*>(&num) == num) {
-            const uint32_t high_part = htonl(
-                                           static_cast<uint32_t>(value >> 32));
-            const uint32_t low_part = htonl(
-                                          static_cast<uint32_t>(value & 0xFFFFFFFFLL));
+  virtual uint64_t writeInt(int intVal) override {
+    int ntv = htonl(intVal);
+    return writeBytes(reinterpret_cast<uint8_t *>(&ntv), 4);
+  }
 
-            return (static_cast<uint64_t>(low_part) << 32) | high_part;
-        } else {
-            return value;
-        }
-    }
+  virtual uint64_t writeLong(uint64_t val) override {
+    uint64_t vl = htonlw(val);
+    return writeBytes(reinterpret_cast<uint8_t *>(&vl), 8);
+  }
 
-    virtual uint64_t writeShort(short shortVal) override {
+  virtual uint64_t writeBytes(const char *bytes, size_t cnt) override {
+    written += cnt;
+    return hdfsWrite(hdfs->getHdfsReference(), fileRef,
+                     static_cast<const void *>(bytes), cnt);
+  }
 
-        short sht = htons(shortVal);
-        return writeBytes(reinterpret_cast<uint8_t*>(&sht),2);
-    }
+  virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt) override {
+    written += cnt;
+    return hdfsWrite(hdfs->getHdfsReference(), fileRef,
+                     static_cast<const void *>(bytes), cnt);
+  }
 
-    virtual uint64_t writeInt(int intVal) override{
+  virtual uint64_t write(const uint8_t *bytes, long cnt) override {
+    written += cnt;
+    return hdfsWrite(hdfs->getHdfsReference(), fileRef,
+                     static_cast<const void *>(bytes), cnt);
+  }
 
-       int ntv = htonl(intVal);
-       return writeBytes(reinterpret_cast<uint8_t*>(&ntv),4);
-    }
+  virtual uint64_t getPos() override { return written; }
 
-    virtual uint64_t writeLong(uint64_t val) override {
+  uint64_t write(const char *bytes, long cnt) override {
+    written += cnt;
+    return hdfsWrite(hdfs->getHdfsReference(), fileRef,
+                     static_cast<const void *>(bytes), cnt);
+  }
 
-        uint64_t vl = htonlw(val);
-        return writeBytes(reinterpret_cast<uint8_t*>(&vl),8);
-    }
+  virtual uint64_t writeByte(int byte) override {
+    return writeBytes(reinterpret_cast<uint8_t *>(&byte), 1);
+  }
 
-    virtual uint64_t writeBytes(const char *bytes, size_t cnt) override{
-        written += cnt;
-        return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
-    }
+  virtual uint64_t writeByte(const uint8_t byte) override {
+    return writeBytes(&byte, 1);
+  }
 
-    
-    virtual uint64_t writeBytes(const uint8_t *bytes, size_t cnt) override {
-        written += cnt;
-        return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
-    }
-
-    
-    virtual uint64_t write(const uint8_t *bytes, long cnt) override{
-        written += cnt;
-        return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
-    }
-
-    
-    virtual uint64_t getPos() override{
-        return written;
-    }
-
-    uint64_t write(const char *bytes, long cnt) override{
-        written += cnt;
-        return hdfsWrite(hdfs->getHdfsReference(),fileRef,static_cast<const void*>(bytes),cnt);
-    }
-
-    virtual uint64_t writeByte(int byte) override {
-        return writeBytes(reinterpret_cast<uint8_t*>(&byte),1);
-    }
-
-
-
-
-    virtual uint64_t writeByte(const uint8_t byte) override {
-        return writeBytes(&byte,1);
-    }
-
-protected:
-
+ protected:
   size_t size;
   hdfsFile fileRef;
   std::string file;
   size_t written;
 
-    // output stream reference. 
+  // output stream reference.
   std::shared_ptr<hdfs::HdfsLink> hdfs;
-
-
 };
 
-
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif

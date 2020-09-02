@@ -21,14 +21,13 @@ namespace scanners {
 /**
  * Heuristic function that defines how the client will connect
  **/
-template<typename T>
+template <typename T>
 class Heuristic {
-
  protected:
-
   std::vector<std::shared_ptr<interconnect::ClientInterface<T>>> servers;
 
-  virtual void addClientInterface(std::shared_ptr<interconnect::ClientInterface<T>> ifc) {
+  virtual void addClientInterface(
+      std::shared_ptr<interconnect::ClientInterface<T>> ifc) {
     servers.push_back(ifc);
   }
 
@@ -36,16 +35,12 @@ class Heuristic {
   /**
    * Constructor.
    **/
-  Heuristic() {
-  }
+  Heuristic() {}
 
   /**
    * Destructor deletes the connecting interfaces
    **/
-  virtual ~Heuristic() {
-
-  }
-
+  virtual ~Heuristic() {}
 };
-}
+}  // namespace scanners
 #endif /* HEURISTIC_H_ */

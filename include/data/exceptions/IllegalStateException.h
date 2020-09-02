@@ -22,21 +22,14 @@ namespace exceptions {
 
 class IllegalStateException : public std::exception {
  public:
-  explicit IllegalStateException(std::string excp)
-      :
-      excp_str(excp) {
+  explicit IllegalStateException(std::string excp) : excp_str(excp) {}
 
-  }
+  ~IllegalStateException() throw() {}
+  const char* what() { return excp_str.c_str(); }
 
-  ~IllegalStateException() throw () {
-
-  }
-  const char* what() {
-    return excp_str.c_str();
-  }
  private:
   std::string excp_str;
 };
-} /* namespace data */
+}  // namespace exceptions
 } /* namespace cclient */
 #endif /* CLIENTEXCEPTION_H_ */

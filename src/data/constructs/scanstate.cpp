@@ -13,34 +13,20 @@
  */
 #include "data/constructs/scanstate.h"
 
-namespace cclient
-{
-namespace data
-{
+namespace cclient {
+namespace data {
 
-ScanState::ScanState (const ScanState& other)
-{
-    *this = other;
+ScanState::ScanState(const ScanState& other) { *this = other; }
+
+ScanState::~ScanState() {}
+
+ScanState& ScanState::operator=(const ScanState& other) {
+  // complete copy constructor
+
+  return *this;
 }
 
-ScanState::~ScanState ()
-{
+bool ScanState::operator==(const ScanState& other) const { return false; }
 
-}
-
-ScanState&
-ScanState::operator= (const ScanState& other)
-{
-    // complete copy constructor
-
-    return *this;
-}
-
-bool
-ScanState::operator== (const ScanState& other) const
-{
-  return false;
-}
-
-}
-}
+}  // namespace data
+}  // namespace cclient

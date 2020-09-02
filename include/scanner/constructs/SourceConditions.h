@@ -15,10 +15,10 @@
 #ifndef SRC_SCANNER_CONSTRUCTS_SINKCONDITIONS_H_
 #define SRC_SCANNER_CONSTRUCTS_SINKCONDITIONS_H_
 
-#include <thread>
-#include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <mutex>
+#include <thread>
 namespace scanners {
 /**
  * Class that contains the conditions for connectivity
@@ -39,10 +39,10 @@ class SourceConditions {
    * waits on results or the completion of the heuritic scan
    **/
   void waitForResults() {
-
-    std::unique_lock < std::recursive_mutex > lock(resultMutex);
+    std::unique_lock<std::recursive_mutex> lock(resultMutex);
     if (alive) {
-      moreResults.wait(lock, [&]() {return !this->alive||this->num_results>0;});
+      moreResults.wait(lock,
+                       [&]() { return !this->alive || this->num_results > 0; });
     }
   }
 
@@ -51,43 +51,33 @@ class SourceConditions {
    * broadcasts to all threads waiting on the condition.
    **/
   void awakeThreadsForResults() {
-    std::lock_guard < std::recursive_mutex > lock(resultMutex);
+    std::lock_guard<std::recursive_mutex> lock(resultMutex);
     moreResults.notify_all();
   }
 
   /**
    * Determines if the source condition is still alive.
    **/
-  bool isAlive() {
-    return alive;
-  }
+  bool isAlive() { return alive; }
 
   void awakeThreadsFinished() {
-    std::lock_guard < std::recursive_mutex > lock(resultMutex);
+    std::lock_guard<std::recursive_mutex> lock(resultMutex);
     alive = false;
     awakeThreadsForResults();
-
   }
 
-  inline void incrementCount() {
-    ++num_results;
-  }
+  inline void incrementCount() { ++num_results; }
 
-  inline void decrementCount() {
-    num_results--;
-  }
+  inline void decrementCount() { num_results--; }
 
-  inline int size() {
-    return num_results;
-  }
+  inline int size() { return num_results; }
 
  protected:
   volatile bool alive;
   std::atomic_int num_results;
   std::condition_variable_any moreResults;
   std::recursive_mutex resultMutex;
-
 };
 
-}
+}  // namespace scanners
 #endif /* SRC_SCANNER_CONSTRUCTS_SINKCONDITIONS_H_ */

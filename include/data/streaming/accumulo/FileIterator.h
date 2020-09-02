@@ -16,30 +16,19 @@
 
 #include "KeyValueIterator.h"
 
-namespace cclient
-{
-namespace data
-{
-namespace streams
-{
+namespace cclient {
+namespace data {
+namespace streams {
 
-class FileIterator : KeyValueIterator
-{
-
-public:
-    FileIterator ()
-    {
-
-    }
-    virtual std::shared_ptr<Key>
-    getFirstKey () = 0;
-    virtual std::shared_ptr<Key>
-    getLastKey () = 0;
-    void
-    close ();
+class FileIterator : KeyValueIterator {
+ public:
+  FileIterator() {}
+  virtual std::shared_ptr<Key> getFirstKey() = 0;
+  virtual std::shared_ptr<Key> getLastKey() = 0;
+  void close();
 };
 
-}
-}
-}
+}  // namespace streams
+}  // namespace data
+}  // namespace cclient
 #endif /* INCLUDE_INTERCONNECT_ACCUMULO_FILEITERATOR_H_ */

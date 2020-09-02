@@ -11,22 +11,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "data/client/LocatorCache.h"
+
 #include <map>
 
-#include "data/client/../constructs/tables/tables.h"
 #include "data/client/../constructs/client/Instance.h"
-#include "data/client/TabletServerLocator.h"
+#include "data/client/../constructs/tables/tables.h"
+#include "data/client/ExtentLocator.h"
 #include "data/client/MetaDataLocationObtainer.h"
 #include "data/client/RootTabletLocator.h"
-#include "data/client/ExtentLocator.h"
-#include "data/client/LocatorCache.h"
+#include "data/client/TabletServerLocator.h"
 namespace cclient {
 namespace impl {
 
 LocatorCache cachedLocators;
 
 LocatorCache::LocatorCache() {
-  locatorCache = new std::map<LocatorKey, TabletLocator*>();
+  locatorCache = new std::map<LocatorKey, TabletLocator *>();
 }
 
 LocatorCache::~LocatorCache() {
@@ -36,37 +37,34 @@ LocatorCache::~LocatorCache() {
   delete locatorCache;
 }
 
-TabletLocator*
-LocatorCache::getLocator(LocatorKey key) {
+TabletLocator *LocatorCache::getLocator(LocatorKey key) {
   std::lock_guard<std::recursive_mutex> lock(locatorMutex);
 
   // critical section
 
-  std::map<LocatorKey, TabletLocator*>::iterator it = locatorCache->find(key);
+  std::map<LocatorKey, TabletLocator *>::iterator it = locatorCache->find(key);
   TabletLocator *locator = NULL;
   if (it != locatorCache->end()) {
     locator = it->second;
-
   }
   std::shared_ptr<cclient::data::Instance> instance = key.instance;
 
   if (NULL == locator) {
-
     MetaDataLocationObtainer *mlo = new MetaDataLocationObtainer(instance);
 
     if (key.tableName.find(ROOT_TABLE_ID) != std::string::npos) {
       locator = new RootTabletLocator(instance);
     } else if (key.tableName.find(META_TABLE_ID) != std::string::npos) {
       locator = new TabletServerLocator(
-      META_TABLE_ID,
-                                        getLocator(LocatorKey(instance, ROOT_TABLE_ID)), mlo, instance);
+          META_TABLE_ID, getLocator(LocatorKey(instance, ROOT_TABLE_ID)), mlo,
+          instance);
     } else {
-      locator = new TabletServerLocator(key.tableName, getLocator(LocatorKey(instance, META_TABLE_ID)), mlo, instance);
-
+      locator = new TabletServerLocator(
+          key.tableName, getLocator(LocatorKey(instance, META_TABLE_ID)), mlo,
+          instance);
     }
 
     put(key, locator);
-
   }
 
   return locator;

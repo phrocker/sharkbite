@@ -13,25 +13,26 @@
  */
 
 #include "data/client/TabletServerLocator.h"
-#include "data/client/TabletLocationObtainer.h"
+
 #include "data/client/TabletLocation.h"
+#include "data/client/TabletLocationObtainer.h"
 
 namespace cclient {
 namespace impl {
 
-TabletServerLocator::TabletServerLocator(std::string tableId, TabletLocator *parent, TabletLocationObtainer *lc, std::shared_ptr<cclient::data::Instance> inst)
+TabletServerLocator::TabletServerLocator(
+    std::string tableId, TabletLocator *parent, TabletLocationObtainer *lc,
+    std::shared_ptr<cclient::data::Instance> inst)
     : tableId(tableId),
       parent(parent),
       locator(lc),
       instance(inst),
-      logger(logging::LoggerFactory<TabletServerLocator>::getLogger()){
+      logger(logging::LoggerFactory<TabletServerLocator>::getLogger()) {
   lastTabletRow = tableId;
   lastTabletRow.append("<");
 }
 
-TabletServerLocator::~TabletServerLocator() {
-  invalidateCache();
-}
+TabletServerLocator::~TabletServerLocator() { invalidateCache(); }
 
-} /* namespace data */
+}  // namespace impl
 } /* namespace cclient */

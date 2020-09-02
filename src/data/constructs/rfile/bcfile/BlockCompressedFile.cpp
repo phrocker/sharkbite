@@ -12,4 +12,3 @@
  * limitations under the License.
  */
 #include "data/constructs/rfile/bcfile/BlockCompressedFile.h"
-
