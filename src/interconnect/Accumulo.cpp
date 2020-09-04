@@ -147,6 +147,16 @@ std::shared_ptr<SecurityOperations> AccumuloConnector::securityOps() {
       instance, ptr, myTransportPool);
 }
 
+std::shared_ptr<AccumuloTableInfo> AccumuloConnector::tableInfo() {
+  auto tserverConnection =
+      myTransportPool->getTransporter(&tabletServers, true).second;
+  tserverConnection->getTransport()->closeAndCreateClient();
+  return std::make_shared<AccumuloTableInfo>(
+      AccumuloBaseConnector<
+          interconnect::AccumuloCoordinatorTransporter>::getCredentials(),
+      instance);
+}
+
 /**
  * Master connect destructor.
  */

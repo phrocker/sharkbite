@@ -257,14 +257,14 @@ namespace cclient
       class ZooSession
       {
       public:
-        ZooSession(ZooKeeper *keeper, Watch *watcher)
+        explicit ZooSession(ZooKeeper *keeper, Watch *watcher)
             : zooKeeper(keeper)
         {
 
           keeper->init(watcher);
         }
 
-        ZooSession(ZooKeeper *keeper)
+        explicit ZooSession(ZooKeeper *keeper)
             : zooKeeper(keeper)
         {
           // already initialized session

@@ -13,13 +13,46 @@
  */
 #pragma once
 
-#include <memory>
-
 #include <interconnect/namespaceOps/NamespaceOperations.h>
 #include <interconnect/securityOps/SecurityOperations.h>
+#include <interconnect/tableOps/ClientTableInfo.h>
 #include <interconnect/tableOps/ClientTableOps.h>
 
+#include <memory>
+
 namespace interconnect {
+
+class PythonTableInfo {
+ public:
+  explicit PythonTableInfo(const std::shared_ptr<AccumuloTableInfo> &tops)
+      : table_info(tops) {}
+
+  /**
+   * Determines if the table exists.
+   * @return returns boolean of whether or not the table exists
+   **/
+  bool exists(const std::string table) { return table_info->exists(table); }
+
+  /**
+   * Returns the table ID for the given table name
+   * @return table ID
+   **/
+  std::string getTableId(const std::string &table) {
+    return table_info->getTableId(table);
+  }
+
+  /**
+   * Returns the table name for the table id
+   * @param tableid
+   * @return table name
+   **/
+  std::string getTableName(const std::string &tableid) {
+    return table_info->getTableName(tableid);
+  }
+
+ private:
+  std::shared_ptr<AccumuloTableInfo> table_info;
+};
 
 class PythonTableOperations {
  public:

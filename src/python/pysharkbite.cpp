@@ -241,12 +241,18 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("createWriter", &interconnect::PythonTableOperations::createWriter, "Create writer for table")
   .def("create",&interconnect::PythonTableOperations::create, "Create the table");
 
+  pybind11::class_<interconnect::PythonTableInfo>(s, "AccumuloTableInfo", "Provides you table information")
+  .def("table_id",&interconnect::PythonTableInfo::getTableId, "Returns the table Id for the corresponding table")
+  .def("table_name",&interconnect::PythonTableInfo::getTableName, "Gets the table name for the corresponding table Id")
+  .def("exists",&interconnect::PythonTableInfo::exists, "Returns true if the table exists");
+
     pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
   .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
   .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
   .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
-  .def("tableOps",&interconnect::AccumuloConnector::table_operations, "Return the table operations object");
+  .def("tableOps",&interconnect::AccumuloConnector::table_operations, "Return the table operations object")
+  .def("tableInfo",&interconnect::AccumuloConnector::table_info, "Return the table(s) Info objects ");
 
   pybind11::class_<cclient::data::Value, std::shared_ptr<cclient::data::Value>>(s, "Value", "Accumulo value")
   .def(pybind11::init<>())

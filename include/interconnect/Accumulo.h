@@ -19,6 +19,7 @@
 
 #include <concurrency/ThreadManager.h>
 #include <data/constructs/client/Instance.h>
+#include <data/constructs/inputvalidation.h>
 #include <protocol/TBinaryProtocol.h>
 #include <protocol/TCompactProtocol.h>
 #include <server/TNonblockingServer.h>
@@ -32,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include <data/constructs/inputvalidation.h>
 #include "ClientInterface.h"
 #include "TabletServer.h"
 #include "data/constructs/coordinator/AccumuloInfo.h"
@@ -40,6 +40,7 @@
 #include "python/PythonConnector.h"
 #include "python/PythonStructures.h"
 #include "securityOps/SecurityOperations.h"
+#include "tableOps/ClientTableInfo.h"
 #include "tableOps/ClientTableOps.h"
 #include "transport/AccumuloCoordinatorTransporter.h"
 
@@ -77,6 +78,13 @@ class AccumuloConnector
   std::shared_ptr<AccumuloTableOperations> tableOps(const std::string &table);
 
   /**
+   * Returns an instance of table operations
+   * @param table incoming table
+   * @returns instance of table ops for this type of interface
+   */
+  std::shared_ptr<AccumuloTableInfo> tableInfo();
+
+  /**
    * Returns an instance of namespace  operations
    * @param nm namespace
    * @returns instance of namespace ops for this type of interface
@@ -107,6 +115,10 @@ class AccumuloConnector
 
   virtual PythonSecurityOperations security_operations() override {
     return PythonSecurityOperations(securityOps());
+  }
+
+  virtual PythonTableInfo table_info() override {
+    return PythonTableInfo(tableInfo());
   }
 
   virtual ~AccumuloConnector();

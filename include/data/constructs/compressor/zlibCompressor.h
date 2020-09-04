@@ -149,7 +149,6 @@ namespace cclient
 				// output length
 				uint32_t output_length;
 
-				//	static DerivedCompressor<ZLibCompressor> reg;
 			};
 		} // namespace compression
 	}	  // namespace data

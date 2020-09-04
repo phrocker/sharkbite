@@ -88,8 +88,8 @@ void AccumuloTableOperations::loadTableOps(bool force) {
   cclient::data::InstanceCache *cache = myInstance->getInstanceCache();
   std::vector<std::string> tableIds = cache->getChildren(fsRoot, force);
 
-  cachedTableIds.clear();
-  tableNames.clear();
+  std::map<std::string, std::string> cachedTableIds;
+  std::set<std::string> tableNames;
   loadNamespaces(force);
   for (std::string retrievedId : tableIds) {
     std::string tablePath = fsRoot;
@@ -139,6 +139,8 @@ void AccumuloTableOperations::loadTableOps(bool force) {
   cachedTableIds.insert(std::make_pair("!0", "accumulo.metadata"));
   cachedTableIds.insert(std::make_pair("accumulo.metadata", "!0"));
   tableNames.insert("accumulo.metadata");
+
+  Tables::getInstance().set(cachedTableIds, tableNames);
 }
 
 void AccumuloTableOperations::loadNamespaces(bool force) {
@@ -185,7 +187,7 @@ std::string AccumuloTableOperations::getTableId() {
     std::string ephemeralTableId = "";
 
     try {
-      ephemeralTableId = cachedTableIds.at(myTable);
+      ephemeralTableId = Tables::getInstance().getTableId(myTable);
     } catch (const std::out_of_range &e) {
       // do nothing since it isn't cached
     }
@@ -193,7 +195,7 @@ std::string AccumuloTableOperations::getTableId() {
     if (IsEmpty(&ephemeralTableId)) {
       loadTableOps();
       try {
-        ephemeralTableId = cachedTableIds.at(myTable);
+        ephemeralTableId = Tables::getInstance().getTableId(myTable);
       } catch (const std::out_of_range &o) {
         // table does not exist
         // do nothing
@@ -384,7 +386,7 @@ bool AccumuloTableOperations::remove() {
 
 bool AccumuloTableOperations::exists(bool createIfNot) {
   loadTableOps(true);
-  bool contains = cachedTableIds.find(myTable) != std::end(cachedTableIds);
+  bool contains = Tables::getInstance().exists(myTable);
 
   if (!contains && createIfNot) {
     if (create()) return true;

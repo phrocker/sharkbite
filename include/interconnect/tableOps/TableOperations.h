@@ -27,7 +27,78 @@ namespace interconnect {
 #include <mutex>
 #include <string>
 
-extern std::set<std::string> tableNames;
+class Tables {
+ private:
+  Tables() {}
+
+  mutable std::recursive_mutex cacheMutex;
+
+  std::map<std::string, std::string> cachedTableIds;
+  std::set<std::string> tableNames;
+
+ public:
+  static Tables &getInstance() {
+    static Tables ref;
+    return ref;
+  }
+
+  /**
+   * Determines if the table exists.
+   * @return returns boolean of whether or not the table exists
+   **/
+  bool exists(const std::string table) const {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex);
+    auto find = cachedTableIds.find(table);
+    if (find != std::end(cachedTableIds)) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Returns the table ID for the given table name
+   * @return table ID
+   **/
+  std::string getTableId(const std::string &table) const {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex);
+    auto find = cachedTableIds.find(table);
+    if (find != std::end(cachedTableIds)) {
+      return find->second;
+    }
+    return "";
+  }
+
+  /**
+   * Returns the table name for the table id
+   * @param tableid
+   * @return table name
+   **/
+  std::string getTableName(const std::string &tableid) const {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex);
+    auto find = cachedTableIds.find(tableid);
+    if (find != std::end(cachedTableIds)) {
+      return find->second;
+    }
+    return "";
+  }
+
+  void setCachedTableName(const std::string tableName,
+                          const std::string tableid) {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex);
+    cachedTableIds.insert(std::make_pair(tableid, tableName));
+    cachedTableIds.insert(std::make_pair(tableName, tableid));
+    tableNames.insert(tableName);
+  }
+
+  void set(std::map<std::string, std::string> cachedTableIds,
+           std::set<std::string> tableNames) {
+    std::lock_guard<std::recursive_mutex> lock(cacheMutex);
+    this->cachedTableIds = cachedTableIds;
+    this->tableNames = tableNames;
+  }
+
+  std::set<std::string> getTables() const { return tableNames; }
+};
 
 template <typename K, typename V>
 class TableOperations {
@@ -122,7 +193,7 @@ class TableOperations {
 
   /**
    * Removes a property on this table.
-   * @param property property name to remove
+   * @param property property name to removef
    */
   virtual int8_t removeProperty(std::string property) = 0;
 
@@ -146,7 +217,9 @@ class TableOperations {
    * Lists tables
    * @return tables
    **/
-  virtual std::set<std::string> listTables() { return tableNames; }
+  virtual std::set<std::string> listTables() {
+    return Tables::getInstance().getTables();
+  }
 
   /**
    * Gets user credentials
@@ -166,8 +239,6 @@ class TableOperations {
   // current table name
   std::string myTable;
 };
-
-extern std::map<std::string, std::string> cachedTableIds;
 
 /**
  * Create a table.

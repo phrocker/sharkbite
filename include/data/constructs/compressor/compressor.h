@@ -48,18 +48,18 @@ namespace cclient
 
                 virtual std::unique_ptr<Compressor> newInstance() = 0;
                 /**
-     Set the input.
-     @param b input buffer.
-     @param offset offset within this buffer.
-     @param length input length.
-     **/
+                 Set the input.
+                @param b input buffer.
+                @param offset offset within this buffer.
+                @param length input length.
+                **/
                 void
                 setInput(const char *b, uint32_t offset, uint32_t length);
 
                 /**
-     Sets the stream offset.
-     @param soff stream offset.
-     **/
+                 Sets the stream offset.
+                @param soff stream offset.
+                **/
                 void
                 setStreamOffset(uint32_t soff)
                 {
@@ -67,9 +67,9 @@ namespace cclient
                 }
 
                 /**
-     Retrieves the stream offset.
-     @return stream offset.
-     **/
+                 Retrieves the stream offset.
+                @return stream offset.
+                **/
                 uint32_t
                 getStreamOffset()
                 {
@@ -77,19 +77,19 @@ namespace cclient
                 }
 
                 /**
-     Pure virtual function that sparks
-     compression. It is intended that each call to compress
-     be exclusive so that the compressor can be reused.
-     @param out_stream output stream.
-     **/
+                 Pure virtual function that sparks
+                compression. It is intended that each call to compress
+                be exclusive so that the compressor can be reused.
+                @param out_stream output stream.
+                **/
                 virtual void
                 compress(cclient::data::streams::OutputStream *out_stream) = 0;
 
                 /**
-     * Pure virtual function that sparks decompression.
-     * It is intended to be used following setInput
-     * @param out_stream output stream.
-     */
+                 * Pure virtual function that sparks decompression.
+                 * It is intended to be used following setInput
+                 * @param out_stream output stream.
+                 */
                 virtual void
                 decompress(cclient::data::streams::ByteOutputStream *out_stream, char *in_buf = nullptr, size_t size = 0)
                 {
@@ -97,54 +97,50 @@ namespace cclient
                 }
 
                 /**
-     Retrieves the buffer size.
-     @return buffer size.
-     **/
-                virtual uint32_t
-                getBufferSize() = 0;
+                 Retrieves the buffer size.
+                @return buffer size.
+                **/
+                virtual uint32_t getBufferSize() = 0;
 
                 /**
-     Returns the compression overhead for the algorithm.
-     @return compression overhead.
-     **/
-                virtual uint32_t
-                getCompressionOverHead() = 0;
+                 Returns the compression overhead for the algorithm.
+                @return compression overhead.
+                **/
+                virtual uint32_t getCompressionOverHead() = 0;
 
                 /**
-     Returns the bytes written thus far.
-     This is defined by the codec
-     @return bytes written.
-     **/
-                virtual uint32_t
-                bytesWritten() = 0;
+                 Returns the bytes written thus far.
+                This is defined by the codec
+                @return bytes written.
+                **/
+                virtual uint32_t bytesWritten() = 0;
 
                 /**
-     Returns the compressed size.
-     @return compressed size.
-     **/
-                virtual uint32_t
-                getCompressedSize() = 0;
+                 Returns the compressed size.
+                @return compressed size.
+                **/
+                virtual uint32_t getCompressedSize() = 0;
 
                 /**
-     Returns the compression algorithm for this compressor
-     @returns CompressionAlgorithm instance.
-     **/
+                 Returns the compression algorithm for this compressor
+                @returns CompressionAlgorithm instance.
+                **/
                 CompressionAlgorithm &getAlgorithm()
                 {
                     return algorithm;
                 }
 
                 /**
-     * Returns the canonical name for this compressor
-     * @returns canonical name
-     */
+                 * Returns the canonical name for this compressor
+                 * @returns canonical name
+                 */
                 virtual std::string
                 getName() = 0;
 
                 /**
-     * Gets the number of bytes read
-     * @returns bytes read
-     */
+                 * Gets the number of bytes read
+                 * @returns bytes read
+                 */
                 int
                 getBytesRead()
                 {

@@ -48,9 +48,9 @@ namespace cclient
                 Algorithm(Algorithm &&other) = default;
 
                 /**
-     * Set the algorithm name
-     * @param algorithm algorithm name
-     */
+                 * Set the algorithm name
+                 * @param algorithm algorithm name
+                 */
                 void
                 setAlgorithm(const std::string &algorithm)
                 {
@@ -58,9 +58,9 @@ namespace cclient
                 }
 
                 /**
-     * Get the algorithm name
-     * @returns algorith name
-     */
+                 * Get the algorithm name
+                 * @returns algorith name
+                 */
                 std::string
                 getName() const
                 {

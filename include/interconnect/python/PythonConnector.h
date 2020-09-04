@@ -28,6 +28,8 @@ class PythonConnector {
       const std::string &nm = "") = 0;
 
   virtual PythonSecurityOperations security_operations() = 0;
+
+  virtual PythonTableInfo table_info() = 0;
 };
 
 }  // namespace interconnect

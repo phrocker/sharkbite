@@ -68,14 +68,16 @@ user = pysharkbite.AuthInfo(args.username, password, zk.getInstanceId())
 try:
     connector = pysharkbite.AccumuloConnector(user, zk)
 
+    table_info = connector.tableInfo()
+
     stats = connector.getStatistics()
 
-    print("Goal state: " + str(stats.goal_state))
-
-    # print some server info
+    # print some server info when running or queued scans are greater than zero
     for serverinfo in stats.tablet_server_info:
-            print(serverinfo.name)
-            print(serverinfo.last_contact)
+        for table_id in serverinfo.table_map:
+            scans = serverinfo.table_map[table_id].compaction_info.scans
+            if scans.running > 0 or scans.queued > 0 :
+                print(serverinfo.name + " " + table_info.table_name(table_id) + " " +  str(scans.running) + "(" + str(scans.queued) + ")")
             
     
 
