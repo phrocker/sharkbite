@@ -41,7 +41,6 @@ MetaIndexEntry *MetaIndex::prepareNewEntry(
 
 uint64_t MetaIndex::read(cclient::data::streams::InputStream *in) {
   uint64_t count = in->readHadoopLong();
-
   for (uint64_t i = 0; i < count; i++) {
     std::shared_ptr<MetaIndexEntry> entry =
         std::make_shared<MetaIndexEntry>(in);

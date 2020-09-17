@@ -59,7 +59,7 @@ class JavaException : public std::exception {
 
 static std::string getMessage(JNIEnv *env, jthrowable throwable) {
 
-  jclass clazz = env->FindClass("java/lang/Throwable");
+  jclass clazz = env->GetObjectClass(throwable);
 
   jmethodID getMessage = env->GetMethodID(clazz, "toString", "()Ljava/lang/String;");
   if (getMessage == nullptr) {
@@ -85,11 +85,12 @@ static std::string getMessage(JNIEnv *env, jthrowable throwable) {
  * @param env Requires an environment to check
  */
 static inline void ThrowIf(JNIEnv *env) {
-  jthrowable throwable = env->ExceptionOccurred();
-  env->ExceptionClear();
-  auto message = getMessage(env, throwable);
-  env->ThrowNew(env->FindClass(EXCEPTION_CLASS), message.c_str());
-  throw JavaException(message);
+  if (env->ExceptionCheck()) {
+    jthrowable throwable = env->ExceptionOccurred();
+    env->ExceptionClear();
+    auto message = getMessage(env, throwable);
+    throw JavaException(message);
+  }
 }
 
 static inline void ThrowJava(JNIEnv *env, const char *message) {

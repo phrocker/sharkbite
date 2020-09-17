@@ -13,6 +13,8 @@
  */
 #include "data/constructs/client/Hdfs.h"
 
+#include <iostream>
+
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
 #include "utils/Uri.h"
@@ -31,11 +33,36 @@ HdfsDirEnt::HdfsDirEnt(const hdfsFileInfo *entry)
 
 HdfsLink::HdfsLink(std::string nn) : nn(nn) {
   auto uri = utils::Uri(nn);
+  this->nn = uri.host();
   reference = hdfsConnect(this->nn.c_str(), uri.port());
 }
 
 HdfsLink::HdfsLink(std::string nn, int port) : nn(nn), port(port) {
-  reference = hdfsConnect(this->nn.c_str(), port);
+  try {
+    auto uri = utils::Uri(nn);
+    this->nn = "hdfs://" + uri.host() + ":" + std::to_string(port);
+    reference = hdfsConnect(this->nn.c_str(), port);
+  } catch (const std::invalid_argument &e) {
+    try {
+      if (this->nn.find("hdfs://") == std::string::npos) {
+        this->nn = "hdfs://" + nn + ":" + std::to_string(port);
+      }
+      reference = hdfsConnect(this->nn.c_str(), port);
+    } catch (...) {
+      this->nn = "hdfs://" + nn + ":" + std::to_string(port);
+      reference = hdfsConnect(this->nn.c_str(), port);
+    }
+  } catch (...) {
+    try {
+      if (this->nn.find("hdfs://") == std::string::npos) {
+        this->nn = "hdfs://" + nn + ":" + std::to_string(port);
+      }
+      reference = hdfsConnect(this->nn.c_str(), port);
+    } catch (...) {
+      this->nn = "hdfs://" + nn + ":" + std::to_string(port);
+      reference = hdfsConnect(this->nn.c_str(), port);
+    }
+  }
 }
 
 int HdfsLink::mkdir(const std::string &dir) {
@@ -63,7 +90,7 @@ int HdfsLink::chown(const std::string &dir, const std::string &user,
   return hdfsChown(reference, dir.c_str(), user.c_str(), group.c_str());
 }
 
-std::shared_ptr<cclient::data::streams::ByteOutputStream> HdfsLink::write(
+std::shared_ptr<cclient::data::streams::OutputStream> HdfsLink::write(
     const std::string &path) {
   return std::make_shared<cclient::data::streams::HdfsOutputStream>(
       shared_from_this(), path);

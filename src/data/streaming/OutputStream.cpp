@@ -19,30 +19,28 @@ namespace cclient {
 namespace data {
 namespace streams {
 OutputStream::OutputStream(std::ostream *ptr, uint64_t pos)
-    : ostream_ref(ptr), position(new uint64_t(pos)), copy(false) {}
+    : ostream_ref(ptr), position(pos), copy(false) {}
 
-OutputStream::OutputStream()
-    : ostream_ref(NULL), position(new uint64_t(0)), copy(false) {}
+OutputStream::OutputStream() : ostream_ref(NULL), position(0), copy(false) {}
 
 OutputStream::~OutputStream() {
   if (canReclaim()) {
     flush();
   }
-  if (!copy) delete position;
 }
 
 void OutputStream::flush() {
   if (ostream_ref != NULL) ostream_ref->flush();
 }
 
-uint64_t OutputStream::getPos() { return *position; }
+uint64_t OutputStream::getPos() { return position; }
 
 uint64_t OutputStream::write(const char *bytes, long cnt) {
   if (ostream_ref != NULL) {
     ostream_ref->write((const char *)bytes, cnt);
-    *position += cnt;
+    position += cnt;
   }
-  return *position;
+  return position;
 }
 
 uint64_t OutputStream::writeByte(int byte) {
@@ -58,14 +56,14 @@ uint64_t OutputStream::writeString(std::string s) {
 
 uint64_t OutputStream::write(const uint8_t *bytes, long cnt) {
   ostream_ref->write((const char *)bytes, cnt);
-  *position += cnt;
-  return *position;
+  position += cnt;
+  return position;
 }
 
 uint64_t OutputStream::writeBytes(const uint8_t *bytes, size_t cnt) {
   ostream_ref->write((const char *)bytes, cnt);
-  *position += cnt;
-  return *position;
+  position += cnt;
+  return position;
 }
 
 uint64_t OutputStream::writeBytes(const char *bytes, size_t cnt) {
@@ -74,36 +72,36 @@ uint64_t OutputStream::writeBytes(const char *bytes, size_t cnt) {
 
 uint64_t OutputStream::writeByte(const uint8_t byte) {
   ostream_ref->write((const char *)&byte, 1);
-  *position += 1;
-  return *position;
+  position += 1;
+  return position;
 }
 
 uint64_t OutputStream::writeShort(const short shortVal) {
   //  memcpy(shortByte,shortVal,2);
   ostream_ref->write((const char *)&shortVal, 2);
-  *position += 2;
-  return *position;
+  position += 2;
+  return position;
 }
 
 uint64_t OutputStream::writeInt(const int intVal) {
   //  memcpy(intByte,intVal,2);
   ostream_ref->write((const char *)&intVal, 4);
-  *position += 4;
-  return *position;
+  position += 4;
+  return position;
 }
 
 uint64_t OutputStream::writeLong(const uint64_t val) {
   ostream_ref->write((const char *)&val, 8);
-  *position += 8;
-  return *position;
+  position += 8;
+  return position;
 }
 
 uint64_t OutputStream::writeBoolean(const bool val) {
   uint8_t byte = 0x00;
   if (val) byte = 0x01;
   ostream_ref->write((const char *)&byte, 1);
-  *position += 1;
-  return *position;
+  position += 1;
+  return position;
 }
 
 uint64_t OutputStream::writeVLong(const int64_t n) {
@@ -139,7 +137,7 @@ uint64_t OutputStream::writeVLong(const int64_t n) {
 uint64_t OutputStream::writeEncodedLong(const int64_t n) {
   if ((n < 128) && (n >= -32)) {
     write((const char *)&n, 1);
-    return *position;
+    return position;
     // return writeByte((int) n);
   }
 
@@ -157,7 +155,7 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
         temp = firstByte - 52;
         write((const char *)&temp, 1);
         write((const char *)&n, 1);
-        return *position;
+        return position;
         // writeByte(firstByte - 52);
         // return writeByte((int) n);
       }
@@ -186,12 +184,12 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
         write((const char *)((short *)&temp), 2);
         // ostream_ref->write((const char*)((short*)&n),2);
         write((const char *)&n, 1);
-        return *position;
+        return position;
       }
       temp = len - 129;
       write((const char *)&temp, 1);
       write((const char *)&n, 4);
-      return *position;
+      return position;
       // writeByte(len - 129);
 
       /// return writeInt((int) n);
@@ -201,7 +199,7 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
       temp = n >> 8;
       write((const char *)&temp, 4);
       write((const char *)&n, 1);
-      return *position;
+      return position;
       /*
        writeByte(len - 129);
        writeInt((int) (n >> 8));
@@ -213,7 +211,7 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
       temp = n >> 16;
       write((const char *)&temp, 4);
       write((const char *)((short *)&n), 2);
-      return *position;
+      return position;
       /*
        writeByte(len - 129);
        writeInt((int) (n >> 16));
@@ -227,7 +225,7 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
       temp = n >> 8;
       write((const char *)((short *)&temp), 2);
       write((const char *)((short *)&n), 1);
-      return *position;
+      return position;
       /*
        writeByte(len - 129);
        writeInt((int) (n >> 24));
@@ -239,15 +237,15 @@ uint64_t OutputStream::writeEncodedLong(const int64_t n) {
       write((const char *)&temp, 1);
 
       write((const char *)&n, 8);
-      return *position;
+      return position;
       /*
        writeByte(len - 129);
        return writeLong(n);
        */
     default:
-      return *position;
+      return position;
   };
-  return *position;
+  return position;
 }
 
 uint64_t OutputStream::writeHadoopLong(const int64_t n) {
@@ -279,7 +277,7 @@ uint64_t OutputStream::writeHadoopLong(const int64_t n) {
   return getPos();
 }
 
-uint32_t OutputStream::bytesWritten() { return *position; }
+uint32_t OutputStream::bytesWritten() { return position; }
 }  // namespace streams
 }  // namespace data
 }  // namespace cclient

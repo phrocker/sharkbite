@@ -102,7 +102,7 @@ namespace cclient
 
         int chown(const std::string &path, const std::string &user, const std::string &group);
 
-        std::shared_ptr<cclient::data::streams::ByteOutputStream> write(const std::string &path);
+        std::shared_ptr<cclient::data::streams::OutputStream> write(const std::string &path);
         std::shared_ptr<cclient::data::streams::InputStream> read(const std::string &path);
 
         std::vector<HdfsDirEnt> list(const std::string &dir);

@@ -19,7 +19,7 @@
 #ifndef _PYTHONITERATOR_
 #define _PYTHONITERATOR_
 
-#include <pybind11/embed.h>
+
 
 #include "data/constructs/KeyValue.h"
 #include "Iterators.h"
@@ -29,54 +29,6 @@ namespace cclient {
 namespace jni {
 namespace python {
 
-class PythonIterator : public cclient::jni::DSLIterator {
-
-  std::shared_ptr<cclient::data::KeyValue> topKeyValue;
-  std::shared_ptr<cclient::data::Key> topKey;
-  std::shared_ptr<cclient::data::Value> topValue;
-
-  bool calledNext;
-
- public:
-
-  PythonIterator()
-      :
-      calledNext(false) {
-  }
-
-  ~PythonIterator() {
-  }
-
-  virtual void setDSL(const std::string &dsl) override;
-  virtual void callNext() override;
-
-  virtual void callSeek(const std::shared_ptr<cclient::data::Range> &range) override;
-
-  virtual bool callHasTop() override {
-    return (nullptr != topKey);
-  }
-
-  virtual void callGetTopKey() override {
-    // nothing to do
-  }
-
-  virtual void callGetTopValue() override {
-    //topValue = iter.callGetTopValue();
-  }
-
-  virtual std::shared_ptr<cclient::data::Key> getTopKey() override;
-
-  virtual std::shared_ptr<cclient::data::Value> getTopValue() override;
-
-
-  virtual bool hasTop() override;
-
-  virtual void next() override;
-
- private:
-  IteratorPythonExecutor iter;
-
-};
 
 } /* namespace python */
 } /* namespace jni */

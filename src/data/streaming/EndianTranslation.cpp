@@ -49,7 +49,8 @@ uint64_t EndianTranslationStream::writeLong(uint64_t val) {
 }
 
 uint64_t EndianTranslationStream::writeEncodedLong(const int64_t val) {
-  return HadoopDataOutputStream::writeEncodedLong((int64_t)htonlw(val));
+  //  return HadoopDataOutputStream::writeEncodedLong((int64_t)htonlw(val));
+  return HadoopDataOutputStream::writeEncodedLong(val);
 }
 
 }  // namespace streams

@@ -47,7 +47,9 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::write(
   std::vector<cclient::data::streams::OutputStream *> ownedStreams;
   if (rfile.find("hdfs://") != std::string::npos) {
     stream = new cclient::data::streams::HdfsOutputStream(rfile);
+    // stream = new cclient::data::streams::EndianTranslationStream(os);
     ownedStreams.push_back(stream);
+    // ownedStreams.push_back(os);
   } else {
     auto in = std::make_unique<std::ofstream>(
         rfile, std::ifstream::ate | std::ifstream::binary);
@@ -197,8 +199,14 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
 }
 
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {
-  std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-  return in.tellg();
+  std::string path = filename;
+  if (path.find("hdfs://") != std::string::npos) {
+    auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
+    return str->getFileSize();
+  } else {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+  }
 }
 
 }  // namespace data
