@@ -418,8 +418,8 @@ add_library(sharkbite-shared SHARED ${UTIL_SOURCES} ${LOGGING_SOURCES} ${ZK_SOUR
 pybind11_add_module(pysharkbite ${PYBIND_SOURCES} ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES}   ${LIBHDFS3_SOURCES} )
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 	add_library(pysharkbite-iterators SHARED ${LOGGING_SOURCES} ${UTIL_SOURCES} ${ZK_SOURCES} ${CONSTRUCT_SOURCES} ${STREAMING_SOURCES} ${CLIENT_SOURCES} ${EXCEPTION_SOURCES} ${THRIFT_SOURCES} ${THRIFTV2_SOURCES} ${AVX_MOD_SOURCES} ${INTERCONNECT_SOURCES} ${SCANNER_SOURCES} ${WRITER_SOURCES} ${CWRAPPER_SOURCES} ${LIBHDFS3_SOURCES} ${JNI_SOURCES})
+    add_dependencies(pysharkbite-iterators Protobuf)
 endif()
-
 
 
 
@@ -431,7 +431,6 @@ add_dependencies(sharkbite-shared curl)
 add_dependencies(sharkbite Protobuf)
 add_dependencies(pysharkbite Protobuf)
 add_dependencies(sharkbite-shared Protobuf)
-add_dependencies(pysharkbite-iterators Protobuf)
 
 add_dependencies(sharkbite ZooKeeper)
 add_dependencies(pysharkbite ZooKeeper)
