@@ -49,14 +49,16 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   std::shared_ptr<cclient::data::Range> block;
 
+
+  protected:
+
   std::priority_queue<std::shared_ptr<cclient::data::streams::KeyValueIterator>, std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>>, KeyValueIteratorComparator> queues;
 
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iterators;
 
   std::shared_ptr<cclient::data::Key> nextKey;
 
-  protected:
-    std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
 
 
  public:
@@ -89,6 +91,8 @@ virtual std::shared_ptr<KeyValue> getTop() override;
 
   virtual void next() override;
 
+  
+
    virtual   DataStream* operator++() override {
     next();
     return this;
@@ -104,6 +108,7 @@ virtual std::shared_ptr<KeyValue> getTop() override;
   virtual uint64_t getEntriesFiltered() override;
 
  protected:
+ void multiNext();
 
   void addSource(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &iter);
 

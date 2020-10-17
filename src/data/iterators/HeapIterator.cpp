@@ -43,6 +43,10 @@ HeapIterator::operator*() {
 }
 
 void HeapIterator::next() {
+  multiNext();
+}
+
+void HeapIterator::multiNext() {
   if (SH_UNLIKELY(nullptr == topIterator)) {
     throw cclient::exceptions::IllegalStateException(
         "Called next() without a top");

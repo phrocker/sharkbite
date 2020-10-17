@@ -4,6 +4,7 @@
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
+#include "data/iterators/DeletingMultiIterator.h"
 namespace cclient {
 namespace data {
 
@@ -119,7 +120,7 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
 
 std::shared_ptr<cclient::data::streams::KeyValueIterator>
 RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
-                                    int versions) {
+                                    int versions, bool withDeletes, bool propogate) {
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
   std::vector<
       std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>>
@@ -192,10 +193,22 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
     iters.emplace_back(std::make_shared<cclient::data::SequentialRFile>(
         std::move(endstream), size));
   }
-  if (versions == 0)
-    return std::make_shared<cclient::data::MultiIterator>(iters);
-  else
-    return std::make_shared<cclient::data::VersioningIterator>(iters);
+
+  std::shared_ptr< cclient::data::HeapIterator > heapItr;
+  
+  if (versions == 0){
+    if (!withDeletes) {
+      heapItr =  std::make_shared<cclient::data::MultiIterator>(iters);
+    }
+    else{
+      heapItr =  std::make_shared<cclient::data::DeletingMultiIterator>(iters,propogate);
+    }
+  }
+  else {
+    heapItr =  std::make_shared<cclient::data::VersioningIterator>(iters);
+  }
+
+  return heapItr;
 }
 
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {
