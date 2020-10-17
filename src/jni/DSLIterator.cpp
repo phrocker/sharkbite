@@ -99,7 +99,8 @@ Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
     }
     auto outStream = cclient::data::RFileOperations::write(file, 32 * 1024);
     std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter =
-        cclient::data::RFileOperations::openManySequential(rfiles,0,true,false);
+        cclient::data::RFileOperations::openManySequential(rfiles, 0, true,
+                                                           false);
     std::vector<std::string> cf;
     cclient::data::Range rng;
 

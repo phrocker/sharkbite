@@ -245,17 +245,16 @@ int Key::compare(const std::shared_ptr<Key> &other) {
   else if (compare > 0)
     return compare;
 
-  if (other->timestamp < timestamp){
+  if (other->timestamp < timestamp) {
     return -1;
-  }
-  else if (other->timestamp > timestamp){
+  } else if (other->timestamp > timestamp) {
     return 1;
   }
 
   if (deleted)
-      compare = other->deleted ? 0 : -1;
-    else
-      compare = other->deleted ? 1 : 0;
+    compare = other->deleted ? 0 : -1;
+  else
+    compare = other->deleted ? 1 : 0;
 
   return compare;
 }

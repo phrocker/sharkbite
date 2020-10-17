@@ -42,9 +42,7 @@ HeapIterator::operator*() {
   return std::make_pair(topIterator->getTopKey(), topIterator->getTopValue());
 }
 
-void HeapIterator::next() {
-  multiNext();
-}
+void HeapIterator::next() { multiNext(); }
 
 void HeapIterator::multiNext() {
   if (SH_UNLIKELY(nullptr == topIterator)) {
