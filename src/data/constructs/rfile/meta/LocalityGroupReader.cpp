@@ -114,6 +114,7 @@ void LocalityGroupReader::seek(
 
       SkippedRelativeKey skipRR(&allocatorInstance);
       skipRR.filterVisibility(auths);
+      skipRR.setAgeOFf(ageoff_evaluator);
       filtered = skipRR.skip(currentStream.get(), startKey, &valueArray,
                              prevKey, currKey, entriesLeft);
 
@@ -139,6 +140,9 @@ void LocalityGroupReader::seek(
        */
       if (!auths.empty()) {
         rKey->filterVisibility(auths);
+      }
+      if (ageoff_evaluator){
+        rKey->setAgeOffEvaluator(ageoff_evaluator);
       }
 
       if (filtered) {

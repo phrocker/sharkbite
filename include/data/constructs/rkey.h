@@ -30,6 +30,7 @@
 #include "data/constructs/security/Authorizations.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "data/constructs/security/VisibilityEvaluator.h"
+#include "data/constructs/ageoff/AgeOffConditions.h"
 
 namespace cclient {
 namespace data {
@@ -118,6 +119,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   void filterVisibility(const cclient::data::security::Authorizations &visibility, const std::shared_ptr<cclient::data::security::VisibilityEvaluator> &eval = nullptr);
 
+  void setAgeOffEvaluator(const std::shared_ptr<cclient::data::AgeOffEvaluator> &conditions);
+
   void setFiltered();
 
  protected:
@@ -182,6 +185,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   cclient::data::security::Authorizations columnVisibility;
   std::shared_ptr<cclient::data::security::VisibilityEvaluator> evaluator;
+
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageOffEvaluator;
 
 
   int32_t rowCommonPrefixLen;

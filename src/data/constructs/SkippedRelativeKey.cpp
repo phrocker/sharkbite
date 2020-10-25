@@ -105,18 +105,14 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
   TextBuffer row, cf, cq, cv;
   TextBuffer prevRow, prevCf, prevCq, prevVis;
 
-  // TextBuffer scratch = seekKey->getRow();
   TextBuffer stopRow, stopCf, stopCq, stopCv;
   stopRow = seekKey->getRow();
-  // stopRow.insert(stopRow.end(), scratch.first, scratch.first +
-  // scratch.second);
+  
   stopCf = seekKey->getColFamily();
-  // stopCf.insert(stopCf.end(), scratch.first, scratch.first + scratch.second);
+
   stopCq = seekKey->getColQualifier();
-  // stopCq.insert(stopCq.end(), scratch.first, scratch.first + scratch.second);
 
   stopCv = seekKey->getColVisibility();
-  // stopCv.insert(stopCv.end(), scratch.first, scratch.first + scratch.second);
 
   uint64_t timestamp = 0;
   uint64_t prevTimestamp = 0;
@@ -125,34 +121,22 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
   int rowCmp = -1, cfCmp = -1, cqCmp = -1, cvCmp = -1;
   if (NULL != currKey) {
     prevRow = currKey->getRow();
-    // prevRow.insert(prevRow.end(), scratch.first, scratch.first +
-    // scratch.second);
 
     prevCf = currKey->getColFamily();
-    // prevCf.insert(prevCf.end(), scratch.first, scratch.first +
-    // scratch.second);
 
     prevCq = currKey->getColQualifier();
-    // prevCq.insert(prevCq.end(), scratch.first, scratch.first +
-    // scratch.second);
 
     prevVis = currKey->getColVisibility();
-    // prevVis.insert(prevVis.end(), scratch.first, scratch.first +
-    // scratch.second);
 
     prevTimestamp = currKey->getTimeStamp();
 
     row = currKey->getRow();
-    // row.insert(prevRow.end(), scratch.first, scratch.first + scratch.second);
 
     cf = currKey->getColFamily();
-    // cf.insert(prevCf.end(), scratch.first, scratch.first + scratch.second);
 
     cq = currKey->getColQualifier();
-    // cq.insert(prevCq.end(), scratch.first, scratch.first + scratch.second);
 
     cv = currKey->getColVisibility();
-    // cv.insert(prevVis.end(), scratch.first, scratch.first + scratch.second);
 
     timestamp = currKey->getTimeStamp();
 
@@ -324,6 +308,9 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
         return true;
       }
     }
+    // age off 
+    if (ageoff_evaluator && ageoff_evaluator->filtered(baseKey))
+      return true;
   }
   return false;
 }

@@ -191,10 +191,22 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   bool hasNext();
 
   void relocate(cclient::data::streams::StreamRelocation *location) {
+    if (nullptr == currentLocalityGroupReader){
+      throw std::runtime_error("Must initialize RFile first.");
+    }
     currentLocalityGroupReader->limitVisibility(location->getAuths());
+    currentLocalityGroupReader->setAgeOff(ageoff_evaluator);
     currentLocalityGroupReader->seek(location);
   }
 
+  void setAgeOff(const std::shared_ptr<cclient::data::AgeOffEvaluator> &evaluator){
+    ageoff_evaluator=evaluator;
+    if (nullptr != currentLocalityGroupReader){
+      currentLocalityGroupReader->setAgeOff(ageoff_evaluator);
+    }
+  }
+
+  
   void next();
 
   virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++();
@@ -274,6 +286,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   // list of locality group pointers.
   std::vector<LocalityGroupMetaData*> localityGroups;
   std::vector<LocalityGroupReader*> localityGroupReaders;
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
 
   // block compressed file.
   std::unique_ptr<BlockCompressedFile> blockWriter;

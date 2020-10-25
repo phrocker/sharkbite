@@ -5,6 +5,7 @@
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
+#include "data/constructs/ageoff/AgeOffConditions.h"
 namespace cclient {
 namespace data {
 
@@ -121,15 +122,19 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
 std::shared_ptr<cclient::data::streams::KeyValueIterator>
 RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
                                     int versions, bool withDeletes,
-                                    bool propogate) {
+                                    bool propogate, uint64_t maxtimestamp) {
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
   std::vector<
       std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>>
       futures;
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageOffEval = nullptr;
+  if (maxtimestamp > 0){
+    ageOffEval = std::make_shared<cclient::data::AgeOffEvaluator>(cclient::data::AgeOffCondition(AgeOffType::DEFAULT,"default",maxtimestamp));
+  }
   if (rfiles.size() > 1) {
     for (const auto &path : rfiles) {
       futures.emplace_back(std::async(
-          [path](void)
+          [path,ageOffEval](void)
               -> std::shared_ptr<cclient::data::streams::KeyValueIterator> {
             try {
               size_t size = 0;
@@ -152,9 +157,10 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
               auto endstream = std::make_unique<
                   cclient::data::streams::ReadAheadInputStream>(
                   std::move(stream), 128 * 1024, 1024 * 1024, size);
-
-              return std::make_shared<cclient::data::SequentialRFile>(
+              auto rfstream = std::make_shared<cclient::data::SequentialRFile>(
                   std::move(endstream), size);
+              rfstream->setAgeOff(ageOffEval);
+              return rfstream;
             } catch (const std::exception &e) {
               std::cout << e.what() << std::endl;
             }
@@ -191,8 +197,10 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
         std::make_unique<cclient::data::streams::ReadAheadInputStream>(
             std::move(stream), 128 * 1024, 1024 * 1024, size);
 
-    iters.emplace_back(std::make_shared<cclient::data::SequentialRFile>(
-        std::move(endstream), size));
+    auto rfstream = std::make_shared<cclient::data::SequentialRFile>(
+        std::move(endstream), size);
+    rfstream->setAgeOff(ageOffEval);
+    iters.emplace_back(rfstream);
   }
 
   std::shared_ptr<cclient::data::HeapIterator> heapItr;

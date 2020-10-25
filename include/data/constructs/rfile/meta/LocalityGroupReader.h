@@ -97,6 +97,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   std::future<size_t> readAhead;
   ReadAheadProxy readAheadResult;
   cclient::data::security::Authorizations auths;
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
 
   void startReadAhead();
 
@@ -193,6 +194,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   void limitVisibility(cclient::data::security::Authorizations *auths) {
     this->auths = *auths;
+  }
+
+  void setAgeOff(const std::shared_ptr<cclient::data::AgeOffEvaluator> &ageoff_evaluator){
+    this->ageoff_evaluator=ageoff_evaluator;
   }
 
   bool hasTop() {

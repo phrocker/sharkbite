@@ -13,8 +13,8 @@
  */
 
 #include "jni/DSLIterator.h"
-//#include "jni/Iterators.h"
-//#include "jni/AccumuloRange.h"
+#include <ctime>
+#include <sys/time.h>
 #include "data/constructs/rfile/RFileOperations.h"
 #include "data/iterators/DeletingMultiIterator.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
@@ -52,7 +52,7 @@ JNIEXPORT void JNICALL
 Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
     JNIEnv *env, jobject me, jstring output_file, jobject arraylist_files,
     jobject longadder_resulted, jobject longadder_total,
-    jobject longadder_filesize) {
+    jobject longadder_filesize, jlong ageoff) {
   try {
     env->ExceptionClear();
     // retrieve the java.util.List interface class
@@ -97,10 +97,19 @@ Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
       }
       rfiles.push_back(rfile);
     }
+    int64_t ageOffDelta = ageoff;
+    uint64_t maxTimestamp = 0;
+    if (ageOffDelta > 0){
+    std::time_t result = std::time(nullptr);
+        struct timeval tp;
+        gettimeofday(&tp, NULL);
+        long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+        maxTimestamp = ms - ageOffDelta;
+    }
     auto outStream = cclient::data::RFileOperations::write(file, 32 * 1024);
     std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter =
         cclient::data::RFileOperations::openManySequential(rfiles, 0, true,
-                                                           false);
+                                                           false,maxTimestamp );
     std::vector<std::string> cf;
     cclient::data::Range rng;
 
