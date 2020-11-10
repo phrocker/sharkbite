@@ -1,11 +1,11 @@
 #include "data/constructs/rfile/RFileOperations.h"
 
+#include "data/constructs/ageoff/AgeOffConditions.h"
 #include "data/iterators/DeletingMultiIterator.h"
 #include "data/iterators/VersioningIterator.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
-#include "data/constructs/ageoff/AgeOffConditions.h"
 namespace cclient {
 namespace data {
 
@@ -128,13 +128,15 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
       std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>>
       futures;
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageOffEval = nullptr;
-  if (maxtimestamp > 0){
-    ageOffEval = std::make_shared<cclient::data::AgeOffEvaluator>(cclient::data::AgeOffCondition(AgeOffType::DEFAULT,"default",maxtimestamp));
+  if (maxtimestamp > 0) {
+    ageOffEval = std::make_shared<cclient::data::AgeOffEvaluator>(
+        cclient::data::AgeOffCondition(AgeOffType::DEFAULT, "default",
+                                       maxtimestamp));
   }
   if (rfiles.size() > 1) {
     for (const auto &path : rfiles) {
       futures.emplace_back(std::async(
-          [path,ageOffEval](void)
+          [path, ageOffEval](void)
               -> std::shared_ptr<cclient::data::streams::KeyValueIterator> {
             try {
               size_t size = 0;

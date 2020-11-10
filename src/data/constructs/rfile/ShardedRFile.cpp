@@ -14,32 +14,24 @@
 
 #include "data/constructs/rfile/ShardedRFile.h"
 
-
 namespace cclient {
 namespace data {
 
 ShardedRFile::ShardedRFile(streams::OutputStream *output_stream,
-                                 std::unique_ptr<BlockCompressedFile> bWriter)
-    : SequentialRFile(output_stream,std::move(bWriter)) {
-}
-ShardedRFile::ShardedRFile(
-    std::unique_ptr<streams::OutputStream> output_stream,
-    std::unique_ptr<BlockCompressedFile> bWriter)
-    : SequentialRFile(std::move(output_stream),std::move(bWriter)) {
-}
+                           std::unique_ptr<BlockCompressedFile> bWriter)
+    : SequentialRFile(output_stream, std::move(bWriter)) {}
+ShardedRFile::ShardedRFile(std::unique_ptr<streams::OutputStream> output_stream,
+                           std::unique_ptr<BlockCompressedFile> bWriter)
+    : SequentialRFile(std::move(output_stream), std::move(bWriter)) {}
 
-ShardedRFile::ShardedRFile(
-    std::unique_ptr<streams::InputStream> input_stream, long fileLength)
-    : SequentialRFile(std::move(input_stream),fileLength) {
-}
+ShardedRFile::ShardedRFile(std::unique_ptr<streams::InputStream> input_stream,
+                           long fileLength)
+    : SequentialRFile(std::move(input_stream), fileLength) {}
 
-ShardedRFile::ShardedRFile(streams::InputStream *input_stream,
-                                 long fileLength)
-    : SequentialRFile(input_stream,fileLength) {
-}
+ShardedRFile::ShardedRFile(streams::InputStream *input_stream, long fileLength)
+    : SequentialRFile(input_stream, fileLength) {}
 
-ShardedRFile::~ShardedRFile(){
-}
+ShardedRFile::~ShardedRFile() {}
 
 }  // namespace data
 }  // namespace cclient

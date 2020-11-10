@@ -141,7 +141,7 @@ void LocalityGroupReader::seek(
       if (!auths.empty()) {
         rKey->filterVisibility(auths);
       }
-      if (ageoff_evaluator){
+      if (ageoff_evaluator) {
         rKey->setAgeOffEvaluator(ageoff_evaluator);
       }
 

@@ -83,8 +83,8 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
   if (key) {
     key->setTimeStamp(timestamp);
     prevKey = key;
-    if (!filtered){
-      if (ageOffEvaluator){
+    if (!filtered) {
+      if (ageOffEvaluator) {
         // check that the key should be aged off
         filtered = ageOffEvaluator->filtered(key);
       }
@@ -175,7 +175,8 @@ void RelativeKey::filterVisibility(
           : eval;
 }
 
-void RelativeKey::setAgeOffEvaluator(const std::shared_ptr<cclient::data::AgeOffEvaluator> &conditions){
+void RelativeKey::setAgeOffEvaluator(
+    const std::shared_ptr<cclient::data::AgeOffEvaluator> &conditions) {
   ageOffEvaluator = conditions;
 }
 
@@ -864,7 +865,6 @@ uint64_t RelativeKey::write(streams::OutputStream *outStream) {
   } else if ((fieldsPrefixed & ROW_PREFIX) == ROW_PREFIX) {
     writePrefix(outStream, &p, rowCommonPrefixLen);
   } else {
-    // outStream->writeVLong(p.second);
     outStream->writeVLong(p.second);
     outStream->writeBytes(p.first, p.second);
   }

@@ -107,7 +107,7 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
 
   TextBuffer stopRow, stopCf, stopCq, stopCv;
   stopRow = seekKey->getRow();
-  
+
   stopCf = seekKey->getColFamily();
 
   stopCq = seekKey->getColQualifier();
@@ -308,9 +308,8 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
         return true;
       }
     }
-    // age off 
-    if (ageoff_evaluator && ageoff_evaluator->filtered(baseKey))
-      return true;
+    // age off
+    if (ageoff_evaluator && ageoff_evaluator->filtered(baseKey)) return true;
   }
   return false;
 }
