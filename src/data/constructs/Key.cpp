@@ -240,9 +240,23 @@ int Key::compare(const std::shared_ptr<Key> &other) {
   auto qtl = getColQualifier();
   compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
 
-  if (compare < 0) return compare;
+  if (compare < 0)
+    return compare;
+  else if (compare > 0)
+    return compare;
 
-  return 0;
+  if (other->timestamp < timestamp) {
+    return -1;
+  } else if (other->timestamp > timestamp) {
+    return 1;
+  }
+
+  if (deleted)
+    compare = other->deleted ? 0 : -1;
+  else
+    compare = other->deleted ? 1 : 0;
+
+  return compare;
 }
 
 int Key::compareToVisibility(const std::shared_ptr<Key> &other) {
@@ -275,9 +289,7 @@ int Key::compareToVisibility(const std::shared_ptr<Key> &other) {
   auto vtl = getColVisibility();
   compare = compareBytes(vtl.first, 0, vtl.second, vtr.first, 0, vtr.second);
 
-  if (compare < 0) return compare;
-
-  return 0;
+  return compare;
 }
 
 bool Key::operator<(const Key &rhs) const {

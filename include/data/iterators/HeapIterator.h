@@ -39,8 +39,8 @@ namespace cclient {
 namespace data {
 
 struct KeyValueIteratorComparator {
-  bool operator()(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &lhs, const std::shared_ptr<cclient::data::streams::KeyValueIterator> &rhs) {
-    return lhs->getTopKey()->compare(rhs->getTopKey()) < 0;
+  bool operator()(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &lhs, const std::shared_ptr<cclient::data::streams::KeyValueIterator> &rhs) const {
+    return lhs->getTopKey()->compare(rhs->getTopKey()) > 0;
   }
 };
 
@@ -49,14 +49,16 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   std::shared_ptr<cclient::data::Range> block;
 
+
+  protected:
+
   std::priority_queue<std::shared_ptr<cclient::data::streams::KeyValueIterator>, std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>>, KeyValueIteratorComparator> queues;
 
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iterators;
 
   std::shared_ptr<cclient::data::Key> nextKey;
 
-  protected:
-    std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> topIterator;
 
 
  public:
@@ -77,96 +79,40 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   HeapIterator& operator=(const HeapIterator &other) = default;
 
-  virtual void relocate(cclient::data::streams::StreamRelocation *location) override {
-    for (auto &itr : iterators) {
-      itr->relocate(location);
-      addSource(itr);
-    }
-  }
+  virtual void relocate(cclient::data::streams::StreamRelocation *location) override;
 
-  virtual std::shared_ptr<Key> getTopKey() override {
-    return topIterator->getTopKey();
-  }
+  virtual std::shared_ptr<Key> getTopKey() override ;
 
-  virtual std::shared_ptr<Value> getTopValue() override {
-    return topIterator->getTopValue();
-  }
+  virtual std::shared_ptr<Value> getTopValue() override ;
 
-virtual std::shared_ptr<KeyValue> getTop() override{
-    return std::make_shared<KeyValue>(topIterator->getTopKey(), topIterator->getTopValue());
-  }
+virtual std::shared_ptr<KeyValue> getTop() override;
 
-  virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override {
-    return std::make_pair(topIterator->getTopKey(), topIterator->getTopValue());
-  }
+  virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override;
 
-  virtual void next() override {
-    if (SH_UNLIKELY(nullptr == topIterator)) {
-      throw cclient::exceptions::IllegalStateException("Called next() without a top");
-    }
-    topIterator->next();
-    if (!topIterator->hasNext()) {
-      if (nullptr == nextKey) {
-        topIterator = nullptr;
-        return;
-      }
-      getTopIterator();
-    } else {
-      if (nullptr == nextKey) {
-        return;
-      }
-      if (nextKey->compare(topIterator->getTopKey()) < 0) {
-        auto top = queues.top();
-        queues.pop();
-        queues.push(topIterator);
-        topIterator = top;
-        nextKey = queues.top()->getTopKey();
-      }
-    }
-  }
+  virtual void next() override;
 
-  virtual DataStream* operator++() override {
+  
+
+   virtual   DataStream* operator++() override {
     next();
     return this;
   }
 
-  virtual DataStream* operator++(int t) override {
+   virtual DataStream* operator++(int t) override {
     for (int i = 0; i < t; i++) {
       next();
     }
     return this;
   }
 
-  virtual uint64_t getEntriesFiltered() override {
-    uint64_t filtered = 0;
-    for (const auto &iter : iterators) {
-      filtered += iter->getEntriesFiltered();
-    }
-    return filtered;
-  }
+  virtual uint64_t getEntriesFiltered() override;
 
  protected:
+ void multiNext();
 
-  void addSource(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &iter) {
-    if (iter->hasNext()) {
-      queues.push(iter);
-      if (nullptr != topIterator) {
-        queues.push(topIterator);
-      }
-      getTopIterator();
-    }
-  }
+  void addSource(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &iter);
 
-  void INLINE getTopIterator() {
-    // remove the top iterator
-    topIterator = queues.top();
-    queues.pop();
-    if (!queues.empty()) {
-      nextKey = queues.top()->getTopKey();
-    } else {
-      nextKey = nullptr;
-    }
-  }
+  void INLINE getTopIterator() ;
 
 };
 

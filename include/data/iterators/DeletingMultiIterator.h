@@ -36,26 +36,38 @@ void findTop() {
     if (!propogateDeletes) {
       while (hasNext() && getTopKey()->isDeleted()) {
         auto keyToSkip=getTopKey();
-        next();
-
+        multiNext();
+        if (!hasNext()){
+          break;
+        }
         while (hasNext()
-            && getTopKey()->compareToVisibility(keyToSkip)) {
-            next();
+            && getTopKey()->compareToVisibility(keyToSkip) == 0) {
+            multiNext();
         }
       }
     }
+    else{
+      multiNext();
+    }
   }
+
  public:
   explicit DeletingMultiIterator(const std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> &itrs, 
   bool propogate, const std::shared_ptr<cclient::data::Range> &range = nullptr)
-      :
-      HeapIterator(itrs, range) {
+      : HeapIterator(itrs, range), propogateDeletes(propogate) {
   }
 
    virtual void relocate(cclient::data::streams::StreamRelocation *location) override {
     cclient::data::HeapIterator::relocate(location);
     findTop();
   }
+
+  virtual void next() override{
+    multiNext();
+    findTop();
+  }
+
+
 
   DeletingMultiIterator(const DeletingMultiIterator &other) = default;
 

@@ -16,6 +16,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wweak-vtables"
 
+#include <arpa/inet.h>
 #include <stdint.h>
 
 #include <memory>
@@ -28,7 +29,7 @@ namespace streams {
 class OutputStream {
  public:
   explicit OutputStream(std::unique_ptr<std::ostream> ptr, uint64_t pos)
-      : ostream_ref(ptr.get()), position(new uint64_t(pos)), copy(false) {
+      : ostream_ref(ptr.get()), position(pos), copy(false) {
     owned_ostream_ref = std::move(ptr);
   }
 
@@ -76,6 +77,22 @@ class OutputStream {
   friend class DataOutputStream;
 
  protected:
+  uint64_t htonlw(uint64_t value) {
+    // The answer is 42
+    static const int num = 42;
+
+    // Check the endianness
+    if (*reinterpret_cast<const char *>(&num) == num) {
+      const uint32_t high_part = htonl(static_cast<uint32_t>(value >> 32));
+      const uint32_t low_part =
+          htonl(static_cast<uint32_t>(value & 0xFFFFFFFFLL));
+
+      return (static_cast<uint64_t>(low_part) << 32) | high_part;
+    } else {
+      return value;
+    }
+  }
+
   virtual bool canReclaim() { return true; }
 
   int numberOfLeadingZeros(uint64_t i) {
@@ -122,7 +139,7 @@ class OutputStream {
   // ostream reference.
   std::ostream *ostream_ref;
   // position pointer.
-  uint64_t *position;
+  uint64_t position;
   // identify that we have copied a stream
   // useful when deleting position
   bool copy;

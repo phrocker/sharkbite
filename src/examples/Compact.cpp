@@ -46,7 +46,7 @@ std::ifstream::pos_type filesize(const char *filename) {
   return in.tellg();
 }
 
-void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const std::string &file) {
+void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const std::string &file, bool print=false) {
 
   std::atomic<int64_t> cntr;
   cntr = 1;
@@ -55,7 +55,7 @@ void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const
 
   auto outStream = cclient::data::RFileOperations::write(file, compressBlockSize);
 
-  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles);
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles,0,true,false);
   std::vector<std::string> cf;
   cclient::data::Range rng;
 
@@ -70,7 +70,9 @@ void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const
   while (multi_iter->hasNext()) {
 
     outStream->append(std::make_shared<cclient::data::KeyValue>(multi_iter->getTopKey(), multi_iter->getTopValue()));
-
+    if (print){
+      std::cout << multi_iter->getTopKey() << std::endl;
+    }
     multi_iter->next();
     count++;
     if ((count % 10000) == 0)
@@ -99,6 +101,7 @@ int main(int argc, char **argv) {
 
   std::vector<std::string> rfiles;
   std::string outputfile;
+  bool print = false;
   uint32_t compressBlockSize = 256 * 1024;
 
   if (argc >= 2) {
@@ -113,6 +116,10 @@ int main(int argc, char **argv) {
         } else {
           throw std::runtime_error("Invalid number of arguments. Must supply visibility");
         }
+      }
+
+      if (key == "-p") {
+        print = true;
       }
 
       if (key == "-s") {
@@ -137,7 +144,10 @@ int main(int argc, char **argv) {
   }
 
   if (!rfiles.empty()) {
-    compact(rfiles, compressBlockSize, outputfile);
+    compact(rfiles, compressBlockSize, outputfile,print);
+  }
+  else{
+    throw std::runtime_error("Specify at least one RFile");
   }
 
   return 0;

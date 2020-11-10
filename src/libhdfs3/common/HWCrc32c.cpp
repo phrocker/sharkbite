@@ -45,24 +45,24 @@ namespace Internal {
 
 #if defined(NATIVE_ARCH) && defined(__LP64__)
 static inline uint64_t _mm_crc32_u64(uint64_t crc, uint64_t value) {
-  asm("crc32q %[value], %[crc]\n" : [ crc ] "+r"(crc) : [ value ] "rm"(value));
+  asm("crc32q %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
   return crc;
 }
 #endif
 
 #if defined(NATIVE_ARCH)
 static inline uint32_t _mm_crc32_u16(uint32_t crc, uint16_t value) {
-  asm("crc32w %[value], %[crc]\n" : [ crc ] "+r"(crc) : [ value ] "rm"(value));
+  asm("crc32w %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
   return crc;
 }
 
 static inline uint32_t _mm_crc32_u32(uint32_t crc, uint64_t value) {
-  asm("crc32l %[value], %[crc]\n" : [ crc ] "+r"(crc) : [ value ] "rm"(value));
+  asm("crc32l %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
   return crc;
 }
 
 static inline uint32_t _mm_crc32_u8(uint32_t crc, uint8_t value) {
-  asm("crc32b %[value], %[crc]\n" : [ crc ] "+r"(crc) : [ value ] "rm"(value));
+  asm("crc32b %[value], %[crc]\n" : [crc] "+r"(crc) : [value] "rm"(value));
   return crc;
 }
 }

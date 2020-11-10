@@ -129,8 +129,10 @@ void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
         compressorRef->newInstance(), version, in_stream);
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
-    localityGroupReaders.push_back(new LocalityGroupReader(
-        blockWriter.get(), in_stream, meatadata, version));
+    auto rdr = new LocalityGroupReader(blockWriter.get(), in_stream, meatadata,
+                                       version);
+    rdr->setAgeOff(ageoff_evaluator);
+    localityGroupReaders.push_back(rdr);
   }
 
   currentLocalityGroupReader = localityGroupReaders.front();

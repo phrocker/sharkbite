@@ -1,5 +1,7 @@
 #include "data/constructs/rfile/RFileOperations.h"
 
+#include "data/constructs/ageoff/AgeOffConditions.h"
+#include "data/iterators/DeletingMultiIterator.h"
 #include "data/iterators/VersioningIterator.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
@@ -47,7 +49,9 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::write(
   std::vector<cclient::data::streams::OutputStream *> ownedStreams;
   if (rfile.find("hdfs://") != std::string::npos) {
     stream = new cclient::data::streams::HdfsOutputStream(rfile);
+    // stream = new cclient::data::streams::EndianTranslationStream(os);
     ownedStreams.push_back(stream);
+    // ownedStreams.push_back(os);
   } else {
     auto in = std::make_unique<std::ofstream>(
         rfile, std::ifstream::ate | std::ifstream::binary);
@@ -117,15 +121,22 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
 
 std::shared_ptr<cclient::data::streams::KeyValueIterator>
 RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
-                                    int versions) {
+                                    int versions, bool withDeletes,
+                                    bool propogate, uint64_t maxtimestamp) {
   std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
   std::vector<
       std::future<std::shared_ptr<cclient::data::streams::KeyValueIterator>>>
       futures;
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageOffEval = nullptr;
+  if (maxtimestamp > 0) {
+    ageOffEval = std::make_shared<cclient::data::AgeOffEvaluator>(
+        cclient::data::AgeOffCondition(AgeOffType::DEFAULT, "default",
+                                       maxtimestamp));
+  }
   if (rfiles.size() > 1) {
     for (const auto &path : rfiles) {
       futures.emplace_back(std::async(
-          [path](void)
+          [path, ageOffEval](void)
               -> std::shared_ptr<cclient::data::streams::KeyValueIterator> {
             try {
               size_t size = 0;
@@ -148,9 +159,10 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
               auto endstream = std::make_unique<
                   cclient::data::streams::ReadAheadInputStream>(
                   std::move(stream), 128 * 1024, 1024 * 1024, size);
-
-              return std::make_shared<cclient::data::SequentialRFile>(
+              auto rfstream = std::make_shared<cclient::data::SequentialRFile>(
                   std::move(endstream), size);
+              rfstream->setAgeOff(ageOffEval);
+              return rfstream;
             } catch (const std::exception &e) {
               std::cout << e.what() << std::endl;
             }
@@ -187,18 +199,37 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
         std::make_unique<cclient::data::streams::ReadAheadInputStream>(
             std::move(stream), 128 * 1024, 1024 * 1024, size);
 
-    iters.emplace_back(std::make_shared<cclient::data::SequentialRFile>(
-        std::move(endstream), size));
+    auto rfstream = std::make_shared<cclient::data::SequentialRFile>(
+        std::move(endstream), size);
+    rfstream->setAgeOff(ageOffEval);
+    iters.emplace_back(rfstream);
   }
-  if (versions == 0)
-    return std::make_shared<cclient::data::MultiIterator>(iters);
-  else
-    return std::make_shared<cclient::data::VersioningIterator>(iters);
+
+  std::shared_ptr<cclient::data::HeapIterator> heapItr;
+
+  if (versions == 0) {
+    if (!withDeletes) {
+      heapItr = std::make_shared<cclient::data::MultiIterator>(iters);
+    } else {
+      heapItr = std::make_shared<cclient::data::DeletingMultiIterator>(
+          iters, propogate);
+    }
+  } else {
+    heapItr = std::make_shared<cclient::data::VersioningIterator>(iters);
+  }
+
+  return heapItr;
 }
 
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {
-  std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
-  return in.tellg();
+  std::string path = filename;
+  if (path.find("hdfs://") != std::string::npos) {
+    auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
+    return str->getFileSize();
+  } else {
+    std::ifstream in(filename, std::ifstream::ate | std::ifstream::binary);
+    return in.tellg();
+  }
 }
 
 }  // namespace data

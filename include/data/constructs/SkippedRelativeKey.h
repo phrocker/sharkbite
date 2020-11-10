@@ -21,6 +21,7 @@
 #include "../streaming/Streams.h"
 #include "data/constructs/security/Authorizations.h"
 #include "data/constructs/security/VisibilityEvaluator.h"
+#include "data/constructs/ageoff/AgeOffConditions.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 #include <stdint.h>
@@ -86,6 +87,7 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
   int skipped;
   ArrayAllocatorPool *allocatorInstance;
   cclient::data::security::Authorizations auths;
+  std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
 
   bool fastSkip(cclient::data::streams::InputStream *stream, const std::shared_ptr<Key> &seekKey, std::vector<char> *valCopy, std::shared_ptr<Key> prevKey, std::shared_ptr<Key> currKey,
                 size_t entriesRemaining);
@@ -126,6 +128,9 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
     this->auths = auths;
   }
 
+  void setAgeOFf(const std::shared_ptr<cclient::data::AgeOffEvaluator> &ageoff){
+    ageoff_evaluator = ageoff;
+  }
   virtual ~SkippedRelativeKey() {
   }
 

@@ -12,21 +12,18 @@
  * limitations under the License.
  */
 
+#include "jni/PythonIterator.h"
+
+#include "jni/AccumuloRange.h"
 #include "jni/DSLIterator.h"
 #include "jni/Iterators.h"
-#include "jni/PythonIterator.h"
-#include "jni/AccumuloRange.h"
-#include "jni/JVMLoader.h"
 #include "jni/JNIUtil.h"
-#include <pybind11/embed.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
+#include "jni/JVMLoader.h"
 
 namespace cclient {
 namespace jni {
 namespace python {
-
+/*
 void PythonIterator::callNext() {
   topKeyValue = iter.callNext(this);
   if (nullptr != topKeyValue) {
@@ -45,13 +42,9 @@ void PythonIterator::callNext() {
   calledNext = false;
 }
 
-void PythonIterator::callSeek(const std::shared_ptr<cclient::data::Range> &range) {
-  calledNext = false;
-  if (iter.callSeek(this, range)) {
-    callNext();
-  } else {
-    accIter->seek(range);
-    callNext();
+void PythonIterator::callSeek(const std::shared_ptr<cclient::data::Range>
+&range) { calledNext = false; if (iter.callSeek(this, range)) { callNext(); }
+else { accIter->seek(range); callNext();
   }
 }
 
@@ -77,7 +70,8 @@ bool PythonIterator::hasTop() {
 void PythonIterator::next() {
   calledNext = true;
 }
+*/
 
 }
-}
-}
+}  // namespace jni
+}  // namespace cclient

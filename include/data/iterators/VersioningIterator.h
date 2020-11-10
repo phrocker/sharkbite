@@ -61,41 +61,15 @@ class VersioningIterator : public cclient::data::HeapIterator {
 
   VersioningIterator& operator=(const VersioningIterator &other) = default;
 
-  virtual std::shared_ptr<Key> getTopKey() override {
-    return topKey;
-  }
+  virtual std::shared_ptr<Key> getTopKey() override;
 
-  virtual std::shared_ptr<Value> getTopValue() override {
-    return topValue;
-  }
+  virtual std::shared_ptr<Value> getTopValue() override;
 
-  virtual bool hasNext() override {
-    return topKey != nullptr || topIterator != nullptr;
-  }
+  virtual bool hasNext() override;
 
-  virtual std::shared_ptr<KeyValue> getTop() override {
-    return std::make_shared<KeyValue>(topKey, topValue);
-  }
+  virtual std::shared_ptr<KeyValue> getTop() override;
 
-  virtual void next() override {
-    if (!cclient::data::HeapIterator::hasNext()) {
-      topKey = nullptr;
-      return;
-    }
-    cclient::data::HeapIterator::next();
-    if (cclient::data::HeapIterator::hasNext()) {
-      topKey = topIterator->getTopKey();
-      topValue = topIterator->getTopValue();
-      if (SH_UNLIKELY(topKey->compareToVisibility(topIterator->getTopKey()) == 0)) {
-        do {
-          cclient::data::HeapIterator::next();
-        } while (nullptr != topIterator && topKey->compareToVisibility(topIterator->getTopKey()) == 0);
-      }
-    } else {
-      topKey = nullptr;
-    }
-
-  }
+  virtual void next() override;
 
 };
 

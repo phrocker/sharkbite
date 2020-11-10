@@ -37,7 +37,7 @@ Uri::Uri(std::string str) : hasAuthority_(false), port_(0) {
 
   std::smatch match;
   if (SH_UNLIKELY(!std::regex_match(str, match, uriRegex))) {
-    throw std::runtime_error("invalid URI ");
+    throw std::invalid_argument("invalid URI ");
   }
 
   scheme_ = smatchBuild(match, 1);

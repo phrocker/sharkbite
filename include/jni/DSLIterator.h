@@ -26,15 +26,7 @@ extern "C" {
 
 void rethrow_cpp_exception_as_java_exception(JNIEnv*);
 
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setType(JNIEnv *, jobject, jstring);
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *, jobject, jstring);
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_seek(JNIEnv *, jobject, jobject, jobject);
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_init(JNIEnv *, jobject, jobject);
-
-JNIEXPORT void JNICALL org_poma_accumulo_DSLIterator_getNextKey(JNIEnv*, jobject, jobject);
+JNIEXPORT void JNICALL Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(JNIEnv* env, jobject me, jstring output_file, jobject arraylist_files, jobject longadder_resulted, jobject longadder_total, jobject longadder_filesize, jlong ageoff);
 
 #ifdef __cplusplus
 }

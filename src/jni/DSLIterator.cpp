@@ -13,15 +13,14 @@
  */
 
 #include "jni/DSLIterator.h"
-#include "jni/Iterators.h"
-#include "jni/PythonIterator.h"
-#include "jni/AccumuloRange.h"
-#include "jni/JVMLoader.h"
+#include <ctime>
+#include <sys/time.h>
+#include "data/constructs/rfile/RFileOperations.h"
+#include "data/iterators/DeletingMultiIterator.h"
+#include "data/streaming/accumulo/KeyValueIterator.h"
 #include "jni/JNIUtil.h"
-#include <pybind11/embed.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
+#include "jni/JVMLoader.h"
+#include "utils/Uri.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,99 +31,121 @@ void rethrow_cpp_exception_as_java_exception(JNIEnv *env) {
     throw;  // This allows to determine the type of the exception
   } catch (const std::bad_alloc &e) {
     jclass jc = env->FindClass("java/lang/OutOfMemoryError");
-    if (jc)
-      env->ThrowNew(jc, e.what());
+    if (jc) env->ThrowNew(jc, e.what());
   } catch (const std::ios_base::failure &e) {
     jclass jc = env->FindClass("java/io/IOException");
-    if (jc)
-      env->ThrowNew(jc, e.what());
+    if (jc) env->ThrowNew(jc, e.what());
   } catch (const std::exception &e) {
     /* unknown exception (may derive from std::exception) */
     jclass jc = env->FindClass("java/lang/Exception");
-    if (jc)
-      env->ThrowNew(jc, e.what());
+    if (jc) env->ThrowNew(jc, e.what());
   } catch (...) {
     /* Oops I missed identifying this exception! */
     jclass jc = env->FindClass("java/lang/Exception");
     if (jc)
-      env->ThrowNew(jc, "Unidentified exception => "
+      env->ThrowNew(jc,
+                    "Unidentified exception => "
                     "Improve rethrow_cpp_exception_as_java_exception()");
   }
 }
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setType(JNIEnv *env, jobject me, jstring type) {
-  auto typestr = JniStringToUTF(env, type);
-  cclient::jni::DSLIterator *ptr = nullptr;
-  if (typestr == "Python") {
-    ptr = new cclient::jni::python::PythonIterator();
-  }
-  cclient::jni::JVMLoader::getInstance()->setPtr(env, me, ptr);
-}
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_setDSL(JNIEnv *env, jobject me, jstring dsl) {
-  const std::string dslStr = JniStringToUTF(env, dsl);
-  cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
-  if (nullptr != itr) {
-    try {
-      itr->setDSL(dslStr);
-    } catch(...) {
-      rethrow_cpp_exception_as_java_exception(env);
-    }
-  }
-}
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_init(JNIEnv *env, jobject me, jobject map) {
-
-}
-
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_seek(JNIEnv *env, jobject me, jobject skvi, jobject range) {
-  cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
-  THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
-
+JNIEXPORT void JNICALL
+Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
+    JNIEnv *env, jobject me, jstring output_file, jobject arraylist_files,
+    jobject longadder_resulted, jobject longadder_total,
+    jobject longadder_filesize, jlong ageoff) {
   try {
-    cclient::jni::AccumuloIterator acciter(env, skvi);
-    itr->setIter(&acciter);
-    cclient::jni::AccumuloRange rng(env,range);
-    THROW_IF( !rng.init(env) , env, "Range is null");
-    itr->callSeek(rng.getRange());
+    env->ExceptionClear();
+    // retrieve the java.util.List interface class
+    jclass cList = env->FindClass("java/util/List");
+    cclient::jni::ThrowIf(env);
+    jclass jadderClass =
+        env->FindClass("java/util/concurrent/atomic/LongAdder");
+    cclient::jni::ThrowIf(env);
+    // retrieve the size and the get method
+    jmethodID mSize = env->GetMethodID(cList, "size", "()I");
+    jmethodID mGet = env->GetMethodID(cList, "get", "(I)Ljava/lang/Object;");
+    jmethodID mAdd = env->GetMethodID(jadderClass, "add", "(J)V");
+    cclient::jni::ThrowIf(env);
+    THROW_IF_NULL(mSize, env, "Could not get size function");
+    THROW_IF_NULL(mGet, env, "Could not obtain get function");
+    THROW_IF_NULL(mAdd, env, "Could not get add function");
+    // get the size of the list
+    jint size = env->CallIntMethod(arraylist_files, mSize);
+    cclient::jni::ThrowIf(env);
+    std::vector<std::string> rfiles;
 
-    if (itr->callHasTop()) {
-      auto top = itr->getTopKey();
-      acciter.setTopKey(env,me,top);
-      auto topv = itr->getTopValue();
-      if ( !acciter.setTopValue(env,me,topv) ) {
-        throw std::runtime_error("cannot set top value");
+    auto file = JniStringToUTF(env, output_file);
+    cclient::jni::ThrowIf(env);
+
+    bool onHdfs = false;
+    if (file.find("hdfs://") != std::string::npos) {
+      onHdfs = true;
+    }
+
+    // walk through and fill the vector
+    for (jint i = 0; i < size; i++) {
+      jstring strObj = (jstring)env->CallObjectMethod(arraylist_files, mGet, i);
+      cclient::jni::ThrowIf(env);
+      auto rfile = JniStringToUTF(env, strObj);
+      if (rfile.find("hdfs://") == std::string::npos && onHdfs) {
+        try {
+          utils::Uri uri(file);
+          rfile =
+              "hdfs://" + uri.host() + ":" + std::to_string(uri.port()) + rfile;
+        } catch (...) {
+        }
+      }
+      rfiles.push_back(rfile);
+    }
+    int64_t ageOffDelta = ageoff;
+    uint64_t maxTimestamp = 0;
+    if (ageOffDelta > 0){
+    std::time_t result = std::time(nullptr);
+        struct timeval tp;
+        gettimeofday(&tp, NULL);
+        long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+        maxTimestamp = ms - ageOffDelta;
+    }
+    auto outStream = cclient::data::RFileOperations::write(file, 32 * 1024);
+    std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter =
+        cclient::data::RFileOperations::openManySequential(rfiles, 0, true,
+                                                           false,maxTimestamp );
+    std::vector<std::string> cf;
+    cclient::data::Range rng;
+
+    cclient::data::security::Authorizations auths;
+
+    cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false);
+    multi_iter->relocate(&seekable);
+    long count = 0;
+    uint64_t total_size = 0;
+    outStream->addLocalityGroup();
+    while (multi_iter->hasNext()) {
+      outStream->append(std::make_shared<cclient::data::KeyValue>(
+          multi_iter->getTopKey(), multi_iter->getTopValue()));
+
+      multi_iter->next();
+      count++;
+      if ((count % 10000) == 0) {
+        env->CallVoidMethod(longadder_resulted, mAdd, count);
+        env->CallVoidMethod(longadder_total, mAdd, count);
+        count = 0;
       }
     }
+    outStream->close();
+    outStream = nullptr;
 
-  } catch(...) {
-    rethrow_cpp_exception_as_java_exception(env);
-  }
+    // auto end = chrono::steady_clock::now();
 
-}
+    env->CallVoidMethod(longadder_resulted, mAdd, count);
 
-JNIEXPORT void JNICALL Java_org_poma_accumulo_DSLIterator_getNextKey(JNIEnv *env, jobject me, jobject skvi) {
+    env->CallVoidMethod(longadder_total, mAdd,
+                        count + multi_iter->getEntriesFiltered());
 
-  cclient::jni::DSLIterator *itr = cclient::jni::JVMLoader::getPtr<cclient::jni::DSLIterator>(env, me);
-  THROW_IF_NULL(itr, env, "DSL Iterator must be defined");
+    auto res_file_size = cclient::data::RFileOperations::filesize(file.c_str());
 
-  auto exc = env->FindClass("java/lang/Exception");
-
-  try {
-    cclient::jni::AccumuloIterator acciter(env, skvi);
-    itr->setIter(&acciter);
-    itr->callNext();
-
-    if (itr->callHasTop()) {
-      auto top = itr->getTopKey();
-      acciter.setTopKey(env,me,top);
-      auto topv = itr->getTopValue();
-      if ( !acciter.setTopValue(env,me,topv) ) {
-        throw std::runtime_error("cannot set top value");
-      }
-    }
-  } catch(...) {
-    std::cout << "exception " << std::endl;
+    env->CallVoidMethod(longadder_filesize, mAdd, res_file_size);
+  } catch (...) {
     rethrow_cpp_exception_as_java_exception(env);
   }
 }
