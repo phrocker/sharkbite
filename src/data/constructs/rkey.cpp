@@ -88,7 +88,7 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
         // check that the key should be aged off
         filtered = ageOffEvaluator->filtered(key);
       }
-      if (keyPredicate) {
+      if (keyPredicate){
         // check that the key should be aged off
         filtered = !keyPredicate->accept(key);
       }
@@ -128,12 +128,12 @@ uint64_t RelativeKey::readFiltered(streams::InputStream *stream) {
       prevFiltered;
 
   key = nullptr;
-
+ 
   key = readRowFiltered(stream, &rowCmp, RelativeKey::ROW_SAME,
-                        RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed,
-                        row_ref, key);
+                  RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed, row_ref,
+                  key);
 
-  if (!key) {
+  if (!key){
     likelyFiltered = true;
     filtered = true;
   }
@@ -159,19 +159,19 @@ uint64_t RelativeKey::readFiltered(streams::InputStream *stream) {
 
   if (key) {
     if (key) {
-      key->setTimeStamp(timestamp);
-      prevKey = key;
-      if (!filtered) {
-        if (ageOffEvaluator) {
-          // check that the key should be aged off
-          filtered = ageOffEvaluator->filtered(key);
-        }
-        if (keyPredicate) {
-          // check that the key should be aged off
-          filtered = !keyPredicate->accept(key);
-        }
+    key->setTimeStamp(timestamp);
+    prevKey = key;
+    if (!filtered) {
+      if (ageOffEvaluator) {
+        // check that the key should be aged off
+        filtered = ageOffEvaluator->filtered(key);
+      }
+      if (keyPredicate){
+        // check that the key should be aged off
+        filtered = !keyPredicate->accept(key);
       }
     }
+  }
   }
 
   // if we've been filtered no point in returning.
@@ -525,10 +525,12 @@ bool RelativeKey::readCv(cclient::data::streams::InputStream *stream,
  *
  *
  */
-std::shared_ptr<Key> RelativeKey::readRowFiltered(
-    cclient::data::streams::InputStream *stream, int *comparison,
-    uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed,
-    std::shared_ptr<Text> &prevText, std::shared_ptr<Key> &newkey) {
+std::shared_ptr<Key> RelativeKey::readRowFiltered(cclient::data::streams::InputStream *stream,
+                                  int *comparison, uint8_t SAME_FIELD,
+                                  uint8_t PREFIX, char fieldsSame,
+                                  char fieldsPrefixed,
+                                  std::shared_ptr<Text> &prevText,
+                                  std::shared_ptr<Key> &newkey) {
   // only use this optimization iff same field.
   if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
@@ -541,13 +543,12 @@ std::shared_ptr<Key> RelativeKey::readRowFiltered(
 
       prevText->reset(ret.first, prevField.second, ret.second);
     }
-    if (likelyFiltered ||
-        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+    if (likelyFiltered || (keyPredicate && !keyPredicate->acceptRow(prevText))){
       likelyFiltered = true;
       return nullptr;
     }
 
-    if (newkey == nullptr) {
+    if (newkey == nullptr){
       newkey = allocatorInstance->newKey();
     }
 
@@ -569,13 +570,12 @@ std::shared_ptr<Key> RelativeKey::readRowFiltered(
       maxsize = read(stream, &field);
     }
 
+
     /**
      * we need to maintain the previous
      * */
-    if (!prevText->empty() || likelyFiltered ||
-        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
-      if (likelyFiltered ||
-          (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+    if (!prevText->empty() || likelyFiltered || (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+      if (likelyFiltered || (keyPredicate && !keyPredicate->acceptRow(prevText))) {
         prevText.reset(
             new Text(allocatorInstance, field.first, field.second, maxsize));
         likelyFiltered = true;
@@ -585,7 +585,8 @@ std::shared_ptr<Key> RelativeKey::readRowFiltered(
       }
     }
 
-    if (newkey == nullptr) {
+    
+    if (newkey == nullptr){
       newkey = allocatorInstance->newKey();
     }
 
@@ -599,15 +600,14 @@ std::shared_ptr<Key> RelativeKey::readRowFiltered(
 
     memcpy_fast(ret.first, prev.first, prev.second);
 
-    if (likelyFiltered ||
-        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+    if (likelyFiltered || (keyPredicate && !keyPredicate->acceptRow(prevText))) {
       likelyFiltered = true;
       prevText.reset(
           new Text(allocatorInstance, ret.first, ret.second, maxsize));
       return nullptr;
     }
 
-    if (newkey == nullptr) {
+    if (newkey == nullptr){
       newkey = allocatorInstance->newKey();
     }
 

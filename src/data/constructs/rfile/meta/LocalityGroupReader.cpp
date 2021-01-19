@@ -365,10 +365,6 @@ LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize,
 
   compressedBuffers.enqueue(my_buf);
 
-  //  outputBuffers.enqueue(bout);
-  //  if (!use_cached)
-  //  compressors.enqueue(compressor);
-
   return stream;
 }
 

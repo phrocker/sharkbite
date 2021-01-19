@@ -116,14 +116,10 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
     localityGroupReaders.push_back(new LocalityGroupReader(
-        blockWriter.get(), in_stream, meatadata, &allocatorInstance, version));
+        blockWriter.get(), in_stream, meatadata, &allocatorInstance,version));
   }
 
   currentLocalityGroupReader = localityGroupReaders.front();
-
-  // if (!colvis.empty()) {
-  //  currentLocalityGroupReader->limitVisibility(colvis);
-  //  }
 }
 
 void RFile::next() { currentLocalityGroupReader->next(); }
