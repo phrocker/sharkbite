@@ -22,6 +22,7 @@
 #include "data/constructs/security/Authorizations.h"
 #include "data/constructs/security/VisibilityEvaluator.h"
 #include "data/constructs/ageoff/AgeOffConditions.h"
+#include "data/constructs/predicates/key/KeyPredicates.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 #include <stdint.h>
@@ -88,6 +89,7 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
   ArrayAllocatorPool *allocatorInstance;
   cclient::data::security::Authorizations auths;
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
+  std::shared_ptr<cclient::data::KeyPredicate> key_predicate;
 
   bool fastSkip(cclient::data::streams::InputStream *stream, const std::shared_ptr<Key> &seekKey, std::vector<char> *valCopy, std::shared_ptr<Key> prevKey, std::shared_ptr<Key> currKey,
                 size_t entriesRemaining);
@@ -128,8 +130,11 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
     this->auths = auths;
   }
 
-  void setAgeOFf(const std::shared_ptr<cclient::data::AgeOffEvaluator> &ageoff){
+  void setAgeOff(const std::shared_ptr<cclient::data::AgeOffEvaluator> &ageoff){
     ageoff_evaluator = ageoff;
+  }
+  void setKeyPredicate(const std::shared_ptr<cclient::data::KeyPredicate> &predicate){
+    key_predicate = predicate;
   }
   virtual ~SkippedRelativeKey() {
   }

@@ -310,6 +310,7 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
     }
     // age off
     if (ageoff_evaluator && ageoff_evaluator->filtered(baseKey)) return true;
+    if (key_predicate && !key_predicate->accept(baseKey)) return true;
   }
   return false;
 }

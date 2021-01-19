@@ -31,6 +31,7 @@
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #include "data/constructs/security/VisibilityEvaluator.h"
 #include "data/constructs/ageoff/AgeOffConditions.h"
+#include "data/constructs/predicates/key/KeyPredicates.h"
 
 namespace cclient {
 namespace data {
@@ -121,6 +122,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
 
   void setAgeOffEvaluator(const std::shared_ptr<cclient::data::AgeOffEvaluator> &conditions);
 
+  void setKeyPredicate(const std::shared_ptr<cclient::data::KeyPredicate> &conditions);
+
   void setFiltered();
 
  protected:
@@ -139,8 +142,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   bool INLINE readCv(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
 
-  bool INLINE readRowFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
-                      const std::shared_ptr<Key> &newkey);
+  std::shared_ptr<cclient::data::Key> INLINE readRowFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
+                      std::shared_ptr<Key> &newkey);
 
   bool INLINE readCfFiltered(cclient::data::streams::InputStream *stream, int *comparison, uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed, std::shared_ptr<Text> &prevText,
                      const std::shared_ptr<Key> &newkey);
@@ -187,6 +190,8 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   std::shared_ptr<cclient::data::security::VisibilityEvaluator> evaluator;
 
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageOffEvaluator;
+
+  std::shared_ptr<cclient::data::KeyPredicate> keyPredicate;
 
 
   int32_t rowCommonPrefixLen;

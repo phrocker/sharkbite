@@ -34,8 +34,74 @@
 #include "data/constructs/rfile/RFileOperations.h"
 #include "data/streaming/input/HdfsInputStream.h"
 #include "logging/Logger.h"
+#include "data/constructs/predicates/key/KeyPredicates.h"
 #include "logging/LoggerConfiguration.h"
+#include "data/extern/knnspeed/avxmem.h"
+#include "data/constructs/Text.h"
+#include <signal.h>
 #define BOOST_IOSTREAMS_NO_LIB 1
+
+class KeySkipper : public cclient::data::KeyPredicate{
+  private:
+  size_t keyCount;
+  size_t skipCount;
+  size_t total_size;
+  public:
+  explicit KeySkipper( size_t keys_to_skip) : skipCount(keys_to_skip), total_size(0),keyCount(0){
+  }
+
+  virtual bool accept(const std::shared_ptr<cclient::data::Key> &key) override{
+    if (++keyCount < skipCount){
+      total_size+=key->length();
+      return false;
+    }else{
+      keyCount = 0;
+      return true;
+    }
+  }
+
+  size_t getSkippedLength() const {
+    return total_size;
+  }
+};
+
+class RowPredicate : public cclient::data::KeyPredicate{
+  private:
+  std::string rowstring;
+  public:
+  explicit RowPredicate( const std::string &str) : rowstring(str){
+  }
+
+    virtual bool acceptRow(const std::shared_ptr<cclient::data::Text> &row) override{
+        if (row->equals(rowstring.data(),rowstring.size())){
+      return true;
+    }
+    return false;
+    }
+
+
+  virtual bool accept(const std::shared_ptr<cclient::data::Key> &key) override{
+    if (key->getRowStr().find(rowstring) != std::string::npos){
+      return true;
+    }
+    return false;
+  }
+};
+
+class ColumnQualifierPredicate : public cclient::data::KeyPredicate{
+  private:
+  std::string cqstring;
+  public:
+  explicit ColumnQualifierPredicate( const std::string &str) : cqstring(str){
+  }
+
+  virtual bool accept(const std::shared_ptr<cclient::data::Key> &key) override{
+    if (key->getColQualifierStr().find(cqstring) != std::string::npos){
+      return true;
+    }
+    return false;
+  }
+};
 
 bool keyCompare(std::shared_ptr<cclient::data::KeyValue> a, std::shared_ptr<cclient::data::KeyValue> b) {
   return *(a->getKey()) < *(b->getKey());
@@ -46,48 +112,29 @@ std::ifstream::pos_type filesize(const char *filename) {
   return in.tellg();
 }
 
-std::unique_ptr<cclient::data::streams::KeyValueIterator> createMultiReader(std::vector<std::string> rfiles) {
+volatile sig_atomic_t stop;
 
-  std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> iters;
-  for (const auto &path : rfiles) {
-    size_t size = 0;
-    std::unique_ptr<cclient::data::streams::InputStream> stream;
-    if (path.find("hdfs://") != std::string::npos) {
-      auto str = std::make_unique<cclient::data::streams::HdfsInputStream>(path);
-      size = str->getFileSize();
-      stream = std::move(str);
-    } else {
-      size = filesize(path.c_str());
-      auto in = std::make_unique<std::ifstream>(path, std::ifstream::ate | std::ifstream::binary);
-
-      stream = std::make_unique<cclient::data::streams::InputStream>(std::move(in), 0);
-    }
-
-    auto endstream = std::make_unique<cclient::data::streams::ReadAheadInputStream>(std::move(stream), 128 * 1024, 1024 * 1024, size);
-
-    if (rfiles.size() == 1) {
-      return std::make_unique<cclient::data::SequentialRFile>(std::move(endstream), size);
-    } else {
-      auto newRFile = std::make_shared<cclient::data::SequentialRFile>(std::move(endstream), size);
-      iters.emplace_back(newRFile);
-    }
-
-  }
-  return std::make_unique<cclient::data::MultiIterator>(iters);
+void inthand(int signum) {
+    stop = 1;
 }
 
-void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, const std::string &visibility) {
 
+void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print,bool size, const std::string &visibility, const std::shared_ptr<cclient::data::KeyPredicate> &predicate,
+std::string cq_nonpredicate) {
+
+  stop = 0;
   std::atomic<int64_t> cntr;
   cntr = 1;
+  
+  signal(SIGINT, inthand);
 
   auto start = chrono::steady_clock::now();
 
-  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequential(rfiles);
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequentialWithPredicate(rfiles,predicate);
   std::vector<std::string> cf;
   cclient::data::Range rng;
 
-  cclient::data::security::Authorizations auths;
+  cclient::data::security::Authorizations auths; 
   if (!visibility.empty()) {
     auths.addAuthorization(visibility);
   }
@@ -97,13 +144,17 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
   multi_iter->relocate(&seekable);
   long count = 0;
   uint64_t total_size = 0;
-  while (multi_iter->hasNext()) {
+  // break with control+c 
+  while (!stop && multi_iter->hasNext()) {
 
-    if (print) {
+    if (print && (cq_nonpredicate.empty() || (**multi_iter).first->getColQualifierStr().find(cq_nonpredicate) != std::string::npos)) {
       std::cout << "has next " << (**multi_iter).first << std::endl;
       std::stringstream ss;
       ss << (**multi_iter).first;
       total_size += ss.str().size();
+    }
+    else if (size){
+      total_size+=(**multi_iter).first->length();
     }
 
     multi_iter->next();
@@ -111,12 +162,19 @@ void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print, cons
     count++;
     if ((count % 100000) == 0)
       cntr.fetch_add(100000, std::memory_order_relaxed);
-
+    
   }
 
-  if (print) {
-    std::cout << "Bytes accessed " << total_size << std::endl;
+  if (predicate){
+    auto keySkipper = std::dynamic_pointer_cast<KeySkipper>(predicate);
+    if (keySkipper){
+      total_size += keySkipper->getSkippedLength();
+    }
   }
+
+  if (print || size)
+  std::cout << "Bytes accessed " << total_size << std::endl;
+  
   auto end = chrono::steady_clock::now();
 
   std::cout << "we done at " << count << " " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << std::endl;
@@ -137,8 +195,11 @@ int main(int argc, char **argv) {
 
   std::vector<std::string> rfiles;
   std::string visibility;
-  bool print = false;
+  bool print = false,size=false;
   long iterations = 1;
+  std::shared_ptr<cclient::data::KeyPredicate> predicate=nullptr;
+  std::string row_contains="";
+  std::string cq_nonpredicate="";
 
   if (argc >= 2) {
     for (int i = 1; i < argc; i++) {
@@ -148,18 +209,62 @@ int main(int argc, char **argv) {
         print = true;
       }
 
+      if (key == "-s") {
+        size = true;
+      }
+
       if (key == "-v") {
         if (i + 1 < argc) {
           visibility = argv[i + 1];
           i++;
         } else {
           throw std::runtime_error("Invalid number of arguments. Must supply visibility");
+          
         }
       }
 
       if (key == "-r") {
         if (i + 1 < argc) {
           rfiles.push_back(argv[i + 1]);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+        }
+      }
+
+      if (key == "-row") {
+        if (i + 1 < argc) {
+          std::string row_contains = argv[i + 1];
+          predicate = std::make_shared<RowPredicate>(row_contains);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+        }
+      }
+
+      if (key == "-skip") {
+        if (i + 1 < argc) {
+          size_t skipCount= std::atol( argv[i + 1] );
+          predicate = std::make_shared<KeySkipper>(skipCount);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+        }
+      }
+
+      if (key == "-cq") {
+        if (i + 1 < argc) {
+          std::string row_contains = argv[i + 1];
+          predicate = std::make_shared<ColumnQualifierPredicate>(row_contains);
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply rfile");
+        }
+      }
+
+      if (key == "-cqpost") {
+        if (i + 1 < argc) {
+          cq_nonpredicate = argv[i + 1];
           i++;
         } else {
           throw std::runtime_error("Invalid number of arguments. Must supply rfile");
@@ -179,7 +284,7 @@ int main(int argc, char **argv) {
 
   if (!rfiles.empty()) {
     for(long i=0; i < iterations; i++){
-      readRfile(rfiles, 0, print, visibility);
+      readRfile(rfiles, 0, print,size, visibility,predicate,cq_nonpredicate);
     }
   }
 

@@ -1,21 +1,13 @@
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 [![Documentation Status](https://readthedocs.org/projects/sharkbite/badge/?version=latest)](https://docs.sharkbite.io/en/latest/?badge=latest)
 
-**S**harkbite is an HDFS and native client for key/value stores. With 
-initial support for [Apache Accumulo][accumulo], the design can and has been used to support other key/value
-stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
-despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
+**S**harkbite is an HDFS and native client for [Apache Accumulo][accumulo], with design liberties
+that make it usable across other key/value stores. 
 
-Capabilities That will be supported in V0.6 : 
+As of version V1.0 : 
 
  * Works with Accumulo 1.6.x, 1.7.x, 1.8.x, 1.9.x and 2.x
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
- * **Table Operations** : Most table operations are currently supported. This includes the fate operations that the normal Accumulo client performs.
- * **Security Operations** : Security operations aren't all implemented, but you should be able to add users, change authorizations, passwords, and remove users.
- 
-Current Master progress 
-  * Development is focusing on abstracting out 2.x changes for Apache Accumulo.
-  * Help is desired in abstracting these thrift changes.  
 
 About the name
 

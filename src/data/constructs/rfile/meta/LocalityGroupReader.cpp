@@ -112,9 +112,10 @@ void LocalityGroupReader::seek(
 
       std::shared_ptr<Key> currKey = 0;
 
-      SkippedRelativeKey skipRR(&allocatorInstance);
+      SkippedRelativeKey skipRR(allocatorInstance);
       skipRR.filterVisibility(auths);
-      skipRR.setAgeOFf(ageoff_evaluator);
+      skipRR.setAgeOff(ageoff_evaluator);
+      skipRR.setKeyPredicate(key_predicate);
       filtered = skipRR.skip(currentStream.get(), startKey, &valueArray,
                              prevKey, currKey, entriesLeft);
 
@@ -124,7 +125,7 @@ void LocalityGroupReader::seek(
         prevKey = NULL;
       logging::LOG_TRACE(logger) << "SRK skipped " << skipRR.getSkipped()
                                  << " keys of " << entriesLeft;
-      auto skp = skipRR.getSkipped();
+      uint32_t skp = skipRR.getSkipped();
       if (skp > entriesLeft) {
         entriesLeft = 0;
       } else
@@ -144,6 +145,11 @@ void LocalityGroupReader::seek(
       if (ageoff_evaluator) {
         rKey->setAgeOffEvaluator(ageoff_evaluator);
       }
+
+      if (key_predicate) {
+        rKey->setKeyPredicate(key_predicate);
+      }
+
 
       if (filtered) {
         entriesSkipped++;
@@ -281,7 +287,7 @@ void LocalityGroupReader::next() {
 
   do {
     prevKey = std::static_pointer_cast<Key>(rKey->getStream());
-    if (auths.empty())
+    if (auths.empty() && !key_predicate)
       rKey->read(currentStream.get());
     else
       rKey->readFiltered(currentStream.get());
@@ -359,6 +365,8 @@ LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize,
       region.assimilateDataStream(reader, my_buf, bout, &outputBuffers);
 
   compressedBuffers.enqueue(my_buf);
+
+//  outputBuffers.enqueue(bout);
   //  if (!use_cached)
   //  compressors.enqueue(compressor);
 

@@ -38,11 +38,13 @@ class Text{
 
   void clear();
 
+  bool equals(const char *str, size_t iSize) const;
+
   std::string toString() const;
 
-  size_t getMaxSize();
+  size_t getMaxSize() const;
 
-  size_t size();
+  size_t size() const;
 
   bool empty() const{
     return currentSize == 0;

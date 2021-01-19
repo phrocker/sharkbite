@@ -24,7 +24,7 @@
 #include "data/streaming/NetworkOrderStream.h"
 #include "data/streaming/Streams.h"
 #include "../../compressor/compressor.h"
-
+#include "utils/MemoryUtils.h"
 #include "IndexManager.h"
 #include "IndexEntry.h"
 
@@ -133,7 +133,7 @@ class LocalityGroupMetaData : cclient::data::streams::StreamInterface {
 
     char *arr = new char[off];
 
-    memcpy(arr, byteOutStream->getByteArray(), off);
+    memcpy_fast(arr, byteOutStream->getByteArray(), off);
     delete byteOutStream;
     delete outputStream;
     return std::make_pair(arr, off);

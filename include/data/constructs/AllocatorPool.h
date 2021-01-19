@@ -69,9 +69,12 @@ class KeyManager {
   size_t maxsize;
  public:
 
-  KeyManager(size_t maxsize)
+  explicit KeyManager(size_t maxsize,ObjectAllocatorPool<Text> *txt)
       :
       maxsize(maxsize) {
+      for(size_t i=0; i < maxsize; i++){
+        freeObjPool.emplace_back(new cclient::data::Key(txt) );
+      }
 
   }
 
@@ -80,8 +83,8 @@ class KeyManager {
       delete o;
   }
 
-  void add(cclient::data::Key *o) {
-    if (o && freeObjPool.size() < maxsize) {
+  inline void add(cclient::data::Key *o) {
+    if (SH_LIKELY(o && freeObjPool.size() < maxsize)) {
       freeObjPool.push_back(o);
     } else {
       delete o;
@@ -91,7 +94,7 @@ class KeyManager {
   std::shared_ptr<cclient::data::Key> get(ObjectAllocatorPool<Text> *txt) {
     cclient::data::Key *o;
     if (freeObjPool.empty())
-      o = new cclient::data::Key(txt);
+      return std::make_shared<cclient::data::Key>(txt);
     else {
       o = freeObjPool.back();
       freeObjPool.pop_back();

@@ -215,6 +215,10 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
  protected:
 
+  cclient::data::ArrayAllocatorPool *getAllocatorInstance(){
+    return &allocatorInstance;
+  }
+
   void
   readLocalityGroups(cclient::data::streams::InputStream *metaBlock);
 
@@ -271,6 +275,8 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;
+
+  cclient::data::ArrayAllocatorPool allocatorInstance;
 
 };
 }

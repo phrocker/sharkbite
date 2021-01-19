@@ -20,7 +20,7 @@
 #include <deque>
 #include <iterator>
 #include <memory>
-
+#include "data/constructs/predicates/key/KeyPredicates.h"
 #include "../compressor/compressor.h"
 #include "../../streaming/Streams.h"
 #include "../../streaming/accumulo/KeyValueIterator.h"
@@ -206,6 +206,13 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     }
   }
 
+  void setKeyPredicate(const std::shared_ptr<cclient::data::KeyPredicate> &predicate){
+    key_predicate=predicate;
+    if (nullptr != currentLocalityGroupReader){
+      currentLocalityGroupReader->setKeyPredicate(key_predicate);
+    }
+  }
+
   
   void next();
 
@@ -287,6 +294,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   std::vector<LocalityGroupMetaData*> localityGroups;
   std::vector<LocalityGroupReader*> localityGroupReaders;
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
+  std::shared_ptr<cclient::data::KeyPredicate> key_predicate;
 
   // block compressed file.
   std::unique_ptr<BlockCompressedFile> blockWriter;
@@ -303,6 +311,8 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;
+
+  cclient::data::ArrayAllocatorPool allocatorInstance;
 
 };
 }

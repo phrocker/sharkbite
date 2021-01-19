@@ -307,6 +307,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     return colQualSize + rowMaxSize + columnFamilySize + colVisSize + 8;
   }
 
+  size_t length() const {
+    return colQualLen + rowLength + columnFamilyLength + colVisLen + 8;
+  }
+
   size_t getRowSize() const {
     return rowMaxSize;
   }

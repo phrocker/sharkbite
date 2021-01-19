@@ -16,7 +16,8 @@
 # under the License.
 
 function(use_bundled_zlib SOURCE_DIR BINARY_DIR)
- message("Using bundled zlib")
+
+message(STATUS "Using bundled zlib")
 if (WIN32)
  string(TOLOWER "${CMAKE_BUILD_TYPE}" build_type)
  if (build_type MATCHES relwithdebinfo OR build_type MATCHES release)
@@ -32,14 +33,14 @@ if (WIN32)
     BUILD_IN_SOURCE true
     GIT_REPOSITORY "https://github.com/zlib-ng/zlib-ng"
     # GIT_REPOSITORY "https://github.com/cloudflare/zlib.git"
-    GIT_TAG "232fa02a93f73e9830d9fff1dd91973567697fe3"  # zlib-ng
-    #GIT_TAG "372bcd151c901418c2721232bf09dc9cdbebafb5"
+    GIT_TAG "efd8bd1d7a8224aeaa8b8694cef5efa789e00e3c"  # zlib-ng
     SOURCE_DIR "${BINARY_DIR}/thirdparty/zlib-src"
     CMAKE_ARGS  "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
           "-DZLIB_ENABLE_TESTS=OFF"
           "-DZLIB_COMPAT=ON"
           "-DCMAKE_BUILD_TYPE=Release"
           "-DWITH_NATIVE_INSTRUCTIONS=ON"
+          "-DBUILD_SHARED_LIBS=OFF"
     			"-D_INSTALL_PREFIX=${BINARY_DIR}/thirdparty/zlib-install"
     BUILD_BYPRODUCTS ${BYPRODUCT}
     INSTALL_COMMAND ""

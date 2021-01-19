@@ -41,6 +41,7 @@
 #include "data/constructs/SkippedRelativeKey.h"
 #include "data/constructs/rkey.h"
 #include "data/constructs/security/Authorizations.h"
+#include "data/constructs/predicates/key/KeyPredicates.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
 
@@ -59,7 +60,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
  private:
   std::shared_ptr<logging::Logger> logger;
  protected:
-  ArrayAllocatorPool allocatorInstance;
+  cclient::data::ArrayAllocatorPool *allocatorInstance;
   BlockCompressedFile *bcFile;
   cclient::data::streams::InputStream *reader;
   int version;
@@ -98,6 +99,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   ReadAheadProxy readAheadResult;
   cclient::data::security::Authorizations auths;
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
+  std::shared_ptr<cclient::data::KeyPredicate> key_predicate;
 
   void startReadAhead();
 
@@ -139,7 +141,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   }
 
  public:
-  LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, LocalityGroupMetaData *metadata, int version)
+  explicit LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, LocalityGroupMetaData *metadata, cclient::data::ArrayAllocatorPool *allocatorInstancePtr,int version)
       :
       logger(logging::LoggerFactory<LocalityGroupReader>::getLogger()),
       bcFile(bcFile),
@@ -156,7 +158,8 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       readAheadEnabled(false),
       readAheadRunning(false),
       entriesLeft(-1),
-      entriesSkipped(0) {
+      entriesSkipped(0),
+      allocatorInstance(allocatorInstancePtr) {
     index = metadata->getIndexManager();
     firstKey = std::dynamic_pointer_cast<Key>(metadata->getFirstKey());
     startBlock = metadata->getStartBlock();
@@ -198,6 +201,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   void setAgeOff(const std::shared_ptr<cclient::data::AgeOffEvaluator> &ageoff_evaluator){
     this->ageoff_evaluator=ageoff_evaluator;
+  }
+
+  void setKeyPredicate(const std::shared_ptr<cclient::data::KeyPredicate> &predicate){
+    this->key_predicate=predicate;
   }
 
   bool hasTop() {

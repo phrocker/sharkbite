@@ -113,7 +113,7 @@ class InputStream {
   }
 
   void adviseSequentialRead(std::ifstream *ifs) {
-    ifs->rdbuf()->pubsetbuf(rdbuffer, sizeof rdbuffer);
+    //ifs->rdbuf()->pubsetbuf(rdbuffer, sizeof rdbuffer);
   }
 
   virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) {
@@ -343,7 +343,7 @@ class InputStream {
   bool copy;
   bool own_istream;
 
-  char rdbuffer[32356];
+  char rdbuffer[62356];
 
   std::unique_ptr<std::istream> ownedStream;
 };
