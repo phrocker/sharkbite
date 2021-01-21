@@ -34,7 +34,7 @@ ArrayAllocatorPool::~ArrayAllocatorPool() {
   }
 }
 
-ArrayAllocatorPool::ArrayAllocatorPool() : keyPool(10000,this) {
+ArrayAllocatorPool::ArrayAllocatorPool() : keyPool(10000, this) {
   for (int i = 0; i < 100; i++) {
     buffers256.push_front(std::make_pair(new char[256], 256));
     buffers128.push_front(std::make_pair(new char[128], 128));

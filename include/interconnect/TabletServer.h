@@ -16,11 +16,11 @@
 #define TABLETSERVER_H_ 1
 
 #ifndef SIGNED_RIGHT_SHIFT_IS
-    #define SIGNED_RIGHT_SHIFT_IS 5
+#define SIGNED_RIGHT_SHIFT_IS 5
 #endif
 
 #ifndef ARITHMETIC_RIGHT_SHIFT
-    #define ARITHMETIC_RIGHT_SHIFT 5
+#define ARITHMETIC_RIGHT_SHIFT 5
 #endif
 
 #include <chrono>
