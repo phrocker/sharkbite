@@ -21,61 +21,53 @@
 #include "data/constructs/compressor/compressor.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 
-
-
 typedef std::vector<char> buffer_t;
 
 namespace cclient {
 namespace data {
 namespace compression {
 
-ZLibCompressor::ZLibCompressor() : Compressor(), rawSize(0), total_out(0)
-				{
-					init = false;
-					// initialize with the defautl buffer size.
-					initialize(64 * 1024);
-					buffer = nullptr;
-				}
-				/**
-				 * Sets the input length and intializes the compressor
-				 * @param in_len input length
-				 */
-ZLibCompressor::ZLibCompressor(uint32_t in_len) : Compressor(), rawSize(0), total_out(0)
-{
+ZLibCompressor::ZLibCompressor() : Compressor(), rawSize(0), total_out(0) {
+  init = false;
+  // initialize with the defautl buffer size.
+  initialize(64 * 1024);
+  buffer = nullptr;
+}
+/**
+ * Sets the input length and intializes the compressor
+ * @param in_len input length
+ */
+ZLibCompressor::ZLibCompressor(uint32_t in_len)
+    : Compressor(), rawSize(0), total_out(0) {
   init = false;
   initialize(in_len);
   buffer = nullptr;
 }
 
- ZLibCompressor::~ZLibCompressor()
-  {
-    #ifdef USE_LIB_DEFLATE
+ZLibCompressor::~ZLibCompressor() {
+#ifdef USE_LIB_DEFLATE
 
-    libdeflate_free_decompressor(decompressor);
+  libdeflate_free_decompressor(decompressor);
 
-    #endif
-  }
+#endif
+}
 
+void ZLibCompressor::initialize(uint32_t in_len) {
+  if (init)  // do not re-initialize;
+    return;
 
-void ZLibCompressor::initialize(uint32_t in_len)
-{
+  Compressor::algorithm.setAlgorithm("gz");
 
-    if (init) // do not re-initialize;
-      return;
+  input_length = in_len;
 
-    Compressor::algorithm.setAlgorithm("gz");
+  init = true;
 
-    input_length = in_len;
+#ifdef USE_LIB_DEFLATE
 
-    init = true;
+  decompressor = libdeflate_alloc_decompressor();
 
-    #ifdef USE_LIB_DEFLATE
-
-    decompressor = libdeflate_alloc_decompressor();
-
-    #endif
-  }
-
+#endif
+}
 
 /**
  * Compression method.
@@ -164,55 +156,53 @@ void ZLibCompressor::decompress(
     throw std::runtime_error(
         "Failure during compression; compression not initialized");
 
+#ifdef USE_LIB_DEFLATE
 
-  #ifdef USE_LIB_DEFLATE
+  size_t actual_in_nbytes;
+  size_t actual_out_nbytes;
+  enum libdeflate_result result;
+  char *compressed_data = in_buf == nullptr ? buffer + off : in_buf;
 
-    size_t actual_in_nbytes;
-	  size_t actual_out_nbytes;
-	  enum libdeflate_result result;
-    char *compressed_data = in_buf == nullptr ? buffer + off : in_buf;
+  size_t compressed_size = size == 0 ? len : size;
+  ;
 
-    size_t compressed_size = size == 0 ? len : size;;
+  size_t uncompressed_size = uncompressed_size =
+      compressed_size *
+      2;  // compressed_size + compressed_size / 1000 + 12 + 1;
 
-    size_t uncompressed_size = uncompressed_size = compressed_size*2; //compressed_size + compressed_size / 1000 + 12 + 1;
+  out_stream->ensure(uncompressed_size);
 
-    out_stream->ensure(uncompressed_size);
+  //    std::cout << "uncompressed size is " << uncompressed_size << " on " <<
+  //    compressed_size << std::endl;
 
-//    std::cout << "uncompressed size is " << uncompressed_size << " on " << compressed_size << std::endl;
-
-    do{
-      //libdeflate_zlib_decompress_ex
-      result = libdeflate_zlib_decompress_ex(decompressor,
-						       compressed_data,
-						       compressed_size,
-						       out_stream->getByteArrayAtPosition(),
-						       uncompressed_size,
-						       &actual_in_nbytes,
-						       &actual_out_nbytes);
-    //std::cout << "finished2" << std::endl;               
-      if (result == LIBDEFLATE_INSUFFICIENT_SPACE) {
-        uncompressed_size *=2;
+  do {
+    // libdeflate_zlib_decompress_ex
+    result = libdeflate_zlib_decompress_ex(
+        decompressor, compressed_data, compressed_size,
+        out_stream->getByteArrayAtPosition(), uncompressed_size,
+        &actual_in_nbytes, &actual_out_nbytes);
+    // std::cout << "finished2" << std::endl;
+    if (result == LIBDEFLATE_INSUFFICIENT_SPACE) {
+      uncompressed_size *= 2;
       //  std::cout << "oh boy" << std::endl;
-        out_stream->ensure(uncompressed_size, 0);
-        continue;
-      }
+      out_stream->ensure(uncompressed_size, 0);
+      continue;
+    }
 
-          compressed_data += actual_in_nbytes;
-          
-//          uncompressed_data += actual_in_nbytes;
-          compressed_size -= actual_in_nbytes;
-          if (compressed_size > 0){
-            out_stream->ensure(uncompressed_size, actual_in_nbytes);
-          }
-          total_out += actual_in_nbytes;
+    compressed_data += actual_in_nbytes;
 
-    }while( compressed_size > 0 );
+    //          uncompressed_data += actual_in_nbytes;
+    compressed_size -= actual_in_nbytes;
+    if (compressed_size > 0) {
+      out_stream->ensure(uncompressed_size, actual_in_nbytes);
+    }
+    total_out += actual_in_nbytes;
 
-    //std::cout << "finished" << std::endl;
+  } while (compressed_size > 0);
 
+  // std::cout << "finished" << std::endl;
 
-
-  #else
+#else
   auto my_len = size == 0 ? len : size;
   char *ptr = in_buf == nullptr ? (buffer + off) : in_buf;
 
@@ -283,7 +273,7 @@ void ZLibCompressor::decompress(
   err = inflateEnd(&c_stream);
 
   len = 0;
-  #endif
+#endif
 }
 
 }  // namespace compression

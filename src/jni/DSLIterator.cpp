@@ -13,8 +13,11 @@
  */
 
 #include "jni/DSLIterator.h"
-#include <ctime>
+
 #include <sys/time.h>
+
+#include <ctime>
+
 #include "data/constructs/rfile/RFileOperations.h"
 #include "data/iterators/DeletingMultiIterator.h"
 #include "data/streaming/accumulo/KeyValueIterator.h"
@@ -99,17 +102,17 @@ Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
     }
     int64_t ageOffDelta = ageoff;
     uint64_t maxTimestamp = 0;
-    if (ageOffDelta > 0){
-    std::time_t result = std::time(nullptr);
-        struct timeval tp;
-        gettimeofday(&tp, NULL);
-        long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
-        maxTimestamp = ms - ageOffDelta;
+    if (ageOffDelta > 0) {
+      std::time_t result = std::time(nullptr);
+      struct timeval tp;
+      gettimeofday(&tp, NULL);
+      long int ms = tp.tv_sec * 1000 + tp.tv_usec / 1000;
+      maxTimestamp = ms - ageOffDelta;
     }
     auto outStream = cclient::data::RFileOperations::write(file, 32 * 1024);
     std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter =
         cclient::data::RFileOperations::openManySequential(rfiles, 0, true,
-                                                           false,maxTimestamp );
+                                                           false, maxTimestamp);
     std::vector<std::string> cf;
     cclient::data::Range rng;
 

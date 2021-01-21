@@ -150,7 +150,6 @@ void LocalityGroupReader::seek(
         rKey->setKeyPredicate(key_predicate);
       }
 
-
       if (filtered) {
         entriesSkipped++;
         rKey->setFiltered();
@@ -366,7 +365,7 @@ LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize,
 
   compressedBuffers.enqueue(my_buf);
 
-//  outputBuffers.enqueue(bout);
+  //  outputBuffers.enqueue(bout);
   //  if (!use_cached)
   //  compressors.enqueue(compressor);
 

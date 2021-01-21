@@ -106,7 +106,7 @@ uint64_t Value::write(cclient::data::streams::OutputStream *outStream) {
 }
 
 uint64_t Value::read(cclient::data::streams::InputStream *in) {
-  if (value != NULL ) delete[] value;
+  if (value != NULL) delete[] value;
 
   uint32_t size = in->readInt();
   value = new uint8_t[size];

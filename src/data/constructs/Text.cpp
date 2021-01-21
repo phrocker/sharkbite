@@ -13,8 +13,10 @@
  */
 
 #include "data/constructs/Text.h"
-#include "utils/MemoryUtils.h"
+
 #include <iostream>
+
+#include "utils/MemoryUtils.h"
 namespace cclient {
 namespace data {
 
@@ -56,13 +58,12 @@ void Text::clear() {
   currentSize = originalSize = 0;
 }
 
-bool Text::equals(const char *str, size_t iSize) const{
+bool Text::equals(const char *str, size_t iSize) const {
   if (buffer && currentSize > 0)
-    return cclient::MemoryUtils::compare(buffer,currentSize,str,iSize) == 0;
-  else{
+    return cclient::MemoryUtils::compare(buffer, currentSize, str, iSize) == 0;
+  else {
     return false;
   }
-
 }
 
 void Text::reset() {

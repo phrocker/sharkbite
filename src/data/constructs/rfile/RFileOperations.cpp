@@ -3,8 +3,6 @@
 namespace cclient {
 namespace data {
 
-
-
 std::ifstream::pos_type RFileOperations::filesize(const char *filename) {
   std::string path = filename;
   if (path.find("hdfs://") != std::string::npos) {
@@ -126,28 +124,22 @@ std::shared_ptr<cclient::data::SequentialRFile> RFileOperations::openSequential(
                                                           size);
 }
 
-
-
-
-
-
 std::shared_ptr<cclient::data::streams::KeyValueIterator>
-RFileOperations::openManySequentialWithPredicate(const std::vector<std::string> &rfiles,
-                                    const std::shared_ptr<cclient::data::KeyPredicate> &predicate,
-                                    int versions, bool withDeletes,
-                                    bool propogate, uint64_t maxtimestamp) {
-  return openRFiles<cclient::data::SequentialRFile>(rfiles,predicate,versions,withDeletes,propogate,maxtimestamp);
-
+RFileOperations::openManySequentialWithPredicate(
+    const std::vector<std::string> &rfiles,
+    const std::shared_ptr<cclient::data::KeyPredicate> &predicate, int versions,
+    bool withDeletes, bool propogate, uint64_t maxtimestamp) {
+  return openRFiles<cclient::data::SequentialRFile>(
+      rfiles, predicate, versions, withDeletes, propogate, maxtimestamp);
 }
-
 
 std::shared_ptr<cclient::data::streams::KeyValueIterator>
 RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
                                     int versions, bool withDeletes,
                                     bool propogate, uint64_t maxtimestamp) {
-   return openRFiles<cclient::data::SequentialRFile>(rfiles,nullptr,versions,withDeletes,propogate,maxtimestamp);
+  return openRFiles<cclient::data::SequentialRFile>(
+      rfiles, nullptr, versions, withDeletes, propogate, maxtimestamp);
 }
-
 
 }  // namespace data
 }  // namespace cclient

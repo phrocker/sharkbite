@@ -40,7 +40,6 @@ INLINE int compare(const void *str1, size_t str1_numbytes, const void *str2,
   return AVX_memcmp(str1, str2, str1_numbytes, equality);
 }
 
-
 // static void* memcpy_fast(void *destination, const void *source, size_t size)
 
 }  // namespace MemoryUtils
