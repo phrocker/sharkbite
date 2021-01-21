@@ -63,7 +63,6 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("getLong", (uint32_t (cclient::impl::Configuration::*)(const std::string &, uint32_t) const) &cclient::impl::Configuration::getLong, "Get the integer value of a configuration item");
 
   pybind11::class_<cclient::data::Instance, std::shared_ptr<cclient::data::Instance>>(s, "Instance" , "Accumulo Instance");
-//logging::LoggerConfiguration::getConfiguration().enableLogging(logging::LOG_LEVEL::trace);
   pybind11::class_<logging::LoggerConfiguration>(s, "LoggingConfiguration", "Sharkbite Logger, enables logging at the debug and trace levels")
   .def_static("enableDebugLogger",&logging::LoggerConfiguration::enableLogger, "Enables the debug logging for all classes")
   .def_static("enableTraceLogger",&logging::LoggerConfiguration::enableTraceLogger, "Enables trace logging for all classes");

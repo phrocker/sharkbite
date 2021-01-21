@@ -88,6 +88,10 @@ uint64_t RelativeKey::read(streams::InputStream *stream) {
         // check that the key should be aged off
         filtered = ageOffEvaluator->filtered(key);
       }
+      if (keyPredicate) {
+        // check that the key should be aged off
+        filtered = !keyPredicate->accept(key);
+      }
     }
   }
 
@@ -123,14 +127,16 @@ uint64_t RelativeKey::readFiltered(streams::InputStream *stream) {
       ((fieldsSame & RelativeKey::CV_SAME) == RelativeKey::CV_SAME) &&
       prevFiltered;
 
-  if (likelyFiltered) {
-    key = nullptr;
-  } else {
-    key = allocatorInstance->newKey();
+  key = nullptr;
+
+  key = readRowFiltered(stream, &rowCmp, RelativeKey::ROW_SAME,
+                        RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed,
+                        row_ref, key);
+
+  if (!key) {
+    likelyFiltered = true;
+    filtered = true;
   }
-  readRowFiltered(stream, &rowCmp, RelativeKey::ROW_SAME,
-                  RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed, row_ref,
-                  key);
 
   readCfFiltered(stream, &cfCmp, RelativeKey::CF_SAME, RelativeKey::CF_PREFIX,
                  fieldsSame, fieldsPrefixed, cf_ref, key);
@@ -152,8 +158,20 @@ uint64_t RelativeKey::readFiltered(streams::InputStream *stream) {
   }
 
   if (key) {
-    key->setTimeStamp(timestamp);
-    prevKey = key;
+    if (key) {
+      key->setTimeStamp(timestamp);
+      prevKey = key;
+      if (!filtered) {
+        if (ageOffEvaluator) {
+          // check that the key should be aged off
+          filtered = ageOffEvaluator->filtered(key);
+        }
+        if (keyPredicate) {
+          // check that the key should be aged off
+          filtered = !keyPredicate->accept(key);
+        }
+      }
+    }
   }
 
   // if we've been filtered no point in returning.
@@ -178,6 +196,11 @@ void RelativeKey::filterVisibility(
 void RelativeKey::setAgeOffEvaluator(
     const std::shared_ptr<cclient::data::AgeOffEvaluator> &conditions) {
   ageOffEvaluator = conditions;
+}
+
+void RelativeKey::setKeyPredicate(
+    const std::shared_ptr<cclient::data::KeyPredicate> &conditions) {
+  keyPredicate = conditions;
 }
 
 void RelativeKey::setFiltered() { prevFiltered = true; }
@@ -321,13 +344,6 @@ bool RelativeKey::readRow(cclient::data::streams::InputStream *stream,
       maxsize = read(stream, &field);
     }
 
-    // if (!prevText->empty() && newkey->getRowStr() != prevText->toString()) {
-    //  prevText.reset(new Text(allocatorInstance));
-    // }
-
-    /**
-     * we need to maintain the previous
-     * */
     if (!prevText->empty()) {
       prevText.reset(new Text(allocatorInstance));
     }
@@ -509,12 +525,10 @@ bool RelativeKey::readCv(cclient::data::streams::InputStream *stream,
  *
  *
  */
-bool RelativeKey::readRowFiltered(cclient::data::streams::InputStream *stream,
-                                  int *comparison, uint8_t SAME_FIELD,
-                                  uint8_t PREFIX, char fieldsSame,
-                                  char fieldsPrefixed,
-                                  std::shared_ptr<Text> &prevText,
-                                  const std::shared_ptr<Key> &newkey) {
+std::shared_ptr<Key> RelativeKey::readRowFiltered(
+    cclient::data::streams::InputStream *stream, int *comparison,
+    uint8_t SAME_FIELD, uint8_t PREFIX, char fieldsSame, char fieldsPrefixed,
+    std::shared_ptr<Text> &prevText, std::shared_ptr<Key> &newkey) {
   // only use this optimization iff same field.
   if (SH_LIKELY((fieldsSame & SAME_FIELD) == SAME_FIELD)) {
     if (prevText->empty()) {
@@ -527,10 +541,18 @@ bool RelativeKey::readRowFiltered(cclient::data::streams::InputStream *stream,
 
       prevText->reset(ret.first, prevField.second, ret.second);
     }
-    if (likelyFiltered) return true;
+    if (likelyFiltered ||
+        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+      likelyFiltered = true;
+      return nullptr;
+    }
+
+    if (newkey == nullptr) {
+      newkey = allocatorInstance->newKey();
+    }
 
     newkey->setRow(prevText);
-    return true;
+    return newkey;
   }
 
   int maxsize = 0;
@@ -547,26 +569,29 @@ bool RelativeKey::readRowFiltered(cclient::data::streams::InputStream *stream,
       maxsize = read(stream, &field);
     }
 
-    // if (!prevText->empty() && newkey->getRowStr() != prevText->toString()) {
-    //  prevText.reset(new Text(allocatorInstance));
-    // }
-
     /**
      * we need to maintain the previous
      * */
-    if (!prevText->empty() || likelyFiltered) {
-      if (likelyFiltered) {
+    if (!prevText->empty() || likelyFiltered ||
+        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+      if (likelyFiltered ||
+          (keyPredicate && !keyPredicate->acceptRow(prevText))) {
         prevText.reset(
             new Text(allocatorInstance, field.first, field.second, maxsize));
-        return true;
+        likelyFiltered = true;
+        return nullptr;
       } else {
         prevText.reset(new Text(allocatorInstance));
       }
     }
 
+    if (newkey == nullptr) {
+      newkey = allocatorInstance->newKey();
+    }
+
     newkey->setRow(field.first, field.second, maxsize, true);
 
-    return true;
+    return newkey;
   } else {
     auto prev = prevFiltered && !prevText->empty() ? prevText->getBuffer()
                                                    : prevKey->getRow();
@@ -574,17 +599,23 @@ bool RelativeKey::readRowFiltered(cclient::data::streams::InputStream *stream,
 
     memcpy_fast(ret.first, prev.first, prev.second);
 
-    if (likelyFiltered) {
+    if (likelyFiltered ||
+        (keyPredicate && !keyPredicate->acceptRow(prevText))) {
+      likelyFiltered = true;
       prevText.reset(
           new Text(allocatorInstance, ret.first, ret.second, maxsize));
-      return true;
+      return nullptr;
+    }
+
+    if (newkey == nullptr) {
+      newkey = allocatorInstance->newKey();
     }
 
     newkey->setRow(ret.first, prev.second, ret.second, true);
-    return true;
+    return newkey;
   }
 
-  return false;
+  return nullptr;
 }
 
 bool RelativeKey::readCfFiltered(cclient::data::streams::InputStream *stream,
@@ -787,6 +818,7 @@ bool RelativeKey::readCvFiltered(cclient::data::streams::InputStream *stream,
     if (!prevText->empty()) {
       prevText.reset(new Text(allocatorInstance));
     }
+    if (filtered) return true;
     newkey->setColVisibility(field.first, field.second, maxsize, true);
 
     return true;
@@ -801,10 +833,13 @@ bool RelativeKey::readCvFiltered(cclient::data::streams::InputStream *stream,
       }
     }
 
+    if (filtered) return true;
+
     auto prev = prevKey->getColVisibility();
     auto ret = allocatorInstance->allocateBuffer(prev.second + 1);
 
     memcpy_fast(ret.first, prev.first, prev.second);
+
     newkey->setColVisibility(ret.first, prev.second, ret.second, true);
 
     return true;

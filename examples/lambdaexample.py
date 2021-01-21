@@ -58,20 +58,20 @@ if not password:
 if not table:
     table = "test"
 
-import pysharkbite
+import sharkbite
 
-pysharkbite.LoggingConfiguration.enableDebugLogger()
+sharkbite.LoggingConfiguration.enableDebugLogger()
 
-conf = pysharkbite.Configuration()
+conf = sharkbite.Configuration()
 
 conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
 
-zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
+zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
 
-user = pysharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
+user = sharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
 
 try:
-    connector = pysharkbite.AccumuloConnector(user, zk)
+    connector = sharkbite.AccumuloConnector(user, zk)
 
 
     with open('python.iter', 'r') as file:
@@ -86,7 +86,7 @@ try:
         print (table + " already exists, so not creating it")  
     
     
-    auths = pysharkbite.Authorizations()
+    auths = sharkbite.Authorizations()
     
     """ Add authorizations """ 
     """ mutation.put("cf","cq","cv",1569786960) """
@@ -94,19 +94,19 @@ try:
    
     scanner = tableOperations.createScanner(auths, 2)
     
-    startKey = pysharkbite.Key()
+    startKey = sharkbite.Key()
     
-    endKey = pysharkbite.Key()
+    endKey = sharkbite.Key()
     
     startKey.setRow("row")
     
     endKey.setRow("row3")
     
-    range = pysharkbite.Range("a")
+    range = sharkbite.Range("a")
     
     scanner.addRange( range )
     
-    iterator = pysharkbite.PythonIterator("PythonIterator",100)
+    iterator = sharkbite.PythonIterator("PythonIterator",100)
     iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 
     scanner.addIterator(iterator)

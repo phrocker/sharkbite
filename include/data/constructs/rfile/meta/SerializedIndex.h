@@ -23,6 +23,7 @@
 #include "data/streaming/Streams.h"
 #include "IndexEntry.h"
 #include "BaseMetaBlock.h"
+#include "utils/MemoryUtils.h"
 
 namespace cclient {
 namespace data {
@@ -40,7 +41,7 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
     offsets->insert(offsets->end(), offsetList.begin(), offsetList.end());
 
     data = new uint8_t[dataLength];
-    memcpy(data, datums, dataLength);
+    memcpy_fast(data, datums, dataLength);
   }
 
   SerializedIndex(const std::shared_ptr<BaseMetaBlock> &source, const std::shared_ptr<BaseMetaBlock> &block)
@@ -83,7 +84,7 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
     return offsets->size();
   }
 
-  std::shared_ptr<IndexEntry> get(uint64_t index) {
+  inline std::shared_ptr<IndexEntry> get(uint64_t index) {
     if (NULL != ptr) {
       return ptr->get(index);
     }

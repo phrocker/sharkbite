@@ -15,6 +15,8 @@
 #include "data/constructs/Text.h"
 
 #include <iostream>
+
+#include "utils/MemoryUtils.h"
 namespace cclient {
 namespace data {
 
@@ -56,6 +58,14 @@ void Text::clear() {
   currentSize = originalSize = 0;
 }
 
+bool Text::equals(const char *str, size_t iSize) const {
+  if (buffer && currentSize > 0)
+    return cclient::MemoryUtils::compare(buffer, currentSize, str, iSize) == 0;
+  else {
+    return false;
+  }
+}
+
 void Text::reset() {
   if (buffer) {
     if (reference) {
@@ -78,9 +88,9 @@ std::pair<char *, size_t> Text::getBuffer() {
   return std::make_pair(buffer, currentSize);
 }
 
-size_t Text::getMaxSize() { return originalSize; }
+size_t Text::getMaxSize() const { return originalSize; }
 
-size_t Text::size() { return currentSize; }
+size_t Text::size() const { return currentSize; }
 
 }  // namespace data
 }  // namespace cclient

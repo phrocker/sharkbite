@@ -862,7 +862,6 @@ std::vector<EncryptionZoneInfo> FileSystemImpl::listAllEncryptionZoneItems() {
 
   std::vector<EncryptionZoneInfo> retval;
   retval.clear();
-  int64_t id = 0;
 
   EncryptionZoneIterator it;
   it = FileSystemImpl::listEncryptionZone();

@@ -19,7 +19,7 @@
 
 #include <string>
 #include <set>
-
+#include <stdexcept>
 #include <vector>
 
 #include "../../exceptions/ClientException.h"

@@ -61,16 +61,16 @@ if not password:
 if not table:
     table = "blahblahd"
 
-import pysharkbite
+import sharkbite
 
-configuration = pysharkbite.Configuration()
+configuration = sharkbite.Configuration()
 
-zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, configuration)
+zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, configuration)
 
-user = pysharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
+user = sharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
 
 try:
-    connector = pysharkbite.AccumuloConnector(user, zk)
+    connector = sharkbite.AccumuloConnector(user, zk)
 
 
     table_operations = connector.tableOps(table)
@@ -82,14 +82,14 @@ try:
         print (table + " already exists, so not creating it")  
     
     
-    auths = pysharkbite.Authorizations()
+    auths = sharkbite.Authorizations()
     
     """ Add authorizations """ 
     """ mutation.put("cf","cq","cv",1569786960) """
     
     writer = table_operations.createWriter(auths, 10)
     
-    mutation = pysharkbite.Mutation("row2");    
+    mutation = sharkbite.Mutation("row2");    
     
     mutation.put("cf","cq","",1569786960, "value")
     mutation.put("cf2","cq2","",1569786960, "value2")
@@ -106,15 +106,15 @@ try:
     
     scanner = table_operations.createScanner(auths, 2)
     
-    startKey = pysharkbite.Key()
+    startKey = sharkbite.Key()
     
-    endKey = pysharkbite.Key()
+    endKey = sharkbite.Key()
     
     startKey.setRow("row")
     
     endKey.setRow("row3")
     
-    range = pysharkbite.Range(startKey,True,endKey,False)
+    range = sharkbite.Range(startKey,True,endKey,False)
     
     scanner.addRange( range )
     

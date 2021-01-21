@@ -3,6 +3,7 @@ project (sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
 
 include(CheckCXXCompilerFlag)
+include(CheckIncludeFileCXX)
 
 TRY_COMPILE(STRERROR_R_RETURN_INT
       ${CMAKE_BINARY_DIR}
@@ -18,6 +19,18 @@ ELSE(STRERROR_R_RETURN_INT)
    MESSAGE(STATUS "Checking whether strerror_r returns an int -- no")
 ENDIF(STRERROR_R_RETURN_INT)
 
+option(USE_OPENMP "Use OpenMP for multi-core parallelism" ON)
+
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  option(USE_GNU_PARALLEL "Use GNU parallel extensions for multi-core parallelism" ON)
+
+  # GNU parallel mode but NOT OpenMP is impossible.
+  if(USE_GNU_PARALLEL AND NOT USE_OPENMP)
+    set(USE_GNU_PARALLEL OFF)
+  endif()
+endif()
+
+
 
 option(NATIVE_ARCH "Build with -march=native" OFF)
 option(ENABLE_GPROF "Enable sampling using gprof" OFF)
@@ -25,6 +38,8 @@ option(PYTHON_ITERATOR_SUPPORT "Builds python iterator support." OFF)
 option(BUILD_JAR "Builds python iterator support. Deprecated by PYTHON_ITERATOR_SUPPORT" OFF)
 option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)  
 option(BUILD_TESTS "Build all tests." ON)
+option(USE_LIB_DEFLATE "Uses Libdeflate for ZLIB decompression." OFF)
+
 CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX14)
@@ -35,18 +50,19 @@ else()
  message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
 endif()
 
+
 if (NATIVE_ARCH)
-	message("-- Attempting march=native")
+	message(STATUS "Attempting march=native")
 	include(CheckCXXCompilerFlag)
 	CHECK_CXX_COMPILER_FLAG("-march=native" COMPILER_SUPPORTS_MARCH_NATIVE)
 	if(COMPILER_SUPPORTS_MARCH_NATIVE)
-		message("--  march=native is supported ")
+		message(STATUS "march=native is supported ")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
 	else()
-		message("--  march=native is NOT supported ")
+		message(STATUS "march=native is NOT supported ")
 	endif()
 else()
-	message("-- Not attempting march=native")
+	message(STATUS "Not attempting march=native")
 endif(NATIVE_ARCH)
 
 if (ENABLE_GPROF)
@@ -66,6 +82,59 @@ endif(STRERROR_R_RETURN_INT)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g -Wno-switch -Wall -fno-stack-protector -Wno-unused-value -Wno-unused-function -Wno-reorder -Wno-overloaded-virtual -Wno-char-subscripts -Wno-unknown-pragmas ")
 #  -fsingle-precision-constant 
 option(test "Build all tests." OFF)
+
+
+###############################################################################
+# optional OpenMP parallelization
+
+if(USE_GNU_PARALLEL AND NOT USE_OPENMP)
+  message(FATAL_ERROR "Configuration selects GNU parallel mode but not OpenMP."
+    "This is impossible.")
+endif()
+
+if(USE_OPENMP OR USE_GNU_PARALLEL)
+
+  include(FindOpenMP)
+
+  if(NOT OPENMP_FOUND)
+    message(STATUS "OpenMP not found. Continuing without parallel algorithm support.")
+  else()
+    set(STXXL_PARALLEL 1)
+    message(STATUS "OpenMP found, enabling built-in parallel algorithms.")
+
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS} -D_GLIBCXX_PARALLEL")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS} -D_GLIBCXX_PARALLEL")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS} -D_GLIBCXX_PARALLEL")
+  endif()
+
+else()
+
+  message(STATUS "OpenMP disabled in STXXL (no parallelism is used).")
+  set(STXXL_PARALLEL 0)
+
+endif(USE_OPENMP OR USE_GNU_PARALLEL)
+
+###############################################################################
+# optional GNU parallel STL mode
+
+if(USE_GNU_PARALLEL)
+
+  if(NOT OPENMP_FOUND)
+    message(FATAL_ERROR "OpenMP not found. Try compilation without GNU parallel mode.")
+  else()
+    check_include_file_cxx(parallel/algorithm HAVE_PARALLEL_ALGORITHM_H)
+
+    if(NOT HAVE_PARALLEL_ALGORITHM_H)
+      message(FATAL_ERROR "GNU parallel mode header not found. Try compilation without parallel mode.")
+    else()
+      set(STXXL_WITH_GNU_PARALLEL 1)
+    endif()
+  endif()
+
+endif(USE_GNU_PARALLEL)
+
+###############################################################################
+
 
 include(ExternalProject)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
@@ -108,9 +177,19 @@ include(Compression)
 include(DownloadProject)
 include(LibreSSL)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
+
+if (USE_LIB_DEFLATE)
+	include(ZlibLibDeflate)
+	message(STATUS "Using Lib deflate for ZLIB decompression")
+	SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSE_LIB_DEFLATE")
+	use_libdeflate(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+	find_package(LIBDEFLATE REQUIRED)
+endif(USE_LIB_DEFLATE)
+
+
 
 use_bundled_zlib(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/override/")
 find_package(ZLIB REQUIRED)
 
 use_libre_ssl(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
@@ -340,6 +419,9 @@ find_package (Threads)
 include_directories(SYSTEM ${THRIFT_INCLUDE_DIR}/thrift )
 include_directories(SYSTEM ${ZOOKEEPER_INCLUDE_DIRS})
 include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS})
+if (USE_LIB_DEFLATE)
+	include_directories(SYSTEM ${LIBDEFLATE_INCLUDE_DIRS})
+endif(USE_LIB_DEFLATE)
 include_directories(SYSTEM ${GTEST_INCLUDE_DIRS})
 message(STATUS "GTest include dir :  ${GTEST_INCLUDE_DIRS}")
 message(STATUS "GTest lib : ${GTEST_LIBRARIES}")
@@ -452,6 +534,15 @@ target_link_libraries(sharkbite
   ${ZLIB_LIBRARY}
   ${NO_WHOLE_ARCHIVE}
 )
+
+if (USE_LIB_DEFLATE)
+	target_link_libraries(sharkbite 
+	${WHOLE_ARCHIVE}
+	${LIBDEFLATE_LIBRARY}
+	${NO_WHOLE_ARCHIVE}
+	)
+	add_dependencies(sharkbite libdeflate-external)
+endif(USE_LIB_DEFLATE)
 
 target_link_libraries(sharkbite 
   ${WHOLE_ARCHIVE}
@@ -573,7 +664,6 @@ if (BUILD_TESTS)
 enable_testing()
 add_executable(InsertTest "src/examples/InsertTest.cpp")
 target_link_libraries (InsertTest ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (InsertTest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( InsertTest )
 target_link_libraries( InsertTest ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})

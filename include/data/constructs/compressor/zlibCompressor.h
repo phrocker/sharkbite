@@ -19,6 +19,12 @@
 #include <stdexcept>
 #include "compressor.h"
 #include "../../streaming/DataOutputStream.h"
+
+#ifdef USE_LIB_DEFLATE
+#include "common/common_defs.h"
+#include "libdeflate.h"
+#endif
+
 #define GZ_NAME "gz"
 
 namespace cclient
@@ -31,27 +37,14 @@ namespace cclient
 			class ZLibCompressor : public Compressor
 			{
 			public:
-				ZLibCompressor() : Compressor(), rawSize(0), total_out(0)
-				{
-					init = false;
-					// initialize with the defautl buffer size.
-					initialize(64 * 1024);
-					buffer = nullptr;
-				}
+				explicit ZLibCompressor();
 				/**
 				 * Sets the input length and intializes the compressor
 				 * @param in_len input length
 				 */
-				explicit ZLibCompressor(uint32_t in_len) : Compressor(), rawSize(0), total_out(0)
-				{
-					init = false;
-					initialize(in_len);
-					buffer = nullptr;
-				}
+				explicit ZLibCompressor(uint32_t in_len);
 
-				virtual ~ZLibCompressor()
-				{
-				}
+				virtual ~ZLibCompressor();
 
 				virtual std::unique_ptr<Compressor> newInstance()
 				{
@@ -109,23 +102,13 @@ namespace cclient
 				void decompress(cclient::data::streams::ByteOutputStream *out_stream, char *in_buf = nullptr, size_t size = 0);
 
 			protected:
+
 				/**
 				 * Initializes the Zlib compressor, accepts the input
 				 * length
 				 * @param in_len input length
 				 */
-				void initialize(uint32_t in_len)
-				{
-
-					if (init) // do not re-initialize;
-						return;
-
-					Compressor::algorithm.setAlgorithm("gz");
-
-					input_length = in_len;
-
-					init = true;
-				}
+				void initialize(uint32_t in_len);
 
 				std::string getName()
 				{
@@ -148,6 +131,16 @@ namespace cclient
 				uint32_t input_length;
 				// output length
 				uint32_t output_length;
+
+				#ifdef USE_LIB_DEFLATE
+					uint32_t load_u32_gzip(const char* p){
+						return ((uint32_t)p[3] << 0) | ((uint32_t)p[2] << 8) |
+								((uint32_t)p[1] << 16) | ((uint32_t)p[0] << 24);
+					}
+
+				struct libdeflate_decompressor *decompressor;
+				#endif
+
 
 			};
 		} // namespace compression

@@ -32,14 +32,14 @@ def operatingsystem():
 
 setup(
     name='sharkbite',
-    version='0.7.4',
+    version='1.0.0',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
     url='https://docs.sharkbite.io/',
     description='Apache Accumulo and Apache HDFS Python Connector',
     long_description=readme(),
     long_description_content_type='text/markdown',
-    ext_modules=[CMakeExtension('pysharkbite')],
+    ext_modules=[CMakeExtension('sharkbite.pysharkbite')],
     zip_safe=False,
     classifiers=[
         "Programming Language :: C++",
@@ -47,4 +47,5 @@ setup(
         operatingsystem(),
     ],
     python_requires='>=3.7',
+    packages=['sharkbite']
 )
