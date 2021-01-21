@@ -39,7 +39,7 @@ setup(
     description='Apache Accumulo and Apache HDFS Python Connector',
     long_description=readme(),
     long_description_content_type='text/markdown',
-    ext_modules=[CMakeExtension('pysharkbite')],
+    ext_modules=[CMakeExtension('sharkbite.pysharkbite')],
     zip_safe=False,
     classifiers=[
         "Programming Language :: C++",
@@ -47,4 +47,5 @@ setup(
         operatingsystem(),
     ],
     python_requires='>=3.7',
+    packages=['sharkbite']
 )

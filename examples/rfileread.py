@@ -41,22 +41,22 @@ args = parser.parse_args()
 
 file = args.file
 
-import pysharkbite
+import sharkbite
 try:
 
-   rfile = pysharkbite.RFileOperations.open(file)
+   rfile = sharkbite.RFileOperations.open(file)
 
    # list of column families
    cf = list()
 
    ## range
 
-   rng = pysharkbite.Range()
+   rng = sharkbite.Range()
 
    ## seekable is an object that replaces the function call
    ## of seek(range,cf,boolean). This exists because the extension point
    ## in the C++ Api allows varying seekable objects that change how seeks occur
-   seek = pysharkbite.Seekable(rng,cf,False)
+   seek = sharkbite.Seekable(rng,cf,False)
 
    rfile.seek(seek)
 

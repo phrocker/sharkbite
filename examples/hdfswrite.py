@@ -48,9 +48,9 @@ if not args.sharedobject is None:
     print ("Opening ",args.sharedobject)
     py = cdll.LoadLibrary(args.sharedobject)
     
-import pysharkbite 
+import sharkbite 
 
-hdfs = pysharkbite.Hdfs(args.nn,int(args.port))
+hdfs = sharkbite.Hdfs(args.nn,int(args.port))
 
 stream = hdfs.write(args.hdfspath)
 

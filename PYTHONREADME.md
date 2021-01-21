@@ -7,6 +7,8 @@ that make it usable across other key/value stores.
 As of version V1.0 : 
 
  * Works with Accumulo 1.6.x, 1.7.x, 1.8.x, 1.9.x and 2.x
+ * package import is now **sharkbite** not **pysharkbite**
+ * Support for torch IterableDatasets using batch scanners.
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
 
 About the name
@@ -35,27 +37,27 @@ Enable it with the following option:
 
 ```
 
-	import pysharkbite as sharkbite
+	import sharkbite as sharkbite
 
 	connector = sharkbite.AccumuloConnector(user, zk)
 
-    table_operations = connector.tableOps(table)  
+  table_operations = connector.tableOps(table)  
 	
  	scanner = table_operations.createScanner(auths, 2)
     
-    range = sharkbite.Range("myrow")
+  range = sharkbite.Range("myrow")
     
-    scanner.addRange( range )
+  scanner.addRange( range )
     
-    ### enable the beta option of hedged reads
+  ### enable the beta option of hedged reads
     
-    scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+  scanner.setOption( sharkbite.ScannerOptions.HedgedReads )
+   
+  resultset = scanner.getResultSet()
     
-    resultset = scanner.getResultSet()
-    
-    for keyvalue in resultset:
-        key = keyvalue.getKey()
-        value = keyvalue.getValue()
+  for keyvalue in resultset:
+      key = keyvalue.getKey()
+      value = keyvalue.getValue()
 	
 ```
 
@@ -96,7 +98,7 @@ If this is defined in a separate file, you may use it with the following code sn
 with open('test.iter', 'r') as file:
   iterator = file.read()
 ## name, iterator text, priority
-iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
+iterator = sharkbite.PythonIterator("PythonIterator",iteratortext,100)
 scanner.addIterator(iterator)    
 ```
 
@@ -105,7 +107,7 @@ You may return a Key or KeyValue object. If you return the former an empty value
 
 ```
 ## define only the name and priority 
-iterator = pysharkbite.PythonIterator("PythonIterator",100)
+iterator = sharkbite.PythonIterator("PythonIterator",100)
 ## define a lambda to ajust the column family.
 iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 
