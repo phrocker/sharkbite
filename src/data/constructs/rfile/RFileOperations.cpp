@@ -1,4 +1,5 @@
 #include "data/constructs/rfile/RFileOperations.h"
+#include "data/streaming/FileStream.h"
 
 namespace cclient {
 namespace data {
@@ -140,6 +141,41 @@ RFileOperations::openManySequential(const std::vector<std::string> &rfiles,
   return openRFiles<cclient::data::SequentialRFile>(
       rfiles, nullptr, versions, withDeletes, propogate, maxtimestamp);
 }
+
+
+std::shared_ptr<cclient::data::streams::KeyValueIterator> RFileOperations::openParallelRFiles(const std::vector<std::string>  &rfiles,const std::shared_ptr<cclient::data::KeyPredicate> &predicate,int versions, bool withDeletes, bool propogate, uint64_t maxtimestamp){
+  std::function<std::vector<cclient::data::streams::FileStream>()> fn = [rfiles,predicate,versions,withDeletes,propogate,maxtimestamp](void) -> std::vector<cclient::data::streams::FileStream> {
+      std::vector<cclient::data::streams::FileStream> streams;
+      for (const auto &path : rfiles) {
+            std::unique_ptr<cclient::data::streams::InputStream> stream;
+            size_t size = 0;
+            if (path.find("hdfs://") != std::string::npos) {
+              auto str =
+                  std::make_unique<cclient::data::streams::HdfsInputStream>(
+                      path);
+              size = str->getFileSize();
+              stream = std::move(str);
+            } else {
+              size = RFileOperations::filesize(path.c_str());
+              auto in = std::make_unique<std::ifstream>(
+                  path, std::ifstream::ate | std::ifstream::binary);
+
+              stream = std::make_unique<cclient::data::streams::InputStream>(
+                  std::move(in), 0);
+            }
+
+            std::unique_ptr<cclient::data::streams::InputStream> endstream = std::make_unique<
+                cclient::data::streams::ReadAheadInputStream>(
+                std::move(stream), 128 * 1024, 1024 * 1024, size);
+            streams.emplace_back(cclient::data::streams::FileStream(std::move(endstream),size));
+      }
+      return streams;
+  };
+  return std::make_shared<ParallelRFile>(std::move(fn),versions,withDeletes,propogate);
+
+  
+}
+
 
 }  // namespace data
 }  // namespace cclient

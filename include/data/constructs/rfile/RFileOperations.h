@@ -20,17 +20,19 @@
 #include <fstream>
 #include "RFile.h"
 #include "SequentialRFile.h"
-#include "data/iterators/MultiIterator.h"
+
 #include "data/streaming/accumulo/KeyValueIterator.h"
 #include "data/constructs/predicates/key/KeyPredicates.h"
 #include "data/streaming/input/ReadAheadInputStream.h"
 
 #include "data/constructs/ageoff/AgeOffConditions.h"
+#include "data/iterators/MultiIterator.h"
 #include "data/iterators/DeletingMultiIterator.h"
 #include "data/iterators/VersioningIterator.h"
 #include "data/streaming/HdfsOutputStream.h"
 #include "data/streaming/OutputStream.h"
 #include "data/streaming/input/HdfsInputStream.h"
+#include "data/constructs/rfile/ParallelRFile.h"
 namespace cclient{
 
 namespace data{
@@ -61,6 +63,7 @@ public:
    static std::shared_ptr<cclient::data::streams::KeyValueIterator> openManySequentialWithPredicate(const std::vector<std::string>  &rfiles,const std::shared_ptr<cclient::data::KeyPredicate> &predicate, int versions=0, bool withDeletes = false, bool propogate = true, uint64_t maxtimestamp=0);
 
 
+static std::shared_ptr<cclient::data::streams::KeyValueIterator> openParallelRFiles(const std::vector<std::string>  &rfiles,const std::shared_ptr<cclient::data::KeyPredicate> &predicate,int versions=0, bool withDeletes=false, bool propogate=true, uint64_t maxtimestamp=0);
   
 
 template<typename T>

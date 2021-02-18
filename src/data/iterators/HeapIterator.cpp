@@ -70,6 +70,13 @@ void HeapIterator::multiNext() {
   }
 }
 
+void HeapIterator::close() {
+  for (auto &iter : iterators) {
+    std::cout << "closing iterator" << std::endl;
+    iter->close();
+  }
+}
+
 uint64_t HeapIterator::getEntriesFiltered() {
   uint64_t filtered = 0;
   for (const auto &iter : iterators) {

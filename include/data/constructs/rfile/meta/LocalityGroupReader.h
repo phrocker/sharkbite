@@ -52,6 +52,7 @@ struct ReadAheadProxy {
   std::unique_ptr<cclient::data::streams::InputStream> stream;
   std::atomic<uint32_t> entries;
   std::atomic<bool> checkRange;
+  std::atomic<bool> finished;
   std::atomic<bool> hasData;
   std::atomic<bool> interrupt;
 };
@@ -103,42 +104,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   void startReadAhead();
 
-  void close() {
-    if (readAheadEnabled) {
-      if (readAheadRunning) {
-        readAheadRunning = false;
-        readAheadResult.interrupt = true;
-        readAheadCondition.notify_one();
-        readAhead.wait();
-      }
-    }
-
-    if (NULL != currentStream) {
-      currentStream->close();
-      currentStream = NULL;
-    }
-    std::vector<uint8_t> *buf;
-    while (compressedBuffers.size_approx() > 0) {
-      if (compressedBuffers.try_dequeue(buf)) {
-        delete buf;
-      }
-    }
-    cclient::data::streams::ByteOutputStream *stream;
-    while (outputBuffers.size_approx() > 0) {
-      if (outputBuffers.try_dequeue(stream)) {
-        delete stream;
-      }
-    }
-
-    cclient::data::compression::Compressor *compressor = nullptr;
-
-    while (compressors.size_approx() > 0) {
-      if (compressors.try_dequeue(compressor) && compressor != nullptr) {
-        delete compressor;
-      }
-    }
-
-  }
+  void close();
 
  public:
   explicit LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, LocalityGroupMetaData *metadata, cclient::data::ArrayAllocatorPool *allocatorInstancePtr,int version)
@@ -213,7 +179,9 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   void seek(cclient::data::streams::StreamRelocation *position);
 
-  void next();
+  std::vector<std::shared_ptr<cclient::data::Key>> getBlockKeys(cclient::data::streams::StreamRelocation *position);
+
+  void next(bool errorOnNext=true);
 
   std::unique_ptr<cclient::data::streams::InputStream> getDataBlock(uint32_t index);
 

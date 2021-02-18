@@ -247,6 +247,13 @@ PYBIND11_MODULE(pysharkbite, s) {
 
     pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
   .def(pybind11::init<cclient::data::security::AuthInfo&, std::shared_ptr<cclient::data::Instance>>())
+  .def("__init__",[](interconnect::AccumuloConnector &self, const std::string &instance, const std::string &zookeepers, const std::string &username, const std::string &password) {
+          auto conf = std::make_shared<cclient::impl::Configuration>();
+          auto zkI = std::make_shared<cclient::data::zookeeper::ZookeeperInstance>(instance, zookeepers,1000, conf );
+          cclient::data::security::AuthInfo auth(username,password,zkI->getInstanceId());
+          new (&self) interconnect::AccumuloConnector(auth,zkI);
+        },"instance"_a, "zookeepers"_a,"username"_a,"password"_a)
+    //.def("__init__", [](Example &instance) {new (&instance) Example();}
   .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
   .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
   .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")

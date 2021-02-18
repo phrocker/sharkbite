@@ -40,8 +40,8 @@ class IndexManager : public BlockLookup, public cclient::data::streams::StreamIn
   read(cclient::data::streams::InputStream *in);
 
   std::shared_ptr<SerializedIndex> lookup(const std::shared_ptr<Key> &key) {
-    std::shared_ptr<Block> block = std::make_shared<Block>(this, indexBlock);
-    std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex>(block, block->lookup(key));
+    std::shared_ptr<Block> block = std::make_shared<Block>(this, indexBlock, key);
+    std::shared_ptr<SerializedIndex> index = std::make_shared<SerializedIndex>(block,key, block->lookup(key));
 
     return index;
   }

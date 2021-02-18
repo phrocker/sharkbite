@@ -44,13 +44,21 @@ struct TextBuffer{
   }
 
   bool operator>(const TextBuffer &o) const{
-    if (strncmp(buffer,o.buffer,size > o.size ? o.size : size)>0)
+    if (size == 0)
+    return false;
+    if (o.size == 0)
+    return true;
+    if (memcmp(buffer,o.buffer,size > o.size ? o.size : size)>0)
     return true;
     else return false;
   }
 
    bool operator>=(const TextBuffer &o) const{
-    if (strncmp(buffer,o.buffer,size > o.size ? o.size : size)>=0)
+    if (size ==0)
+    return false;
+    if (o.size == 0)
+    return true;
+    if (memcmp(buffer,o.buffer,size > o.size ? o.size : size)>=0)
     return true;
     else return false;
   }
@@ -67,9 +75,14 @@ struct TextBuffer{
       max = 128;
     }
     buffer = new char[ max];
+    memset(buffer,0x00,max);
     memcpy_fast(buffer,other.first,size);
 
     return *this;
+  }
+
+  std::string toString() const {
+    return std::string(buffer,size);
   }
 };
 /**

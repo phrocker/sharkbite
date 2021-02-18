@@ -46,7 +46,7 @@ bool SkippedRelativeKey::readPrefix(cclient::data::streams::InputStream *stream,
       if (*field > *stopField) {
         *comparison = 1;
       } else
-        *comparison = 1;
+        *comparison = 0;
     } else {
       *comparison = -1;
     }
@@ -231,8 +231,8 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
       }
 
       count++;
-
       if (changed && rowCmp >= 0) {
+
         if (rowCmp > 0) break;
 
         if (cfCmp >= 0) {
@@ -241,7 +241,7 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
           if (cqCmp >= 0) break;
         }
       }
-      count++;
+      //count++;
     }
 
     if (count > 1) {

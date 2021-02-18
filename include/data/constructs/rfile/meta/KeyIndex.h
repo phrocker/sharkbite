@@ -41,48 +41,11 @@ class KeyIndex : cclient::data::streams::StreamInterface {
     }
   }
 
-  std::shared_ptr<Key> get(uint64_t index) {
-    uint64_t len = 0;
-    if (index == offsets.size() - 1) {
-      len = dataLength - offsets.at(index);
-    } else {
-      len = offsets.at(index + 1) - offsets.at(index);
-    }
-    std::shared_ptr<Key> returnKey = std::make_shared<Key>();
+  std::shared_ptr<Key> get(uint64_t index);
 
-    cclient::data::streams::EndianInputStream *inputStream = new cclient::data::streams::EndianInputStream((char*) data + offsets.at(index), len);
-    returnKey->read(inputStream);
-    delete inputStream;
+  int binary_search(const std::shared_ptr<Key> &search_key);
 
-    return returnKey;
-  }
-
-  int binary_search(const std::shared_ptr<Key> &search_key) {
-    return binary_search(0, offsets.size() - 1, search_key);
-  }
-
-  int binary_search(int first, int last, const std::shared_ptr<Key> &search_key) {
-    int index;
-
-    if (first > last)
-      index = -1;
-
-    else {
-      int mid = (first + last) / 2;
-
-      std::shared_ptr<Key> midKey = get(mid);
-      if (*search_key == *midKey)
-        index = mid;
-      else
-
-      if (*search_key < *midKey)
-        index = binary_search(first, mid - 1, search_key);
-      else
-        index = binary_search(mid + 1, last, search_key);
-
-    }  // end if
-    return index;
-  }  // end binarySearch
+  int binary_search(int first, int last, const std::shared_ptr<Key> &search_key);
 
  protected:
   int currentValue = 0;

@@ -85,7 +85,7 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   virtual std::shared_ptr<Value> getTopValue() override ;
 
-virtual std::shared_ptr<KeyValue> getTop() override;
+  virtual std::shared_ptr<KeyValue> getTop() override;
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override;
 
@@ -106,6 +106,8 @@ virtual std::shared_ptr<KeyValue> getTop() override;
   }
 
   virtual uint64_t getEntriesFiltered() override;
+
+  virtual void close() override;
 
  protected:
  void multiNext();

@@ -70,6 +70,7 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream,
       currentBlockStart(0),
       entries(0),
       entriesSkipped(0),
+      myDataStream(nullptr),
       currentLocalityGroup(NULL) {
   if (input_stream == NULL) {
     throw std::runtime_error(
@@ -277,25 +278,38 @@ bool SequentialRFile::append(
 }
 
 void SequentialRFile::close() {
+  if (closed)
+    return;
   closeData();
 
   // create  new compression stream.
+  if (myDataStream){
+    BlockCompressorStream *outStream =
+        (BlockCompressorStream *)blockWriter->createCompressorStream(
+            myDataStream, blockWriter->prepareNewEntry("RFile.index"));
+    // prepare the RFile Index.
 
-  BlockCompressorStream *outStream =
-      (BlockCompressorStream *)blockWriter->createCompressorStream(
-          myDataStream, blockWriter->prepareNewEntry("RFile.index"));
-  // prepare the RFile Index.
+    MetaBlock block;
+    closeCurrentGroup();
+    block.addLocalityGroups(localityGroups);
+    block.write(outStream);
+    outStream->flush();
+    blockWriter->write(myDataStream);
+    blockWriter->close();
 
-  MetaBlock block;
-  closeCurrentGroup();
-  block.addLocalityGroups(localityGroups);
-  block.write(outStream);
-  outStream->flush();
-  blockWriter->write(myDataStream);
-  blockWriter->close();
-
-  delete outStream;
+    delete outStream;
+  }
   closed = true;
 }
+
+
+std::vector<std::shared_ptr<cclient::data::Key>> SequentialRFile::getBlocks(cclient::data::streams::StreamRelocation *location) {
+    std::vector<std::shared_ptr<cclient::data::Key>> blocks = {};
+    if (nullptr != currentLocalityGroupReader){
+      blocks = currentLocalityGroupReader->getBlockKeys(location);
+    }
+    return blocks;
+  }
+
 }  // namespace data
 }  // namespace cclient

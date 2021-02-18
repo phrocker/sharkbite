@@ -24,7 +24,7 @@ namespace security {
 
 bool VisibilityEvaluator::evaluate(const std::string &expression,
                                    const VisibilityNode &root) {
-  if (expression.length() == 0) return true;
+  if (expression.length() == 0) return false;
   switch (root.getType()) {
     case TERM:
       return auths.contains(root.getTerm(expression).getTerm());

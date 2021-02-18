@@ -813,6 +813,13 @@ bool RelativeKey::readCvFiltered(cclient::data::streams::InputStream *stream,
         prevFiltered = false;
       }
     }
+    else if (evaluator != nullptr){
+       filtered = true;
+        prevFiltered = true;
+        prevText.reset(
+            new Text(allocatorInstance, field.first, field.second, maxsize));
+            return true;
+    }
 
     if (!prevText->empty()) {
       prevText.reset(new Text(allocatorInstance));

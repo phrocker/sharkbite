@@ -33,6 +33,10 @@ class StreamRelocation {
 
   virtual std::vector<std::string>* getColumnFamilies() = 0;
 
+  virtual uint32_t getDesiredThreads() const = 0;
+
+  virtual uint32_t getKeysCachedPerThread() const = 0;
+
   virtual bool isInclusive() = 0;
 };
 
