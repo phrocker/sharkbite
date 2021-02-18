@@ -18,35 +18,37 @@ namespace cclient {
 namespace data {
 
 std::shared_ptr<Block> Block::lookup(const std::shared_ptr<Key> &key) {
-    int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
-   //// std::cout << " for " << key << " got " << posCheck << std::endl;
-    if (posCheck < 0) {
-      posCheck = (posCheck * -1) - 1;
-    }
-    uint64_t pos = posCheck;
-    if (pos >= indexBlock->getIndex()->size()) {
-      if (parent == NULL) { /******** ******** ***** */
-        throw std::runtime_error("Illegal state ( parent is null )");
-      }
-      //std::cout << "current position 2 for " << key << " is  " << currentPosition << std::endl;
-      currentPosition = pos;
-      return shared_from_this();
-    }
-
-    currentPosition = pos;
-   // std::cout << "current position for " << key << " is  " << currentPosition << std::endl;
-    if (indexBlock->getLevel() == 0) {
-      return shared_from_this();
-    }
-
-    std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(pos);
-    std::shared_ptr<Block> newChild = std::make_shared<Block>(shared_from_this(), getIndexBlock(ie));
-
-    std::shared_ptr<Block> returnBlock = newChild->lookup(key);
-
-    return returnBlock;
-
+  int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
+  //// std::cout << " for " << key << " got " << posCheck << std::endl;
+  if (posCheck < 0) {
+    posCheck = (posCheck * -1) - 1;
   }
+  uint64_t pos = posCheck;
+  if (pos >= indexBlock->getIndex()->size()) {
+    if (parent == NULL) { /******** ******** ***** */
+      throw std::runtime_error("Illegal state ( parent is null )");
+    }
+    // std::cout << "current position 2 for " << key << " is  " <<
+    // currentPosition << std::endl;
+    currentPosition = pos;
+    return shared_from_this();
+  }
+
+  currentPosition = pos;
+  // std::cout << "current position for " << key << " is  " << currentPosition
+  // << std::endl;
+  if (indexBlock->getLevel() == 0) {
+    return shared_from_this();
+  }
+
+  std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(pos);
+  std::shared_ptr<Block> newChild =
+      std::make_shared<Block>(shared_from_this(), getIndexBlock(ie));
+
+  std::shared_ptr<Block> returnBlock = newChild->lookup(key);
+
+  return returnBlock;
+}
 }  // namespace data
 
 }  // namespace cclient

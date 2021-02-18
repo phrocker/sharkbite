@@ -21,11 +21,11 @@
 #include <execinfo.h>
 #include <signal.h>
 #endif
+#include <iostream>
+#include <mutex>
+#include <sstream>
 #include <thread>
 #include <vector>
-#include <mutex>
-#include <iostream>
-#include <sstream>
 
 #define TRACE_BUFFER_SIZE 128
 
@@ -41,17 +41,12 @@ class TraceResolver;
  */
 class BackTrace {
  public:
-  BackTrace() {
-  }
-  BackTrace(const std::string &name)
-      : name_(name) {
-  }
+  BackTrace() {}
+  BackTrace(const std::string &name) : name_(name) {}
   BackTrace(BackTrace &&) = default;
   BackTrace(BackTrace &) = delete;
 
-  std::vector<std::string> getTraces() const {
-    return trace_;
-  }
+  std::vector<std::string> getTraces() const { return trace_; }
 
   BackTrace &operator=(BackTrace &&other) = default;
 
@@ -59,9 +54,7 @@ class BackTrace {
    * Return thread name of f this caller
    * @returns name ;
    */
-  std::string getName() const {
-    return name_;
-  }
+  std::string getName() const { return name_; }
 
  protected:
   void addLine(const std::string &symbol_line) {
@@ -96,12 +89,12 @@ void emplace_handler();
  */
 class TraceResolver {
  public:
-
   /**
    * Retrieves the backtrace for the provided thread reference
    * @return BackTrace instance
    */
-  BackTrace &&getBackTrace(const std::string &thread_name, std::thread::native_handle_type thread);
+  BackTrace &&getBackTrace(const std::string &thread_name,
+                           std::thread::native_handle_type thread);
 
   /**
    * Retrieves the backtrace for the calling thread
@@ -109,8 +102,8 @@ class TraceResolver {
    */
   BackTrace &&getBackTrace(const std::string &thread_name) {
 #ifdef WIN32
-	  // currrently not supported in windows
-	  return BackTrace(thread_name);
+    // currrently not supported in windows
+    return BackTrace(thread_name);
 #else
     return std::move(getBackTrace(thread_name, pthread_self()));
 #endif
@@ -154,8 +147,7 @@ class TraceResolver {
 
  private:
   TraceResolver()  // can't use = default due to handle_types not defaulting.
-      : thread_handle_(0),
-        caller_handle_(0) {
+      : thread_handle_(0), caller_handle_(0) {
     ;
   }
 
@@ -166,4 +158,3 @@ class TraceResolver {
 };
 
 #endif /* LIBMINIFI_INCLUDE_UTILS_BACKTRACE_H_ */
-

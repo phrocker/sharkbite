@@ -58,24 +58,20 @@ if not password:
 if not table:
     table = "test"
 
-import sharkbite
+from sharkbite import *
 
-sharkbite.LoggingConfiguration.enableDebugLogger()
+#LoggingConfiguration.enableDebugLogger()
 
-conf = sharkbite.Configuration()
+conf = Configuration()
 
 conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
 
-zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
+zk = ZookeeperInstance(args.instance, args.zookeepers, 1000, conf)
 
-user = sharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
+user = AuthInfo(args.username, password, zk.getInstanceId()) 
 
 try:
-    connector = sharkbite.AccumuloConnector(user, zk)
-
-
-    with open('python.iter', 'r') as file:
-        iterator = file.read()
+    connector = AccumuloConnector(user, zk)
 
     tableOperations = connector.tableOps(table)
 
@@ -86,27 +82,29 @@ try:
         print (table + " already exists, so not creating it")  
     
     
-    auths = sharkbite.Authorizations()
+    auths = Authorizations()
     
     """ Add authorizations """ 
-    """ mutation.put("cf","cq","cv",1569786960) """
+
+    mutation = Mutation("a")
+
+    mutation.put("cf","cq","",1569786960) 
+    mutation.put("cf2","cq","",1569786960) 
     
+    writer = tableOperations.createWriter(auths,2)
+
+   # writer.addMutation(mutation)
+
+
+    #writer.close()
    
     scanner = tableOperations.createScanner(auths, 2)
     
-    startKey = sharkbite.Key()
-    
-    endKey = sharkbite.Key()
-    
-    startKey.setRow("row")
-    
-    endKey.setRow("row3")
-    
-    range = sharkbite.Range("a")
+    range = Range("a")
     
     scanner.addRange( range )
     
-    iterator = sharkbite.PythonIterator("PythonIterator",100)
+    iterator = PythonIterator("PythonIterator",100)
     iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
 
     scanner.addIterator(iterator)

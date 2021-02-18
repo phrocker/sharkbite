@@ -35,47 +35,53 @@ class StreamSeekable : public StreamRelocation {
   uint32_t keysPerThread;
 
  public:
-  explicit StreamSeekable(Range &range, uint32_t threads=1, uint32_t keysPerThread=1000)
-      : range(std::move(range)), inclusive(false),threads(threads) {}
+  explicit StreamSeekable(Range &range, uint32_t threads = 1,
+                          uint32_t keysPerThread = 1000)
+      : range(std::move(range)), inclusive(false), threads(threads) {}
 
   explicit StreamSeekable(Range &range,
                           std::vector<std::string> &columnFamilies,
-                          bool inclusive, uint32_t threads=1,uint32_t keysPerThread=1000)
+                          bool inclusive, uint32_t threads = 1,
+                          uint32_t keysPerThread = 1000)
       : range(std::move(range)),
         columnFamilies(columnFamilies),
-        inclusive(inclusive),threads(threads),keysPerThread(keysPerThread) {}
+        inclusive(inclusive),
+        threads(threads),
+        keysPerThread(keysPerThread) {}
 
   explicit StreamSeekable(Range &range,
                           std::vector<std::string> &columnFamilies,
                           cclient::data::security::Authorizations &in_auths,
-                          bool inclusive, uint32_t threads=1,uint32_t keysPerThread=1000)
+                          bool inclusive, uint32_t threads = 1,
+                          uint32_t keysPerThread = 1000)
       : range(std::move(range)),
         columnFamilies(columnFamilies),
         inclusive(inclusive),
-        auths(std::move(in_auths)),threads(threads),keysPerThread(keysPerThread) {}
+        auths(std::move(in_auths)),
+        threads(threads),
+        keysPerThread(keysPerThread) {}
 
   explicit StreamSeekable(Range *rng, std::vector<std::string> &columnFamilies,
                           cclient::data::security::Authorizations *in_auths,
-                          bool inclusive, uint32_t threads=1,uint32_t keysPerThread=1000)
+                          bool inclusive, uint32_t threads = 1,
+                          uint32_t keysPerThread = 1000)
       : range(rng->getStartKey(), rng->getStartKeyInclusive(),
               rng->getStopKey(), rng->getStartKeyInclusive()),
         columnFamilies(columnFamilies),
         inclusive(inclusive),
-        auths(in_auths->getAuthorizations()),threads(threads),keysPerThread(keysPerThread) {}
+        auths(in_auths->getAuthorizations()),
+        threads(threads),
+        keysPerThread(keysPerThread) {}
 
   virtual cclient::data::security::Authorizations *getAuths() override {
     return &auths;
   }
 
-  virtual uint32_t getDesiredThreads() const override{
-    return threads;
-  }
+  virtual uint32_t getDesiredThreads() const override { return threads; }
 
-  void setThreads(uint32_t threads){
-    this->threads=threads;
-  }
+  void setThreads(uint32_t threads) { this->threads = threads; }
 
-  virtual uint32_t getKeysCachedPerThread() const override{ 
+  virtual uint32_t getKeysCachedPerThread() const override {
     return keysPerThread;
   }
 
@@ -94,19 +100,19 @@ class DelegatedStreamSeekable : public StreamRelocation {
   StreamRelocation *seekable;
 
  public:
-  explicit DelegatedStreamSeekable(std::shared_ptr<Range> &rng, StreamRelocation *ssk)
+  explicit DelegatedStreamSeekable(std::shared_ptr<Range> &rng,
+                                   StreamRelocation *ssk)
       : range(rng), seekable(ssk) {}
 
-  
   virtual cclient::data::security::Authorizations *getAuths() override {
     return seekable->getAuths();
   }
 
-  virtual uint32_t getDesiredThreads() const override{
+  virtual uint32_t getDesiredThreads() const override {
     return seekable->getDesiredThreads();
   }
 
-  virtual uint32_t getKeysCachedPerThread() const override{ 
+  virtual uint32_t getKeysCachedPerThread() const override {
     return seekable->getKeysCachedPerThread();
   }
 

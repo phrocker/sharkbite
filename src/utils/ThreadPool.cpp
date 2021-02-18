@@ -17,21 +17,19 @@
 
 #include "utils/ThreadPool.h"
 
-
 #ifndef SH_UNLIKELY
 #ifdef __GNUC__
 #define SH_UNLIKELY(val) (__builtin_expect((val), 0))
 #define SH_LIKELY(val) (__builtin_expect((val), 1))
 #else
-      #define SH_UNLIKELY(val) (val)
-      #define SH_LIKELY(val) (val)
-      #endif
+#define SH_UNLIKELY(val) (val)
+#define SH_LIKELY(val) (val)
 #endif
-
+#endif
 
 namespace utils {
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::run_tasks(std::shared_ptr<WorkerThread> thread) {
   thread->is_running_ = true;
   while (running_.load()) {
@@ -62,11 +60,13 @@ void ThreadPool<T>::run_tasks(std::shared_ptr<WorkerThread> thread) {
           worker_queue_.enqueue(std::move(task));
           continue;
         }
-        // Task will be put to the delayed queue as next exec time is in the future
+        // Task will be put to the delayed queue as next exec time is in the
+        // future
         std::unique_lock<std::mutex> lock(worker_queue_mutex_);
         bool need_to_notify =
             delayed_worker_queue_.empty() ||
-                task.getNextExecutionTime() < delayed_worker_queue_.top().getNextExecutionTime();
+            task.getNextExecutionTime() <
+                delayed_worker_queue_.top().getNextExecutionTime();
 
         delayed_worker_queue_.push(std::move(task));
         if (need_to_notify) {
@@ -74,8 +74,9 @@ void ThreadPool<T>::run_tasks(std::shared_ptr<WorkerThread> thread) {
         }
       }
     } else {
-      // The threadpool is running, but the ConcurrentQueue is stopped -> shouldn't happen during normal conditions
-      // Might happen during startup or shutdown for a very short time
+      // The threadpool is running, but the ConcurrentQueue is stopped ->
+      // shouldn't happen during normal conditions Might happen during startup
+      // or shutdown for a very short time
       if (running_.load()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
@@ -84,16 +85,19 @@ void ThreadPool<T>::run_tasks(std::shared_ptr<WorkerThread> thread) {
   current_workers_--;
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::manage_delayed_queue() {
   while (running_) {
     std::unique_lock<std::mutex> lock(worker_queue_mutex_);
 
     // Put the tasks ready to run in the worker queue
     while (!delayed_worker_queue_.empty() &&
-        delayed_worker_queue_.top().getNextExecutionTime() <= std::chrono::steady_clock::now()) {
-      // I'm very sorry for this - committee must has been seriously drunk when the interface of prio queue was submitted.
-      Worker<T> task = std::move(const_cast<Worker<T>&>(delayed_worker_queue_.top()));
+           delayed_worker_queue_.top().getNextExecutionTime() <=
+               std::chrono::steady_clock::now()) {
+      // I'm very sorry for this - committee must has been seriously drunk when
+      // the interface of prio queue was submitted.
+      Worker<T> task =
+          std::move(const_cast<Worker<T> &>(delayed_worker_queue_.top()));
       delayed_worker_queue_.pop();
       worker_queue_.enqueue(std::move(task));
     }
@@ -101,13 +105,15 @@ void ThreadPool<T>::manage_delayed_queue() {
       delayed_task_available_.wait(lock);
     } else {
       auto wait_time = std::chrono::duration_cast<std::chrono::milliseconds>(
-          delayed_worker_queue_.top().getNextExecutionTime() - std::chrono::steady_clock::now());
-      delayed_task_available_.wait_for(lock, std::max(wait_time, std::chrono::milliseconds(1)));
+          delayed_worker_queue_.top().getNextExecutionTime() -
+          std::chrono::steady_clock::now());
+      delayed_task_available_.wait_for(
+          lock, std::max(wait_time, std::chrono::milliseconds(1)));
     }
   }
 }
 
-template<typename T>
+template <typename T>
 bool ThreadPool<T>::execute(Worker<T> &&task, std::future<T> &future) {
   {
     std::unique_lock<std::mutex> lock(worker_queue_mutex_);
@@ -121,13 +127,14 @@ bool ThreadPool<T>::execute(Worker<T> &&task, std::future<T> &future) {
   return true;
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::manageWorkers() {
   for (int i = 0; i < max_worker_threads_; i++) {
     std::stringstream thread_name;
     thread_name << name_ << " #" << i;
     auto worker_thread = std::make_shared<WorkerThread>(thread_name.str());
-    worker_thread->thread_ = createThread(std::bind(&ThreadPool::run_tasks, this, worker_thread));
+    worker_thread->thread_ =
+        createThread(std::bind(&ThreadPool::run_tasks, this, worker_thread));
     thread_queue_.push_back(worker_thread);
     current_workers_++;
   }
@@ -138,16 +145,13 @@ void ThreadPool<T>::manageWorkers() {
     }
   }
 
-for (auto &thread : thread_queue_) {
-    if (thread->thread_.joinable())
-    thread->thread_.join();
+  for (auto &thread : thread_queue_) {
+    if (thread->thread_.joinable()) thread->thread_.join();
+  }
 }
 
-}
-
-template<typename T>
+template <typename T>
 void ThreadPool<T>::start() {
-  
   std::lock_guard<std::recursive_mutex> lock(manager_mutex_);
   if (!running_) {
     running_ = true;
@@ -155,31 +159,32 @@ void ThreadPool<T>::start() {
     manager_thread_ = std::thread(&ThreadPool::manageWorkers, this);
 
     std::lock_guard<std::mutex> quee_lock(worker_queue_mutex_);
-    delayed_scheduler_thread_ = std::thread(&ThreadPool<T>::manage_delayed_queue, this);
+    delayed_scheduler_thread_ =
+        std::thread(&ThreadPool<T>::manage_delayed_queue, this);
   }
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::stopTasks(const TaskId &identifier) {
   std::unique_lock<std::mutex> lock(worker_queue_mutex_);
   task_status_[identifier] = false;
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::resume() {
   if (!worker_queue_.isRunning()) {
     worker_queue_.start();
   }
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::pause() {
   if (worker_queue_.isRunning()) {
     worker_queue_.stop();
   }
 }
 
-template<typename T>
+template <typename T>
 void ThreadPool<T>::shutdown() {
   if (running_.load()) {
     std::lock_guard<std::recursive_mutex> lock(manager_mutex_);
@@ -198,8 +203,7 @@ void ThreadPool<T>::shutdown() {
     }
 
     for (const auto &thread : thread_queue_) {
-      if (thread->thread_.joinable())
-        thread->thread_.join();
+      if (thread->thread_.joinable()) thread->thread_.join();
     }
 
     thread_queue_.clear();

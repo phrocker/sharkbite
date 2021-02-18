@@ -21,21 +21,19 @@
 namespace cclient {
 namespace data {
 
-std::vector<std::shared_ptr<cclient::data::Key>> LocalityGroupReader::getBlockKeys(cclient::data::streams::StreamRelocation *position){
-
+std::vector<std::shared_ptr<cclient::data::Key>>
+LocalityGroupReader::getBlockKeys(
+    cclient::data::streams::StreamRelocation *position) {
   if (closed) {
     throw cclient::exceptions::IllegalArgumentException(
         "Locality group reader closed");
   }
 
-    std::vector<std::shared_ptr<cclient::data::Key>> topKeys;
+  std::vector<std::shared_ptr<cclient::data::Key>> topKeys;
 
-
-    
   auto seekRange = position->getRange();
 
-
-   std::shared_ptr<Key> startKey = NULL;
+  std::shared_ptr<Key> startKey = NULL;
   if (NULL != seekRange->getStartKey()) {
     startKey = std::make_shared<Key>(seekRange->getStartKey());
 
@@ -43,24 +41,22 @@ std::vector<std::shared_ptr<cclient::data::Key>> LocalityGroupReader::getBlockKe
     startKey = std::make_shared<Key>();
   }
 
-    iiter = index->lookup(startKey);
+  iiter = index->lookup(startKey);
 
-    close();
+  close();
 
-    do{
-       if (!iiter->isEnd()) { 
-        std::shared_ptr<IndexEntry> indexEntry = iiter->get();
-        // place the key for the index entry into the array
-        topKeys.emplace_back(indexEntry->getKey());
-      }
-      if (iiter->hasNext()){
-        (*iiter)++;
-      }else{
-        break;
-      }
+  do {
+    if (!iiter->isEnd()) {
+      std::shared_ptr<IndexEntry> indexEntry = iiter->get();
+      // place the key for the index entry into the array
+      topKeys.emplace_back(indexEntry->getKey());
     }
-  while(true);
-        
+    if (iiter->hasNext()) {
+      (*iiter)++;
+    } else {
+      break;
+    }
+  } while (true);
 
   return topKeys;
 }
@@ -72,8 +68,7 @@ void LocalityGroupReader::seek(
         "Locality group reader closed");
   }
 
-  if (position->getColumnFamilies()->size() > 0 ||
-      position->isInclusive()) {
+  if (position->getColumnFamilies()->size() > 0 || position->isInclusive()) {
     throw std::runtime_error("I do not know how to filter column families");
   }
 
@@ -117,14 +112,11 @@ void LocalityGroupReader::seek(
 
     close();
 
-
-    if (!iiter){
+    if (!iiter) {
       return;
     }
-    auto hs = iiter->hasNext();
     bool filtered = false;
     if (!iiter->isEnd()) {
-      
       while (iiter->hasPrevious()) {
         std::shared_ptr<IndexEntry> ent = *(*iiter);
         if (*(iiter->getPrevious()) == *ent)
@@ -140,8 +132,9 @@ void LocalityGroupReader::seek(
 
       std::shared_ptr<IndexEntry> indexEntry = iiter->get();
       entriesLeft = indexEntry->getNumEntries();
-      
-      logging::LOG_TRACE(logger) << "Index Entry is " << indexEntry->getKey() << " on " << startKey;
+
+      logging::LOG_TRACE(logger)
+          << "Index Entry is " << indexEntry->getKey() << " on " << startKey;
 
       if (version == 3 || version == 4) {
         currentStream =
@@ -151,8 +144,7 @@ void LocalityGroupReader::seek(
                                                indexEntry->getCompressedSize(),
                                                indexEntry->getRawSize()));
       }
-      checkRange =
-          position->getRange()->afterEndKey(indexEntry->getKey());
+      checkRange = position->getRange()->afterEndKey(indexEntry->getKey());
       if (!checkRange) topExists = true;
 
       // don't concern ourselves with block indexing
@@ -183,7 +175,7 @@ void LocalityGroupReader::seek(
       val = std::make_shared<Value>();
       val->setValue((uint8_t *)valueArray.data(), valueArray.size(), 0);
       rKey = skipRR.getRelativeKey();
-      if (!rKey){
+      if (!rKey) {
         return;
       }
       /**
@@ -219,22 +211,20 @@ void LocalityGroupReader::seek(
 
   topExists = rKey != NULL && !currentRange->afterEndKey(getTopKey());
 
-  
-if (topExists && readAheadEnabled && (nullptr!= iiter && iiter->hasNext())) {
-  logging::LOG_TRACE(logger) << " Starting read ahead on " << getTopKey() ;
+  if (topExists && readAheadEnabled && (nullptr != iiter && iiter->hasNext())) {
+    logging::LOG_TRACE(logger) << " Starting read ahead on " << getTopKey();
     startReadAhead();
-}
+  }
 
   while (hasTop() && !currentRange->getInfiniteStartKey() &&
          currentRange->beforeStartKey(getTopKey())) {
-           
     next();
   }
 
-  if (!(topExists && readAheadEnabled && (nullptr!= iiter && iiter->hasNext()))) {
+  if (!(topExists && readAheadEnabled &&
+        (nullptr != iiter && iiter->hasNext()))) {
     readAheadResult.checkRange = false;
     readAheadResult.hasData = true;
-
   }
 }
 
@@ -242,7 +232,7 @@ void LocalityGroupReader::startReadAhead() {
   if (readAheadRunning) return;
   readAhead = std::async(std::launch::async, [&] {
     readAheadResult.hasData = false;
-    readAheadResult.finished= false;
+    readAheadResult.finished = false;
     size_t count = 0;
     readAheadRunning = true;
     while (readAheadRunning) {
@@ -265,14 +255,15 @@ void LocalityGroupReader::startReadAhead() {
         readAheadResult.checkRange = false;
         std::unique_lock<std::mutex> lock(readAheadMutex);
         readAheadResult.hasData = false;
-        readAheadResult.finished= true;
+        readAheadResult.finished = true;
+        readAheadResult.entries = 0;
         readAheadConsumerCondition.notify_one();
         lock.unlock();
         break;
       }
       std::unique_lock<std::mutex> lock(readAheadMutex);
       readAheadResult.hasData = true;
-      readAheadResult.finished= false;
+      readAheadResult.finished = false;
       readAheadConsumerCondition.notify_one();
       if (readAheadResult.finished) {
         lock.unlock();
@@ -297,7 +288,8 @@ void LocalityGroupReader::startReadAhead() {
 }
 
 void LocalityGroupReader::next(bool errorOnNext) {
-  if (errorOnNext && !hasTop()) throw std::runtime_error("Illegal State Exception");
+  if (errorOnNext && !hasTop())
+    throw std::runtime_error("Illegal State Exception");
   if (SH_UNLIKELY(entriesLeft == 0)) {
     currentStream->close();
     if (readAheadEnabled) {
@@ -307,7 +299,8 @@ void LocalityGroupReader::next(bool errorOnNext) {
         std::unique_lock<std::mutex> lock(readAheadMutex);
         if (!readAheadResult.hasData && !readAheadResult.finished) {
           readAheadConsumerCondition.wait(lock, [&] {
-            return !readAheadRunning || readAheadResult.hasData || readAheadResult.finished;
+            return !readAheadRunning || readAheadResult.hasData ||
+                   readAheadResult.finished;
           });
           lock.unlock();
         }
@@ -315,9 +308,9 @@ void LocalityGroupReader::next(bool errorOnNext) {
       if (readAheadResult.hasData) {
         entriesLeft = readAheadResult.entries;
         currentStream = std::move(readAheadResult.stream);
-        if ( !readAheadResult.checkRange )
+        if (!readAheadResult.checkRange)
           topExists = true;
-        else{
+        else {
           checkRange = true;
         }
         readAheadResult.hasData = false;
@@ -356,8 +349,15 @@ void LocalityGroupReader::next(bool errorOnNext) {
   }
 
   do {
+    if (entriesLeft == 0) {
+      topExists = false;
+      return;
+    }
     if (rKey != nullptr)
       prevKey = std::static_pointer_cast<Key>(rKey->getStream());
+    else {
+      rKey = std::make_shared<cclient::data::RelativeKey>(allocatorInstance);
+    }
     if (auths.empty() && !key_predicate)
       rKey->read(currentStream.get());
     else
@@ -366,8 +366,7 @@ void LocalityGroupReader::next(bool errorOnNext) {
     val->read(currentStream.get());
     entriesLeft--;
     if (!rKey->isFiltered()) {
-        break;
-
+      break;
     }
     entriesSkipped++;
     if (entriesLeft == 0) {
@@ -440,45 +439,43 @@ LocalityGroupReader::getDataBlock(uint64_t offset, uint64_t compressedSize,
   return stream;
 }
 
-
-
-  void LocalityGroupReader::close() {
-    if (readAheadEnabled) {
-      if (readAheadRunning) {
-        readAheadRunning = false;
-        readAheadResult.interrupt = true;
-        readAheadCondition.notify_one();
-        readAhead.wait();
-      }
+void LocalityGroupReader::close() {
+  if (readAheadEnabled) {
+    if (readAheadRunning) {
+      readAheadRunning = false;
+      readAheadResult.interrupt = true;
+      readAheadCondition.notify_one();
+      readAhead.wait();
     }
-
-    if (NULL != currentStream) {
-      currentStream->close();
-      currentStream = NULL;
-    }
-    std::vector<uint8_t> *buf;
-    while (compressedBuffers.size_approx() > 0) {
-      if (compressedBuffers.try_dequeue(buf)) {
-        delete buf;
-      }
-    }
-    cclient::data::streams::ByteOutputStream *stream;
-    while (outputBuffers.size_approx() > 0) {
-      if (outputBuffers.try_dequeue(stream)) {
-        delete stream;
-      }
-    }
-
-    cclient::data::compression::Compressor *compressor = nullptr;
-
-    while (compressors.size_approx() > 0) {
-      if (compressors.try_dequeue(compressor) && compressor != nullptr) {
-        delete compressor;
-      }
-    }
-    topExists=false;
-    rKey = nullptr;
   }
+
+  if (NULL != currentStream) {
+    currentStream->close();
+    currentStream = NULL;
+  }
+  std::vector<uint8_t> *buf;
+  while (compressedBuffers.size_approx() > 0) {
+    if (compressedBuffers.try_dequeue(buf)) {
+      delete buf;
+    }
+  }
+  cclient::data::streams::ByteOutputStream *stream;
+  while (outputBuffers.size_approx() > 0) {
+    if (outputBuffers.try_dequeue(stream)) {
+      delete stream;
+    }
+  }
+
+  cclient::data::compression::Compressor *compressor = nullptr;
+
+  while (compressors.size_approx() > 0) {
+    if (compressors.try_dequeue(compressor) && compressor != nullptr) {
+      delete compressor;
+    }
+  }
+  topExists = false;
+  rKey = nullptr;
+}
 
 }  // namespace data
 

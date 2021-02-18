@@ -67,7 +67,7 @@ class KeyValueIterator
   /**
    * Close is a no op for most iterators
    **/
-  virtual void close(){}
+  virtual void close() {}
 };
 }  // namespace streams
 }  // namespace data

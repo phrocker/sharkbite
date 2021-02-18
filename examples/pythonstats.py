@@ -57,16 +57,10 @@ if not password:
 if not table:
     table = "blahblahd"
 
-import sharkbite
-
-configuration = sharkbite.Configuration()
-
-zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, configuration)
-
-user = sharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
+from sharkbite import *
 
 try:
-    connector = sharkbite.AccumuloConnector(user, zk)
+    connector = AccumuloConnector(args.instance,args.zookeepers,args.username,password)
 
     table_info = connector.tableInfo()
 

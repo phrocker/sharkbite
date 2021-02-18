@@ -146,7 +146,8 @@ void SequentialRFile::next() { currentLocalityGroupReader->next(); }
 cclient::data::streams::DataStream<
     std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>
     *SequentialRFile::operator++() {
-  currentLocalityGroupReader->next();
+  if (currentLocalityGroupReader && currentLocalityGroupReader->hasTop())
+    currentLocalityGroupReader->next();
   return this;
 }
 
@@ -278,12 +279,11 @@ bool SequentialRFile::append(
 }
 
 void SequentialRFile::close() {
-  if (closed)
-    return;
+  if (closed) return;
   closeData();
 
   // create  new compression stream.
-  if (myDataStream){
+  if (myDataStream) {
     BlockCompressorStream *outStream =
         (BlockCompressorStream *)blockWriter->createCompressorStream(
             myDataStream, blockWriter->prepareNewEntry("RFile.index"));
@@ -302,14 +302,14 @@ void SequentialRFile::close() {
   closed = true;
 }
 
-
-std::vector<std::shared_ptr<cclient::data::Key>> SequentialRFile::getBlocks(cclient::data::streams::StreamRelocation *location) {
-    std::vector<std::shared_ptr<cclient::data::Key>> blocks = {};
-    if (nullptr != currentLocalityGroupReader){
-      blocks = currentLocalityGroupReader->getBlockKeys(location);
-    }
-    return blocks;
+std::vector<std::shared_ptr<cclient::data::Key>> SequentialRFile::getBlocks(
+    cclient::data::streams::StreamRelocation *location) {
+  std::vector<std::shared_ptr<cclient::data::Key>> blocks = {};
+  if (nullptr != currentLocalityGroupReader) {
+    blocks = currentLocalityGroupReader->getBlockKeys(location);
   }
+  return blocks;
+}
 
 }  // namespace data
 }  // namespace cclient

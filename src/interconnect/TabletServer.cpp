@@ -46,7 +46,6 @@ ServerInterconnect::ServerInterconnect(
       conn.getAddressString(interconnect::INTERCONNECT_TYPES::TSERV_CLIENT),
       rangeDef->getPort(), timeout);
 
-  
   /*
   int failures = 0;
   do {

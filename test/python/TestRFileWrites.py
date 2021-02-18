@@ -59,7 +59,7 @@ class TestRFileWrites(TestRunner):
 		readrfile.seek( seekable)
 		i = 0
 		while readrfile.hasNext():
-			assert( str("row" + str(i)) == readrfile.getTopKey().getRow() )
+			assert( str("row" + str(i)) == readrfile.getTopKey().getRow() )		
 			i=i+1
 			readrfile.next()
 		assert(i==1000)

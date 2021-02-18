@@ -218,7 +218,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   
   void next();
 
-  virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++();
+  virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++() override;
 
   friend inline std::ostream&
   operator <<(std::ostream &out, SequentialRFile &rhs) {

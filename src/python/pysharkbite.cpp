@@ -492,16 +492,36 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
   .def("hasNext",&cclient::data::streams::KeyValueIterator::hasNext, "Returns true of further keys exist, false otherwise")
   .def("getTopKey",&cclient::data::streams::KeyValueIterator::getTopKey, "Returns the top key")
   .def("getTopValue",&cclient::data::streams::KeyValueIterator::getTopValue, "Returns the top value")
-  .def("next",&cclient::data::streams::KeyValueIterator::next, "Queues the next key/value to be returned via getTopKey and getTopValue");
+  .def("next",[](const std::shared_ptr<cclient::data::streams::KeyValueIterator> &self) {
+          if (!self->hasNext())
+           throw pybind11::stop_iteration();
+          self->next();
+    }, "Queues the next key/value to be returned via getTopKey and getTopValue")
+  .def("__next__", [](const std::shared_ptr<cclient::data::streams::KeyValueIterator> &self) {
+          if (!self->hasNext())
+           throw pybind11::stop_iteration();
+          self->next();
+    },"Queues the next key/value to be returned via getTopKey and getTopValue");
 
   pybind11::class_<cclient::data::SequentialRFile, cclient::data::streams::KeyValueIterator, std::shared_ptr<cclient::data::SequentialRFile>>(s, "SequentialRFile", "Specializd RFile, which is an internal data structure for storing data within Accumulo, to be used when much of the data is similar")
   .def("seek",&cclient::data::SequentialRFile::relocate, "Seeks to the next key and value within the RFile")
   .def("hasNext",&cclient::data::SequentialRFile::hasNext,"Returns true of further keys exist, false otherwise")
   .def("getTop",&cclient::data::SequentialRFile::getTop, "Returns the top key/value")
+  .def("getTopKey",&cclient::data::SequentialRFile::getTopKey, "Returns the top key")
+  .def("getTopValue",&cclient::data::SequentialRFile::getTopValue, "Returns the top value")
   .def("addLocalityGroup",&cclient::data::SequentialRFile::addLocalityGroup, "Adds a locality group to an RFile when writing")
   .def("append",(bool (cclient::data::SequentialRFile::*)(std::shared_ptr<cclient::data::KeyValue> ) )&cclient::data::SequentialRFile::append, "Appends a key and value pair to the RFile")
   .def("close",&cclient::data::SequentialRFile::close, "Closes the RFile")
-  .def("next",&cclient::data::SequentialRFile::next, "Queues the next key/value pair");
+  .def("next",[](const std::shared_ptr<cclient::data::SequentialRFile> &self) {
+          if (!self->hasNext())
+           throw pybind11::stop_iteration();
+          self->next();
+    },"Queues the next key/value to be returned via getTopKey and getTopValue")
+  .def("__next__", [](const std::shared_ptr<cclient::data::SequentialRFile> &self) {
+          if (!self->hasNext())
+           throw pybind11::stop_iteration();
+          self->next();
+    });
 
   pybind11::class_<cclient::data::hdfs::HdfsDirEnt>(s, "HdfsDirEnt", "HDFS directory entry object. ")
       .def("getName",&cclient::data::hdfs::HdfsDirEnt::getName, "Gets the name of the directory entry")
