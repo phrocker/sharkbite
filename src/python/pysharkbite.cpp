@@ -70,27 +70,37 @@ PYBIND11_MODULE(pysharkbite, s) {
   pybind11::class_<cclient::data::zookeeper::ZookeeperInstance, std::shared_ptr<cclient::data::zookeeper::ZookeeperInstance>, cclient::data::Instance>(s, "ZookeeperInstance", "Zookeeper instance enables connectivity to a zookeper quorum")
   .def(pybind11::init<std::string, std::string,uint32_t, const std::shared_ptr<cclient::impl::Configuration>&>())
   .def("getInstanceName", &cclient::data::zookeeper::ZookeeperInstance::getInstanceName)
+  .def("instance_name", &cclient::data::zookeeper::ZookeeperInstance::getInstanceName)
+  .def("instance_id", &cclient::data::zookeeper::ZookeeperInstance::getInstanceId,"retry"_a=false)
   .def("getInstanceId", &cclient::data::zookeeper::ZookeeperInstance::getInstanceId,"retry"_a=false);
 
   pybind11::class_<cclient::data::security::AuthInfo>(s, "AuthInfo", "Auth info object contains accessor to an Accumulo Instance")
   .def(pybind11::init<std::string, std::string,std::string>())
   .def("getUserName",&cclient::data::security::AuthInfo::getUserName, "Get the username")
+  .def("username",&cclient::data::security::AuthInfo::getUserName, "Get the username")
+  .def("password", &cclient::data::security::AuthInfo::getPassword, "Get the user's password")
   .def("getPassword", &cclient::data::security::AuthInfo::getPassword, "Get the user's password")
-  .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId, "Get the instance ID");
+  .def("getInstanceId", &cclient::data::security::AuthInfo::getInstanceId, "Get the instance ID")
+  .def("instance_id", &cclient::data::security::AuthInfo::getInstanceId, "Get the instance ID");
 
   pybind11::class_<cclient::data::IterInfo>(s, "IterInfo", "IterInfo is an iterator configuration")
   .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
   .def(pybind11::init<const std::string &,const std::string &,uint32_t,const std::string &>(),
       "script"_a, "iteratorName"_a,"priority"_a,"type"_a="Python")
   .def("getPriority",&cclient::data::IterInfo::getPriority, "Get the priority for this iterator")
+  .def("priority",&cclient::data::IterInfo::getPriority, "Get the priority for this iterator")
   .def("getName",&cclient::data::IterInfo::getName, "Get the name of this iterator")
+  .def("name",&cclient::data::IterInfo::getName, "Get the name of this iterator")
+  .def("class",&cclient::data::IterInfo::getClass, "Get the class for this iterator")
   .def("getClass",&cclient::data::IterInfo::getClass, "Get the class for this iterator");
 
   pybind11::class_<cclient::data::python::PythonIterInfo>(s, "PythonIterator", "Defines a python iterator")
   .def(pybind11::init<const std::string &,const std::string &, uint32_t>())
   .def(pybind11::init<const std::string &,uint32_t>())
   .def("getPriority",&cclient::data::python::PythonIterInfo::getPriority,"Get the priority for this iterator")
+  .def("priority",&cclient::data::python::PythonIterInfo::getPriority,"Get the priority for this iterator")
   .def("getName",&cclient::data::python::PythonIterInfo::getName,"Get the name of this iterator")
+  .def("name",&cclient::data::python::PythonIterInfo::getName,"Get the name of this iterator")
   .def("onNext",&cclient::data::python::PythonIterInfo::onNext, "Lambda that is provided the accumulo key")
   .def("getClass",&cclient::data::python::PythonIterInfo::getClass,"Get the class for this iterator");
 
@@ -253,7 +263,6 @@ PYBIND11_MODULE(pysharkbite, s) {
           cclient::data::security::AuthInfo auth(username,password,zkI->getInstanceId());
           new (&self) interconnect::AccumuloConnector(auth,zkI);
         },"instance"_a, "zookeepers"_a,"username"_a,"password"_a)
-    //.def("__init__", [](Example &instance) {new (&instance) Example();}
   .def("securityOps",&interconnect::AccumuloConnector::security_operations, "Return the security operations object")
   .def("namespaceOps",&interconnect::AccumuloConnector::namespace_operations, "Allows the user to perform namespace operations")
   .def("getStatistics",&interconnect::AccumuloConnector::getStatistics, "Returns Statistics for the accumulo connector")
@@ -288,8 +297,8 @@ PYBIND11_MODULE(pysharkbite, s) {
   pybind11::class_<cclient::data::Key, std::shared_ptr<cclient::data::Key>>(s, "Key", "Accumulo Key")
   .def(pybind11::init<>())
   .def(pybind11::init<const char *,const char *, const char *, const char *, int64_t>(),
-      "row"_a, "columnfamily"_a=nullptr,"columnqualifier"_a=nullptr,"columnvisibility"_a=nullptr,"timestamp"_a=9223372036854775807L)
-  .def("setRow",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setRow, "Sets the row")
+      "row"_a, "cf"_a=nullptr,"cq"_a=nullptr,"cv"_a=nullptr,"timestamp"_a=9223372036854775807L)
+  .def("setRow",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setRow, "Sets the row","row"_a="")
   .def("__str__",[](const std::shared_ptr<cclient::data::Key> &si) {
         if (si){
           return si->toString();
@@ -306,8 +315,10 @@ PYBIND11_MODULE(pysharkbite, s) {
           return std::string(" : []");
         }
     })
-  .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColFamily, "Sets the column fmaily")
-  .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColQualifier, "Sets the column qualifier")
+  .def("setColumnFamily",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColFamily, "Sets the column fmaily"
+        ,"cf"_a="")
+  .def("setColumnQualifier",(void (cclient::data::Key::*)(const std::string &) ) &cclient::data::Key::setColQualifier, "Sets the column qualifier"
+        ,"cq"_a="")
   .def("getRow", &cclient::data::Key::getRowStr, "Gets the row")
   .def("getColumnFamily", &cclient::data::Key::getColFamilyStr, "Gets the Column Family")
   .def("getColumnVisibility", &cclient::data::Key::getColVisibilityStr, "Gets the Column Visibility")
@@ -349,12 +360,18 @@ PYBIND11_MODULE(pysharkbite, s) {
 
   pybind11::class_<cclient::data::Mutation, std::shared_ptr<cclient::data::Mutation>>(s, "Mutation")
   .def(pybind11::init<std::string>())
-  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t, const std::string & ) ) &cclient::data::Mutation::put, "Adds a mutation")
-  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t ) ) &cclient::data::Mutation::put, "Adds a mutation")
-  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &) ) &cclient::data::Mutation::put, "Adds a mutation")
-  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &) ) &cclient::data::Mutation::put, "Adds a mutation")
-  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation")
-  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string & ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation");
+  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t, const std::string & ) ) &cclient::data::Mutation::put, "Adds a mutation"
+          ,"cf"_a="", "cq"_a="","cv"_a="","timestamp"_a=0,"value"_a="")
+  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t ) ) &cclient::data::Mutation::put, "Adds a mutation"
+          ,"cf"_a="", "cq"_a="","cv"_a="","timestamp"_a=0)
+  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &) ) &cclient::data::Mutation::put, "Adds a mutation"
+          ,"cf"_a="", "cq"_a="","cv"_a="")
+  .def("put", (void (cclient::data::Mutation::*)(const std::string &, const std::string &) ) &cclient::data::Mutation::put, "Adds a mutation"
+          ,"cf"_a="", "cq"_a="")
+  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string &, int64_t ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation"
+          ,"cf"_a="", "cq"_a="","cv"_a="","timestamp"_a=0)
+  .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string & ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation"
+          ,"cf"_a="", "cq"_a="","cv"_a="");
 
   pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(s, "Results")
   .def("__await__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {

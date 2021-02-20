@@ -88,15 +88,15 @@ try:
 
     mutation = Mutation("a")
 
-    mutation.put("cf","cq","",1569786960) 
-    mutation.put("cf2","cq","",1569786960) 
+    mutation.put(cf="cf",cq="cq",timestamp=1569786960) 
+    mutation.put(cf="cf2",cq="cq",timestamp=1569786960) 
     
     writer = tableOperations.createWriter(auths,2)
 
-   # writer.addMutation(mutation)
+    writer.addMutation(mutation)
 
 
-    #writer.close()
+    writer.close()
    
     scanner = tableOperations.createScanner(auths, 2)
     

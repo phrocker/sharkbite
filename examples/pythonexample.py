@@ -78,9 +78,6 @@ try:
     
     auths = Authorizations()
     
-    """ Add authorizations """ 
-    """ mutation.put("cf","cq","cv",1569786960) """
-    
     scanner = table_operations.createScanner(auths, 2)
     
     startKey = Key()
