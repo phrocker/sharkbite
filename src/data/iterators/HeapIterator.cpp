@@ -42,6 +42,12 @@ HeapIterator::operator*() {
   return std::make_pair(topIterator->getTopKey(), topIterator->getTopValue());
 }
 
+bool HeapIterator::hasNext() {
+  std::cout << "has next ? "
+            << (topIterator != nullptr && topIterator->hasNext()) << std::endl;
+  return topIterator != nullptr && topIterator->hasNext();
+}
+
 void HeapIterator::next() { multiNext(); }
 
 void HeapIterator::multiNext() {
@@ -67,6 +73,13 @@ void HeapIterator::multiNext() {
       topIterator = top;
       nextKey = queues.top()->getTopKey();
     }
+  }
+}
+
+void HeapIterator::close() {
+  for (auto &iter : iterators) {
+    std::cout << "closing iterator" << std::endl;
+    iter->close();
   }
 }
 

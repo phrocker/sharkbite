@@ -63,6 +63,11 @@ class KeyValueIterator
   virtual DataStream* operator++() { return this; }
 
   virtual DataStream* operator++(int t) { return this; }
+
+  /**
+   * Close is a no op for most iterators
+   **/
+  virtual void close() {}
 };
 }  // namespace streams
 }  // namespace data

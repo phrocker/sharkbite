@@ -56,17 +56,10 @@ if not password:
 if not table:
     table = "blahblahd"
 
-import sharkbite
-
-configuration = sharkbite.Configuration()
-
-zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 1000, configuration)
-
-user = sharkbite.AuthInfo(args.username, password, zk.getInstanceId()) 
+from sharkbite import *
 
 try:
-    connector = sharkbite.AccumuloConnector(user, zk)
-
+    connector = AccumuloConnector(args.instance,args.zookeepers,args.username,password)
 
     table_operations = connector.tableOps(table)
 
@@ -83,18 +76,15 @@ try:
         print(auth)
 
     
-    auths = sharkbite.Authorizations()
-    
-    """ Add authorizations """ 
-    """ mutation.put("cf","cq","cv",1569786960) """
+    auths = Authorizations()
     
     scanner = table_operations.createScanner(auths, 2)
     
-    startKey = sharkbite.Key()
+    startKey = Key()
     
-    endKey = sharkbite.Key()
+    endKey = Key()
     
-    range = sharkbite.Range(startKey,True,endKey,False)
+    range = Range(startKey,True,endKey,False)
     
     scanner.addRange( range )
     

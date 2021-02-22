@@ -128,7 +128,6 @@ uint64_t RelativeKey::readFiltered(streams::InputStream *stream) {
       prevFiltered;
 
   key = nullptr;
-
   key = readRowFiltered(stream, &rowCmp, RelativeKey::ROW_SAME,
                         RelativeKey::ROW_PREFIX, fieldsSame, fieldsPrefixed,
                         row_ref, key);
@@ -813,6 +812,12 @@ bool RelativeKey::readCvFiltered(cclient::data::streams::InputStream *stream,
         prevText.reset(new Text(allocatorInstance));
         prevFiltered = false;
       }
+    } else if (evaluator != nullptr) {
+      filtered = true;
+      prevFiltered = true;
+      prevText.reset(
+          new Text(allocatorInstance, field.first, field.second, maxsize));
+      return true;
     }
 
     if (!prevText->empty()) {

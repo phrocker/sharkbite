@@ -19,8 +19,9 @@ from ctypes import cdll
 from argparse import ArgumentParser
 from ctypes import cdll
 import ctypes
+import os
 import traceback
-import json
+import sys
 import time
 
 
@@ -55,27 +56,27 @@ if not password:
     password = input()
     
 if not table:
-    table = "blahblahd"
+    table = "test"
 
 from sharkbite import *
 
+
 try:
-    connector = AccumuloConnector(args.instance,args.zookeepers,args.username,password)
+    writer = AccumuloWriter(args.instance,args.zookeepers,args.username,password,table,"")
 
-    table_info = connector.tableInfo()
+    writer.put("q",cf="cf",cq="cq")
+    writer.put("q",cf="cf2",cq="cq")
 
-    stats = connector.getStatistics()
+    writer.close()
 
-    # print some server info when running or queued scans are greater than zero
-    for serverinfo in stats.tablet_server_info:
-        for table_id in serverinfo.table_map:
-            scans = serverinfo.table_map[table_id].compaction_info.scans
-            if scans.running > 0 or scans.queued > 0 :
-                print(serverinfo.name + " " + table_info.table_name(table_id) + " " +  str(scans.running) + "(" + str(scans.queued) + ")")
-            
+    for keyvalue in writer.to_scanner().get("q"):
+        key = keyvalue.getKey()
+        value = keyvalue.getValue()
+        v = value.get()
+        writer.delete(key)
+        print("key is " + str(key))
+
     
-
-   
 except RuntimeError as e:
      traceback.print_exc()
      print("Oops, error caused: " + str(e))

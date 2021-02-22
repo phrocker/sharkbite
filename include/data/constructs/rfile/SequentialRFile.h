@@ -213,10 +213,12 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
     }
   }
 
+  std::vector<std::shared_ptr<cclient::data::Key>> getBlocks(cclient::data::streams::StreamRelocation *location);
+
   
   void next();
 
-  virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++();
+  virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++() override;
 
   friend inline std::ostream&
   operator <<(std::ostream &out, SequentialRFile &rhs) {

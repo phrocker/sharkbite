@@ -19,9 +19,11 @@ from ctypes import cdll
 from argparse import ArgumentParser
 from ctypes import cdll
 import ctypes
+import os
 import traceback
-import json
+import sys
 import time
+import torch
 
 
 
@@ -55,27 +57,42 @@ if not password:
     password = input()
     
 if not table:
-    table = "blahblahd"
+    table = "test"
 
 from sharkbite import *
+from sharkbite.torch import *
+
+def getCq(kv : KeyValue):
+    key = kv.getKey()
+    return int(key.getColumnQualifier())
 
 try:
-    connector = AccumuloConnector(args.instance,args.zookeepers,args.username,password)
 
-    table_info = connector.tableInfo()
+    writer = AccumuloWriter(args.instance,args.zookeepers,args.username,password,table,"")
 
-    stats = connector.getStatistics()
+    writer.put("q",cf="cf",cq="25")
+    writer.put("q",cf="cf2",cq="26")
+    writer.put("q",cf="cf2",cq="27")
 
-    # print some server info when running or queued scans are greater than zero
-    for serverinfo in stats.tablet_server_info:
-        for table_id in serverinfo.table_map:
-            scans = serverinfo.table_map[table_id].compaction_info.scans
-            if scans.running > 0 or scans.queued > 0 :
-                print(serverinfo.name + " " + table_info.table_name(table_id) + " " +  str(scans.running) + "(" + str(scans.queued) + ")")
-            
+    writer.close()
+
+    for keyvalue in writer.to_scanner().get("q"):
+        key = keyvalue.getKey()
+        value = keyvalue.getValue()
+        v = value.get()
+
+    ds = AccumuloDataset(args.instance,args.zookeepers,args.username,password,table,"", "q", "r", getCq)
+
+
+    print(list(torch.utils.data.DataLoader(ds, num_workers=0)))
+
+    for keyvalue in writer.to_scanner().get("q"):
+        key = keyvalue.getKey()
+        value = keyvalue.getValue()
+        writer.delete(key)
+        v = value.get()
+
     
-
-   
 except RuntimeError as e:
      traceback.print_exc()
      print("Oops, error caused: " + str(e))

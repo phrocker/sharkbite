@@ -320,22 +320,26 @@ bool Key::operator<(const Key &rhs) const {
 }
 
 bool Key::operator==(const Key &rhs) const {
+  auto btr = rhs.getRow();
+  auto btl = getRow();
   int compare =
-      compareBytes(row, 0, rowLength, rhs.row, 0, rhs.columnFamilyLength);
+      compareBytes(btl.first, 0, btl.second, btr.first, 0, btr.second);
 
   if (compare != 0) return false;
 
-  compare = compareBytes(colFamily, 0, columnFamilyLength, rhs.colFamily, 0,
-                         rhs.columnFamilyLength);
+  auto ctr = rhs.getColFamily();
+  auto ctl = getColFamily();
+  compare = compareBytes(ctl.first, 0, ctl.second, ctr.first, 0, ctr.second);
 
   if (compare != 0) return false;
 
-  compare = compareBytes(colQualifier, 0, colQualLen, rhs.colQualifier, 0,
-                         rhs.colQualLen);
+  auto qtr = rhs.getColQualifier();
+  auto qtl = getColQualifier();
+  compare = compareBytes(qtl.first, 0, qtl.second, qtr.first, 0, qtr.second);
 
   if (compare != 0) return false;
 
-  return (timestamp < rhs.timestamp);
+  return (timestamp == rhs.timestamp);
 }
 
 uint64_t Key::write(cclient::data::streams::OutputStream *outStream) {

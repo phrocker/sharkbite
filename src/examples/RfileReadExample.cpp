@@ -115,11 +115,12 @@ std::ifstream::pos_type filesize(const char *filename) {
 volatile sig_atomic_t stop;
 
 void inthand(int signum) {
+  std::cout << "boyyyyy" << std::endl;
     stop = 1;
 }
 
 
-void readRfile(std::vector<std::string> &rfiles, uint16_t port, bool print,bool size, const std::string &visibility, const std::shared_ptr<cclient::data::KeyPredicate> &predicate,
+void readRfile(std::vector<std::string> &rfiles, uint16_t port,int threads, bool print,bool size, const std::string &visibility, const std::shared_ptr<cclient::data::KeyPredicate> &predicate,
 std::string cq_nonpredicate) {
 
   stop = 0;
@@ -128,23 +129,37 @@ std::string cq_nonpredicate) {
   
   signal(SIGINT, inthand);
 
-  auto start = chrono::steady_clock::now();
 
-  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = cclient::data::RFileOperations::openManySequentialWithPredicate(rfiles,predicate);
+
+  std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = nullptr;
   std::vector<std::string> cf;
-  cclient::data::Range rng;
+  //std::shared_ptr<cclient::data::Key> key = std::make_shared<cclient::data::Key>("20200131_120", "fi\u0000LATITUDE","43.63\u0000iotsim\u0000");
+  //std::shared_ptr<cclient::data::Key> key = std::make_shared<cclient::data::Key>("20200131_120", std::string("fi\0LATITUDE",11),std::string("43.63\0iotsim",12));
+  cclient::data::Range rng; // (key,false);
+
+  if (threads > 1 && (rng.getInfiniteStartKey() && rng.getInfiniteStopKey())){
+    multi_iter = cclient::data::RFileOperations::openParallelRFiles(rfiles,predicate);
+  }
+  else{
+    multi_iter = cclient::data::RFileOperations::openManySequentialWithPredicate(rfiles,predicate);
+  }
+  
 
   cclient::data::security::Authorizations auths; 
   if (!visibility.empty()) {
     auths.addAuthorization(visibility);
   }
 
-  cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false);
-
+  cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false,10000);
+  if (threads > 1 && (rng.getInfiniteStartKey() && rng.getInfiniteStopKey())){
+    seekable.setThreads(threads);
+  }
   multi_iter->relocate(&seekable);
   long count = 0;
   uint64_t total_size = 0;
   // break with control+c 
+
+  auto start = chrono::steady_clock::now();
   while (!stop && multi_iter->hasNext()) {
 
     if (print && (cq_nonpredicate.empty() || (**multi_iter).first->getColQualifierStr().find(cq_nonpredicate) != std::string::npos)) {
@@ -171,6 +186,9 @@ std::string cq_nonpredicate) {
       total_size += keySkipper->getSkippedLength();
     }
   }
+  std::cout << "closing iterator" << std::endl;
+  multi_iter->close();
+
 
   if (print || size)
   std::cout << "Bytes accessed " << total_size << std::endl;
@@ -197,6 +215,7 @@ int main(int argc, char **argv) {
   std::string visibility;
   bool print = false,size=false;
   long iterations = 1;
+  int threads = 1;
   std::shared_ptr<cclient::data::KeyPredicate> predicate=nullptr;
   std::string row_contains="";
   std::string cq_nonpredicate="";
@@ -207,6 +226,16 @@ int main(int argc, char **argv) {
       std::string key = argv[i];
       if (key == "-p") {
         print = true;
+      }
+
+      if (key == "-t") {
+         if (i + 1 < argc) {
+          threads = std::atoi( argv[i + 1] );
+          i++;
+        } else {
+          throw std::runtime_error("Invalid number of arguments. Must supply thread count");
+          
+        }
       }
 
       if (key == "-s") {
@@ -284,7 +313,7 @@ int main(int argc, char **argv) {
 
   if (!rfiles.empty()) {
     for(long i=0; i < iterations; i++){
-      readRfile(rfiles, 0, print,size, visibility,predicate,cq_nonpredicate);
+      readRfile(rfiles, 0, threads, print,size, visibility,predicate,cq_nonpredicate);
     }
   }
 

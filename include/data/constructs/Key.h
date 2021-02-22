@@ -237,13 +237,13 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   bool operator <=(const Key *rhs) const {
     if (rhs == nullptr)
       return false;
-    return *this < *rhs || *rhs == *this;
+    return *this < *rhs || *this == *rhs ;
   }
 
   bool operator <=(const Key &rhs) const {
     if (rhs == nullptr)
       return false;
-    return *this < rhs || rhs == *this;
+    return *this < rhs || *this == rhs ;
   }
 
   int compare(const std::shared_ptr<Key> &other);

@@ -61,8 +61,8 @@ class VisibilityEvaluator {
     if (cacheLookup != std::end(resultMap)) {
       return cacheLookup->second;
     }
-    if (expr.empty()){
-      return true;
+    if (expr.empty() && !auths.empty()){
+      return false;
     }
     auto cv = ColumnVisibility(expr);
     auto tree = cv.getTree();

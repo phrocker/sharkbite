@@ -63,9 +63,7 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
  public:
 
-  virtual bool hasNext() override {
-    return topIterator != nullptr;
-  }
+  virtual bool hasNext() override;
 
   explicit HeapIterator(const std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> &itrs, const std::shared_ptr<cclient::data::Range> &range = nullptr) {
     iterators = itrs;
@@ -85,7 +83,7 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   virtual std::shared_ptr<Value> getTopValue() override ;
 
-virtual std::shared_ptr<KeyValue> getTop() override;
+  virtual std::shared_ptr<KeyValue> getTop() override;
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override;
 
@@ -106,6 +104,8 @@ virtual std::shared_ptr<KeyValue> getTop() override;
   }
 
   virtual uint64_t getEntriesFiltered() override;
+
+  virtual void close() override;
 
  protected:
  void multiNext();

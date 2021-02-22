@@ -1,0 +1,447 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+#pragma once
+
+#include <algorithm>
+#include <atomic>
+#include <chrono>
+#include <functional>
+#include <future>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <mutex>
+#include <queue>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <utility>
+#include <vector>
+
+#include "BackTrace.h"
+#include "utils/ConcurrentQueue.h"
+
+namespace utils {
+
+using TaskId = std::string;
+
+/**
+ * Worker task helper that determines
+ * whether or not we will run
+ */
+template <typename T>
+class AfterExecute {
+ public:
+  virtual ~AfterExecute() = default;
+
+  AfterExecute() = default;
+
+  explicit AfterExecute(AfterExecute &&other) {}
+  virtual bool isFinished(const T &result) = 0;
+  virtual bool isCancelled(const T &result) = 0;
+  /**
+   * Time to wait before re-running this task if necessary
+   * @return milliseconds since epoch after which we are eligible to re-run this
+   * task.
+   */
+  virtual std::chrono::milliseconds wait_time() = 0;
+};
+
+/**
+ * Uses the wait time for a given worker to determine if it is eligible to run
+ */
+class TimerAwareMonitor
+    : public utils::AfterExecute<std::chrono::milliseconds> {
+ public:
+  TimerAwareMonitor(std::atomic<bool> *run_monitor)  // NOLINT
+      : current_wait_(std::chrono::milliseconds(0)),
+        run_monitor_(run_monitor) {}
+  bool isFinished(const std::chrono::milliseconds &result) override {
+    current_wait_.store(result);
+    if (*run_monitor_) {
+      return false;
+    }
+    return true;
+  }
+  bool isCancelled(const std::chrono::milliseconds & /*result*/) override {
+    if (*run_monitor_) {
+      return false;
+    }
+    return true;
+  }
+  /**
+   * Time to wait before re-running this task if necessary
+   * @return milliseconds since epoch after which we are eligible to re-run this
+   * task.
+   */
+  std::chrono::milliseconds wait_time() override {
+    return current_wait_.load();
+  }
+
+ protected:
+  std::atomic<std::chrono::milliseconds> current_wait_;
+  std::atomic<bool> *run_monitor_;
+};
+
+struct TaskRescheduleInfo {
+  TaskRescheduleInfo(bool result, std::chrono::milliseconds wait_time)
+      : wait_time_(wait_time), finished_(result) {}
+
+  std::chrono::milliseconds wait_time_;
+  bool finished_;
+
+  static TaskRescheduleInfo Done() {
+    return TaskRescheduleInfo(true, std::chrono::milliseconds(0));
+  }
+
+  static TaskRescheduleInfo RetryIn(std::chrono::milliseconds interval) {
+    return TaskRescheduleInfo(false, interval);
+  }
+
+  static TaskRescheduleInfo RetryImmediately() {
+    return TaskRescheduleInfo(false, std::chrono::milliseconds(0));
+  }
+
+#if defined(WIN32)
+  // https://developercommunity.visualstudio.com/content/problem/60897/c-shared-state-futuresstate-default-constructs-the.html
+  // Because of this bug we need to have this object default constructible,
+  // which makes no sense otherwise. Hack.
+ private:
+  TaskRescheduleInfo()
+      : wait_time_(std::chrono::milliseconds(0)), finished_(true) {}
+  friend class std::_Associated_state<TaskRescheduleInfo>;
+#endif
+};
+
+class ComplexMonitor : public utils::AfterExecute<TaskRescheduleInfo> {
+ public:
+  ComplexMonitor() = default;
+
+  bool isFinished(const TaskRescheduleInfo &result) override {
+    if (result.finished_) {
+      return true;
+    }
+    current_wait_.store(result.wait_time_);
+    return false;
+  }
+  bool isCancelled(const TaskRescheduleInfo & /*result*/) override {
+    return false;
+  }
+  /**
+   * Time to wait before re-running this task if necessary
+   * @return milliseconds since epoch after which we are eligible to re-run this
+   * task.
+   */
+  std::chrono::milliseconds wait_time() override {
+    return current_wait_.load();
+  }
+
+ private:
+  std::atomic<std::chrono::milliseconds> current_wait_{
+      std::chrono::milliseconds(0)};
+};
+
+// utils::Worker<utils::TaskRescheduleInfo> functor(f_ex,
+// serviceNode->getUUIDStr(), std::move(monitor));
+
+/**
+ * Worker task
+ * purpose: Provides a wrapper for the functor
+ * and returns a future based on the template argument.
+ */
+template <typename T>
+class Worker {
+ public:
+  explicit Worker(const std::function<T()> &task, const TaskId &identifier,
+                  std::unique_ptr<AfterExecute<T>> run_determinant)
+      : identifier_(identifier),
+        next_exec_time_(std::chrono::steady_clock::now()),
+        task(task),
+        run_determinant_(std::move(run_determinant)) {
+    promise = std::make_shared<std::promise<T>>();
+  }
+
+  explicit Worker(const std::function<T()> &task, const TaskId &identifier)
+      : identifier_(identifier),
+        next_exec_time_(std::chrono::steady_clock::now()),
+        task(task),
+        run_determinant_(nullptr) {
+    promise = std::make_shared<std::promise<T>>();
+  }
+
+  explicit Worker(const TaskId &identifier = {})
+      : identifier_(identifier),
+        next_exec_time_(std::chrono::steady_clock::now()) {}
+
+  virtual ~Worker() = default;
+
+  /**
+   * Move constructor for worker tasks
+   */
+  Worker(Worker &&other) noexcept
+      : identifier_(std::move(other.identifier_)),
+        next_exec_time_(std::move(other.next_exec_time_)),
+        task(std::move(other.task)),
+        run_determinant_(std::move(other.run_determinant_)),
+        promise(other.promise) {}
+
+  /**
+   * Runs the task and takes the output from the functor
+   * setting the result into the promise
+   * @return whether or not to continue running
+   *   false == finished || error
+   *   true == run again
+   */
+  virtual bool run() {
+    T result = task();
+    if (run_determinant_ == nullptr ||
+        (run_determinant_->isFinished(result) ||
+         run_determinant_->isCancelled(result))) {
+      promise->set_value(result);
+      return false;
+    }
+    next_exec_time_ = std::max(next_exec_time_ + run_determinant_->wait_time(),
+                               std::chrono::steady_clock::now());
+    return true;
+  }
+
+  virtual void setIdentifier(const TaskId &identifier) {
+    identifier_ = identifier;
+  }
+
+  virtual std::chrono::time_point<std::chrono::steady_clock>
+  getNextExecutionTime() const {
+    return next_exec_time_;
+  }
+
+  virtual std::chrono::milliseconds getWaitTime() const {
+    return run_determinant_->wait_time();
+  }
+
+  Worker<T>(const Worker<T> &) = delete;
+  Worker<T> &operator=(const Worker<T> &) = delete;
+
+  Worker<T> &operator=(Worker<T> &&) noexcept;
+
+  std::shared_ptr<std::promise<T>> getPromise() const;
+
+  const TaskId &getIdentifier() const { return identifier_; }
+
+ protected:
+  TaskId identifier_;
+  std::chrono::time_point<std::chrono::steady_clock> next_exec_time_;
+  std::function<T()> task;
+  std::unique_ptr<AfterExecute<T>> run_determinant_;
+  std::shared_ptr<std::promise<T>> promise;
+};
+
+template <typename T>
+class DelayedTaskComparator {
+ public:
+  bool operator()(Worker<T> &a, Worker<T> &b) {
+    return a.getNextExecutionTime() > b.getNextExecutionTime();
+  }
+};
+
+template <typename T>
+Worker<T> &Worker<T>::operator=(Worker<T> &&other) noexcept {
+  task = std::move(other.task);
+  promise = other.promise;
+  next_exec_time_ = std::move(other.next_exec_time_);
+  identifier_ = std::move(other.identifier_);
+  run_determinant_ = std::move(other.run_determinant_);
+  return *this;
+}
+
+template <typename T>
+std::shared_ptr<std::promise<T>> Worker<T>::getPromise() const {
+  return promise;
+}
+
+class WorkerThread {
+ public:
+  explicit WorkerThread(std::thread thread,
+                        const std::string &name = "NamelessWorker")
+      : is_running_(false), thread_(std::move(thread)), name_(name) {}
+  WorkerThread(const std::string &name = "NamelessWorker")  // NOLINT
+      : is_running_(false), name_(name) {}
+  std::atomic<bool> is_running_;
+  std::thread thread_;
+  std::string name_;
+};
+
+/**
+ * Thread pool
+ * Purpose: Provides a thread pool with basic functionality similar to
+ * ThreadPoolExecutor
+ * Design: Locked control over a manager thread that controls the worker threads
+ */
+template <typename T>
+class ThreadPool {
+ public:
+  ThreadPool(int max_worker_threads = 2, bool daemon_threads = false,
+             const std::string &name = "NamelessPool")
+      : daemon_threads_(daemon_threads),
+        thread_reduction_count_(0),
+        max_worker_threads_(max_worker_threads),
+        adjust_threads_(false),
+        running_(false),
+        name_(name) {
+    current_workers_ = 0;
+    task_count_ = 0;
+  }
+
+  ThreadPool(const ThreadPool<T> &other) = delete;
+  ThreadPool<T> &operator=(const ThreadPool<T> &other) = delete;
+  ThreadPool(ThreadPool<T> &&other) = delete;
+  ThreadPool<T> &operator=(ThreadPool<T> &&other) = delete;
+
+  ~ThreadPool() { shutdown(); }
+
+  /**
+   * Execute accepts a worker task and returns
+   * a future
+   * @param task this thread pool will subsume ownership of
+   * the worker task
+   * @param future future to move new promise to
+   * @return true if future can be created and thread pool is in a running
+   * state.
+   */
+  bool execute(Worker<T> &&task, std::future<T> &future);
+
+  /**
+   * attempts to stop tasks with the provided identifier.
+   * @param identifier for worker tasks. Note that these tasks won't
+   * immediately stop.
+   */
+  void stopTasks(const TaskId &identifier);
+
+  /**
+   * resumes work queue processing.
+   */
+  void resume();
+
+  /**
+   * pauses work queue processing
+   */
+  void pause();
+
+  /**
+   * Returns true if a task is running.
+   */
+  bool isTaskRunning(const TaskId &identifier) {
+    std::unique_lock<std::mutex> lock(worker_queue_mutex_);
+    const auto iter = task_status_.find(identifier);
+    if (iter == task_status_.end()) return false;
+    return iter->second;
+  }
+
+  bool isRunning() const { return running_.load(); }
+
+  /**
+   * Starts the Thread Pool
+   */
+  void start();
+  /**
+   * Shutdown the thread pool and clear any
+   * currently running activities
+   */
+  void shutdown();
+  /**
+   * Set the max concurrent tasks. When this is done
+   * we must start and restart the thread pool if
+   * the number of tasks is less than the currently configured number
+   */
+  void setMaxConcurrentTasks(uint16_t max) {
+    std::lock_guard<std::recursive_mutex> lock(manager_mutex_);
+    bool was_running = running_;
+    if (was_running) {
+      shutdown();
+    }
+    max_worker_threads_ = max;
+    if (was_running) start();
+  }
+
+ protected:
+  std::thread createThread(std::function<void()> &&functor) {
+    return std::thread([functor]() mutable { functor(); });
+  }
+
+  /**
+   * Drain will notify tasks to stop following notification
+   */
+  void drain() {
+    worker_queue_.stop();
+    while (current_workers_ > 0) {
+      // The sleeping workers were waken up and stopped, but we have to wait
+      // the ones that actually worked on something when the queue was stopped.
+      // Stopping the queue guarantees that they don't get any new task.
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+  }
+  // determines if threads are detached
+  bool daemon_threads_;
+  std::atomic<int> thread_reduction_count_;
+  // max worker threads
+  int max_worker_threads_;
+  // current worker tasks.
+  std::atomic<int> current_workers_;
+  std::atomic<int> task_count_;
+  // thread queue
+  std::vector<std::shared_ptr<WorkerThread>> thread_queue_;
+  // manager thread
+  std::thread manager_thread_;
+  // the thread responsible for putting delayed tasks to the worker queue when
+  // they had to be put
+  std::thread delayed_scheduler_thread_;
+  // conditional that's used to adjust the threads
+  std::atomic<bool> adjust_threads_;
+  // atomic running boolean
+  std::atomic<bool> running_;
+  // thread queue for the recently deceased threads.
+  ConcurrentQueue<std::shared_ptr<WorkerThread>> deceased_thread_queue_;
+  // worker queue of worker objects
+  ConditionConcurrentQueue<Worker<T>> worker_queue_;
+  std::priority_queue<Worker<T>, std::vector<Worker<T>>,
+                      DelayedTaskComparator<T>>
+      delayed_worker_queue_;
+  // mutex to  protect task status and delayed queue
+  std::mutex worker_queue_mutex_;
+  // notification for new delayed tasks that's before the current ones
+  std::condition_variable delayed_task_available_;
+  // map to identify if a task should be
+  std::map<TaskId, bool> task_status_;
+  // manager mutex
+  std::recursive_mutex manager_mutex_;
+  // thread pool name
+  std::string name_;
+
+  /**
+   * Call for the manager to start worker threads
+   */
+  void manageWorkers();
+
+  /**
+   * Runs worker tasks
+   */
+  void run_tasks(std::shared_ptr<WorkerThread> thread);
+
+  void manage_delayed_queue();
+};
+
+}  // namespace utils

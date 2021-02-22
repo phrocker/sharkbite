@@ -20,12 +20,11 @@ namespace cclient {
 namespace data {
 namespace streams {
 
-class FileIterator : KeyValueIterator {
+class FileIterator : cclient::data::streams::KeyValueIterator {
  public:
   FileIterator() {}
   virtual std::shared_ptr<Key> getFirstKey() = 0;
   virtual std::shared_ptr<Key> getLastKey() = 0;
-  void close();
 };
 
 }  // namespace streams

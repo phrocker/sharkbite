@@ -76,12 +76,13 @@ std::string PythonIterInfo::getDSL() const {
   if (formedDSL.empty()) {
     std::stringstream str;
     str << "from org.apache.accumulo.core.data import Range,Value" << std::endl;
-    str << "from org.poma.accumulo import Key,KeyValue" << std::endl;
+    str << "from pysharkbite import Key,KeyValue" << std::endl;
 
     if (!onNextLambda.empty()) {
       str << "class " << getName() << ":" << std::endl;
-      str << "  def seek(self,iterator,range):" << std::endl;
-      str << "    iterator.seek(range) " << std::endl;
+      str << "  def seek(self,iterator,range, families, inclusive):"
+          << std::endl;
+      str << "    iterator.seek(range, families, inclusive) " << std::endl;
       str << "    if (iterator.hasTop()): " << std::endl;
       str << "      key = iterator.getTopKey()" << std::endl;
       str << "      value = iterator.getTopValue()" << std::endl;

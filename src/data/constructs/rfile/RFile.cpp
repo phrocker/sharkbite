@@ -120,10 +120,6 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   }
 
   currentLocalityGroupReader = localityGroupReaders.front();
-
-  // if (!colvis.empty()) {
-  //  currentLocalityGroupReader->limitVisibility(colvis);
-  //  }
 }
 
 void RFile::next() { currentLocalityGroupReader->next(); }

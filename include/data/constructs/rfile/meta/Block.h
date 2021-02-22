@@ -31,27 +31,29 @@ class Block : public BaseMetaBlock, public std::enable_shared_from_this<Block> {
   std::shared_ptr<IndexBlock> indexBlock;
   uint32_t currentPosition;
   BlockLookup *blockStore;
+  std::shared_ptr<cclient::data::Key> keyRef;
 
  public:
 
-  Block(BlockLookup *blockStore, std::shared_ptr<Block> parent, std::shared_ptr<IndexBlock> block)
+  Block(BlockLookup *blockStore, std::shared_ptr<Block> parent, std::shared_ptr<IndexBlock> block,const std::shared_ptr<cclient::data::Key> &keyref=nullptr)
       :
       blockStore(blockStore),
       parent(parent),
       indexBlock(block),
+      keyRef(keyref),
       currentPosition(0) {
 
   }
 
-  Block(BlockLookup *blockStore, std::shared_ptr<IndexBlock> block)
+  Block(BlockLookup *blockStore, std::shared_ptr<IndexBlock> block, const std::shared_ptr<cclient::data::Key> &keyref=nullptr)
       :
-      Block(blockStore, NULL, block) {
+      Block(blockStore, NULL, block, keyref) {
 
   }
 
-  Block(std::shared_ptr<Block> blockStore, std::shared_ptr<IndexBlock> block)
+  Block(std::shared_ptr<Block> blockStore, std::shared_ptr<IndexBlock> block, const std::shared_ptr<cclient::data::Key> &keyref=nullptr)
       :
-      Block(blockStore->blockStore, blockStore, block) {
+      Block(blockStore->blockStore, blockStore, block,keyref) {
 
   }
 
@@ -82,34 +84,7 @@ class Block : public BaseMetaBlock, public std::enable_shared_from_this<Block> {
     return blockStore->getIndexBlock(ie);
   }
 
-  std::shared_ptr<Block> lookup(const std::shared_ptr<Key> &key) {
-
-    int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
-    if (posCheck < 0) {
-      posCheck = (posCheck * -1) - 1;
-    }
-    uint64_t pos = posCheck;
-    if (pos >= indexBlock->getIndex()->size()) {
-      if (parent == NULL) { /******** ******** ***** */
-        throw std::runtime_error("Illegal state ( parent is null )");
-      }
-      currentPosition = pos;
-      return shared_from_this();
-    }
-
-    currentPosition = pos;
-    if (indexBlock->getLevel() == 0) {
-      return shared_from_this();
-    }
-
-    std::shared_ptr<IndexEntry> ie = indexBlock->getIndex()->get(pos);
-    std::shared_ptr<Block> newChild = std::make_shared<Block>(shared_from_this(), getIndexBlock(ie));
-
-    std::shared_ptr<Block> returnBlock = newChild->lookup(key);
-
-    return returnBlock;
-
-  }
+  std::shared_ptr<Block> lookup(const std::shared_ptr<Key> &key);
 
   virtual std::shared_ptr<BaseMetaBlock> getNextBlock() {
     return parent->getNext();
