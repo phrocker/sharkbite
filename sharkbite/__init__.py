@@ -14,14 +14,50 @@ class AccumuloBase:
     _user = None
     _connector = None
     _table = ""
-    _tableOperations = None
+    _table_operations = None
     _auths = None
+    _threads=10
 
     def to_scanner(self):
         return AccumuloScanner(self._instance,self._zookeepers,self._username,self._password,self._table,self._auths)
 
-    def __init__(self):
-        pass
+    def __init__(self, instance: str , zookepeers: str, username: str, password: str, table: str =None, auths: str =None):
+        self._conf = Configuration()
+        self._instance = instance
+        self._zookeepers = zookepeers
+        self._username = username
+        self._password = password
+        self._zk =  ZookeeperInstance(self._instance, self._zookeepers, 1000, self._conf)
+        self._user = AuthInfo(self._username, self._password , self._zk.getInstanceId()) 
+        if auths is not None and isinstance(auths, Authorizations):
+            self._auths = auths
+        else:
+            if len(auths) > 0:
+                self._auths = Authorizations(auths)
+            else:
+                self._auths = Authorizations()
+        self._connector = AccumuloConnector(self._user, self._zk)
+        self._table = table
+        if self._table is not None:
+            self._table_operations = self._connector.tableOps(self._table)
+
+
+    def set_authorizations(self,auths):
+        if auths is not None and isinstance(auths, Authorizations):
+            self._auths = auths
+        else:
+            if len(auths) > 0:
+                self._auths = Authorizations(auths)
+            else:
+                self._auths = Authorizations()
+
+    def set_threads(self, thread_count):
+        self._threads=thread_count
+
+    def set_table(self,table: str):
+        if table is not None:
+            self._table = table
+            self._table_operations = self._connector.tableOps(self._table)
 
 class AccumuloScanner(AccumuloBase):
     
@@ -33,27 +69,12 @@ class AccumuloWriter(AccumuloBase):
     _mutation = None
     _writer = None
     
-    def __init__(self, instance, zookepeers, username, password, table, auths):
-        self._conf = Configuration()
-        self._instance = instance
-        self._zookeepers = zookepeers
-        self._username = username
-        self._password = password
-        self._zk =  ZookeeperInstance(self._instance, self._zookeepers, 1000, self._conf)
-        self._user = AuthInfo(self._username, self._password , self._zk.getInstanceId()) 
-        if isinstance(auths, Authorizations):
-            self._auths = auths
-        else:
-            if len(auths) > 0:
-                self._auths = Authorizations(auths)
-            else:
-                self._auths = Authorizations()
-        self._connector = AccumuloConnector(self._user, self._zk)
-        self._table = table
-        self._tableOperations = self._connector.tableOps(self._table)
-        self._writer = self._tableOperations.createWriter(self._auths,10)
+    def __init__(self,  instance: str , zookeepers: str, username: str, password: str, table: str =None, auths: str =None):
+        super().__init__(instance,zookeepers,username,password,table,auths)
 
-    def put(self,row, cf, cq, cv=None, timestamp=0, value=None):
+    def put(self,row : str , cf: str , cq: str , cv: str =None, timestamp: int =0, value=None):
+        if self._writer is None:
+            self._writer = self._table_operations.createWriter(self._auths,self._threads)
         if row != self._row:
             self._row = row
             if self._mutation is not None:
@@ -66,7 +87,7 @@ class AccumuloWriter(AccumuloBase):
             ts = milliseconds = int(round(time.time() * 1000))
         if value is None:
             if cv is None:
-                self._mutation.put(cf=cf,cq=cq,timestamp=ts) 
+                    self._mutation.put(cf=cf,cq=cq,timestamp=ts) 
             else:
                 self._mutation.put(cf=cf,cq=cq,cv=cv,timestamp=ts) 
         else:
@@ -75,33 +96,45 @@ class AccumuloWriter(AccumuloBase):
             else:
                 self._mutation.put(cf=cf,cq=cq,cv=cv,timestamp=ts,value=value) 
     
+    def putDelete(self,row : str , cf: str , cq: str , cv: str ="", timestamp: int =0):
+        if self._writer is None:
+            self._writer = self._table_operations.createWriter(self._auths,self._threads)
+        if row != self._row:
+            self._row = row
+            if self._mutation is not None:
+                self._writer.addMutation(self._mutation)
+            self._mutation = Mutation(row)
+        if cf is None or cq is None:
+            raise ValueError("CF and CQ must be specified")
+        ts = timestamp
+        if ts > 0:
+            self._mutation.putDelete(cf,cq,cv,ts) 
+        else:
+            self._mutation.putDelete(cf,cq,cv) 
+    
+    def delete(self, key : Key):
+        if key is not None:
+            self.putDelete(key.getRow(),key.getColumnFamily(),key.getColumnQualifier(),key.getColumnVisibility(), key.getTimestamp())
+
+    def close(self):
+        if self._writer is not None: 
+            if self._mutation is not None:
+                self._writer.addMutation(self._mutation)
+            self._writer.close()
+            self._writer=None
+            self._row=None
+            self._mutation = None
+
     def __del__(self):
-        if self._mutation is not None:
-            self._writer.addMutation(self._mutation)
-        self._writer.close()
+        self.close()
+            
 
 class AccumuloScanner(AccumuloBase):
     _row = ""
     _scanner = None
     
-    def __init__(self, instance, zookepeers, username, password, table, auths):
-        self._conf = Configuration()
-        self._instance = instance
-        self._zookeepers = zookepeers
-        self._username = username
-        self._password = password
-        self._zk =  ZookeeperInstance(self._instance, self._zookeepers, 1000, self._conf)
-        self._user = AuthInfo(self._username, self._password , self._zk.getInstanceId()) 
-        if isinstance(auths, Authorizations):
-            self._auths = auths
-        else:
-            if len(auths) > 0:
-                self._auths = Authorizations(auths)
-            else:
-                self._auths = Authorizations()
-        self._connector = AccumuloConnector(self._user, self._zk)
-        self._table = table
-        self._tableOperations = self._connector.tableOps(self._table)
+    def __init__(self, instance: str , zookeepers: str, username: str, password: str, table: str =None, auths: str =None):
+        super().__init__(instance,zookeepers,username,password,table,auths)
         
 
     def get(self,begin_row, end_row=None):
@@ -111,7 +144,7 @@ class AccumuloScanner(AccumuloBase):
             range = Range(begin_row,True,end_row,False)
     
 
-        scanner = self._tableOperations.createScanner(self._auths,10)
+        scanner = self._table_operations.createScanner(self._auths,self._threads)
 
         scanner.addRange( range )
     

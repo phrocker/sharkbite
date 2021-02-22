@@ -1,41 +1,39 @@
 from torch.utils.data import Dataset, IterableDataset, DataLoader
 from itertools import cycle, islice
-from . import AuthInfo, Range, Configuration, ZookeeperInstance, AccumuloConnector, Authorizations, Key
+from . import AuthInfo, Range, Configuration, ZookeeperInstance, AccumuloConnector, Authorizations, Key, AccumuloBase
 
-class AccumuloCluster(IterableDataset):
-    def __init__(self, zk_string, instance_name, user, password):
-        self.configuration = Configuration()
-        self.zk = ZookeeperInstance(instance_name, zk_string, 1000, self.configuration)
-        self.authinfo = AuthInfo(user,password, self.zk.getInstanceId())
-        self.connector = AccumuloConnector(self.authinfo, self.zk)
-        self.threads=10
-        self.auths = Authorizations()
-
-    def set_authorizations(self,auths):
-        self.auths=Authorizations(auths)
-
-    def set_threads(self, thread_count):
-        self.threads=thread_count
+class AccumuloCluster(AccumuloBase, IterableDataset):
+    def __init__(self,  instance: str , zookeepers: str, username: str, password: str, table: str =None, auths: str =None):
+        super().__init__(instance,zookeepers,username,password,table,auths)
 
 
-class AccumuloDataset(IterableDataset):
+class AccumuloDataset(AccumuloBase,IterableDataset):
+  _scanner = None
+  _lambda = None
   'Characterizes a dataset for PyTorch'
-  def __init__(self, cluster, table, start_key_string, end_key_string):
+  def __init__(self, instance: str , zookeepers: str, username: str, password: str, table: str, auths : str, start_key_string: str , end_key_string : str, user_lambda = None):
         'Initialization'
+        super().__init__(instance,zookeepers,username,password,table,auths)
         self._range = Range(start_key_string,True,end_key_string, False)
-        self._cluster = cluster
         self.iter = None
         self.iter_iter = None
-        self.table_ops = self._cluster.connector.tableOps(table)
-        self.scanner = self.table_ops.createScanner(cluster.auths, self._cluster.threads)
-        self.scanner.addRange( self._range ) 
+        self._scanner = self._table_operations.createScanner(self._auths, self._threads)
+        self._scanner.addRange( self._range ) 
+        self._lambda = user_lambda
 
   def coerce(self,key):
-      
-      try:
-        return int(key.getKey().getValue().get() )
-      except Exception:
-        return 0
+      if self._lambda is None:
+        try:
+          return int(key.getKey().getValue().get() )
+        except Exception as e:
+          print(e)
+          return 0
+      else:
+        try:
+          return self._lambda(key)
+        except Exception as e:
+          print(e)
+          return 0
 
   def __next__(self):
       if self.iter is None:
@@ -49,7 +47,7 @@ class AccumuloDataset(IterableDataset):
             self.iter_iter=None
             raise StopIteration
       except StopIteration:
-        self.scanner.close()
+        self._scanner.close()
         self.iter=None
         self.iter_iter=None
         raise StopIteration
@@ -58,7 +56,7 @@ class AccumuloDataset(IterableDataset):
   def __iter__(self):
         'Sets the Accumulo Iterator'
         if self.iter is None:
-            self.iter = self.scanner.getResultSet()
+            self.iter = self._scanner.getResultSet()
             self.iter_iter = self.iter.__iter__()
         return self
 

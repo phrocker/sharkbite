@@ -23,6 +23,7 @@ import os
 import traceback
 import sys
 import time
+import torch
 
 
 
@@ -59,13 +60,19 @@ if not table:
     table = "test"
 
 from sharkbite import *
+from sharkbite.torch import *
 
+def getCq(kv : KeyValue):
+    key = kv.getKey()
+    return int(key.getColumnQualifier())
 
 try:
+
     writer = AccumuloWriter(args.instance,args.zookeepers,args.username,password,table,"")
 
-    writer.put("q",cf="cf",cq="cq")
-    writer.put("q",cf="cf2",cq="cq")
+    writer.put("q",cf="cf",cq="25")
+    writer.put("q",cf="cf2",cq="26")
+    writer.put("q",cf="cf2",cq="27")
 
     writer.close()
 
@@ -73,8 +80,17 @@ try:
         key = keyvalue.getKey()
         value = keyvalue.getValue()
         v = value.get()
+
+    ds = AccumuloDataset(args.instance,args.zookeepers,args.username,password,table,"", "q", "r", getCq)
+
+
+    print(list(torch.utils.data.DataLoader(ds, num_workers=0)))
+
+    for keyvalue in writer.to_scanner().get("q"):
+        key = keyvalue.getKey()
+        value = keyvalue.getValue()
         writer.delete(key)
-        print("key is " + str(key))
+        v = value.get()
 
     
 except RuntimeError as e:
