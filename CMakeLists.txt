@@ -19,7 +19,7 @@ ELSE(STRERROR_R_RETURN_INT)
    MESSAGE(STATUS "Checking whether strerror_r returns an int -- no")
 ENDIF(STRERROR_R_RETURN_INT)
 
-option(USE_OPENMP "Use OpenMP for multi-core parallelism" ON)
+option(USE_OPENMP "Use OpenMP for multi-core parallelism" OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   option(USE_GNU_PARALLEL "Use GNU parallel extensions for multi-core parallelism" ON)
@@ -399,9 +399,9 @@ else()
         set(Python_ADDITIONAL_VERSIONS ${MY_PYTHON_VERSION})
     else()
         set(Python_ADDITIONAL_VERSIONS 3.6)
-	    find_package(PythonInterp 3.6 REQUIRED)
-	    find_package(PythonLibs 3.6 REQUIRED)
     endif()
+	find_package(PythonInterp ${Python_ADDITIONAL_VERSIONS} REQUIRED)
+	find_package(PythonLibs ${Python_ADDITIONAL_VERSIONS} REQUIRED)
 endif()
 
 download_project(PROJ pybind11 

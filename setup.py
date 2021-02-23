@@ -32,7 +32,7 @@ def operatingsystem():
 
 setup(
     name='sharkbite',
-    version='1.0.1',
+    version='1.0.2',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
     url='https://docs.sharkbite.io/',
@@ -46,6 +46,6 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         operatingsystem(),
     ],
-    python_requires='>=3.8',
+    python_requires='>=3.6',
     packages=['sharkbite']
 )
