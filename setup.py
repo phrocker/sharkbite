@@ -46,6 +46,6 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         operatingsystem(),
     ],
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     packages=['sharkbite']
 )
