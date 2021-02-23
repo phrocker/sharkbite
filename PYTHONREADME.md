@@ -37,13 +37,13 @@ Enable it with the following option:
 
 ```
 
-	import sharkbite as sharkbite
+  import sharkbite as sharkbite
 
-	connector = sharkbite.AccumuloConnector(user, zk)
+  connector = sharkbite.AccumuloConnector(user, zk)
 
   table_operations = connector.tableOps(table)  
 	
- 	scanner = table_operations.createScanner(auths, 2)
+  scanner = table_operations.createScanner(auths, 2)
     
   range = sharkbite.Range("myrow")
     
