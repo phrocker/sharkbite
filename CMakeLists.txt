@@ -22,7 +22,7 @@ ENDIF(STRERROR_R_RETURN_INT)
 option(USE_OPENMP "Use OpenMP for multi-core parallelism" OFF)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  option(USE_GNU_PARALLEL "Use GNU parallel extensions for multi-core parallelism" ON)
+  option(USE_GNU_PARALLEL "Use GNU parallel extensions for multi-core parallelism" OFF)
 
   # GNU parallel mode but NOT OpenMP is impossible.
   if(USE_GNU_PARALLEL AND NOT USE_OPENMP)
