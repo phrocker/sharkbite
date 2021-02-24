@@ -24,9 +24,9 @@ copyright = '2020, Marc Parisi'
 author = 'Marc Parisi'
 
 # The short X.Y version
-version = ''
+version = '0.7.2'
 # The full version, including alpha/beta/rc tags
-release = ''
+release = '0.7.2'
 
 
 # -- General configuration ---------------------------------------------------
