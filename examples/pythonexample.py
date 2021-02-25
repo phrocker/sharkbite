@@ -63,6 +63,11 @@ try:
 
     table_operations = connector.tableOps(table)
 
+    # print tables
+
+    for table in connector.tableInfo().list_tables():
+        print(table)
+
     if not table_operations.exists(False):
         print ("Creating table " + table)
         table_operations.create(False)  

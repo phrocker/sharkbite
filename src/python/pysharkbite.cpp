@@ -253,6 +253,7 @@ PYBIND11_MODULE(pysharkbite, s) {
   pybind11::class_<interconnect::PythonTableInfo>(s, "AccumuloTableInfo", "Provides you table information")
   .def("table_id",&interconnect::PythonTableInfo::getTableId, "Returns the table Id for the corresponding table")
   .def("table_name",&interconnect::PythonTableInfo::getTableName, "Gets the table name for the corresponding table Id")
+  .def("list_tables",&interconnect::PythonTableInfo::getTables, "Lists the set of tables")
   .def("exists",&interconnect::PythonTableInfo::exists, "Returns true if the table exists");
 
     pybind11::class_<interconnect::AccumuloConnector,  std::shared_ptr<interconnect::AccumuloConnector>>(s, "AccumuloConnector", "Accumulo connector")
