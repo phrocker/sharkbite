@@ -74,6 +74,14 @@ class AccumuloTableInfo {
     return Tables::getInstance().getTableName(tableid);
   }
 
+  /**
+   * Gets the table names
+   * @return table names
+   */
+  std::set<std::string> getTables() const{
+    return Tables::getInstance().getTables();
+  }
+
  private:
   void loadTableOps() {
     const cclient::impl::Configuration *conf = myInstance->getConfiguration();

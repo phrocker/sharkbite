@@ -29,17 +29,15 @@ class AccumuloBase:
         self._password = password
         self._zk =  ZookeeperInstance(self._instance, self._zookeepers, 1000, self._conf)
         self._user = AuthInfo(self._username, self._password , self._zk.getInstanceId()) 
-        if auths is not None and isinstance(auths, Authorizations):
-            self._auths = auths
-        else:
-            if len(auths) > 0:
-                self._auths = Authorizations(auths)
-            else:
-                self._auths = Authorizations()
+        self.set_authorizations(auths)
         self._connector = AccumuloConnector(self._user, self._zk)
         self._table = table
         if self._table is not None:
             self._table_operations = self._connector.tableOps(self._table)
+
+
+    def list_tables(self):
+        return self._connector.tableInfo().list_tables()
 
 
     def set_authorizations(self,auths):
