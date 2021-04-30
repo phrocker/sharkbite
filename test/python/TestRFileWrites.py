@@ -27,17 +27,17 @@ class TestRFileWrites(TestRunner):
 
 		print ("Opening ",dll)
 		py = cdll.LoadLibrary(dll)
-		import sharkbite
+		import pysharkbite
 
 	def writerfile(self):
 
-		import sharkbite
-		rfile = sharkbite.RFileOperations.openForWrite("blah.rf")
+		import pysharkbite
+		rfile = pysharkbite.RFileOperations.openForWrite("blah.rf")
 
 		for x in range(1000):
-			key = sharkbite.Key(row=str("row" + str(x)))
-			value = sharkbite.Value()
-			kv = sharkbite.KeyValue(key,value)
+			key = pysharkbite.Key(row=str("row" + str(x)))
+			value = pysharkbite.Value()
+			kv = pysharkbite.KeyValue(key,value)
 			rfile.append(kv)
 		
 		rfile.close()
@@ -45,17 +45,17 @@ class TestRFileWrites(TestRunner):
 	
 	def mthd(self):
 		
-		import sharkbite
+		import pysharkbite
 		
-		sharkbite.LoggingConfiguration.enableTraceLogger()
+		pysharkbite.LoggingConfiguration.enableTraceLogger()
 
 		self.writerfile()
 		
-		readrfile = sharkbite.RFileOperations.sequentialRead("blah.rf")
+		readrfile = pysharkbite.RFileOperations.sequentialRead("blah.rf")
 
-		accrange = sharkbite.Range()
+		accrange = pysharkbite.Range()
 
-		seekable = sharkbite.Seekable(accrange)
+		seekable = pysharkbite.Seekable(accrange)
 		readrfile.seek( seekable)
 		i = 0
 		while readrfile.hasNext():

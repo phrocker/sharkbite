@@ -8,7 +8,7 @@ class TestWrites(TestRunner):
 	
 	def mthd(self):
 	
-		import sharkbite
+		import pysharkbite
 		
 		tableOperations = super().getTableOperations()
 			
@@ -19,7 +19,7 @@ class TestWrites(TestRunner):
 		    print ("Table already exists, so not creating it")  
 		
 		
-		auths = sharkbite.Authorizations()
+		auths = pysharkbite.Authorizations()
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 		
@@ -32,7 +32,7 @@ class TestWrites(TestRunner):
 		
 		writer = tableOperations.createWriter(auths, 10)
 		
-		mutation = sharkbite.Mutation("row2");    
+		mutation = pysharkbite.Mutation("row2");    
 		
 		mutation.put("cf","cq","blah1",1569786960, "value")
 		mutation.put("cf2","cq2","blah1",1569786960, "value2")
@@ -45,21 +45,21 @@ class TestWrites(TestRunner):
 		
 		print("written")
 		
-		auths = sharkbite.Authorizations()
+		auths = pysharkbite.Authorizations()
 		
 		auths.addAuthorization("blah1")
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
-		startKey = sharkbite.Key()
+		startKey = pysharkbite.Key()
 		
-		endKey = sharkbite.Key()
+		endKey = pysharkbite.Key()
 		
 		startKey.setRow("row")
 		
 		endKey.setRow("row3")
 		
-		range = sharkbite.Range(startKey,True,endKey,False)
+		range = pysharkbite.Range(startKey,True,endKey,False)
 		
 		scanner.addRange( range )
 		

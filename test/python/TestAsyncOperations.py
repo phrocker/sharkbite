@@ -9,7 +9,7 @@ class TestAsync(TestRunner):
 	
 	
 	async def testasync(self,connector,table):
-		import sharkbite
+		import pysharkbite
 		tableOperations = connector.tableOps(table)
 		
 		if not tableOperations.exists(False):
@@ -19,7 +19,7 @@ class TestAsync(TestRunner):
 		    print ("Table already exists, so not creating it")  
 		
 		
-		auths = sharkbite.Authorizations()
+		auths = pysharkbite.Authorizations()
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 		
@@ -32,7 +32,7 @@ class TestAsync(TestRunner):
 		
 		writer = tableOperations.createWriter(auths, 10)
 		
-		mutation = sharkbite.Mutation("row2");    
+		mutation = pysharkbite.Mutation("row2");    
 		
 		mutation.put("cf","cq","blah1",1569786960, "value")
 		mutation.put("cf2","cq2","blah1",1569786960, "value2")
@@ -45,22 +45,22 @@ class TestAsync(TestRunner):
 		
 		print("written")
 		
-		auths = sharkbite.Authorizations()
+		auths = pysharkbite.Authorizations()
 		
 		auths.addAuthorization("blah1")
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
-		startKey = sharkbite.Key()
+		startKey = pysharkbite.Key()
 		
-		endKey = sharkbite.Key()
+		endKey = pysharkbite.Key()
 		
 		startKey.setRow("row")
 		
 		endKey.setRow("row3")
 		
 		# test single range
-		range = sharkbite.Range("row2")
+		range = pysharkbite.Range("row2")
 		
 		scanner.addRange( range )
 		
@@ -78,7 +78,7 @@ class TestAsync(TestRunner):
 				print("Unexpected column cf3")
 				sys.exit(1)
 		    
-		range = sharkbite.Range("row1",True,"row1.5",True)
+		range = pysharkbite.Range("row1",True,"row1.5",True)
 		
 		scanner.addRange( range )
 		
@@ -89,7 +89,7 @@ class TestAsync(TestRunner):
 			sys.exit(1)
 		    
 		# test single range
-		range = sharkbite.Range("row",False,"row3",True)
+		range = pysharkbite.Range("row",False,"row3",True)
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
@@ -116,7 +116,7 @@ class TestAsync(TestRunner):
 			
 		
 		# test infinite range
-		range = sharkbite.Range("",False,"row3",True)
+		range = pysharkbite.Range("",False,"row3",True)
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
@@ -141,9 +141,9 @@ class TestAsync(TestRunner):
 			print("Expected results")
 			sys.exit(1)
 			
-		startKey = sharkbite.Key("row3")
+		startKey = pysharkbite.Key("row3")
 			
-		range = sharkbite.Range(None,False,startKey,True)
+		range = pysharkbite.Range(None,False,startKey,True)
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
@@ -175,7 +175,7 @@ class TestAsync(TestRunner):
 
 	async def mthd(self):
 	
-		import sharkbite
+		import pysharkbite
 	
 		await self.testasync(self.getConnector(),self.getTable()+"a")
 		await self.testasync(self.getConnector(),self.getTable()+"b")

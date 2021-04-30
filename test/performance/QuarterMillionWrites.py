@@ -8,7 +8,7 @@ class TestWrites(TestRunner):
 
 	def mthd(self):
 
-		import sharkbite
+		import pysharkbite
 
 		tableOperations = super().getTableOperations()
 
@@ -26,7 +26,7 @@ class TestWrites(TestRunner):
 		splits = {"row","row5","row9", "sow"}
 		tableOperations.addSplits(splits)
 
-		auths = sharkbite.Authorizations()
+		auths = pysharkbite.Authorizations()
 
 		""" Add authorizations """
 		""" mutation.put("cf","cq","cv",1569786960) """
@@ -36,7 +36,7 @@ class TestWrites(TestRunner):
 		rng = range(0,500)
 		for i in rng:
 			row = ("row%i" % (i+5))
-			mutation = sharkbite.Mutation(row);
+			mutation = pysharkbite.Mutation(row);
 			rng2 = range(0,100)
 			for j in rng:
 				mutation.put("cf%i" % j ,"cq","",1569786960, "value")
@@ -53,7 +53,7 @@ class TestWrites(TestRunner):
 
 		time.sleep(1)
 
-		accumuloRange = sharkbite.Range("a",True,"sow",False)
+		accumuloRange = pysharkbite.Range("a",True,"sow",False)
 
 		scanner.addRange( accumuloRange )
 

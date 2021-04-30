@@ -61,8 +61,8 @@ class TestRunner(object):
 
                 print ("Opening ",dll)
                 py = cdll.LoadLibrary(dll)
-                import sharkbite
-                self._conf = sharkbite.Configuration()
+                import pysharkbite
+                self._conf = pysharkbite.Configuration()
                 self._conf.set ("FILE_SYSTEM_ROOT", "/accumulo")
                 self._instance=args.instance
                 self._password=password
@@ -73,11 +73,11 @@ class TestRunner(object):
                 print("created connector")
 
         def inity(self,replace=False):
-                import sharkbite
-                self._zk = sharkbite.ZookeeperInstance(self._instance, self._zks, 1000, self._conf)
-                self._user = sharkbite.AuthInfo(self._username, self._password, self._zk.getInstanceId())
+                import pysharkbite
+                self._zk = pysharkbite.ZookeeperInstance(self._instance, self._zks, 1000, self._conf)
+                self._user = pysharkbite.AuthInfo(self._username, self._password, self._zk.getInstanceId())
                 if replace == True :
-                  self._connector = sharkbite.AccumuloConnector(self._user, self._zk)
+                  self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
                   self._tableOperations = self._connector.tableOps(self._table)
                   self._securityOperations = self._connector.securityOps()
 
