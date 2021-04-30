@@ -8,8 +8,8 @@ class TestWrites(TestRunner):
 
 	def mthd(self):
 
-		import pysharkbite
-		pysharkbite.LoggingConfiguration.enableTraceLogger()
+		import sharkbite
+		sharkbite.LoggingConfiguration.enableTraceLogger()
 
 		tableOperations = super().getTableOperations()
 
@@ -20,7 +20,7 @@ class TestWrites(TestRunner):
 		    print ("Table already exists, so not creating it")
 
 
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 
@@ -33,7 +33,7 @@ class TestWrites(TestRunner):
 
 		writer = tableOperations.createWriter(auths, 10)
 
-		mutation = pysharkbite.Mutation("row2");
+		mutation = sharkbite.Mutation("row2");
 
 		mutation.put("cf","cq","blah1",1569786960, "value")
 		mutation.put("cf2","cq2","blah1",1569786960, "value2")
@@ -46,24 +46,24 @@ class TestWrites(TestRunner):
 
 		print("written")
 
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 
 		auths.addAuthorization("blah1")
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(sharkbite.ScannerOptions.HedgedReads)
 
-		startKey = pysharkbite.Key()
+		startKey = sharkbite.Key()
 
-		endKey = pysharkbite.Key()
+		endKey = sharkbite.Key()
 
 		startKey.setRow("row")
 
 		endKey.setRow("row3")
 
 		# test single range
-		range = pysharkbite.Range("row2")
+		range = sharkbite.Range("row2")
 
 		scanner.addRange( range )
 
@@ -81,7 +81,7 @@ class TestWrites(TestRunner):
 				print("Unexpected column cf3")
 				sys.exit(1)
 
-		range = pysharkbite.Range("row1",True,"row1.5",True)
+		range = sharkbite.Range("row1",True,"row1.5",True)
 
 		scanner.addRange( range )
 
@@ -92,11 +92,11 @@ class TestWrites(TestRunner):
 			sys.exit(1)
 
 		# test single range
-		range = pysharkbite.Range("row",False,"row3",True)
+		range = sharkbite.Range("row",False,"row3",True)
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(sharkbite.ScannerOptions.HedgedReads)
 
 		scanner.addRange( range )
 
@@ -122,13 +122,13 @@ class TestWrites(TestRunner):
 
 
 		# test infinite range
-		range = pysharkbite.Range("",False,"row3",True)
+		range = sharkbite.Range("",False,"row3",True)
 
 		scanner = tableOperations.createScanner(auths, 2)
 
 		scanner.addRange( range )
 
-#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(sharkbite.ScannerOptions.HedgedReads)
 
 		resultset = scanner.getResultSet()
 
@@ -149,13 +149,13 @@ class TestWrites(TestRunner):
 			print("Expected results")
 			sys.exit(1)
 
-		startKey = pysharkbite.Key("row3")
+		startKey = sharkbite.Key("row3")
 
-		range = pysharkbite.Range(None,False,startKey,True)
+		range = sharkbite.Range(None,False,startKey,True)
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-#		scanner.setOption(pysharkbite.ScannerOptions.HedgedReads)
+#		scanner.setOption(sharkbite.ScannerOptions.HedgedReads)
 
 		scanner.addRange( range )
 

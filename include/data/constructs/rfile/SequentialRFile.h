@@ -190,7 +190,7 @@ class SequentialRFile : public cclient::data::HeapIterator, public std::enable_s
 
   }
 
-  void relocate(cclient::data::streams::StreamRelocation *location) {
+  void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
     lgCache = cclient::data::LocalityGroupIterator::relocate(shared_from_this(),lgContext.get(),location,lgCache);
 
   }
@@ -213,7 +213,7 @@ class SequentialRFile : public cclient::data::HeapIterator, public std::enable_s
     }
   }
 
-  std::vector<std::shared_ptr<cclient::data::Key>> getBlocks(cclient::data::streams::StreamRelocation *location);
+  std::vector<std::shared_ptr<cclient::data::Key>> getBlocks(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location);
 
   virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++() override;
 

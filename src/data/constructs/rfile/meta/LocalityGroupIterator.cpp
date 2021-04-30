@@ -24,7 +24,7 @@ namespace data {
 
 std::shared_ptr<LocalityGroupSeekCache> LocalityGroupIterator::relocate(
     const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext,
-    cclient::data::streams::StreamRelocation *location,
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &location,
     const std::shared_ptr<LocalityGroupSeekCache> &lgSeekCache) {
   // determine if the arguments have changed since the last time
   bool sameArgs = false;
@@ -45,9 +45,9 @@ std::shared_ptr<LocalityGroupSeekCache> LocalityGroupIterator::relocate(
     hiter->clear();
     for (auto &lgr : lgSeekCache->lastUsed) {
       std::vector<std::string> empty_cf;
-      cclient::data::streams::StreamSeekable new_relocation(
+      auto new_relocation = std::make_shared<cclient::data::streams::StreamSeekable>(
           location->getRange(), empty_cf, location->getAuths(), false);
-      lgr->getIterator()->relocate(&new_relocation);
+      lgr->getIterator()->relocate(new_relocation);
       hiter->addSource(lgr->getIterator());
     }
   } else {  // otherwise capture the parameters, and use the static seek method
@@ -62,7 +62,7 @@ std::shared_ptr<LocalityGroupSeekCache> LocalityGroupIterator::relocate(
 
 std::vector<std::shared_ptr<LocalityGroup>> LocalityGroupIterator::_relocate(
     const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext,
-    cclient::data::streams::StreamRelocation *location) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
   hiter->clear();
 
   std::set<std::string> cfSet;
@@ -129,11 +129,10 @@ std::vector<std::shared_ptr<LocalityGroup>> LocalityGroupIterator::_relocate(
     }
   }
   std::vector<std::string> empty_cf;
-  cclient::data::streams::StreamSeekable new_relocation(
+  auto new_relocation = std::make_shared<cclient::data::streams::StreamSeekable>(
       location->getRange(), empty_cf, location->getAuths(), false);
-  // lgr->getIterator().relocate(&new_relocation);
   for (const auto &lgr : groups) {
-    lgr->getIterator()->relocate(&new_relocation);
+    lgr->getIterator()->relocate(new_relocation);
     hiter->addSource(lgr->getIterator());
   }
 

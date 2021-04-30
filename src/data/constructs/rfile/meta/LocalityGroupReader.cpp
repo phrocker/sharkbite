@@ -23,7 +23,7 @@ namespace data {
 
 std::vector<std::shared_ptr<cclient::data::Key>>
 LocalityGroupReader::getBlockKeys(
-    cclient::data::streams::StreamRelocation *position) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &position) {
   if (closed) {
     throw cclient::exceptions::IllegalArgumentException(
         "Locality group reader closed");
@@ -62,7 +62,7 @@ LocalityGroupReader::getBlockKeys(
 }
 
 void LocalityGroupReader::seek(
-    cclient::data::streams::StreamRelocation *position) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &position) {
   if (closed) {
     throw cclient::exceptions::IllegalArgumentException(
         "Locality group reader closed");
@@ -77,6 +77,7 @@ void LocalityGroupReader::seek(
   }
 
   currentRange = position->getRange();
+  currentLocation = position;
 
   checkRange = true;
 
@@ -134,7 +135,7 @@ void LocalityGroupReader::seek(
       entriesLeft = indexEntry->getNumEntries();
 
       logging::LOG_TRACE(logger)
-          << "Index Entry is " << indexEntry->getKey() << " on " << startKey;
+          << "Index Entry is " << indexEntry->getKey()->toString() << " on " << startKey->toString();
 
       if (version == 3 || version == 4) {
         currentStream =
@@ -212,7 +213,7 @@ void LocalityGroupReader::seek(
   topExists = rKey != NULL && !currentRange->afterEndKey(getTopKey());
 
   if (topExists && readAheadEnabled && (nullptr != iiter && iiter->hasNext())) {
-    logging::LOG_TRACE(logger) << " Starting read ahead on " << getTopKey();
+    logging::LOG_TRACE(logger) << " Starting read ahead on " << getTopKey()->toString();
     startReadAhead();
   }
 
@@ -337,7 +338,7 @@ void LocalityGroupReader::f_next(bool errorOnNext) {
                                        indexEntry->getCompressedSize(),
                                        indexEntry->getRawSize());
         }
-        checkRange = !currentRange->afterEndKey(indexEntry->getKey());
+        checkRange = currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange) topExists = true;
       } else {
         rKey = 0;
@@ -388,7 +389,7 @@ void LocalityGroupReader::f_next(bool errorOnNext) {
                                        indexEntry->getCompressedSize(),
                                        indexEntry->getRawSize());
         }
-        checkRange = !currentRange->afterEndKey(indexEntry->getKey());
+        checkRange = currentRange->afterEndKey(indexEntry->getKey());
         if (!checkRange) topExists = true;
       } else {
         rKey = 0;

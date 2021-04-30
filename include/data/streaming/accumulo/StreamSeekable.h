@@ -66,7 +66,7 @@ class StreamSeekable : public StreamRelocation {
                           bool inclusive, uint32_t threads = 1,
                           uint32_t keysPerThread = 1000)
       : range(rng->getStartKey(), rng->getStartKeyInclusive(),
-              rng->getStopKey(), rng->getStartKeyInclusive()),
+              rng->getStopKey(), rng->getStopKeyInclusive()),
         columnFamilies(columnFamilies),
         inclusive(inclusive),
         auths(in_auths->getAuthorizations()),
@@ -97,11 +97,11 @@ class StreamSeekable : public StreamRelocation {
 class DelegatedStreamSeekable : public StreamRelocation {
  protected:
   std::shared_ptr<Range> range;
-  StreamRelocation *seekable;
+  std::shared_ptr<StreamRelocation> seekable;
 
  public:
   explicit DelegatedStreamSeekable(std::shared_ptr<Range> &rng,
-                                   StreamRelocation *ssk)
+                                   const std::shared_ptr<StreamRelocation> &ssk)
       : range(rng), seekable(ssk) {}
 
   virtual cclient::data::security::Authorizations *getAuths() override {

@@ -87,7 +87,7 @@ class ParallelRFile : public cclient::data::streams::StreamInterface, public ccl
 
   virtual ~ParallelRFile();
 
-  virtual void relocate(cclient::data::streams::StreamRelocation *location) override;
+  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) override;
 
   virtual void close() override;
 

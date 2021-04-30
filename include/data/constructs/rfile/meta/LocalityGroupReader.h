@@ -73,6 +73,7 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator, public 
   std::unique_ptr<cclient::data::streams::InputStream> currentStream;
   volatile bool interrupted = false;
   Range *currentRange;
+  std::shared_ptr<cclient::data::streams::StreamRelocation> currentLocation;
   std::shared_ptr<Key> prevKey;
   uint32_t entriesLeft;
   uint64_t entriesSkipped;
@@ -188,13 +189,13 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator, public 
 
   virtual bool hasNext() override { return topExists; }
 
-  void seek(cclient::data::streams::StreamRelocation *position);
+  void seek(const std::shared_ptr<cclient::data::streams::StreamRelocation> &position);
 
-  virtual void relocate(cclient::data::streams::StreamRelocation* location) override{
+  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) override{
     seek(location);
   }
 
-  std::vector<std::shared_ptr<cclient::data::Key>> getBlockKeys(cclient::data::streams::StreamRelocation *position);
+  std::vector<std::shared_ptr<cclient::data::Key>> getBlockKeys(const std::shared_ptr<cclient::data::streams::StreamRelocation> &position);
 
   void f_next(bool errorOnNext=true);
 

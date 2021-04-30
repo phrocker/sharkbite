@@ -131,7 +131,8 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
     cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(endstream, size);
     std::vector<std::string> cf;
     cclient::data::Range rng;
-    cclient::data::streams::StreamSeekable *seekable = new cclient::data::streams::StreamSeekable(rng, cf, false);
+    auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(rng, cf, false);
+
 
     newRFile->relocate(seekable);
     long count = 0;
@@ -154,7 +155,6 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
       std::cout << "Bytes accessed " << total_size << std::endl;
     }
 
-    delete seekable;
 
     delete endstream;
 

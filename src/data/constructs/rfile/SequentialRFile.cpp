@@ -293,7 +293,7 @@ void SequentialRFile::close() {
 }
 
 std::vector<std::shared_ptr<cclient::data::Key>> SequentialRFile::getBlocks(
-    cclient::data::streams::StreamRelocation *location) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
   std::vector<std::shared_ptr<cclient::data::Key>> blocks = {};
   if (nullptr != currentLocalityGroupReader) {
     blocks = currentLocalityGroupReader->getBlockKeys(location);

@@ -79,7 +79,7 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   HeapIterator& operator=(const HeapIterator &other) = default;
 
-  virtual void relocate(cclient::data::streams::StreamRelocation *location) override;
+  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) override;
 
   virtual std::shared_ptr<Key> getTopKey() override ;
 

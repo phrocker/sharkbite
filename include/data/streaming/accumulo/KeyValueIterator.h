@@ -38,7 +38,7 @@ class KeyValueIterator
 
   virtual bool hasNext() { return false; }
 
-  virtual void relocate(StreamRelocation* location) {}
+  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {}
 
   virtual DataStream* begin() { return this; }
 

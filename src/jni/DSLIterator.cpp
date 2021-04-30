@@ -118,8 +118,8 @@ Java_org_apache_accumulo_tserver_tablet_NativeCompactor_callCompact(
 
     cclient::data::security::Authorizations auths;
 
-    cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false);
-    multi_iter->relocate(&seekable);
+    auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(rng, cf, auths, false);
+    multi_iter->relocate(seekable);
     long count = 0;
     uint64_t total_size = 0;
     outStream->addLocalityGroup();

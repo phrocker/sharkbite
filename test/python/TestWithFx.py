@@ -8,11 +8,11 @@ class TestWrites(TestRunner):
 	
 	def mthd(self):
 	
-		import pysharkbite
+		import sharkbite
 		
 		securityOps = super().getSecurityOperations()
 
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 	
@@ -28,13 +28,13 @@ class TestWrites(TestRunner):
 		""" mutation.put("cf","cq","cv",1569786960) """
 		
 		with tableOperations.createWriter(auths, 10) as writer:
-			mutation = pysharkbite.Mutation("row2")
+			mutation = sharkbite.Mutation("row2")
 			mutation.put("cf","cq","blah1",1569786960, "value")
 			mutation.put("cf2","cq2","blah1",1569786960, "value2")
 			""" no value """
 			mutation.put("cf3","cq3","blah2",1569786960, "") 
 			writer.addMutation( mutation )
-			mutation = pysharkbite.Mutation("row4")
+			mutation = sharkbite.Mutation("row4")
 			mutation.put("cf","cq","blah1",1569786960, "value")
 			mutation.put("cf2","cq2","blah1",1569786960, "value2")
 			""" no value """
@@ -42,12 +42,12 @@ class TestWrites(TestRunner):
 			writer.addMutation( mutation )
 		
 		
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 		count=0
-		with tableOperations.createScanner(auths, 2).withRange(pysharkbite.Range("row",True,"row3",False)) as scanner:
+		with tableOperations.createScanner(auths, 2).withRange(sharkbite.Range("row",True,"row3",False)) as scanner:
 			resultset = scanner.getResultSet()
 			
 			for keyvalue in resultset:
@@ -60,7 +60,7 @@ class TestWrites(TestRunner):
 					assert( "value"  == value.get() )
 				if ("cf2" == key.getColumnFamily() ):
 					assert( "value2" == value.get() )
-		with tableOperations.createScanner(auths, 2).withRange(pysharkbite.Range("row4",True,"row5",False)) as scanner:
+		with tableOperations.createScanner(auths, 2).withRange(sharkbite.Range("row4",True,"row5",False)) as scanner:
 			resultset = scanner.getResultSet()
 			
 			for keyvalue in resultset:

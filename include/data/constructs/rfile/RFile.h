@@ -175,7 +175,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
 
   virtual bool hasNext();
 
-  virtual void relocate(cclient::data::streams::StreamRelocation *location) {
+  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
     if (!location->getAuths()->empty())
       currentLocalityGroupReader->limitVisibility(location->getAuths());
     currentLocalityGroupReader->seek(location);

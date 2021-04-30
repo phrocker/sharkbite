@@ -58,7 +58,7 @@ void ParallelRFile::stopExecutors() {
 }
 
 void ParallelRFile::relocate(
-    cclient::data::streams::StreamRelocation *location) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
   close();
   uint32_t number = location->getDesiredThreads();
   if (number == 0) number = 1;
@@ -160,7 +160,7 @@ void ParallelRFile::relocate(
         location->getRange()->getStopKey(),
         location->getRange()->getStopKeyInclusive()));
   }
-  assert(keys.size() == thread_readers.size() == number);
+  assert(keys.size() == thread_readers.size() && thread_readers.size() == number);
 
   for (uint32_t i = 0; i < number; i++) {
     thread_readers.at(i)->range =
@@ -227,7 +227,7 @@ void ParallelRFile::startDelegator() {
       }
 
       std::shared_ptr<ThreadReaders> my_reader = thread_readers.at(index);
-      my_reader->heapIter->relocate(my_reader->range.get());
+      my_reader->heapIter->relocate(my_reader->range);
       while (readersRunning && my_reader->heapIter->hasNext()) {
         while (readersRunning && !my_reader->resultSet.try_enqueue(
                                      my_reader->heapIter->getTop())) {

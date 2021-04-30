@@ -17,6 +17,7 @@
 #include "../streaming/Streams.h"
 #include "ObjectPool.h"
 #include "data/extern/fastmemcpy/FastMemCpy.h"
+#include "utils/StringUtils.h"
 #include "Text.h"
 #include <stdint.h>
 #include <ostream>
@@ -278,16 +279,17 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
 
   std::string toString() {
     std::string out;
-    out += getRowStr() + " ";
-    out += getColFamilyStr() + ":" + getColQualifierStr()+ " [";
+    out += utils::StringUtils::getEscapedString(getRowStr()) + " ";
+    out += utils::StringUtils::getEscapedString(getColFamilyStr()) + ":" + utils::StringUtils::getEscapedString(getColQualifierStr()) + " [";
     out += getColVisibilityStr() + "] " + std::to_string(getTimeStamp());
     return out;
   }
 
   friend inline std::ostream&
   operator <<(std::ostream &out, Key &rhs) {
-    out << rhs.getRowStr() << " ";
-    out << rhs.getColFamilyStr() << ":" << rhs.getColQualifierStr()+ " [";
+    
+    out << utils::StringUtils::getEscapedString(rhs.getRowStr()) << " ";
+    out << utils::StringUtils::getEscapedString(rhs.getColFamilyStr()) << ":" << utils::StringUtils::getEscapedString(rhs.getColQualifierStr())+ " [";
     out << rhs.getColVisibilityStr() << "] " << std::to_string(rhs.getTimeStamp());
     return out;
   }

@@ -103,11 +103,11 @@ explicit LocalityGroupContext(std::vector<std::shared_ptr<LocalityGroup>> groups
 class LocalityGroupIterator : public cclient::data::HeapIterator{
 public:
 
-    static std::shared_ptr<LocalityGroupSeekCache > relocate(const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext, cclient::data::streams::StreamRelocation *location, const std::shared_ptr<LocalityGroupSeekCache > &lgSeekCache );
+    static std::shared_ptr<LocalityGroupSeekCache > relocate(const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext, const std::shared_ptr<cclient::data::streams::StreamRelocation> &location, const std::shared_ptr<LocalityGroupSeekCache > &lgSeekCache );
 
 protected:
 
-    static std::vector<std::shared_ptr<LocalityGroup>> _relocate(const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext, cclient::data::streams::StreamRelocation *location);
+    static std::vector<std::shared_ptr<LocalityGroup>> _relocate(const std::shared_ptr<HeapIterator> &hiter, LocalityGroupContext *lgContext, const std::shared_ptr<cclient::data::streams::StreamRelocation> &location);
 
 };
 

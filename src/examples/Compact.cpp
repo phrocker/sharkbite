@@ -61,9 +61,9 @@ void compact(std::vector<std::string> &rfiles, uint32_t compressBlockSize, const
 
   cclient::data::security::Authorizations auths;
 
-  cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false);
+  auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(rng, cf, auths, false);
 
-  multi_iter->relocate(&seekable);
+  multi_iter->relocate(seekable);
   long count = 0;
   uint64_t total_size = 0;
   outStream->addLocalityGroup();

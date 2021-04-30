@@ -57,7 +57,7 @@ void findTop() {
       : HeapIterator(itrs, range), propogateDeletes(propogate) {
   }
 
-   virtual void relocate(cclient::data::streams::StreamRelocation *location) override {
+   virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) override {
     cclient::data::HeapIterator::relocate(location);
     findTop();
   }

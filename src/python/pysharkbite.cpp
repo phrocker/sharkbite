@@ -576,9 +576,9 @@ pybind11::class_<cclient::data::streams::KeyValueIterator, std::shared_ptr<cclie
     .def("mkdir",&cclient::data::hdfs::HdfsLink::mkdir, "Creates a directory on HDFS. Should be a relative path")
     .def("list",&cclient::data::hdfs::HdfsLink::list, "Lists HDFS directory, returns a list of HdfsDirEnt objects");
 
-    pybind11::class_<cclient::data::streams::StreamRelocation>(s, "StreamRelocation");
+    pybind11::class_<cclient::data::streams::StreamRelocation, std::shared_ptr<cclient::data::streams::StreamRelocation>>(s, "StreamRelocation");
 
-  pybind11::class_<cclient::data::streams::StreamSeekable, cclient::data::streams::StreamRelocation>(s, "Seekable")
+  pybind11::class_<cclient::data::streams::StreamSeekable, cclient::data::streams::StreamRelocation, std::shared_ptr<cclient::data::streams::StreamSeekable>>(s, "Seekable")
     .def(pybind11::init<cclient::data::Range&>())
     .def(pybind11::init<cclient::data::Range&,std::vector<std::string> &,bool>())
     .def("getRange",&cclient::data::streams::StreamSeekable::getRange, "Gets this seekable range")

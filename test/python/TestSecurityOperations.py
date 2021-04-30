@@ -8,21 +8,21 @@ class TestWrites(TestRunner):
 	
 	def mthd(self):
 	
-		import pysharkbite
+		import sharkbite
 		
 		securityOps = super().getSecurityOperations()
 
 		securityOps.create_user("testUser","password")
 		## validate that we DON'T see the permissions
 		
-		assert( False == securityOps.has_system_permission("testUser",pysharkbite.SystemPermissions.CREATE_TABLE) )
-		securityOps.grant_system_permission("testUser",pysharkbite.SystemPermissions.CREATE_TABLE )
-		securityOps.grant_system_permission("testUser",pysharkbite.SystemPermissions.DROP_TABLE )
+		assert( False == securityOps.has_system_permission("testUser",sharkbite.SystemPermissions.CREATE_TABLE) )
+		securityOps.grant_system_permission("testUser",sharkbite.SystemPermissions.CREATE_TABLE )
+		securityOps.grant_system_permission("testUser",sharkbite.SystemPermissions.DROP_TABLE )
 		## validate that we DO see the permissions
 		
-		assert( True == securityOps.has_system_permission("testUser",pysharkbite.SystemPermissions.CREATE_TABLE) )
+		assert( True == securityOps.has_system_permission("testUser",sharkbite.SystemPermissions.CREATE_TABLE) )
 		
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		auths.addAuthorization("blah1")
 		auths.addAuthorization("blah2")
 		
@@ -35,9 +35,9 @@ class TestWrites(TestRunner):
 		## validate that we DO see the permissions
 
 
-		securityOps.grant_table_permission("testUser",super().getTable(),pysharkbite.TablePermissions.READ )
-		securityOps.grant_table_permission("testUser",super().getTable(),pysharkbite.TablePermissions.WRITE )
-		securityOps.grant_table_permission("testUser",super().getTable(),pysharkbite.TablePermissions.DROP_TABLE )
+		securityOps.grant_table_permission("testUser",super().getTable(),sharkbite.TablePermissions.READ )
+		securityOps.grant_table_permission("testUser",super().getTable(),sharkbite.TablePermissions.WRITE )
+		securityOps.grant_table_permission("testUser",super().getTable(),sharkbite.TablePermissions.DROP_TABLE )
 
 
 		super().setUser("testUser","password")
@@ -53,7 +53,7 @@ class TestWrites(TestRunner):
 		""" mutation.put("cf","cq","cv",1569786960) """
 		
 		with tableOperations.createWriter(auths, 10) as writer:
-			mutation = pysharkbite.Mutation("row2")
+			mutation = sharkbite.Mutation("row2")
 			mutation.put("cf","cq","blah1",1569786960, "value")
 			mutation.put("cf2","cq2","blah1",1569786960, "value2")
 			""" no value """
@@ -61,21 +61,21 @@ class TestWrites(TestRunner):
 			writer.addMutation( mutation )
 		
 		
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		
 		auths.addAuthorization("blah1")
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
-		startKey = pysharkbite.Key()
+		startKey = sharkbite.Key()
 		
-		endKey = pysharkbite.Key()
+		endKey = sharkbite.Key()
 		
 		startKey.setRow("row")
 		
 		endKey.setRow("row3")
 		
-		range = pysharkbite.Range(startKey,True,endKey,False)
+		range = sharkbite.Range(startKey,True,endKey,False)
 		
 		scanner.addRange( range )
 		
@@ -112,7 +112,7 @@ class TestWrites(TestRunner):
 			super().inity(replace=True)
 			print("Expected failure when setting user")
 			sys.exit(1)
-		except pysharkbite.ClientException:
+		except sharkbite.ClientException:
 			print("caught expected exception")
 			pass
 

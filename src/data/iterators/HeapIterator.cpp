@@ -17,7 +17,7 @@ namespace cclient {
 namespace data {
 
 void HeapIterator::relocate(
-    cclient::data::streams::StreamRelocation *location) {
+    const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) {
   for (auto &itr : iterators) {
     itr->relocate(location);
     addSource(itr);

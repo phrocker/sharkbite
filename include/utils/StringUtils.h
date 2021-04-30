@@ -259,6 +259,8 @@ class StringUtils {
   static std::string replaceMap(
       std::string source_string,
       const std::map<std::string, std::string>& replace_map);
+
+  static std::string getEscapedString(std::string const& s);
 };
 
 } /* namespace utils */

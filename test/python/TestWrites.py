@@ -7,7 +7,7 @@ class TestWrites(TestRunner):
 	
 	def mthd(self):
 	
-		import pysharkbite
+		import sharkbite
 
 		
 		tableOperations = super().getTableOperations()
@@ -20,7 +20,7 @@ class TestWrites(TestRunner):
 		    print ("Table already exists, so not creating it")  
 		
 		
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 		
 		""" Add authorizations """ 
 		""" mutation.put("cf","cq","cv",1569786960) """
@@ -28,7 +28,7 @@ class TestWrites(TestRunner):
 		
 		writer = tableOperations.createWriter(auths, 10)
 		
-		mutation = pysharkbite.Mutation("sow2");    
+		mutation = sharkbite.Mutation("sow2");    
 		
 		mutation.put("cf","cq","",1569786960, "value")
 		mutation.put("cf2","cq2","",1569786960, "value2")
@@ -44,7 +44,7 @@ class TestWrites(TestRunner):
 		rng = range(0,1000)
 		for i in rng:
 			row = ("row%i" % (i+5))
-			mutation = pysharkbite.Mutation(row);    
+			mutation = sharkbite.Mutation(row);    
 			mutation.put("cf","cq","",1569786960, "value")
 			writer.addMutation(mutation)
 			
@@ -56,15 +56,15 @@ class TestWrites(TestRunner):
 		
 		scanner = tableOperations.createScanner(auths, 2)
 		
-		startKey = pysharkbite.Key()
+		startKey = sharkbite.Key()
 		
-		endKey = pysharkbite.Key()
+		endKey = sharkbite.Key()
 		
 		startKey.setRow("sow")
 		
 		endKey.setRow("sow3")
 		
-		accumuloRange = pysharkbite.Range(startKey,True,endKey,False)
+		accumuloRange = sharkbite.Range(startKey,True,endKey,False)
 		
 		scanner.addRange( accumuloRange )
 		
@@ -84,7 +84,7 @@ class TestWrites(TestRunner):
 		  
 		scanner = tableOperations.createScanner(auths, 2)   
 		
-		accumuloRange = pysharkbite.Range("row",True,"",False)
+		accumuloRange = sharkbite.Range("row",True,"",False)
 		
 		scanner.addRange( accumuloRange )
 		

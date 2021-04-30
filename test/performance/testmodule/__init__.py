@@ -63,17 +63,17 @@ class TestRunner(object):
 		print ("Opening ",dll)
 		py = cdll.LoadLibrary(dll)
 		
-		import pysharkbite
+		import sharkbite
 		
-		self._conf = pysharkbite.Configuration()
+		self._conf = sharkbite.Configuration()
 		
 		self._conf.set ("FILE_SYSTEM_ROOT", "/accumulo");
 		
-		self._zk = pysharkbite.ZookeeperInstance(args.instance, args.zookeepers, 2000, self._conf)
+		self._zk = sharkbite.ZookeeperInstance(args.instance, args.zookeepers, 2000, self._conf)
 		
-		self._user = pysharkbite.AuthInfo(args.username, password, self._zk.getInstanceId()) 
+		self._user = sharkbite.AuthInfo(args.username, password, self._zk.getInstanceId()) 
 		
-		self._connector = pysharkbite.AccumuloConnector(self._user, self._zk)
+		self._connector = sharkbite.AccumuloConnector(self._user, self._zk)
 		
 		self._tableOperations = self._connector.tableOps(self._table)
 		

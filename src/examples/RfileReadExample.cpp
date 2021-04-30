@@ -133,8 +133,7 @@ std::string cq_nonpredicate) {
 
   std::shared_ptr<cclient::data::streams::KeyValueIterator> multi_iter = nullptr;
   std::vector<std::string> cf;
-  //std::shared_ptr<cclient::data::Key> key = std::make_shared<cclient::data::Key>("20200131_120", "fi\u0000LATITUDE","43.63\u0000iotsim\u0000");
-  //std::shared_ptr<cclient::data::Key> key = std::make_shared<cclient::data::Key>("20200131_120", std::string("fi\0LATITUDE",11),std::string("43.63\0iotsim",12));
+
   cclient::data::Range rng; // (key,false);
 
   if (threads > 1 && (rng.getInfiniteStartKey() && rng.getInfiniteStopKey())){
@@ -150,11 +149,11 @@ std::string cq_nonpredicate) {
     auths.addAuthorization(visibility);
   }
 
-  cclient::data::streams::StreamSeekable seekable(rng, cf, auths, false,10000);
+  auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(rng, cf, auths, false,10000);
   if (threads > 1 && (rng.getInfiniteStartKey() && rng.getInfiniteStopKey())){
-    seekable.setThreads(threads);
+    seekable->setThreads(threads);
   }
-  multi_iter->relocate(&seekable);
+  multi_iter->relocate(seekable);
   long count = 0;
   uint64_t total_size = 0;
   // break with control+c 

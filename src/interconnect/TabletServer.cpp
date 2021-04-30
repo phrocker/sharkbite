@@ -290,9 +290,9 @@ Scan *ServerInterconnect::hedgedScan(
         auto multi_iter = cclient::data::RFileOperations::openManySequential(
             locations, maxVersion);
         std::vector<std::string> cols;
-        cclient::data::streams::StreamSeekable seekable(*range, cols, *auths,
+        auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(*range, cols, *auths,
                                                         false);
-        multi_iter->relocate(&seekable);
+        multi_iter->relocate(seekable);
         int count = 0;
         std::vector<std::shared_ptr<cclient::data::KeyValue>> res;
         Scan *newScan = new Scan(isRunning);

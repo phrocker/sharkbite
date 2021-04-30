@@ -7,7 +7,7 @@ class TestWrites(TestRunner):
 
 	def mthd(self):
 
-		import pysharkbite
+		import sharkbite
 
 
 		tableOperations = super().getTableOperations()
@@ -20,7 +20,7 @@ class TestWrites(TestRunner):
 		    print ("Table already exists, so not creating it")
 
 
-		auths = pysharkbite.Authorizations()
+		auths = sharkbite.Authorizations()
 
 		""" Add authorizations """
 		""" mutation.put("cf","cq","cv",1569786960) """
@@ -28,7 +28,7 @@ class TestWrites(TestRunner):
 
 		writer = tableOperations.createWriter(auths, 10)
 
-		mutation = pysharkbite.Mutation("sow2");
+		mutation = sharkbite.Mutation("sow2");
 
 		mutation.put("cf","cq","",1569786960, "value")
 		mutation.put("cf2","cq","",1569786960, "value")
@@ -44,7 +44,7 @@ class TestWrites(TestRunner):
 		rng = range(0,1000)
 		for i in rng:
 			row = ("row%i" % (i+5))
-			mutation = pysharkbite.Mutation(row);
+			mutation = sharkbite.Mutation(row);
 			mutation.put("cf","cq","",1569786960, "value")
 			writer.addMutation(mutation)
 
@@ -56,11 +56,11 @@ class TestWrites(TestRunner):
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-		accumuloRange = pysharkbite.Range("sow",True,"sow3",False)
+		accumuloRange = sharkbite.Range("sow",True,"sow3",False)
 
 		scanner.addRange( accumuloRange )
 
-		iterator = pysharkbite.PythonIterator("PythonIterator",100)
+		iterator = sharkbite.PythonIterator("PythonIterator",100)
 		iterator = iterator.onNext("lambda x : KeyValue( Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()), Value()) ")
 		scanner.addIterator(iterator)
 
@@ -77,11 +77,11 @@ class TestWrites(TestRunner):
 
 		scanner = tableOperations.createScanner(auths, 2)
 
-		accumuloRange = pysharkbite.Range("sow",True,"sow3",False)
+		accumuloRange = sharkbite.Range("sow",True,"sow3",False)
 
 		scanner.addRange( accumuloRange )
 
-		iterator = pysharkbite.PythonIterator("PythonIterator",100)
+		iterator = sharkbite.PythonIterator("PythonIterator",100)
 		iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), x.getKey().getColumnFamily(), 'new cq') ")
 		scanner.addIterator(iterator)
 

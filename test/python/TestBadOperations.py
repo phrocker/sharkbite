@@ -10,7 +10,7 @@ class TestWrites(TestRunner):
 	
 	def mthd(self):
 	
-		import pysharkbite
+		import sharkbite
 
 		
 		tableOperations = super().getTableOperations()
@@ -25,7 +25,7 @@ class TestWrites(TestRunner):
 			    print ("Table already exists, so not creating it")  
 			
 			
-			auths = pysharkbite.Authorizations()
+			auths = sharkbite.Authorizations()
 			
 			""" Add authorizations """ 
 			""" mutation.put("cf","cq","cv",1569786960) """
@@ -36,7 +36,7 @@ class TestWrites(TestRunner):
 			
 			writer = tableOperations.createWriter(auths, 10)
 			
-			mutation = pysharkbite.Mutation("sow2");    
+			mutation = sharkbite.Mutation("sow2");    
 			
 			mutation.put("cf","cq","",1569786960, "value")
 			mutation.put("cf2","cq2","",1569786960, "value2")
@@ -52,7 +52,7 @@ class TestWrites(TestRunner):
 			rng = range(0,1000)
 			for i in rng:
 				row = ("row%i" % (i+5))
-				mutation = pysharkbite.Mutation(row);    
+				mutation = sharkbite.Mutation(row);    
 				mutation.put("cf","cq","",1569786960, "value")
 				writer.addMutation(mutation)
 				
@@ -60,12 +60,12 @@ class TestWrites(TestRunner):
 			
 			print("Table not removed")
 			sys.exit(1)
-		except (pysharkbite.ClientException, RuntimeError, TypeError, NameError):
+		except (sharkbite.ClientException, RuntimeError, TypeError, NameError):
 			print("Table successfully removed")
 			# this is okay
 			pass
 		try:
-			testzk = pysharkbite.ZookeeperInstance(None, None, 1000, None)
+			testzk = sharkbite.ZookeeperInstance(None, None, 1000, None)
 			print("Table not removed")
 			sys.exit(1)
 		except (RuntimeError, TypeError, NameError):
@@ -76,7 +76,7 @@ class TestWrites(TestRunner):
 			writer = tableOperations.createWriter(None, 10)
 			print("Expected error passing None")
 			sys.exit(1)
-		except (pysharkbite.ClientException,RuntimeError, TypeError, NameError):
+		except (sharkbite.ClientException,RuntimeError, TypeError, NameError):
 			print("Caught expected error on write")
 			# this is okay
 		
@@ -86,12 +86,12 @@ class TestWrites(TestRunner):
 			super().setUser("roots","secret")
 			super().inity(replace=True)
 
-			auths = pysharkbite.Authorizations()
+			auths = sharkbite.Authorizations()
 
 			writer = tableOperations.createWriter(auths, 10)
 			print("Expected error passing None")
 			sys.exit(1)
-		except (pysharkbite.ClientException,RuntimeError, TypeError, NameError):
+		except (sharkbite.ClientException,RuntimeError, TypeError, NameError):
 			print("Caught expected error on write")
 			# this is okay
 

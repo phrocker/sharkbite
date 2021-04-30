@@ -18,6 +18,7 @@
 #include "data/exceptions/IllegalArgumentException.h"
 #include "Key.h"
 #include <memory>
+#include <stdbool.h>
 namespace cclient {
 namespace data {
 
