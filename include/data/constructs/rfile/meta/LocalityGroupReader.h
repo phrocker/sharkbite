@@ -44,6 +44,7 @@
 #include "data/constructs/predicates/key/KeyPredicates.h"
 #include "logging/Logger.h"
 #include "logging/LoggerConfiguration.h"
+#include "LocalityGroupIterator.h"
 
 namespace cclient {
 namespace data {
@@ -57,7 +58,7 @@ struct ReadAheadProxy {
   std::atomic<bool> interrupt;
 };
 
-class LocalityGroupReader : public cclient::data::streams::FileIterator {
+class LocalityGroupReader : public cclient::data::streams::FileIterator, public cclient::data::LocalityGroup, public std::enable_shared_from_this<LocalityGroupReader> {
  private:
   std::shared_ptr<logging::Logger> logger;
  protected:
@@ -67,11 +68,11 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
   int version;
   volatile bool closed;
   bool checkRange;
+  std::shared_ptr<SerializedIndex> iiter;
   volatile bool topExists = false;
   std::unique_ptr<cclient::data::streams::InputStream> currentStream;
   volatile bool interrupted = false;
   Range *currentRange;
-  std::shared_ptr<SerializedIndex> iiter;
   std::shared_ptr<Key> prevKey;
   uint32_t entriesLeft;
   uint64_t entriesSkipped;
@@ -104,10 +105,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
 
   void startReadAhead();
 
-  void close();
+  
 
  public:
-  explicit LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, LocalityGroupMetaData *metadata, cclient::data::ArrayAllocatorPool *allocatorInstancePtr,int version)
+  explicit LocalityGroupReader(BlockCompressedFile *bcFile, cclient::data::streams::InputStream *input_stream, std::shared_ptr<LocalityGroupMetaData> metadata, cclient::data::ArrayAllocatorPool *allocatorInstancePtr,int version)
       :
       logger(logging::LoggerFactory<LocalityGroupReader>::getLogger()),
       bcFile(bcFile),
@@ -127,15 +128,19 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
       entriesSkipped(0),
       allocatorInstance(allocatorInstancePtr) {
     index = metadata->getIndexManager();
+    defaultGroup = metadata->getIsDefaultLG();
     firstKey = std::dynamic_pointer_cast<Key>(metadata->getFirstKey());
     startBlock = metadata->getStartBlock();
     blockCount = index->getSize();
     rKey = NULL;
   }
 
+  void close();
+
   virtual ~LocalityGroupReader() {
     close();
   }
+
 
   void enableReadAhead() {
     readAheadEnabled = true;
@@ -161,6 +166,10 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     return val;
   }
 
+  virtual std::shared_ptr<cclient::data::streams::KeyValueIterator> getIterator() override {
+        return std::dynamic_pointer_cast<cclient::data::streams::KeyValueIterator>(shared_from_this());    
+    }
+
   void limitVisibility(cclient::data::security::Authorizations *auths) {
     this->auths = *auths;
   }
@@ -177,11 +186,21 @@ class LocalityGroupReader : public cclient::data::streams::FileIterator {
     return topExists;
   }
 
+  virtual bool hasNext() override { return topExists; }
+
   void seek(cclient::data::streams::StreamRelocation *position);
+
+  virtual void relocate(cclient::data::streams::StreamRelocation* location) override{
+    seek(location);
+  }
 
   std::vector<std::shared_ptr<cclient::data::Key>> getBlockKeys(cclient::data::streams::StreamRelocation *position);
 
-  void next(bool errorOnNext=true);
+  void f_next(bool errorOnNext=true);
+
+  virtual void next() override{
+    f_next(true);
+  }
 
   std::unique_ptr<cclient::data::streams::InputStream> getDataBlock(uint32_t index);
 

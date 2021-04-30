@@ -19,19 +19,19 @@
 #include <set>
 #include <string>
 
-#include "scanner/impl/../../data/client/ExtentLocator.h"
-#include "scanner/impl/../../data/client/LocatorCache.h"
-#include "scanner/impl/../../data/constructs/Key.h"
-#include "scanner/impl/../../data/constructs/client/zookeeperinstance.h"
-#include "scanner/impl/../../data/constructs/inputvalidation.h"
-#include "scanner/impl/../../data/constructs/security/AuthInfo.h"
-#include "scanner/impl/../../data/constructs/security/Authorizations.h"
-#include "scanner/impl/../../data/constructs/value.h"
-#include "scanner/impl/../../interconnect/ClientInterface.h"
-#include "scanner/impl/../../interconnect/tableOps/TableOperations.h"
-#include "scanner/impl/../Source.h"
-#include "scanner/impl/../constructs/Results.h"
-#include "scanner/impl/../constructs/ServerHeuristic.h"
+#include "data/client/ExtentLocator.h"
+#include "data/client/LocatorCache.h"
+#include "data/constructs/Key.h"
+#include "data/constructs/client/zookeeperinstance.h"
+#include "data/constructs/inputvalidation.h"
+#include "data/constructs/security/AuthInfo.h"
+#include "data/constructs/security/Authorizations.h"
+#include "data/constructs/value.h"
+#include "interconnect/ClientInterface.h"
+#include "interconnect/tableOps/TableOperations.h"
+#include "scanner/Source.h"
+#include "scanner/constructs/Results.h"
+#include "scanner/constructs/ServerHeuristic.h"
 #include "utils/StringUtils.h"
 
 namespace scanners {

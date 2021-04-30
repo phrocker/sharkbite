@@ -25,7 +25,9 @@
 #include "../../streaming/Streams.h"
 #include "../../streaming/accumulo/KeyValueIterator.h"
 #include "../../streaming/input/InputStream.h"
+#include "data/iterators/HeapIterator.h"
 #include "../KeyValue.h"
+#include "meta/LocalityGroupIterator.h"
 // meta
 #include "meta/MetaBlock.h"
 #include "meta/LocalityGroupReader.h"
@@ -38,7 +40,7 @@
 namespace cclient {
 namespace data {
 
-class SequentialRFile : public cclient::data::streams::StreamInterface, public cclient::data::streams::KeyValueIterator {
+class SequentialRFile : public cclient::data::HeapIterator, public std::enable_shared_from_this<SequentialRFile> {
 
  public:
   /**
@@ -149,7 +151,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
    **/
   void addLocalityGroup(std::string name = "") {
     closeCurrentGroup();
-    LocalityGroupMetaData *group = new LocalityGroupMetaData(dataBlockCnt, name);
+    auto group = std::make_shared<LocalityGroupMetaData>(dataBlockCnt, name);
     currentLocalityGroup = group;
     dataBlockCnt++;
 
@@ -188,35 +190,30 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   }
 
-  bool hasNext();
-
   void relocate(cclient::data::streams::StreamRelocation *location) {
-    if (nullptr == currentLocalityGroupReader){
-      throw std::runtime_error("Must initialize RFile first.");
-    }
-    currentLocalityGroupReader->limitVisibility(location->getAuths());
-    currentLocalityGroupReader->setAgeOff(ageoff_evaluator);
-    currentLocalityGroupReader->seek(location);
+    lgCache = cclient::data::LocalityGroupIterator::relocate(shared_from_this(),lgContext.get(),location,lgCache);
+
   }
 
   void setAgeOff(const std::shared_ptr<cclient::data::AgeOffEvaluator> &evaluator){
     ageoff_evaluator=evaluator;
-    if (nullptr != currentLocalityGroupReader){
-      currentLocalityGroupReader->setAgeOff(ageoff_evaluator);
+    for(auto rdr : localityGroupReaders){
+      auto map = std::dynamic_pointer_cast<cclient::data::LocalityGroupReader>(rdr);
+      if (nullptr != map)
+        map->setAgeOff(ageoff_evaluator);      
     }
   }
 
   void setKeyPredicate(const std::shared_ptr<cclient::data::KeyPredicate> &predicate){
     key_predicate=predicate;
-    if (nullptr != currentLocalityGroupReader){
-      currentLocalityGroupReader->setKeyPredicate(key_predicate);
+    for(auto rdr : localityGroupReaders){
+      auto map = std::dynamic_pointer_cast<cclient::data::LocalityGroupReader>(rdr);
+      if (nullptr != map)
+        map->setKeyPredicate(key_predicate);      
     }
   }
 
   std::vector<std::shared_ptr<cclient::data::Key>> getBlocks(cclient::data::streams::StreamRelocation *location);
-
-  
-  void next();
 
   virtual DataStream<std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>* operator++() override;
 
@@ -241,14 +238,10 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
 
   virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*();
 
-  std::shared_ptr<Key> getTopKey();
-
-  std::shared_ptr<Value> getTopValue();
-
-  std::shared_ptr<cclient::data::KeyValue> getTop();
 
   virtual uint64_t getEntriesFiltered() {
-    return currentLocalityGroupReader != nullptr ? entriesSkipped + currentLocalityGroupReader->getEntriesFiltered() : entriesSkipped;
+    //currentLocalityGroupReader != nullptr ? entriesSkipped + currentLocalityGroupReader->getEntriesFiltered() :
+    return  entriesSkipped;
   }
 
  protected:
@@ -275,7 +268,7 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   std::vector<cclient::data::streams::OutputStream*> ownedStreams;
 
   // current locality group.
-  LocalityGroupMetaData *currentLocalityGroup;
+  std::shared_ptr<LocalityGroupMetaData> currentLocalityGroup;
   LocalityGroupReader *currentLocalityGroupReader;
   // number of entries in current block.
   uint32_t entries;
@@ -293,8 +286,8 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   cclient::data::streams::InputStream *myInputStream;
 
   // list of locality group pointers.
-  std::vector<LocalityGroupMetaData*> localityGroups;
-  std::vector<LocalityGroupReader*> localityGroupReaders;
+  std::vector<std::shared_ptr<LocalityGroupMetaData>> localityGroups;
+  std::vector<std::shared_ptr<cclient::data::LocalityGroup>> localityGroupReaders;
   std::shared_ptr<cclient::data::AgeOffEvaluator> ageoff_evaluator;
   std::shared_ptr<cclient::data::KeyPredicate> key_predicate;
 
@@ -314,7 +307,10 @@ class SequentialRFile : public cclient::data::streams::StreamInterface, public c
   // primarily for reading
   cclient::data::streams::InputStream *in_stream;
 
-  cclient::data::ArrayAllocatorPool allocatorInstance;
+  std::vector<cclient::data::ArrayAllocatorPool*> allocatorInstance;
+
+  std::shared_ptr<cclient::data::LocalityGroupSeekCache> lgCache;
+  std::unique_ptr<cclient::data::LocalityGroupContext> lgContext;
 
 };
 }

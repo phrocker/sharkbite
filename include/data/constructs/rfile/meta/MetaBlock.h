@@ -50,13 +50,13 @@ class MetaBlock : public cclient::data::streams::StreamInterface {
   /**
    Adds a list of locality groups to the RFile Meta Block
    **/
-  void addLocalityGroups(std::vector<LocalityGroupMetaData*> lgs) {
+  void addLocalityGroups(std::vector<std::shared_ptr<LocalityGroupMetaData>> lgs) {
     localityGroups.insert(localityGroups.end(), lgs.begin(), lgs.end());
   }
 
   uint64_t write(cclient::data::streams::DataOutputStream *outStream);
  protected:
-  std::vector<LocalityGroupMetaData*> localityGroups;
+  std::vector<std::shared_ptr<LocalityGroupMetaData>> localityGroups;
 };
 
 }

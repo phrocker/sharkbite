@@ -98,8 +98,6 @@ SequentialRFile::SequentialRFile(streams::InputStream *input_stream,
   delete metaBlock;
 }
 
-bool SequentialRFile::hasNext() { return currentLocalityGroupReader->hasTop(); }
-
 void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
   int magic = metaBlock->readInt();
 
@@ -125,63 +123,55 @@ void SequentialRFile::readLocalityGroups(streams::InputStream *metaBlock) {
 
   localityGroups.resize(size);
 
+  auto pool = ArrayAllocatorPool::newInstance();
+  allocatorInstance.push_back(pool);
   for (int i = 0; i < size; i++) {
-    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(
+    auto meatadata = std::make_shared<LocalityGroupMetaData>(
         compressorRef->newInstance(), version, in_stream);
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
-    auto rdr = new LocalityGroupReader(blockWriter.get(), in_stream, meatadata,
-                                       &allocatorInstance, version);
+
+    auto rdr = std::make_shared<LocalityGroupReader>(
+        blockWriter.get(), in_stream, meatadata, pool, version);
     rdr->setAgeOff(ageoff_evaluator);
+    rdr->enableReadAhead();
     localityGroupReaders.push_back(rdr);
   }
 
-  currentLocalityGroupReader = localityGroupReaders.front();
+  lgContext = std::make_unique<cclient::data::LocalityGroupContext>(
+      localityGroupReaders);
 
-  currentLocalityGroupReader->enableReadAhead();
+  lgCache = std::make_shared<cclient::data::LocalityGroupSeekCache>();
+  // currentLocalityGroupReader = localityGroupReaders.front();
+
+  // currentLocalityGroupReader->enableReadAhead();
 }
-
-void SequentialRFile::next() { currentLocalityGroupReader->next(); }
 
 cclient::data::streams::DataStream<
     std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>>
     *SequentialRFile::operator++() {
-  if (currentLocalityGroupReader && currentLocalityGroupReader->hasTop())
-    currentLocalityGroupReader->next();
+  next();
   return this;
 }
 
 std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>>
 SequentialRFile::operator*() {
-  return std::make_pair(currentLocalityGroupReader->getTopKey(),
-                        currentLocalityGroupReader->getTopValue());
-}
-
-std::shared_ptr<cclient::data::KeyValue> SequentialRFile::getTop() {
-  return std::make_shared<cclient::data::KeyValue>(
-      currentLocalityGroupReader->getTopKey(),
-      currentLocalityGroupReader->getTopValue());
-}
-
-std::shared_ptr<Key> SequentialRFile::getTopKey() {
-  return currentLocalityGroupReader->getTopKey();
-}
-
-std::shared_ptr<Value> SequentialRFile::getTopValue() {
-  return currentLocalityGroupReader->getTopValue();
+  return std::make_pair(HeapIterator::getTopKey(), HeapIterator::getTopValue());
 }
 
 SequentialRFile::~SequentialRFile() {
-  for (auto reader : localityGroupReaders) {
-    delete reader;
+  for (const auto grp : localityGroupReaders) {
+    auto rdr =
+        std::dynamic_pointer_cast<cclient::data::LocalityGroupReader>(grp);
+    rdr->close();
   }
-
-  for (auto metadata : localityGroups) {
-    delete metadata;
-  }
-
+  localityGroupReaders.clear();
   for (auto stream : ownedStreams) {
     delete stream;
+  }
+
+  for (const auto &alloc : allocatorInstance) {
+    ArrayAllocatorPool::returnInstance(alloc);
   }
 }
 

@@ -158,7 +158,7 @@ std::string cq_nonpredicate) {
   long count = 0;
   uint64_t total_size = 0;
   // break with control+c 
-
+  std::map<std::string,long> fi_counts;
   auto start = chrono::steady_clock::now();
   while (!stop && multi_iter->hasNext()) {
 
@@ -170,6 +170,23 @@ std::string cq_nonpredicate) {
     }
     else if (size){
       total_size+=(**multi_iter).first->length();
+      auto cf = (**multi_iter).first->getColFamilyStr();
+      if (cf.find("fi") != std::string::npos){
+        if (fi_counts.find(cf) != fi_counts.end()){
+          fi_counts[cf]= fi_counts[cf]+1;
+        }
+        else{
+          fi_counts[cf] = 1;
+        }
+      }
+      else{
+          if (!fi_counts.empty()){
+            for(auto cfi: fi_counts){
+              std::cout << cfi.first << " " << cfi.second << std::endl;
+            }
+            fi_counts.clear();
+          }
+      }
     }
 
     multi_iter->next();
@@ -180,6 +197,12 @@ std::string cq_nonpredicate) {
     
   }
 
+if (!fi_counts.empty()){
+            for(auto cfi: fi_counts){
+              std::cout << cfi.first << " " << cfi.second << std::endl;
+            }
+            fi_counts.clear();
+          }
   if (predicate){
     auto keySkipper = std::dynamic_pointer_cast<KeySkipper>(predicate);
     if (keySkipper){

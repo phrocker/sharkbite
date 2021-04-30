@@ -54,9 +54,7 @@ class PythonTableInfo {
    * Returns a set of table names
    * @return std::set of table names
    */
-  std::set<std::string> getTables() const{
-    return table_info->getTables();
-  }
+  std::set<std::string> getTables() const { return table_info->getTables(); }
 
  private:
   std::shared_ptr<AccumuloTableInfo> table_info;

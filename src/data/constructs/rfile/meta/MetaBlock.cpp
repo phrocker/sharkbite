@@ -31,10 +31,8 @@ uint64_t MetaBlock::write(cclient::data::streams::DataOutputStream *outStream) {
   // write the size of the locaity groups.
   outStream->writeInt(localityGroups.size());
   uint64_t offset = 0;
-  for (std::vector<LocalityGroupMetaData *>::iterator it =
-           localityGroups.begin();
-       it != localityGroups.end(); it++) {
-    offset = (*it)->write(outStream);
+  for (const auto &grp : localityGroups) {
+    offset = grp->write(outStream);
   }
   return offset;
   // return outStream->getPos();

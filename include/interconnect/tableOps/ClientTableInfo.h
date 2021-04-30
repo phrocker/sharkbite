@@ -78,7 +78,7 @@ class AccumuloTableInfo {
    * Gets the table names
    * @return table names
    */
-  std::set<std::string> getTables() const{
+  std::set<std::string> getTables() const {
     return Tables::getInstance().getTables();
   }
 

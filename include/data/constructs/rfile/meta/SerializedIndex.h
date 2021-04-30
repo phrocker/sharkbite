@@ -65,8 +65,6 @@ class SerializedIndex : public cclient::data::streams::StreamInterface, public s
   }
 
   std::shared_ptr<SerializedIndex> end() {
-    std::cout << "end" << std::endl;
-    std::exit(1);
     return std::make_shared<SerializedIndex>(true, ptr->offsets.size());
   }
 

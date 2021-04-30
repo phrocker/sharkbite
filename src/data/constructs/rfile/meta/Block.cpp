@@ -19,7 +19,6 @@ namespace data {
 
 std::shared_ptr<Block> Block::lookup(const std::shared_ptr<Key> &key) {
   int64_t posCheck = indexBlock->getKeyIndex()->binary_search(key);
-  //// std::cout << " for " << key << " got " << posCheck << std::endl;
   if (posCheck < 0) {
     posCheck = (posCheck * -1) - 1;
   }
@@ -28,15 +27,12 @@ std::shared_ptr<Block> Block::lookup(const std::shared_ptr<Key> &key) {
     if (parent == NULL) { /******** ******** ***** */
       throw std::runtime_error("Illegal state ( parent is null )");
     }
-    // std::cout << "current position 2 for " << key << " is  " <<
-    // currentPosition << std::endl;
+
     currentPosition = pos;
     return shared_from_this();
   }
 
   currentPosition = pos;
-  // std::cout << "current position for " << key << " is  " << currentPosition
-  // << std::endl;
   if (indexBlock->getLevel() == 0) {
     return shared_from_this();
   }

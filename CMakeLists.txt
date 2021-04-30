@@ -435,7 +435,7 @@ message(STATUS "ZK Lib: ${ZOOKEEPER_LIBRARIES}")
 #However, the file(GLOB...) allows for wildcard additions:
 
 file(GLOB_RECURSE EXCEPTION_HEADERS "include/data/exceptions/*.h")
-file(GLOB_RECURSE DATA_HEADERS "include/data//*.h")
+file(GLOB_RECURSE DATA_HEADERS "include/data/*.h")
 file(GLOB_RECURSE STREAMING_HEADERS "include/data/streaming/*.h")
 file(GLOB_RECURSE ZK_HEADERS "include/data/zookeeper/*.h")
 file(GLOB_RECURSE CLIENT_HEADERS "include/data/client/*.h")
@@ -454,7 +454,7 @@ file(GLOB_RECURSE SCANNER_HEADERS "include/scanner/*.h")
 file(GLOB_RECURSE WRITER_HEADERS "include/writer/*.h")
 
 file(GLOB_RECURSE EXCEPTION_SOURCES "src/data/exceptions/*cpp")
-file(GLOB_RECURSE CONSTRUCT_SOURCES "src/data/constructs/*cpp" "src/data/iterators/*.cpp")
+file(GLOB_RECURSE CONSTRUCT_SOURCES "src/data/constructs/*cpp" "src/data/iterators/*.cpp" "src/data/constructs/rfile/meta/*.cpp")
 file(GLOB_RECURSE STREAMING_SOURCES "src/data/streaming/*cpp")
 file(GLOB_RECURSE ZK_SOURCES "src/data/zookeeper/*cpp")
 file(GLOB_RECURSE CLIENT_SOURCES "src/data/client/*cpp")

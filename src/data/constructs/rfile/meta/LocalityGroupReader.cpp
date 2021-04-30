@@ -199,7 +199,7 @@ void LocalityGroupReader::seek(
         rKey->setFiltered();
         // start readahead
         startReadAhead();
-        next(false);
+        f_next(false);
         if (!topExists) {
           return;
         }
@@ -287,7 +287,7 @@ void LocalityGroupReader::startReadAhead() {
   }
 }
 
-void LocalityGroupReader::next(bool errorOnNext) {
+void LocalityGroupReader::f_next(bool errorOnNext) {
   if (errorOnNext && !hasTop())
     throw std::runtime_error("Illegal State Exception");
   if (SH_UNLIKELY(entriesLeft == 0)) {

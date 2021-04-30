@@ -43,8 +43,6 @@ HeapIterator::operator*() {
 }
 
 bool HeapIterator::hasNext() {
-  std::cout << "has next ? "
-            << (topIterator != nullptr && topIterator->hasNext()) << std::endl;
   return topIterator != nullptr && topIterator->hasNext();
 }
 
@@ -78,7 +76,6 @@ void HeapIterator::multiNext() {
 
 void HeapIterator::close() {
   for (auto &iter : iterators) {
-    std::cout << "closing iterator" << std::endl;
     iter->close();
   }
 }
@@ -111,6 +108,15 @@ void HeapIterator::getTopIterator() {
   } else {
     nextKey = nullptr;
   }
+}
+
+void HeapIterator::clear() {
+  queues = std::priority_queue<
+      std::shared_ptr<cclient::data::streams::KeyValueIterator>,
+      std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>>,
+      KeyValueIteratorComparator>();
+  topIterator = nullptr;
+  nextKey = nullptr;
 }
 
 }  // namespace data

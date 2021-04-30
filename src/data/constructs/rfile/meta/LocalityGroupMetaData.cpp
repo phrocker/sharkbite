@@ -58,7 +58,7 @@ LocalityGroupMetaData::~LocalityGroupMetaData() {
 uint64_t LocalityGroupMetaData::read(cclient::data::streams::InputStream *in) {
   isDefaultLG = in->readBoolean();
   if (!isDefaultLG) {
-    name = in->readString();
+    name = in->readUTF();
   }
 
   if (read_version == 3 || read_version == 4 || read_version == 6 ||
@@ -72,7 +72,6 @@ uint64_t LocalityGroupMetaData::read(cclient::data::streams::InputStream *in) {
 
   } else {
     columnFamilies.clear();
-
     for (int32_t i = 0; i < size; i++) {
       int len = in->readInt();
       uint8_t *cf = new uint8_t[len];

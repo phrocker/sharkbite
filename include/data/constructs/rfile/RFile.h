@@ -134,8 +134,7 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
    **/
   void addLocalityGroup(std::string name = "") {
     closeCurrentGroup();
-    LocalityGroupMetaData *group = new LocalityGroupMetaData(dataBlockCnt, name);
-    currentLocalityGroup = group;
+    currentLocalityGroup = std::make_shared<LocalityGroupMetaData>(dataBlockCnt, name);
     dataBlockCnt++;
 
   }
@@ -236,8 +235,8 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   }
 
   // current locality group.
-  LocalityGroupMetaData *currentLocalityGroup;
-  LocalityGroupReader *currentLocalityGroupReader;
+  std::shared_ptr<LocalityGroupMetaData> currentLocalityGroup;
+  std::shared_ptr<LocalityGroupReader> currentLocalityGroupReader;
   // number of entries in current block.
   uint32_t entries;
   uint32_t currentBlockStart;
@@ -253,8 +252,8 @@ class RFile : public cclient::data::streams::StreamInterface, public cclient::da
   cclient::data::streams::InputStream *myInputStream;
 
   // list of locality group pointers.
-  std::vector<LocalityGroupMetaData*> localityGroups;
-  std::vector<LocalityGroupReader*> localityGroupReaders;
+  std::vector<std::shared_ptr<LocalityGroupMetaData>> localityGroups;
+  std::vector<std::shared_ptr<LocalityGroupReader>> localityGroupReaders;
 
   // block compressed file.
   std::unique_ptr<BlockCompressedFile> blockWriter;

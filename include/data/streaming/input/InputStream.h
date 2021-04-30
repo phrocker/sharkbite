@@ -25,6 +25,7 @@
 #include <istream>
 #include <memory>
 #include <stdexcept>
+#include <vector>
 
 #include "data/extern/fastmemcpy/FastMemCpy.h"
 #if __linux__
@@ -112,9 +113,78 @@ class InputStream {
     return ret;
   }
 
-  void adviseSequentialRead(std::ifstream *ifs) {
-    // ifs->rdbuf()->pubsetbuf(rdbuffer, sizeof rdbuffer);
+  virtual std::string readUTF() {
+    int utflen = readUnsignedShort();
+    std::vector<uint8_t> bytearr;
+    bytearr.resize(utflen * 2);
+    std::vector<char> chararray;
+    chararray.resize(utflen * 2);
+
+    int c, char2, char3;
+    int count = 0;
+    int chararr_count = 0;
+
+    char *chararr = chararray.data();
+    readBytes((uint8_t *)bytearr.data(), (size_t)utflen);
+
+    while (count < utflen) {
+      c = (int)bytearr.at(count) & 0xff;
+      if (c > 127) break;
+      count++;
+      chararr[chararr_count++] = (char)c;
+    }
+
+    while (count < utflen) {
+      c = (int)bytearr.at(count) & 0xff;
+      switch (c >> 4) {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+          /* 0xxxxxxx*/
+          count++;
+          chararr[chararr_count++] = (char)c;
+          break;
+        case 12:
+        case 13:
+          /* 110x xxxx   10xx xxxx*/
+          count += 2;
+          if (count > utflen)
+            throw std::runtime_error(
+                "malformed input: partial character at end");
+          char2 = (int)bytearr[count - 1];
+          if ((char2 & 0xC0) != 0x80)
+            throw std::runtime_error("malformed input around byte " + count);
+          chararr[chararr_count++] = (char)(((c & 0x1F) << 6) | (char2 & 0x3F));
+          break;
+        case 14:
+          /* 1110 xxxx  10xx xxxx  10xx xxxx */
+          count += 3;
+          if (count > utflen)
+            throw std::runtime_error(
+                "malformed input: partial character at end");
+          char2 = (int)bytearr.at(count - 2);
+          char3 = (int)bytearr.at(count - 1);
+          if (((char2 & 0xC0) != 0x80) || ((char3 & 0xC0) != 0x80))
+            throw std::runtime_error("malformed input around byte " +
+                                     (count - 1));
+          chararr[chararr_count++] =
+              (char)(((c & 0x0F) << 12) | ((char2 & 0x3F) << 6) |
+                     ((char3 & 0x3F) << 0));
+          break;
+        default:
+          /* 10xx xxxx,  1111 xxxx */
+          throw std::runtime_error("malformed input around byte " + count);
+      }
+    }
+    return std::string(chararr, chararr_count);
   }
+
+  void adviseSequentialRead(std::ifstream *ifs) {}
 
   virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) {
     istream_ref->read((char *)bytes, cnt);

@@ -105,6 +105,10 @@ class LocalityGroupMetaData : cclient::data::streams::StreamInterface {
 
   }
 
+  bool getIsDefaultLG() const {
+    return isDefaultLG;
+  }
+
   std::shared_ptr<IndexManager> getIndexManager() {
     return indexManager;
   }

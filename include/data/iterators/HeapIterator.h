@@ -65,6 +65,8 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   virtual bool hasNext() override;
 
+  HeapIterator(){}
+
   explicit HeapIterator(const std::vector<std::shared_ptr<cclient::data::streams::KeyValueIterator>> &itrs, const std::shared_ptr<cclient::data::Range> &range = nullptr) {
     iterators = itrs;
   }
@@ -107,10 +109,14 @@ class HeapIterator : public cclient::data::streams::StreamInterface, public ccli
 
   virtual void close() override;
 
+  void clear();
+
+  void addSource(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &iter);
+
  protected:
  void multiNext();
 
-  void addSource(const std::shared_ptr<cclient::data::streams::KeyValueIterator> &iter);
+  
 
   void INLINE getTopIterator() ;
 

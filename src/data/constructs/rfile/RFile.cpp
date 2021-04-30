@@ -111,11 +111,11 @@ void RFile::readLocalityGroups(streams::InputStream *metaBlock) {
   localityGroups.resize(size);
 
   for (int i = 0; i < size; i++) {
-    LocalityGroupMetaData *meatadata = new LocalityGroupMetaData(
+    auto meatadata = std::make_shared<LocalityGroupMetaData>(
         compressorRef->newInstance(), version, in_stream);
     meatadata->read(metaBlock);
     localityGroups.push_back(meatadata);
-    localityGroupReaders.push_back(new LocalityGroupReader(
+    localityGroupReaders.push_back(std::make_shared<LocalityGroupReader>(
         blockWriter.get(), in_stream, meatadata, &allocatorInstance, version));
   }
 
@@ -150,15 +150,7 @@ std::shared_ptr<cclient::data::KeyValue> RFile::getTop() {
       currentLocalityGroupReader->getTopValue());
 }
 
-RFile::~RFile() {
-  for (auto reader : localityGroupReaders) {
-    delete reader;
-  }
-
-  for (auto metadata : localityGroups) {
-    delete metadata;
-  }
-}
+RFile::~RFile() {}
 
 bool RFile::append(std::shared_ptr<KeyValue> kv) {
   if (dataClosed || closed)
