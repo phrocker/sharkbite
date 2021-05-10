@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 project (sharkbite)
 set ( CMAKE_VERBOSE_MAKEFILE true )
 
@@ -40,7 +40,7 @@ option(BUILD_PYTHON_TESTS "Build Python Integration." OFF)
 option(BUILD_TESTS "Build all tests." ON)
 option(USE_LIB_DEFLATE "Uses Libdeflate for ZLIB decompression." OFF)
 
-CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++14" COMPILER_SUPPORTS_CXX14)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
 if(COMPILER_SUPPORTS_CXX14)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
@@ -324,7 +324,6 @@ include_directories(${CURL_INCLUDE_DIRS})
 	  			 "-DWITH_HASKELL=OFF"
 	  			 "-DWITH_SHARED_LIB=OFF"
 	  			 "-DWITH_C_GLIB=OFF"
-#CONFIGURE_COMMAND ./bootstrap.sh && ./configure --without-qt4  --with-openssl=${LIBRESSL_BIN_DIR} --without-c_glib  --without-csharp --without-java --without-erlang --without-nodejs --without-lua --without-python --without-perl --without-php --without-php_extension --without-ruby --without-haskell --without-go --without-d --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/thrift
 	  UPDATE_COMMAND ""
 	  )
 
@@ -347,7 +346,6 @@ include_directories(${CURL_INCLUDE_DIRS})
 	  GIT_PROGRESS ON
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper-src"
-	  #CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/zookeeper"
 	  CONFIGURE_COMMAND autoreconf -if && ./configure --prefix=${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper
 	  UPDATE_COMMAND ""
 	)
@@ -358,7 +356,6 @@ include_directories(${CURL_INCLUDE_DIRS})
 	
 	set(ZOOKEEPER_INCLUDE_DIRS "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/include" CACHE STRING "" FORCE)
 	set(ZOOKEEPER_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.a" CACHE STRING "" FORCE)
-	#set(ZOOKEEPER_SHARED_LIBRARIES  "${CMAKE_CURRENT_BINARY_DIR}/dependencies/zookeeper/lib/libzookeeper_mt.so" CACHE STRING "" FORCE)
 	include_directories(${ZOOKEEPER_INCLUDE_DIRS})
 	set(ZOOKEEPER_FOUND TRUE CACHE STRING "" FORCE)
 
@@ -391,27 +388,35 @@ if (TRAVIS)
 else()
 	
 	if(MY_PYTHON_VERSION)
-	find_package(Python ${MY_PYTHON_VERSION} COMPONENTS Interpreter Development EXACT REQUIRED)
+		find_package(Python ${MY_PYTHON_VERSION} COMPONENTS Interpreter Development EXACT REQUIRED)
 	else()
-	find_package(Python REQUIRED)
-	endif()
+		find_package(Python COMPONENTS Interpreter Development REQUIRED)
+	endif() 
     if(MY_PYTHON_VERSION)
-        set(Python_ADDITIONAL_VERSIONS ${MY_PYTHON_VERSION})
+        set(Python_ADDITIONAL_VERSIONS ${MY_PYTHON_VERSION} CACHE STRING "" FORCE)
     else()
-        set(Python_ADDITIONAL_VERSIONS 3.6)
+        set(Python_ADDITIONAL_VERSIONS 3.6 CACHE STRING "" FORCE)
     endif()
 	find_package(PythonInterp ${Python_ADDITIONAL_VERSIONS} REQUIRED)
 	find_package(PythonLibs ${Python_ADDITIONAL_VERSIONS} REQUIRED)
 endif()
 
+
+
 download_project(PROJ pybind11 
 				 GIT_REPOSITORY "https://github.com/pybind/pybind11.git" 
-				 GIT_TAG "7ec2ddfc95f65d1e986d359466a6c254aa514ef3" )
+				 GIT_TAG "v2.6.2" 
+				 CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install\"\n\"-DPYTHON_VERSION=${Python_ADDITIONAL_VERSIONS}\"\n\"-DPYBIND11_TEST=OFF")
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install")
+
+set(pybind11_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install/share/cmake/pybind11" CACHE STRING "" FORCE)
+find_package(pybind11 CONFIG )
 
 set(PYBIND11_CPP_STANDARD -std=c++14)
-add_subdirectory(${pybind11_SOURCE_DIR})
+#add_subdirectory(${pybind11_SOURCE_DIR})
 include_directories(${PROTOBUF_INCLUDE_DIRS})
-include_directories("${pybind11_SOURCE_DIR}/include/")
+include_directories(${pybind11_INCLUDE_DIRS})
 include_directories(${Python_INCLUDE_DIRS})
 
 find_package (Threads)
@@ -635,7 +640,6 @@ target_link_libraries(capi PRIVATE sharkbite-shared)
 #ClientExample
 add_executable(ClientExample "src/examples/ClientExample.cpp")
 target_link_libraries (ClientExample ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (ClientExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ClientExample )
 target_link_libraries( ClientExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ClientExample ${THRIFT_LIBS} sharkbite)
@@ -670,10 +674,8 @@ target_link_libraries( InsertTest ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
 target_link_libraries( InsertTest sharkbite)
 
 
-
 add_executable(ContinuousIngest "src/examples/ContinuousIngest.cpp")
 target_link_libraries (ContinuousIngest ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (ContinuousIngest ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( ContinuousIngest )
 target_link_libraries( ContinuousIngest ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES})
 target_link_libraries( ContinuousIngest ${THRIFT_LIBS})
@@ -681,7 +683,6 @@ target_link_libraries( ContinuousIngest sharkbite)
 
 add_executable(TableOps "src/examples/TableOps.cpp")
 target_link_libraries (TableOps ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (TableOps ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( TableOps )
 target_link_libraries( TableOps ${ZOOKEEPER_LIBRARIES} )
 target_link_libraries( TableOps ${THRIFT_LIBS} ${OPENSSL_LIBRARIES})
@@ -689,7 +690,6 @@ target_link_libraries( TableOps sharkbite)
 
 add_executable(RfileReadExample "src/examples/RfileReadExample.cpp")
 target_link_libraries (RfileReadExample ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (RfileReadExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( RfileReadExample )
 target_link_libraries( RfileReadExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( RfileReadExample ${THRIFT_LIBS})
@@ -697,7 +697,6 @@ target_link_libraries( RfileReadExample sharkbite)
 
 add_executable(Compact "src/examples/Compact.cpp")
 target_link_libraries (Compact ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (Compact ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( Compact )
 target_link_libraries( Compact ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( Compact ${THRIFT_LIBS})
@@ -705,7 +704,6 @@ target_link_libraries( Compact sharkbite)
 
 add_executable(HedgedRead "src/examples/HedgedRead.cpp")
 target_link_libraries (HedgedRead ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (HedgedRead ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( HedgedRead )
 target_link_libraries( HedgedRead ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( HedgedRead ${THRIFT_LIBS})
@@ -713,7 +711,6 @@ target_link_libraries( HedgedRead sharkbite)
 
 add_executable(RfileWriteExample "src/examples/RfileWriteExample.cpp")
 target_link_libraries (RfileWriteExample ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (RfileWriteExample ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( RfileWriteExample )
 target_link_libraries( RfileWriteExample ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( RfileWriteExample ${THRIFT_LIBS})
@@ -721,7 +718,6 @@ target_link_libraries( RfileWriteExample sharkbite)
 
 add_executable(PrintInfo "src/examples/PrintInfo.cpp")
 target_link_libraries (PrintInfo ${CMAKE_THREAD_LIBS_INIT})
-#target_link_libraries (PrintInfo ${WHOLE_ARCHIVE} ${ZLIB_LIBRARY} ${NO_WHOLE_ARCHIVE})
 target_link_libraries( PrintInfo )
 target_link_libraries( PrintInfo ${ZOOKEEPER_LIBRARIES} ${OPENSSL_LIBRARIES} )
 target_link_libraries( PrintInfo ${THRIFT_LIBS})

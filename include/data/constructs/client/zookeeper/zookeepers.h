@@ -85,7 +85,6 @@ namespace cclient
               hostPorts((char *)hostPorts),
               timeout(timeout),
               zookeeperReference(0),
-              initWatchFp(0),
               myWatch(nullptr)
         {
         }
@@ -95,10 +94,6 @@ namespace cclient
           if (NULL != zookeeperReference)
           {
             zookeeper_close(zookeeperReference);
-          }
-          if (NULL != initWatchFp)
-          {
-            delete initWatchFp;
           }
         }
         void setWatch(Watch *watch)
@@ -115,7 +110,7 @@ namespace cclient
           return myWatch->isConnected();
         }
 
-        bool exists(std::string path, watcher_fn fn, WatchFn *ptr = NULL)
+        bool exists(std::string path, watcher_fn fn, std::shared_ptr<WatchFn> ptr = nullptr)
         {
           Stat stat = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -129,12 +124,12 @@ namespace cclient
             fn = NULL;
           }
 
-          zoo_wexists(zookeeperReference, path.c_str(), fn, ptr, &stat);
+          zoo_wexists(zookeeperReference, path.c_str(), fn, ptr.get(), &stat);
 
           return !stat_empty(&stat);
         }
 
-        char *getData(std::string path, watcher_fn fn, WatchFn *ptr = NULL)
+        char *getData(std::string path, watcher_fn fn, std::shared_ptr<WatchFn> ptr =  nullptr)
         {
           Stat stat = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -153,7 +148,7 @@ namespace cclient
           char *buffer = new char[len];
           memset(buffer, 0x00, len);
 
-          zoo_wget(zookeeperReference, path.c_str(), fn, ptr, buffer, &len, &stat);
+          zoo_wget(zookeeperReference, path.c_str(), fn, ptr.get(), buffer, &len, &stat);
 
           if (len == -1)
           {
@@ -164,7 +159,7 @@ namespace cclient
           return buffer;
         }
 
-        std::vector<std::string> *getChildren(std::string path, watcher_fn fn, WatchFn *ptr = NULL)
+        std::vector<std::string> *getChildren(std::string path, watcher_fn fn, std::shared_ptr<WatchFn> ptr =  nullptr)
         {
           struct String_vector str_vec = {0, 0};
 
@@ -179,7 +174,7 @@ namespace cclient
             fn = NULL;
           }
 
-          zoo_wget_children(zookeeperReference, path.c_str(), fn, ptr, &str_vec);
+          zoo_wget_children(zookeeperReference, path.c_str(), fn, ptr.get(), &str_vec);
 
           // add the children paths iff we have results
           std::vector<std::string> *newList = 0;
@@ -199,14 +194,18 @@ namespace cclient
 
         void init(Watch *watch)
         {
-          FILE *outfile = fopen("nul", "w");
+          #ifdef WIN32_OS       
+            FILE *outfile = fopen("nul", "w");
+          #else
+            FILE *outfile = fopen("NULL", "w");
+          #endif
           zoo_set_log_stream(outfile);
           myWatch = watch;
           // init zk with our zk info, and the watcher_function will
           // label our watch as 'connected'
-          initWatchFp = new WatchFn();
+          initWatchFp = std::make_shared<WatchFn>();
           initWatchFp->ptr = myWatch;
-          zookeeperReference = zookeeper_init(hostPorts, watcher_function, timeout, 0, initWatchFp, 0);
+          zookeeperReference = zookeeper_init(hostPorts, watcher_function, timeout, 0, initWatchFp.get(), 0);
 
           myWatch->setHandle(zookeeperReference);
           logging::LOG_TRACE(logger) << "Connecting to " << hostPorts;
@@ -251,7 +250,7 @@ namespace cclient
         uint32_t timeout;
         zhandle_t *zookeeperReference;
         Watch *myWatch;
-        WatchFn *initWatchFp;
+        std::shared_ptr<WatchFn> initWatchFp;
       };
 
       class ZooSession

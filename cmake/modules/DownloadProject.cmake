@@ -108,7 +108,7 @@ function(download_project)
         INSTALL_COMMAND
         TEST_COMMAND
     )
-    set(multiValueArgs "")
+    set(multiValueArgs CMAKE_ARGS)
 
     cmake_parse_arguments(DL_ARGS "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
@@ -158,6 +158,7 @@ function(download_project)
     # anything to be updated, so extra rebuilds of the project won't occur.
     # Make sure to pass through CMAKE_MAKE_PROGRAM in case the main project
     # has this set to something not findable on the PATH.
+    STRING (REPLACE ";" "\n" DL_ARGS_CMAKE_ARGS_STR "${DL_ARGS_CMAKE_ARGS}")
     configure_file("${_DownloadProjectDir}/DownloadProject.CMakeLists.cmake.in"
                    "${DL_ARGS_DOWNLOAD_DIR}/CMakeLists.txt")
     execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}"

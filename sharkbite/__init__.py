@@ -119,9 +119,11 @@ class AccumuloWriter(AccumuloBase):
             if self._mutation is not None:
                 self._writer.addMutation(self._mutation)
             self._writer.close()
-            self._writer=None
             self._row=None
             self._mutation = None
+            self._writer=None
+            
+            
 
     def __del__(self):
         self.close()

@@ -98,7 +98,6 @@ bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
   if (nullptr == key) return true;
 
   if (infiniteStopKey==true){
-    std::cout << "infin" << std::endl;
     return false;
   }
 

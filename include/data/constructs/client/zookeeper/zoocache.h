@@ -54,24 +54,19 @@ namespace cclient
 
           clear();
           std::lock_guard<std::mutex> lock(syncBarrier);
-          for (auto fn : fns)
-          {
-            delete fn;
-          }
           fns.clear();
         }
 
         inline static void cache_watcher(zhandle_t *, int type, int state, const char *path, void *v)
         {
-
           WatchFn *ctx = (WatchFn *)v;
           ZooCache *cacheRef = (ZooCache *)ctx->Fn;
-          Event *event = new Event();
-          event->path = path;
-          event->type = type;
+          Event event;
+          event.path = path;
+          event.type = type;
           if (type == ZOO_CHANGED_EVENT || type == ZOO_CHILD_EVENT || type == ZOO_CREATED_EVENT || type == ZOO_DELETED_EVENT)
           {
-            cacheRef->removePath(event);
+            cacheRef->removePath(&event);
           }
           else if (type == ZOO_SESSION_EVENT)
           {
@@ -84,21 +79,10 @@ namespace cclient
           {
             // do nothing
           }
-
-          std::lock_guard<std::mutex> lock(cacheRef->syncBarrier);
-          std::set<WatchFn *>::iterator it = cacheRef->fns.find(ctx);
-          cacheRef->fns.erase(it);
-
-          if (ctx == nullptr)
-          {
-            throw std::runtime_error("Zoo context is null");
-          }
-          delete ctx;
         }
 
         uint8_t *getData(std::string path)
         {
-
           if (IsEmpty(&path))
           {
             return NULL;
@@ -110,12 +94,12 @@ namespace cclient
           if (cachedData == cache.end())
           {
 
-            WatchFn *watchFp = new WatchFn();
+            auto watchFp = std::make_shared<WatchFn>();
             fns.insert(watchFp);
             watchFp->Fn = this;
             if (myZk->exists(path, cache_watcher, watchFp))
             {
-              watchFp = new WatchFn();
+              watchFp = std::make_shared<WatchFn>();
               fns.insert(watchFp);
               watchFp->Fn = this;
 
@@ -140,20 +124,18 @@ namespace cclient
 
         std::vector<std::string> getChildren(const std::string path, bool force = false)
         {
-
           if (IsEmpty(&path))
           {
             return std::vector<std::string>();
           }
-          if (force)
-            clear();
+
           std::lock_guard<std::mutex> lock(syncBarrier);
 
           std::map<std::string, std::vector<std::string> *>::iterator children = childrenCache.find(path);
 
-          if (children == childrenCache.end())
+          if (force || children == childrenCache.end())
           {
-            WatchFn *watchFp = new WatchFn();
+            std::shared_ptr<WatchFn> watchFp = std::make_shared<WatchFn>();
             fns.insert(watchFp);
             watchFp->Fn = this;
 
@@ -169,7 +151,6 @@ namespace cclient
 
           if (children == childrenCache.end())
           {
-
             return std::vector<std::string>();
           }
           std::vector<std::string> strings(*children->second);
@@ -182,7 +163,6 @@ namespace cclient
         {
           if (NULL == event || IsEmpty(&event->path))
           {
-            delete event;
             return;
           }
           std::lock_guard<std::mutex> lock(syncBarrier);
@@ -203,7 +183,6 @@ namespace cclient
             delete children;
           }
 
-          delete event;
         }
 
         void clear()
@@ -227,7 +206,7 @@ namespace cclient
           childrenCache.clear();
         }
 
-        std::set<WatchFn *> fns;
+        std::set<std::shared_ptr<WatchFn>> fns;
         ZooKeeper *myZk;
         std::map<std::string, uint8_t *> cache;
         std::map<std::string, std::vector<std::string> *> childrenCache;

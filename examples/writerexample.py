@@ -64,9 +64,10 @@ from sharkbite import *
 try:
     writer = AccumuloWriter(args.instance,args.zookeepers,args.username,password,table,"")
 
-    writer.put("q",cf="cf",cq="cq")
-    writer.put("q",cf="cf2",cq="cq")
-
+    for i in range(5000):
+        writer.put("q",cf="cf" + str(i),cq="cq")
+        writer.put("q",cf="cf2"+ str(i),cq="cq")
+    
     writer.close()
 
     for keyvalue in writer.to_scanner().get("q"):
