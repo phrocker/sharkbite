@@ -14,7 +14,7 @@ matrix:
             - ubuntu-toolchain-r-test
             - boost-latest
           packages:
-            - g++-7
+            - g++-8
             - libbz2-dev
             - libgsasl7-dev
             - uuid-dev
@@ -26,7 +26,7 @@ matrix:
             - libprotobuf-dev
             - protobuf-compiler
       env:
-         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
+         - MATRIX_EVAL="CC=gcc-8 && CXX=g++-8"
     - os: osx
       osx_image: xcode12.2
       addons:
@@ -50,6 +50,6 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export LDFLAGS="-L/usr/local/opt/bison/lib" && export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; 
-    then travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON .. && make -j4  && ctest --debug;
-    else travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && make -j4 && ctest --debug;
+    then travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8 .. && make -j4  && ctest --debug;
+    else travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -DCMAKE_C_COMPILER=gcc-8 -DCMAKE_CXX_COMPILER=g++-8 -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && make -j4 && ctest --debug;
     fi
