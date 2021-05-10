@@ -50,6 +50,6 @@ before_script:
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then export LDFLAGS="-L/usr/local/opt/bison/lib" && export PATH="/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"; fi
 script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; 
-    then travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -D CMAKE_C_COMPILER=gcc-8 -D CMAKE_CXX_COMPILER=g++-8 .. && make -j4  && ctest --debug;
-    else travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -D CMAKE_C_COMPILER=gcc-8 -D CMAKE_CXX_COMPILER=g++-8 -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && make -j4 && ctest --debug;
+    then travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON .. && make -j4  && ctest --debug;
+    else travis_wait 40 mkdir -p build && cd build && cmake -DTRAVIS=ON -DBUILD_PYTHON_TESTS=ON -DBUILD_JAR=ON -DPYTHON_ITERATOR_SUPPORT=ON .. && make -j4 && ctest --debug;
     fi
