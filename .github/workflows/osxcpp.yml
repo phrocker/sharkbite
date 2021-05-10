@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: install deps
       run: brew install boost  flex bison python3
+    - name: Link Flex and Bison
       run: brew link --force flex bison
 
     - name: Configure CMake
