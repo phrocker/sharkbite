@@ -17,7 +17,11 @@ jobs:
     # cross-platform coverage.
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: macos-latest
-
+    env:
+      CMAKE_INCLUDE_PATH: "/usr/local/opt/flex/include"
+      CMAKE_LIBRARY_PATH: "/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"
+      LDFLAGS: "-L/usr/local/opt/bison/lib"
+      PATH: "/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"
     steps:
     - run: brew install boost  flex bison python3
     - run: brew link --force flex bison
