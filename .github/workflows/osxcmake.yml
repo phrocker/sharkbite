@@ -19,7 +19,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - run: brew boost  flex bison python3
+    - run: brew install boost  flex bison python3
     - run: brew link --force flex bison
     - uses: actions/checkout@v2
 
