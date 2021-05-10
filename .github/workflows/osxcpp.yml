@@ -1,4 +1,4 @@
-name: OPSX CICD Pipeline
+name: OPX CICD Pipeline
 
 on: [push]
 
@@ -6,7 +6,11 @@ jobs:
   build:
 
     runs-on: macos-latest
-    
+    env:
+      CMAKE_INCLUDE_PATH: "/usr/local/opt/flex/include"
+      CMAKE_LIBRARY_PATH: "/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"
+      LDFLAGS: "-L/usr/local/opt/bison/lib"
+      PATH: "/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"
     steps:
     - uses: actions/checkout@v2
     - name: install deps
