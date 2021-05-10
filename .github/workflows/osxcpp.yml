@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [ main ]
 
-env:
-  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
 
 jobs:
   build:
@@ -22,8 +19,9 @@ jobs:
       CMAKE_LIBRARY_PATH: "/usr/local/opt/flex/lib;/usr/local/opt/bison/lib"
       LDFLAGS: "-L/usr/local/opt/bison/lib"
       PATH: "/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"
+      BUILD_TYPE: Release
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v1
     - run: brew install boost  flex bison python3
     - run: brew link --force flex bison
 
