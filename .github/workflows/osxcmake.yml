@@ -19,8 +19,8 @@ jobs:
     runs-on: macos-latest
 
     steps:
-    - run: sudo brew boost  flex bison python3
-    - run: sudo brew link --force flex bison
+    - run: brew boost  flex bison python3
+    - run: brew link --force flex bison
     - uses: actions/checkout@v2
 
     - name: Configure CMake
