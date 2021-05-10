@@ -1,4 +1,4 @@
-name: CICD OSX
+name: OSX CICD Pipeline
 
 on:
   push:
@@ -23,6 +23,7 @@ jobs:
       LDFLAGS: "-L/usr/local/opt/bison/lib"
       PATH: "/usr/local/opt/flex/bin:/usr/local/opt/bison/bin:$PATH"
     steps:
+    - run: /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
     - run: brew install boost  flex bison python3
     - run: brew link --force flex bison
     - uses: actions/checkout@v2
