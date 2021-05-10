@@ -14,7 +14,7 @@ matrix:
             - ubuntu-toolchain-r-test
             - boost-latest
           packages:
-            - g++-5
+            - g++-7
             - libbz2-dev
             - libgsasl7-dev
             - uuid-dev
@@ -26,9 +26,9 @@ matrix:
             - libprotobuf-dev
             - protobuf-compiler
       env:
-         - MATRIX_EVAL="CC=gcc-5 && CXX=g++-5"
+         - MATRIX_EVAL="CC=gcc-7 && CXX=g++-7"
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode12.2
       addons:
         homebrew:
           packages:
