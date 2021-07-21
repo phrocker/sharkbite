@@ -194,12 +194,8 @@ namespace cclient
 
         void init(Watch *watch)
         {
-          #ifdef WIN32_OS       
-            FILE *outfile = fopen("nul", "w");
-          #else
-            FILE *outfile = fopen("NULL", "w");
-          #endif
-          zoo_set_log_stream(outfile);
+          // turn down logging sent to stderr so that we only have errors sent
+          zoo_set_debug_level(ZOO_LOG_LEVEL_ERROR);
           myWatch = watch;
           // init zk with our zk info, and the watcher_function will
           // label our watch as 'connected'
@@ -208,6 +204,7 @@ namespace cclient
           zookeeperReference = zookeeper_init(hostPorts, watcher_function, timeout, 0, initWatchFp.get(), 0);
 
           myWatch->setHandle(zookeeperReference);
+          
           logging::LOG_TRACE(logger) << "Connecting to " << hostPorts;
         }
 
