@@ -31,7 +31,7 @@ def operatingsystem():
     return "Operating System :: POSIX :: Linux"
 
 setup(
-    name='sharkbite',
+    name='pandashark',
     version='1.1.1.0',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
@@ -39,7 +39,6 @@ setup(
     description='Apache Accumulo and Apache HDFS Python Connector',
     long_description=readme(),
     long_description_content_type='text/markdown',
-    ext_modules=[CMakeExtension('sharkbite.pysharkbite')],
     zip_safe=False,
     classifiers=[
         "Programming Language :: C++",
@@ -47,5 +46,5 @@ setup(
         operatingsystem(),
     ],
     python_requires='>=3.6',
-    packages=['sharkbite']
+    packages=['pandashark']
 )

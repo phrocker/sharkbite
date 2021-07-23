@@ -135,20 +135,32 @@ class AccumuloScanner(AccumuloBase):
     
     def __init__(self, instance: str , zookeepers: str, username: str, password: str, table: str =None, auths: str =None):
         super().__init__(instance,zookeepers,username,password,table,auths)
+        self._scanner = self._table_operations.createScanner(self._auths,self._threads)
         
+    def select_column(self, cf : str, cq: str = None):
+        if cq:
+            self._scanner.fetchColumn(cf)
+        else:
+            self._scanner.fetchColumn(cf,cq)
 
     def get(self,begin_row, end_row=None):
         if end_row is None:
             range = Range(begin_row)
         else:
             range = Range(begin_row,True,end_row,False)
-    
 
-        scanner = self._table_operations.createScanner(self._auths,self._threads)
-
-        scanner.addRange( range )
+        self._scanner.addRange( range )
     
-        return AccumuloIterator(scanner)
+        return AccumuloIterator(self._scanner)
+
+    def fetch_range(self, range):
+        self._scanner.addRange(range)
+    def fetch_ranges(self, ranges : list):
+        for range in ranges:
+            self._scanner.addRange(range)
+
+    def get(self, chunksize : int):   
+        return AccumuloIterator(self._scanner, chunksize)
 
     def __del__(self):
         if self._scanner is not None:
@@ -159,19 +171,30 @@ class AccumuloIterator(AccumuloBase):
     _scanner = None
     _iter = None
     _resultset = None
+    _chunkSize = 0
+    _chunkCounter = 0
 
     def __init__(self, scanner):
         self._scanner = scanner
         self._resultset = scanner.getResultSet()
+    
+    def __init__(self, scanner, chunkSize):
+        self._scanner = scanner
+        self._resultset = scanner.getResultSet()
+        self._chunkSize = chunkSize
 
     def __iter__(self):
         self._iter = self._resultset.__iter__()
         return self
 
+    def nextBatch(self):
+        self._chunkCounter = 0
+
     def __next__(self):
         tk = self._iter.__next__()
-        if tk is None:
+        if tk is None or (self._chunkSize > 0 and self._chunkCounter >= self._chunkSize ):
             raise StopIteration
         else:
+            self._chunkCounter += 1
             return tk
         
