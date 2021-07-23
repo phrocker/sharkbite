@@ -21,7 +21,7 @@ class CMakeExtension(Extension):
         self.sourcedir = os.path.abspath(sourcedir)
 
 def readme():
-  with open("PYTHONREADME.md", "r") as fh:
+  with open("PANDASHARKREADME.md", "r") as fh:
     return fh.read()
 
 def operatingsystem():
@@ -32,7 +32,7 @@ def operatingsystem():
 
 setup(
     name='pandashark',
-    version='1.1.1.0',
+    version='1.1.1.1',
     author='Marc Parisi',
     author_email='phrocker@apache.org',
     url='https://docs.sharkbite.io/',
