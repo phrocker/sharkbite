@@ -27,8 +27,8 @@ TabletServerLocator::TabletServerLocator(
       parent(parent),
       locator(lc),
       instance(inst),
+      lastTabletRow(tableId),
       logger(logging::LoggerFactory<TabletServerLocator>::getLogger()) {
-  lastTabletRow = tableId;
   lastTabletRow.append("<");
 }
 

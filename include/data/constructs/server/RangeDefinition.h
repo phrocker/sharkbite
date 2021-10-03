@@ -83,7 +83,7 @@ public:
 	}
 
 	friend inline std::ostream&
-	operator <<(std::ostream &out, RangeDefinition &rhs) {
+	operator <<(std::ostream &out, const RangeDefinition &rhs) {
 		out << "Ranges: ";
 		for (const auto range : rhs.ranges) {
 			out << *range << " ";

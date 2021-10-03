@@ -82,10 +82,10 @@ class IterInfo {
    * @param cl iterator class name
    * @param pri iterator priority
    **/
-  explicit IterInfo(const std::string &name, const std::string &cl, uint32_t pri, std::map<std::string, std::string> &opts)
+  explicit IterInfo(const std::string &name, const std::string &cl, uint32_t pri, const std::map<std::string, std::string> &opts)
       :
       IterInfo(name, cl, pri) {
-    options = opts;
+        options = opts;
   }
 
   explicit IterInfo(const std::string &name, const std::string &dsl, uint32_t pri, const std::string &type)

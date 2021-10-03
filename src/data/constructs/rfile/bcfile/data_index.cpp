@@ -24,7 +24,7 @@ DataIndex::DataIndex() {}
 
 DataIndex::~DataIndex() {
   for (std::vector<BlockRegion *>::iterator it = listRegions.begin();
-       it != listRegions.end(); it++)
+       it != listRegions.end(); ++it)
     delete (*it);
 }
 
@@ -46,7 +46,7 @@ uint64_t DataIndex::write(cclient::data::streams::OutputStream *out) {
   // TODO was encoded long
   out->writeEncodedLong(listRegions.size());
   for (std::vector<BlockRegion *>::iterator it = listRegions.begin();
-       it != listRegions.end(); it++) {
+       it != listRegions.end(); ++it) {
     (*it)->write(out);
   }
 

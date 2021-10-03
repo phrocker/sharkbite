@@ -77,7 +77,7 @@ class AccumuloCoordinatorFacade {
 
   virtual bool importDirectory(cclient::data::security::AuthInfo *auth,
                                const std::string &table, const std::string &dir,
-                               std::string failure_dir, bool setTime) = 0;
+                               const std::string &failure_dir, bool setTime) = 0;
 
   virtual bool compactFallBack(cclient::data::security::AuthInfo *auth,
                                const std::string &table,
@@ -106,20 +106,20 @@ class AccumuloCoordinatorFacade {
   /**namespace operations**/
 
   virtual bool createNamespace(cclient::data::security::AuthInfo *auth,
-                               std::string name) = 0;
+                               const std::string &name) = 0;
 
   virtual bool deletenamespace(cclient::data::security::AuthInfo *auth,
-                               std::string name) = 0;
+                               const std::string &name) = 0;
 
   virtual bool renamenamespace(cclient::data::security::AuthInfo *auth,
-                               std::string oldName, std::string newName) = 0;
+                               const std::string &oldName, const std::string &newName) = 0;
 
   virtual void removeNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                                       std::string nameSpaceName,
+                                       const std::string &nameSpaceName,
                                        const std::string &property) = 0;
 
   virtual void setNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                                    std::string nameSpaceName,
+                                    const std::string &nameSpaceName,
                                     const std::string &property,
                                     const std::string &value) = 0;
 };

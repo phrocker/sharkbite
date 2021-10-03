@@ -65,7 +65,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
   std::vector<cclient::data::TabletLocation> findTablet(
       cclient::data::security::AuthInfo *credentials,
       cclient::data::TabletLocation *source, std::string row,
-      std::string stopRow, TabletLocator *parent);
+      std::string stopRow, TabletLocator *parent) override;
   /**
    * Finds tablet
    * @param credentials connecting user's credentials
@@ -79,7 +79,7 @@ class MetaDataLocationObtainer : public TabletLocationObtainer {
       cclient::data::security::AuthInfo *credentials, std::string tabletserver,
       std::map<cclient::data::KeyExtent, std::vector<cclient::data::Range>>
           *map,
-      TabletLocator *parent) {
+      TabletLocator *parent) override {
     return std::vector<cclient::data::TabletLocation>();
   }
 

@@ -58,8 +58,7 @@ class InputStream {
  public:
   InputStream(std::istream *ptr, uint64_t pos)
       : istream_ref(ptr),
-        position(new uint64_t(pos)),
-        copy(false),
+        position(pos),
         own_istream(false) {
     if (dynamic_cast<std::ifstream *>(ptr) != nullptr)
       adviseSequentialRead(dynamic_cast<std::ifstream *>(ptr));
@@ -67,8 +66,7 @@ class InputStream {
 
   InputStream(std::unique_ptr<std::istream> ptr, uint64_t pos)
       : istream_ref(ptr.get()),
-        position(new uint64_t(pos)),
-        copy(false),
+        position(pos),
         own_istream(false) {
     if (dynamic_cast<std::ifstream *>(ptr.get()) != nullptr)
       adviseSequentialRead(dynamic_cast<std::ifstream *>(ptr.get()));
@@ -77,8 +75,7 @@ class InputStream {
 
   InputStream()
       : istream_ref(NULL),
-        position(new uint64_t(0)),
-        copy(false),
+        position(0),
         own_istream(false) {}
 
   InputStream(InputStream &&) = default;
@@ -89,17 +86,15 @@ class InputStream {
 
   virtual InputStream *seek(uint64_t pos) {
     istream_ref->seekg(pos);
-    *position = pos;
+    position = pos;
     return this;
   }
 
   virtual ~InputStream() {
-    if (!copy) delete position;
-
     if (own_istream) delete istream_ref;
   }
 
-  virtual uint64_t getPos() { return *position; }
+  virtual uint64_t getPos() { return position; }
 
   virtual std::string readString() {
     // write size of string
@@ -188,14 +183,14 @@ class InputStream {
 
   virtual INLINE uint64_t readBytes(uint8_t *bytes, size_t cnt) {
     istream_ref->read((char *)bytes, cnt);
-    *position += cnt;
-    return *position;
+    position += cnt;
+    return position;
   }
 
   virtual INLINE uint64_t readBytes(char *bytes, size_t cnt) {
     istream_ref->read((char *)bytes, cnt);
-    *position += cnt;
-    return *position;
+    position += cnt;
+    return position;
   }
 
   virtual INLINE uint64_t readBytes(uint8_t **bytes, size_t cnt) {
@@ -244,7 +239,6 @@ class InputStream {
   virtual uint64_t readLong() {
     uint64_t val;
     readBytes((uint8_t *)&val, 8);
-    // *position += 8;
     return val;
   }
 
@@ -356,7 +350,7 @@ class InputStream {
    * of the stream ( this stream )
    * @returns stream position
    */
-  virtual uint32_t bytesRead() { return *position; }
+  virtual uint32_t bytesRead() { return position; }
 
   virtual uint64_t bytesAvailable() {
     // by default, return the maximum
@@ -401,16 +395,14 @@ class InputStream {
   InputStream(InputStream *ptr)
       : istream_ref(ptr->istream_ref),
         position(ptr->position),
-        copy(true),
         own_istream(false) {}
 
   // ostream reference.
   std::istream *istream_ref;
   // position pointer.
-  uint64_t *position;
+  uint64_t position;
   // identify that we have copied a stream
   // useful when deleting position
-  bool copy;
   bool own_istream;
 
   char rdbuffer[62356];

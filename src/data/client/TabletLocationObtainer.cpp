@@ -40,7 +40,7 @@ TabletLocationObtainer::decodeResults(
 
   for (std::vector<std::shared_ptr<cclient::data::KeyValue>>::iterator it =
            results->begin();
-       it != results->end(); it++) {
+       it != results->end(); ++it) {
     std::shared_ptr<cclient::data::KeyValue> kv =
         (std::shared_ptr<cclient::data::KeyValue>)(*it);
 

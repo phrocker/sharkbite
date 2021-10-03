@@ -59,7 +59,7 @@ uint64_t MetaIndex::write(cclient::data::streams::OutputStream *out) {
   // write out all the meta index entries
   for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it =
            index.begin();
-       it != index.end(); it++) {
+       it != index.end(); ++it) {
     (*it).second->write(out);
   }
   return out->getPos();

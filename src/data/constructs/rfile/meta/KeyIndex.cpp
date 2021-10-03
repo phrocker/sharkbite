@@ -41,8 +41,6 @@ int KeyIndex::binary_search(const std::shared_ptr<Key> &search_key) {
 
 int KeyIndex::binary_search(int first, int last,
                             const std::shared_ptr<Key> &search_key) {
-  int index;
-
   int low = first;
   int high = last;
 
@@ -68,7 +66,6 @@ int KeyIndex::binary_search(int first, int last,
 
   return -(low + 1);  // key not found
 
-  return index;
 }  // end binarySear
 
 }  // namespace data

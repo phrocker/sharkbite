@@ -74,7 +74,7 @@ public:
 	bool operator <(const Column *rhs) const {
 		return *this < *rhs;
 	}
-	uint64_t write(cclient::data::streams::OutputStream *outStream);
+	uint64_t write(cclient::data::streams::OutputStream *outStream) override;
 
 	void setColFamily(const char *r, uint32_t size);
 

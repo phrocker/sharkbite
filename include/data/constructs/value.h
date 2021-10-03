@@ -53,15 +53,15 @@ public:
 
     size_t size();
 
-    std::shared_ptr<StreamInterface> getStream();
+    std::shared_ptr<StreamInterface> getStream() override;
 
     std::pair<uint8_t*, size_t> getValue() const;
 
     std::string getValueAsString() const;
 
-    uint64_t write (cclient::data::streams::OutputStream *outStream);
+    uint64_t write (cclient::data::streams::OutputStream *outStream) override;
 
-    uint64_t read (cclient::data::streams::InputStream *in);
+    uint64_t read (cclient::data::streams::InputStream *in) override;
 
     bool operator ==(const Value & rhs) const;
 

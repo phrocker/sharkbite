@@ -58,7 +58,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
    * Returns the relative key.
    **/
   std::shared_ptr<StreamInterface>
-  getStream();
+  getStream() override;
 
   /**
    * Sets the base for the relative key
@@ -70,7 +70,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
   /**
    * create and fulfill the relative key object.
    **/
-  virtual uint64_t read(cclient::data::streams::InputStream *in);
+  virtual uint64_t read(cclient::data::streams::InputStream *in) override;
 
   uint64_t readFiltered(cclient::data::streams::InputStream *in);
 
@@ -86,7 +86,7 @@ class RelativeKey : public cclient::data::streams::StreamInterface {
    * @param outStream output stream.
    **/
   uint64_t
-  write(cclient::data::streams::OutputStream *outStream);
+  write(cclient::data::streams::OutputStream *outStream) override;
 
   bool operator <(const RelativeKey &rhs) const;
 

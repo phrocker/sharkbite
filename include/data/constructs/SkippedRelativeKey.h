@@ -129,7 +129,7 @@ class SkippedRelativeKey : public cclient::data::streams::StreamInterface {
 
   }
 
-  SkippedRelativeKey(ArrayAllocatorPool *allocator)
+  explicit SkippedRelativeKey(ArrayAllocatorPool *allocator)
       :
       SkippedRelativeKey(NULL, 0, NULL, allocator) {
   }

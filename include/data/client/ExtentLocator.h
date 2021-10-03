@@ -44,7 +44,7 @@ class LocatorKey {
    * @param table table for which we are locating tablets
    **/
   explicit LocatorKey(std::shared_ptr<cclient::data::Instance> instance,
-                      std::string table);
+                      const std::string &table);
   // instance
   std::shared_ptr<cclient::data::Instance> instance;
   // table name
@@ -94,7 +94,7 @@ class TabletLocator {
    * @returns returns the tablet location or null
    **/
   virtual cclient::data::TabletLocation locateTablet(
-      cclient::data::security::AuthInfo *creds, std::string row, bool skipRow,
+      cclient::data::security::AuthInfo *creds, const std::string &row, bool skipRow,
       bool retry) = 0;
 
   /**

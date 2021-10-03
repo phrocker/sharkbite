@@ -16,8 +16,7 @@
 namespace cclient {
 namespace data {
 
-TabletLocation::TabletLocation() : port(0) {
-  tablet_extent = std::make_shared<cclient::data::KeyExtent>("!0", "d");
+TabletLocation::TabletLocation() : port(0), tablet_extent(std::make_shared<cclient::data::KeyExtent>("!0", "d")) {
 }
 
 TabletLocation::~TabletLocation() {}

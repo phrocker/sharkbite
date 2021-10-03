@@ -31,7 +31,7 @@ namespace streams {
 
 class BigEndianOutStream : public DataOutputStream {
  public:
-  BigEndianOutStream(OutputStream *os) : DataOutputStream(os) {}
+  explicit BigEndianOutStream(OutputStream *os) : DataOutputStream(os) {}
 
   /**
    * Copied from
@@ -53,19 +53,19 @@ class BigEndianOutStream : public DataOutputStream {
     }
   }
 
-  uint64_t writeShort(short shortVal) {
+  uint64_t writeShort(short shortVal) override {
     return DataOutputStream::writeShort(htons(shortVal));
   }
 
-  uint64_t writeInt(int intVal) {
+  uint64_t writeInt(int intVal) override {
     return DataOutputStream::writeInt(htonl(intVal));
   }
 
-  uint64_t writeLong(uint64_t val) {
+  uint64_t writeLong(uint64_t val) override {
     return DataOutputStream::writeLong(htonlw(val));
   }
 
-  uint64_t writeBytes(const char *bytes, size_t cnt) {
+  uint64_t writeBytes(const char *bytes, size_t cnt) override {
     return DataOutputStream::writeBytes(bytes, cnt);
   }
 };

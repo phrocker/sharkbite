@@ -234,14 +234,14 @@ main (int argc, char **argv)
 	
 	for (int i = 0; i < fruit_to_write; i++) {
 
-		cclient::data::Mutation *newKv = new cclient::data::Mutation ("a");
+		std::unique_ptr<cclient::data::Mutation> newKv = make_unique< cclient::data::Mutation> ("a");
 		
 		std::stringstream cq;
 		cq << "banana" << i;
 		
-		newKv->put("avacado",cq.str(),"",1445105294261L);
+		newKv->put("avocado",cq.str(),"",1445105294261L);
 		
-		writer->addMutation (std::unique_ptr<cclient::data::Mutation>(newKv));
+		writer->addMutation (std::move(newKv));
 	}
 	
 	
@@ -275,7 +275,7 @@ main (int argc, char **argv)
 
 	scanner->addRange (std::unique_ptr<cclient::data::Range>(range));
 	
-	scanner->fetchColumn("avacado");
+	scanner->fetchColumn("avocado");
 
 	scanners::Iterator<cclient::data::KeyValue> *results =
 	                scanner->getResultSet ();

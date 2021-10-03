@@ -17,7 +17,7 @@
 namespace cclient {
 namespace data {
 
-KeyExtent::KeyExtent(std::string flattenedText,
+KeyExtent::KeyExtent(const std::string &flattenedText,
                      std::shared_ptr<Value> prevEndRow) {
   decodeMetadataRow(flattenedText);
   setPrevEndRow(prevEndRow);

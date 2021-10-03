@@ -49,9 +49,8 @@ AccumuloConnector::AccumuloConnector(
     : RootInterface<interconnect::AccumuloCoordinatorTransporter,
                     cclient::data::KeyValue,
                     scanners::ResultBlock<cclient::data::KeyValue>>(
-          credentials, inst.get()) {
+          credentials, inst.get()), instance(inst) {
   // copy the instance information
-  instance = inst;
 
   this->myTransportPool = &ACCUMULO_COORDINATOR;
   this->credentials = credentials;

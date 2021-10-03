@@ -112,7 +112,7 @@ void ParallelRFile::relocate(
   }
   // create heap iterators so we can read files within a given thread
   for (const auto &reader_set : readers) {
-    std::shared_ptr<cclient::data::streams::KeyValueIterator> heapItr = {};
+    std::shared_ptr<cclient::data::streams::KeyValueIterator> heapItr;
     if (versions == 0) {
       if (!withDeletes) {
         heapItr =

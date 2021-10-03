@@ -116,7 +116,6 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
 
   uint64_t timestamp = 0;
   uint64_t prevTimestamp = 0;
-  bool previousDeleted = false;
 
   int rowCmp = -1, cfCmp = -1, cqCmp = -1, cvCmp = -1;
   if (NULL != currKey) {
@@ -171,12 +170,15 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
     }
 
   } else {
+
+    bool previousDeleted = false;
+
     char fieldsSame = -1;
 
     size_t count = 0;
 
     std::shared_ptr<Key> newPrevKey = NULL;
-    int fieldsPrefixed = 0;
+    int fieldsPrefixed;
     while (count < entriesRemaining) {
       previousDeleted =
           (fieldsSame & RelativeKey::DELETED) == RelativeKey::DELETED;

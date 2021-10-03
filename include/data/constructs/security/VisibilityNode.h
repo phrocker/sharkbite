@@ -181,7 +181,6 @@ struct ExpressionASTComparator {
         if (diff < 0)
           return true;
         auto lhs_children = lhs.getChildren();
-        auto rhs_children = rhs.getChildren();
         for (size_t i = 0; i < lhs_children.size(); i++) {
           diff = operator()(lhs_children.at(i), rhs.children.at(i));
           if (diff > 0)

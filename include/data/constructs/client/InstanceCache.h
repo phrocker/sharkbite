@@ -32,7 +32,7 @@ namespace cclient
             }
 
             virtual uint8_t *getData(std::string path) = 0;
-            virtual std::vector<std::string> getChildren(const std::string path, bool force = false) = 0;
+            virtual std::vector<std::string> getChildren(const std::string &path, bool force = false) = 0;
         };
 
     } // namespace data
