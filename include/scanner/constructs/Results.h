@@ -73,7 +73,7 @@ class ResultBlock : public std::istream_iterator<T> {
 
   bool isEndOfRange() const { return isEnd; }
 
-  void setException(std::exception_ptr &e) { result_excp = e; }
+  void setException(const std::exception_ptr &e) { result_excp = e; }
 
   ResultBlock<T> end() {
     return static_cast<ResultBlock<T>>(
@@ -145,7 +145,7 @@ class ResultBlock : public std::istream_iterator<T> {
 
   void add(std::vector<std::unique_ptr<T>> *t) {
     for (typename std::vector<std::unique_ptr<T>>::iterator it = t->begin();
-         it != t->end(); it++) {
+         it != t->end(); ++it) {
       resultSet->enqueue(*it.release());
       sourceConditionals->incrementCount();
     }
@@ -155,7 +155,7 @@ class ResultBlock : public std::istream_iterator<T> {
 
   void add(std::vector<std::shared_ptr<T>> *t) {
     for (typename std::vector<std::shared_ptr<T>>::iterator it = t->begin();
-         it != t->end(); it++) {
+         it != t->end(); ++it) {
       resultSet->enqueue(*it);
       sourceConditionals->incrementCount();
     }

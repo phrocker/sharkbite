@@ -289,7 +289,7 @@ class TabletServerLocator : public TabletLocator {
     cachedLocations.clear();
   }
 
-  void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) {}
+  void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) override {}
 
  protected:
   std::string lastTabletRow;

@@ -54,7 +54,7 @@ class HadoopDataInputStream : public InputStream {
 class HdfsInputStream : public InputStream {
  protected:
  public:
-  explicit HdfsInputStream(const std::string path);
+  explicit HdfsInputStream(const std::string &path);
 
   explicit HdfsInputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs,
                            const std::string &path);

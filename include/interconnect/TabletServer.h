@@ -66,10 +66,9 @@ class ServerInterconnect
  protected:
   explicit ServerInterconnect(cclient::data::security::AuthInfo *creds,
                               TransportPool<ThriftTransporter> *
-                                  distributedConnector = &CLUSTER_COORDINATOR) {
+                                  distributedConnector = &CLUSTER_COORDINATOR) : myTransport(nullptr) {
     myTransportPool = distributedConnector;
     this->credentials = *creds;
-    myTransport = NULL;
   }
   std::shared_ptr<CachedTransport<ThriftTransporter>> myTransport;
 

@@ -127,7 +127,7 @@ uint64_t HadoopDataOutputStream::writeHadoopLong(const int64_t n) {
   return output_stream_ref->getPos();
 }
 
-HdfsOutputStream::HdfsOutputStream(const std::string path)
+HdfsOutputStream::HdfsOutputStream(const std::string &path)
     : hdfs(nullptr), file(path) {
   utils::Uri uri(path);
 
