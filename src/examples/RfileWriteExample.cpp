@@ -128,7 +128,7 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
 
     auto endstream = new cclient::data::streams::ReadAheadInputStream(stream, 128 * 1024, 1024 * 1024, size);
 
-    cclient::data::SequentialRFile *newRFile = new cclient::data::SequentialRFile(endstream, size);
+    auto newRFile = std::make_shared<cclient::data::SequentialRFile>(endstream, size);
     std::vector<std::string> cf;
     cclient::data::Range rng;
     auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(rng, cf, false);
@@ -159,8 +159,6 @@ void readRfile(std::string outputFile, uint16_t port, bool print, const std::str
     delete endstream;
 
     delete stream;
-
-    delete newRFile;
 
     auto end = chrono::steady_clock::now();
 

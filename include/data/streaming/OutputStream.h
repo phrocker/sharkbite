@@ -31,8 +31,10 @@ class OutputStream {
   explicit OutputStream(std::unique_ptr<std::ostream> ptr, uint64_t pos)
       : ostream_ref(ptr.get()),
         position(pos),
-        copy(false),
-        owned_ostream_ref(std::move(ptr)) {}
+        copy(false) //,owned_ostream_ref(std::move(ptr))
+         {
+           owned_ostream_ref =std::move(ptr);
+         }
 
   explicit OutputStream(std::ostream *ptr, uint64_t pos);
 
