@@ -38,8 +38,8 @@ class RootTabletLocator : public TabletLocator {
   ~RootTabletLocator();
 
   cclient::data::TabletLocation locateTablet(
-      cclient::data::security::AuthInfo *creds, const std::string  &row, bool skipRow,
-      bool retry) override{
+      cclient::data::security::AuthInfo *creds, const std::string &row,
+      bool skipRow, bool retry) override {
     cclient::data::TabletLocation *location = getRootTabletLocation();
 
     while (retry && location == NULL) {
@@ -63,7 +63,8 @@ class RootTabletLocator : public TabletLocator {
                std::shared_ptr<cclient::data::TabletServerMutations>>
           *binnedMutations,
       std::set<std::string> *locations,
-      std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) override {}
+      std::vector<std::shared_ptr<cclient::data::Mutation>> *failures)
+      override {}
 
   virtual std::vector<std::shared_ptr<cclient::data::Range>> binRanges(
       cclient::data::security::AuthInfo *credentials,
@@ -74,13 +75,13 @@ class RootTabletLocator : public TabletLocator {
                         std::vector<std::shared_ptr<cclient::data::Range>>,
                         pointer_comparator<
                             std::shared_ptr<cclient::data::KeyExtent>>>>
-          *binnedRanges) override{
+          *binnedRanges) override {
     return std::vector<std::shared_ptr<cclient::data::Range>>();
   }
 
-  void invalidateCache(cclient::data::KeyExtent failedExtent) override{}
+  void invalidateCache(cclient::data::KeyExtent failedExtent) override {}
 
-  void invalidateCache() override{}
+  void invalidateCache() override {}
 
   void invalidateCache(std::vector<cclient::data::KeyExtent> keySet) override {}
 

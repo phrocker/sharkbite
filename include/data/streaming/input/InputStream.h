@@ -57,26 +57,19 @@ namespace streams {
 class InputStream {
  public:
   InputStream(std::istream *ptr, uint64_t pos)
-      : istream_ref(ptr),
-        position(pos),
-        own_istream(false) {
+      : istream_ref(ptr), position(pos), own_istream(false) {
     if (dynamic_cast<std::ifstream *>(ptr) != nullptr)
       adviseSequentialRead(dynamic_cast<std::ifstream *>(ptr));
   }
 
   InputStream(std::unique_ptr<std::istream> ptr, uint64_t pos)
-      : istream_ref(ptr.get()),
-        position(pos),
-        own_istream(false) {
+      : istream_ref(ptr.get()), position(pos), own_istream(false) {
     if (dynamic_cast<std::ifstream *>(ptr.get()) != nullptr)
       adviseSequentialRead(dynamic_cast<std::ifstream *>(ptr.get()));
     ownedStream = std::move(ptr);
   }
 
-  InputStream()
-      : istream_ref(NULL),
-        position(0),
-        own_istream(false) {}
+  InputStream() : istream_ref(NULL), position(0), own_istream(false) {}
 
   InputStream(InputStream &&) = default;
 

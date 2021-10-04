@@ -151,67 +151,63 @@ std::string StringUtils::replaceMap(
   return result_string;
 }
 
+std::string StringUtils::getEscapedString(std::string const &s) {
+  std::stringstream out;
+  for (auto ch : s) {
+    switch (ch) {
+      case 0:
+        out << "\\u0000";
+        break;
+      case '\'':
+        out << "\\'";
+        break;
 
-    std::string StringUtils::getEscapedString(std::string const& s)
-    {
-      std::stringstream out;
-      for ( auto ch : s )
-      {
-          switch (ch)
-          {
-            case 0:
-                out << "\\u0000";
-                break;
-            case '\'':
-                out << "\\'";
-                break;
+      case '\"':
+        out << "\\\"";
+        break;
 
-            case '\"':
-                out << "\\\"";
-                break;
+      case '\?':
+        out << "\\?";
+        break;
 
-            case '\?':
-                out << "\\?";
-                break;
+      case '\\':
+        out << "\\\\";
+        break;
 
-            case '\\':
-                out << "\\\\";
-                break;
+      case '\a':
+        out << "\\a";
+        break;
 
-            case '\a':
-                out << "\\a";
-                break;
+      case '\b':
+        out << "\\b";
+        break;
 
-            case '\b':
-                out << "\\b";
-                break;
+      case '\f':
+        out << "\\f";
+        break;
 
-            case '\f':
-                out << "\\f";
-                break;
+      case '\n':
+        out << "\\n";
+        break;
 
-            case '\n':
-                out << "\\n";
-                break;
+      case '\r':
+        out << "\\r";
+        break;
 
-            case '\r':
-                out << "\\r";
-                break;
+      case '\t':
+        out << "\\t";
+        break;
 
-            case '\t':
-                out << "\\t";
-                break;
+      case '\v':
+        out << "\\v";
+        break;
 
-            case '\v':
-                out << "\\v";
-                break;
-
-            default:
-                out << ch;
-          }
-      }
-
-      return out.str();
+      default:
+        out << ch;
     }
+  }
+
+  return out.str();
+}
 
 } /* namespace utils */

@@ -160,7 +160,8 @@ void ParallelRFile::relocate(
         location->getRange()->getStopKey(),
         location->getRange()->getStopKeyInclusive()));
   }
-  assert(keys.size() == thread_readers.size() && thread_readers.size() == number);
+  assert(keys.size() == thread_readers.size() &&
+         thread_readers.size() == number);
 
   for (uint32_t i = 0; i < number; i++) {
     thread_readers.at(i)->range =

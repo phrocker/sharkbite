@@ -53,7 +53,7 @@ class TabletServerLocator : public TabletLocator {
    *metadata rows for this table.
    **/
   virtual std::vector<cclient::data::TabletLocation> locations(
-      cclient::data::security::AuthInfo *credentials) override{
+      cclient::data::security::AuthInfo *credentials) override {
     std::stringstream metadataRow;
 
     metadataRow << tableId << ';';
@@ -74,8 +74,8 @@ class TabletServerLocator : public TabletLocator {
    * @param retry determines if failures should be retried.
    **/
   cclient::data::TabletLocation locateTablet(
-      cclient::data::security::AuthInfo *creds, const std::string &row, bool skipRow,
-      bool retry) override{
+      cclient::data::security::AuthInfo *creds, const std::string &row,
+      bool skipRow, bool retry) override {
     std::string modifiedRow;
 
     if (skipRow) {
@@ -149,7 +149,8 @@ class TabletServerLocator : public TabletLocator {
                std::shared_ptr<cclient::data::TabletServerMutations>>
           *binnedMutations,
       std::set<std::string> *locations,
-      std::vector<std::shared_ptr<cclient::data::Mutation>> *failures) override{
+      std::vector<std::shared_ptr<cclient::data::Mutation>> *failures)
+      override {
     std::map<std::string,
              std::shared_ptr<cclient::data::TabletServerMutations>>::iterator
         it;
@@ -186,7 +187,7 @@ class TabletServerLocator : public TabletLocator {
                         std::vector<std::shared_ptr<cclient::data::Range>>,
                         pointer_comparator<
                             std::shared_ptr<cclient::data::KeyExtent>>>>
-          *binnedRanges) override{
+          *binnedRanges) override {
     std::string startRow = "";
     std::vector<std::shared_ptr<cclient::data::Range>> failures;
 
@@ -278,12 +279,12 @@ class TabletServerLocator : public TabletLocator {
     return failures;
   }
 
-  void invalidateCache(cclient::data::KeyExtent failedExtent) override{
+  void invalidateCache(cclient::data::KeyExtent failedExtent) override {
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);
     cachedLocations.erase(failedExtent.getEndRow());
   }
 
-  void invalidateCache() override{
+  void invalidateCache() override {
     std::lock_guard<std::recursive_mutex> lock(locatorMutex);
     logging::LOG_DEBUG(logger) << "Invalidating the cache";
     cachedLocations.clear();

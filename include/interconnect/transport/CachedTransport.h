@@ -80,7 +80,8 @@ class CachedTransport {
 
   bool isOpen() { return serverTransport->isOpen(); }
 
-  void registerService(const std::string &instance, const std::string &clusterManagers) {
+  void registerService(const std::string &instance,
+                       const std::string &clusterManagers) {
     // no op
   }
 

@@ -57,7 +57,8 @@ class SecurityOperations {
           *distributedConnector)
       : credentials(creds),
         myInstance(instance),
-        clientInterface(interface->getTransport()), ptr(interface->getTransporter()){
+        clientInterface(interface->getTransport()),
+        ptr(interface->getTransporter()) {
     cachedTransport = interface;
     refTransportPool = distributedConnector;
   }

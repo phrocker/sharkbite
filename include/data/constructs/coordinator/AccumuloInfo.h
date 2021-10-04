@@ -151,19 +151,19 @@ namespace cclient
         class AccumuloInfoBuilder
         {
         public:
-            AccumuloInfoBuilder &tableMap(std::map<std::string, TableInfo> tableMap)
+            AccumuloInfoBuilder &tableMap(const std::map<std::string, TableInfo> &tableMap)
             {
                 info.tableMap = tableMap;
                 return *this;
             }
 
-            AccumuloInfoBuilder &tabletServerInfo(std::vector<TabletServerStatus> tServerInfo)
+            AccumuloInfoBuilder &tabletServerInfo(const std::vector<TabletServerStatus> &tServerInfo)
             {
                 info.tServerInfo = tServerInfo;
                 return *this;
             }
 
-            AccumuloInfoBuilder &badTabletServers(std::map<std::string, int8_t> badTServers)
+            AccumuloInfoBuilder &badTabletServers(const std::map<std::string, int8_t> &badTServers)
             {
                 info.badTServers = badTServers;
                 return *this;
@@ -187,13 +187,13 @@ namespace cclient
                 return *this;
             }
 
-            AccumuloInfoBuilder &serversShuttingDown(std::set<std::string> serversShuttingDown)
+            AccumuloInfoBuilder &serversShuttingDown(const std::set<std::string> &serversShuttingDown)
             {
                 info.serversShuttingDown = serversShuttingDown;
                 return *this;
             }
 
-            AccumuloInfoBuilder &deadTabletServers(std::vector<DeadServer> deadTabletServers)
+            AccumuloInfoBuilder &deadTabletServers(const std::vector<DeadServer> &deadTabletServers)
             {
                 info.deadTabletServers = deadTabletServers;
                 return *this;

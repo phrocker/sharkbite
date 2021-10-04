@@ -165,7 +165,7 @@ ServerInterconnect::ServerInterconnect(
 }
 
 ServerInterconnect::ServerInterconnect(
-    const std::string host, const int port,
+    const std::string &host, const int port,
     const cclient::impl::Configuration *conf,
     TransportPool<ThriftTransporter> *distributedConnector)
     : logger(logging::LoggerFactory<ServerInterconnect>::getLogger()),
@@ -290,8 +290,9 @@ Scan *ServerInterconnect::hedgedScan(
         auto multi_iter = cclient::data::RFileOperations::openManySequential(
             locations, maxVersion);
         std::vector<std::string> cols;
-        auto seekable = std::make_shared<cclient::data::streams::StreamSeekable>(*range, cols, *auths,
-                                                        false);
+        auto seekable =
+            std::make_shared<cclient::data::streams::StreamSeekable>(
+                *range, cols, *auths, false);
         multi_iter->relocate(seekable);
         int count = 0;
         std::vector<std::shared_ptr<cclient::data::KeyValue>> res;

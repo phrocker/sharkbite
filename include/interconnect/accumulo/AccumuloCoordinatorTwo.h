@@ -283,7 +283,7 @@ class AccumuloCoordinatorFacadeV2 : public AccumuloCoordinatorFacade {
   /**namespace operations**/
 
   bool v2_createNamespace(cclient::data::security::AuthInfo *auth,
-                         const std::string &name) {
+                          const std::string &name) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(name);
     std::map<std::string, std::string> options;
@@ -327,7 +327,8 @@ class AccumuloCoordinatorFacadeV2 : public AccumuloCoordinatorFacade {
   }
 
   bool v2_renamenamespace(cclient::data::security::AuthInfo *auth,
-                          const std::string &oldName, const std::string &newName) {
+                          const std::string &oldName,
+                          const std::string &newName) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(oldName);
     tableArgs.push_back(newName);

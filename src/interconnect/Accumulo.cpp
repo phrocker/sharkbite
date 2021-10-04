@@ -48,8 +48,9 @@ AccumuloConnector::AccumuloConnector(
     std::shared_ptr<cclient::data::Instance> inst)
     : RootInterface<interconnect::AccumuloCoordinatorTransporter,
                     cclient::data::KeyValue,
-                    scanners::ResultBlock<cclient::data::KeyValue>>(
-          credentials, inst.get()), instance(inst) {
+                    scanners::ResultBlock<cclient::data::KeyValue>>(credentials,
+                                                                    inst.get()),
+      instance(inst) {
   // copy the instance information
 
   this->myTransportPool = &ACCUMULO_COORDINATOR;

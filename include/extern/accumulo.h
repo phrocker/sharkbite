@@ -65,7 +65,7 @@ public:
 
 
 	std::shared_ptr<cclient::data::Key> next(){
-        st++;
+        ++st;
 		return key_;
 	}
 

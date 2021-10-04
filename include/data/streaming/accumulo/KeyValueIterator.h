@@ -38,7 +38,9 @@ class KeyValueIterator
 
   virtual bool hasNext() override { return false; }
 
-  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) override {}
+  virtual void relocate(
+      const std::shared_ptr<cclient::data::streams::StreamRelocation>& location)
+      override {}
 
   virtual DataStream* begin() { return this; }
 
@@ -52,7 +54,8 @@ class KeyValueIterator
     return std::make_shared<KeyValue>(getTopKey(), getTopValue());
   }
 
-  virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*() override{
+  virtual std::pair<std::shared_ptr<Key>, std::shared_ptr<Value>> operator*()
+      override {
     return std::make_pair(nullptr, nullptr);
   }
 

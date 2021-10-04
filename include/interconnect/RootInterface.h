@@ -45,7 +45,7 @@ class RootInterface : public AccumuloBaseConnector<T> {
    * @param instance pointer to the current instance
    */
   explicit RootInterface(cclient::data::security::AuthInfo &creds,
-                cclient::data::Instance *instance)
+                         cclient::data::Instance *instance)
       : AccumuloBaseConnector<T>() {}
   /**
    * Constructor, requires credentials and base instance
@@ -53,7 +53,7 @@ class RootInterface : public AccumuloBaseConnector<T> {
    * @param instance pointer to the current instance
    */
   explicit RootInterface(cclient::data::security::AuthInfo &creds,
-                std::shared_ptr<cclient::data::Instance> instance)
+                         std::shared_ptr<cclient::data::Instance> instance)
       : AccumuloBaseConnector<T>() {}
 
   virtual ~RootInterface() {}

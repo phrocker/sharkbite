@@ -394,7 +394,8 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   bool v1_renamenamespace(cclient::data::security::AuthInfo *auth,
-                          const std::string &oldName, const std::string &newName) {
+                          const std::string &oldName,
+                          const std::string &newName) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(oldName);
     tableArgs.push_back(newName);
@@ -683,7 +684,8 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   bool renamenamespace(cclient::data::security::AuthInfo *auth,
-                       const std::string &oldName, const std::string &newName) override {
+                       const std::string &oldName,
+                       const std::string &newName) override {
     return v1_renamenamespace(auth, oldName, newName);
   }
 

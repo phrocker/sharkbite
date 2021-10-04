@@ -115,7 +115,7 @@ class StringUtils {
    * Compares strings by lower casing them.
    */
   static inline bool equalsIgnoreCase(const std::string& left,
-                                      const std::string &right) {
+                                      const std::string& right) {
     if (left.length() == right.length()) {
       return std::equal(right.begin(), right.end(), left.begin(),
                         [](unsigned char lc, unsigned char rc) {

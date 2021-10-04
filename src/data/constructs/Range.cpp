@@ -97,11 +97,11 @@ Range::Range(const std::shared_ptr<Key> &startKey, bool startInclusive,
 bool Range::afterEndKey(const std::shared_ptr<Key> &key) const {
   if (nullptr == key) return true;
 
-  if (infiniteStopKey==true){
+  if (infiniteStopKey == true) {
     return false;
   }
 
-  if (stopKeyInclusive==true) {
+  if (stopKeyInclusive == true) {
     return *stop.get() < key.get();
   }
 

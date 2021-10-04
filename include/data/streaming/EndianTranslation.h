@@ -28,8 +28,7 @@ class EndianTranslationStream : public HadoopDataOutputStream {
       : HadoopDataOutputStream(os) {}
 
   explicit EndianTranslationStream(std::unique_ptr<OutputStream> os)
-      : HadoopDataOutputStream(os.get()), ref(std::move(os)) {
-  }
+      : HadoopDataOutputStream(os.get()), ref(std::move(os)) {}
 
   EndianTranslationStream(EndianTranslationStream &&) = delete;
 

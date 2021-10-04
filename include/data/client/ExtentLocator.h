@@ -94,8 +94,8 @@ class TabletLocator {
    * @returns returns the tablet location or null
    **/
   virtual cclient::data::TabletLocation locateTablet(
-      cclient::data::security::AuthInfo *creds, const std::string &row, bool skipRow,
-      bool retry) = 0;
+      cclient::data::security::AuthInfo *creds, const std::string &row,
+      bool skipRow, bool retry) = 0;
 
   /**
    * returns a list of locations

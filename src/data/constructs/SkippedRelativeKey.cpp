@@ -170,7 +170,6 @@ bool SkippedRelativeKey::fastSkip(cclient::data::streams::InputStream *stream,
     }
 
   } else {
-
     bool previousDeleted = false;
 
     char fieldsSame = -1;

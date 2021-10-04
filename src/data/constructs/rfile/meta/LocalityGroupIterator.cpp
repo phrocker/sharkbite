@@ -45,8 +45,9 @@ std::shared_ptr<LocalityGroupSeekCache> LocalityGroupIterator::relocate(
     hiter->clear();
     for (auto &lgr : lgSeekCache->lastUsed) {
       std::vector<std::string> empty_cf;
-      auto new_relocation = std::make_shared<cclient::data::streams::StreamSeekable>(
-          location->getRange(), empty_cf, location->getAuths(), false);
+      auto new_relocation =
+          std::make_shared<cclient::data::streams::StreamSeekable>(
+              location->getRange(), empty_cf, location->getAuths(), false);
       lgr->getIterator()->relocate(new_relocation);
       hiter->addSource(lgr->getIterator());
     }
@@ -129,8 +130,9 @@ std::vector<std::shared_ptr<LocalityGroup>> LocalityGroupIterator::_relocate(
     }
   }
   std::vector<std::string> empty_cf;
-  auto new_relocation = std::make_shared<cclient::data::streams::StreamSeekable>(
-      location->getRange(), empty_cf, location->getAuths(), false);
+  auto new_relocation =
+      std::make_shared<cclient::data::streams::StreamSeekable>(
+          location->getRange(), empty_cf, location->getAuths(), false);
   for (const auto &lgr : groups) {
     lgr->getIterator()->relocate(new_relocation);
     hiter->addSource(lgr->getIterator());

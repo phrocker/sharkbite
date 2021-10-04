@@ -227,7 +227,7 @@ class Logger : public BaseLogger {
     }
   }
   explicit Logger(std::shared_ptr<spdlog::logger> delegate,
-         std::shared_ptr<LoggerControl> controller)
+                  std::shared_ptr<LoggerControl> controller)
       : delegate_(delegate), controller_(controller) {}
 
   explicit Logger(std::shared_ptr<spdlog::logger> delegate)

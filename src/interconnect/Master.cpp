@@ -47,8 +47,9 @@ MasterConnect::MasterConnect(cclient::data::security::AuthInfo &credentials,
                              std::shared_ptr<cclient::data::Instance> inst)
     : RootInterface<interconnect::AccumuloCoordinatorTransporter,
                     cclient::data::KeyValue,
-                    scanners::ResultBlock<cclient::data::KeyValue>>(
-          credentials, inst.get()), instance(inst) {
+                    scanners::ResultBlock<cclient::data::KeyValue>>(credentials,
+                                                                    inst.get()),
+      instance(inst) {
   // copy the instance information
 
   this->myTransportPool = &MASTER_COORDINATOR;

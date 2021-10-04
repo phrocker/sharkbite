@@ -65,8 +65,9 @@ class ServerInterconnect
 
  protected:
   explicit ServerInterconnect(cclient::data::security::AuthInfo *creds,
-                              TransportPool<ThriftTransporter> *
-                                  distributedConnector = &CLUSTER_COORDINATOR) : myTransport(nullptr) {
+                              TransportPool<ThriftTransporter>
+                                  *distributedConnector = &CLUSTER_COORDINATOR)
+      : myTransport(nullptr) {
     myTransportPool = distributedConnector;
     this->credentials = *creds;
   }
@@ -75,7 +76,7 @@ class ServerInterconnect
   void recreateConnection(bool errorOcurred = false);
 
  public:
-  explicit ServerInterconnect(const std::string host, const int port,
+  explicit ServerInterconnect(const std::string &host, const int port,
                               const cclient::impl::Configuration *conf,
                               TransportPool<ThriftTransporter>
                                   *distributedConnector = &CLUSTER_COORDINATOR);

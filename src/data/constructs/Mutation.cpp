@@ -20,7 +20,11 @@ namespace cclient {
 
 namespace data {
 
-Mutation::Mutation(const std::string &row) : mut_row(row), ptr(0), entries(0),outStream(std::make_unique<streams::ByteOutputStream>(1024)) {
+Mutation::Mutation(const std::string &row)
+    : mut_row(row),
+      ptr(0),
+      entries(0),
+      outStream(std::make_unique<streams::ByteOutputStream>(1024)) {
   endianStream =
       std::make_unique<streams::EndianTranslationStream>(outStream.get());
   baseStream = std::make_unique<streams::DataOutputStream>(endianStream.get());
