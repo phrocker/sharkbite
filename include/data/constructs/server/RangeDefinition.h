@@ -49,13 +49,13 @@ public:
 	 *
 	 */
 	explicit RangeDefinition(cclient::data::security::AuthInfo *creds,
-			cclient::data::security::Authorizations *auths, std::string host,
+			cclient::data::security::Authorizations *auths, const std::string &host,
 			uint32_t port, std::vector<std::shared_ptr<cclient::data::Range>> *keyRange,
 			std::vector<std::shared_ptr<KeyExtent>> *keyExt,
 			const std::vector<Column> &columns);
 
 	explicit RangeDefinition(cclient::data::security::AuthInfo *creds,
-			cclient::data::security::Authorizations *auths, std::string host,
+			cclient::data::security::Authorizations *auths, const std::string &host,
 			uint32_t port, std::vector<std::shared_ptr<cclient::data::Range>> *keyRange,
 			std::vector<std::shared_ptr<KeyExtent>> *keyExt);
 

@@ -29,7 +29,7 @@ namespace cclient
 {
 namespace data
 {
-  /**
+/**
  * Stores Keys and values within a stream object.
  **/
 class KeyValue : public cclient::data::streams::StreamInterface

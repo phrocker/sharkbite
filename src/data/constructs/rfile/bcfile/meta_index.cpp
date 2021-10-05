@@ -30,7 +30,7 @@ MetaIndex::~MetaIndex() {}
  * @returns newly allocated MetaIndexEntry
  */
 MetaIndexEntry *MetaIndex::prepareNewEntry(
-    const std::string name,
+    const std::string &name,
     std::unique_ptr<cclient::data::compression::Compressor> comp) {
   std::shared_ptr<MetaIndexEntry> entry =
       std::make_shared<MetaIndexEntry>(std::move(comp));

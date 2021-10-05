@@ -85,7 +85,7 @@ class ScannerHeuristic : public Heuristic<interconnect::ThriftTransporter> {
 
     if (started) {
       for (std::vector<std::thread>::iterator iter = threads.begin();
-           iter != threads.end(); iter++) {
+           iter != threads.end(); ++iter) {
         iter->join();
       }
     }
