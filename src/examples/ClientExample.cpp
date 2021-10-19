@@ -170,7 +170,7 @@ main (int argc, char **argv)
 
 	cclient::data::security::AuthInfo creds (argv[3], argv[4], instance->getInstanceId ());
 
-	auto accumulo = new interconnect::AccumuloConnector (creds, instance);
+	auto accumulo = make_unique<interconnect::AccumuloConnector> (creds, instance);
 
 	auto ops = accumulo->tableOps (
 	                        table);
@@ -271,9 +271,9 @@ main (int argc, char **argv)
 	startkey->setRow ("a", 1);
 	std::shared_ptr<cclient::data::Key> stopKey= std::make_shared<cclient::data::Key>();
 	stopKey->setRow ("z", 1);
-	cclient::data::Range *range = new cclient::data::Range (startkey, true, stopKey, false);
+	auto range = make_unique<cclient::data::Range> (startkey, true, stopKey, false);
 
-	scanner->addRange (std::unique_ptr<cclient::data::Range>(range));
+	scanner->addRange (std::move(range));
 	
 	scanner->fetchColumn("avocado");
 
@@ -283,7 +283,7 @@ main (int argc, char **argv)
 	
 	
 	for (auto iter = results->begin (); iter != results->end ();
-	     iter++, counter++) {
+	     iter++, ++counter) {
 		auto kv = *iter;
 
 		if (kv != NULL && kv->getKey () != NULL)
@@ -308,10 +308,6 @@ main (int argc, char **argv)
 	{
 	  std::cout << "did not get expected results. Please look into this" << std::endl;
 	}
-
-	//assert(counter == fruit_to_write/2 );
-
-	delete accumulo;
 
 	return 0;
 }
