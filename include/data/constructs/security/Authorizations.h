@@ -62,11 +62,7 @@ class Authorizations {
   void addAuthorization(std::string auth);
 
   std::vector<std::string> getAuthorizations() const {
-    std::vector<std::string> strAuths;
-    for (auto it : authStrings) {
-      strAuths.push_back(it);
-    }
-    return strAuths;
+    return std::vector<std::string>(authStrings.begin(),authStrings.end());
   }
 
   bool empty() const {

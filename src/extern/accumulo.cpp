@@ -106,7 +106,6 @@ int free_table(struct TableOps *tableOps) {
   if (NULL != tableOps->tableOpsPtr) {
     AccumuloTableOperations *tableOpsCpp = static_cast<AccumuloTableOperations*>(tableOps->tableOpsPtr);
     delete tableOpsCpp;
-    delete tableOps;
   }
   delete tableOps;
   return 1;
@@ -178,19 +177,16 @@ int addMutation(struct BatchWriter *writer, struct CMutation *mutation){
 void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey) {
   std::pair<char*, size_t> row = otherKey->getRow();
   key->row = new char[row.second];
-    //memcpy(key->row, row.first, row.second);
   strcpy(key->row,row.first);
 
   std::pair<char*, size_t> cf = otherKey->getColFamily();
   key->colFamily = new char[cf.second];
-  //memcpy(key->colFamily, cf.first, cf.second);
     strcpy(key->colFamily,cf.first);
 
   std::pair<char*, size_t> cq = otherKey->getColQualifier();
   key->colQualifier = new char[cq.second];
   if (cq.second > 0)
       strcpy(key->colQualifier,cq.first);
-    //memcpy(key->colQualifier, cq.first, cq.second);
   else
       key->colQualifier[0] = 0x00;
 
@@ -198,7 +194,6 @@ void populateKey(CKey *key, const std::shared_ptr<cclient::data::Key> &otherKey)
   key->keyVisibility = new char[cv.second];
   if (cv.second > 0)
       strcpy(key->keyVisibility,cv.first);
-  //memcpy(key->keyVisibility, cv.first, cv.second);
   else
       key->keyVisibility[0] = 0x00;
 
@@ -225,7 +220,6 @@ std::shared_ptr<cclient::data::Key> toKey(CKey *key) {
     nk->setColVisibility((const char*) key->keyVisibility, strlen(key->keyVisibility));
 
   nk->setTimeStamp(key->timestamp);
-  //nk->setDeleted(key->deleted);
   return nk;
 }
 

@@ -168,7 +168,7 @@ class Logger : public BaseLogger {
     log(spdlog::level::trace, format, args...);
   }
 
-  bool should_log(const LOG_LEVEL& level) {
+  bool should_log(const LOG_LEVEL& level) override {
     if (controller_ && !controller_->is_enabled()) return false;
     spdlog::level::level_enum logger_level = spdlog::level::level_enum::info;
     switch (level) {
@@ -202,7 +202,7 @@ class Logger : public BaseLogger {
   }
 
  protected:
-  virtual void log_string(LOG_LEVEL level, std::string str) {
+  virtual void log_string(LOG_LEVEL level, std::string str) override {
     switch (level) {
       case critical:
         log_warn(str.c_str());
@@ -226,11 +226,11 @@ class Logger : public BaseLogger {
         break;
     }
   }
-  Logger(std::shared_ptr<spdlog::logger> delegate,
-         std::shared_ptr<LoggerControl> controller)
+  explicit Logger(std::shared_ptr<spdlog::logger> delegate,
+                  std::shared_ptr<LoggerControl> controller)
       : delegate_(delegate), controller_(controller) {}
 
-  Logger(std::shared_ptr<spdlog::logger> delegate)
+  explicit Logger(std::shared_ptr<spdlog::logger> delegate)
       : delegate_(delegate), controller_(nullptr) {}
 
   std::shared_ptr<spdlog::logger> delegate_;

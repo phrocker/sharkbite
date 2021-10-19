@@ -53,7 +53,7 @@ class HadoopDataOutputStream : public DataOutputStream {
 
 class HdfsOutputStream : public OutputStream {
  public:
-  explicit HdfsOutputStream(const std::string path);
+  explicit HdfsOutputStream(const std::string &path);
 
   explicit HdfsOutputStream(const std::shared_ptr<hdfs::HdfsLink> &hdfs,
                             const std::string &path);

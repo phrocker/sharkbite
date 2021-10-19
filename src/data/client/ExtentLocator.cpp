@@ -20,7 +20,7 @@ TabletLocator::TabletLocator() {}
 
 TabletLocator::~TabletLocator() {}
 LocatorKey::LocatorKey(std::shared_ptr<cclient::data::Instance> instance,
-                       std::string table)
+                       const std::string &table)
     : instance(instance), tableName(table) {}
 
 }  // namespace impl

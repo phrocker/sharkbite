@@ -135,7 +135,8 @@ void LocalityGroupReader::seek(
       entriesLeft = indexEntry->getNumEntries();
 
       logging::LOG_TRACE(logger)
-          << "Index Entry is " << indexEntry->getKey()->toString() << " on " << startKey->toString();
+          << "Index Entry is " << indexEntry->getKey()->toString() << " on "
+          << startKey->toString();
 
       if (version == 3 || version == 4) {
         currentStream =
@@ -213,7 +214,8 @@ void LocalityGroupReader::seek(
   topExists = rKey != NULL && !currentRange->afterEndKey(getTopKey());
 
   if (topExists && readAheadEnabled && (nullptr != iiter && iiter->hasNext())) {
-    logging::LOG_TRACE(logger) << " Starting read ahead on " << getTopKey()->toString();
+    logging::LOG_TRACE(logger)
+        << " Starting read ahead on " << getTopKey()->toString();
     startReadAhead();
   }
 

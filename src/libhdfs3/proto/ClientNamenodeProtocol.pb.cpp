@@ -17921,8 +17921,9 @@ void GetListingResponseProto::InternalSwap(GetListingResponseProto* other) {
 void GetSnapshottableDirListingRequestProto::InitAsDefaultInstance() {}
 class GetSnapshottableDirListingRequestProto::_Internal {
  public:
-  using HasBits = decltype(
-      std::declval<GetSnapshottableDirListingRequestProto>()._has_bits_);
+  using HasBits =
+      decltype(std::declval<GetSnapshottableDirListingRequestProto>()
+                   ._has_bits_);
 };
 
 GetSnapshottableDirListingRequestProto::GetSnapshottableDirListingRequestProto()
@@ -18097,8 +18098,9 @@ void GetSnapshottableDirListingResponseProto::InitAsDefaultInstance() {
 }
 class GetSnapshottableDirListingResponseProto::_Internal {
  public:
-  using HasBits = decltype(
-      std::declval<GetSnapshottableDirListingResponseProto>()._has_bits_);
+  using HasBits =
+      decltype(std::declval<GetSnapshottableDirListingResponseProto>()
+                   ._has_bits_);
   static const ::Hdfs::Internal::SnapshottableDirectoryListingProto&
   snapshottabledirlist(const GetSnapshottableDirListingResponseProto* msg);
   static void set_has_snapshottabledirlist(HasBits* has_bits) {

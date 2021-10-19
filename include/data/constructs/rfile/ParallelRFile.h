@@ -179,27 +179,6 @@ private:
   std::atomic<int> counter_;
   std::mutex current_counter_;
 
-  /**
-   * 
-   *  std::function<utils::TaskRescheduleInfo()> f_ex = [serviceNode] {
-      serviceNode->enable();
-      return utils::TaskRescheduleInfo::Done();
-    };
-
-  // only need to run this once.
-  auto monitor = utils::make_unique<utils::ComplexMonitor>();
-  utils::Worker<utils::TaskRescheduleInfo> functor(f_ex, serviceNode->getUUIDStr(), std::move(monitor));
-  // move the functor into the thread pool. While a future is returned
-  // we aren't terribly concerned with the result.
-  std::future<utils::TaskRescheduleInfo> future;
-  thread_pool_.execute(std::move(functor), future);
-  if (future.valid())
-    future.wait();
-  return future;
-
-   * 
-   */ 
-
 
 };
 }

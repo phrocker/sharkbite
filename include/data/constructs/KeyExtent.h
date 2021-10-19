@@ -38,14 +38,14 @@ class KeyExtent {
    * @param flattenedText flattened representation of the end row and table id
    * @param prevEndRow the previous endrow so we can ensure lexicographical ordering
    **/
-  explicit KeyExtent(std::string flattenedText, std::shared_ptr<Value> prevEndRow);
+  explicit KeyExtent(const std::string &flattenedText, std::shared_ptr<Value> prevEndRow);
 
   /**
    * Constructor
    * @param tableIdIn table Id
    * @param endRowIn end row for the tablet
    **/
-  explicit KeyExtent(std::string tableIdIn, std::string endRowIn)
+  explicit KeyExtent(const std::string &tableIdIn, const std::string &endRowIn)
       :
       KeyExtent(tableIdIn, endRowIn, "") {
 
@@ -124,14 +124,14 @@ class KeyExtent {
     int result = tableId.compare(rhs.tableId);
 
     if (result < 0)
-      return result;
+      return true;
     else if (result > 0)
       return false;
 
     result = endRow.compare(rhs.endRow);
 
     if (result < 0)
-      return result;
+      return true;
     else if (result > 0)
       return false;
 
@@ -147,17 +147,17 @@ class KeyExtent {
     int result = tableId.compare(rhs.tableId);
 
     if (result != 0)
-      return (result == 0);
+      return false;
 
     result = endRow.compare(rhs.endRow);
 
     if (result != 0)
-      return (result == 0);
+      return false;
 
     result = prevEndRow.compare(rhs.prevEndRow);
 
     if (result != 0)
-      return (result == 0);
+      return false;
 
     return true;
   }
@@ -168,7 +168,7 @@ class KeyExtent {
     out << "tableId:" << rhs->tableId << " end:" << (IsEmpty(&rhs->endRow) ? "<" : rhs->endRow) << " prev:" << (IsEmpty(&rhs->prevEndRow) ? "<" : rhs->prevEndRow) << " " << std::endl;
     return out;
   }
-  void setTableId(std::string id) {
+  void setTableId(const std::string &id) {
     tableId = id;
   }
 
@@ -188,9 +188,10 @@ class KeyExtent {
     return std::make_shared<cclient::data::Range>(prevEndRow, false, endRow, true);
   }
 
-  void setPrevEndRow(std::string prev) {
+  void setPrevEndRow(const std::string &prev) {
     prevEndRow = prev;
   }
+  
  protected:
   void setPrevEndRow(std::shared_ptr<Value> prevEndRow) {
     std::pair<unsigned char*, size_t> valuePair = prevEndRow->getValue();

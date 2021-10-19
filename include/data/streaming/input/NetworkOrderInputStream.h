@@ -40,12 +40,13 @@ namespace streams {
  */
 class EndianInputStream : public ByteInputStream {
  public:
-  EndianInputStream(InputStream *out_stream) : ByteInputStream(out_stream) {}
+  explicit EndianInputStream(InputStream *out_stream)
+      : ByteInputStream(out_stream) {}
 
-  EndianInputStream(char *byteArray, size_t len)
+  explicit EndianInputStream(char *byteArray, size_t len)
       : ByteInputStream(byteArray, len) {}
 
-  EndianInputStream(char *byteArray, size_t len, bool allocated)
+  explicit EndianInputStream(char *byteArray, size_t len, bool allocated)
       : ByteInputStream(byteArray, len, allocated) {}
 
   EndianInputStream() : ByteInputStream() {}

@@ -123,7 +123,7 @@ uint64_t LocalityGroupMetaData::write(
   outStream->writeInt(offsets.size());
 
   for (std::vector<int>::iterator it = offsets.begin(); it != offsets.end();
-       it++) {
+       ++it) {
     outStream->writeInt((*it));
   }
 

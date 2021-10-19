@@ -30,7 +30,7 @@ MetaIndex::~MetaIndex() {}
  * @returns newly allocated MetaIndexEntry
  */
 MetaIndexEntry *MetaIndex::prepareNewEntry(
-    const std::string name,
+    const std::string &name,
     std::unique_ptr<cclient::data::compression::Compressor> comp) {
   std::shared_ptr<MetaIndexEntry> entry =
       std::make_shared<MetaIndexEntry>(std::move(comp));
@@ -59,7 +59,7 @@ uint64_t MetaIndex::write(cclient::data::streams::OutputStream *out) {
   // write out all the meta index entries
   for (std::map<std::string, std::shared_ptr<MetaIndexEntry>>::iterator it =
            index.begin();
-       it != index.end(); it++) {
+       it != index.end(); ++it) {
     (*it).second->write(out);
   }
   return out->getPos();

@@ -81,7 +81,7 @@ namespace cclient
           }
         }
 
-        uint8_t *getData(std::string path)
+        uint8_t *getData(std::string path) override
         {
           if (IsEmpty(&path))
           {
@@ -122,7 +122,7 @@ namespace cclient
           return ptr;
         }
 
-        std::vector<std::string> getChildren(const std::string path, bool force = false)
+        std::vector<std::string> getChildren(const std::string &path, bool force = false) override
         {
           if (IsEmpty(&path))
           {

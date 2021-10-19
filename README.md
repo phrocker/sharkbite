@@ -86,7 +86,7 @@ During this process the C++ library and python bindings will be built.
 [A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
 library.
 
-## Python Iterators (! BETA )
+## Python Iterators
 
 ### Recommended
 We now support python iterators. If you don't have a need to build sharkbite and don't wish to use JNI for the python bindings, you can build
@@ -152,8 +152,7 @@ You may either define a python iterator as a text implementation or a lambda. Bo
 
 ## C Library
 
-The C library is a wrapper around the C++ Code. We supply a target called "capi". We have an example
-built to use [python via our C-Library using C-Types ](https://github.com/phrocker/sharkbite/blob/master/c-library-examples/python/example.py].
+The C library is a wrapper around the C++ Code. We supply a target called "capi". 
 
 This python example is vestigial and only exists as an example of the C-API wrappers. Implementations can be written
 in Go, Rust, Ruby, etc. 

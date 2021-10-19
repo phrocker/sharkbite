@@ -72,10 +72,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   explicit Key(std::shared_ptr<Key> other)
       :
       Key() {
-    std::pair<char*, size_t> row = other->getRow();
+    std::pair<char*, size_t> lrow = other->getRow();
 
-    if (row.second > 0)
-      setRow(row.first, row.second);
+    if (lrow.second > 0)
+      setRow(lrow.first, lrow.second);
 
     std::pair<char*, size_t> cf = other->getColFamily();
 
@@ -231,7 +231,7 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
     deleted = isDeleted;
   }
 
-  std::shared_ptr<StreamInterface> getStream() {
+  std::shared_ptr<StreamInterface> getStream() override {
     return shared_from_this();
   }
 
@@ -300,10 +300,10 @@ class Key : public cclient::data::streams::StreamInterface, public std::enable_s
   }
 
   uint64_t
-  write(cclient::data::streams::OutputStream *outStream);
+  write(cclient::data::streams::OutputStream *outStream) override;
 
   uint64_t
-  read(cclient::data::streams::InputStream *in);
+  read(cclient::data::streams::InputStream *in) override;
 
   size_t size() const {
     return colQualSize + rowMaxSize + columnFamilySize + colVisSize + 8;

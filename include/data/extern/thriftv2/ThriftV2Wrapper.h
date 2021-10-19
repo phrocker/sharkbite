@@ -223,7 +223,7 @@ class ThriftV2Wrapper {
     return keyExtent;
   }
 
-  static org::apache::accumulov2::core::dataImpl::thrift::TKeyExtent convert(const cclient::data::KeyExtent ot) {
+  static org::apache::accumulov2::core::dataImpl::thrift::TKeyExtent convert(const cclient::data::KeyExtent &ot) {
     org::apache::accumulov2::core::dataImpl::thrift::TKeyExtent keyExtent;
     keyExtent.table = ot.getTableId();
     std::string endRow = ot.getEndRow();

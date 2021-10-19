@@ -21,7 +21,7 @@ namespace exceptions {
 
 class NotServingException : public std::exception {
  public:
-  explicit NotServingException(std::string excp) : excp_str(excp) {}
+  explicit NotServingException(const std::string &excp) : excp_str(excp) {}
 
   ~NotServingException() throw() {}
   const char *what() const noexcept { return excp_str.c_str(); }

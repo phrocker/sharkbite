@@ -188,7 +188,7 @@ class MetaIndex : public cclient::data::streams::StreamInterface {
    * modifying the internals of the compressor )
    * @returns newly allocated MetaIndexEntry
    */
-  MetaIndexEntry* prepareNewEntry(const std::string name, std::unique_ptr<cclient::data::compression::Compressor> comp);
+  MetaIndexEntry* prepareNewEntry(const std::string &name, std::unique_ptr<cclient::data::compression::Compressor> comp);
 
   uint64_t read(cclient::data::streams::InputStream *in);
 

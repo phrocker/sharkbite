@@ -45,7 +45,7 @@ public:
      * @param host host name we're connecting to
      * @param port incoming port
      */
-    ServerDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, std::string host,
+    explicit ServerDefinition(cclient::data::security::AuthInfo *creds, cclient::data::security::Authorizations *auths, const std::string &host,
                      uint32_t port);
 
     // default to a port

@@ -112,7 +112,7 @@ void ParallelRFile::relocate(
   }
   // create heap iterators so we can read files within a given thread
   for (const auto &reader_set : readers) {
-    std::shared_ptr<cclient::data::streams::KeyValueIterator> heapItr = {};
+    std::shared_ptr<cclient::data::streams::KeyValueIterator> heapItr;
     if (versions == 0) {
       if (!withDeletes) {
         heapItr =
@@ -160,7 +160,8 @@ void ParallelRFile::relocate(
         location->getRange()->getStopKey(),
         location->getRange()->getStopKeyInclusive()));
   }
-  assert(keys.size() == thread_readers.size() && thread_readers.size() == number);
+  assert(keys.size() == thread_readers.size() &&
+         thread_readers.size() == number);
 
   for (uint32_t i = 0; i < number; i++) {
     thread_readers.at(i)->range =

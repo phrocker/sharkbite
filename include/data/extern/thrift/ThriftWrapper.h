@@ -228,7 +228,7 @@ class ThriftWrapper {
     return keyExtent;
   }
 
-  static org::apache::accumulo::core::data::thrift::TKeyExtent convert(const cclient::data::KeyExtent ot) {
+  static org::apache::accumulo::core::data::thrift::TKeyExtent convert(const cclient::data::KeyExtent &ot) {
     org::apache::accumulo::core::data::thrift::TKeyExtent keyExtent;
     keyExtent.table = ot.getTableId();
     std::string endRow = ot.getEndRow();

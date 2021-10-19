@@ -27,11 +27,12 @@ namespace data {
 class TabletLocation {
  public:
   TabletLocation();
-  explicit TabletLocation(std::shared_ptr<KeyExtent> extent, std::string loc)
+  explicit TabletLocation(std::shared_ptr<KeyExtent> extent,
+                          const std::string &loc)
       : tablet_extent(extent), tablet_location(loc), port(0) {}
 
-  explicit TabletLocation(std::shared_ptr<KeyExtent> extent, std::string loc,
-                          std::string sesh)
+  explicit TabletLocation(std::shared_ptr<KeyExtent> extent,
+                          const std::string &loc, const std::string &sesh)
       : tablet_extent(extent), tablet_location(loc), session(sesh) {
     std::vector<std::string> tokens = split(tablet_location, ':');
     if (!IsEmpty(&tokens)) {

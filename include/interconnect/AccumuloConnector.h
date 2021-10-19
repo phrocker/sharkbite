@@ -50,7 +50,7 @@ class AccumuloBaseConnector : virtual public ClientInterface<Tr> {
    * @param host host name
    * @param port port for Accumulo server
    **/
-  AccumuloBaseConnector(const std::string host, const int port)
+  AccumuloBaseConnector(const std::string &host, const int port)
       : ClientInterface<Tr>(host, port),
         myTransportPool(NULL),
         rangeDef(NULL),

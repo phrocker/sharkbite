@@ -65,10 +65,10 @@ class ClientServiceIfFactory {
 
 class ClientServiceIfSingletonFactory : virtual public ClientServiceIfFactory {
  public:
-  ClientServiceIfSingletonFactory(const std::shared_ptr<ClientServiceIf>& iface) : iface_(iface) {}
+  explicit ClientServiceIfSingletonFactory(const std::shared_ptr<ClientServiceIf>& iface) : iface_(iface) {}
   virtual ~ClientServiceIfSingletonFactory() {}
 
-  virtual ClientServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) {
+  virtual ClientServiceIf* getHandler(const ::apache::thrift::TConnectionInfo&) override {
     return iface_.get();
   }
   virtual void releaseHandler(ClientServiceIf* /* handler */) {}
@@ -3976,7 +3976,7 @@ class ClientService_checkNamespaceClass_presult {
 
 class ClientServiceClient : virtual public ClientServiceIf {
  public:
-  ClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  explicit ClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
   ClientServiceClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {
@@ -4135,7 +4135,7 @@ class ClientServiceProcessor : public ::apache::thrift::TDispatchProcessor {
   void process_checkTableClass(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
   void process_checkNamespaceClass(int32_t seqid, ::apache::thrift::protocol::TProtocol* iprot, ::apache::thrift::protocol::TProtocol* oprot, void* callContext);
  public:
-  ClientServiceProcessor(std::shared_ptr<ClientServiceIf> iface) :
+  explicit ClientServiceProcessor(std::shared_ptr<ClientServiceIf> iface) :
     iface_(iface) {
     processMap_["getRootTabletLocation"] = &ClientServiceProcessor::process_getRootTabletLocation;
     processMap_["getInstanceId"] = &ClientServiceProcessor::process_getInstanceId;
@@ -4174,7 +4174,7 @@ class ClientServiceProcessor : public ::apache::thrift::TDispatchProcessor {
 
 class ClientServiceProcessorFactory : public ::apache::thrift::TProcessorFactory {
  public:
-  ClientServiceProcessorFactory(const ::std::shared_ptr< ClientServiceIfFactory >& handlerFactory) :
+  explicit ClientServiceProcessorFactory(const ::std::shared_ptr< ClientServiceIfFactory >& handlerFactory) :
       handlerFactory_(handlerFactory) {}
 
   ::std::shared_ptr< ::apache::thrift::TProcessor > getProcessor(const ::apache::thrift::TConnectionInfo& connInfo);
@@ -4185,7 +4185,7 @@ class ClientServiceProcessorFactory : public ::apache::thrift::TProcessorFactory
 
 class ClientServiceMultiface : virtual public ClientServiceIf {
  public:
-  ClientServiceMultiface(std::vector<std::shared_ptr<ClientServiceIf> >& ifaces) : ifaces_(ifaces) {
+  explicit ClientServiceMultiface(std::vector<std::shared_ptr<ClientServiceIf> >& ifaces) : ifaces_(ifaces) {
   }
   virtual ~ClientServiceMultiface() {}
  protected:
@@ -4482,7 +4482,7 @@ class ClientServiceMultiface : virtual public ClientServiceIf {
 // only be used when you need to share a connection among multiple threads
 class ClientServiceConcurrentClient : virtual public ClientServiceIf {
  public:
-  ClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
+  explicit ClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> prot) {
     setProtocol(prot);
   }
   ClientServiceConcurrentClient(std::shared_ptr< ::apache::thrift::protocol::TProtocol> iprot, std::shared_ptr< ::apache::thrift::protocol::TProtocol> oprot) {

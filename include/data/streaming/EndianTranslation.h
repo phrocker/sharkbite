@@ -29,8 +29,8 @@ class EndianTranslationStream : public HadoopDataOutputStream {
 
   explicit EndianTranslationStream(std::unique_ptr<OutputStream> os)
       : HadoopDataOutputStream(os.get()) {
-    ref = std::move(os);
-  }
+          ref = std::move(os);
+      }
 
   EndianTranslationStream(EndianTranslationStream &&) = delete;
 
@@ -40,7 +40,7 @@ class EndianTranslationStream : public HadoopDataOutputStream {
 
   uint64_t htonlw(uint64_t value);
 
-  uint64_t writeShort(short shortVal);
+  uint64_t writeShort(short shortVal) override;
 
   uint64_t writeInt(int intVal);
 

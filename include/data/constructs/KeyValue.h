@@ -29,7 +29,7 @@ namespace cclient
 {
 namespace data
 {
-  /**
+/**
  * Stores Keys and values within a stream object.
  **/
 class KeyValue : public cclient::data::streams::StreamInterface
@@ -56,13 +56,13 @@ public:
 	  return false;
 	}
 
-	std::shared_ptr<StreamInterface> getStream();
+	std::shared_ptr<StreamInterface> getStream() override;
 
 	std::shared_ptr<Value> getValue();
 	void setValue(const std::shared_ptr<Value> &v);
 	
 	 friend inline std::ostream &
-	operator << (std::ostream &out, KeyValue &rhs)
+	operator << (std::ostream &out, const KeyValue &rhs)
 	{
 	    out << "key is " << rhs.key;
 	    return out;
@@ -75,7 +75,7 @@ public:
 	}
 
 	void setValue(uint8_t *b, size_t size);
-	uint64_t write (cclient::data::streams::OutputStream *outStream);
+	uint64_t write (cclient::data::streams::OutputStream *outStream) override;
 	KeyValue &operator=(const KeyValue &other);
 	bool operator <(const KeyValue &rhs) const;
 	bool operator <(const KeyValue *rhs) const;

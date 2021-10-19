@@ -38,7 +38,9 @@ class DataStream : public std::iterator<std::forward_iterator_tag, T> {
 
   virtual bool hasNext() = 0;
 
-  virtual void relocate(const std::shared_ptr<cclient::data::streams::StreamRelocation> &location) = 0;
+  virtual void relocate(
+      const std::shared_ptr<cclient::data::streams::StreamRelocation>
+          &location) = 0;
 
   virtual DataStream *begin() = 0;
 

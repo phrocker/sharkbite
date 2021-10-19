@@ -164,7 +164,7 @@ void TransportPool<Tr>::freeTransport(
   long millis = (time.tv_sec * 1000) + (time.tv_usec / 1000);
   bool foundCacheKey = false;
 
-  for (; cacheIter != cachedConnections.end(); cacheIter++) {
+  for (; cacheIter != cachedConnections.end(); ++cacheIter) {
     if (std::addressof(*((*cacheIter).get())) ==
         std::addressof(*(cachedTransport.get()))) {
       if (cachedTransport->hasError()) {
@@ -203,7 +203,7 @@ void TransportPool<Tr>::freeTransport(
         closeList.push_back(*cacheIter);
         cacheIter = cachedConnections.erase(cacheIter);
       } else {
-        cacheIter++;
+        ++cacheIter;
       }
     }
   }

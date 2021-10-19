@@ -82,7 +82,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
 
   bool v1_importDirectory(cclient::data::security::AuthInfo *auth,
                           const std::string &table, const std::string &dir,
-                          std::string failure_dir, bool setTime) {
+                          const std::string &failure_dir, bool setTime) {
     std::vector<std::string> tableArgs;
 
     tableArgs.push_back(table);
@@ -340,10 +340,9 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   /**namespace operations**/
 
   bool v1_createNamespace(cclient::data::security::AuthInfo *auth,
-                          std::string name) {
+                          const std::string &name) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(name);
-    // tableArgs.push_back ("MILLIS");
     std::map<std::string, std::string> options;
     try {
       std::string returnValue =
@@ -368,10 +367,9 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   bool v1_deletenamespace(cclient::data::security::AuthInfo *auth,
-                          std::string name) {
+                          const std::string &name) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(name);
-    // tableArgs.push_back ("MILLIS");
     std::map<std::string, std::string> options;
     try {
       std::string returnValue =
@@ -396,7 +394,8 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   bool v1_renamenamespace(cclient::data::security::AuthInfo *auth,
-                          std::string oldName, std::string newName) {
+                          const std::string &oldName,
+                          const std::string &newName) {
     std::vector<std::string> tableArgs;
     tableArgs.push_back(oldName);
     tableArgs.push_back(newName);
@@ -424,7 +423,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   void v1_removeNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                                  std::string nameSpaceName,
+                                  const std::string &nameSpaceName,
                                   const std::string &property) {
     org::apache::accumulo::core::trace::thrift::TInfo transId;
     org::apache::accumulo::core::security::thrift::TCredentials creds =
@@ -437,7 +436,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   }
 
   void v1_setNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                               std::string nameSpaceName,
+                               const std::string &nameSpaceName,
                                const std::string &property,
                                const std::string &value) {
     org::apache::accumulo::core::trace::thrift::TInfo transId;
@@ -600,7 +599,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
           myTransport->close();
         } catch (std::runtime_error &e) {
           myTransport->close();
-          throw e;
+          throw;
         }
         myTransport->close();
       }
@@ -616,7 +615,6 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   bool createTable(cclient::data::security::AuthInfo *auth,
                    const std::string &table) override {
     return v1_createTable(auth, table);
-    return false;
   }
 
   virtual cclient::data::AccumuloInfo getStatistics(
@@ -634,7 +632,7 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
 
   bool importDirectory(cclient::data::security::AuthInfo *auth,
                        const std::string &table, const std::string &dir,
-                       std::string failure_dir, bool setTime) override {
+                       const std::string &failure_dir, bool setTime) override {
     return v1_importDirectory(auth, table, dir, failure_dir, setTime);
   }
 
@@ -676,28 +674,29 @@ class AccumuloCoordinatorFacadeV1 : public AccumuloCoordinatorFacade {
   /**namespace operations**/
 
   bool createNamespace(cclient::data::security::AuthInfo *auth,
-                       std::string name) override {
+                       const std::string &name) override {
     return v1_createNamespace(auth, name);
   }
 
   bool deletenamespace(cclient::data::security::AuthInfo *auth,
-                       std::string name) override {
+                       const std::string &name) override {
     return v1_deletenamespace(auth, name);
   }
 
   bool renamenamespace(cclient::data::security::AuthInfo *auth,
-                       std::string oldName, std::string newName) override {
+                       const std::string &oldName,
+                       const std::string &newName) override {
     return v1_renamenamespace(auth, oldName, newName);
   }
 
   void removeNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                               std::string nameSpaceName,
+                               const std::string &nameSpaceName,
                                const std::string &property) override {
     v1_removeNamespaceProperty(auth, nameSpaceName, property);
   }
 
   void setNamespaceProperty(cclient::data::security::AuthInfo *auth,
-                            std::string nameSpaceName,
+                            const std::string &nameSpaceName,
                             const std::string &property,
                             const std::string &value) override {
     v1_setNamespaceProperty(auth, nameSpaceName, property, value);

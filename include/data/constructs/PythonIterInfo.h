@@ -49,7 +49,7 @@ class PythonIterInfo : public cclient::data::IterInfo {
    * Returns options
    * @returns options for this iterator
    **/
-  const std::map<std::string, std::string> getOptions() const;
+  const std::map<std::string, std::string> getOptions() const override;
  protected:
 
   std::string getDSL() const;

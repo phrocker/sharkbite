@@ -53,7 +53,7 @@ class AccumuloTableInfo {
    * Determines if the table exists.
    * @return returns boolean of whether or not the table exists
    **/
-  bool exists(const std::string table) {
+  bool exists(const std::string &table) {
     return Tables::getInstance().exists(table);
   }
 

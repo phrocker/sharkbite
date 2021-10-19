@@ -35,7 +35,7 @@ namespace tserver {
  */
 ServerDefinition::ServerDefinition(
     cclient::data::security::AuthInfo *creds,
-    cclient::data::security::Authorizations *auths, std::string host,
+    cclient::data::security::Authorizations *auths, const std::string &host,
     uint32_t port)
     : credentials(creds), auths(auths), server(host), port(port) {}
 // default to a port

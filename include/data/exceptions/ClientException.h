@@ -40,7 +40,8 @@ extern const std::map<uint16_t, std::string> CLIENT_ERROR_CODES;
 
 class ClientException : public std::exception {
  public:
-  explicit ClientException(std::string excp) : errorCode(-1), excp_str(excp) {}
+  explicit ClientException(const std::string& excp)
+      : errorCode(-1), excp_str(excp) {}
 
   ClientException(const uint16_t errorCode) : errorCode(errorCode) {}
 

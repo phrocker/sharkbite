@@ -28,7 +28,7 @@ enum AgeOffType{
 struct AgeOffCondition{
     AgeOffCondition():type(AgeOffType::DEFAULT),name("default"),earliest_allowed_timestamp(0){
     }
-    explicit AgeOffCondition(AgeOffType type, std::string name, int64_t earliest_allowed_timestamp) : type(type),name(name),earliest_allowed_timestamp(earliest_allowed_timestamp){}
+    explicit AgeOffCondition(AgeOffType type, const std::string &name, int64_t earliest_allowed_timestamp) : type(type),name(name),earliest_allowed_timestamp(earliest_allowed_timestamp){}
     AgeOffType type;
     std::string name;
     int64_t earliest_allowed_timestamp;
@@ -50,7 +50,7 @@ public:
         default_condition.earliest_allowed_timestamp=0;
         
         if (condition.type==AgeOffType::DEFAULT){
-            if (default_condition.earliest_allowed_timestamp != 0){
+            if (condition.earliest_allowed_timestamp != 0){
                 throw std::runtime_error("Cannot have more than one default condition");
             }
             default_condition.earliest_allowed_timestamp = condition.earliest_allowed_timestamp;

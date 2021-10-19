@@ -22,7 +22,7 @@ namespace cclient {
 namespace data {
 namespace streams {
 
-HdfsInputStream::HdfsInputStream(const std::string path)
+HdfsInputStream::HdfsInputStream(const std::string &path)
     : InputStream(), hdfs(nullptr), file(path) {
   utils::Uri uri(path);
 

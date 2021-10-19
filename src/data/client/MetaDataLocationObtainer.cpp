@@ -47,8 +47,6 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
   auto range =
       std::make_shared<cclient::data::Range>(startKey, true, endKey, true);
 
-  std::map<cclient::data::Key, cclient::data::Value> resultSet;
-
   cclient::data::security::Authorizations emptyAuths;
 
   std::vector<std::shared_ptr<cclient::data::Range>> ranges;
@@ -83,21 +81,21 @@ std::vector<cclient::data::TabletLocation> MetaDataLocationObtainer::findTablet(
            pointer_comparator<std::shared_ptr<cclient::data::Key>>>
       results = decodeResults(&kvResults);
 
-  std::shared_ptr<cclient::data::Key> key = 0;
-  std::shared_ptr<cclient::data::Value> value = 0;
-  std::string lastRowFromKey = "";
-  std::string currentRow = "";
+  std::shared_ptr<cclient::data::Key> key = nullptr;
+  std::shared_ptr<cclient::data::Value> value = nullptr;
+  std::string lastRowFromKey;
+  std::string currentRow;
 
-  std::string location = "", session = "";
+  std::string location, session;
 
-  std::shared_ptr<cclient::data::Value> prevRow = 0;
+  std::shared_ptr<cclient::data::Value> prevRow = nullptr;
 
   std::shared_ptr<cclient::data::KeyExtent> currentKe = nullptr;
   std::vector<std::string> files;
   for (std::map<std::shared_ptr<cclient::data::Key>,
                 std::shared_ptr<cclient::data::Value>>::iterator it =
            results.begin();
-       it != results.end(); it++) {
+       it != results.end(); ++it) {
     key = it->first;
     logging::LOG_DEBUG(logger) << "FindTablet received" << key;
     currentRow = std::string(key->getRow().first, key->getRow().second);

@@ -22,7 +22,7 @@ namespace exceptions {
 
 class IllegalArgumentException : public std::exception {
  public:
-  explicit IllegalArgumentException(std::string excp) : excp_str(excp) {}
+  explicit IllegalArgumentException(const std::string &excp) : excp_str(excp) {}
 
   ~IllegalArgumentException() throw() {}
   const char *what() { return excp_str.c_str(); }

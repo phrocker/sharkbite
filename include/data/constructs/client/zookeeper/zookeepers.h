@@ -52,7 +52,7 @@ namespace cclient
       static void watcher_function(zhandle_t *, int type, int state, const char *path, void *v)
       {
 
-        Watch *ctx = ((WatchFn *)v)->ptr;
+        Watch *ctx = static_cast<WatchFn *>(v)->ptr;
 
         if (state == ZOO_CONNECTED_STATE)
         {
@@ -281,7 +281,7 @@ namespace cclient
         static std::map<std::string, ZooSession *> sessions;
 
       public:
-        static std::string sessionKey(std::string keepers, uint16_t timeout, std::string auth)
+        static std::string sessionKey(const std::string &keepers, uint16_t timeout, std::string auth)
         {
           std::stringstream ss(std::stringstream::in | std::stringstream::out);
           ss << keepers << ":" << timeout << ":" << (auth.size() > 0 ? auth : "");
@@ -291,10 +291,10 @@ namespace cclient
         static ZooSession *getSession(std::string zookeepers, uint16_t timeout, std::string auth)
         {
           std::lock_guard<std::mutex> lock(syncBarrier);
-          std::string sessionKey = ZooKeepers::sessionKey(zookeepers, timeout, auth);
+          std::string my_sessionKey = ZooKeepers::sessionKey(zookeepers, timeout, auth);
           std::string readOnlyKey = ZooKeepers::sessionKey(zookeepers, timeout, "");
 
-          std::map<std::string, ZooSession *>::iterator it = sessions.find(sessionKey);
+          std::map<std::string, ZooSession *>::iterator it = sessions.find(my_sessionKey);
 
           // it exists
 
@@ -319,7 +319,7 @@ namespace cclient
 
             zsi = new ZooSession(connect(zookeepers, timeout, auth, watcher));
 
-            sessions.insert(std::make_pair(sessionKey, zsi));
+            sessions.insert(std::make_pair(my_sessionKey, zsi));
           }
 
           return zsi;
@@ -343,8 +343,8 @@ namespace cclient
 
                 if (auth.size() > 0)
                 {
-                  break;
                   tryAgain = false;
+                  break;
                 }
                 else
                 {

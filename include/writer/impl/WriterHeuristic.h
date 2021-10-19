@@ -115,7 +115,7 @@ class WriterHeuristic
         conditionals->awakeThreadsFinished();
 
         for (std::vector<std::thread>::iterator iter = threads.begin();
-             iter != threads.end(); iter++) {
+             iter != threads.end(); ++iter) {
           iter->join();
         }
       }

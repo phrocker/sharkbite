@@ -52,7 +52,7 @@ class CachedTransport {
       serverTransport->open();
     } catch (std::runtime_error &tfe) {
       foundError = true;
-      throw tfe;
+      throw;
     }
 
     ioCount++;
@@ -80,7 +80,8 @@ class CachedTransport {
 
   bool isOpen() { return serverTransport->isOpen(); }
 
-  void registerService(std::string instance, std::string clusterManagers) {
+  void registerService(const std::string &instance,
+                       const std::string &clusterManagers) {
     // no op
   }
 
