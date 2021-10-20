@@ -75,19 +75,16 @@ class Scanner : public scanners::Source<cclient::data::KeyValue,
    * Returns a result set.
    * @return results iterator.
    **/
-  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
-      *getResultSet() override;
+  std::shared_ptr<Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>>
+      getResultSet() override;
 
   void addResults(
-      Results<std::shared_ptr<cclient::data::KeyValue>,
-              ResultBlock<std::shared_ptr<cclient::data::KeyValue>>> *results) {
+      shared_ptr<Results<std::shared_ptr<cclient::data::KeyValue>,
+              ResultBlock<std::shared_ptr<cclient::data::KeyValue>>>> results) {
 
   }
 
   virtual ~Scanner() {
-    if (!IsEmpty(resultSet)) {
-      delete resultSet;
-    }
   }
 
   std::shared_ptr<cclient::data::Instance> getInstance() override {
@@ -141,8 +138,8 @@ class Scanner : public scanners::Source<cclient::data::KeyValue,
   // vector of ranges to interrogate.
   std::vector<std::shared_ptr<cclient::data::Range>> ranges;
   // result set iterator
-  Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
-      *resultSet;
+  std::shared_ptr<Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
+      > resultSet;
   // credentials
   cclient::data::security::AuthInfo *credentials;
   // scanner authorizations

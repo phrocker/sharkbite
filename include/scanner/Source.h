@@ -58,7 +58,7 @@ class Source {
       std::vector<std::shared_ptr<cclient::data::tserver::RangeDefinition>>
           *locatedTablets) = 0;
 
-  virtual Results<T, BlockType> *getResultSet() = 0;
+  virtual std::shared_ptr<Results<T, BlockType>> getResultSet() = 0;
 
   virtual ~Source() {}
 

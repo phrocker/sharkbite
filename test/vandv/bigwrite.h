@@ -165,8 +165,7 @@ class TestBigWrite : public IntegrationTest {
 
       scanner->fetchColumn("avacado");
 
-      scanners::Results<cclient::data::KeyValue,
-          scanners::ResultBlock<cclient::data::KeyValue>> *results = scanner
+      auto results = scanner
           ->getResultSet();
 
       for (auto iter = results->begin(); iter != results->end();

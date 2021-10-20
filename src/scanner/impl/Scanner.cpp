@@ -78,20 +78,20 @@ void Scanner::addRange(std::unique_ptr<cclient::data::Range> range) {
   ranges.push_back(sharedRange);
 }
 
-Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
-    *Scanner::getResultSet() {
+std::shared_ptr<Results<cclient::data::KeyValue, ResultBlock<cclient::data::KeyValue>>
+    > Scanner::getResultSet() {
   std::lock_guard<std::mutex> lock(scannerLock);
 
   if (IsEmpty(&ranges)) {
     throw cclient::exceptions::ClientException(RANGE_NOT_SPECIFIED);
   }
-  if (IsEmpty(resultSet) && IsEmpty(&servers)) {
+  if (IsEmpty(resultSet.get()) && IsEmpty(&servers)) {
     for (const auto &range : ranges) {
       logging::LOG_TRACE(logger) << "range is " << *range.get();
     }
 
-    resultSet = new Results<cclient::data::KeyValue,
-                            ResultBlock<cclient::data::KeyValue>>();
+    resultSet = make_shared<Results<cclient::data::KeyValue,
+                            ResultBlock<cclient::data::KeyValue>>>();
 
     std::map<
         std::string,

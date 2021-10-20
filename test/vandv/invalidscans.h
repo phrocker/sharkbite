@@ -104,7 +104,7 @@ public:
 	{
 	  std::unique_ptr<scanners::Scanner> scanner = std::unique_ptr<scanners::Scanner>( dynamic_cast<scanners::Scanner*>(ops->createScanner (&auths, 1).release()));
 	  
-	  scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
+	  auto results =
 			  scanner->getResultSet ();
 	  assert(results == NULL);
 	  return -1;

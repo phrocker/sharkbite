@@ -277,7 +277,7 @@ main (int argc, char **argv)
 	
 	scanner->fetchColumn("avocado");
 
-	scanners::Iterator<cclient::data::KeyValue> *results =
+	auto results =
 	                scanner->getResultSet ();
 
 	
