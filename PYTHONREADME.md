@@ -4,12 +4,13 @@
 **S**harkbite is an HDFS and native client for Apache Accumulo ccumulo, with design liberties
 that make it usable across other key/value stores. 
 
-As of version V1.0 : 
+As of version V1.2 : 
 
  * Works with Accumulo 1.6.x, 1.7.x, 1.8.x, 1.9.x and 2.x
  * package import is now **sharkbite** not **pysharkbite**
  * Support for torch IterableDatasets using batch scanners.
  * **Read/Write** : Reading and writing data to Accumulo is currently supported.
+ * Bug fix for scanners when using Value in multiple threads
 
 About the name
 

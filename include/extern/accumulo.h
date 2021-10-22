@@ -39,7 +39,7 @@ class ScanRes{
 
 	std::shared_ptr<cclient::data::Key> key_;
 
-	scanners::Iterator<cclient::data::KeyValue> *results;
+	std::shared_ptr<scanners::Iterator<cclient::data::KeyValue>> results;
 	scanners::BatchScanner *scan_;
 
 public:

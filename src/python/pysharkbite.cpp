@@ -22,7 +22,6 @@
 #include "data/constructs/security/Authorizations.h"
 #include "scanner/constructs/Results.h"
 #include "scanner/impl/Scanner.h"
-#include "scanner/constructs/Results.h"
 #include "writer/impl/SinkImpl.h"
 #include "data/constructs/client/zookeeperinstance.h"
 #include "interconnect/Accumulo.h"
@@ -374,17 +373,17 @@ PYBIND11_MODULE(pysharkbite, s) {
   .def("putDelete", (void (cclient::data::Mutation::*)(const std::string &, const std::string &, const std::string & ) ) &cclient::data::Mutation::putDelete, "Adds a delete mutation"
           ,"cf"_a="", "cq"_a="","cv"_a="");
 
-  pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>(s, "Results")
-  .def("__await__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
+  pybind11::class_<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>, std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>>>(s, "Results")
+  .def("__await__", [](const std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> &it) -> std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> {
             it->begin();
             return it;})
-  .def("__aiter__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
+  .def("__aiter__", [](const std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> &it) -> std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> {
               it->begin();
               return it;})
-  .def("__iter__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>* {
+  .def("__iter__", [](const std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> &it) -> std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> {
         it->begin();
         return it;})
-  .def("__anext__", [](scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *it) -> pybind11::object {
+  .def("__anext__", [](const std::shared_ptr<scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>>> &it) -> pybind11::object {
             if (it->isEndOfRange()){
               throw stop_async_iteration();
             }
@@ -433,7 +432,7 @@ PYBIND11_MODULE(pysharkbite, s) {
       .value("BULK_IMPORT",cclient::data::TablePermissions::BULK_IMPORT, "Enables bulk import permissions on the table");
 
   pybind11::class_<scanners::BatchScanner,std::shared_ptr<scanners::BatchScanner>>(s, "BatchScanner", "Batch Scanner to be constructed via TableOperations")
-  .def("getResultSet", &scanners::BatchScanner::getResultSet, pybind11::return_value_policy::reference, "Gets a result set that can be used asynchronously")
+  .def("getResultSet", &scanners::BatchScanner::getResultSet, "Gets a result set that can be used asynchronously")
   .def("fetchColumn", &scanners::BatchScanner::fetchColumn, "Fetches the column")
   .def("setOption", &scanners::BatchScanner::setOption, "Sets the option")
   .def("__enter__",[](const std::shared_ptr<scanners::BatchScanner> &self) {

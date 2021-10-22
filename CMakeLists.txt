@@ -569,9 +569,9 @@ target_link_libraries(sharkbite
 target_link_libraries (pysharkbite PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS}  ${PROTOBUF_LIBS})
 
 if (BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
-	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${PROTOBUF_LIBS}) 
+	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS} ${PROTOBUF_LIBS})
 	target_link_libraries (pysharkbite-iterators PRIVATE ${ZOOKEEPER_LIBRARIES}   ${OPENSSL_LIBRARIES} ${THRIFT_LIBS})
-	target_link_libraries (pysharkbite-iterators PRIVATE ${JAVA_JVM_LIBRARY})	
+	target_link_libraries (pysharkbite-iterators PRIVATE ${JAVA_JVM_LIBRARY})
 endif(BUILD_JAR OR PYTHON_ITERATOR_SUPPORT)
 
 if (NOT APPLE)
@@ -600,6 +600,12 @@ target_link_libraries(pysharkbite PRIVATE
   ${CURL_LIBRARIES}
   ${NO_WHOLE_ARCHIVE}
 )
+
+target_link_libraries(pysharkbite PRIVATE
+		${WHOLE_ARCHIVE}
+		${OPENSSL_LIBRARIES}
+		${NO_WHOLE_ARCHIVE}
+		)
 
 target_compile_options(pysharkbite INTERFACE -fvisibility=hidden)
 

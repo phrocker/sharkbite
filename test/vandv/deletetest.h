@@ -157,7 +157,7 @@ public:
 	
 	scanner->fetchColumn("avacado");
 
-	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
+	auto results =
 	                scanner->getResultSet ();
 
 	writer = std::unique_ptr<writer::Writer>( dynamic_cast<writer::Writer*>(ops->createWriter (&auths, 15).release()));	

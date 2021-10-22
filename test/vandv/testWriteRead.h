@@ -157,7 +157,7 @@ public:
 	
 	scanner->fetchColumn("avacado");
 
-	scanners::Results<cclient::data::KeyValue, scanners::ResultBlock<cclient::data::KeyValue>> *results =
+	auto results =
 	                scanner->getResultSet ();
 
 	
