@@ -143,7 +143,7 @@ class AccumuloScanner(AccumuloBase):
         else:
             self._scanner.fetchColumn(cf,cq)
 
-    def get(self,begin_row, end_row=None):
+    def get(self,begin_row, end_row=None, chunksize: int = 1000):
         if end_row is None:
             range = Range(begin_row)
         else:
@@ -151,16 +151,13 @@ class AccumuloScanner(AccumuloBase):
 
         self._scanner.addRange( range )
     
-        return AccumuloIterator(self._scanner)
+        return AccumuloIterator(self._scanner,chunksize)
 
     def fetch_range(self, range):
         self._scanner.addRange(range)
     def fetch_ranges(self, ranges : list):
         for range in ranges:
             self._scanner.addRange(range)
-
-    def get(self, chunksize : int):   
-        return AccumuloIterator(self._scanner, chunksize)
 
     def __del__(self):
         if self._scanner is not None:
