@@ -70,7 +70,8 @@ try:
     
     writer.close()
 
-    for keyvalue in writer.to_scanner().get("q"):
+    scanner = writer.to_scanner()
+    for keyvalue in scanner.get("q"):
         key = keyvalue.getKey()
         value = keyvalue.getValue()
         v = value.get()

@@ -21,7 +21,7 @@ class AccumuloBase:
     def to_scanner(self):
         return AccumuloScanner(self._instance,self._zookeepers,self._username,self._password,self._table,self._auths)
 
-    def __init__(self, instance: str , zookepeers: str, username: str, password: str, table: str =None, auths: str =None):
+    def __init__(self, instance: str , zookepeers: str, username: str, password: str, table: str =None, auths =None):
         self._conf = Configuration()
         self._instance = instance
         self._zookeepers = zookepeers
@@ -44,7 +44,7 @@ class AccumuloBase:
         if auths is not None and isinstance(auths, Authorizations):
             self._auths = auths
         else:
-            if len(auths) > 0:
+            if auths is not None and len(auths) > 0:
                 self._auths = Authorizations(auths)
             else:
                 self._auths = Authorizations()
@@ -67,7 +67,7 @@ class AccumuloWriter(AccumuloBase):
     _mutation = None
     _writer = None
     
-    def __init__(self,  instance: str , zookeepers: str, username: str, password: str, table: str =None, auths: str =None):
+    def __init__(self,  instance: str , zookeepers: str, username: str, password: str, table: str =None, auths =None):
         super().__init__(instance,zookeepers,username,password,table,auths)
 
     def put(self,row : str , cf: str , cq: str , cv: str =None, timestamp: int =0, value=None):
