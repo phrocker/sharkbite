@@ -94,7 +94,7 @@
 		</plugins>
 	</build>
   <properties>
-    <acc.version>2.0.0</acc.version>
+    <acc.version>2.0.1</acc.version>
     <org.slf4j.version>1.7.25</org.slf4j.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
