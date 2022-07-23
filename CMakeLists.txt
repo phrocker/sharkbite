@@ -226,7 +226,7 @@ endif()
   ExternalProject_Add(
     curl-external
     GIT_REPOSITORY "https://github.com/curl/curl.git"
-    GIT_TAG "f3294d9d86e6a7915a967efff2842089b8b0d071"  # Version 7.64.0
+    GIT_TAG "45ac4d019475df03562fe0ac54eb67e1d1de0ca7"  # Version 7.84.0
     SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/thirdparty/curl-src"
     LIST_SEPARATOR % # This is needed for passing semicolon-separated lists
     CMAKE_ARGS ${PASSTHROUGH_CMAKE_ARGS}
@@ -234,10 +234,9 @@ endif()
                 -DCMAKE_POSITION_INDEPENDENT_CODE=ON
                 -DBUILD_CURL_EXE=OFF
                 -DBUILD_TESTING=OFF
-                -DCMAKE_USE_OPENSSL=ON
                 -DBUILD_SHARED_LIBS=OFF
                 -DHTTP_ONLY=ON
-                -DCMAKE_USE_OPENSSL=ON
+                -DCURL_USE_OPENSSL=ON
                 "-DLIBRESSL_BIN_DIR=${LIBRESSL_BIN_DIR}"
                 "-DLIBRESSL_SRC_DIR=${LIBRESSL_SRC_DIR}"
                 "-DBYPRODUCT_PREFIX=${BYPRODUCT_PREFIX}"
@@ -361,7 +360,7 @@ include_directories(${CURL_INCLUDE_DIRS})
 	ExternalProject_Add(
 	  Protobuf
 	  GIT_REPOSITORY "https://github.com/phrocker/protobuf.git"
-	  GIT_TAG v3.11.4
+	  GIT_TAG v3.11.4 # v3.21.3
 	  BUILD_IN_SOURCE true
 	  SOURCE_DIR "${CMAKE_CURRENT_BINARY_DIR}/dependencies/protobuf-src"
 	  CONFIGURE_COMMAND ./autogen.sh
@@ -401,7 +400,7 @@ endif()
 
 download_project(PROJ pybind11 
 				 GIT_REPOSITORY "https://github.com/pybind/pybind11.git" 
-				 GIT_TAG "v2.6.2" 
+				 GIT_TAG "v2.10.0"
 				 CMAKE_ARGS "-DCMAKE_INSTALL_PREFIX=${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install\"\n\"-DPYTHON_VERSION=${Python_ADDITIONAL_VERSIONS}\"\n\"-DPYBIND11_TEST=OFF")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_BINARY_DIR}/dependencies/pybind11-install")
