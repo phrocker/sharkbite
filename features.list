@@ -1,0 +1,24 @@
+# Features will be listed here in the following format, using three lines each
+# option.name=<name>
+# <name>_description=<description>
+# <name>_default=TRUE/FALSE
+# <name>_dependencies=abc,xyz
+################
+option.name=BUILD_SHARKBITE
+BUILD_SHARKBITE_description=Build Core Sharkbite
+BUILD_SHARKBITE_default=TRUE
+BUILD_SHARKBITE_dependencies=autoconf,automake,libtool,autotool,libevent-dev,unzip,openjdk-11-jdk,flex,bison, libboost-all-dev
+#######
+option.name=BUILD_TESTS
+BUILD_TESTS_description=Build Tests
+BUILD_TESTS_default=TRUE
+################
+option.name=PYTHON_ITERATOR_SUPPORT
+PYTHON_ITERATOR_SUPPORT_description=Build Python Iterators
+PYTHON_ITERATOR_SUPPORT_default=TRUE
+PYTHON_ITERATOR_SUPPORT_dependencies=autoconf,automake,libtool,autotool,libevent-dev,unzip,openjdk-11-jdk
+################
+option.name=NATIVE_ARCH
+NATIVE_ARCH_description=Build Native Extensions
+NATIVE_ARCH_default=FALSE
+################
