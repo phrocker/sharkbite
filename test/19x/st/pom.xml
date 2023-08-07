@@ -27,7 +27,7 @@
     <dep.httpclient.version>4.5.13</dep.httpclient.version>
     <dep.jline.version>2.11</dep.jline.version>
     <dep.log4j.version>1.2.17</dep.log4j.version>
-    <dep.netty.version>3.6.2.Final</dep.netty.version>
+    <dep.netty.version>3.9.8.Final</dep.netty.version>
     <dep.slf4j.version>1.7.21</dep.slf4j.version>
     <dep.zookeeper.version>3.4.14</dep.zookeeper.version>
     <maven.compiler.source>1.8</maven.compiler.source>
