@@ -29,7 +29,7 @@
     <dep.log4j.version>1.2.17</dep.log4j.version>
     <dep.netty.version>3.6.2.Final</dep.netty.version>
     <dep.slf4j.version>1.7.21</dep.slf4j.version>
-    <dep.zookeeper.version>3.4.14</dep.zookeeper.version>
+    <dep.zookeeper.version>3.7.2</dep.zookeeper.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>${maven.compiler.source}</maven.compiler.target>
     <maven.eclipseFormatterStyle>${project.basedir}/src/main/contrib/Eclipse-Accumulo-Codestyle.xml</maven.eclipseFormatterStyle>
