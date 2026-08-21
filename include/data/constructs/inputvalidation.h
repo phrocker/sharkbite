@@ -15,7 +15,6 @@
 #ifndef INPUTVALIDATION_H
 #define INPUTVALIDATION_H
 
-#include <cstdint>
 #include <sstream>
 #include <string>
 #include <string.h>

@@ -15,7 +15,6 @@
 #ifndef ITERINFO_H_
 #define ITERINFO_H_
 
-#include <cstdint>
 #include <string>
 #include <map>
 #include "inputvalidation.h"

@@ -1,6 +1,19 @@
 name: Ubuntu CICD Pipeline
 
-on: [push]
+on:
+  push:
+    paths:
+      - ".github/workflows/ccpp.yml"
+      - "CMakeLists.txt"
+      - "Makefile"
+      - "cmake/**"
+      - "include/**"
+      - "src/**"
+      - "test/**"
+      - "thirdparty/**"
+      - "thrift/**"
+      - "native-iterators-jni/**"
+      - "c-library-examples/**"
 
 jobs:
   build:
