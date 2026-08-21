@@ -7,6 +7,13 @@ It must never install the `sharkbite` or `pysharkbite` packages, extension
 modules, shared libraries, headers, or command-line programs. Those files are
 owned solely by the `shoal-sharkbite` implementation distribution.
 
+Sharkbite issue
+[#108](https://github.com/phrocker/sharkbite/issues/108) is the authoritative
+compatibility-layer migration gate. This repository provides only the
+install-name and release bridge; publishing it is not evidence that the
+compatibility implementation or live-cluster conformance is complete. Keep
+#108 open until all four required live Accumulo rows pass.
+
 The compatibility distribution has its own monotonically increasing version
 because PyPI already contains historical `sharkbite` releases through
 `1.2.0.3`, while Shoal uses an independent semantic version. Each compatibility
