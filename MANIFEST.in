@@ -1,0 +1,20 @@
+include LICENSE
+include PYTHONREADME.md
+include RELEASE.md
+include pyproject.toml
+include setup.py
+
+prune sharkbite
+prune pandashark
+prune src
+prune include
+prune thrift
+prune thirdparty
+prune cmake
+prune native-iterators-jni
+prune c-library-examples
+prune examples
+prune test
+prune tests
+global-exclude *.py[cod]
+global-exclude __pycache__
