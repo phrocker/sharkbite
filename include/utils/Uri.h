@@ -15,6 +15,7 @@
  */
 
 #pragma once
+#include <cstdint>
 #include <regex>
 #include <string>
 #include <vector>
