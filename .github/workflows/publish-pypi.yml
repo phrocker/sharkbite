@@ -180,6 +180,7 @@ jobs:
           gh release download "v${version}" \
             --repo phrocker/shoal-oss \
             --pattern "shoal_sharkbite-${version}-*" \
+            --pattern "shoal_sharkbite-${version}.tar.gz" \
             --pattern SHA256SUMS \
             --dir shoal-release
           (cd shoal-release && sha256sum -c SHA256SUMS)

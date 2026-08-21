@@ -32,6 +32,8 @@ ALLOWED_SDIST_EGG_INFO_FILES = {
 
 
 def metadata_from_wheel(path: Path):
+    if not path.name.endswith("-py3-none-any.whl"):
+        raise AssertionError(f"expected a universal py3-none-any wheel, found {path.name}")
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
         metadata_names = [name for name in names if name.endswith(".dist-info/METADATA")]
@@ -44,16 +46,24 @@ def metadata_from_wheel(path: Path):
         disallowed = [name for name in names if not name.startswith(expected_prefix)]
         if disallowed:
             raise AssertionError(f"wheel contains installed files: {disallowed}")
+        forbidden_dist_info_files = {"entry_points.txt"}
+        entry_points = [
+            name
+            for name in names
+            if Path(name).name in forbidden_dist_info_files
+        ]
+        if entry_points:
+            raise AssertionError(f"wheel declares entry points/scripts: {entry_points}")
         return metadata
 
 
 def verify_sdist(path: Path) -> None:
     with tarfile.open(path, "r:*") as archive:
-        files = [
-            member.name.split("/", 1)[-1]
-            for member in archive.getmembers()
-            if member.isfile()
-        ]
+        members = archive.getmembers()
+        non_regular = [member.name for member in members if not (member.isfile() or member.isdir())]
+        if non_regular:
+            raise AssertionError(f"sdist contains non-regular members: {non_regular}")
+        files = [member.name.split("/", 1)[-1] for member in members if member.isfile()]
     disallowed = [
         name
         for name in files
@@ -72,8 +82,14 @@ def require_pypi_release(requirement: str) -> None:
             payload = json.load(response)
     except urllib.error.HTTPError as error:
         raise AssertionError(f"{requirement} is not published on PyPI") from error
-    if not payload.get("urls"):
+    urls = payload.get("urls") or []
+    if not urls:
         raise AssertionError(f"{requirement} has no PyPI artifacts")
+    if not any(
+        file.get("packagetype") == "bdist_wheel" and not file.get("yanked")
+        for file in urls
+    ):
+        raise AssertionError(f"{requirement} has no non-yanked wheel published on PyPI")
 
 
 def main() -> int:
