@@ -83,6 +83,7 @@ jobs:
         run: |
           python -m venv smoke-env
           smoke-env/bin/python -m pip install --no-index --find-links dist --find-links stub-dist sharkbite
+          smoke-env/bin/python -m pip check
           cd smoke-env
           bin/python - <<'PY'
           import importlib.metadata
