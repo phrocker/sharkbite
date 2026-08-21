@@ -173,3 +173,24 @@ jobs:
         uses: pypa/gh-action-pypi-publish@ed0c53931b1dc9bd32cbe73a98c7f6766f8a527e # release/v1
         with:
           packages-dir: publish-dist
+
+  release-assets:
+    name: Publish checksummed GitHub release assets
+    if: github.event_name == 'release'
+    needs: publish
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified distributions
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: sharkbite-pypi-${{ github.sha }}
+          path: release-artifacts
+
+      - name: Upload immutable release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" release-artifacts/* --repo "$GITHUB_REPOSITORY"

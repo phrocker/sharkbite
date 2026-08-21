@@ -33,7 +33,7 @@ Shoal implementation version requires a reviewed `sharkbite` metadata release.
 6. Create and publish a GitHub release whose tag is exactly `v<project
    version>`. The protected `pypi` environment must approve publishing.
 7. Verify `pip install sharkbite==<version>` in a clean environment and retain
-   the workflow checksums and GitHub artifact attestation.
+   the checksummed GitHub release assets and GitHub artifact attestation.
 
 Never upload from a workstation. Configure PyPI Trusted Publishing for:
 
