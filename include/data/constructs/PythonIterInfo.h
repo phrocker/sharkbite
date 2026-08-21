@@ -15,6 +15,7 @@
 #ifndef PYTHONITERINFO_H
 #define PYTHONITERINFO_H
 
+#include <cstdint>
 #include <string>
 #include <map>
 #include "data/constructs/IterInfo.h"
