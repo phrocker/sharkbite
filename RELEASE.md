@@ -59,3 +59,7 @@ Historical implementation source remains in this repository for audit and
 migration analysis, but packaging configuration and release verification
 exclude it from both wheel and sdist. Removing that source requires a separate
 consumer-impact review.
+
+The legacy native workflow remains available for changes to the historical
+C++ build surfaces. Packaging-only changes are validated by
+`publish-pypi.yml` and do not invoke that unrelated native build.
