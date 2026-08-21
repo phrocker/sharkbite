@@ -12,7 +12,8 @@ Sharkbite issue
 compatibility-layer migration gate. This repository provides only the
 install-name and release bridge; publishing it is not evidence that the
 compatibility implementation or live-cluster conformance is complete. Keep
-#108 open until all four required live Accumulo rows pass.
+#108 open until `SB-SCAN-022`, `SB-SCAN-026`, `SB-XCUT-015`, and
+`SB-XCUT-016` pass.
 
 PyPI already contains historical `sharkbite` releases through `1.2.0.3`.
 The first coordinated version is therefore `1.3.0`, which is unused and valid

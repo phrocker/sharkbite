@@ -21,7 +21,7 @@ This install-name bridge is packaging evidence for the authoritative
 [Sharkbite migration gate](https://github.com/phrocker/sharkbite/issues/108);
 it does not complete that gate. The compatibility implementation already lives
 in Shoal. Issue #108 remains open until its four required live Accumulo rows
-pass.
+pass: `SB-SCAN-022`, `SB-SCAN-026`, `SB-XCUT-015`, and `SB-XCUT-016`.
 
 Release maintainers must follow [RELEASE.md](RELEASE.md). In particular,
 `shoal-sharkbite` must be published and verified before the corresponding
