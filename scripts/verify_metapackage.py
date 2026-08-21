@@ -22,6 +22,13 @@ ALLOWED_SDIST_FILES = {
     "setup.cfg",
     "setup.py",
 }
+ALLOWED_SDIST_EGG_INFO_FILES = {
+    "sharkbite.egg-info/PKG-INFO",
+    "sharkbite.egg-info/SOURCES.txt",
+    "sharkbite.egg-info/dependency_links.txt",
+    "sharkbite.egg-info/requires.txt",
+    "sharkbite.egg-info/top_level.txt",
+}
 
 
 def metadata_from_wheel(path: Path):
@@ -50,11 +57,8 @@ def verify_sdist(path: Path) -> None:
     disallowed = [
         name
         for name in files
-        if Path(name).name not in ALLOWED_SDIST_FILES
-        and not name.endswith(".egg-info/SOURCES.txt")
-        and not name.endswith(".egg-info/dependency_links.txt")
-        and not name.endswith(".egg-info/requires.txt")
-        and not name.endswith(".egg-info/top_level.txt")
+        if name not in ALLOWED_SDIST_FILES
+        and name not in ALLOWED_SDIST_EGG_INFO_FILES
     ]
     if disallowed:
         raise AssertionError(f"sdist contains historical implementation files: {disallowed}")
