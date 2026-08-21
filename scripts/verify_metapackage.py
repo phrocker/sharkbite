@@ -37,14 +37,14 @@ def metadata_from_wheel(path: Path):
         metadata_names = [name for name in names if name.endswith(".dist-info/METADATA")]
         if len(metadata_names) != 1:
             raise AssertionError(f"expected one METADATA file, found {metadata_names}")
-        disallowed = [
-            name
-            for name in names
-            if ".dist-info/" not in name and not name.endswith(".dist-info")
-        ]
+        metadata = email.message_from_bytes(archive.read(metadata_names[0]))
+        expected_prefix = f"sharkbite-{metadata['Version']}.dist-info/"
+        if metadata_names[0] != expected_prefix + "METADATA":
+            raise AssertionError(f"unexpected dist-info directory: {metadata_names[0]}")
+        disallowed = [name for name in names if not name.startswith(expected_prefix)]
         if disallowed:
             raise AssertionError(f"wheel contains installed files: {disallowed}")
-        return email.message_from_bytes(archive.read(metadata_names[0]))
+        return metadata
 
 
 def verify_sdist(path: Path) -> None:
