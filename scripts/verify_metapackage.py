@@ -85,8 +85,11 @@ def main() -> int:
 
     metadata = metadata_from_wheel(args.wheel)
     requirements = metadata.get_all("Requires-Dist", [])
-    if len(requirements) != 1 or not requirements[0].startswith("shoal-sharkbite=="):
-        raise AssertionError(f"expected one exact shoal-sharkbite dependency: {requirements}")
+    expected_requirement = f"shoal-sharkbite=={metadata['Version']}"
+    if requirements != [expected_requirement]:
+        raise AssertionError(
+            f"expected same-version dependency {expected_requirement}: {requirements}"
+        )
     if metadata["Requires-Python"] != ">=3.9":
         raise AssertionError(f"unexpected Requires-Python: {metadata['Requires-Python']}")
     if args.sdist:

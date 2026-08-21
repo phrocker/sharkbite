@@ -90,8 +90,8 @@ jobs:
           import sharkbite
 
           assert importlib.metadata.version("sharkbite") == "1.3.0"
-          assert importlib.metadata.version("shoal-sharkbite") == "0.5.0"
-          assert sharkbite.__version__ == pysharkbite.__version__ == "0.5.0"
+          assert importlib.metadata.version("shoal-sharkbite") == "1.3.0"
+          assert sharkbite.__version__ == pysharkbite.__version__ == "1.3.0"
           owners = importlib.metadata.packages_distributions()
           assert owners["sharkbite"] == ["shoal-sharkbite"], owners["sharkbite"]
           assert owners["pysharkbite"] == ["shoal-sharkbite"], owners["pysharkbite"]
@@ -146,6 +146,7 @@ jobs:
       name: pypi
       url: https://pypi.org/project/sharkbite/
     permissions:
+      attestations: read
       contents: read
       id-token: write
     steps:
@@ -153,6 +154,11 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.11"
 
       - name: Download verified distributions
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
@@ -162,6 +168,78 @@ jobs:
 
       - name: Require implementation release on PyPI
         run: python scripts/verify_metapackage.py release-artifacts/*.whl --require-pypi
+
+      - name: Verify Shoal release, PyPI artifact, native ABI, and ownership
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')
+          mkdir shoal-release pypi-download
+          gh release download "v${version}" \
+            --repo phrocker/shoal-oss \
+            --pattern "shoal_sharkbite-${version}-*" \
+            --pattern SHA256SUMS \
+            --dir shoal-release
+          (cd shoal-release && sha256sum -c SHA256SUMS)
+          gh attestation verify shoal-release/*.whl --repo phrocker/shoal-oss
+          gh attestation verify shoal-release/*.tar.gz --repo phrocker/shoal-oss
+          python -m pip download \
+            --disable-pip-version-check \
+            --no-deps \
+            --only-binary=:all: \
+            --dest pypi-download \
+            "shoal-sharkbite==${version}"
+          wheel=$(find pypi-download -maxdepth 1 -name '*.whl' -print -quit)
+          release_wheel="shoal-release/$(basename "$wheel")"
+          test -f "$release_wheel"
+          cmp "$wheel" "$release_wheel"
+          python -m venv implementation-smoke
+          implementation-smoke/bin/python -m pip install --no-index --no-deps "$wheel"
+          (
+            cd implementation-smoke
+            bin/python - <<'PY'
+          import importlib.metadata
+          from pathlib import Path
+
+          import pysharkbite
+          import sharkbite
+          from sharkbite._native import NativeAPI
+
+          version = importlib.metadata.version("shoal-sharkbite")
+          assert sharkbite.__version__ == pysharkbite.__version__ == version
+          owners = importlib.metadata.packages_distributions()
+          assert owners["sharkbite"] == ["shoal-sharkbite"], owners["sharkbite"]
+          assert owners["pysharkbite"] == ["shoal-sharkbite"], owners["pysharkbite"]
+          distribution = importlib.metadata.distribution("shoal-sharkbite")
+          native_files = [
+              path for path in distribution.files or ()
+              if ".libs" in path.parts and Path(path).suffix in {".so", ".dll", ".dylib"}
+          ]
+          assert native_files, "shoal-sharkbite has no bundled native library"
+          api = NativeAPI()
+          assert api.version >= (1, 19, 0), api.version
+          assert api.capabilities, "Shoal ABI exposes no capabilities"
+          PY
+          )
+          implementation-smoke/bin/python -m pip install \
+            --no-index \
+            --no-deps \
+            release-artifacts/*.whl
+          (
+            cd implementation-smoke
+            bin/python - <<'PY'
+          import importlib.metadata
+
+          assert importlib.metadata.version("sharkbite") == importlib.metadata.version(
+              "shoal-sharkbite"
+          )
+          owners = importlib.metadata.packages_distributions()
+          assert owners["sharkbite"] == ["shoal-sharkbite"], owners["sharkbite"]
+          assert owners["pysharkbite"] == ["shoal-sharkbite"], owners["pysharkbite"]
+          PY
+            bin/python -m pip check
+          )
 
       - name: Select PyPI distributions
         shell: bash

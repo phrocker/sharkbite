@@ -14,33 +14,35 @@ install-name and release bridge; publishing it is not evidence that the
 compatibility implementation or live-cluster conformance is complete. Keep
 #108 open until all four required live Accumulo rows pass.
 
-The compatibility distribution has its own monotonically increasing version
-because PyPI already contains historical `sharkbite` releases through
-`1.2.0.3`, while Shoal uses an independent semantic version. Each compatibility
-release pins one validated implementation release with exact equality:
+PyPI already contains historical `sharkbite` releases through `1.2.0.3`.
+The first coordinated version is therefore `1.3.0`, which is unused and valid
+for both projects. Every coordinated release uses one PEP 440 version in both
+projects and pins the implementation with exact equality:
 
 ```text
-sharkbite 1.3.0 -> shoal-sharkbite == 0.5.0
+sharkbite 1.3.0 -> shoal-sharkbite == 1.3.0
 ```
 
 Do not loosen this to an unbounded or compatible-release specifier. A new
-Shoal implementation version requires a reviewed `sharkbite` metadata release.
+Shoal implementation version requires the same reviewed `sharkbite` metadata
+version.
 
 ## Required ordering
 
 1. Merge the Shoal implementation and release-workflow changes.
-2. Publish `shoal-sharkbite` and verify its PyPI wheel/sdist, checksums,
-   provenance, native bundle, and both `import sharkbite` and
-   `import pysharkbite`.
-3. Update the exact dependency in `pyproject.toml`, if necessary.
+2. Tag and publish Shoal GitHub Release `v<VERSION>`. Wait for
+   `shoal-sharkbite==<VERSION>` on PyPI, then verify its hashes/provenance,
+   clean `--no-deps` install, both imports, native ABI, and capabilities.
+3. Set both this project version and the exact dependency to `<VERSION>`.
 4. Run this repository's build, metadata, dependency, file-ownership, install,
-   and import smoke tests.
+   import, native-file ownership, and `pip check` smoke tests.
 5. Merge the compatibility PR only after steps 1-4 establish the version
    contract.
 6. Create and publish a GitHub release whose tag is exactly `v<project
    version>`. The protected `pypi` environment must approve publishing.
-7. Verify `pip install sharkbite==<version>` in a clean environment and retain
-   the checksummed GitHub release assets and GitHub artifact attestation.
+7. Verify `pip install sharkbite==<VERSION>` in a clean environment, run
+   `pip check`, prove imports/native files are owned by `shoal-sharkbite`, and
+   retain the checksummed GitHub release assets and artifact attestation.
 
 Never upload from a workstation. Configure PyPI Trusted Publishing for:
 
