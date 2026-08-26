@@ -229,7 +229,10 @@ jobs:
             --no-deps \
             --target split-user \
             dist/*.whl
-          PYTHONPATH="$PWD/split-user:$PWD/split-system" python - <<'PY'
+          workspace="$PWD"
+          mkdir split-run
+          cd split-run
+          PYTHONPATH="$workspace/split-user:$workspace/split-system" python - <<'PY'
           import pysharkbite
           import sharkbite
 
