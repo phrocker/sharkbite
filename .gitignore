@@ -1,6 +1,8 @@
 .kdev4/
 build/
 build*
+dist/
+*.egg-info/
 *.pyc
 workspace.xml
 native-iterators-jni/.idea/*
