@@ -1,0 +1,143 @@
+"""Compatibility entry point layered over the Shoal implementation."""
+
+from pkgutil import extend_path
+
+__path__ = extend_path(__path__, __name__)
+
+# The remainder of this file must match shoal-sharkbite's initializer exactly.
+"""Incremental Shoal Python binding; intentionally not full compatibility."""
+
+from ._version import __version__
+from ._native import ForkSafetyError, NativeAPI, RuntimeInfo
+from .admin import (
+    NamespaceOperations,
+    NamespacePermissions,
+    SecurityOperations,
+    ShoalSystemPermissions,
+    ShoalTablePermissions,
+    SystemPermissions,
+    TableInfo,
+    TableOperations,
+    TablePermissions,
+)
+from .client import (
+    AccumuloBase,
+    AccumuloIterator,
+    AccumuloScanner,
+    AccumuloWriter,
+    BatchScanner,
+    Client,
+    Connector,
+    Scanner,
+    Results,
+)
+from .compatibility import (
+    IterInfo,
+    LoggingConfiguration,
+    PythonIterator,
+    ScannerOptions,
+)
+from .configuration import (
+    AccumuloInfo,
+    AuthInfo,
+    Compacting,
+    Configuration,
+    DeadServer,
+    Instance,
+    RecoveryStatus,
+    TableCompactions,
+    TableRates,
+    TabletServerStatus,
+    ZookeeperInstance,
+)
+from .data import Authorizations, Key, KeyValue, Range, Value
+from .errors import (
+    AmbiguousWriteError,
+    AlreadyExistsError,
+    CancelledError,
+    ClientException,
+    ClosedError,
+    DeadlineExceededError,
+    InvalidArgumentError,
+    NotFoundError,
+    PermissionDeniedError,
+    ShoalError,
+    UnsupportedError,
+)
+from .writer import BatchWriter, BatchWriterOptions, Mutation
+from .storage import (
+    Hdfs,
+    HdfsDirEnt,
+    HdfsInputStream,
+    HdfsOutputStream,
+    RFileOperations,
+    SequentialRFile,
+)
+
+AccumuloConnector = Connector
+
+__all__ = [
+    "__version__",
+    "AccumuloBase",
+    "AccumuloConnector",
+    "AccumuloIterator",
+    "AccumuloInfo",
+    "AccumuloScanner",
+    "AccumuloWriter",
+    "AmbiguousWriteError",
+    "AlreadyExistsError",
+    "Authorizations",
+    "AuthInfo",
+    "BatchWriter",
+    "BatchWriterOptions",
+    "BatchScanner",
+    "CancelledError",
+    "Client",
+    "ClientException",
+    "ClosedError",
+    "Connector",
+    "Configuration",
+    "Compacting",
+    "DeadlineExceededError",
+    "DeadServer",
+    "InvalidArgumentError",
+    "Instance",
+    "Hdfs",
+    "HdfsDirEnt",
+    "HdfsInputStream",
+    "HdfsOutputStream",
+    "ForkSafetyError",
+    "Key",
+    "KeyValue",
+    "IterInfo",
+    "Range",
+    "LoggingConfiguration",
+    "NativeAPI",
+    "NamespaceOperations",
+    "NamespacePermissions",
+    "NotFoundError",
+    "PermissionDeniedError",
+    "RuntimeInfo",
+    "RFileOperations",
+    "RecoveryStatus",
+    "PythonIterator",
+    "Results",
+    "Scanner",
+    "ScannerOptions",
+    "SecurityOperations",
+    "ShoalSystemPermissions",
+    "ShoalTablePermissions",
+    "ShoalError",
+    "UnsupportedError",
+    "SystemPermissions",
+    "TableInfo",
+    "TableCompactions",
+    "TableOperations",
+    "TablePermissions",
+    "TableRates",
+    "TabletServerStatus",
+    "Mutation",
+    "Value",
+    "SequentialRFile",
+    "ZookeeperInstance",
+]

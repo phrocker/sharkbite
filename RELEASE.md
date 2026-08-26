@@ -2,10 +2,18 @@
 
 ## Architecture
 
-The PyPI project `sharkbite` is a metadata-only compatibility distribution.
-It must never install the `sharkbite` or `pysharkbite` packages, extension
-modules, shared libraries, headers, or command-line programs. Those files are
-owned solely by the `shoal-sharkbite` implementation distribution.
+The PyPI project `sharkbite` is a compatibility distribution. It installs only
+`sharkbite/__init__.py`, after the exact same-version `shoal-sharkbite`
+dependency. This final-write initializer is required because pip installs
+dependencies before dependents: while upgrading historical `sharkbite`, pip
+otherwise removes the initializer that Shoal just installed. The bridge
+initializer extends the package path for split-site installations, then
+matches Shoal's same-version initializer.
+
+`shoal-sharkbite` owns every implementation module, the `pysharkbite` package,
+extension and shared libraries, headers, data, and command-line programs. The
+two distributions intentionally record the identical `sharkbite/__init__.py`
+path; release verification enforces that this is their only overlap.
 
 Sharkbite issue
 [#108](https://github.com/phrocker/sharkbite/issues/108) is the authoritative
@@ -35,15 +43,22 @@ version.
    `shoal-sharkbite==<VERSION>` on PyPI, then verify its hashes/provenance,
    clean `--no-deps` install, both imports, native ABI, and capabilities.
 3. Set both this project version and the exact dependency to `<VERSION>`.
-4. Run this repository's build, metadata, dependency, file-ownership, install,
-   import, native-file ownership, and `pip check` smoke tests.
+4. Run this repository's build, metadata, dependency, file-ownership, clean
+   install, historical in-place upgrade, import, native-file ownership, and
+   `pip check` smoke tests.
 5. Merge the compatibility PR only after steps 1-4 establish the version
    contract.
 6. Create and publish a GitHub release whose tag is exactly `v<project
    version>`. The protected `pypi` environment must approve publishing.
-7. Verify `pip install sharkbite==<VERSION>` in a clean environment, run
-   `pip check`, prove imports/native files are owned by `shoal-sharkbite`, and
-   retain the checksummed GitHub release assets and artifact attestation.
+7. Verify both a clean `pip install sharkbite==<VERSION>` and an ordinary
+   upgrade from `sharkbite==1.2.0.3`. Run `pip check`, prove only the
+   compatibility initializer is shared while implementation/native files are
+   owned by `shoal-sharkbite`, and retain the checksummed GitHub release assets
+   and artifact attestation.
+
+Uninstalling only `sharkbite` removes the shared initializer while leaving its
+dependency installed. Users intentionally switching to direct
+`shoal-sharkbite` ownership must reinstall `shoal-sharkbite` afterward.
 
 Never upload from a workstation. Configure PyPI Trusted Publishing for:
 
