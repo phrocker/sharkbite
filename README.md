@@ -2,6 +2,12 @@
 # ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
 ![Ubuntu CICD Pipeline](https://github.com/phrocker/sharkbite/workflows/Ubuntu%20CICD%20Pipeline/badge.svg)
 
+> **Python package ownership moved to
+> [Shoal](https://github.com/phrocker/shoal-oss).** `pip install sharkbite`
+> installs the compatibility entry point plus the exact same-version
+> `shoal-sharkbite` implementation. The native source below is retained for
+> historical audit and migration analysis; `pip install .` no longer builds it.
+
 **S**harkbite is a native client for key/value stores. With 
 initial support for [Apache Accumulo](https://accumulo.apache.org/), the design can and has been used to support other key/value
 stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
@@ -80,8 +86,16 @@ Please note that the library of sharkbite consists of C bindings to allow you to
 via our C interfaces and a Python binding built via Pybind11. 
 
 ## Python Lib
-The Python library can be installed by simply typing pip install . into the root source directory.
-During this process the C++ library and python bindings will be built.
+Install the maintained compatibility package from PyPI:
+
+```console
+pip install sharkbite
+```
+
+Installing from this repository builds the same compatibility distribution; it
+does not compile the historical C++ implementation. See
+[PYTHONREADME.md](PYTHONREADME.md) and [RELEASE.md](RELEASE.md) for the current
+ownership and release contract.
 
 [A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
 library.

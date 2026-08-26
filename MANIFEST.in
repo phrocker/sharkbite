@@ -3,6 +3,7 @@ include PYTHONREADME.md
 include RELEASE.md
 include pyproject.toml
 include setup.py
+include compat_src/sharkbite/__init__.py
 
 prune sharkbite
 prune pandashark

@@ -1,8 +1,8 @@
 # Sharkbite compatibility package
 
-`sharkbite` is now a thin compatibility package. The maintained implementation,
-including the `sharkbite` and `pysharkbite` import packages and bundled native C
-ABI, is published by the Shoal project as `shoal-sharkbite`.
+`sharkbite` is now a compatibility package for the Shoal implementation. The
+Shoal project publishes the maintained modules, `pysharkbite` package, and
+bundled native C ABI as `shoal-sharkbite`.
 
 Existing installation commands remain valid:
 
@@ -10,9 +10,11 @@ Existing installation commands remain valid:
 pip install sharkbite
 ```
 
-The compatibility distribution installs no Python modules or native files of
-its own. It depends exactly on the tested Shoal implementation release, so
-there is a single owner for every installed import and native library.
+The compatibility distribution depends exactly on the tested Shoal
+implementation release. It installs only the final `sharkbite/__init__.py`
+entry point so that a normal upgrade from historical `sharkbite` releases
+cannot delete Shoal's newly installed initializer. All implementation modules
+and native files remain supplied by `shoal-sharkbite`.
 
 For implementation documentation and issue reporting, see
 [Shoal](https://github.com/phrocker/shoal-oss).
