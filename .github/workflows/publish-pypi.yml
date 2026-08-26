@@ -129,7 +129,8 @@ jobs:
           bridge_payload = {
               str(path)
               for path in bridge.files or ()
-              if ".dist-info" not in path.parts
+              if not any(part.endswith(".dist-info") for part in path.parts)
+              and "__pycache__" not in path.parts
           }
           assert bridge_payload == {"sharkbite/__init__.py"}, bridge_payload
           implementation = importlib.metadata.distribution("shoal-sharkbite")
