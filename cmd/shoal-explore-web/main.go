@@ -54,6 +54,40 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
+// transitionSkipReporter is the part of the dispatch service the health
+// surface reads. Declared here rather than widened into
+// webapi.FleetDispatchProvider, which is the API boundary and has no business
+// carrying an observability accessor.
+type transitionSkipReporter interface {
+	SkippedTransitionPublications() uint64
+}
+
+// dispatchMetrics renders the dispatch counters the health port may carry, or
+// nil when there is no dispatch service to read — a nil writer leaves the
+// surface exactly as it was, with /metrics a 404.
+//
+// One counter, and deliberately not a gauge over pending work. The health port
+// is unauthenticated, so it carries counters of this process's own behaviour
+// and nothing that tracks tenant workload: an oldest-pending age or a queue
+// depth names no object and still reports how much work a tenant has
+// outstanding (#642). The durable pending signal waits for #647 and belongs
+// behind authentication.
+func dispatchMetrics(provider webapi.FleetDispatchProvider) healthsurface.MetricsWriter {
+	reporter, ok := provider.(transitionSkipReporter)
+	if !ok {
+		return nil
+	}
+	return func(b *strings.Builder) {
+		fmt.Fprintf(b,
+			"# HELP shoal_fleet_transition_publications_skipped_total "+
+				"Pending transition rows left in place because the "+
+				"reconciling caller was not entitled to publish them.\n"+
+				"# TYPE shoal_fleet_transition_publications_skipped_total counter\n"+
+				"shoal_fleet_transition_publications_skipped_total %d\n",
+			reporter.SkippedTransitionPublications())
+	}
+}
+
 func main() {
 	ctx, stop := signal.NotifyContext(
 		context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -991,7 +1025,8 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	health := (*healthsurface.Server)(nil)
 	state := &healthsurface.State{}
 	if address := strings.TrimSpace(*healthAddress); address != "" {
-		health, err = healthsurface.Start(address, state)
+		health, err = healthsurface.StartWithConfig(address, state,
+			healthsurface.Config{Metrics: dispatchMetrics(opened.fleetDispatch)})
 		if err != nil {
 			listener.Close()
 			return fmt.Errorf("listen on %s: %w", address, err)

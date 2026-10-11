@@ -100,6 +100,19 @@ type Config struct {
 	// carry operational counts only: no payload, identity, corpus or policy
 	// content. Once this is set, the surface's no-disclosure property is the
 	// producer's to keep.
+	//
+	// "Operational counts" means counters of *this process's own behaviour*:
+	// errors, skips, refusals by closed reason, readiness. What it excludes is
+	// anything tracking tenant workload — pending or in-flight counts, queue
+	// depth, per-action or per-principal anything — because volume over an
+	// open port is a load oracle even when it carries no identifier, and a
+	// per-object series is an existence oracle outright (#398).
+	//
+	// The line is drawn there rather than at "contains no IDs" because the
+	// first signal proposed for this surface passed that weaker test and
+	// failed this one: an oldest-pending-transition age names nothing and
+	// still reports how much work a tenant has outstanding. A signal over
+	// pending work belongs behind authentication; see #642 and #647.
 	Metrics MetricsWriter
 }
 

@@ -13,6 +13,7 @@ import (
 	"hash"
 	"slices"
 	"sort"
+	"sync/atomic"
 	"time"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
@@ -34,6 +35,30 @@ type DispatchService struct {
 	evidenceVisibility EvidenceVisibility
 	evidenceLabels     evidencelabels.Translator
 	evidenceNodes      evidencelabels.NodeGate
+	// skippedPublications counts transition rows this process left pending
+	// because the caller was not entitled to publish them. See
+	// SkippedTransitionPublications.
+	skippedPublications atomic.Uint64
+}
+
+// SkippedTransitionPublications is the number of pending transition rows this
+// process has left in place because the reconciling caller was not entitled to
+// publish them.
+//
+// A counter, deliberately, and not a gauge of what is pending (#642). A row
+// strands when its owning principal never makes another request on that
+// action, and nothing visits it — so no request reaches the skip, and any
+// gauge built from this would read healthy exactly when the condition it was
+// added to detect is occurring. What this can honestly report is "requests are
+// encountering rows they cannot drain", which is the signal that the condition
+// is reachable at all.
+//
+// Process-local and reset by a restart. The durable signal needs a
+// pending-only index (#647), and belongs behind authentication rather than on
+// the unauthenticated health port, because an age or depth over pending work
+// tracks tenant workload rather than this process's own behaviour.
+func (s *DispatchService) SkippedTransitionPublications() uint64 {
+	return s.skippedPublications.Load()
 }
 
 func NewDispatchService(config DispatchConfig) (*DispatchService, error) {
@@ -2532,6 +2557,10 @@ func (s *DispatchService) reconcileActionTransitions(
 					return err
 				}
 				if !may {
+					// Counted, not logged: this is the ordinary case for a
+					// co-tenant row and logging it per request would be noise
+					// at exactly the rate it is useless. #642.
+					s.skippedPublications.Add(1)
 					continue
 				}
 			}
