@@ -440,7 +440,13 @@ func TestParityStateMachines(t *testing.T) {
 			t.Errorf("approval state %q is unreachable", s)
 		}
 	}
-	for _, final := range []fleet.ApprovalState{fleet.ApprovalRefused, fleet.ApprovalExpired, fleet.ApprovalEnqueued} {
+	// Enqueued is not among them (#655): an approval that committed to
+	// become work and whose action can never be written is recorded as
+	// stranded.
+	for _, final := range []fleet.ApprovalState{
+		fleet.ApprovalRefused, fleet.ApprovalExpired,
+		fleet.ApprovalWithdrawn, fleet.ApprovalStranded,
+	} {
 		if leaves[string(final)] {
 			t.Errorf("final approval state %q has an outgoing edge", final)
 		}

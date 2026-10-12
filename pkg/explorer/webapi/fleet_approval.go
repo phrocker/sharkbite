@@ -29,6 +29,15 @@ type FleetApprovalProvider interface {
 	Status(context.Context, fleet.ApprovalStatusRequest) (fleet.ApprovalStatus, error)
 }
 
+// FleetApprovalWithdrawer is the optional withdrawal half of the approval
+// surface (#655). A provider that implements it serves
+// POST /api/v1/fleet/approvals/{id}/withdraw; one that does not answers that
+// route 404, so an existing FleetApprovalProvider keeps compiling and keeps
+// serving exactly what it served.
+type FleetApprovalWithdrawer interface {
+	Withdraw(context.Context, fleet.ApprovalWithdrawRequest) (fleet.ApprovalRecord, error)
+}
+
 // NewFleetApprovalHandler returns the approval surface without adding another
 // authentication boundary. Mount it through Handler.MountAuthenticated at
 // FleetApprovalRoutePrefix.
@@ -146,6 +155,37 @@ func mountFleetApproval(mux *http.ServeMux, provider FleetApprovalProvider) {
 			}
 			writeResponse(w, http.StatusOK, encodeApproval(record, false))
 		})
+	if withdrawer, ok := provider.(FleetApprovalWithdrawer); ok {
+		mux.HandleFunc("POST /api/v1/fleet/approvals/{approval}/withdraw",
+			func(w http.ResponseWriter, r *http.Request) {
+				id, err := decodeWireBytes(
+					"approval ID", r.PathValue("approval"), false)
+				if err != nil {
+					writeError(w, fleetApprovalError(err))
+					return
+				}
+				var wire fleetRequestContextWire
+				if err := decodeRequest(w, r, &wire); err != nil {
+					writeError(w, shoal.NewError(
+						shoal.ErrorInvalidArgument, err.Error()))
+					return
+				}
+				contextValue, err := wire.decode()
+				if err != nil {
+					writeError(w, fleetApprovalError(err))
+					return
+				}
+				record, err := withdrawer.Withdraw(
+					r.Context(), fleet.ApprovalWithdrawRequest{
+						ID: id, Context: contextValue,
+					})
+				if err != nil {
+					writeError(w, fleetApprovalError(err))
+					return
+				}
+				writeResponse(w, http.StatusOK, encodeApproval(record, false))
+			})
+	}
 	mux.HandleFunc("POST /api/v1/fleet/approvals/{approval}/status",
 		func(w http.ResponseWriter, r *http.Request) {
 			id, err := decodeWireBytes("approval ID", r.PathValue("approval"), false)
@@ -217,6 +257,9 @@ func fleetApprovalError(err error) error {
 			shoal.ErrorConflict, "fleet approval identity scheme moved", err)
 	case errors.Is(err, fleet.ErrApprovalConflict),
 		errors.Is(err, fleet.ErrApprovalExpired),
+		errors.Is(err, fleet.ErrApprovalWithdrawn),
+		errors.Is(err, fleet.ErrApprovalTerminalStatesDisabled),
+		errors.Is(err, fleet.ErrApprovalStranded),
 		errors.Is(err, fleet.ErrApprovalSuperseded),
 		errors.Is(err, fleet.ErrApproverMappingMoved):
 		if shoal.IsErrorCode(err, shoal.ErrorConflict) {
@@ -291,6 +334,10 @@ type fleetApprovalWire struct {
 	Approver       string                `json:"approver,omitempty"`
 	ApproverActor  string                `json:"approver_actor,omitempty"`
 	DecidedAt      *time.Time            `json:"decided_at,omitempty"`
+	// WithdrawnAt is set on a withdrawn request (#655). The withdrawal's
+	// reason is recorded and audited and, like the request's own reason,
+	// not served.
+	WithdrawnAt *time.Time `json:"withdrawn_at,omitempty"`
 }
 
 func encodeApproval(record fleet.ApprovalRecord, withInput bool) fleetApprovalWire {
@@ -316,6 +363,10 @@ func encodeApproval(record fleet.ApprovalRecord, withInput bool) fleetApprovalWi
 	if !record.DecidedAt.IsZero() {
 		decided := record.DecidedAt
 		result.DecidedAt = &decided
+	}
+	if !record.WithdrawnAt.IsZero() {
+		withdrawn := record.WithdrawnAt
+		result.WithdrawnAt = &withdrawn
 	}
 	if withInput {
 		result.Input = append(json.RawMessage(nil), request.Input...)

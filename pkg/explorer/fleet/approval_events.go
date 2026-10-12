@@ -106,6 +106,9 @@ const (
 	ApprovalEventRefused      = "approval.refused"
 	ApprovalEventExpired      = "approval.expired"
 	ApprovalEventMaterialized = "approval.materialized"
+	// Withdrawal and stranding (#655).
+	ApprovalEventWithdrawn = "approval.withdrawn"
+	ApprovalEventStranded  = "approval.stranded"
 )
 
 // ApprovalEventKind is the event a record in this state was written by.
@@ -121,29 +124,45 @@ func ApprovalEventKind(state ApprovalState) (string, bool) {
 		return ApprovalEventExpired, true
 	case ApprovalEnqueued:
 		return ApprovalEventMaterialized, true
+	case ApprovalWithdrawn:
+		return ApprovalEventWithdrawn, true
+	case ApprovalStranded:
+		return ApprovalEventStranded, true
 	default:
 		return "", false
 	}
 }
 
-// ApprovalObserver is which side's call wrote an expiry.
+// ApprovalObserver is which side's call wrote an expiry or a stranding.
 //
-// Expiry has no acting principal. Nobody decides that a window has closed;
-// time closes it. It is written lazily, by the next Request (the requester)
-// or Decide (an approver) that finds the window closed. That writer is the
-// transition's publisher and the row says which side it was. The event
-// carries it as its reason code, so a subscriber can tell an expiry observed
-// on the requester's return from one observed by an approver.
+// Neither has an acting principal. Nobody decides that a window has closed,
+// or that a request's target has moved; it happened. Each is written by
+// whichever call observed it: a requester's Request or Status, an approver's
+// Decide or Status, or the host's sweep (#655). That writer is the
+// transition's publisher and the row says which it was. The event carries it
+// in its reason code, so a subscriber can tell an expiry observed on the
+// requester's return from one observed by an approver or by the sweep.
 type ApprovalObserver string
 
 const (
 	ApprovalObservedByRequester ApprovalObserver = "requester"
 	ApprovalObservedByApprover  ApprovalObserver = "approver"
+	// ApprovalObservedBySweeper is the host's system observer
+	// (ApprovalSweeperSubject), which is neither party.
+	ApprovalObservedBySweeper ApprovalObserver = "sweeper"
 )
 
 // ApprovalExpiryReasonCode is the event reason code for an expiry, by observer.
 func ApprovalExpiryReasonCode(observer ApprovalObserver) string {
 	return "approval.expiry.observed_by_" + string(observer)
+}
+
+// ApprovalStrandReasonCode is the event reason code for a stranding, by
+// cause and observer (#655).
+func ApprovalStrandReasonCode(
+	cause ApprovalCondition, observer ApprovalObserver,
+) string {
+	return "approval.stranded." + string(cause) + ".observed_by_" + string(observer)
 }
 
 // ApprovalPublisher is the principal that made one approval transition, and
@@ -193,10 +212,14 @@ func approvalPublisherFor(
 		AuthorizationFingerprint: fingerprint,
 		AuthorizationExpiresAt:   decision.AuthenticationExpires(),
 	}
-	if phase == "approval_expiry" {
-		publisher.Observer = ApprovalObservedByRequester
-		if operation == auth.OperationActionApprove {
+	if phase == "approval_expiry" || phase == "approval_strand" {
+		switch operation {
+		case auth.OperationActionApprove:
 			publisher.Observer = ApprovalObservedByApprover
+		case auth.OperationApprovalSweep:
+			publisher.Observer = ApprovalObservedBySweeper
+		default:
+			publisher.Observer = ApprovalObservedByRequester
 		}
 	}
 	return publisher, nil
@@ -263,9 +286,11 @@ func (t ApprovalTransition) LapsesAt() time.Time {
 //     identity is the stored request's;
 //   - approved and refused: the approver the record names, under approve,
 //     with the decision's own request ID;
-//   - expired: whichever side observed it. The requester is under dispatch,
-//     with the request's identity. An approver is under approve, not on
-//     anybody's behalf.
+//   - expired and stranded: whichever side observed it. The requester is
+//     under dispatch, with the request's identity. An approver is under
+//     approve, not on anybody's behalf. The sweep is the system observer,
+//     under approval_sweep, as ApprovalSweeperSubject (#655);
+//   - withdrawn: the requester, under dispatch (#655).
 //
 // A row that names any other publisher is refused by the store and by the
 // publisher. That is what makes "published under the identity of the
@@ -317,7 +342,7 @@ func (t ApprovalTransition) Validate() error {
 	}
 	var valid bool
 	switch t.Kind {
-	case ApprovalEventRequested, ApprovalEventMaterialized:
+	case ApprovalEventRequested, ApprovalEventMaterialized, ApprovalEventWithdrawn:
 		valid = p.Observer == "" && requester()
 	case ApprovalEventApproved, ApprovalEventRefused:
 		valid = p.Observer == "" &&
@@ -329,19 +354,30 @@ func (t ApprovalTransition) Validate() error {
 			p.RequestID == t.Record.DecisionRequestID &&
 			p.CorrelationID == t.Record.DecisionCorrelationID &&
 			p.AuthorizationFingerprint == t.Record.ApproverFingerprint
-	case ApprovalEventExpired:
+	case ApprovalEventExpired, ApprovalEventStranded:
 		switch p.Observer {
 		case ApprovalObservedByRequester:
 			valid = requester()
 		case ApprovalObservedByApprover:
 			// The record names no observer, so eligibility cannot be
 			// rechecked from the data. What can be is that the approver is
-			// not the requester under another operation.
+			// not the requester under another operation, and not the
+			// system observer under a party's operation.
 			request := t.Record.Request
 			valid = p.Operation == auth.OperationActionApprove &&
 				len(p.OnBehalfOf) == 0 &&
 				p.Subject != request.Subject && p.Subject != request.Actor &&
-				p.Actor != request.Subject && p.Actor != request.Actor
+				p.Actor != request.Subject && p.Actor != request.Actor &&
+				p.Subject != ApprovalSweeperSubject &&
+				p.Actor != ApprovalSweeperSubject
+		case ApprovalObservedBySweeper:
+			// The system observer and nothing else: its identity, its
+			// operation, on nobody's behalf (#655).
+			valid = p.Operation == auth.OperationApprovalSweep &&
+				p.Subject == ApprovalSweeperSubject &&
+				p.Actor == ApprovalSweeperSubject &&
+				p.ClientID == ApprovalSweeperClientID &&
+				len(p.OnBehalfOf) == 0
 		}
 	}
 	if !valid {
@@ -547,6 +583,17 @@ func (s *ApprovalService) drainApprovalEvents(
 			"the transition's event row is not yet readable"))
 	}
 	return answer
+}
+
+// drainApprovalEventsQuietly is a drain that answers for nothing: the caller
+// is not the call that owes any row's event, so a failure is counted and the
+// row left for its own retry or its lapse (#655).
+func (s *ApprovalService) drainApprovalEventsQuietly(
+	ctx context.Context, id []byte,
+) {
+	if err := s.drainApprovalEvents(ctx, id, 0); err != nil && s.events != nil {
+		s.events.failed.Add(1)
+	}
 }
 
 // publishedBy reports whether a decision is the principal a row names.

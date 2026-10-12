@@ -93,7 +93,7 @@ var requiredKeySet = sync.OnceValue(func() map[string]bool {
 		"approval.next.enqueued", "approval.next.final", "approval.next.options")
 	for _, edge := range ApprovalEdges {
 		add("approval.transition." + edge.Name)
-		if edge.From != "" {
+		if approvalEdgeOffered(edge) {
 			add("approval.next.edge." + edge.Name)
 		}
 	}

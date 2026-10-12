@@ -723,6 +723,30 @@ func TestFleetActionInteractionSinkUsesLifecycleOperationForEvidence(t *testing.
 			"(%v) while dispatch was not (%v)", approveErr, dispatchErr)
 	}
 
+	// Approval sweep is the fifth (#655): the host's system observer
+	// publishes the expiries and strandings it records under its own
+	// decision. Asserted the same way.
+	sweepDecision := f.decision(
+		t, "approval-sweep", [][]byte{f.sourceA}, [][]byte{f.policyA},
+		[]auth.Operation{auth.OperationApprovalSweep},
+	)
+	sweepSink := f.clientA.FleetActionInteractionSink(auth.OperationApprovalSweep)
+	sweepReconciler, ok := sweepSink.(interface {
+		RecordReconciledInteractionResult(
+			context.Context, explorerfleetcap.Capability, interaction.Session,
+		) (interaction.Session, error)
+	})
+	if sweepSink == nil || !ok {
+		t.Fatal("approval sweep has no reconciling fleet lifecycle sink, so " +
+			"a recorded expiry answers its event unpublished")
+	}
+	if _, sweepErr := sweepReconciler.RecordReconciledInteractionResult(
+		f.context(t, sweepDecision), explorerfleetcap.New(), executeStored,
+	); shoal.IsErrorCode(sweepErr, shoal.ErrorUnavailable) {
+		t.Fatalf("approval sweep reconciliation was refused by the operation "+
+			"gate (%v) while dispatch was not (%v)", sweepErr, dispatchErr)
+	}
+
 	// And the set is still a set: an unrelated operation gets no sink, so
 	// this is not "any operation will do".
 	if stray := f.clientA.FleetActionInteractionSink(

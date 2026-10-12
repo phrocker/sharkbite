@@ -190,6 +190,7 @@ var DispatchEdges = []Edge{
 var ApprovalStates = []fleet.ApprovalState{
 	fleet.ApprovalPending, fleet.ApprovalApproved, fleet.ApprovalRefused,
 	fleet.ApprovalExpired, fleet.ApprovalEnqueued, fleet.ApprovalUnresolvable,
+	fleet.ApprovalWithdrawn, fleet.ApprovalStranded,
 }
 
 // ApprovalConditions is every fleet.ApprovalCondition, including none.
@@ -227,6 +228,12 @@ var EffectiveApprovals = []EffectiveApproval{
 	{fleet.ApprovalUnresolvable, fleet.ApprovalConditionIdentitySchemeMoved, []fleet.ApprovalState{fleet.ApprovalPending, fleet.ApprovalApproved}},
 	{fleet.ApprovalRefused, fleet.ApprovalConditionNone, []fleet.ApprovalState{fleet.ApprovalRefused}},
 	{fleet.ApprovalExpired, fleet.ApprovalConditionNone, []fleet.ApprovalState{fleet.ApprovalExpired}},
+	// #655: withdrawn by the requester, and stranded for a permanent cause.
+	{fleet.ApprovalWithdrawn, fleet.ApprovalConditionNone, []fleet.ApprovalState{fleet.ApprovalWithdrawn}},
+	{fleet.ApprovalStranded, fleet.ApprovalConditionTargetMoved, []fleet.ApprovalState{fleet.ApprovalStranded}},
+	{fleet.ApprovalStranded, fleet.ApprovalConditionPolicyMoved, []fleet.ApprovalState{fleet.ApprovalStranded}},
+	{fleet.ApprovalStranded, fleet.ApprovalConditionIdentityTaken, []fleet.ApprovalState{fleet.ApprovalStranded}},
+	{fleet.ApprovalStranded, fleet.ApprovalConditionDeadlinePassed, []fleet.ApprovalState{fleet.ApprovalStranded}},
 }
 
 // ApprovalEdges is the approval state machine (docs/approval.md, "The model").
@@ -237,6 +244,19 @@ var ApprovalEdges = []Edge{
 	{Name: "expired_undecided", From: "pending", To: "expired"},
 	{Name: "materialized", From: "approved", To: "enqueued"},
 	{Name: "expired_unused", From: "approved", To: "expired"},
+	// #655.
+	{Name: "withdrawn", From: "pending", To: "withdrawn"},
+	{Name: "stranded_undecided", From: "pending", To: "stranded"},
+	{Name: "stranded_unused", From: "approved", To: "stranded"},
+	// From enqueued, whose next step is its action's own status
+	// (approval.next.enqueued), so it is never offered as an option.
+	{Name: "stranded_unwritten", From: "enqueued", To: "stranded"},
+}
+
+// approvalEdgeOffered reports whether an edge is offered as a next step. An
+// enqueued approval's next step is its action's status, not an option.
+func approvalEdgeOffered(edge Edge) bool {
+	return edge.From != "" && edge.From != string(fleet.ApprovalEnqueued)
 }
 
 // Decision vocabularies (pkg/decision).

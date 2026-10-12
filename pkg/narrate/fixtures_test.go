@@ -102,7 +102,28 @@ func approvalRecord(state fleet.ApprovalState, verdict fleet.ApprovalVerdict) fl
 	if state == fleet.ApprovalExpired {
 		r.UpdatedAt = t0.Add(90 * time.Minute)
 	}
+	if state == fleet.ApprovalWithdrawn {
+		r.Version = 2
+		r.WithdrawnAt = t0.Add(5 * time.Minute)
+		r.UpdatedAt = r.WithdrawnAt
+	}
+	if state == fleet.ApprovalStranded {
+		r.Version++
+		r.UpdatedAt = t0.Add(30 * time.Minute)
+	}
 	return r
+}
+
+// strandedAfterApproval is a request stranded while its window was open,
+// after it was approved: the one stranded history the status table's
+// fixtures, which show a request stranded undecided, do not reach (#655).
+func strandedAfterApproval() fleet.ApprovalStatus {
+	record := approvalRecord(fleet.ApprovalStranded, fleet.ApprovalVerdictApprove)
+	record.StrandedCause = fleet.ApprovalConditionTargetMoved
+	return fleet.ApprovalStatus{
+		Approval: record, State: fleet.ApprovalStranded,
+		Condition: fleet.ApprovalConditionTargetMoved,
+	}
 }
 
 // approvalStatus builds a status for one row of EffectiveApprovals from one
@@ -115,8 +136,25 @@ func approvalStatus(row EffectiveApproval, stored fleet.ApprovalState) fleet.App
 	case fleet.ApprovalRefused:
 		verdict = fleet.ApprovalVerdictRefuse
 	}
+	record := approvalRecord(stored, verdict)
+	if stored == fleet.ApprovalStranded {
+		// Stranded with the row's cause. A request stranded after it
+		// committed to become work was approved and materialized; one
+		// stranded while its window was open is shown undecided here, and
+		// the coverage test renders it approved too.
+		record.StrandedCause = row.Condition
+		if row.Condition == fleet.ApprovalConditionIdentityTaken ||
+			row.Condition == fleet.ApprovalConditionDeadlinePassed {
+			record.Verdict = fleet.ApprovalVerdictApprove
+			record.ApproverSubject, record.ApproverActor = "bob", "bob"
+			record.DecidedAt = t0.Add(10 * time.Minute)
+			record.DecisionRequestID = "req-2"
+			record.MaterializedAt = t0.Add(20 * time.Minute)
+			record.Version = 4
+		}
+	}
 	return fleet.ApprovalStatus{
-		Approval: approvalRecord(stored, verdict), State: row.State, Condition: row.Condition,
+		Approval: record, State: row.State, Condition: row.Condition,
 	}
 }
 

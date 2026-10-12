@@ -113,10 +113,12 @@ func TestApprovalRequiredOverHTTP(t *testing.T) {
 		body["stored_state"] != "pending" || body["condition"] != nil {
 		t.Fatalf("approval status = %d %v", status, body)
 	}
+	// Past the window the requester's Status records the expiry it
+	// observes (#655), so the stored state is the effective one.
 	h.advance(fleet.DefaultApprovalWindow + time.Second)
 	status, body = serve(approvalHandler, h.as(requester), statusPath, statusBody)
 	if status != http.StatusOK || body["state"] != "expired" ||
-		body["stored_state"] != "pending" || body["condition"] != "window_closed" {
+		body["stored_state"] != "expired" || body["condition"] != nil {
 		t.Fatalf("lapsed approval status = %d %v", status, body)
 	}
 	contextWire["deadline"] = h.now().Add(3 * time.Hour).Format(time.RFC3339Nano)

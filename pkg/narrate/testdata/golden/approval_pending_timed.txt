@@ -10,5 +10,6 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver; the window closes 45 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7

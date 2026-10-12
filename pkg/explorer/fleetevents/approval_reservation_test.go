@@ -79,6 +79,15 @@ func TestApprovalPublicationPermitsNameOneOperationPerTransition(t *testing.T) {
 		"approval.refused":      {auth.OperationActionApprove},
 		"approval.expired": {
 			auth.OperationDispatch, auth.OperationActionApprove,
+			auth.OperationApprovalSweep,
+		},
+		// #655: the requester withdraws; a stranding is observed by
+		// either party or by the host's system observer, which publishes
+		// expiry and stranding and nothing else.
+		"approval.withdrawn": {auth.OperationDispatch},
+		"approval.stranded": {
+			auth.OperationDispatch, auth.OperationActionApprove,
+			auth.OperationApprovalSweep,
 		},
 		"approval.enqueued":       nil,
 		"approval.anything_later": nil,
@@ -86,7 +95,7 @@ func TestApprovalPublicationPermitsNameOneOperationPerTransition(t *testing.T) {
 	every := []auth.Operation{
 		auth.OperationDispatch, auth.OperationInvoke, auth.OperationExecute,
 		auth.OperationActionApprove, auth.OperationEventPublish,
-		auth.OperationSubscriptionCreate,
+		auth.OperationSubscriptionCreate, auth.OperationApprovalSweep,
 	}
 	for kind, permitted := range want {
 		for _, operation := range every {

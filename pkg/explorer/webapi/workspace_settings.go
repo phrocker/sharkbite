@@ -415,10 +415,14 @@ func workspaceOperationForRequest(
 	// shed the dispatch an approver holds and pass the separation check it is
 	// there to fail — so a decide route listed here resolves the workspace and
 	// is then refused, rather than being refused as unregistered.
+	//
+	// Withdrawing (#655) is the requester's too: only the principal that
+	// made a request may withdraw it, under the dispatch it made it under.
 	case method == http.MethodPost &&
 		(path == "/api/v1/fleet/approvals/request" ||
 			(strings.HasPrefix(path, "/api/v1/fleet/approvals/") &&
-				strings.HasSuffix(path, "/status"))):
+				(strings.HasSuffix(path, "/status") ||
+					strings.HasSuffix(path, "/withdraw")))):
 		return auth.OperationDispatch, true
 	case method == http.MethodPost &&
 		(path == "/api/v1/fleet/approvals/pending" ||
@@ -739,8 +743,14 @@ func requestMayCommit(method, path string) bool {
 					// still holds the fence for.
 					strings.HasSuffix(path, "/extend") ||
 					strings.HasSuffix(path, "/cancel"))) ||
-			// A decision commits; pending and status only read.
+			// A decision and a withdrawal (#655) commit; pending only
+			// reads. Status may record a final state it observes (#655),
+			// but that write is a fact any later call re-derives, and a
+			// lost Status response loses nothing a retry does not read
+			// back, so it stays out: an over-budget Status is not an
+			// indeterminate commit.
 			(strings.HasPrefix(path, "/api/v1/fleet/approvals/") &&
-				strings.HasSuffix(path, "/decide"))
+				(strings.HasSuffix(path, "/decide") ||
+					strings.HasSuffix(path, "/withdraw")))
 	}
 }

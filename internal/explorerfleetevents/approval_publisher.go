@@ -164,16 +164,25 @@ func ApprovalPublication(
 	writeTokenField(transitionHash, version[:])
 	writeTokenField(transitionHash, record.RequestDigest)
 
-	// No reason, except the expiry observer's code. The request's reason
-	// (a code and a digest of its free-form detail) is not on the approval
-	// wire, and its digest would let an approver confirm a guessed detail.
-	// The decision's reason is not stored.
+	// No reason, except the observer's code on an expiry and a stranding.
+	// The request's reason (a code and a digest of its free-form detail) is
+	// not on the approval wire, and its digest would let an approver confirm
+	// a guessed detail. The decision's reason is not stored. A withdrawal's
+	// reason is the requester's and is withheld for the same reason (#655).
+	// A stranding's cause is what Status reports to the same audience as
+	// its condition, so the code names it.
 	occurred := record.UpdatedAt
 	var reason interaction.Reason
-	if transition.Kind == fleet.ApprovalEventExpired {
+	switch transition.Kind {
+	case fleet.ApprovalEventExpired:
 		occurred = record.ExpiresAt
 		reason = interaction.Reason{
 			Code: fleet.ApprovalExpiryReasonCode(transition.Publisher.Observer),
+		}
+	case fleet.ApprovalEventStranded:
+		reason = interaction.Reason{
+			Code: fleet.ApprovalStrandReasonCode(
+				record.StrandedCause, transition.Publisher.Observer),
 		}
 	}
 	publisher := transition.Publisher

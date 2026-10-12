@@ -11,8 +11,9 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == pending/ stored=pending now=2m0s
 outcome approval.outcome.pending
@@ -27,8 +28,9 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver; the window closes 58 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == pending/ stored=pending now=30m0s
 outcome approval.outcome.pending
@@ -43,8 +45,9 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver; the window closes 30 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == pending/ stored=pending now=3h0m0s
 outcome approval.outcome.pending
@@ -59,8 +62,9 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == pending/ stored=pending now=-30m0s
 outcome approval.outcome.pending
@@ -75,8 +79,9 @@ blocked approval.blocked.pending
   It is waiting for an eligible approver; the window closes 1 hour 30 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; or no one decides it and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: an eligible approver approves it before 2026-10-08 13:00:00 UTC; an eligible approver refuses it before 2026-10-08 13:00:00 UTC; no one decides it and it expires at 2026-10-08 13:00:00 UTC; the requester withdraws it before 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == approved/ stored=approved now=untimed
 outcome approval.outcome.approved
@@ -95,8 +100,9 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == approved/ stored=approved now=2m0s
 outcome approval.outcome.approved
@@ -115,8 +121,9 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it; the window closes 58 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == approved/ stored=approved now=30m0s
 outcome approval.outcome.approved
@@ -135,8 +142,9 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it; the window closes 30 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == approved/ stored=approved now=3h0m0s
 outcome approval.outcome.approved
@@ -155,8 +163,9 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == approved/ stored=approved now=-30m0s
 outcome approval.outcome.approved
@@ -175,8 +184,9 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it; the window closes 1 hour 30 minutes from now.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7
 
 == expired/window_closed stored=pending now=untimed
 outcome approval.outcome.expired.window_closed
@@ -184,7 +194,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says pending; this status is computed and nothing was written.
@@ -203,7 +213,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says pending; this status is computed and nothing was written.
@@ -222,7 +232,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says pending; this status is computed and nothing was written.
@@ -241,7 +251,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says pending; this status is computed and nothing was written.
@@ -260,7 +270,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says pending; this status is computed and nothing was written.
@@ -279,7 +289,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says approved; this status is computed and nothing was written.
@@ -302,7 +312,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says approved; this status is computed and nothing was written.
@@ -325,7 +335,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says approved; this status is computed and nothing was written.
@@ -348,7 +358,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says approved; this status is computed and nothing was written.
@@ -371,7 +381,7 @@ outcome approval.outcome.expired.window_closed
   record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
   identifiers close-ticket agent-7
 reason approval.reason.window_closed
-  Expiry is written lazily, by the next request or decision, so the stored record has not caught up.
+  Expiry is written lazily, by the next request, decision, status or sweep, so the stored record has not caught up.
   record=approval:act-1
 reason approval.reason.stored_differs
   The stored record still says approved; this status is computed and nothing was written.
@@ -2283,6 +2293,546 @@ next approval.next.final
   Nothing further can happen to this request; a new request needs its own approval.
   record=approval:act-1
 
+== withdrawn/ stored=withdrawn now=untimed
+outcome approval.outcome.withdrawn
+  The request to run action close-ticket on agent agent-7 was withdrawn by its requester.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.withdrawn
+  alice withdrew it at 2026-10-08 12:05:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== withdrawn/ stored=withdrawn now=2m0s
+outcome approval.outcome.withdrawn
+  The request to run action close-ticket on agent agent-7 was withdrawn by its requester.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.withdrawn
+  alice withdrew it at 2026-10-08 12:05:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== withdrawn/ stored=withdrawn now=30m0s
+outcome approval.outcome.withdrawn
+  The request to run action close-ticket on agent agent-7 was withdrawn by its requester.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.withdrawn
+  alice withdrew it at 2026-10-08 12:05:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== withdrawn/ stored=withdrawn now=3h0m0s
+outcome approval.outcome.withdrawn
+  The request to run action close-ticket on agent agent-7 was withdrawn by its requester.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.withdrawn
+  alice withdrew it at 2026-10-08 12:05:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== withdrawn/ stored=withdrawn now=-30m0s
+outcome approval.outcome.withdrawn
+  The request to run action close-ticket on agent agent-7 was withdrawn by its requester.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.withdrawn
+  alice withdrew it at 2026-10-08 12:05:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== stranded/target_moved stored=stranded now=untimed
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1
+
+== stranded/target_moved stored=stranded now=2m0s
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1
+
+== stranded/target_moved stored=stranded now=30m0s
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1
+
+== stranded/target_moved stored=stranded now=3h0m0s
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1
+
+== stranded/target_moved stored=stranded now=-30m0s
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1
+
+== stranded/policy_generation_moved stored=stranded now=untimed
+outcome approval.outcome.stranded.policy_generation_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.policy_generation_moved
+  The policy generation in force has moved since the request was made under generation 9.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.policy_generation_moved
+  Make a new request under the policy generation now in force; it needs its own approval.
+  record=approval:act-1
+
+== stranded/policy_generation_moved stored=stranded now=2m0s
+outcome approval.outcome.stranded.policy_generation_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.policy_generation_moved
+  The policy generation in force has moved since the request was made under generation 9.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.policy_generation_moved
+  Make a new request under the policy generation now in force; it needs its own approval.
+  record=approval:act-1
+
+== stranded/policy_generation_moved stored=stranded now=30m0s
+outcome approval.outcome.stranded.policy_generation_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.policy_generation_moved
+  The policy generation in force has moved since the request was made under generation 9.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.policy_generation_moved
+  Make a new request under the policy generation now in force; it needs its own approval.
+  record=approval:act-1
+
+== stranded/policy_generation_moved stored=stranded now=3h0m0s
+outcome approval.outcome.stranded.policy_generation_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.policy_generation_moved
+  The policy generation in force has moved since the request was made under generation 9.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.policy_generation_moved
+  Make a new request under the policy generation now in force; it needs its own approval.
+  record=approval:act-1
+
+== stranded/policy_generation_moved stored=stranded now=-30m0s
+outcome approval.outcome.stranded.policy_generation_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.policy_generation_moved
+  The policy generation in force has moved since the request was made under generation 9.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.stranded_undecided
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, before anyone decided it.
+  record=approval:act-1
+next approval.next.policy_generation_moved
+  Make a new request under the policy generation now in force; it needs its own approval.
+  record=approval:act-1
+
+== stranded/identity_taken stored=stranded now=untimed
+outcome approval.outcome.stranded.identity_taken
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.identity_taken
+  Another route’s action already holds this action identity.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.identity_taken
+  Make a new request under a different action identity; it needs its own approval.
+  record=approval:act-1
+
+== stranded/identity_taken stored=stranded now=2m0s
+outcome approval.outcome.stranded.identity_taken
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.identity_taken
+  Another route’s action already holds this action identity.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.identity_taken
+  Make a new request under a different action identity; it needs its own approval.
+  record=approval:act-1
+
+== stranded/identity_taken stored=stranded now=30m0s
+outcome approval.outcome.stranded.identity_taken
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.identity_taken
+  Another route’s action already holds this action identity.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.identity_taken
+  Make a new request under a different action identity; it needs its own approval.
+  record=approval:act-1
+
+== stranded/identity_taken stored=stranded now=3h0m0s
+outcome approval.outcome.stranded.identity_taken
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.identity_taken
+  Another route’s action already holds this action identity.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.identity_taken
+  Make a new request under a different action identity; it needs its own approval.
+  record=approval:act-1
+
+== stranded/identity_taken stored=stranded now=-30m0s
+outcome approval.outcome.stranded.identity_taken
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.identity_taken
+  Another route’s action already holds this action identity.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.identity_taken
+  Make a new request under a different action identity; it needs its own approval.
+  record=approval:act-1
+
+== stranded/deadline_passed stored=stranded now=untimed
+outcome approval.outcome.stranded.deadline_passed
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.deadline_passed
+  The action deadline passed at 2026-10-08 14:00:00 UTC, so the request can no longer be re-requested.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.deadline_passed
+  Make a new request with a later deadline; it needs its own approval.
+  record=approval:act-1
+
+== stranded/deadline_passed stored=stranded now=2m0s
+outcome approval.outcome.stranded.deadline_passed
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.deadline_passed
+  The action deadline passed at 2026-10-08 14:00:00 UTC, so the request can no longer be re-requested.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.deadline_passed
+  Make a new request with a later deadline; it needs its own approval.
+  record=approval:act-1
+
+== stranded/deadline_passed stored=stranded now=30m0s
+outcome approval.outcome.stranded.deadline_passed
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.deadline_passed
+  The action deadline passed at 2026-10-08 14:00:00 UTC, so the request can no longer be re-requested.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.deadline_passed
+  Make a new request with a later deadline; it needs its own approval.
+  record=approval:act-1
+
+== stranded/deadline_passed stored=stranded now=3h0m0s
+outcome approval.outcome.stranded.deadline_passed
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.deadline_passed
+  The action deadline passed at 2026-10-08 14:00:00 UTC, so the request can no longer be re-requested.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.deadline_passed
+  Make a new request with a later deadline; it needs its own approval.
+  record=approval:act-1
+
+== stranded/deadline_passed stored=stranded now=-30m0s
+outcome approval.outcome.stranded.deadline_passed
+  The request to run action close-ticket on agent agent-7 was approved and was recorded as never able to become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.deadline_passed
+  The action deadline passed at 2026-10-08 14:00:00 UTC, so the request can no longer be re-requested.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+history approval.transition.stranded_unwritten
+  It was recorded at 2026-10-08 12:30:00 UTC as never able to become work, after it was committed to become work.
+  record=approval:act-1
+next approval.next.deadline_passed
+  Make a new request with a later deadline; it needs its own approval.
+  record=approval:act-1
+
 == expired stored=expired verdict=
 outcome approval.outcome.expired
   The request to run action close-ticket on agent agent-7 expired at 2026-10-08 13:00:00 UTC without a decision.
@@ -2317,4 +2867,28 @@ history approval.transition.expired_unused
   record=approval:act-1
 next approval.next.final
   Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1
+
+== stranded stored=stranded verdict=approve
+outcome approval.outcome.stranded.target_moved
+  The request to run action close-ticket on agent agent-7 was recorded as unable to progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.stranded_unused
+  It was recorded at 2026-10-08 12:30:00 UTC as unable to progress, after it was approved and before it became work.
+  record=approval:act-1
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
   record=approval:act-1

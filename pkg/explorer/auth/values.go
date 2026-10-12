@@ -127,6 +127,24 @@ const (
 	// It implies nothing either: an admin cannot enroll or submit as a
 	// collector, and cannot provision its own principal as one.
 	OperationCollectorAdmin Operation = "collector_admin"
+	// OperationApprovalSweep is permission to write down that a held
+	// approval request (#451) can no longer progress: to move a request
+	// whose window has closed to expired, and one whose target, policy
+	// generation or action identity has permanently moved to stranded
+	// (#655). It is a statement of a fact the approval service re-derives
+	// from durable state before every write, never a decision about the
+	// request, and it grants nothing else: no read of a request's input, no
+	// decision, no enqueue and no materialization.
+	//
+	// It is held by exactly one principal, the host's own system observer
+	// (fleet.ApprovalSweeperSubject), in a decision the host mints for one
+	// approval's scope at a time and binds with its own binder. Like
+	// collector_admin it is granted by nothing that grants anything else: no
+	// OIDC mapping, no workspace, approver or executor audience, no
+	// development principal and no delegation mints it, and no service role
+	// allows it. cmd/shoal-explore-web/approval_sweep_grant_test.go and the
+	// auth package's inventory tests assert that.
+	OperationApprovalSweep Operation = "approval_sweep"
 )
 
 // ParseOperation accepts one exact canonical serialized operation.
@@ -153,7 +171,7 @@ func (o Operation) Validate() error {
 		OperationAnalyticsRead, OperationTeamOverviewRead,
 		OperationWorkspaceSettingsRead,
 		OperationWorkspaceSettingsWrite,
-		OperationCollectorAdmin:
+		OperationCollectorAdmin, OperationApprovalSweep:
 		return nil
 	default:
 		return shoal.NewError(shoal.ErrorInvalidArgument, "unknown authorization operation")

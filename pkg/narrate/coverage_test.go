@@ -281,6 +281,17 @@ func TestCoverageApproval(t *testing.T) {
 		}, Options{})
 		noFallback(t, "expired "+string(verdict), sentences, err)
 	}
+	// So does a record stranded while its window was open (#655): before
+	// and after a decision.
+	for _, verdict := range []fleet.ApprovalVerdict{"", fleet.ApprovalVerdictApprove} {
+		record := approvalRecord(fleet.ApprovalStranded, verdict)
+		record.StrandedCause = fleet.ApprovalConditionTargetMoved
+		sentences, err := r.Approval(fleet.ApprovalStatus{
+			Approval: record, State: fleet.ApprovalStranded,
+			Condition: fleet.ApprovalConditionTargetMoved,
+		}, Options{})
+		noFallback(t, "stranded "+string(verdict), sentences, err)
+	}
 	// Every state and condition in source appears in some row.
 	states, conditions := map[string]bool{}, map[string]bool{}
 	for _, row := range EffectiveApprovals {
@@ -301,7 +312,7 @@ func TestCoverageApproval(t *testing.T) {
 		if !r.keys["approval.transition."+edge.Name] {
 			t.Errorf("approval transition %s was never narrated", edge.Name)
 		}
-		if edge.From != "" && !r.keys["approval.next.edge."+edge.Name] {
+		if approvalEdgeOffered(edge) && !r.keys["approval.next.edge."+edge.Name] {
 			t.Errorf("approval edge %s was never offered as a next step", edge.Name)
 		}
 	}
@@ -506,6 +517,9 @@ func coverRecords(t *testing.T, r *observed) {
 		}, Options{}); err != nil {
 			t.Fatal(err)
 		}
+	}
+	if _, err := r.Approval(strandedAfterApproval(), Options{}); err != nil {
+		t.Fatal(err)
 	}
 	coverDecision(t, r)
 	for _, c := range routerCases(t) {

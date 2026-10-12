@@ -103,9 +103,11 @@ func TestApprovalStatusNamesATakenIdentity(t *testing.T) {
 	if armed.Load() {
 		t.Fatal("the squat hook did not run")
 	}
+	// The identity can never be this approval's, so the requester's Status
+	// records it as stranded (#655).
 	status := h.status(request.id)
-	if status.Approval.State != fleet.ApprovalEnqueued ||
-		status.State != fleet.ApprovalUnresolvable ||
+	if status.Approval.State != fleet.ApprovalStranded ||
+		status.State != fleet.ApprovalStranded ||
 		status.Condition != fleet.ApprovalConditionIdentityTaken {
 		t.Fatalf("status of a taken identity = %q/%q stored %q",
 			status.State, status.Condition, status.Approval.State)

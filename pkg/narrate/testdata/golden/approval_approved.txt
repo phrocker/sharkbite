@@ -14,5 +14,6 @@ blocked approval.blocked.approved
   It is waiting for the requester to re-request it.
   record=approval:act-1
 next approval.next.options
-  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work, or the requester does not come back and it expires at 2026-10-08 13:00:00 UTC.
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
   record=approval:act-1
+  identifiers agent-7

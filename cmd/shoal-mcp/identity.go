@@ -211,7 +211,12 @@ func parseOperations(value string) ([]auth.Operation, error) {
 		// operation: this process serves no collector route, so the grant
 		// could buy nothing but a decision that holds it. It is minted only
 		// by a host that mounts the collector admin routes itself.
-		if operation == auth.OperationCollectorAdmin {
+		//
+		// Approval sweep (#655) likewise: it is the host's system observer's
+		// operation, minted only by the host that runs the approval sweep,
+		// for one approval at a time.
+		if operation == auth.OperationCollectorAdmin ||
+			operation == auth.OperationApprovalSweep {
 			return nil, fmt.Errorf(
 				"identity operation %q cannot be granted to an MCP process", part)
 		}

@@ -45,6 +45,8 @@ func (r *Renderer) Approval(status fleet.ApprovalStatus, opts Options) ([]Senten
 		"deadline":     request.Deadline,
 		"decided":      record.DecidedAt,
 		"materialized": record.MaterializedAt,
+		"withdrawn":    record.WithdrawnAt,
+		"updated":      record.UpdatedAt,
 		"policy":       record.PolicyGeneration,
 		"stored":       Selector(record.State),
 		"verdict":      Selector(record.Verdict),
@@ -102,6 +104,19 @@ func (r *Renderer) Approval(status fleet.ApprovalStatus, opts Options) ([]Senten
 	if !record.MaterializedAt.IsZero() {
 		b.add(RoleHistory, "approval.transition.materialized", args)
 	}
+	switch record.State {
+	case fleet.ApprovalWithdrawn:
+		b.add(RoleHistory, "approval.transition.withdrawn", args, requestRefs...)
+	case fleet.ApprovalStranded:
+		switch {
+		case !record.MaterializedAt.IsZero():
+			b.add(RoleHistory, "approval.transition.stranded_unwritten", args)
+		case record.Verdict == fleet.ApprovalVerdictApprove:
+			b.add(RoleHistory, "approval.transition.stranded_unused", args)
+		default:
+			b.add(RoleHistory, "approval.transition.stranded_undecided", args)
+		}
+	}
 
 	// What it waits on, and what can happen next.
 	if condition != fleet.ApprovalConditionNone {
@@ -121,7 +136,7 @@ func (r *Renderer) Approval(status fleet.ApprovalStatus, opts Options) ([]Senten
 	}
 	var options []Fragment
 	for _, edge := range ApprovalEdges {
-		if edge.From == string(state) {
+		if edge.From == string(state) && approvalEdgeOffered(edge) {
 			options = append(options, b.frag("approval.next.edge."+edge.Name, args))
 		}
 	}

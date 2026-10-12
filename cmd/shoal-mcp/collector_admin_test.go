@@ -43,6 +43,11 @@ func TestTheProcessIdentityNeverHoldsCollectorAdmin(t *testing.T) {
 	}); err == nil || !strings.Contains(err.Error(), "cannot be granted") {
 		t.Fatalf("environment grant: %v", err)
 	}
+	// Nor approval_sweep (#655): the host's system observer's operation.
+	if _, err := parseOperations(string(auth.OperationApprovalSweep)); err == nil ||
+		!strings.Contains(err.Error(), "cannot be granted") {
+		t.Fatalf("approval_sweep grant: %v", err)
+	}
 
 	for name, options := range map[string]identityOptions{
 		"default":   {subject: "subject", actor: "actor", domain: "domain", sourceID: "source", policyID: "policy", policyGeneration: 1, lifetime: time.Hour},

@@ -287,6 +287,22 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		"Window over which the -mosaic-budget distinct-domain count accumulates "+
 			"for an identity before it resets",
 	)
+	approvalTerminalStates := flags.Bool(
+		"approval-terminal-states", false,
+		"Enable the withdrawn and stranded approval states (#655): requester "+
+			"withdrawal, recording a request that can no longer progress, and "+
+			"the approval sweep. A build before #655 cannot read them, so turn "+
+			"this on only once every replica runs this build; while it is off, "+
+			"nothing writes them and rolling back is safe",
+	)
+	approvalSweepInterval := flags.Duration(
+		"approval-sweep-interval", 0,
+		"How often the host's system observer sweeps held approval requests, "+
+			"recording as expired or stranded every one that can no longer "+
+			"progress (#655), for example 10m. Requires "+
+			"-approval-terminal-states. Zero, the default, disables the sweep; "+
+			"requests are then recorded only when a party touches them",
+	)
 	oidcIssuer := flags.String(
 		"oidc-issuer", "",
 		"Exact OIDC token issuer. Required for OIDC authentication; "+
@@ -689,6 +705,19 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	// nothing else.
 	backfill := newDevelopmentBackfill(
 		authenticator, listener.Addr().String(), authority.Binder())
+	if *approvalSweepInterval < 0 ||
+		(*approvalSweepInterval > 0 && *approvalSweepInterval < minApprovalSweepInterval) {
+		listener.Close()
+		return fmt.Errorf("-approval-sweep-interval must be zero or at least %s",
+			minApprovalSweepInterval)
+	}
+	if *approvalSweepInterval > 0 && !*approvalTerminalStates {
+		listener.Close()
+		return errors.New("-approval-sweep-interval requires " +
+			"-approval-terminal-states: what the sweep writes cannot be read " +
+			"by a build before #655, so it runs only once the operator has " +
+			"enabled those states")
+	}
 	corpusDir, policyDir := resolveWorkspacePaths(*stateDir, *data, *policyDirFlag)
 	opened, err := openService(ctx, serviceConfig{
 		backend:   *backend,
@@ -697,10 +726,13 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		remote:    *remote,
 		embedder:  embedding,
 		resolver:  authority.Resolver(),
+		binder:    authority.Binder(),
 		clock:     time.Now,
-		backfill:  backfill,
-		ontology:  activeOntology,
-		executors: executors,
+		// #655: off until the operator says every replica can read them.
+		terminalStates: *approvalTerminalStates,
+		backfill:       backfill,
+		ontology:       activeOntology,
+		executors:      executors,
 		approverMapping: func(context.Context) (auth.Digest, error) {
 			return approverMapping, nil
 		},
@@ -720,6 +752,13 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	}
 	service, cleanup := opened.service, opened.close
 	defer cleanup()
+	if *approvalSweepInterval > 0 && opened.approvalService != nil {
+		// Deferred after cleanup, so it runs first: a pass in flight
+		// finishes before the stores it writes are closed.
+		stopSweeps := startApprovalSweeps(
+			ctx, opened.approvalService, *approvalSweepInterval, output)
+		defer stopSweeps()
+	}
 
 	// The host-authority allow-list defaults to the resolved listen address,
 	// preserving the local-first posture: a loopback bind serves only requests
@@ -1027,7 +1066,9 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	state := &healthsurface.State{}
 	if address := strings.TrimSpace(*healthAddress); address != "" {
 		health, err = healthsurface.StartWithConfig(address, state,
-			healthsurface.Config{Metrics: dispatchMetrics(opened.fleetDispatch)})
+			healthsurface.Config{Metrics: combineMetrics(
+				dispatchMetrics(opened.fleetDispatch),
+				approvalSweepMetrics(opened.approvalService))})
 		if err != nil {
 			listener.Close()
 			return fmt.Errorf("listen on %s: %w", address, err)
@@ -1189,6 +1230,14 @@ type serviceConfig struct {
 	// in, or checked against, the coordination store before anything is
 	// served. Nil for an authenticator that is not OIDC.
 	identityScheme *identitySchemeConfig
+	// binder is the binder of the authority behind resolver. With it the
+	// approval service's sweep is configured (#655): the host mints its
+	// system observer's decisions and binds them with it. Nil configures no
+	// sweep.
+	binder auth.Binder
+	// terminalStates is -approval-terminal-states (#655): whether anything
+	// may write the withdrawn and stranded states.
+	terminalStates bool
 }
 
 // openedService is the constructed workspace service together with what the
@@ -1202,6 +1251,9 @@ type openedService struct {
 	fleetEvents   webapi.FleetEventService
 	admission     webapi.AdmissionProvider
 	approvals     webapi.FleetApprovalProvider
+	// approvalService is the unbound approval service, held so the host can
+	// run its sweep (#655). Nothing serves it.
+	approvalService *fleet.ApprovalService
 	// approvalOutbox is the durable approval event outbox (#653), held so
 	// tests can confirm a transition's row against the ledger. Nothing
 	// serves it.
@@ -1532,6 +1584,17 @@ func openService(
 			embedded.Close()
 			return closed, err
 		}
+		var approvalSweeper fleet.ApprovalSweepBinder
+		if config.binder != nil {
+			minter, err := newApprovalSweepMinter(
+				config.binder, generationReader, config.clock)
+			if err != nil {
+				store.Close()
+				embedded.Close()
+				return closed, err
+			}
+			approvalSweeper = minter.bind
+		}
 		approvalService, err := fleet.NewApprovalService(fleet.ApprovalConfig{
 			Dispatch: fleetDispatch, Store: approvalStore,
 			Recorder: approvalRecorder,
@@ -1554,6 +1617,10 @@ func openService(
 			// Lifecycle events (#653): the durable store is the outbox,
 			// whatever wraps it for the service.
 			Outbox: durableApprovals, Events: approvalEvents,
+			// The host's system observer (#655), when this host can bind
+			// one.
+			Sweeper:        approvalSweeper,
+			TerminalStates: config.terminalStates,
 		})
 		if err != nil {
 			store.Close()
@@ -1626,19 +1693,20 @@ func openService(
 			return closed, err
 		}
 		return openedService{
-			service:        service,
-			settings:       settingsProvider,
-			fleetRegistry:  boundFleetRegistry,
-			fleetDispatch:  boundFleetDispatch,
-			fleetEvents:    fleetEvents,
-			admission:      boundAdmissionService,
-			approvals:      boundApprovalService,
-			approvalOutbox: durableApprovals,
-			attestation:    optionalAttestation(attestationService),
-			teamOverview:   teamOverview,
-			client:         client,
-			backfilled:     backfilled,
-			labelMigration: labelMigration,
+			service:         service,
+			settings:        settingsProvider,
+			fleetRegistry:   boundFleetRegistry,
+			fleetDispatch:   boundFleetDispatch,
+			fleetEvents:     fleetEvents,
+			admission:       boundAdmissionService,
+			approvals:       boundApprovalService,
+			approvalService: approvalService,
+			approvalOutbox:  durableApprovals,
+			attestation:     optionalAttestation(attestationService),
+			teamOverview:    teamOverview,
+			client:          client,
+			backfilled:      backfilled,
+			labelMigration:  labelMigration,
 			close: func() {
 				settingsStore.Close()
 				store.Close()

@@ -253,7 +253,8 @@ func TestApprovalConcurrentReRequestsAgree(t *testing.T) {
 func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
 	h := newApprovalHarness(t)
 
-	// Window closed, expiry not yet written.
+	// Window closed: Status writes the expiry it observes (#655), as the
+	// party asking, so the stored state is the effective one afterwards.
 	lapsed := h.held("status-lapsed")
 	h.mustRequest(requester, lapsed, fleet.ApprovalPending)
 	approvedLapse := h.held("status-approved-lapse")
@@ -265,28 +266,33 @@ func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
 	for _, id := range [][]byte{lapsed.id, approvedLapse.id} {
 		status := h.status(id)
 		if status.State != fleet.ApprovalExpired ||
-			status.Condition != fleet.ApprovalConditionWindowClosed ||
-			status.Approval.State == fleet.ApprovalExpired {
+			status.Condition != fleet.ApprovalConditionNone ||
+			status.Approval.State != fleet.ApprovalExpired {
 			t.Fatalf("%s status = %q/%q stored %q", id, status.State,
 				status.Condition, status.Approval.State)
 		}
 	}
 
-	// A policy generation that has moved: the request can never progress.
+	// A policy generation that has moved: the request can never progress,
+	// and the requester's Status on the new generation records it as
+	// stranded (#655).
 	current := h.held("status-policy")
 	h.mustRequest(requester, current, fleet.ApprovalPending)
 	movedRequester := requester
 	movedRequester.generation = workspacePolicyGeneration + 1
 	h.reader.value.Store(workspacePolicyGeneration + 1)
 	status := h.statusAs(movedRequester, current.id)
-	if status.State != fleet.ApprovalUnresolvable ||
-		status.Condition != fleet.ApprovalConditionPolicyMoved {
-		t.Fatalf("policy-moved status = %q/%q", status.State, status.Condition)
+	if status.State != fleet.ApprovalStranded ||
+		status.Condition != fleet.ApprovalConditionPolicyMoved ||
+		status.Approval.State != fleet.ApprovalStranded {
+		t.Fatalf("policy-moved status = %q/%q stored %q",
+			status.State, status.Condition, status.Approval.State)
 	}
 	h.reader.value.Store(workspacePolicyGeneration)
 
 	// The target's generation moves: an approved request strands, and a
-	// re-request cannot reach it. Status says so instead of "approved".
+	// re-request cannot reach it. Status says so instead of "approved", and
+	// records it (#655).
 	stranded := h.held("status-target")
 	strandedReceipt := h.mustRequest(requester, stranded, fleet.ApprovalPending)
 	if _, err := h.decide(approver, strandedReceipt, fleet.ApprovalVerdictApprove); err != nil {
@@ -296,9 +302,9 @@ func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
 		t.Fatalf("move the agent's generation: %v", err)
 	}
 	status = h.status(stranded.id)
-	if status.State != fleet.ApprovalUnresolvable ||
+	if status.State != fleet.ApprovalStranded ||
 		status.Condition != fleet.ApprovalConditionTargetMoved ||
-		status.Approval.State != fleet.ApprovalApproved {
+		status.Approval.State != fleet.ApprovalStranded {
 		t.Fatalf("target-moved status = %q/%q stored %q",
 			status.State, status.Condition, status.Approval.State)
 	}
@@ -307,8 +313,10 @@ func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
 		t.Fatalf("re-request after the target moved = %v (documented as "+
 			"not found: the request names a generation that no longer resolves)", err)
 	}
-	if status := h.status(stranded.id); status.Approval.State != fleet.ApprovalApproved {
-		t.Fatalf("status wrote the effective state: %q", status.Approval.State)
+	if status := h.status(stranded.id); status.Approval.State != fleet.ApprovalStranded ||
+		status.Approval.StrandedCause != fleet.ApprovalConditionTargetMoved {
+		t.Fatalf("the stranding did not stay recorded: %q/%q",
+			status.Approval.State, status.Approval.StrandedCause)
 	}
 }
 

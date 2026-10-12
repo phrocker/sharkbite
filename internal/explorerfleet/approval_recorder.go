@@ -108,10 +108,13 @@ func (r *ApprovalRecorder) RecordApproval(
 		AuthorizationExpiresAt: audit.AuthorizationExpiresAt,
 		Turns: []interaction.Turn{{
 			Index: 0, Decision: identifier,
-			// A refusal and an expiry are recorded as failed turns, so an
-			// activity reader sees them as the request not proceeding.
+			// A refusal, an expiry, a withdrawal and a stranding (#655)
+			// are recorded as failed turns, so an activity reader sees
+			// them as the request not proceeding.
 			Failed: audit.Record.State == fleet.ApprovalRefused ||
-				audit.Record.State == fleet.ApprovalExpired,
+				audit.Record.State == fleet.ApprovalExpired ||
+				audit.Record.State == fleet.ApprovalWithdrawn ||
+				audit.Record.State == fleet.ApprovalStranded,
 			ToolCall: &interaction.ToolCall{Kind: identifier},
 		}},
 	}

@@ -38,8 +38,9 @@ var (
 )
 
 // maxApprovalTransitions bounds one approval's rows. An approval has at most
-// three transitions (requested; approved, refused or expired; materialized or
-// expired), so a scan that returns more than this is a corrupt store.
+// four transitions (requested; approved, refused, expired, withdrawn or
+// stranded; materialized, expired or stranded; stranded after materializing,
+// #655), so a scan that returns more than this is a corrupt store.
 const maxApprovalTransitions = 8
 
 type storedApprovalEvent struct {

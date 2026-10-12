@@ -56,18 +56,21 @@ func IsApprovalKind(kind string) bool {
 
 // approvalPublicationPermits is the approval half of
 // lifecyclePublicationPermits: the operation each approval transition is made
-// under. The requester requests and materializes under dispatch. An approver
-// decides under approve. An expiry is written by whichever side observed it.
+// under. The requester requests, materializes and withdraws under dispatch.
+// An approver decides under approve. An expiry or a stranding is written by
+// whichever observed it: either party, or the host's system observer under
+// approval_sweep (#655), which publishes those two kinds and nothing else.
 // An unlisted approval kind is admitted by no operation.
 func approvalPublicationPermits(kind string, operation auth.Operation) bool {
 	switch kind {
-	case "approval.requested", "approval.materialized":
+	case "approval.requested", "approval.materialized", "approval.withdrawn":
 		return operation == auth.OperationDispatch
 	case "approval.approved", "approval.refused":
 		return operation == auth.OperationActionApprove
-	case "approval.expired":
+	case "approval.expired", "approval.stranded":
 		return operation == auth.OperationDispatch ||
-			operation == auth.OperationActionApprove
+			operation == auth.OperationActionApprove ||
+			operation == auth.OperationApprovalSweep
 	default:
 		return false
 	}

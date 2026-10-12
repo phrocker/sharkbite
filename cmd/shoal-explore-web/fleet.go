@@ -562,6 +562,20 @@ func (r *boundApproval) Status(
 	return r.service.Status(ctx, request)
 }
 
+// Withdraw is the requester's withdrawal (#655), served through
+// webapi.FleetApprovalWithdrawer.
+func (r *boundApproval) Withdraw(
+	ctx context.Context,
+	request fleet.ApprovalWithdrawRequest,
+) (fleet.ApprovalRecord, error) {
+	bound, err := r.requestContext(ctx, request.Context)
+	if err != nil {
+		return fleet.ApprovalRecord{}, err
+	}
+	request.Context = bound
+	return r.service.Withdraw(ctx, request)
+}
+
 // externalFleetEffectBindings is the operator's per-reference opt-in to the
 // one binding in this process that admits external work.
 //

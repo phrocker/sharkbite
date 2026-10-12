@@ -89,6 +89,8 @@ func TestWorkspaceSettingsClampAnalyticsAndMarkResponseLoss(t *testing.T) {
 		// output limit must read as indeterminate.
 		{http.MethodPost, "/api/v1/fleet/approvals/request"},
 		{http.MethodPost, "/api/v1/fleet/approvals/approval/decide"},
+		// A withdrawal writes the withdrawn record (#655).
+		{http.MethodPost, "/api/v1/fleet/approvals/approval/withdraw"},
 		{http.MethodPost, "/api/v1/fleet/events/subscriptions"},
 		{http.MethodDelete, "/api/v1/fleet/events/subscriptions/subscription"},
 		{http.MethodPost, "/api/v1/fleet/events/publish"},
@@ -106,7 +108,9 @@ func TestWorkspaceSettingsClampAnalyticsAndMarkResponseLoss(t *testing.T) {
 		{http.MethodPost, "/api/v1/fleet/actions/action/status"},
 		// Listing what is outstanding writes nothing.
 		{http.MethodPost, "/api/v1/admission/outstanding"},
-		// Listing what is decidable and reading one request write nothing.
+		// Listing what is decidable writes nothing. Reading one request may
+		// record a final state it observes (#655), which any later call
+		// re-derives, so a lost response is not an indeterminate commit.
 		{http.MethodPost, "/api/v1/fleet/approvals/pending"},
 		{http.MethodPost, "/api/v1/fleet/approvals/approval/status"},
 		{http.MethodPost, "/api/v1/fleet/agents/resolve"},
@@ -169,6 +173,7 @@ func TestWorkspaceOperationForRequestUsesRouteOperation(t *testing.T) {
 		// exercises: the requester's dispatch, the approver's approve.
 		{http.MethodPost, "/api/v1/fleet/approvals/request", auth.OperationDispatch, true},
 		{http.MethodPost, "/api/v1/fleet/approvals/approval/status", auth.OperationDispatch, true},
+		{http.MethodPost, "/api/v1/fleet/approvals/approval/withdraw", auth.OperationDispatch, true},
 		{http.MethodPost, "/api/v1/fleet/approvals/pending", auth.OperationActionApprove, true},
 		{http.MethodPost, "/api/v1/fleet/approvals/approval/decide", auth.OperationActionApprove, true},
 		{http.MethodGet, "/api/v1/fleet/approvals/pending", "", false},

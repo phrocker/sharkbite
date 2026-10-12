@@ -259,6 +259,11 @@ func approvalCases(t *testing.T) []valueCase {
 			run:  func(r *Renderer) ([]Sentence, error) { return r.Approval(status, Options{}) },
 		})
 	}
+	stranded := strandedAfterApproval()
+	out = append(out, valueCase{
+		name: "stranded stored=stranded verdict=approve",
+		run:  func(r *Renderer) ([]Sentence, error) { return r.Approval(stranded, Options{}) },
+	})
 	return out
 }
 

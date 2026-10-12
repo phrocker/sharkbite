@@ -117,10 +117,14 @@ func (c *Client) AnalyticsInteractionSink() interaction.ResultSink {
 // publication audit needs the same reconciling sink. Without it the
 // approver's decision committed and its event then failed "trusted
 // interaction reconciliation sink is unavailable", the shape above.
+//
+// Approval sweep is the fifth (#655): the host's system observer publishes
+// the expiries and strandings it records under its own decision, and its
+// publication audit needs the same reconciling sink for the same reason.
 func fleetActionLifecycleOperation(operation auth.Operation) bool {
 	switch operation {
 	case auth.OperationDispatch, auth.OperationInvoke, auth.OperationExecute,
-		auth.OperationActionApprove:
+		auth.OperationActionApprove, auth.OperationApprovalSweep:
 		return true
 	default:
 		return false

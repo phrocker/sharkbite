@@ -57,6 +57,7 @@ var productActionOperations = []auth.Operation{
 	auth.OperationWorkspaceSettingsRead,
 	auth.OperationWorkspaceSettingsWrite,
 	auth.OperationCollectorAdmin,
+	auth.OperationApprovalSweep,
 }
 
 var authorizationOperations = append(
@@ -229,6 +230,7 @@ func TestProductActionOperationValuesAndParsingAreStable(t *testing.T) {
 		auth.OperationWorkspaceSettingsRead:  "workspace_settings_read",
 		auth.OperationWorkspaceSettingsWrite: "workspace_settings_write",
 		auth.OperationCollectorAdmin:         "collector_admin",
+		auth.OperationApprovalSweep:          "approval_sweep",
 	}
 	if len(expected) != len(authorizationOperations) {
 		t.Fatalf("operation inventory = %d, want %d", len(authorizationOperations), len(expected))
@@ -335,7 +337,11 @@ func TestServiceRoleOperationMatrixIsExhaustive(t *testing.T) {
 		// (#446): it assigns every collector's authority, and a role is a
 		// ceiling some service holds by configuration, not an operator's
 		// explicit grant. Any role allowing it would mint it for that role.
-		if operation == auth.OperationCollectorAdmin {
+		// Approval sweep is the second (#655): it is held only by the host's
+		// own system observer, in a decision the host mints per approval,
+		// and a role would let some service hold it by configuration.
+		if operation == auth.OperationCollectorAdmin ||
+			operation == auth.OperationApprovalSweep {
 			if permitted {
 				t.Errorf("a service role permits %q", operation)
 			}
@@ -365,6 +371,28 @@ func TestNoServiceRoleOrWildcardImpliesCollectorAdmin(t *testing.T) {
 	}
 	if err := auth.OperationCollectorAdmin.Validate(); err != nil {
 		t.Fatalf("collector_admin is not a valid operation: %v", err)
+	}
+}
+
+// TestNoServiceRoleOrWildcardImpliesApprovalSweep is the role half of the
+// approval-sweep guard (#655), as the collector-admin one above: no role,
+// the migration wildcard included, allows it, so no service decision can be
+// constructed holding it.
+func TestNoServiceRoleOrWildcardImpliesApprovalSweep(t *testing.T) {
+	for _, role := range authorizationServiceRoles {
+		if role.Allows(auth.OperationApprovalSweep) {
+			t.Errorf("%q allows approval_sweep", role)
+		}
+		config := baseDecisionConfig()
+		config.ServiceRole = role
+		config.ServiceCeilingIdentity = "approval-sweep-ceiling"
+		config.AllowedOperations = []auth.Operation{auth.OperationApprovalSweep}
+		if _, err := auth.NewDecision(config); err == nil {
+			t.Errorf("a %q decision was minted holding approval_sweep", role)
+		}
+	}
+	if err := auth.OperationApprovalSweep.Validate(); err != nil {
+		t.Fatalf("approval_sweep is not a valid operation: %v", err)
 	}
 }
 

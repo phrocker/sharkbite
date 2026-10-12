@@ -176,6 +176,18 @@ func (s *ApprovalStore) ApplyApproval(
 		if err := refuseRewrittenApproval(current, canonical); err != nil {
 			return fleet.ApprovalRecord{}, err
 		}
+		// The lifecycle is a table (#655): nothing leaves a final state,
+		// and nothing materializes except from approved. The service builds
+		// every transition to fit; the store refuses one that does not, so
+		// no writer can re-enable a withdrawn, expired, refused or stranded
+		// request by writing the next version. After the immutability
+		// check, so a rewrite is named for the field it rewrote.
+		if !fleet.ApprovalTransitionAllowed(current.State, canonical.State) {
+			return fleet.ApprovalRecord{}, shoal.NewError(
+				shoal.ErrorInternal,
+				"fleet approval transition from "+string(current.State)+
+					" to "+string(canonical.State)+" is not allowed")
+		}
 		intentGuard.Mode = guard.ModeMutate
 		intentGuard.ExpectedEpoch = head.Epoch
 		intentGuard.ExpectedDigest = head.LogicalDigest
@@ -343,6 +355,21 @@ func refuseRewrittenApproval(current, next fleet.ApprovalRecord) error {
 		!current.MaterializedAt.Equal(next.MaterializedAt) {
 		return rewrittenApproval("materialization time")
 	}
+	// Withdrawal and stranding (#655) are set once, by the transition that
+	// makes the record final, and the table already refuses any write after
+	// that one. Stated here as well, so the immutability of what a final
+	// record says does not rest on the table alone.
+	switch {
+	case !current.WithdrawnAt.IsZero() &&
+		!current.WithdrawnAt.Equal(next.WithdrawnAt):
+		return rewrittenApproval("withdrawal time")
+	case current.WithdrawalReason.Code != "" &&
+		current.WithdrawalReason != next.WithdrawalReason:
+		return rewrittenApproval("withdrawal reason")
+	case current.StrandedCause != "" &&
+		current.StrandedCause != next.StrandedCause:
+		return rewrittenApproval("stranding cause")
+	}
 	return nil
 }
 
@@ -353,6 +380,22 @@ func rewrittenApproval(field string) error {
 
 func (s *ApprovalStore) ScanApprovals(
 	ctx context.Context, after []byte, limit int,
+) (fleet.ApprovalPage, error) {
+	return s.scanApprovals(ctx, after, limit, false)
+}
+
+// ScanApprovalsTolerant is ScanApprovals that skips, and counts, a stored
+// record that does not decode instead of failing the page (#655): corrupt,
+// or written by a newer build. The approval sweep uses it, so one such
+// record cannot end every pass at its page. Pending keeps the strict scan.
+func (s *ApprovalStore) ScanApprovalsTolerant(
+	ctx context.Context, after []byte, limit int,
+) (fleet.ApprovalPage, error) {
+	return s.scanApprovals(ctx, after, limit, true)
+}
+
+func (s *ApprovalStore) scanApprovals(
+	ctx context.Context, after []byte, limit int, tolerant bool,
 ) (fleet.ApprovalPage, error) {
 	if len(after) > 0 {
 		if err := dispatchID(after); err != nil {
@@ -386,6 +429,10 @@ func (s *ApprovalStore) ScanApprovals(
 	}
 	for _, cell := range page.Cells {
 		record, decodeErr := decodeApproval(cell.Cell.Value)
+		if decodeErr != nil && tolerant {
+			result.Undecodable++
+			continue
+		}
 		if decodeErr != nil {
 			return fleet.ApprovalPage{}, shoal.WrapError(
 				shoal.ErrorInternal, "invalid committed fleet approval", decodeErr)
@@ -446,4 +493,7 @@ func decodeApproval(value []byte) (fleet.ApprovalRecord, error) {
 	return record, nil
 }
 
-var _ fleet.ApprovalStore = (*ApprovalStore)(nil)
+var (
+	_ fleet.ApprovalStore           = (*ApprovalStore)(nil)
+	_ fleet.ApprovalTolerantScanner = (*ApprovalStore)(nil)
+)

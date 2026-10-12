@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
+	"github.com/phrocker/shoal-oss/pkg/interaction"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -86,6 +87,24 @@ var (
 	// cannot be compared for independence. Such a request can only expire.
 	ErrIdentitySchemeMoved = errors.New(
 		"fleet approval: identity scheme has moved since the request")
+	// ErrApprovalWithdrawn reports a decision on a request its requester
+	// has withdrawn (#655). Withdrawal is final; the request will never be
+	// decided.
+	ErrApprovalWithdrawn = errors.New(
+		"fleet approval: the request has been withdrawn")
+	// ErrApprovalStranded reports a decision or a withdrawal on a request
+	// that has been recorded as stranded (#655): its target, policy
+	// generation or action identity moved permanently, and it can never
+	// become work.
+	ErrApprovalStranded = errors.New(
+		"fleet approval: the request can no longer progress")
+	// ErrApprovalTerminalStatesDisabled reports a withdrawal, or a sweep, on
+	// a host whose operator has not enabled the withdrawn and stranded
+	// states (ApprovalConfig.TerminalStates, #655). A build before #655
+	// cannot read either state, so they are written only once the operator
+	// says every replica can.
+	ErrApprovalTerminalStatesDisabled = errors.New(
+		"fleet approval: withdrawal and stranding are not enabled on this host")
 )
 
 // approvalRequired is what enqueue and invoke return for an action that
@@ -131,14 +150,65 @@ const (
 	// ApprovalExpired closed without becoming work: undecided at ExpiresAt,
 	// or approved and not materialized before it. Verdict says which. Final.
 	ApprovalExpired ApprovalState = "expired"
-	// ApprovalEnqueued has become an ActionRecord at the same identity. Final.
+	// ApprovalEnqueued has committed to become an ActionRecord at the same
+	// identity. Final, except that one whose action can provably never be
+	// written is recorded as stranded (#655).
 	ApprovalEnqueued ApprovalState = "enqueued"
+	// ApprovalWithdrawn was withdrawn by its requester while pending (#655).
+	// Final.
+	ApprovalWithdrawn ApprovalState = "withdrawn"
+	// ApprovalStranded can never progress, for the permanent reason its
+	// StrandedCause records (#655). Final. It is written only for a cause
+	// that is a durable fact no later event can undo; see approvalStrandable.
+	ApprovalStranded ApprovalState = "stranded"
 )
 
 func (s ApprovalState) valid() bool {
 	switch s {
 	case ApprovalPending, ApprovalApproved, ApprovalRefused,
-		ApprovalExpired, ApprovalEnqueued:
+		ApprovalExpired, ApprovalEnqueued, ApprovalWithdrawn,
+		ApprovalStranded:
+		return true
+	default:
+		return false
+	}
+}
+
+// ApprovalTransitionAllowed reports whether an approval record may move from
+// one state to another in one compare-and-set (#655).
+//
+// The table is the whole lifecycle. Nothing leaves refused, expired,
+// withdrawn or stranded, so a terminal record can never be re-enabled, and
+// nothing reaches enqueued except from approved, so nothing materializes from
+// a terminal state. Enqueued may still be recorded as stranded, which is a
+// statement that its action can never be written, never a way back.
+//
+// Exported for the durable store, which refuses any write outside it: the
+// service builds every transition to fit, and this makes that a property of
+// the store rather than of every call site.
+func ApprovalTransitionAllowed(from, to ApprovalState) bool {
+	switch from {
+	case ApprovalPending:
+		switch to {
+		case ApprovalApproved, ApprovalRefused, ApprovalExpired,
+			ApprovalWithdrawn, ApprovalStranded:
+			return true
+		}
+	case ApprovalApproved:
+		switch to {
+		case ApprovalEnqueued, ApprovalExpired, ApprovalStranded:
+			return true
+		}
+	case ApprovalEnqueued:
+		return to == ApprovalStranded
+	}
+	return false
+}
+
+// terminal reports whether a stored state is final.
+func (s ApprovalState) terminal() bool {
+	switch s {
+	case ApprovalRefused, ApprovalExpired, ApprovalWithdrawn, ApprovalStranded:
 		return true
 	default:
 		return false
@@ -222,6 +292,17 @@ type ApprovalRecord struct {
 	// created with, so a retry after a crash between the two writes builds
 	// the same record.
 	MaterializedAt time.Time
+	// WithdrawnAt and WithdrawalReason are written once, by the requester's
+	// withdrawal (#655), and only on a withdrawn record. The reason is the
+	// withdrawal request's own, redacted as every request reason is: a code
+	// and a digest of the free-form detail.
+	WithdrawnAt      time.Time
+	WithdrawalReason interaction.Reason
+	// StrandedCause is why a stranded record can never progress (#655), and
+	// is set on a stranded record only. It is one of the permanent causes
+	// approvalStrandable names. Additive like every field after Request:
+	// a record a previous build wrote decodes with all three zero.
+	StrandedCause ApprovalCondition
 }
 
 // Validate checks a record's shape, including that the stored digest is the
@@ -304,6 +385,24 @@ func (r ApprovalRecord) Validate() error {
 			return shoal.NewError(
 				shoal.ErrorInvalidArgument, "an expired approval verdict is invalid")
 		}
+	case ApprovalWithdrawn:
+		// Withdrawn only while pending, so never decided.
+		if decided {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument, "a withdrawn approval carries a verdict")
+		}
+	case ApprovalStranded:
+		// Stranded from pending, approved or enqueued; never from refused.
+		if decided && r.Verdict != ApprovalVerdictApprove {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument, "a stranded approval verdict is invalid")
+		}
+	}
+	if err := r.validateWithdrawal(); err != nil {
+		return err
+	}
+	if err := r.validateStranding(); err != nil {
+		return err
 	}
 	if decided {
 		if err := r.validateDecision(); err != nil {
@@ -320,7 +419,9 @@ func (r ApprovalRecord) Validate() error {
 			shoal.ErrorInvalidArgument,
 			"an undecided approval carries approver provenance")
 	}
-	if (r.State == ApprovalEnqueued) == r.MaterializedAt.IsZero() {
+	materialized := r.State == ApprovalEnqueued ||
+		(r.State == ApprovalStranded && strandedAfterMaterializing(r.StrandedCause))
+	if materialized == r.MaterializedAt.IsZero() {
 		return shoal.NewError(
 			shoal.ErrorInvalidArgument,
 			"approval materialization time is inconsistent with its state")
@@ -373,6 +474,96 @@ func (r ApprovalRecord) validateDecision() error {
 		return shoal.NewError(
 			shoal.ErrorInvalidArgument,
 			"approval mapping digest does not match its provenance")
+	}
+	return nil
+}
+
+// validateWithdrawal checks the withdrawal fields: present, consistent and
+// inside the window on a withdrawn record, and absent on every other.
+func (r ApprovalRecord) validateWithdrawal() error {
+	if r.State != ApprovalWithdrawn {
+		if !r.WithdrawnAt.IsZero() || r.WithdrawalReason != (interaction.Reason{}) {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument,
+				"only a withdrawn approval carries a withdrawal")
+		}
+		return nil
+	}
+	if r.WithdrawnAt.IsZero() || r.WithdrawnAt.Location() != time.UTC ||
+		r.WithdrawnAt.Before(r.RequestedAt) || !r.WithdrawnAt.Before(r.ExpiresAt) ||
+		!r.UpdatedAt.Equal(r.WithdrawnAt) {
+		return shoal.NewError(
+			shoal.ErrorInvalidArgument, "approval withdrawal time is inconsistent")
+	}
+	if r.WithdrawalReason.Code == "" {
+		return shoal.NewError(
+			shoal.ErrorInvalidArgument, "approval withdrawal reason is required")
+	}
+	return r.WithdrawalReason.Validate()
+}
+
+// ApprovalStrandGrace is how long after an enqueued request's action
+// deadline it is recorded as stranded when its action was never written
+// (#655). Every re-request runs under a context whose deadline is the action
+// deadline, because the action deadline is the request context's deadline
+// (queuedRecord) and a re-request must name the same one (equivalentEnqueue).
+// So past the deadline no call that could still write the action is running,
+// on a replica whose clock agrees; the grace is the replica clock skew the
+// event window already allows (ApprovalEventSkewAllowance).
+//
+// What the grace does not bound is a write that call already handed to the
+// coordination runtime. A materialization whose publish was interrupted
+// (indeterminate, a crash) is a durable intent that recovery rolls forward
+// later, with no time check, so its ActionRecord can still land after the
+// approval was recorded stranded/deadline_passed. It lands past its own
+// deadline, which every claim refuses (Claim, ExecuteClaim), so it can never
+// run; docs/approval.md states it as a residual.
+const ApprovalStrandGrace = time.Hour
+
+// strandedAfterMaterializing reports whether a stranding cause applies to a
+// request that had committed to become work (enqueued), as opposed to one
+// still pending or approved.
+func strandedAfterMaterializing(cause ApprovalCondition) bool {
+	return cause == ApprovalConditionIdentityTaken ||
+		cause == ApprovalConditionDeadlinePassed
+}
+
+// validateStranding checks the stranding cause: one of the permanent causes,
+// consistent with the state it was stranded from, on a stranded record only.
+func (r ApprovalRecord) validateStranding() error {
+	if r.State != ApprovalStranded {
+		if r.StrandedCause != ApprovalConditionNone {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument,
+				"only a stranded approval carries a stranding cause")
+		}
+		return nil
+	}
+	switch r.StrandedCause {
+	case ApprovalConditionTargetMoved, ApprovalConditionPolicyMoved:
+		// Stranded while pending or approved, which is possible only inside
+		// the window: past it the request is expired, not stranded.
+		if !r.UpdatedAt.Before(r.ExpiresAt) {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument,
+				"a request whose window has closed is expired, not stranded")
+		}
+	case ApprovalConditionIdentityTaken:
+	case ApprovalConditionDeadlinePassed:
+		if r.UpdatedAt.Before(r.Request.Deadline.Add(ApprovalStrandGrace)) {
+			return shoal.NewError(
+				shoal.ErrorInvalidArgument,
+				"an enqueued request is stranded on its deadline only after the grace")
+		}
+	default:
+		return shoal.NewError(
+			shoal.ErrorInvalidArgument, "approval stranding cause is invalid")
+	}
+	if strandedAfterMaterializing(r.StrandedCause) &&
+		r.Verdict != ApprovalVerdictApprove {
+		return shoal.NewError(
+			shoal.ErrorInvalidArgument,
+			"only an approved request can be stranded after materializing")
 	}
 	return nil
 }
@@ -452,6 +643,9 @@ type ApprovalMutation struct {
 type ApprovalPage struct {
 	Approvals []ApprovalRecord
 	Next      []byte
+	// Undecodable is set by ApprovalTolerantScanner only: the stored records
+	// on this page it skipped because they do not decode.
+	Undecodable int
 }
 
 // ApprovalStore is the durable approval key space. ApplyApproval must refuse,
@@ -538,6 +732,19 @@ type ApprovalConfig struct {
 	// around Store need not expose them.
 	Outbox ApprovalTransitionStore
 	Events ApprovalEventPublisher
+	// Sweeper binds the host's system observer for one approval's scope
+	// (#655). Optional: nil configures no sweep, and Sweep refuses. See
+	// ApprovalSweepBinder.
+	Sweeper ApprovalSweepBinder
+	// TerminalStates enables the withdrawn and stranded states (#655): the
+	// requester's withdrawal, the lazy stranding Decide and Status write,
+	// and the sweep. Off, nothing writes either state, by any path: Withdraw
+	// refuses with ErrApprovalTerminalStatesDisabled, Status and Decide
+	// report what they always reported and write nothing new, and Sweep
+	// refuses. A build before #655 cannot read either state, nor an outbox
+	// row the sweep writes, so the operator turns this on only once every
+	// replica runs a build that can; until then rolling back is safe.
+	TerminalStates bool
 }
 
 // IdentityScheme describes the identity scheme in force (#526).
@@ -695,6 +902,9 @@ type ApprovalService struct {
 	window      time.Duration
 	scheme      IdentityScheme
 	events      *approvalEvents
+	sweeper     ApprovalSweepBinder
+	terminal    bool
+	sweep       approvalSweepState
 }
 
 func NewApprovalService(config ApprovalConfig) (*ApprovalService, error) {
@@ -724,6 +934,7 @@ func NewApprovalService(config ApprovalConfig) (*ApprovalService, error) {
 		recorder: config.Recorder, narrowed: config.Narrowed,
 		generations: config.Generations, mapping: config.ApproverMapping,
 		window: window, scheme: cloneIdentityScheme(config.IdentityScheme),
+		sweeper: config.Sweeper, terminal: config.TerminalStates,
 	}
 	if config.Outbox != nil {
 		service.events = &approvalEvents{
@@ -1015,11 +1226,18 @@ func (s *ApprovalService) advance(
 			}
 			return receiptFor(expired, ActionRecord{}), nil
 		}
+		// No stranding here (#655). The target cannot have moved:
+		// queuedRecord has just resolved it, pinned, at the request's
+		// generation. And the policy can have moved only under a credential
+		// minted before it did — equivalentEnqueue compares the generation —
+		// whose writes the audit's generation guard refuses. Status, Decide
+		// and the sweep record those.
+		//
 		// A replay: the requester asking where its request is, which is
 		// also how it reconciles its own unpublished event (#653).
 		return receiptFor(current, ActionRecord{}),
 			s.drainApprovalEvents(ctx, current.ID, 0)
-	case ApprovalRefused, ApprovalExpired:
+	case ApprovalRefused, ApprovalExpired, ApprovalWithdrawn, ApprovalStranded:
 		return receiptFor(current, ActionRecord{}),
 			s.drainApprovalEvents(ctx, current.ID, 0)
 	case ApprovalApproved:
@@ -1064,6 +1282,8 @@ func (s *ApprovalService) advance(
 		if err != nil {
 			return ApprovalReceipt{}, err
 		}
+		// Not stranded here, for the reason the pending case gives: only a
+		// credential older than the policy reaches this, and it cannot write.
 		if inForce != current.PolicyGeneration {
 			return ApprovalReceipt{}, shoal.WrapError(
 				shoal.ErrorConflict,
@@ -1268,6 +1488,201 @@ func (s *ApprovalService) expire(
 	return s.commit(ctx, "approval_expiry", operation, decision, next, current.Version)
 }
 
+// strand records that a request can never progress, for a permanent cause
+// approvalStrandable established (#655).
+func (s *ApprovalService) strand(
+	ctx context.Context,
+	operation auth.Operation,
+	decision auth.Decision,
+	current ApprovalRecord,
+	cause ApprovalCondition,
+	now time.Time,
+) (ApprovalRecord, error) {
+	next := CloneApprovalRecord(current)
+	next.Version++
+	next.State = ApprovalStranded
+	next.StrandedCause = cause
+	next.UpdatedAt = notBefore(now, current)
+	return s.commit(ctx, "approval_strand", operation, decision, next, current.Version)
+}
+
+// settle writes the terminal state approvalStrandable chose.
+func (s *ApprovalService) settle(
+	ctx context.Context,
+	operation auth.Operation,
+	decision auth.Decision,
+	current ApprovalRecord,
+	state ApprovalState,
+	cause ApprovalCondition,
+	now time.Time,
+) (ApprovalRecord, error) {
+	if state == ApprovalExpired {
+		return s.expire(ctx, operation, decision, current, now)
+	}
+	return s.strand(ctx, operation, decision, current, cause, now)
+}
+
+// approvalStrandable decides whether a request that is not yet final must
+// now be recorded as final, and as what (#655). It answers ("", "") when the
+// request may still progress, or when the evidence that it cannot is not
+// conclusive.
+//
+// The rule is that only a durable fact no later event can undo is a reason
+// to write a terminal state. A terminal state cannot be left, so writing one
+// on weaker evidence — a read that failed, a replica whose configuration is
+// behind, a lease that a heartbeat would renew — could end a request that
+// would have lived. Weaker evidence waits for the window, which closes for
+// every pending or approved request at or before its deadline.
+//
+//   - Pending or approved, window closed: expired, as every observer writes.
+//   - Pending or approved, target moved: the agent's registry row, read
+//     successfully, names a higher generation than the request, or is
+//     revoked. The request's own rebuild is pinned to its generation
+//     (queuedRecord), and generations only grow, so the requester can never
+//     re-request it. A stale read can only show an older generation, never a
+//     newer one, so it cannot produce this answer. A failed or absent read
+//     and a lapsed lease are not evidence.
+//   - Pending or approved, policy moved: the generation authority's
+//     generation is greater than the request's. Greater, not different: a
+//     replica still on an older configuration during a rollout sees a newer
+//     request's generation as ahead of its own, and must not strand it.
+//   - Enqueued, identity taken: an action exists at the identity and is not
+//     this approval's materialization, so materialize can never write there.
+//   - Enqueued, no action, past the deadline by ApprovalStrandGrace: no call
+//     that could still write the action can be running; see
+//     ApprovalStrandGrace. Before that, a moved target or policy is left
+//     alone, because a re-request already past its checks may still be
+//     landing the action.
+//
+// A moved approver mapping or identity scheme is deliberately not a cause.
+// Replicas legitimately disagree on both during a rollout, so one replica
+// would be stranding approvals another honours. Those requests expire.
+func (s *ApprovalService) approvalStrandable(
+	ctx context.Context, current ApprovalRecord, now time.Time,
+) (ApprovalState, ApprovalCondition, error) {
+	switch current.State {
+	case ApprovalPending, ApprovalApproved:
+		if !now.Before(current.ExpiresAt) {
+			return ApprovalExpired, ApprovalConditionNone, nil
+		}
+		if s.dispatch.registry == nil || s.dispatch.registry.store == nil {
+			// A composition with no registry has no evidence to offer.
+			return "", "", nil
+		}
+		stored, err := s.dispatch.registry.store.Get(ctx, current.Request.AgentID)
+		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			// Absent, or a committed value not yet visible: the store does
+			// not tell them apart, so neither is evidence.
+			return "", "", nil
+		}
+		if err != nil {
+			return "", "", err
+		}
+		descriptor := stored.Descriptor
+		if descriptor.Generation > current.Request.AgentGeneration ||
+			(descriptor.Generation == current.Request.AgentGeneration &&
+				!descriptor.RevokedAt.IsZero()) {
+			return ApprovalStranded, ApprovalConditionTargetMoved, nil
+		}
+		if descriptor.Generation != current.Request.AgentGeneration {
+			// Older than the request: a read that has not caught up. Not
+			// evidence of anything.
+			return "", "", nil
+		}
+		inForce, err := s.generations.CurrentPolicyGeneration(
+			ctx, descriptor.AuthorizationDomain)
+		if err != nil {
+			return "", "", err
+		}
+		if inForce > current.PolicyGeneration {
+			return ApprovalStranded, ApprovalConditionPolicyMoved, nil
+		}
+		return "", "", nil
+	case ApprovalEnqueued:
+		action, err := s.dispatch.store.GetAction(ctx, current.ID)
+		if err == nil {
+			if !isMaterializationOf(action, current) {
+				return ApprovalStranded, ApprovalConditionIdentityTaken, nil
+			}
+			return "", "", nil
+		}
+		if !errors.Is(err, ErrActionNotFound) {
+			return "", "", err
+		}
+		if !now.Before(current.Request.Deadline.Add(ApprovalStrandGrace)) {
+			return ApprovalStranded, ApprovalConditionDeadlinePassed, nil
+		}
+		return "", "", nil
+	default:
+		return "", "", nil
+	}
+}
+
+// settleObserved writes, as the calling party, the terminal state
+// approvalStrandable chose for a record that party has reached (#655): the
+// lazy half of resolving stranded rows, published by its maker as #653's
+// expiry is.
+//
+// It is opportunistic. settled is true only when a write committed (with or
+// without its event) or lost a compare-and-set, which the caller answers as
+// it answers any race. Every other failure, including no evidence and a write
+// the caller's own credential could not make (one minted before the policy
+// moved fails its audit's generation guard), leaves the record as it was and
+// the caller answering exactly as it did before stranding existed. The sweep
+// writes what a party could not.
+func (s *ApprovalService) settleObserved(
+	ctx context.Context,
+	operation auth.Operation,
+	decision auth.Decision,
+	current ApprovalRecord,
+	now time.Time,
+) (ApprovalRecord, bool, error) {
+	// Off, Status and Decide answer exactly as before #655 and write
+	// nothing a party did not already write (TerminalStates).
+	if !s.terminal {
+		return ApprovalRecord{}, false, nil
+	}
+	state, cause, err := s.approvalStrandable(ctx, current, now)
+	if err != nil || state == "" {
+		return ApprovalRecord{}, false, nil
+	}
+	settled, err := s.settle(ctx, operation, decision, current, state, cause, now)
+	switch {
+	case err == nil:
+		return settled, true, nil
+	case errors.Is(err, ErrApprovalEventUnpublished):
+		return settled, true, err
+	case errors.Is(err, ErrApprovalConflict):
+		return ApprovalRecord{}, true, err
+	default:
+		return ApprovalRecord{}, false, nil
+	}
+}
+
+func approvalStranded(cause ApprovalCondition) error {
+	sentinel := ErrApprovalStranded
+	if cause == ApprovalConditionPolicyMoved {
+		// Still a superseded generation, which is what callers that predate
+		// stranding branch on.
+		sentinel = errors.Join(ErrApprovalStranded, ErrApprovalSuperseded)
+	}
+	return shoal.WrapError(
+		shoal.ErrorConflict,
+		"the request can no longer progress ("+string(cause)+")", sentinel)
+}
+
+func terminalStatesDisabled() error {
+	return shoal.WrapError(
+		shoal.ErrorConflict,
+		"withdrawal and stranding are not enabled on this host",
+		ErrApprovalTerminalStatesDisabled)
+}
+
+func approvalWithdrawn() error {
+	return shoal.WrapError(
+		shoal.ErrorConflict, "the request has been withdrawn", ErrApprovalWithdrawn)
+}
+
 // Decide approves or refuses a pending request.
 //
 // The order of the checks is the order of the questions. May this caller
@@ -1320,6 +1735,156 @@ func (s *ApprovalService) Decide(
 		return result, err
 	}
 	return ApprovalRecord{}, approvalConflict()
+}
+
+// ApprovalWithdrawRequest asks for a held request to be withdrawn (#655).
+// The context's reason is recorded as the withdrawal's.
+type ApprovalWithdrawRequest struct {
+	ID      []byte
+	Context RequestContext
+}
+
+// Withdraw withdraws a pending request, by its requester (#655).
+//
+// Only the requester, by Status's rule: the request's own principal, still
+// holding dispatch on its scope. Anyone else, including every approver, is
+// answered as for an approval that does not exist; an approver holds no
+// dispatch and is refused by begin before any record is read, so the refusal
+// says nothing about which IDs exist.
+//
+// The withdrawal is a compare-and-set from pending, at the version the
+// request was read at, so a decision made concurrently either lands first —
+// and the withdrawal then conflicts with it — or loses to the withdrawal and
+// is refused as ErrApprovalWithdrawn. Never both. A request whose window has
+// closed is expired, as a decision finds it. A withdrawn request replays, so
+// a requester whose response was lost can send it again, and that replay is
+// how it publishes its own withdrawal event if the first publication failed.
+func (s *ApprovalService) Withdraw(
+	ctx context.Context, request ApprovalWithdrawRequest,
+) (ApprovalRecord, error) {
+	dispatch := s.dispatch
+	ctx, cancel := dispatch.deadline(ctx, request.Context)
+	defer cancel()
+	decision, now, err := dispatch.begin(ctx, auth.OperationDispatch, request.Context)
+	if err != nil {
+		return ApprovalRecord{}, err
+	}
+	if err := validateOpaque("approval ID", request.ID, false); err != nil {
+		return ApprovalRecord{}, err
+	}
+	// Refused before any record is read, so the answer is the host's and
+	// says nothing about which approval IDs exist.
+	if !s.terminal {
+		return ApprovalRecord{}, terminalStatesDisabled()
+	}
+	reason, err := interaction.NewReason(
+		request.Context.ReasonCode, request.Context.ReasonDetail)
+	if err != nil {
+		return ApprovalRecord{}, err
+	}
+	for attempt := 0; attempt < maxApprovalAttempts; attempt++ {
+		current, err := s.store.GetApproval(ctx, request.ID)
+		if err != nil {
+			if errors.Is(err, ErrApprovalNotFound) {
+				return ApprovalRecord{}, auth.ObjectNotFound()
+			}
+			return ApprovalRecord{}, err
+		}
+		if !requestedBy(decision, current, now) {
+			return ApprovalRecord{}, auth.ObjectNotFound()
+		}
+		attemptNow := now
+		if attempt > 0 {
+			if fresh := dispatch.clock().UTC(); fresh.After(attemptNow) {
+				attemptNow = fresh
+			}
+		}
+		result, err := s.withdraw(ctx, decision, current, reason, attemptNow)
+		if errors.Is(err, errApprovalRaced) {
+			continue
+		}
+		return result, err
+	}
+	return ApprovalRecord{}, approvalConflict()
+}
+
+func (s *ApprovalService) withdraw(
+	ctx context.Context,
+	decision auth.Decision,
+	current ApprovalRecord,
+	reason interaction.Reason,
+	now time.Time,
+) (ApprovalRecord, error) {
+	switch current.State {
+	case ApprovalPending:
+		if !now.Before(current.ExpiresAt) {
+			if _, err := s.expire(
+				ctx, auth.OperationDispatch, decision, current, now,
+			); err != nil {
+				if errors.Is(err, ErrApprovalConflict) {
+					return ApprovalRecord{}, errApprovalRaced
+				}
+				return ApprovalRecord{}, err
+			}
+			return ApprovalRecord{}, approvalExpired()
+		}
+		next := CloneApprovalRecord(current)
+		next.Version++
+		next.State = ApprovalWithdrawn
+		next.WithdrawnAt = notBefore(now, current)
+		next.UpdatedAt = next.WithdrawnAt
+		next.WithdrawalReason = reason
+		stored, err := s.commit(
+			ctx, "approval_withdrawal", auth.OperationDispatch,
+			decision, next, current.Version)
+		if errors.Is(err, ErrApprovalConflict) {
+			return ApprovalRecord{}, errApprovalRaced
+		}
+		return stored, err
+	case ApprovalWithdrawn:
+		// A replay, which answers for the requester's own unpublished
+		// withdrawal event as a re-request does (#653).
+		if err := s.drainApprovalEvents(ctx, current.ID, 0); err != nil {
+			return ApprovalRecord{}, err
+		}
+		return CloneApprovalRecord(current), nil
+	}
+	// Decided, expired, materialized or stranded: nothing to withdraw.
+	switch current.State {
+	case ApprovalExpired:
+		// A withdrawal that found the window closed wrote this expiry and
+		// may have answered that its event did not publish; this is the
+		// retry it asked for, so it answers for the requester's own rows.
+		if err := s.drainApprovalEvents(ctx, current.ID, 0); err != nil {
+			return ApprovalRecord{}, err
+		}
+		return ApprovalRecord{}, approvalExpired()
+	case ApprovalStranded:
+		s.drainApprovalEventsQuietly(ctx, current.ID)
+		return ApprovalRecord{}, approvalStranded(current.StrandedCause)
+	default:
+		// The requester's own rows are published quietly; this is not the
+		// call that owes them.
+		s.drainApprovalEventsQuietly(ctx, current.ID)
+		return ApprovalRecord{}, shoal.WrapError(
+			shoal.ErrorConflict,
+			"the request has already been decided and cannot be withdrawn",
+			ErrApprovalConflict)
+	}
+}
+
+// requestedBy is the requester rule Status, VisibleTo and Withdraw share:
+// the request's own principal, still holding dispatch on its scope.
+func requestedBy(
+	decision auth.Decision, current ApprovalRecord, now time.Time,
+) bool {
+	return sameActionPrincipal(decision, current.Request) &&
+		decision.AuthorizeObject(auth.OperationDispatch, auth.ResourceRequest{
+			AuthorizationDomain: decision.AuthorizationDomain(),
+			SourceID:            current.Request.SourceID,
+			PolicyID:            current.Request.PolicyID,
+			ObjectID:            shoal.ID(current.ID),
+		}, now) == nil
 }
 
 // notBefore clamps a transition time to the record's latest, so a replica
@@ -1382,10 +1947,30 @@ func (s *ApprovalService) decide(
 		if sameApprovalDecision(decision, current, request) {
 			return CloneApprovalRecord(current), nil
 		}
-		if current.State == ApprovalExpired {
+		switch current.State {
+		case ApprovalExpired:
 			return ApprovalRecord{}, approvalExpired()
+		case ApprovalWithdrawn:
+			return ApprovalRecord{}, approvalWithdrawn()
+		case ApprovalStranded:
+			return ApprovalRecord{}, approvalStranded(current.StrandedCause)
 		}
 		return ApprovalRecord{}, approvalConflict()
+	}
+	// A pending request whose target or policy has moved for good can never
+	// become work, whatever this approver decides; the approver observed
+	// it, so it records it (#655). Opportunistic: an approver whose own
+	// credential cannot make the write is answered as before, below.
+	if stranded, settled, err := s.settleObserved(
+		ctx, auth.OperationActionApprove, decision, current, now,
+	); settled {
+		if errors.Is(err, ErrApprovalConflict) {
+			return ApprovalRecord{}, errApprovalRaced
+		}
+		if err != nil {
+			return ApprovalRecord{}, err
+		}
+		return ApprovalRecord{}, approvalStranded(stranded.StrandedCause)
 	}
 	// The generation the approver reviewed under, and the one it holds now,
 	// must both be the request's. An approval under a superseded generation
@@ -1652,7 +2237,9 @@ func (s *ApprovalService) eligibility(
 // stored. Expiry is written lazily, and a request whose target or policy
 // generation has moved, or whose deadline has passed, can never progress
 // although its row still says pending or approved; reporting the row would
-// tell a reader something live that is not. Nothing is written here.
+// tell a reader something live that is not. What it reports as final for a
+// permanent reason it also records, as the asking party (#655); see
+// settleObserved.
 func (s *ApprovalService) Status(
 	ctx context.Context, request ApprovalStatusRequest,
 ) (ApprovalStatus, error) {
@@ -1680,18 +2267,13 @@ func (s *ApprovalService) Status(
 		}
 		return ApprovalStatus{}, err
 	}
-	requester := sameActionPrincipal(decision, current.Request) &&
-		decision.AuthorizeObject(auth.OperationDispatch, auth.ResourceRequest{
-			AuthorizationDomain: decision.AuthorizationDomain(),
-			SourceID:            current.Request.SourceID,
-			PolicyID:            current.Request.PolicyID,
-			ObjectID:            shoal.ID(current.ID),
-		}, now) == nil
+	requester := requestedBy(decision, current, now)
 	if !requester {
-		// The approver path, which is also where a target that has moved
-		// stops being visible: eligibility resolves the binding at the
-		// request's generation. An approver therefore sees a request only
-		// while it is decidable in principle, and the requester always.
+		// The approver path. Eligibility resolves the agent unpinned (a
+		// heartbeat moves its generation), so an approver still sees a
+		// request whose target generation moved — and records it as
+		// stranded below (#655) — and stops seeing it only on a revocation
+		// or a lost scope. The requester always sees its own.
 		if _, err := s.eligibleApprover(ctx, decision, current, now); err != nil {
 			if shoal.IsErrorCode(err, shoal.ErrorNotFound) ||
 				errors.Is(err, ErrIdentitySchemeMoved) {
@@ -1705,6 +2287,45 @@ func (s *ApprovalService) Status(
 			}
 			return ApprovalStatus{}, err
 		}
+	}
+	// What the effective state reports as final for a permanent reason is
+	// written down by whoever asked, as itself (#655): the requester under
+	// dispatch, an eligible approver under approve. Status is the one party
+	// call that reaches a request whose target moved — the requester's
+	// re-request is refused by its pinned rebuild first, and that is the
+	// request a requester asks Status about. Opportunistic, like every lazy
+	// settlement: a write this caller cannot make leaves the report exactly
+	// what it was.
+	operation := auth.OperationActionApprove
+	if requester {
+		operation = auth.OperationDispatch
+	}
+	if !current.State.terminal() {
+		settled, wrote, err := s.settleObserved(ctx, operation, decision, current, now)
+		switch {
+		case wrote && err == nil:
+			current = settled
+		case wrote && errors.Is(err, ErrApprovalEventUnpublished):
+			// Committed, and only its event is owed: the retry this asks
+			// for finds the row terminal and drains it below.
+			return ApprovalStatus{}, err
+		case wrote:
+			// Lost a compare-and-set to another writer. Report what is
+			// there now.
+			reread, readErr := s.store.GetApproval(ctx, request.ID)
+			if readErr != nil {
+				return ApprovalStatus{}, readErr
+			}
+			current = reread
+		}
+	} else if s.terminal &&
+		(current.State == ApprovalExpired || current.State == ApprovalStranded) {
+		// The kinds Status writes. A Status whose write committed and whose
+		// event did not answered 503; this is the retry it asked for, and it
+		// publishes the caller's own row. Quietly: Status is a read, and a
+		// persistent failure on one row must not make it fail for #653's
+		// whole lapse window. Only the call that committed answers for it.
+		s.drainApprovalEventsQuietly(ctx, current.ID)
 	}
 	state, condition, err := s.effectiveState(ctx, current, now)
 	if err != nil {
@@ -1769,13 +2390,7 @@ func (s *ApprovalService) VisibleTo(
 		}
 		return false, nil
 	}
-	if sameActionPrincipal(decision, current.Request) &&
-		decision.AuthorizeObject(auth.OperationDispatch, auth.ResourceRequest{
-			AuthorizationDomain: decision.AuthorizationDomain(),
-			SourceID:            current.Request.SourceID,
-			PolicyID:            current.Request.PolicyID,
-			ObjectID:            shoal.ID(current.ID),
-		}, now) == nil {
+	if requestedBy(decision, current, now) {
 		return true, nil
 	}
 	// Any failure to establish eligibility is a false answer, whatever its
@@ -1800,8 +2415,24 @@ func (s *ApprovalService) effectiveState(
 	now time.Time,
 ) (ApprovalState, ApprovalCondition, error) {
 	switch current.State {
-	case ApprovalRefused, ApprovalExpired:
+	case ApprovalRefused, ApprovalExpired, ApprovalWithdrawn:
 		return current.State, ApprovalConditionNone, nil
+	case ApprovalStranded:
+		// Final, and the cause it was recorded for is the condition. Spelled
+		// out cause by cause, so the pairs this can return are readable from
+		// the source (pkg/narrate's parity test reads them).
+		switch current.StrandedCause {
+		case ApprovalConditionTargetMoved:
+			return ApprovalStranded, ApprovalConditionTargetMoved, nil
+		case ApprovalConditionPolicyMoved:
+			return ApprovalStranded, ApprovalConditionPolicyMoved, nil
+		case ApprovalConditionIdentityTaken:
+			return ApprovalStranded, ApprovalConditionIdentityTaken, nil
+		case ApprovalConditionDeadlinePassed:
+			return ApprovalStranded, ApprovalConditionDeadlinePassed, nil
+		}
+		return "", "", shoal.NewError(
+			shoal.ErrorInternal, "approval stranding cause is invalid")
 	case ApprovalEnqueued:
 		action, err := s.dispatch.store.GetAction(ctx, current.ID)
 		if err == nil {
@@ -1950,6 +2581,14 @@ func (s *ApprovalService) commit(
 ) (ApprovalRecord, error) {
 	if err := record.Validate(); err != nil {
 		return ApprovalRecord{}, err
+	}
+	// The one place every transition passes: whatever path built it, a
+	// withdrawn or stranded record is not written unless the operator has
+	// enabled them (TerminalStates). Every path also refuses earlier, with
+	// its own answer; this is the guarantee, not the answer.
+	if !s.terminal &&
+		(record.State == ApprovalWithdrawn || record.State == ApprovalStranded) {
+		return ApprovalRecord{}, terminalStatesDisabled()
 	}
 	fingerprint, err := auth.AuthorizationFingerprint(decision)
 	if err != nil {
