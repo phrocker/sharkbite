@@ -527,14 +527,24 @@ func TestLabelsStayBoundedWhateverTheCallerSends(t *testing.T) {
 // failure that says nothing, and no restart or reroute would bring the plane
 // back. The outage is an alert on the counter, not a probe result.
 func TestMetricsAreServedOnTheHealthListener(t *testing.T) {
-	// A plane address with nothing listening, so every admission is a
-	// transport failure.
-	closed, err := net.Listen("tcp", "127.0.0.1:0")
+	// A plane that drops every connection unanswered, so every admission is
+	// a transport failure. It stays bound for the whole test: a port closed
+	// and assumed dead can be taken by another process under a parallel run.
+	plane, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Fatal(err)
 	}
-	planeAddress := closed.Addr().String()
-	_ = closed.Close()
+	t.Cleanup(func() { _ = plane.Close() })
+	go func() {
+		for {
+			conn, err := plane.Accept()
+			if err != nil {
+				return
+			}
+			_ = conn.Close()
+		}
+	}()
+	planeAddress := plane.Addr().String()
 	// A token, so the denial is the plane being absent and not this pod
 	// lacking its own credential.
 	t.Setenv("SHOAL_ADMISSION_TOKEN", "plane-token")
