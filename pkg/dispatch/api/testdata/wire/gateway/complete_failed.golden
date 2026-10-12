@@ -1,0 +1,9 @@
+POST /shoal/api/v1/fleet/actions/YQD_/complete
+header Accept: application/json
+header Accept-Encoding: gzip
+header Authorization: Bearer dispatch-token
+header Content-Length: 287
+header Content-Type: application/json
+header Shoal-Correlation-Id: trace-527
+header User-Agent: shoal-effects-gateway/1
+body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"dHJhY2UtNTI3\",\"reason_code\":\"gateway_complete\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T12:01:30.123456789Z\"},\"expected_version\":3,\"claim_id\":\"Z3cxfHBvZHxjbGFpbQ\",\"claim_fence\":1,\"error_code\":\"outcome_unknown\",\"failed\":true}"

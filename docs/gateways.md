@@ -81,8 +81,18 @@ plane sits behind a path prefix). `cmd/shoal-llm-gateway` speaks the seam only
 through it. Golden fixtures in `pkg/admission/api/testdata/wire` pin the bytes
 both the handler and the gateway put on the wire. The client's response decoder
 refuses duplicate and case-variant keys and trailing data but ignores unknown
-fields, so a deployed gateway keeps working against a newer plane. The dispatch
-client is not public yet (#446).
+fields, so a deployed gateway keeps working against a newer plane.
+
+The worker-facing dispatch routes are published the same way as
+`pkg/dispatch/api`: the wire types of pull, claim, extend, complete, ambiguity,
+status and descriptor resolve, the limits, and a client
+(`sdk.New(...).Dispatch()`, or `api.NewClient` behind a path prefix) that
+carries the rules for a lost answer — a claim that may have committed is a
+re-pull, an extension binds on the fence alone, and a completion binds on the
+claim fence and resends until a record or an honest "indeterminate" settles
+it. `internal/effectsgateway` is a thin adapter over it and links no
+`pkg/explorer` package. Golden fixtures in `pkg/dispatch/api/testdata/wire` pin
+both sides.
 
 **Extensions use only that public surface:**
 

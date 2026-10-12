@@ -26,7 +26,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -34,7 +34,7 @@ func heldEntry(id string, fence uint64) UnrecordedEntry {
 	return UnrecordedEntry{
 		ActionID: []byte(id), Fence: fence, ClaimNonce: ClaimNonce{1, 2, 3},
 		RouteAction: "charge", Method: "POST", PathTemplate: "/v1/customers/{customer}/charges",
-		Outcome: fleet.AmbiguityOutcomeUnknown, Target: testSurface, Reference: "ch_1",
+		Outcome: dispatchapi.AmbiguityOutcomeUnknown, Target: testSurface, Reference: "ch_1",
 		CorrelationID: []byte("trace-" + id), Status: 400,
 		DispatchError: DispatchAmbiguityUnrecorded,
 	}
@@ -204,14 +204,14 @@ func TestUnrecordedLogReservesItsBound(t *testing.T) {
 
 func maximalEntry(t *testing.T, n int) UnrecordedEntry {
 	t.Helper()
-	id := []byte(strings.Repeat("i", fleet.MaxActionIDBytes-8) + jsonNumber(100000 + n)[:6])
+	id := []byte(strings.Repeat("i", dispatchapi.MaxActionIDBytes-8) + jsonNumber(100000 + n)[:6])
 	return UnrecordedEntry{
 		ActionID: id, Fence: ^uint64(0), ClaimNonce: ClaimNonce{0xff},
 		RouteAction: strings.Repeat("a", 256), Method: "DELETE",
 		PathTemplate:  strings.Repeat("p", maxPathTemplateBytes),
-		Outcome:       fleet.AmbiguityOutcomeUnknown,
-		Target:        strings.Repeat("t", fleet.MaxAmbiguityTargetBytes),
-		Reference:     strings.Repeat("r", fleet.MaxAmbiguityReferenceBytes),
+		Outcome:       dispatchapi.AmbiguityOutcomeUnknown,
+		Target:        strings.Repeat("t", dispatchapi.MaxAmbiguityTargetBytes),
+		Reference:     strings.Repeat("r", dispatchapi.MaxAmbiguityReferenceBytes),
 		CorrelationID: []byte(strings.Repeat("c", shoal.MaxIDBytes)), Status: 999,
 		DispatchError: DispatchAmbiguityUnrecorded, Attempts: 1 << 30,
 	}

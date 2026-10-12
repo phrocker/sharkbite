@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -49,6 +49,11 @@ func TestTheGatewayAcceptsExactlyTheCorrelationsTheExplorerAccepts(t *testing.T)
 				name, len(value), explorerErr == nil, clientErr == nil)
 		}
 	}
+	// The header the client sends is the one the explorer reads.
+	if effectsgateway.CorrelationIDHeader != CorrelationIDHeader {
+		t.Errorf("the gateway sends %q, the explorer reads %q",
+			effectsgateway.CorrelationIDHeader, CorrelationIDHeader)
+	}
 	// The boundaries themselves, so a bound that drifts on both sides at
 	// once is still caught.
 	for length, want := range map[int]bool{256: true, 257: true, 1024: true, 1025: false} {
@@ -77,7 +82,7 @@ func TestTheGatewayWorksAnActionWithAMaximalCorrelation(t *testing.T) {
 	}
 	if _, err := client.ReportAmbiguity(ctx, claimed.ID, effectsgateway.AmbiguityReport{
 		Context:    claimed.Correlate(g.context("gateway_ambiguity")),
-		ClaimFence: claimed.ClaimFence, Outcome: fleet.AmbiguityRequestNotSent,
+		ClaimFence: claimed.ClaimFence, Outcome: dispatchapi.AmbiguityRequestNotSent,
 	}); err != nil {
 		t.Fatalf("ambiguity: %v", err)
 	}

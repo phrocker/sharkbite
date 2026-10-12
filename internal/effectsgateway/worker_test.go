@@ -29,10 +29,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
-func (h *workerHarness) state(id string) fleet.DispatchState { return h.explorer.record(id).State }
+func (h *workerHarness) state(id string) dispatchapi.DispatchState {
+	return h.explorer.record(id).State
+}
 
 func (h *workerHarness) assertNoSecrets() {
 	h.t.Helper()
@@ -57,7 +59,7 @@ func TestWorkerHappyPath(t *testing.T) {
 	h := newWorkerHarness(t, nil)
 	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
 	h.start()
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 
 	completion := h.completion(1)
 	if completion.Failed || completion.ClaimFence != 1 || completion.ExpectedVersion != 2 {
@@ -109,7 +111,7 @@ func TestWorkerFiltersAndPrechecksBeforeClaiming(t *testing.T) {
 	// Unprotected: retention does not apply.
 	h.explorer.enqueue("refund", "refund", `{"body":{"charge":"x"}}`, workerEpoch.Add(25*time.Hour))
 	h.start()
-	eventually(t, "the refund to succeed", func() bool { return h.state("refund") == fleet.DispatchSucceeded })
+	eventually(t, "the refund to succeed", func() bool { return h.state("refund") == dispatchapi.DispatchSucceeded })
 	for i := 0; i < 3; i++ {
 		h.clock.Advance(MaxBackoff)
 		settle()
@@ -147,11 +149,11 @@ func TestWorkerRepullsOnAnIndeterminateOrLostClaim(t *testing.T) {
 	}
 	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
 	h.start()
-	for i := 0; i < 6 && h.state("a1") != fleet.DispatchSucceeded; i++ {
+	for i := 0; i < 6 && h.state("a1") != dispatchapi.DispatchSucceeded; i++ {
 		settle()
 		h.clock.Advance(MaxBackoff)
 	}
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 	h.explorer.mu.Lock()
 	defer h.explorer.mu.Unlock()
 	seen := map[string]bool{}
@@ -180,11 +182,11 @@ func TestWorkerRecordsATargetRefusal(t *testing.T) {
 	}
 	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
 	h.start()
-	eventually(t, "the action to fail", func() bool { return h.state("a1") == fleet.DispatchFailed })
+	eventually(t, "the action to fail", func() bool { return h.state("a1") == dispatchapi.DispatchFailed })
 	completion := h.completion(1)
 	body := `{"amount":4200,"memo":"SECRET-MEMO"}`
 	if !completion.Failed || completion.ErrorCode != "target_rejected_422" ||
-		completion.Effected != (fleet.EffectedVolume{Bytes: int64(len(body)), Chunks: 1}) {
+		completion.Effected != (dispatchapi.Effected{Bytes: int64(len(body)), Chunks: 1}) {
 		t.Fatalf("completion = %+v", completion)
 	}
 	h.assertNoSecrets()
@@ -212,7 +214,7 @@ func TestWorkerCapsRetryAfterAndResendsTheSameKey(t *testing.T) {
 		t.Fatalf("retried after %v", MaxBackoff-time.Second)
 	}
 	h.clock.Advance(time.Second)
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 	if _, _, keys := h.target.stats(); len(keys) != 2 || keys[0] != keys[1] {
 		t.Fatalf("keys = %q", keys)
 	}
@@ -227,11 +229,11 @@ func TestWorkerResendsALostResponseUnderTheSameKey(t *testing.T) {
 	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
 	h.start()
 	eventually(t, "the first request", func() bool { _, n, _ := h.target.stats(); return n >= 1 })
-	for i := 0; i < 5 && h.state("a1") != fleet.DispatchSucceeded; i++ {
+	for i := 0; i < 5 && h.state("a1") != dispatchapi.DispatchSucceeded; i++ {
 		settle()
 		h.clock.Advance(time.Second)
 	}
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 	effects, requests, _ := h.target.stats()
 	var output map[string]any
 	_ = json.Unmarshal(h.completion(1).Output, &output)
@@ -247,7 +249,7 @@ func TestWorkerNeverResendsAWrittenUnprotectedRequest(t *testing.T) {
 	h.target.dropFirst = true
 	h.explorer.enqueue("r1", "refund", `{"body":{"charge":"ch_9"}}`, workerEpoch.Add(time.Hour))
 	h.start()
-	eventually(t, "the action to fail", func() bool { return h.state("r1") == fleet.DispatchFailed })
+	eventually(t, "the action to fail", func() bool { return h.state("r1") == dispatchapi.DispatchFailed })
 	completion := h.completion(1)
 	if _, requests, _ := h.target.stats(); requests != 1 || completion.ErrorCode != ErrorOutcomeUnknown ||
 		completion.Effected.Bytes == 0 {
@@ -321,7 +323,7 @@ func TestWorkerExtendsToTheExplorersClampedEnd(t *testing.T) {
 	close(hold)
 	eventually(t, "the report", func() bool { return len(h.reportsMade()) == 1 })
 	settle()
-	if report := h.reportsMade()[0]; report.Outcome != fleet.AmbiguityRequestNotSent || report.ClaimFence != 1 {
+	if report := h.reportsMade()[0]; report.Outcome != dispatchapi.AmbiguityRequestNotSent || report.ClaimFence != 1 {
 		t.Fatalf("report = %+v", report)
 	}
 	if _, requests, _ := h.target.stats(); requests != 0 {
@@ -350,7 +352,7 @@ func TestWorkerReportsAnExtensionRefusedMidFlight(t *testing.T) {
 	h.release()
 	eventually(t, "the report", func() bool { return len(h.reportsMade()) == 1 })
 	settle()
-	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != fleet.AmbiguityEffectObserved ||
+	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != dispatchapi.AmbiguityEffectObserved ||
 		reports[0].Reference != "ch_1" {
 		t.Fatalf("reports = %+v", reports)
 	}
@@ -386,7 +388,7 @@ func TestWorkerReportsRequestNotSentWhenTheFenceIsLostFirst(t *testing.T) {
 	close(hold)
 	eventually(t, "the report", func() bool { return len(h.reportsMade()) == 1 })
 	settle()
-	if reports := h.reportsMade(); reports[0].Outcome != fleet.AmbiguityRequestNotSent {
+	if reports := h.reportsMade(); reports[0].Outcome != dispatchapi.AmbiguityRequestNotSent {
 		t.Fatalf("report = %+v", reports[0])
 	}
 	if _, requests, _ := h.target.stats(); requests != 0 {
@@ -416,7 +418,7 @@ func TestWorkerLosesTheFenceAtTheLocalLeaseEnd(t *testing.T) {
 	}
 	h.release()
 	eventually(t, "the report", func() bool { return len(h.reportsMade()) == 1 })
-	if report := h.reportsMade()[0]; report.Outcome != fleet.AmbiguityEffectObserved {
+	if report := h.reportsMade()[0]; report.Outcome != dispatchapi.AmbiguityEffectObserved {
 		t.Fatalf("report = %+v", report)
 	}
 }
@@ -436,7 +438,7 @@ func TestWorkerMakesOneReportPerFence(t *testing.T) {
 	if completion := h.completion(1); completion.ErrorCode != ErrorInputInvalid {
 		t.Fatalf("completion = %+v", completion)
 	}
-	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != fleet.AmbiguityRequestNotSent {
+	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != dispatchapi.AmbiguityRequestNotSent {
 		t.Fatalf("reports = %+v, want exactly one", reports)
 	}
 	if _, requests, _ := h.target.stats(); requests != 0 {
@@ -465,7 +467,7 @@ func TestWorkerHoldsAnUnrecordedReport(t *testing.T) {
 	if string(entry.ActionID) != "a1" || entry.Fence != 1 || entry.ClaimNonce == (ClaimNonce{}) ||
 		entry.RouteAction != "charge" || entry.Method != "POST" ||
 		entry.PathTemplate != "/v1/customers/{customer}/charges" ||
-		entry.Outcome != fleet.AmbiguityEffectObserved || entry.Reference != "ch_1" ||
+		entry.Outcome != dispatchapi.AmbiguityEffectObserved || entry.Reference != "ch_1" ||
 		entry.Target != testSurface || entry.Status != 400 ||
 		entry.DispatchError != DispatchAmbiguityUnrecorded || entry.FirstAt.IsZero() ||
 		string(entry.CorrelationID) != "trace-a1" {
@@ -531,7 +533,7 @@ func fillUnrecorded(t *testing.T, dir string, n int) {
 		line, err := encodeEntry(UnrecordedEntry{
 			ActionID: []byte("held-" + string(rune('a'+i%26)) + "-" + itoa(i)), Fence: 1,
 			RouteAction: "charge", Method: "POST", PathTemplate: "/v1/charges",
-			Outcome: fleet.AmbiguityOutcomeUnknown, CorrelationID: []byte("trace"),
+			Outcome: dispatchapi.AmbiguityOutcomeUnknown, CorrelationID: []byte("trace"),
 			FirstAt: workerEpoch, LastAt: workerEpoch, Attempts: 1,
 		})
 		if err != nil {
@@ -589,11 +591,11 @@ func TestWorkerStopsClaimingWhenTheUnrecordedLogIsFull(t *testing.T) {
 	if ready, reason := h.worker.Ready(); !ready {
 		t.Fatalf("still not ready after an ack: %s", reason)
 	}
-	for i := 0; i < 3 && h.state("a1") != fleet.DispatchSucceeded; i++ {
+	for i := 0; i < 3 && h.state("a1") != dispatchapi.DispatchSucceeded; i++ {
 		h.clock.Advance(MaxBackoff)
 		settle()
 	}
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 	if !h.logs.has("unrecorded_cleared") {
 		t.Fatal("no unrecorded_cleared event for the ack")
 	}
@@ -612,7 +614,7 @@ func TestWorkerRetriesHeldReportsAtStart(t *testing.T) {
 	for _, id := range []string{"recordable", "refused"} {
 		if err := log.Append(UnrecordedEntry{ActionID: []byte(id), Fence: 3,
 			RouteAction: "charge", Method: "POST", PathTemplate: "/v1/charges",
-			Outcome: fleet.AmbiguityEffectObserved, Reference: "ch_7", Target: testSurface,
+			Outcome: dispatchapi.AmbiguityEffectObserved, Reference: "ch_7", Target: testSurface,
 			CorrelationID: []byte("trace-" + id)}); err != nil {
 			t.Fatal(err)
 		}
@@ -652,7 +654,7 @@ func TestWorkerDrainsInFlightWork(t *testing.T) {
 	if err := h.stop(); err != nil {
 		t.Fatal(err)
 	}
-	if h.state("a1") != fleet.DispatchSucceeded {
+	if h.state("a1") != dispatchapi.DispatchSucceeded {
 		t.Fatalf("state = %s", h.state("a1"))
 	}
 	if after, _, _, _, _ := h.explorer.counts(); after != pulls {
@@ -682,13 +684,13 @@ func TestWorkerDrainReportsUnsentClaims(t *testing.T) {
 	if err := h.stop(); err != nil {
 		t.Fatal(err)
 	}
-	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != fleet.AmbiguityRequestNotSent {
+	if reports := h.reportsMade(); len(reports) != 1 || reports[0].Outcome != dispatchapi.AmbiguityRequestNotSent {
 		t.Fatalf("reports = %+v", reports)
 	}
 	if _, requests, _ := h.target.stats(); requests != 0 {
 		t.Fatal("sent while draining")
 	}
-	if h.state("a1") != fleet.DispatchClaimed {
+	if h.state("a1") != dispatchapi.DispatchClaimed {
 		t.Fatalf("state = %s, want the claim left to lapse", h.state("a1"))
 	}
 }
@@ -715,7 +717,7 @@ func TestWorkerWaitsOutTheLeaseAfterAnIndeterminateCompletion(t *testing.T) {
 	}
 	h.clock.Advance(time.Second)
 	eventually(t, "the report", func() bool { return len(h.reportsMade()) == 1 })
-	if report := h.reportsMade()[0]; report.Outcome != fleet.AmbiguityEffectObserved || report.Reference != "ch_1" {
+	if report := h.reportsMade()[0]; report.Outcome != dispatchapi.AmbiguityEffectObserved || report.Reference != "ch_1" {
 		t.Fatalf("report = %+v", report)
 	}
 }
@@ -747,7 +749,7 @@ func TestWorkerAttestsBeforeClaimingAndBeforeExtending(t *testing.T) {
 		t.Fatalf("attest/extend order = %v", sequence)
 	}
 	h.release()
-	eventually(t, "the action to succeed", func() bool { return h.state("a1") == fleet.DispatchSucceeded })
+	eventually(t, "the action to succeed", func() bool { return h.state("a1") == dispatchapi.DispatchSucceeded })
 }
 
 // TestWorkerRefusesToClaimUnderAShortAttestation: an attestation expiring
@@ -790,13 +792,13 @@ func TestWorkerPullsOnlyWithAFreeSlot(t *testing.T) {
 		t.Fatalf("pulls %d→%d, claims %d→%d with every slot held", pulls, after, claims, afterClaims)
 	}
 	h.release()
-	for i := 0; i < 3 && h.state("a3") != fleet.DispatchSucceeded; i++ {
+	for i := 0; i < 3 && h.state("a3") != dispatchapi.DispatchSucceeded; i++ {
 		settle()
 		h.clock.Advance(MaxBackoff)
 	}
 	eventually(t, "all three", func() bool {
-		return h.state("a1") == fleet.DispatchSucceeded && h.state("a2") == fleet.DispatchSucceeded &&
-			h.state("a3") == fleet.DispatchSucceeded
+		return h.state("a1") == dispatchapi.DispatchSucceeded && h.state("a2") == dispatchapi.DispatchSucceeded &&
+			h.state("a3") == dispatchapi.DispatchSucceeded
 	})
 }
 

@@ -1,0 +1,9 @@
+requests: 2
+request: POST /shoal/api/v1/fleet/actions/YQD_/ambiguity
+request: POST /shoal/api/v1/fleet/actions/YQD_/ambiguity
+error: dispatch ambiguity: ambiguity_unrecorded (HTTP 400, invalid_argument)
+kind: ambiguity_unrecorded
+status: 400 code: "invalid_argument" failure: ""
+is ambiguity unrecorded: true
+is unexpected EOF: false is deadline: false
+chain: ambiguity_unrecorded(400) > invalid_argument(400)

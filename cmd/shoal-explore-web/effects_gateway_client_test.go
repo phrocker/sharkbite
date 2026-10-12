@@ -35,6 +35,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
@@ -98,7 +99,7 @@ func newGatewayHarness(t *testing.T, extra ...fleet.Action) *gatewayHarness {
 	t.Cleanup(func() { h.opened.close() })
 
 	h.routes, err = effectsgateway.ParseRoutes([]byte(gatewayTestRoutes),
-		fleet.Effects{fleet.EffectEgressesContent, fleet.EffectMutatesExternal})
+		dispatchapi.Effects{dispatchapi.EffectEgressesContent, dispatchapi.EffectMutatesExternal})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +128,7 @@ func newGatewayHarness(t *testing.T, extra ...fleet.Action) *gatewayHarness {
 					Name:         "charge",
 					InputSchema:  charge.InputSchema(),
 					OutputSchema: effectsgateway.OutputSchema(),
-					Effects:      charge.Effects(),
+					Effects:      fleetEffectsOf(charge.Effects()),
 				}}, extra...),
 			}},
 			LeaseExpiresAt: time.Now().UTC().Add(time.Hour),
@@ -344,7 +345,7 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 		t.Fatal("the pull page carried the input or the executor key")
 	}
 	if string(offered.AgentID) != string(h.agentID) || offered.Action != "charge" ||
-		offered.State != fleet.DispatchQueued {
+		offered.State != dispatchapi.DispatchQueued {
 		t.Fatalf("offered = %#v", offered)
 	}
 	serverNow, err := effectsgateway.ServerNow(page.Header, page.ReceivedAt, time.Now())
@@ -444,7 +445,7 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("complete: %v", err)
 	}
-	if completed.State != fleet.DispatchSucceeded ||
+	if completed.State != dispatchapi.DispatchSucceeded ||
 		!jsonEqual(t, completed.Output, `{"status":200,"idempotency":"key","reference":"ch_42"}`) {
 		t.Fatalf("completed = %#v (%s)", completed, completed.Output)
 	}
@@ -550,7 +551,7 @@ func TestEffectsGatewayClientRecordsAFailureInOneRequest(t *testing.T) {
 	if err != nil {
 		t.Fatalf("a recorded failure was reported as an error: %v", err)
 	}
-	if failed.State != fleet.DispatchFailed || failed.ErrorCode != "target_rejected_422" ||
+	if failed.State != dispatchapi.DispatchFailed || failed.ErrorCode != "target_rejected_422" ||
 		!failed.EffectPossible {
 		t.Fatalf("failed = %#v", failed)
 	}
@@ -629,7 +630,7 @@ func TestEffectsGatewayClientSurfacesAnOutcomeRecordedOtherwise(t *testing.T) {
 	if effectsgateway.DispatchKind(err) != effectsgateway.DispatchRecordedOtherwise {
 		t.Fatalf("complete = %#v, %v; want the terminal record and recorded_otherwise", recorded, err)
 	}
-	if recorded.State != fleet.DispatchFailed || recorded.ErrorCode != "invalid_executor_output" {
+	if recorded.State != dispatchapi.DispatchFailed || recorded.ErrorCode != "invalid_executor_output" {
 		t.Fatalf("recorded = %#v", recorded)
 	}
 }
@@ -643,4 +644,14 @@ func jsonEqual(t *testing.T, got json.RawMessage, want string) bool {
 	ga, _ := json.Marshal(a)
 	gb, _ := json.Marshal(b)
 	return bytes.Equal(ga, gb)
+}
+
+// fleetEffectsOf converts a route's declared effects into the fleet's type,
+// for registering the descriptor the gateway will resolve.
+func fleetEffectsOf(effects dispatchapi.Effects) fleet.Effects {
+	converted := make(fleet.Effects, len(effects))
+	for i, effect := range effects {
+		converted[i] = fleet.Effect(effect)
+	}
+	return converted
 }

@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 func (h *workerHarness) runResult() error {
@@ -93,7 +93,7 @@ func TestADrainThatRunsOutWritesWhatMayHaveHappened(t *testing.T) {
 	}
 	entries := h.log.Entries()
 	if len(entries) != 1 || string(entries[0].ActionID) != "a1" || entries[0].Fence != 1 ||
-		entries[0].Outcome != fleet.AmbiguityOutcomeUnknown || entries[0].RouteAction != "charge" ||
+		entries[0].Outcome != dispatchapi.AmbiguityOutcomeUnknown || entries[0].RouteAction != "charge" ||
 		string(entries[0].CorrelationID) != "trace-a1" {
 		t.Fatalf("entries = %+v", entries)
 	}
@@ -291,7 +291,7 @@ func TestTheWorstShutdownPathFitsTheDrainBound(t *testing.T) {
 	}
 	entries := h.log.Entries()
 	if len(entries) != 1 || entries[0].DispatchError != DispatchIndeterminate ||
-		entries[0].Outcome != fleet.AmbiguityOutcomeUnknown {
+		entries[0].Outcome != dispatchapi.AmbiguityOutcomeUnknown {
 		t.Fatalf("entries = %+v, want the fallback report's own entry", entries)
 	}
 	if reports := h.explorer.reportTimes(); len(reports) != FallbackReportAttempts {
@@ -514,7 +514,7 @@ func TestAHardStopAccountsForEveryRequest(t *testing.T) {
 	}
 	entries := h.log.Entries()
 	if len(entries) != 1 || string(entries[0].ActionID) != "a1" ||
-		entries[0].Outcome != fleet.AmbiguityOutcomeUnknown {
+		entries[0].Outcome != dispatchapi.AmbiguityOutcomeUnknown {
 		t.Fatalf("entries = %+v", entries)
 	}
 	// a2 was claimed and never worked: nothing past its claim is logged.
@@ -646,7 +646,7 @@ func unwritableReport(t *testing.T) (h *workerHarness, heal func()) {
 	h.release()
 	eventually(t, "the failed write", func() bool {
 		for _, line := range h.logs.lines() {
-			if line["event"] == string(EventDispatch) && line["ambiguity"] == string(fleet.AmbiguityEffectObserved) {
+			if line["event"] == string(EventDispatch) && line["ambiguity"] == string(dispatchapi.AmbiguityEffectObserved) {
 				return true
 			}
 		}
@@ -670,7 +670,7 @@ func TestTheDrainRetriesAReportItCouldNotWrite(t *testing.T) {
 	}
 	entries := h.log.Entries()
 	if len(entries) != 1 || string(entries[0].ActionID) != "a1" ||
-		entries[0].Outcome != fleet.AmbiguityEffectObserved || entries[0].Reference != "ch_1" {
+		entries[0].Outcome != dispatchapi.AmbiguityEffectObserved || entries[0].Reference != "ch_1" {
 		t.Fatalf("entries = %+v", entries)
 	}
 	if n := h.worker.InFlight(); n != 0 {

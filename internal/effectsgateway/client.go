@@ -18,28 +18,37 @@
 package effectsgateway
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"reflect"
 	"strings"
 	"time"
 
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/executorref"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
-	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
 // The dispatch client speaks the routes that exist on main and no others:
 // pull, claim, extend (#430), complete, the lost-fence ambiguity route (#484),
 // the gateway's own descriptor resolve, and attestation presentation (#528).
+//
+// It is a thin adapter over pkg/dispatch/api (#446), which holds the wire
+// types and the rules for a lost answer: a claim that may have committed is a
+// re-pull, an extension binds on the fence alone, a completion binds on the
+// claim fence and resends until a record or an honest "indeterminate" settles
+// it, and an ambiguity report that was refused is unrecorded. What stays here
+// is the gateway's own: its types and error identities (DispatchError and its
+// kinds, with the failure class of a transport error), the closed vocabulary
+// of error codes it may report (ValidErrorCode), the poll correlation it
+// mints, the executor-ref binding of Resolve and PresentAttestation, and
+// attestation presentation itself. Golden fixtures in
+// pkg/dispatch/api/testdata/wire pin both the bytes it sends and what it makes
+// of every answer, as captured before the move.
 //
 // It has no heartbeat, and that is deliberate (#391): a worker cannot
 // truthfully assert a descriptor's liveness, so the gateway never heartbeats
@@ -51,16 +60,16 @@ import (
 // carries Shoal-Correlation-ID taken from the action record's correlation_id,
 // so the worker's transitions thread the trace the enqueuer started. Pull,
 // which is about no one action, carries a correlation the client mints per
-// poll. Every value is checked with interaction.ValidateCorrelationID before
-// it is sent, the rule the explorer's authenticators apply to the header.
+// poll. Every value is checked with the explorer's rule (CheckCorrelationID)
+// before it is sent.
 //
 // Wire rules, taken from pkg/explorer/webapi/fleet_dispatch.go and checked
 // against the real handler in this package's tests:
 //
 //   - every byte field is unpadded base64url;
 //   - a lease is an integer number of nanoseconds, positive and at most
-//     fleet.MaxActionClaimTTL — the service refuses a longer one rather than
-//     clamping it;
+//     dispatchapi.MaxActionClaimTTL — the service refuses a longer one rather
+//     than clamping it;
 //   - every request carries a context with a request ID, a non-empty reason
 //     code and a deadline in the future, in UTC;
 //   - 404 and 409 are refusals, and 503 with Shoal-Commit-Outcome:
@@ -70,15 +79,6 @@ import (
 //     as a clean refusal either (see Complete and Claim).
 
 const (
-	// commitOutcomeHeader and commitOutcomeIndeterminate mirror
-	// webapi.CommitOutcomeHeader; restated rather than imported so this
-	// package does not depend on the server's transport package.
-	commitOutcomeHeader        = "Shoal-Commit-Outcome"
-	commitOutcomeIndeterminate = "indeterminate"
-	// maxDispatchResponseBytes bounds what the client will read from the
-	// explorer. A claim response carries the input (at most
-	// fleet.MaxActionPayloadBytes) and a pull page carries no inputs.
-	maxDispatchResponseBytes = 8 << 20
 	// ClaimNonceBytes is the CSPRNG part of a claim ID.
 	ClaimNonceBytes = 16
 	// claimIDPrefix versions the claim ID layout.
@@ -86,23 +86,24 @@ const (
 )
 
 // DispatchErrorKind is a dispatch failure reduced to what the worker does
-// about it. Closed, and loggable.
+// about it. Closed, and loggable. Every kind the public client returns has
+// the same spelling here (dispatchapi.ErrorKind).
 type DispatchErrorKind string
 
 const (
 	// DispatchNotFound (404): on claim, re-pull — the loser of a claim race
 	// is told not-found deliberately, to avoid an existence oracle, so it
 	// never means "this action is gone".
-	DispatchNotFound DispatchErrorKind = "not_found"
+	DispatchNotFound = DispatchErrorKind(dispatchapi.KindNotFound)
 	// DispatchConflict (409): the version or claim moved.
-	DispatchConflict DispatchErrorKind = "conflict"
+	DispatchConflict = DispatchErrorKind(dispatchapi.KindConflict)
 	// DispatchIndeterminate (503 + Shoal-Commit-Outcome: indeterminate): the
 	// mutation may have committed. Claim reports it as DispatchRepull.
-	DispatchIndeterminate DispatchErrorKind = "indeterminate"
+	DispatchIndeterminate = DispatchErrorKind(dispatchapi.KindIndeterminate)
 	// DispatchUnavailable (503 without the header). Claim and Complete never
 	// return it for a 503 of their own: until #505 a bare 503 from either may
 	// hide a committed write (see DispatchRepull and Complete).
-	DispatchUnavailable DispatchErrorKind = "unavailable"
+	DispatchUnavailable = DispatchErrorKind(dispatchapi.KindUnavailable)
 	// DispatchRepull (Claim only: a transport error, any 503, a 502 or a
 	// 504): the claim may or may not have been taken. The caller holds no
 	// claim — it must not execute — and re-pulls. If the claim did commit,
@@ -110,31 +111,31 @@ const (
 	// completion against it is refused by the claim check, so acting as
 	// though nothing is held is safe. The original error is its cause. The
 	// bare-503 case is interim until #505; see Claim.
-	DispatchRepull       DispatchErrorKind = "repull"
-	DispatchInvalid      DispatchErrorKind = "invalid_argument"
-	DispatchUnauthorized DispatchErrorKind = "unauthorized"
-	DispatchDeadline     DispatchErrorKind = "deadline"
-	DispatchStatus       DispatchErrorKind = "unexpected_status"
-	DispatchTransport    DispatchErrorKind = "transport"
-	DispatchProtocol     DispatchErrorKind = "protocol"
-	DispatchRefusedLocal DispatchErrorKind = "refused_locally"
-	DispatchNoCredential DispatchErrorKind = "no_credential"
+	DispatchRepull       = DispatchErrorKind(dispatchapi.KindRepull)
+	DispatchInvalid      = DispatchErrorKind(dispatchapi.KindInvalid)
+	DispatchUnauthorized = DispatchErrorKind(dispatchapi.KindUnauthorized)
+	DispatchDeadline     = DispatchErrorKind(dispatchapi.KindDeadline)
+	DispatchStatus       = DispatchErrorKind(dispatchapi.KindStatus)
+	DispatchTransport    = DispatchErrorKind(dispatchapi.KindTransport)
+	DispatchProtocol     = DispatchErrorKind(dispatchapi.KindProtocol)
+	DispatchRefusedLocal = DispatchErrorKind(dispatchapi.KindRefused)
+	DispatchNoCredential = DispatchErrorKind(dispatchapi.KindNoCredential)
 	// DispatchRecordedOtherwise: the record is terminal under this claim, in
 	// a different state from the one reported — for example a success whose
 	// output the explorer refused and recorded as failed. Final; do not
 	// report again.
-	DispatchRecordedOtherwise DispatchErrorKind = "recorded_otherwise"
+	DispatchRecordedOtherwise = DispatchErrorKind(dispatchapi.KindRecordedOtherwise)
 	// DispatchFenceLost (Extend only, a definite 404 or 409): the lease was
 	// not renewed and nothing was written. The claim, if this worker still
 	// holds it, runs to the lease end it already had and no further. See
 	// Extend for what each status covers.
-	DispatchFenceLost DispatchErrorKind = "fence_lost"
+	DispatchFenceLost = DispatchErrorKind(dispatchapi.KindFenceLost)
 	// DispatchAmbiguityUnrecorded (ReportAmbiguity only): the explorer
 	// definitely refused the report, or answered not-found, so nothing about
 	// this attempt is on the record. It is NOT "nothing to report" (#514):
 	// the caller keeps the report in its local unrecorded log for operator
 	// reconciliation. errors.Is(err, ErrAmbiguityUnrecorded) holds for it.
-	DispatchAmbiguityUnrecorded DispatchErrorKind = "ambiguity_unrecorded"
+	DispatchAmbiguityUnrecorded = DispatchErrorKind(dispatchapi.KindAmbiguityUnrecorded)
 	// DispatchAttestationRefused (PresentAttestation only): the explorer's
 	// one opaque verification refusal.
 	DispatchAttestationRefused DispatchErrorKind = "attestation_refused"
@@ -218,6 +219,44 @@ func refusedLocally(op, reason string) error {
 	return &DispatchError{Op: op, Kind: DispatchRefusedLocal, reason: reason}
 }
 
+// dispatchError maps a public client error onto this package's identity:
+// the same kind, status, code and reason, the failure class of a transport
+// error, and the cause chain the gateway always had. Only the kinds that
+// carried a cause before the move carry one now: a transport error its
+// transport failure, and a re-pull, a lost fence, an unrecorded report or an
+// unconfirmed resend the answer that led to it. Protocol and credential
+// errors carry none, as before.
+func dispatchError(err error) error {
+	var apiErr *dispatchapi.Error
+	if err == nil || !errors.As(err, &apiErr) {
+		return err
+	}
+	return fromAPIError(apiErr)
+}
+
+func fromAPIError(apiErr *dispatchapi.Error) *DispatchError {
+	result := &DispatchError{
+		Op: apiErr.Op, Kind: DispatchErrorKind(apiErr.Kind),
+		Status: apiErr.Status, Code: apiErr.Code, reason: apiErr.Reason,
+	}
+	switch apiErr.Kind {
+	case dispatchapi.KindTransport:
+		result.cause = apiErr.Err
+		result.Failure = ClassifyFailure(apiErr.Err)
+	case dispatchapi.KindRepull, dispatchapi.KindFenceLost,
+		dispatchapi.KindAmbiguityUnrecorded, dispatchapi.KindIndeterminate:
+		var inner *dispatchapi.Error
+		if errors.As(apiErr.Err, &inner) {
+			converted := fromAPIError(inner)
+			result.cause = converted
+			if apiErr.Kind == dispatchapi.KindRepull {
+				result.Failure = converted.Failure
+			}
+		}
+	}
+	return result
+}
+
 // RequestContext is the context every dispatch call carries.
 //
 // CorrelationID is also sent as the Shoal-Correlation-ID header. On claim,
@@ -232,42 +271,11 @@ type RequestContext struct {
 	Deadline      time.Time
 }
 
-type contextWire struct {
-	RequestID     string    `json:"request_id"`
-	CorrelationID string    `json:"correlation_id,omitempty"`
-	ReasonCode    string    `json:"reason_code"`
-	ReasonDetail  string    `json:"reason_detail,omitempty"`
-	Deadline      time.Time `json:"deadline"`
-}
-
-func (r RequestContext) wire(op string, now time.Time) (contextWire, error) {
-	if len(r.RequestID) == 0 || len(r.RequestID) > fleet.MaxActionIDBytes {
-		return contextWire{}, refusedLocally(op, "request ID is outside its bound")
+func (r RequestContext) api() dispatchapi.Context {
+	return dispatchapi.Context{
+		RequestID: r.RequestID, CorrelationID: r.CorrelationID,
+		ReasonCode: r.ReasonCode, ReasonDetail: r.ReasonDetail, Deadline: r.Deadline,
 	}
-	// The explorer bounds a correlation at shoal.MaxIDBytes, not at the
-	// action-ID bound; see CheckCorrelationID.
-	if len(r.CorrelationID) > shoal.MaxIDBytes {
-		return contextWire{}, refusedLocally(op, "correlation ID is outside its bound")
-	}
-	if r.ReasonCode == "" || len(r.ReasonCode) > fleet.MaxReasonCodeBytes ||
-		strings.TrimSpace(r.ReasonCode) != r.ReasonCode {
-		return contextWire{}, refusedLocally(op, "reason code is required, at most "+
-			fmt.Sprint(fleet.MaxReasonCodeBytes)+" bytes, with no surrounding whitespace")
-	}
-	if r.Deadline.IsZero() || !now.Before(r.Deadline) {
-		return contextWire{}, refusedLocally(op, "request deadline must be in the future")
-	}
-	wire := contextWire{
-		RequestID:    base64.RawURLEncoding.EncodeToString(r.RequestID),
-		ReasonCode:   r.ReasonCode,
-		ReasonDetail: r.ReasonDetail,
-		// The explorer refuses a deadline whose location is not UTC.
-		Deadline: r.Deadline.UTC(),
-	}
-	if len(r.CorrelationID) > 0 {
-		wire.CorrelationID = base64.RawURLEncoding.EncodeToString(r.CorrelationID)
-	}
-	return wire, nil
 }
 
 // NewRequestID returns 16 fresh CSPRNG bytes.
@@ -292,7 +300,7 @@ func NewRequestID(random io.Reader) ([]byte, error) {
 // not an identity: Status and lapsed-claim Pull expose it to co-principals,
 // and the worker reports under the principal that claimed, not under this.
 func NewClaimID(pod string, random io.Reader) ([]byte, ClaimNonce, error) {
-	maxPod := fleet.MaxActionIDBytes - len(claimIDPrefix) - 1 - ClaimNonceBytes
+	maxPod := dispatchapi.MaxActionIDBytes - len(claimIDPrefix) - 1 - ClaimNonceBytes
 	if pod == "" || len(pod) > maxPod {
 		return nil, ClaimNonce{}, fmt.Errorf("pod name must be 1 to %d bytes", maxPod)
 	}
@@ -324,7 +332,7 @@ func NewClaimID(pod string, random io.Reader) ([]byte, ClaimNonce, error) {
 type Action struct {
 	ID              []byte
 	Version         uint64
-	State           fleet.DispatchState
+	State           dispatchapi.DispatchState
 	AgentID         []byte
 	AgentGeneration int64
 	Capability      string
@@ -343,7 +351,7 @@ type Action struct {
 	// Effected is the volume a failed record says escaped before the failure
 	// (#427), zero when none was reported. Read back on a resend, never
 	// re-derived: the field is write-once and compared on replay.
-	Effected fleet.EffectedVolume
+	Effected dispatchapi.Effected
 	// CorrelationID is the record's correlation_id: the trace the enqueuer
 	// started, which every request the worker makes about this action
 	// carries (#527).
@@ -355,12 +363,7 @@ type Action struct {
 
 // RecordedAmbiguity is one ambiguity report as the record holds it. The
 // reporter's identity and time are the explorer's and are not read.
-type RecordedAmbiguity struct {
-	ClaimFence uint64
-	Outcome    fleet.AmbiguityOutcome
-	Target     string
-	Reference  string
-}
+type RecordedAmbiguity = dispatchapi.RecordedAmbiguity
 
 // Correlate returns request carrying this action's correlation ID, which is
 // what every claim, extend, complete and ambiguity request about it sends.
@@ -376,94 +379,26 @@ func (a Action) ClaimTimes() ClaimTimes {
 	}
 }
 
-type actionWire struct {
-	ID              string              `json:"id"`
-	Version         uint64              `json:"version"`
-	State           fleet.DispatchState `json:"state"`
-	AgentID         string              `json:"agent_id"`
-	AgentGeneration int64               `json:"agent_generation"`
-	Capability      string              `json:"capability"`
-	Action          string              `json:"action"`
-	Input           json.RawMessage     `json:"input,omitempty"`
-	Output          json.RawMessage     `json:"output,omitempty"`
-	ErrorCode       string              `json:"error_code,omitempty"`
-	Deadline        time.Time           `json:"deadline"`
-	CreatedAt       time.Time           `json:"created_at"`
-	UpdatedAt       time.Time           `json:"updated_at"`
-	ExecutorKey     string              `json:"executor_key,omitempty"`
-	ClaimID         string              `json:"claim_id,omitempty"`
-	ClaimFence      uint64              `json:"claim_fence,omitempty"`
-	ClaimLeaseUntil time.Time           `json:"claim_lease_until,omitempty"`
-	EffectPossible  bool                `json:"effect_possible"`
-	Effected        *effectedWire       `json:"effected,omitempty"`
-	CorrelationID   string              `json:"correlation_id,omitempty"`
-	// AmbiguityReports is read for the four fields a report is matched on.
-	AmbiguityReports []ambiguityRecordWire `json:"ambiguity_reports,omitempty"`
-}
-
-type ambiguityRecordWire struct {
-	ClaimFence uint64 `json:"claim_fence"`
-	Outcome    string `json:"outcome"`
-	Target     string `json:"target,omitempty"`
-	Reference  string `json:"reference,omitempty"`
-}
-
-// effectedWire is the /complete route's volume object, accepted on a failed
-// completion and returned on the record.
-type effectedWire struct {
-	Bytes  int64 `json:"bytes"`
-	Chunks int64 `json:"chunks,omitempty"`
-}
-
-func (w actionWire) decode() (Action, error) {
-	id, err := base64.RawURLEncoding.DecodeString(w.ID)
-	if err != nil || len(id) == 0 {
-		return Action{}, errors.New("action ID is not unpadded base64url")
-	}
-	agent, err := base64.RawURLEncoding.DecodeString(w.AgentID)
-	if err != nil {
-		return Action{}, errors.New("agent ID is not unpadded base64url")
-	}
-	claimID, err := base64.RawURLEncoding.DecodeString(w.ClaimID)
-	if err != nil {
-		return Action{}, errors.New("claim ID is not unpadded base64url")
-	}
-	correlation, err := base64.RawURLEncoding.DecodeString(w.CorrelationID)
-	if err != nil {
-		return Action{}, errors.New("correlation ID is not unpadded base64url")
-	}
+// actionFrom is the gateway's view of a decoded record. The public client
+// has already refused a malformed executor key, so the key here is either
+// absent or exactly ExecutorKeyBytes.
+func actionFrom(record dispatchapi.Record) Action {
 	action := Action{
-		ID: id, Version: w.Version, State: w.State, AgentID: agent,
-		AgentGeneration: w.AgentGeneration, Capability: w.Capability,
-		Action: w.Action, Input: w.Input, Output: w.Output,
-		ErrorCode: w.ErrorCode, Deadline: w.Deadline, CreatedAt: w.CreatedAt,
-		UpdatedAt: w.UpdatedAt, ClaimID: claimID, ClaimFence: w.ClaimFence,
-		ClaimLeaseUntil: w.ClaimLeaseUntil, EffectPossible: w.EffectPossible,
+		ID: record.ID, Version: record.Version, State: record.State,
+		AgentID: record.AgentID, AgentGeneration: record.AgentGeneration,
+		Capability: record.Capability, Action: record.Action,
+		Input: record.Input, Output: record.Output, ErrorCode: record.ErrorCode,
+		Deadline: record.Deadline, CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
+		ClaimID: record.ClaimID, ClaimFence: record.ClaimFence,
+		ClaimLeaseUntil: record.ClaimLeaseUntil, EffectPossible: record.EffectPossible,
+		Effected: record.Effected, CorrelationID: record.CorrelationID,
+		AmbiguityReports: record.AmbiguityReports,
 	}
-	if len(correlation) > 0 {
-		action.CorrelationID = correlation
+	if len(record.ExecutorKey) == ExecutorKeyBytes {
+		copy(action.ExecutorKey.bytes[:], record.ExecutorKey)
+		action.ExecutorKey.set = true
 	}
-	for _, report := range w.AmbiguityReports {
-		action.AmbiguityReports = append(action.AmbiguityReports, RecordedAmbiguity{
-			ClaimFence: report.ClaimFence, Outcome: fleet.AmbiguityOutcome(report.Outcome),
-			Target: report.Target, Reference: report.Reference,
-		})
-	}
-	if w.Effected != nil {
-		action.Effected = fleet.EffectedVolume{
-			Bytes: w.Effected.Bytes, Chunks: w.Effected.Chunks,
-		}
-	}
-	if w.ExecutorKey != "" {
-		// The HTTP wire spells the key raw-URL; ParseExecutorKey also accepts
-		// the MCP spelling, and either way the key is held as bytes.
-		key, err := ParseExecutorKey(w.ExecutorKey)
-		if err != nil {
-			return Action{}, fmt.Errorf("executor key: %w", err)
-		}
-		action.ExecutorKey = key
-	}
-	return action, nil
+	return action
 }
 
 // Descriptor is the part of a resolved descriptor the startup check reads.
@@ -471,7 +406,7 @@ type Descriptor struct {
 	ID           []byte
 	Generation   int64
 	ExecutorRef  string
-	Capabilities []fleet.Capability
+	Capabilities []dispatchapi.Capability
 }
 
 // Actions returns the named capability's actions for VerifyDescriptor.
@@ -505,6 +440,7 @@ type PullPage struct {
 
 // DispatchClient calls the explorer's fleet dispatch routes.
 type DispatchClient struct {
+	api        *dispatchapi.Client
 	base       *url.URL
 	http       *http.Client
 	credential func() (string, error)
@@ -531,7 +467,16 @@ func NewDispatchClient(
 	copied := *base
 	copied.Path = strings.TrimSuffix(copied.Path, "/")
 	copied.RawPath = ""
-	return &DispatchClient{base: &copied, http: client, credential: credential, clock: clock}, nil
+	apiClient, err := dispatchapi.NewClient(dispatchapi.Config{
+		BaseURL: copied.String(), HTTPClient: client,
+		Token:     func(context.Context) (string, error) { return credential() },
+		UserAgent: UserAgent, Clock: clock, ErrorCodes: ValidErrorCode,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("dispatch client: %w", err)
+	}
+	return &DispatchClient{api: apiClient, base: &copied, http: client,
+		credential: credential, clock: clock}, nil
 }
 
 // BindExecutor returns a copy of the client bound to the executor ref its
@@ -557,15 +502,6 @@ func (c *DispatchClient) Pull(
 	ctx context.Context, request RequestContext, after string, limit int,
 ) (PullPage, error) {
 	const op = "pull"
-	if limit <= 0 || limit > fleet.MaxDispatchListResults {
-		return PullPage{}, refusedLocally(op, fmt.Sprintf(
-			"limit must be 1 to %d", fleet.MaxDispatchListResults))
-	}
-	if after != "" {
-		if _, err := base64.RawURLEncoding.DecodeString(after); err != nil {
-			return PullPage{}, refusedLocally(op, "cursor is not unpadded base64url")
-		}
-	}
 	// A poll is about no one action, so it starts its own trace: minted here,
 	// fresh per poll, unless the caller threads one.
 	if len(request.CorrelationID) == 0 {
@@ -575,40 +511,19 @@ func (c *DispatchClient) Pull(
 		}
 		request.CorrelationID = minted
 	}
-	correlation, err := correlationHeader(op, request.CorrelationID)
+	result, err := c.api.Pull(ctx, request.api(), after, limit)
 	if err != nil {
-		return PullPage{}, err
-	}
-	contextValue, err := request.wire(op, c.clock())
-	if err != nil {
-		return PullPage{}, err
-	}
-	body := struct {
-		Context contextWire `json:"context"`
-		After   string      `json:"after,omitempty"`
-		Limit   int         `json:"limit"`
-	}{Context: contextValue, After: after, Limit: limit}
-	var response struct {
-		Actions []actionWire `json:"actions"`
-		Next    string       `json:"next,omitempty"`
-	}
-	header, receivedAt, err := c.post(ctx, op, "/api/v1/fleet/actions/pull", correlation, body, &response)
-	if err != nil {
-		return PullPage{}, err
+		return PullPage{}, dispatchError(err)
 	}
 	page := PullPage{
-		Actions: make([]Action, 0, len(response.Actions)), Next: response.Next,
-		Header: http.Header{}, ReceivedAt: receivedAt,
+		Actions: make([]Action, 0, len(result.Records)), Next: result.Next,
+		Header: http.Header{}, ReceivedAt: result.ReceivedAt,
 	}
-	if date := header.Get("Date"); date != "" {
-		page.Header.Set("Date", date)
+	if result.Date != "" {
+		page.Header.Set("Date", result.Date)
 	}
-	for _, wire := range response.Actions {
-		action, err := wire.decode()
-		if err != nil {
-			return PullPage{}, &DispatchError{Op: op, Kind: DispatchProtocol, reason: err.Error()}
-		}
-		page.Actions = append(page.Actions, action)
+	for _, record := range result.Records {
+		page.Actions = append(page.Actions, actionFrom(record))
 	}
 	return page, nil
 }
@@ -625,75 +540,29 @@ type ClaimRequest struct {
 // carries the input and the executor key. Its ClaimFence is what every later
 // Extend, Complete and ReportAmbiguity for this claim sends. The request's
 // correlation is the pulled record's (Action.Correlate).
+//
+// Every answer after which the claim may have committed — a transport error,
+// any 503, a 502 or 504 — is DispatchRepull, never a definite failure, and
+// the caller contract is unchanged: Claim returns no Action, so the caller
+// holds no claim and executes nothing. If the claim did commit, it lapses at
+// its lease and reappears on the pull page; a completion against a claim the
+// worker does not hold is refused. The original error, with its kind, is kept
+// as the cause.
+//
+// The bare-503 case is interim until #505: today ErrActionCommitted (the
+// claim was durably written and only its publication failed) reaches the wire
+// as a bare 503, indistinguishable from a clean refusal. After #505 a
+// header-less 503 is a clean pre-write refusal and narrows back to
+// DispatchUnavailable; the other cases stay.
 func (c *DispatchClient) Claim(ctx context.Context, actionID []byte, request ClaimRequest) (Action, error) {
-	const op = "claim"
-	if err := checkActionID(op, actionID); err != nil {
-		return Action{}, err
-	}
-	correlation, err := correlationHeader(op, request.Context.CorrelationID)
+	record, err := c.api.Claim(ctx, actionID, dispatchapi.Claim{
+		Context: request.Context.api(), ExpectedVersion: request.ExpectedVersion,
+		ClaimID: request.ClaimID, Lease: request.Lease,
+	})
 	if err != nil {
-		return Action{}, err
+		return Action{}, dispatchError(err)
 	}
-	if request.ExpectedVersion == 0 {
-		return Action{}, refusedLocally(op, "expected version is required")
-	}
-	if len(request.ClaimID) == 0 || len(request.ClaimID) > fleet.MaxActionIDBytes {
-		return Action{}, refusedLocally(op, "claim ID is outside its bound")
-	}
-	if request.Lease <= 0 || request.Lease > fleet.MaxActionClaimTTL {
-		return Action{}, refusedLocally(op, "lease must be positive and at most "+
-			fleet.MaxActionClaimTTL.String()+"; the explorer refuses a longer one "+
-			"rather than shortening it")
-	}
-	contextValue, err := request.Context.wire(op, c.clock())
-	if err != nil {
-		return Action{}, err
-	}
-	body := struct {
-		Context         contextWire   `json:"context"`
-		ExpectedVersion uint64        `json:"expected_version"`
-		ClaimID         string        `json:"claim_id"`
-		Lease           time.Duration `json:"lease"`
-	}{
-		Context: contextValue, ExpectedVersion: request.ExpectedVersion,
-		ClaimID: base64.RawURLEncoding.EncodeToString(request.ClaimID),
-		Lease:   request.Lease,
-	}
-	var response actionWire
-	if _, _, err := c.post(ctx, op, actionPath(actionID, "claim"), correlation, body, &response); err != nil {
-		// Every answer after which the claim may have committed — a
-		// transport error, any 503, a 502 or 504 (answerLost) — is a
-		// re-pull signal, never a definite failure, and the caller contract
-		// is unchanged: Claim returns no Action, so the caller holds no claim
-		// and executes nothing. If the claim did commit, it lapses at its
-		// lease and reappears on the pull page; a completion against a claim
-		// the worker does not hold is refused. The original error, with its
-		// kind, is kept as the cause.
-		//
-		// The bare-503 case is interim until #505: today ErrActionCommitted
-		// (the claim was durably written and only its publication failed)
-		// reaches the wire as a bare 503, indistinguishable from a clean
-		// refusal. After #505 a header-less 503 is a clean pre-write refusal
-		// and narrows back to DispatchUnavailable; the other cases stay.
-		if answerLost(err) {
-			var dispatchErr *DispatchError
-			errors.As(err, &dispatchErr)
-			return Action{}, &DispatchError{Op: op, Kind: DispatchRepull,
-				Status: dispatchErr.Status, Code: dispatchErr.Code,
-				Failure: dispatchErr.Failure, cause: err}
-		}
-		return Action{}, err
-	}
-	action, err := response.decode()
-	if err != nil {
-		return Action{}, &DispatchError{Op: op, Kind: DispatchProtocol, reason: err.Error()}
-	}
-	if !bytes.Equal(action.ID, actionID) || !bytes.Equal(action.ClaimID, request.ClaimID) ||
-		action.State != fleet.DispatchClaimed || action.ClaimFence == 0 {
-		return Action{}, &DispatchError{Op: op, Kind: DispatchProtocol,
-			reason: "claim response does not describe the requested claim"}
-	}
-	return action, nil
+	return actionFrom(record), nil
 }
 
 // Completion is a terminal report. Exactly one of Output and Failed+ErrorCode.
@@ -710,7 +579,9 @@ type Completion struct {
 	ClaimFence uint64
 	Output     json.RawMessage
 	Failed     bool
-	ErrorCode  string
+	// ErrorCode is in the closed vocabulary (ValidErrorCode); the client
+	// refuses any other before sending.
+	ErrorCode string
 	// Effected is how much of an irreversible egress happened before a
 	// failure (#427): an upper bound on bytes handed to the transport, "at
 	// most N bytes may have reached the target", never a receipt. Zero when
@@ -723,277 +594,45 @@ type Completion struct {
 	// the resend below carries the identical value: the record is write-once
 	// and the replay branch compares it, so a different number is a different
 	// report.
-	Effected fleet.EffectedVolume
+	Effected dispatchapi.Effected
 }
 
 // Complete reports the outcome under the claim. Evidence is never sent: the
 // gateway is the first executor that is not trusted, and an evidence anchor is
 // a claim about the corpus it never read.
 //
-// A lost response is recovered by resending the identical body once: on a
-// transport error, any 503, a 502 or 504 (a proxy can answer either after
-// the explorer processed the request), or a 2xx whose body does not decode or
-// does not describe this report's terminal record (the route answered
-// success, so something committed), the report may have committed, and the
-// completion route's replay branch answers a resend with the committed record.
-// The resend on a genuinely lost or unreadable answer is permanent.
+// The resend rules are dispatchapi.Client.Complete's, and they are the ones
+// this gateway always applied:
 //
-// Every 503 counts, header or not — interim until #505. ErrExecutionAmbiguous
-// and ErrActionCommitted (a durable write whose publication failed) arrive
-// today as bare 503s without Shoal-Commit-Outcome: indeterminate, so a bare
-// 503 may hide a committed write. ErrRecordingUnavailable is also a bare 503;
-// on the dispatch surface every audit precedes its store write, so it is in
-// fact a clean refusal, but nothing on the wire distinguishes it and the
-// client never reads error-message text to try. (The "committed" in
-// explorer.MarkCommittedInteraction refers to an interaction record, not to
-// the action, and is not part of this.) Once #505 marks the genuinely
-// indeterminate sentinels, a header-less 503 means a clean refusal before any
-// write, and the trigger narrows back to the header; the resend itself stays.
-//
-// After a possibly-committed first answer, Complete returns a record or
-// DispatchIndeterminate and nothing else. It never returns the first
-// attempt's status — that status describes a request whose outcome the resend
-// was sent to learn — and it never returns a refusal from the resend as
-// definite either:
-//
-//   - a resend answered by a transport error, any 503, or a 502 or 504 is
+//   - a transport error, any 503 (interim until #505), a 502 or 504, a 2xx
+//     that does not describe this report's terminal record, or a 400 or 500
+//     (the #492 shape of a server before #547) may have committed, and the
+//     identical body is resent;
+//   - after such an answer Complete returns a record or DispatchIndeterminate
+//     and nothing else: a resend answered by a lost answer is indeterminate,
+//     and a resend answered by anything else that is not a record — 409, 404
+//     (ErrExecutionAmbiguous may still be writing), a 400/500 or another
+//     status — is followed by one third read, and anything but a record is
 //     DispatchIndeterminate;
-//   - a resend answered by anything else that is not a record — 409, 404, a
-//     400/500, a 2xx that is not this report's record, or any other
-//     status — is followed by one third read
-//     through the replay branch, and anything but a record is
-//     DispatchIndeterminate.
-//
-// Why a 409 (or 404) is not definite here: ErrExecutionAmbiguous says the
-// service cannot tell whether its store write landed, so that write may still
-// be in flight when the resend reads the record. The resend can then see the
-// claim at the old version with its lease lapsed and answer ErrClaimLost
-// (409) for a report that commits a moment later. The third read gives such a
-// write the chance to surface through the replay branch; if it does not, the
-// honest answer is still "may have committed", never "refused". With no
-// possibly-committed answer before it, a first-attempt 409 or 404 is definite
-// and returned as it is.
-//
-// A resend answered 400 or 500 is not definite either (#492): the first
-// attempt may have committed, or — if the first answer was a genuine error
-// that committed nothing — the resend may have committed and had its record
-// discarded by a server before #547. So the record is read a third time
-// through the replay branch, and anything but a record is
-// DispatchIndeterminate.
-//
-// The 400 and 500 triggers exist for servers before #547 (#492). There, the
-// /complete handler discarded the committed record of a reported failure and
-// of a success whose output the explorer refuses (recorded as failed,
-// invalid_executor_output) and answered 500 and 400 — a durably written
-// terminal record, indistinguishable from a refusal that wrote nothing. A
-// current server answers both with 200 and the committed record, so they
-// complete in one request. A gateway cannot tell which server it talks to, so
-// the triggers stay; the cost is that a genuine 400 or 500 refusal from a
-// current server still takes the three-request path and ends
-// DispatchIndeterminate.
+//   - with no possibly-committed answer before it, a first-attempt 409 or 404
+//     is definite and returned as it is.
 //
 // When the committed record is terminal under this claim but differs from
-// what was reported — state, error code, or output — Complete returns it
-// together with DispatchRecordedOtherwise: the record is final, and the
-// caller must not report again. That check is permanent.
+// what was reported — state, error code, effected volume, or output compared
+// as JSON values — Complete returns it together with
+// DispatchRecordedOtherwise: the record is final, and the caller must not
+// report again.
 func (c *DispatchClient) Complete(ctx context.Context, actionID []byte, completion Completion) (Action, error) {
-	const op = "complete"
-	if err := checkActionID(op, actionID); err != nil {
-		return Action{}, err
+	record, err := c.api.Complete(ctx, actionID, dispatchapi.Completion{
+		Context: completion.Context.api(), ExpectedVersion: completion.ExpectedVersion,
+		ClaimID: completion.ClaimID, ClaimFence: completion.ClaimFence,
+		Output: completion.Output, Failed: completion.Failed,
+		ErrorCode: completion.ErrorCode, Effected: completion.Effected,
+	})
+	if err != nil && dispatchapi.Kind(err) != dispatchapi.KindRecordedOtherwise {
+		return Action{}, dispatchError(err)
 	}
-	if completion.ExpectedVersion == 0 {
-		return Action{}, refusedLocally(op, "expected version is required")
-	}
-	if len(completion.ClaimID) == 0 || len(completion.ClaimID) > fleet.MaxActionIDBytes {
-		return Action{}, refusedLocally(op, "claim ID is outside its bound")
-	}
-	if completion.ClaimFence == 0 {
-		return Action{}, refusedLocally(op, "claim fence is required: take it from the claim response")
-	}
-	correlation, err := correlationHeader(op, completion.Context.CorrelationID)
-	if err != nil {
-		return Action{}, err
-	}
-	switch {
-	case completion.Failed && len(completion.Output) != 0:
-		return Action{}, refusedLocally(op, "a failed completion carries no output")
-	case completion.Failed && !ValidErrorCode(completion.ErrorCode):
-		return Action{}, refusedLocally(op, "error code is not in the closed vocabulary")
-	case !completion.Failed && completion.ErrorCode != "":
-		return Action{}, refusedLocally(op, "a successful completion carries no error code")
-	case !completion.Failed && len(completion.Output) == 0:
-		return Action{}, refusedLocally(op, "a successful completion requires output")
-	case !completion.Failed && !completion.Effected.Zero():
-		return Action{}, refusedLocally(op, "a successful completion carries no effected volume")
-	case completion.Effected.Bytes < 0 || completion.Effected.Chunks < 0 ||
-		completion.Effected.Bytes > fleet.MaxEffectedBytes ||
-		completion.Effected.Chunks > fleet.MaxEffectedChunks:
-		return Action{}, refusedLocally(op, "effected volume is outside its bound")
-	case completion.Effected.Chunks > 0 && completion.Effected.Bytes == 0:
-		// The explorer would adjudicate this rather than refuse it, and the
-		// record would then say the volume is unknown when the worker meant
-		// "nothing": a chunk that left carried something.
-		return Action{}, refusedLocally(op, "effected volume counts chunks but no bytes")
-	}
-	contextValue, err := completion.Context.wire(op, c.clock())
-	if err != nil {
-		return Action{}, err
-	}
-	body := struct {
-		Context         contextWire     `json:"context"`
-		ExpectedVersion uint64          `json:"expected_version"`
-		ClaimID         string          `json:"claim_id"`
-		ClaimFence      uint64          `json:"claim_fence"`
-		Output          json.RawMessage `json:"output,omitempty"`
-		ErrorCode       string          `json:"error_code,omitempty"`
-		Failed          bool            `json:"failed,omitempty"`
-		Effected        *effectedWire   `json:"effected,omitempty"`
-	}{
-		Context: contextValue, ExpectedVersion: completion.ExpectedVersion,
-		ClaimID:    base64.RawURLEncoding.EncodeToString(completion.ClaimID),
-		ClaimFence: completion.ClaimFence,
-		Output:     completion.Output, ErrorCode: completion.ErrorCode,
-		Failed: completion.Failed,
-	}
-	if !completion.Effected.Zero() {
-		// Built once with the body, so every attempt below sends this value.
-		body.Effected = &effectedWire{
-			Bytes: completion.Effected.Bytes, Chunks: completion.Effected.Chunks,
-		}
-	}
-	path := actionPath(actionID, "complete")
-	unconfirmed := func(cause error) error {
-		return &DispatchError{Op: op, Kind: DispatchIndeterminate,
-			reason: "the report may have committed and the resend could not confirm it",
-			cause:  cause}
-	}
-	// attempt sends the body and returns this report's terminal record, or an
-	// error. A 2xx whose body does not decode or does not describe this
-	// claim's terminal record is DispatchProtocol, and only a 2xx produces
-	// that kind here.
-	attempt := func() (Action, error) {
-		var response actionWire
-		if _, _, err := c.post(ctx, op, path, correlation, body, &response); err != nil {
-			return Action{}, err
-		}
-		action, err := response.decode()
-		if err != nil {
-			return Action{}, &DispatchError{Op: op, Kind: DispatchProtocol, reason: err.Error()}
-		}
-		// With a fence the completion binds on the claim generation, not the
-		// version: the route answers 200 for a fresh terminal write, or a
-		// replay of one, under this fence and claim ID — at a version past
-		// the one this worker last saw, since an extension or an ambiguity
-		// report may have moved it in between. A different fence, a version
-		// not past ExpectedVersion, or a state that is not terminal is not
-		// this report's record.
-		if !bytes.Equal(action.ID, actionID) || !bytes.Equal(action.ClaimID, completion.ClaimID) ||
-			action.ClaimFence != completion.ClaimFence ||
-			action.Version <= completion.ExpectedVersion ||
-			(action.State != fleet.DispatchSucceeded && action.State != fleet.DispatchFailed) {
-			return Action{}, &DispatchError{Op: op, Kind: DispatchProtocol,
-				reason: "completion response does not describe this claim's terminal record"}
-		}
-		return action, nil
-	}
-	action, err := attempt()
-	if mayHaveCommitted(err) || hidesCommittedRecord(err) {
-		action, err = attempt()
-		switch {
-		case err == nil:
-		case answerLost(err):
-			return Action{}, unconfirmed(err)
-		default:
-			// Not a record, and not definite after a possibly-committed
-			// first answer. For a 400/500 (pre-#547 servers): whatever
-			// preceded it — a lost response, or a 400/500 that may have been
-			// a genuine error committing nothing — this resend may itself
-			// have committed the report and then had its record discarded.
-			// For a 409, 404 or any other refusal: the first attempt's write
-			// may still be in flight (ErrExecutionAmbiguous). For a 2xx that
-			// is not this report's record: the route answered success, so
-			// something committed. Read once more through the replay branch;
-			// only a record settles it.
-			if action, err = attempt(); err != nil {
-				return Action{}, unconfirmed(err)
-			}
-		}
-	}
-	if err != nil {
-		return Action{}, err
-	}
-	if !recordedAsReported(action, completion) {
-		return action, &DispatchError{Op: op, Kind: DispatchRecordedOtherwise}
-	}
-	return action, nil
-}
-
-// hidesCommittedRecord is the #492 shape: from a server before #547, a 400 or
-// 500 from /complete may be a terminal record that was written and then
-// discarded by the handler. A current server answers those outcomes 200 with
-// the record, but the gateway cannot tell the generations apart, so this
-// stays.
-func hidesCommittedRecord(err error) bool {
-	var dispatchErr *DispatchError
-	return errors.As(err, &dispatchErr) &&
-		(dispatchErr.Status == http.StatusInternalServerError ||
-			dispatchErr.Status == http.StatusBadRequest)
-}
-
-// mayHaveCommitted is an answer after which the report may have committed:
-// a lost answer (answerLost), or a 2xx whose body does not decode or does not
-// describe this report's terminal record. The route answered success, so a
-// write or a replay happened; the identical resend reads the record back
-// through the replay branch rather than returning DispatchProtocol alone.
-func mayHaveCommitted(err error) bool {
-	return answerLost(err) || DispatchKind(err) == DispatchProtocol
-}
-
-// answerLost is a request that may have been applied whose answer did not
-// arrive, or arrived without saying what happened:
-//
-//   - a transport failure, or an indeterminate 503 (permanent);
-//   - a 502 or 504, which a proxy in front of the explorer can answer after
-//     the explorer processed the request (permanent);
-//   - a bare 503 (DispatchUnavailable) — interim until #505: today
-//     ErrExecutionAmbiguous and ErrActionCommitted reach the wire as bare
-//     503s. After #505 a header-less 503 is a clean pre-write refusal and
-//     this case is dropped.
-func answerLost(err error) bool {
-	var dispatchErr *DispatchError
-	if !errors.As(err, &dispatchErr) {
-		return false
-	}
-	switch dispatchErr.Kind {
-	case DispatchTransport, DispatchIndeterminate, DispatchUnavailable:
-		return true
-	}
-	return dispatchErr.Status == http.StatusBadGateway ||
-		dispatchErr.Status == http.StatusGatewayTimeout
-}
-
-// recordedAsReported compares the committed record with the report: state,
-// error code, for a failure the effected volume, and for a success the output,
-// compared as JSON values because the explorer canonicalizes what it stores.
-//
-// The volume is read back from the record and compared, never assumed: a
-// record that kept a different number (or dropped it, as an adjudicated
-// invalid_executor_effected does) is recorded otherwise.
-func recordedAsReported(action Action, completion Completion) bool {
-	if completion.Failed {
-		return action.State == fleet.DispatchFailed &&
-			action.ErrorCode == completion.ErrorCode &&
-			action.Effected == completion.Effected
-	}
-	if action.State != fleet.DispatchSucceeded || action.ErrorCode != "" {
-		return false
-	}
-	var recorded, reported any
-	if json.Unmarshal(action.Output, &recorded) != nil ||
-		json.Unmarshal(completion.Output, &reported) != nil {
-		return false
-	}
-	return reflect.DeepEqual(recorded, reported)
+	return actionFrom(record), dispatchError(err)
 }
 
 // Resolve reads the gateway's own descriptor, once at startup.
@@ -1008,144 +647,24 @@ func (c *DispatchClient) Resolve(ctx context.Context, agentID []byte, request Re
 	if c.executorRef == "" {
 		return Descriptor{}, refusedLocally(op, "resolve needs the executor ref this gateway is bound to")
 	}
-	if len(agentID) == 0 {
-		return Descriptor{}, refusedLocally(op, "agent ID is required")
-	}
-	contextValue, err := request.wire(op, c.clock())
+	resolved, err := c.api.Resolve(ctx, agentID, request.api())
 	if err != nil {
-		return Descriptor{}, err
+		return Descriptor{}, dispatchError(err)
 	}
-	var response struct {
-		ID           string             `json:"id"`
-		Generation   int64              `json:"generation"`
-		ExecutorRef  string             `json:"executor_ref"`
-		Capabilities []fleet.Capability `json:"capabilities"`
-	}
-	path := "/api/v1/fleet/agents/" + base64.RawURLEncoding.EncodeToString(agentID) + "/resolve"
-	if _, _, err := c.post(ctx, op, path, "", contextValue, &response); err != nil {
-		return Descriptor{}, err
-	}
-	id, err := base64.RawURLEncoding.DecodeString(response.ID)
-	if err != nil || !bytes.Equal(id, agentID) {
-		return Descriptor{}, &DispatchError{Op: op, Kind: DispatchProtocol,
-			reason: "resolve response names a different descriptor"}
-	}
-	if response.ExecutorRef != c.executorRef {
+	if resolved.ExecutorRef != c.executorRef {
 		return Descriptor{}, refusedLocally(op,
 			"the descriptor is bound to another executor ref; a gateway serves only its own")
 	}
 	return Descriptor{
-		ID: id, Generation: response.Generation,
-		ExecutorRef: response.ExecutorRef, Capabilities: response.Capabilities,
+		ID: append([]byte(nil), agentID...), Generation: resolved.Generation,
+		ExecutorRef: resolved.ExecutorRef, Capabilities: resolved.Capabilities,
 	}, nil
-}
-
-func checkActionID(op string, id []byte) error {
-	if len(id) == 0 || len(id) > fleet.MaxActionIDBytes {
-		return refusedLocally(op, "action ID is outside its bound")
-	}
-	return nil
-}
-
-func actionPath(id []byte, verb string) string {
-	return "/api/v1/fleet/actions/" + base64.RawURLEncoding.EncodeToString(id) + "/" + verb
-}
-
-// post sends one JSON request and decodes a 2xx answer into out. A non-empty
-// correlation, already checked by correlationHeader, is sent as
-// Shoal-Correlation-ID.
-func (c *DispatchClient) post(
-	ctx context.Context, op, path, correlation string, body, out any,
-) (http.Header, time.Time, error) {
-	token, err := c.credential()
-	if err != nil {
-		// The credential source's error names a file path or a variable, never
-		// the value; it is still not carried, for the same reason transport
-		// errors are not.
-		return nil, time.Time{}, &DispatchError{Op: op, Kind: DispatchNoCredential}
-	}
-	if strings.ContainsAny(token, "\r\n") || token == "" {
-		return nil, time.Time{}, &DispatchError{Op: op, Kind: DispatchNoCredential}
-	}
-	encoded, err := json.Marshal(body)
-	if err != nil {
-		return nil, time.Time{}, refusedLocally(op, "request could not be encoded")
-	}
-	endpoint := *c.base
-	endpoint.Path = c.base.Path + path
-	request, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint.String(),
-		bytes.NewReader(encoded))
-	if err != nil {
-		return nil, time.Time{}, refusedLocally(op, "request could not be built")
-	}
-	request.Header.Set("Content-Type", "application/json")
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("User-Agent", UserAgent)
-	request.Header.Set("Authorization", "Bearer "+token)
-	if correlation != "" {
-		request.Header.Set(CorrelationIDHeader, correlation)
-	}
-	response, err := c.http.Do(request)
-	if err != nil {
-		return nil, time.Time{}, &DispatchError{
-			Op: op, Kind: DispatchTransport, Failure: ClassifyFailure(err), cause: err,
-		}
-	}
-	defer response.Body.Close()
-	receivedAt := c.clock()
-	data, oversize, readErr := ReadBounded(response.Body, maxDispatchResponseBytes)
-	if response.StatusCode < 200 || response.StatusCode > 299 {
-		return nil, receivedAt, statusError(op, response, data)
-	}
-	if readErr != nil {
-		return nil, receivedAt, &DispatchError{Op: op, Kind: DispatchTransport,
-			Status: response.StatusCode, Failure: ClassifyFailure(readErr), cause: readErr}
-	}
-	if oversize {
-		return nil, receivedAt, &DispatchError{Op: op, Kind: DispatchProtocol,
-			Status: response.StatusCode, reason: "response exceeds the client's bound"}
-	}
-	if err := json.Unmarshal(data, out); err != nil {
-		return nil, receivedAt, &DispatchError{Op: op, Kind: DispatchProtocol,
-			Status: response.StatusCode, reason: "response is not the expected JSON"}
-	}
-	return response.Header, receivedAt, nil
-}
-
-func statusError(op string, response *http.Response, body []byte) error {
-	result := &DispatchError{Op: op, Status: response.StatusCode}
-	var envelope struct {
-		Code string `json:"code"`
-	}
-	if json.Unmarshal(body, &envelope) == nil && wellFormedCode(envelope.Code) {
-		result.Code = envelope.Code
-	}
-	switch response.StatusCode {
-	case http.StatusNotFound:
-		result.Kind = DispatchNotFound
-	case http.StatusConflict:
-		result.Kind = DispatchConflict
-	case http.StatusServiceUnavailable:
-		result.Kind = DispatchUnavailable
-		if strings.EqualFold(strings.TrimSpace(response.Header.Get(commitOutcomeHeader)),
-			commitOutcomeIndeterminate) {
-			result.Kind = DispatchIndeterminate
-		}
-	case http.StatusBadRequest:
-		result.Kind = DispatchInvalid
-	case http.StatusUnauthorized, http.StatusForbidden:
-		result.Kind = DispatchUnauthorized
-	case http.StatusGatewayTimeout:
-		result.Kind = DispatchDeadline
-	default:
-		result.Kind = DispatchStatus
-	}
-	return result
 }
 
 // wellFormedCode admits the explorer's short snake-case error codes and
 // nothing else, so a proxy in front of the explorer cannot put text into an
-// error message through the code field.
+// error message through the code field. The public client applies the same
+// rule to dispatch answers; this one is for attestation answers.
 func wellFormedCode(code string) bool {
 	if code == "" || len(code) > 64 {
 		return false

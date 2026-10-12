@@ -1,0 +1,9 @@
+POST /api/v1/fleet/actions/YQD_/complete
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"expected_version\":4,\"claim_id\":\"Z3cxfHBvZHxjbGFpbQ\",\"claim_fence\":2,\"output\":{\"ok\":true,\"n\":1}}"
+provider calls: 1
+provider input: fleet.CompletionRequest{ID:[]uint8{0x61, 0x0, 0xff}, ExpectedVersion:0x4, ClaimID:[]uint8{0x67, 0x77, 0x31, 0x7c, 0x70, 0x6f, 0x64, 0x7c, 0x63, 0x6c, 0x61, 0x69, 0x6d}, ClaimFence:0x2, Result:fleet.ExecutionResult{Output:json.RawMessage{0x7b, 0x22, 0x6f, 0x6b, 0x22, 0x3a, 0x74, 0x72, 0x75, 0x65, 0x2c, 0x22, 0x6e, 0x22, 0x3a, 0x31, 0x7d}, ErrorCode:"", EvidenceSnapshotID:"", EvidenceSnapshotAsOf:time.Date(1, time.January, 1, 0, 0, 0, 0, time.UTC), Evidence:[]fleet.EvidenceRef{}, Effected:fleet.EffectedVolume{Bytes:0, Chunks:0}}, Failed:false, Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"gateway_claim", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}}
+status: 503
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: indeterminate
+body: "{\"code\":\"unavailable\",\"message\":\"not_found: fleet action not found\",\"indeterminate\":true}\n"

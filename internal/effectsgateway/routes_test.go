@@ -28,10 +28,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
-var remoteEffects = fleet.Effects{fleet.EffectEgressesContent, fleet.EffectMutatesExternal}
+var remoteEffects = dispatchapi.Effects{dispatchapi.EffectEgressesContent, dispatchapi.EffectMutatesExternal}
 
 const remoteEffectsJSON = `["external","egresses-content"]`
 
@@ -195,12 +195,12 @@ func TestParseRoutesBoundsTheTable(t *testing.T) {
 func TestDerivedEffectsFollowTheTarget(t *testing.T) {
 	for _, probe := range []struct {
 		target string
-		want   fleet.Effects
+		want   dispatchapi.Effects
 	}{
-		{"http://localhost:8080", fleet.Effects{fleet.EffectMutatesExternal}},
-		{"http://LOCALHOST.:8080", fleet.Effects{fleet.EffectMutatesExternal}},
-		{"http://127.0.0.1:8080", fleet.Effects{fleet.EffectMutatesExternal}},
-		{"http://[::1]:8080", fleet.Effects{fleet.EffectMutatesExternal}},
+		{"http://localhost:8080", dispatchapi.Effects{dispatchapi.EffectMutatesExternal}},
+		{"http://LOCALHOST.:8080", dispatchapi.Effects{dispatchapi.EffectMutatesExternal}},
+		{"http://127.0.0.1:8080", dispatchapi.Effects{dispatchapi.EffectMutatesExternal}},
+		{"http://[::1]:8080", dispatchapi.Effects{dispatchapi.EffectMutatesExternal}},
 		{"https://api.example.com", remoteEffects},
 		{"https://10.0.0.5", remoteEffects},
 		// Resolving to loopback is not being loopback; overstating here is
@@ -216,7 +216,7 @@ func TestDerivedEffectsFollowTheTarget(t *testing.T) {
 		}
 	}
 	// A loopback target's routes must declare exactly {external}.
-	loopback := fleet.Effects{fleet.EffectMutatesExternal}
+	loopback := dispatchapi.Effects{dispatchapi.EffectMutatesExternal}
 	if _, err := ParseRoutes([]byte(`[`+route(map[string]any{"effects": []string{"external"}})+`]`), loopback); err != nil {
 		t.Fatalf("a loopback route declaring {external}: %v", err)
 	}
@@ -511,7 +511,7 @@ func TestVerifyDescriptor(t *testing.T) {
 		var actions []DescriptorAction
 		for _, name := range table.Actions() {
 			actions = append(actions, DescriptorAction{
-				Name: name, Effects: fleet.Effects{fleet.EffectMutatesExternal, fleet.EffectEgressesContent},
+				Name: name, Effects: dispatchapi.Effects{dispatchapi.EffectMutatesExternal, dispatchapi.EffectEgressesContent},
 				InputSchema:  mustRoute(t, table, name).InputSchema(),
 				OutputSchema: OutputSchema(),
 			})
@@ -542,7 +542,7 @@ func TestVerifyDescriptor(t *testing.T) {
 		}, "registered with no route"},
 		{"duplicate action", func(a []DescriptorAction) []DescriptorAction { return append(a, a[0]) }, "twice"},
 		{"understated effects", func(a []DescriptorAction) []DescriptorAction {
-			a[0].Effects = fleet.Effects{fleet.EffectMutatesExternal}
+			a[0].Effects = dispatchapi.Effects{dispatchapi.EffectMutatesExternal}
 			return a
 		}, "declares effects"},
 		{"no effects", func(a []DescriptorAction) []DescriptorAction { a[0].Effects = nil; return a }, "effects"},

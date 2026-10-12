@@ -32,7 +32,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // The command's tests run Run against a scripted explorer: the dispatch
@@ -54,7 +54,7 @@ type fakeExplorer struct {
 	paths         []string
 	resolveStatus int
 	executorRef   string
-	capabilities  []fleet.Capability
+	capabilities  []dispatchapi.Capability
 	// offer is the one action the pull page offers until it is claimed.
 	offer     *offeredAction
 	claimed   bool
@@ -76,9 +76,9 @@ func newFakeExplorer(t *testing.T, target *url.URL) *fakeExplorer {
 	route, _ := table.Lookup("status")
 	explorer := &fakeExplorer{
 		t: t, executorRef: "stripe",
-		capabilities: []fleet.Capability{{
+		capabilities: []dispatchapi.Capability{{
 			Name: effectsgateway.DefaultCapability,
-			Actions: []fleet.Action{{
+			Actions: []dispatchapi.DescriptorAction{{
 				Name: "status", Effects: route.Effects(),
 				InputSchema: route.InputSchema(), OutputSchema: effectsgateway.OutputSchema(),
 			}},
@@ -110,7 +110,7 @@ func (f *fakeExplorer) offerAction(id string) {
 
 func b64(raw []byte) string { return base64.RawURLEncoding.EncodeToString(raw) }
 
-func (f *fakeExplorer) actionWire(offer *offeredAction, version uint64, state fleet.DispatchState) map[string]any {
+func (f *fakeExplorer) actionWire(offer *offeredAction, version uint64, state dispatchapi.DispatchState) map[string]any {
 	return map[string]any{
 		"id": b64(offer.id), "version": version, "state": state,
 		"agent_id": b64(testAgent), "agent_generation": 1,
@@ -150,7 +150,7 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		actions := []any{}
 		if f.offer != nil && !f.claimed {
-			actions = append(actions, f.actionWire(f.offer, 1, fleet.DispatchQueued))
+			actions = append(actions, f.actionWire(f.offer, 1, dispatchapi.DispatchQueued))
 		}
 		f.mu.Unlock()
 		reply(http.StatusOK, map[string]any{"actions": actions})
@@ -163,7 +163,7 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		offer := f.offer
 		f.claimed = true
 		f.mu.Unlock()
-		record := f.actionWire(offer, 2, fleet.DispatchClaimed)
+		record := f.actionWire(offer, 2, dispatchapi.DispatchClaimed)
 		now := time.Now().UTC()
 		record["updated_at"] = now
 		record["claim_id"] = claimID
@@ -185,9 +185,9 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		_ = json.Unmarshal(body["claim_id"], &claimID)
 		_ = json.Unmarshal(body["error_code"], &errorCode)
 		_ = json.Unmarshal(body["failed"], &failed)
-		state := fleet.DispatchSucceeded
+		state := dispatchapi.DispatchSucceeded
 		if failed {
-			state = fleet.DispatchFailed
+			state = dispatchapi.DispatchFailed
 		}
 		record := f.actionWire(offer, expected+1, state)
 		record["claim_id"] = claimID

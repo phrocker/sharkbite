@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: unavailable (HTTP 503, unavailable)
+kind: unavailable
+status: 503 code: "unavailable" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: unavailable(503)

@@ -20,7 +20,7 @@ func TestNewValidatesSharedConfiguration(t *testing.T) {
 		t.Fatal("path-prefixed base URL accepted by the shared facade")
 	}
 	c, e := New(Config{BaseURL: "https://shoal.example", Token: token})
-	if e != nil || c.Collectors() == nil || c.Decisions() == nil || c.Admission() == nil || c.Attestation() == nil {
+	if e != nil || c.Collectors() == nil || c.Decisions() == nil || c.Admission() == nil || c.Attestation() == nil || c.Dispatch() == nil {
 		t.Fatalf("client: %v", e)
 	}
 	if ProtocolVersion != 1 {

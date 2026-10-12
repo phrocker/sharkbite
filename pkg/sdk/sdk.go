@@ -25,6 +25,7 @@ import (
 	attestationapi "github.com/phrocker/shoal-oss/pkg/attestation/api"
 	collectorapi "github.com/phrocker/shoal-oss/pkg/collector/api"
 	decisionapi "github.com/phrocker/shoal-oss/pkg/decision/api"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // ProtocolVersion is the SDK's wire protocol version. It changes only when a
@@ -44,6 +45,7 @@ type Client struct {
 	decisions   *decisionapi.Client
 	admission   *admissionapi.Client
 	attestation *attestationapi.Client
+	dispatch    *dispatchapi.Client
 }
 
 func New(c Config) (*Client, error) {
@@ -63,7 +65,11 @@ func New(c Config) (*Client, error) {
 	if e != nil {
 		return nil, fmt.Errorf("sdk: %w", e)
 	}
-	return &Client{collectors: collectors, decisions: decisions, admission: admission, attestation: attestation}, nil
+	dispatch, e := dispatchapi.NewClient(dispatchapi.Config{BaseURL: c.BaseURL, HTTPClient: c.HTTPClient, Token: c.Token})
+	if e != nil {
+		return nil, fmt.Errorf("sdk: %w", e)
+	}
+	return &Client{collectors: collectors, decisions: decisions, admission: admission, attestation: attestation, dispatch: dispatch}, nil
 }
 
 func (c *Client) Collectors() *collectorapi.Client { return c.collectors }
@@ -72,3 +78,9 @@ func (c *Client) Admission() *admissionapi.Client  { return c.admission }
 
 // Attestation presents executor attestations (docs/executor-attestation.md).
 func (c *Client) Attestation() *attestationapi.Client { return c.attestation }
+
+// Dispatch speaks the worker-facing fleet dispatch routes: pull, claim,
+// extend, complete, ambiguity, status and descriptor resolve. sdk.New refuses
+// a path-prefixed base URL; a worker behind a path-routed proxy builds
+// dispatchapi.NewClient directly.
+func (c *Client) Dispatch() *dispatchapi.Client { return c.dispatch }

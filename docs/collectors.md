@@ -17,7 +17,8 @@ and calls `MountCollectors` itself, as for decisions (`docs/decision-http-api.md
 | `pkg/collector/api` | Wire types, strict decoding, Go client | `pkg/collector`, `pkg/shoal` |
 | `pkg/admission/api` | Admission seam wire types (request, grant, report, receipt, outstanding page, error), limits and a Go client that accepts a path-prefixed base URL; see `docs/admission-seam.md` | stdlib, `pkg/shoal` |
 | `pkg/attestation/api` | Executor attestation presentation wire types, limits and a Go client; see `docs/executor-attestation.md` | stdlib, `pkg/shoal` |
-| `pkg/sdk` | Versioned facade: `sdk.New(...).Collectors()`, `.Decisions()`, `.Admission()` and `.Attestation()`; `sdk.ProtocolVersion = 1` | `pkg/shoal`, `*/api` |
+| `pkg/dispatch/api` | Worker-facing dispatch wire types (pull, claim, extend, complete, ambiguity, status, descriptor resolve), limits and a Go client that accepts a path-prefixed base URL and carries the resend rules for lost answers | stdlib, `pkg/shoal`, `pkg/executorref` |
+| `pkg/sdk` | Versioned facade: `sdk.New(...).Collectors()`, `.Decisions()`, `.Admission()`, `.Attestation()` and `.Dispatch()`; `sdk.ProtocolVersion = 1` | `pkg/shoal`, `*/api` |
 | `internal/collectorregistry` | Engine-backed registry, `Provider` wire adapter, `Source` adapter | core |
 | `internal/collectorattest` | Attestation verifiers | core |
 | `pkg/explorer/webapi` (`collectors.go`) | HTTP routes | core |
@@ -193,7 +194,7 @@ so it works with `GOWORK=off`) and fails when:
 - B. an extension module (any `go.mod` under `extensions/`, at any depth)
   imports a repository package outside `pkg/sdk`, `pkg/collector`,
   `pkg/collector/api`, `pkg/decision/api`, `pkg/admission/api`,
-  `pkg/attestation/api`, `pkg/shoal`;
+  `pkg/attestation/api`, `pkg/dispatch/api`, `pkg/shoal`;
   or declares a module
   path other than the repository module plus its directory (a module naming
   itself `.../internal` would otherwise exempt its own imports, and Go's

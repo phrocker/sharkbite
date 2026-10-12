@@ -41,7 +41,7 @@ import (
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
 	"github.com/phrocker/shoal-oss/internal/effectsgateway/gatewaycmd"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 const reexec = "SHOAL_GATEWAY_TEST_MAIN"
@@ -74,8 +74,8 @@ func idleExplorer(t *testing.T, target *url.URL) (*httptest.Server, func() int) 
 			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": base64.RawURLEncoding.EncodeToString([]byte("agent")), "generation": 1,
 				"executor_ref": "stripe",
-				"capabilities": []fleet.Capability{{Name: effectsgateway.DefaultCapability,
-					Actions: []fleet.Action{{Name: "status", Effects: route.Effects(),
+				"capabilities": []dispatchapi.Capability{{Name: effectsgateway.DefaultCapability,
+					Actions: []dispatchapi.DescriptorAction{{Name: "status", Effects: route.Effects(),
 						InputSchema: route.InputSchema(), OutputSchema: effectsgateway.OutputSchema()}}}},
 			})
 		case r.URL.Path == "/api/v1/fleet/actions/pull":

@@ -1,0 +1,9 @@
+POST /api/v1/fleet/actions/YQD_/extend
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"claim_fence\":2,\"claim_id\":\"Z3cxfHBvZHxjbGFpbQ\",\"lease\":60000000000}"
+provider calls: 1
+provider input: fleet.ExtendRequest{ID:[]uint8{0x61, 0x0, 0xff}, ExpectedVersion:0x0, ClaimFence:0x2, ClaimID:[]uint8{0x67, 0x77, 0x31, 0x7c, 0x70, 0x6f, 0x64, 0x7c, 0x63, 0x6c, 0x61, 0x69, 0x6d}, Lease:60000000000, Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"gateway_claim", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}}
+status: 503
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: indeterminate
+body: "{\"code\":\"unavailable\",\"message\":\"not_found: fleet action not found\",\"indeterminate\":true}\n"

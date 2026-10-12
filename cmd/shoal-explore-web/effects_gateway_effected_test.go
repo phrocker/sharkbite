@@ -28,7 +28,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // loseFirstComplete delivers the first /complete and loses its answer, the
@@ -87,7 +87,7 @@ func TestEffectsGatewayClientReportsAPartialSendOnce(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	volume := fleet.EffectedVolume{Bytes: 517, Chunks: 1}
+	volume := dispatchapi.Effected{Bytes: 517, Chunks: 1}
 	completion := effectsgateway.Completion{
 		Context: claimed.Correlate(requestContext(t, "gateway_complete")), ExpectedVersion: claimed.Version, ClaimFence: claimed.ClaimFence,
 		ClaimID: claimID, Failed: true, ErrorCode: effectsgateway.ErrorOutcomeUnknown,
@@ -100,7 +100,7 @@ func TestEffectsGatewayClientReportsAPartialSendOnce(t *testing.T) {
 	if lossy.sent != 2 {
 		t.Fatalf("completion requests = %d, want the first and one resend", lossy.sent)
 	}
-	if recorded.State != fleet.DispatchFailed || recorded.Effected != volume {
+	if recorded.State != dispatchapi.DispatchFailed || recorded.Effected != volume {
 		t.Fatalf("recorded = %#v, want a failure carrying %+v", recorded, volume)
 	}
 
@@ -110,7 +110,7 @@ func TestEffectsGatewayClientReportsAPartialSendOnce(t *testing.T) {
 	// report.
 	different := completion
 	different.Context = claimed.Correlate(requestContext(t, "gateway_complete"))
-	different.Effected = fleet.EffectedVolume{Bytes: volume.Bytes + 1, Chunks: 1}
+	different.Effected = dispatchapi.Effected{Bytes: volume.Bytes + 1, Chunks: 1}
 	action, err := client.Complete(ctx, claimed.ID, different)
 	if effectsgateway.DispatchKind(err) != effectsgateway.DispatchRecordedOtherwise {
 		t.Fatalf("a different volume = %#v, %v; want recorded_otherwise", action, err)

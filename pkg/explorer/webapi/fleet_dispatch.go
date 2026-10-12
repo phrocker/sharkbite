@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/document"
 	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
@@ -123,10 +124,9 @@ func mountFleetDispatch(mux *http.ServeMux, provider FleetDispatchProvider) {
 		for i := range page.Actions {
 			actions[i] = encodeFleetAction(page.Actions[i])
 		}
-		writeResponse(w, http.StatusOK, struct {
-			Actions []fleetActionWire `json:"actions"`
-			Next    string            `json:"next,omitempty"`
-		}{Actions: actions, Next: base64.RawURLEncoding.EncodeToString(page.Next)})
+		writeResponse(w, http.StatusOK, dispatchapi.Page{
+			Actions: actions, Next: base64.RawURLEncoding.EncodeToString(page.Next),
+		})
 	})
 	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/claim", func(w http.ResponseWriter, r *http.Request) {
 		actionID, err := decodeWireBytes("action ID", r.PathValue("action"), false)
@@ -474,6 +474,14 @@ type fleetInvokeWire struct {
 	Lease   time.Duration    `json:"lease"`
 }
 
+// The worker's request bodies decode into these private structs, not into
+// pkg/dispatch/api's request types, although the shapes are the same: the
+// error text decodeRequest forwards in a 400 names the destination types
+// ("Go struct field fleetClaimWire.context of type
+// webapi.fleetRequestContextWire"), and the golden fixtures in
+// pkg/dispatch/api/testdata/wire pin those bytes. dispatch_parity_test.go
+// holds each one to its public counterpart field by field, and responses are
+// encoded from the public types directly.
 type fleetClaimWire struct {
 	Context         fleetRequestContextWire `json:"context"`
 	ExpectedVersion uint64                  `json:"expected_version"`
@@ -575,15 +583,8 @@ type fleetEffectedWire struct {
 	Chunks int64 `json:"chunks,omitempty"`
 }
 
-type fleetAmbiguityReportWire struct {
-	ClaimFence uint64    `json:"claim_fence"`
-	Outcome    string    `json:"outcome"`
-	Target     string    `json:"target,omitempty"`
-	Reference  string    `json:"reference,omitempty"`
-	Subject    string    `json:"subject"`
-	Actor      string    `json:"actor"`
-	ReportedAt time.Time `json:"reported_at"`
-}
+// fleetAmbiguityReportWire is one report as a record carries it.
+type fleetAmbiguityReportWire = dispatchapi.AmbiguityReport
 
 type fleetEvidenceWire struct {
 	AnchorID   string                   `json:"anchor_id"`
@@ -612,116 +613,96 @@ type fleetAssertionWire struct {
 	Origin      ontology.AssertionOrigin `json:"origin"`
 }
 
-type fleetActionWire struct {
-	ID              string              `json:"id"`
-	Version         uint64              `json:"version"`
-	State           fleet.DispatchState `json:"state"`
-	AgentID         string              `json:"agent_id"`
-	AgentGeneration int64               `json:"agent_generation"`
-	Capability      string              `json:"capability"`
-	Action          string              `json:"action"`
-	// Input is what the work actually is, and without it an out-of-process
-	// worker can pull an action, claim it under a fence and complete it without
-	// ever receiving the operation's parameters. It was absent from this wire
-	// while being present on the enqueue wire, validated against the action's
-	// InputSchema at enqueue, and stored on the record — so the data was
-	// correct and simply never read back out (#435).
-	//
-	// Nothing on a worker's side recovers this. A worker reconstructing a
-	// plausible request from the capability name would be fabricating the
-	// parameters of an effect Shoal cannot undo, which is why the gap had to be
-	// closed here rather than worked around there.
-	//
-	// Populated on the claim response alone — see encodeClaimedFleetAction, the
-	// one caller that sets it. Every other route uses encodeFleetAction and
-	// leaves it empty, which is both an exposure bound and a size bound.
-	//
-	// The exposure bound: a claim is the point at which a principal takes
-	// responsibility for performing the work, so it is the one transition whose
-	// caller must have the parameters. An earlier version of this field was
-	// emitted unconditionally on the argument that every consumer of this wire
-	// is scoped to the action's own principal, since Pull filtered on
-	// sameActionPrincipal. That was true when written and false as of #437,
-	// which lets a principal granted OperationExecute on the descriptor pull
-	// work it did not enqueue. Verified by composing the two branches and
-	// reading the input back as a non-enqueuing executor.
-	//
-	// The size bound is the reason it is not merely narrowed to Pull as well.
-	// MaxActionPayloadBytes is a fixed 1 MiB and a workspace's OutputBytes
-	// budget narrows to any non-zero value (workspace.ValidateBudgets rejects
-	// only zero), so a response carrying an input can exceed the budget that
-	// governs it. Pull returns up to MaxDispatchListResults — 256 — records,
-	// which would have put a quarter-gigabyte page against a 64 MiB default
-	// ceiling; and unlike Output, an Input is populated from enqueue onward, so
-	// it would have been present on every record of every page rather than only
-	// on completed ones. writeResponse answers an overflow on a route
-	// requestMayCommit reports as commit-bearing with 503 and
-	// X-Commit-Outcome: indeterminate, which on the enqueue echo would have
-	// meant a successful enqueue reported as an unknown outcome, repeatably,
-	// for as long as the record existed. One record on one route is the bound
-	// that keeps the page size independent of the payload ceiling.
-	Input     json.RawMessage `json:"input,omitempty"`
-	Output    json.RawMessage `json:"output,omitempty"`
-	ErrorCode string          `json:"error_code,omitempty"`
-	// ErrorCodeOrigin says whether the service or the executor decided
-	// ErrorCode, which the code alone cannot tell a reader (#508). Omitted on
-	// a record written before the field existed, which a reader must treat as
-	// "either" rather than as "executor".
-	ErrorCodeOrigin string `json:"error_code_origin,omitempty"`
-	// Effected accompanies a failure that followed a partial irreversible
-	// egress (#427). Returned as well as accepted, so a worker that lost its
-	// response reads back what was recorded rather than re-deriving it —
-	// which it cannot, since the record is write-once and its own retry would
-	// be compared against it.
-	Effected      *fleetEffectedWire `json:"effected,omitempty"`
-	RequestID     string             `json:"request_id"`
-	CorrelationID string             `json:"correlation_id,omitempty"`
-	Deadline      time.Time          `json:"deadline"`
-	CreatedAt     time.Time          `json:"created_at"`
-	UpdatedAt     time.Time          `json:"updated_at"`
-	// ExecutorKey is the idempotency key an in-process executor already
-	// receives (dispatch_service.go hands it over as IdempotencyKey), derived
-	// at enqueue as a length-prefixed digest over a domain tag, the action ID
-	// and the caller's idempotency key. An out-of-process worker performing an
-	// irreversible effect needs exactly that value for exactly that purpose: it
-	// is the stable identity that lets a target deduplicate a re-claim after a
-	// lease lapse.
-	//
-	// Exposing it is strictly better than having each worker invent a key. A
-	// hand-written digest over the same inputs is easy to get subtly wrong —
-	// omitting the length prefixes makes it non-injective, so a caller able to
-	// enqueue against two surfaces can make one key collide with another's, and
-	// a collision makes a provider return a cached success without performing
-	// the effect. That is worse than a duplicate, because nothing records it.
-	//
-	// Set on the claim response alone, for the same reason as Input: it is the
-	// claimant that performs the effect and therefore needs the key. It is not
-	// a new disclosure — pkg/explorer/mcp returns fleet.ActionRecord whole, and
-	// that type carries no JSON tags, so the MCP enqueue and invoke tools
-	// already emit this value to their caller as "ExecutorKey" in padded
-	// standard base64. This wire spells it raw-URL like every other byte field
-	// here. Both decode to the same key, so a worker must compare decoded bytes
-	// and never the two spellings against each other.
-	ExecutorKey     string    `json:"executor_key,omitempty"`
-	ClaimID         string    `json:"claim_id,omitempty"`
-	ClaimFence      uint64    `json:"claim_fence,omitempty"`
-	ClaimLeaseUntil time.Time `json:"claim_lease_until,omitempty"`
-	EffectPossible  bool      `json:"effect_possible"`
-	// AmbiguityReports accompany EffectPossible wherever it appears, because
-	// the flag says an effect may have happened and these say what was
-	// attempted. An operator reading one without the other has the question
-	// and not the evidence.
-	//
-	// The claim history is deliberately *not* on this wire. It exists so the
-	// service can recognise a lapsed claimant, and publishing it would hand
-	// every execute-holder in the scope a list of which principals have held a
-	// record and under which fences — an identity disclosure the route does
-	// not need to make.
-	AmbiguityReports     []fleetAmbiguityReportWire `json:"ambiguity_reports,omitempty"`
-	EvidenceSnapshotID   string                     `json:"evidence_snapshot_id,omitempty"`
-	EvidenceSnapshotAsOf time.Time                  `json:"evidence_snapshot_as_of,omitempty"`
-	Evidence             []fleetEvidenceWire        `json:"evidence,omitempty"`
-}
+// fleetActionWire is the record every dispatch route returns: the public
+// dispatchapi.Action. What its fields carry, and why:
+//
+// Input is what the work actually is, and without it an out-of-process
+// worker can pull an action, claim it under a fence and complete it without
+// ever receiving the operation's parameters. It was absent from this wire
+// while being present on the enqueue wire, validated against the action's
+// InputSchema at enqueue, and stored on the record — so the data was
+// correct and simply never read back out (#435).
+//
+// Nothing on a worker's side recovers this. A worker reconstructing a
+// plausible request from the capability name would be fabricating the
+// parameters of an effect Shoal cannot undo, which is why the gap had to be
+// closed here rather than worked around there.
+//
+// Populated on the claim response alone — see encodeClaimedFleetAction, the
+// one caller that sets it. Every other route uses encodeFleetAction and
+// leaves it empty, which is both an exposure bound and a size bound.
+//
+// The exposure bound: a claim is the point at which a principal takes
+// responsibility for performing the work, so it is the one transition whose
+// caller must have the parameters. An earlier version of this field was
+// emitted unconditionally on the argument that every consumer of this wire
+// is scoped to the action's own principal, since Pull filtered on
+// sameActionPrincipal. That was true when written and false as of #437,
+// which lets a principal granted OperationExecute on the descriptor pull
+// work it did not enqueue. Verified by composing the two branches and
+// reading the input back as a non-enqueuing executor.
+//
+// The size bound is the reason it is not merely narrowed to Pull as well.
+// MaxActionPayloadBytes is a fixed 1 MiB and a workspace's OutputBytes
+// budget narrows to any non-zero value (workspace.ValidateBudgets rejects
+// only zero), so a response carrying an input can exceed the budget that
+// governs it. Pull returns up to MaxDispatchListResults — 256 — records,
+// which would have put a quarter-gigabyte page against a 64 MiB default
+// ceiling; and unlike Output, an Input is populated from enqueue onward, so
+// it would have been present on every record of every page rather than only
+// on completed ones. writeResponse answers an overflow on a route
+// requestMayCommit reports as commit-bearing with 503 and
+// X-Commit-Outcome: indeterminate, which on the enqueue echo would have
+// meant a successful enqueue reported as an unknown outcome, repeatably,
+// for as long as the record existed. One record on one route is the bound
+// that keeps the page size independent of the payload ceiling.
+//
+// ErrorCodeOrigin says whether the service or the executor decided
+// ErrorCode, which the code alone cannot tell a reader (#508). Omitted on
+// a record written before the field existed, which a reader must treat as
+// "either" rather than as "executor".
+//
+// Effected accompanies a failure that followed a partial irreversible
+// egress (#427). Returned as well as accepted, so a worker that lost its
+// response reads back what was recorded rather than re-deriving it —
+// which it cannot, since the record is write-once and its own retry would
+// be compared against it.
+//
+// ExecutorKey is the idempotency key an in-process executor already
+// receives (dispatch_service.go hands it over as IdempotencyKey), derived
+// at enqueue as a length-prefixed digest over a domain tag, the action ID
+// and the caller's idempotency key. An out-of-process worker performing an
+// irreversible effect needs exactly that value for exactly that purpose: it
+// is the stable identity that lets a target deduplicate a re-claim after a
+// lease lapse.
+//
+// Exposing it is strictly better than having each worker invent a key. A
+// hand-written digest over the same inputs is easy to get subtly wrong —
+// omitting the length prefixes makes it non-injective, so a caller able to
+// enqueue against two surfaces can make one key collide with another's, and
+// a collision makes a provider return a cached success without performing
+// the effect. That is worse than a duplicate, because nothing records it.
+//
+// Set on the claim response alone, for the same reason as Input: it is the
+// claimant that performs the effect and therefore needs the key. It is not
+// a new disclosure — pkg/explorer/mcp returns fleet.ActionRecord whole, and
+// that type carries no JSON tags, so the MCP enqueue and invoke tools
+// already emit this value to their caller as "ExecutorKey" in padded
+// standard base64. This wire spells it raw-URL like every other byte field
+// here. Both decode to the same key, so a worker must compare decoded bytes
+// and never the two spellings against each other.
+//
+// AmbiguityReports accompany EffectPossible wherever it appears, because
+// the flag says an effect may have happened and these say what was
+// attempted. An operator reading one without the other has the question
+// and not the evidence.
+//
+// The claim history is deliberately *not* on this wire. It exists so the
+// service can recognise a lapsed claimant, and publishing it would hand
+// every execute-holder in the scope a list of which principals have held a
+// record and under which fences — an identity disclosure the route does
+// not need to make.
+type fleetActionWire = dispatchapi.Action
 
 func (w fleetEnqueueWire) decode(pathID []byte) (fleet.EnqueueRequest, error) {
 	contextValue, err := w.Context.decode()
@@ -830,22 +811,22 @@ func decodeEvidence(values []fleetEvidenceWire) ([]fleet.EvidenceRef, error) {
 }
 
 func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
-	evidence := make([]fleetEvidenceWire, len(record.Evidence))
+	evidence := make([]dispatchapi.Evidence, len(record.Evidence))
 	for i, item := range record.Evidence {
-		evidence[i] = fleetEvidenceWire{
-			AnchorID: encodeFleetID(item.AnchorID), Kind: item.Kind,
+		evidence[i] = dispatchapi.Evidence{
+			AnchorID: encodeFleetID(item.AnchorID), Kind: string(item.Kind),
 			NodeIDs: encodeFleetIDs(item.NodeIDs), EdgeIDs: encodeFleetIDs(item.EdgeIDs),
-			Assertions: make([]fleetAssertionWire, len(item.Assertions)),
+			Assertions: make([]dispatchapi.Assertion, len(item.Assertions)),
 			Visibility: append([]string(nil), item.Visibility...),
 		}
 		for index, assertion := range item.Assertions {
-			evidence[i].Assertions[index] = fleetAssertionWire{
+			evidence[i].Assertions[index] = dispatchapi.Assertion{
 				AssertionID: encodeFleetID(assertion.AssertionID),
-				EdgeID:      encodeFleetID(assertion.EdgeID), Origin: assertion.Origin,
+				EdgeID:      encodeFleetID(assertion.EdgeID), Origin: string(assertion.Origin),
 			}
 		}
 		if item.Kind == interaction.EvidenceDocument {
-			evidence[i].Citation = &fleetCitationWire{
+			evidence[i].Citation = &dispatchapi.Citation{
 				DocumentID: encodeFleetID(item.Citation.DocumentID),
 				RevisionID: encodeFleetID(item.Citation.RevisionID),
 				SectionID:  encodeFleetID(item.Citation.SectionID),
@@ -858,7 +839,8 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 		}
 	}
 	return fleetActionWire{
-		ID: base64.RawURLEncoding.EncodeToString(record.ID), Version: record.Version, State: record.State,
+		ID: base64.RawURLEncoding.EncodeToString(record.ID), Version: record.Version,
+		State:   dispatchapi.DispatchState(record.State),
 		AgentID: encodeFleetID(record.AgentID), AgentGeneration: record.AgentGeneration,
 		Capability: record.Capability, Action: record.Action,
 		Output:          append(json.RawMessage(nil), record.Output...),
@@ -905,7 +887,7 @@ func encodeFleetAmbiguityReports(
 	for index, report := range reports {
 		result[index] = fleetAmbiguityReportWire{
 			ClaimFence: report.ClaimFence,
-			Outcome:    string(report.Outcome),
+			Outcome:    dispatchapi.AmbiguityOutcome(report.Outcome),
 			Target:     report.Target, Reference: report.Reference,
 			Subject:    encodeFleetID(report.Subject),
 			Actor:      encodeFleetID(report.Actor),
@@ -924,11 +906,11 @@ func decodeEffected(wire *fleetEffectedWire) fleet.EffectedVolume {
 	return fleet.EffectedVolume{Bytes: wire.Bytes, Chunks: wire.Chunks}
 }
 
-func encodeEffected(value fleet.EffectedVolume) *fleetEffectedWire {
+func encodeEffected(value fleet.EffectedVolume) *dispatchapi.Effected {
 	if value.Zero() {
 		return nil
 	}
-	return &fleetEffectedWire{Bytes: value.Bytes, Chunks: value.Chunks}
+	return &dispatchapi.Effected{Bytes: value.Bytes, Chunks: value.Chunks}
 }
 
 func encodeFleetIDs(values []shoal.ID) []string {

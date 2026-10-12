@@ -23,6 +23,7 @@ import (
 	"github.com/phrocker/shoal-oss/internal/executorattest"
 	admissionapi "github.com/phrocker/shoal-oss/pkg/admission/api"
 	attestationapi "github.com/phrocker/shoal-oss/pkg/attestation/api"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
@@ -584,7 +585,7 @@ func TestSDKAttestationEffectsGatewayClaimAndComplete(t *testing.T) {
 		Context: gatewayContext("complete"), ExpectedVersion: claimed.Version, ClaimFence: claimed.ClaimFence,
 		ClaimID: claimID, Output: json.RawMessage(`{"ok":true}`),
 	})
-	if err != nil || completed.State != fleet.DispatchSucceeded {
+	if err != nil || completed.State != dispatchapi.DispatchSucceeded {
 		t.Fatalf("complete over HTTP = %+v, %v", completed.State, err)
 	}
 }

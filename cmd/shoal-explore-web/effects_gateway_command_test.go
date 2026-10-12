@@ -81,7 +81,7 @@ func newCommandWorldWith(
 	for _, name := range table.Actions() {
 		route, _ := table.Lookup(name)
 		actions = append(actions, fleet.Action{
-			Name: name, Effects: route.Effects(),
+			Name: name, Effects: fleetEffectsOf(route.Effects()),
 			InputSchema: route.InputSchema(), OutputSchema: effectsgateway.OutputSchema(),
 			RequiresAttestation: attestation != nil,
 		})

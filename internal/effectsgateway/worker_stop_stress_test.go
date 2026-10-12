@@ -31,7 +31,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // TestEveryEffectIsAccountedForWhateverTheStopTiming is the stop paths'
@@ -237,7 +237,7 @@ func stopStressIteration(t *testing.T, seed uint64, totals *stressTotals) {
 		hadEffect = true
 		totals.effects++
 		record := h.explorer.record(id)
-		completed := record.State == fleet.DispatchSucceeded || record.State == fleet.DispatchFailed
+		completed := record.State == dispatchapi.DispatchSucceeded || record.State == dispatchapi.DispatchFailed
 		reported := len(record.AmbiguityReports) > 0
 		switch {
 		case completed:

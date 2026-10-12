@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/extend
+error: dispatch extend: fence_lost (HTTP 404)
+kind: fence_lost
+status: 404 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: fence_lost(404) > not_found(404)

@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/pull
+error: dispatch pull: transport (reset)
+kind: transport
+status: 0 code: "" failure: "reset"
+is ambiguity unrecorded: false
+is unexpected EOF: true is deadline: false
+chain: transport(0)

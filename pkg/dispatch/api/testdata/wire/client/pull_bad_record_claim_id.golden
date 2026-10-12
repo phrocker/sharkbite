@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/pull
+error: dispatch pull: protocol: claim ID is not unpadded base64url
+kind: protocol
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: protocol(0)

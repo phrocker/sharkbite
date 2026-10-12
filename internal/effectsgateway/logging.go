@@ -31,7 +31,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // The logging policy is enforced by the shape of the one function that writes
@@ -178,7 +178,7 @@ type LogRecord struct {
 	Gate           GateRefusal
 	DispatchError  DispatchErrorKind
 	// Ambiguity is the outcome of a lost-fence report, closed.
-	Ambiguity fleet.AmbiguityOutcome
+	Ambiguity dispatchapi.AmbiguityOutcome
 	// Unrecorded is the unrecorded log's entry count after this event; set
 	// on EventUnrecorded and EventUnrecordedCleared.
 	Unrecorded int
@@ -317,9 +317,9 @@ var validGates = map[GateRefusal]bool{
 	GateRetention: true,
 }
 
-var validAmbiguity = map[fleet.AmbiguityOutcome]bool{
-	fleet.AmbiguityRequestNotSent: true, fleet.AmbiguityEffectObserved: true,
-	fleet.AmbiguityOutcomeUnknown: true,
+var validAmbiguity = map[dispatchapi.AmbiguityOutcome]bool{
+	dispatchapi.AmbiguityRequestNotSent: true, dispatchapi.AmbiguityEffectObserved: true,
+	dispatchapi.AmbiguityOutcomeUnknown: true,
 }
 
 var validNotReady = map[NotReadyReason]bool{

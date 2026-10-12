@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/executorref"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 )
 
 // The defaults are named so a test can assert they satisfy ValidateDurations.
@@ -51,7 +51,7 @@ const (
 	// MaxResponseBytesLimit keeps the worker's read bound below the
 	// explorer's output bound, so a hostile target cannot make the worker
 	// buffer more than the record could ever hold.
-	MaxResponseBytesLimit = fleet.MaxActionOutputBytes
+	MaxResponseBytesLimit = dispatchapi.MaxActionOutputBytes
 	// minPullInterval keeps an idle worker from spinning on the explorer.
 	minPullInterval = 100 * time.Millisecond
 )
@@ -79,7 +79,7 @@ type Config struct {
 	IdempotencyRetention time.Duration
 
 	Routes  *RouteTable
-	Effects fleet.Effects
+	Effects dispatchapi.Effects
 
 	ClaimLease       time.Duration
 	OperationTimeout time.Duration
@@ -201,7 +201,7 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 			"are refused, and an action with no route is never performed")
 
 	claimLease := flags.Duration("claim-lease", DefaultClaimLease,
-		"Claim lease L. At most "+fleet.MaxActionClaimTTL.String()+"; the "+
+		"Claim lease L. At most "+dispatchapi.MaxActionClaimTTL.String()+"; the "+
 			"explorer refuses a longer one rather than shortening it")
 	operationTimeout := flags.Duration("operation-timeout", DefaultOperationTimeout,
 		"Bound T on one request to the target")
@@ -211,7 +211,7 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 		"Bytes of a target response the worker reads. A larger body is "+
 			"treated as success without a reference, never buffered")
 	pullLimit := flags.Int("pull-limit", DefaultPullLimit,
-		fmt.Sprintf("Actions requested per pull, 1 to %d", fleet.MaxDispatchListResults))
+		fmt.Sprintf("Actions requested per pull, 1 to %d", dispatchapi.MaxDispatchListResults))
 	pullInterval := flags.Duration("pull-interval", DefaultPullInterval,
 		"Pause between pulls when the queue offered nothing")
 	healthAddress := flags.String("health-address", "",
@@ -332,8 +332,8 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 		return nil, fmt.Errorf("-max-response-bytes must be 1 to %d",
 			MaxResponseBytesLimit)
 	}
-	if config.PullLimit <= 0 || config.PullLimit > fleet.MaxDispatchListResults {
-		return nil, fmt.Errorf("-pull-limit must be 1 to %d", fleet.MaxDispatchListResults)
+	if config.PullLimit <= 0 || config.PullLimit > dispatchapi.MaxDispatchListResults {
+		return nil, fmt.Errorf("-pull-limit must be 1 to %d", dispatchapi.MaxDispatchListResults)
 	}
 	if config.PullInterval < minPullInterval {
 		return nil, fmt.Errorf("-pull-interval must be at least %s", minPullInterval)
@@ -394,10 +394,10 @@ func ValidateDurations(lease, operation, plane time.Duration, renew bool) error 
 	if lease <= 0 {
 		return errors.New("-claim-lease must be positive")
 	}
-	if lease > fleet.MaxActionClaimTTL {
+	if lease > dispatchapi.MaxActionClaimTTL {
 		return fmt.Errorf("-claim-lease must not exceed %s; the explorer refuses "+
 			"a longer lease rather than shortening it, so every claim would fail",
-			fleet.MaxActionClaimTTL)
+			dispatchapi.MaxActionClaimTTL)
 	}
 	if operation <= 0 {
 		return errors.New("-operation-timeout must be positive")
@@ -560,13 +560,13 @@ func isLoopbackHost(host string) bool {
 
 // fleetName applies the fleet's name grammar at startup. It mirrors
 // validateName in pkg/explorer/fleet/model.go, which is unexported, and takes
-// the bound from fleet.MaxNameBytes so at least the number cannot drift.
+// the bound from dispatchapi.MaxNameBytes so at least the number cannot drift.
 func fleetName(flagName, value string) error {
 	if value == "" {
 		return fmt.Errorf("%s is required", flagName)
 	}
-	if len(value) > fleet.MaxNameBytes {
-		return fmt.Errorf("%s must be at most %d bytes", flagName, fleet.MaxNameBytes)
+	if len(value) > dispatchapi.MaxNameBytes {
+		return fmt.Errorf("%s must be at most %d bytes", flagName, dispatchapi.MaxNameBytes)
 	}
 	if strings.TrimSpace(value) != value {
 		return fmt.Errorf("%s must not have leading or trailing whitespace", flagName)

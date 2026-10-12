@@ -30,14 +30,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
 // The dispatch client's wire behaviour is tested against the real explorer
-// handler in cmd/shoal-explore-web (effects_gateway_client_test.go). These are
-// the pure parts: the status mapping, which the real handler cannot be made to
-// produce on demand for every row, and the local refusals.
+// handler in cmd/shoal-explore-web (effects_gateway_client_test.go), and every
+// answer sequence is pinned in dispatch_golden_test.go. These are the pure
+// parts: the status mapping, which the real handler cannot be made to produce
+// on demand for every row, and the local refusals.
 
 func TestStatusErrorMapping(t *testing.T) {
 	for _, row := range []struct {
@@ -67,7 +68,22 @@ func TestStatusErrorMapping(t *testing.T) {
 		if header == nil {
 			header = http.Header{}
 		}
-		err := statusError("claim", &http.Response{StatusCode: row.status, Header: header}, []byte(row.body))
+		// Pull maps a status as it is: no resend, no re-pull.
+		status, body := row.status, row.body
+		transport := &scriptedTransport{replies: []func() (*http.Response, error){
+			func() (*http.Response, error) {
+				return &http.Response{StatusCode: status, Header: header,
+					Body: io.NopCloser(strings.NewReader(body))}, nil
+			},
+		}}
+		base, _ := url.Parse("https://explorer.invalid")
+		client, err := NewDispatchClient(base, &http.Client{Transport: transport},
+			func() (string, error) { return "token", nil }, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_, err = client.Pull(context.Background(), RequestContext{RequestID: []byte("r"),
+			ReasonCode: "gateway_poll", Deadline: time.Now().Add(time.Minute)}, "", 1)
 		var dispatchErr *DispatchError
 		if !errors.As(err, &dispatchErr) || dispatchErr.Kind != row.kind ||
 			dispatchErr.Code != row.code || dispatchErr.Status != row.status {
@@ -116,8 +132,8 @@ func TestNewClaimID(t *testing.T) {
 	if bytes.Equal(a, b) {
 		t.Fatal("two claim attempts produced one claim ID")
 	}
-	longest := strings.Repeat("p", fleet.MaxActionIDBytes-len(claimIDPrefix)-1-ClaimNonceBytes)
-	if id, _, err := NewClaimID(longest, nil); err != nil || len(id) != fleet.MaxActionIDBytes {
+	longest := strings.Repeat("p", dispatchapi.MaxActionIDBytes-len(claimIDPrefix)-1-ClaimNonceBytes)
+	if id, _, err := NewClaimID(longest, nil); err != nil || len(id) != dispatchapi.MaxActionIDBytes {
 		t.Fatalf("longest pod name: %d bytes, %v", len(id), err)
 	}
 	for _, pod := range []string{"", longest + "p", "a|b", "a b", "pod\n", "pöd"} {
@@ -133,28 +149,45 @@ func TestNewClaimID(t *testing.T) {
 func TestRequestContextWire(t *testing.T) {
 	now := time.Date(2026, 10, 8, 12, 0, 0, 0, time.FixedZone("EST", -5*3600))
 	good := RequestContext{RequestID: []byte{0, 1}, ReasonCode: "gateway_claim", Deadline: now.Add(time.Minute)}
-	wire, err := good.wire("claim", now)
-	if err != nil {
-		t.Fatal(err)
+	resolve := func(request RequestContext) (*scriptedTransport, error) {
+		transport := &scriptedTransport{replies: []func() (*http.Response, error){
+			reply(404, `{"code":"not_found"}`)}}
+		base, _ := url.Parse("https://explorer.invalid")
+		client, err := NewDispatchClient(base, &http.Client{Transport: transport},
+			func() (string, error) { return "token", nil }, func() time.Time { return now })
+		if err != nil {
+			t.Fatal(err)
+		}
+		if client, err = client.BindExecutor("gateway"); err != nil {
+			t.Fatal(err)
+		}
+		_, err = client.Resolve(context.Background(), []byte("agent"), request)
+		return transport, err
 	}
-	if wire.Deadline.Location() != time.UTC || wire.RequestID != "AAE" || wire.CorrelationID != "" {
-		t.Fatalf("wire = %#v", wire)
+	// The resolve body is the context alone.
+	transport, err := resolve(good)
+	if DispatchKind(err) != DispatchNotFound || len(transport.bodies) != 1 {
+		t.Fatalf("resolve = %v after %d requests", err, len(transport.bodies))
+	}
+	if want := `{"request_id":"AAE","reason_code":"gateway_claim","deadline":"2026-10-08T17:01:00Z"}`; string(transport.bodies[0]) != want {
+		t.Fatalf("context wire = %s, want %s (the deadline in UTC, no correlation)", transport.bodies[0], want)
 	}
 	for name, mutate := range map[string]func(*RequestContext){
 		"no request ID":        func(r *RequestContext) { r.RequestID = nil },
-		"long request ID":      func(r *RequestContext) { r.RequestID = make([]byte, fleet.MaxActionIDBytes+1) },
+		"long request ID":      func(r *RequestContext) { r.RequestID = make([]byte, dispatchapi.MaxActionIDBytes+1) },
 		"long correlation ID":  func(r *RequestContext) { r.CorrelationID = make([]byte, shoal.MaxIDBytes+1) },
 		"no reason":            func(r *RequestContext) { r.ReasonCode = "" },
 		"untrimmed reason":     func(r *RequestContext) { r.ReasonCode = "claim " },
-		"long reason":          func(r *RequestContext) { r.ReasonCode = strings.Repeat("r", fleet.MaxReasonCodeBytes+1) },
+		"long reason":          func(r *RequestContext) { r.ReasonCode = strings.Repeat("r", dispatchapi.MaxReasonCodeBytes+1) },
 		"deadline now":         func(r *RequestContext) { r.Deadline = now },
 		"deadline in the past": func(r *RequestContext) { r.Deadline = now.Add(-time.Second) },
 		"no deadline":          func(r *RequestContext) { r.Deadline = time.Time{} },
 	} {
 		request := good
 		mutate(&request)
-		if _, err := request.wire("claim", now); DispatchKind(err) != DispatchRefusedLocal {
-			t.Errorf("%s: %v", name, err)
+		transport, err := resolve(request)
+		if DispatchKind(err) != DispatchRefusedLocal || len(transport.bodies) != 0 {
+			t.Errorf("%s: %v after %d requests", name, err, len(transport.bodies))
 		}
 	}
 }
@@ -172,13 +205,13 @@ func TestDispatchClientRefusesLocallyBeforeSending(t *testing.T) {
 	claimID := []byte("claim")
 	checks := map[string]error{}
 	_, checks["pull limit 0"] = client.Pull(ctx, request, "", 0)
-	_, checks["pull limit 257"] = client.Pull(ctx, request, "", fleet.MaxDispatchListResults+1)
+	_, checks["pull limit 257"] = client.Pull(ctx, request, "", dispatchapi.MaxDispatchListResults+1)
 	_, checks["pull bad cursor"] = client.Pull(ctx, request, "!!", 1)
 	_, checks["claim no ID"] = client.Claim(ctx, nil, ClaimRequest{Context: request, ExpectedVersion: 1, ClaimID: claimID, Lease: time.Minute})
 	_, checks["claim no version"] = client.Claim(ctx, []byte("a"), ClaimRequest{Context: request, ClaimID: claimID, Lease: time.Minute})
 	_, checks["claim no claim ID"] = client.Claim(ctx, []byte("a"), ClaimRequest{Context: request, ExpectedVersion: 1, Lease: time.Minute})
 	_, checks["claim zero lease"] = client.Claim(ctx, []byte("a"), ClaimRequest{Context: request, ExpectedVersion: 1, ClaimID: claimID})
-	_, checks["claim lease over ceiling"] = client.Claim(ctx, []byte("a"), ClaimRequest{Context: request, ExpectedVersion: 1, ClaimID: claimID, Lease: fleet.MaxActionClaimTTL + 1})
+	_, checks["claim lease over ceiling"] = client.Claim(ctx, []byte("a"), ClaimRequest{Context: request, ExpectedVersion: 1, ClaimID: claimID, Lease: dispatchapi.MaxActionClaimTTL + 1})
 	_, checks["complete both output and failure"] = client.Complete(ctx, []byte("a"), Completion{Context: request, ExpectedVersion: 1, ClaimID: claimID, ClaimFence: 1, Output: []byte(`{}`), Failed: true, ErrorCode: ErrorOutcomeUnknown})
 	_, checks["complete success with code"] = client.Complete(ctx, []byte("a"), Completion{Context: request, ExpectedVersion: 1, ClaimID: claimID, ClaimFence: 1, Output: []byte(`{}`), ErrorCode: ErrorOutcomeUnknown})
 	_, checks["complete success without output"] = client.Complete(ctx, []byte("a"), Completion{Context: request, ExpectedVersion: 1, ClaimID: claimID})
@@ -253,13 +286,13 @@ func lost() (*http.Response, error) { return nil, io.ErrUnexpectedEOF }
 
 var indeterminate = []string{"Shoal-Commit-Outcome", "indeterminate"}
 
-func committed(t *testing.T, version uint64, state fleet.DispatchState, code, output string) string {
+func committed(t *testing.T, version uint64, state dispatchapi.DispatchState, code, output string) string {
 	t.Helper()
 	return committedUnder(t, 1, version, state, code, output)
 }
 
 // committedUnder is committed() under a chosen claim fence.
-func committedUnder(t *testing.T, fence, version uint64, state fleet.DispatchState, code, output string) string {
+func committedUnder(t *testing.T, fence, version uint64, state dispatchapi.DispatchState, code, output string) string {
 	t.Helper()
 	record := map[string]any{
 		"id": base64.RawURLEncoding.EncodeToString([]byte("action")), "version": version,
@@ -284,8 +317,8 @@ func TestCompleteRecoversOnlyWhatTheResendConfirms(t *testing.T) {
 		ErrorCode: TargetRejected(422)}
 	success := Completion{ExpectedVersion: 2, ClaimID: []byte("claim"), ClaimFence: 1,
 		Output: json.RawMessage(`{"status":200,"idempotency":"key","reference":"ch_1"}`)}
-	failedRecord := committed(t, 3, fleet.DispatchFailed, "target_rejected_422", "")
-	successRecord := committed(t, 3, fleet.DispatchSucceeded, "", `{"idempotency":"key","reference":"ch_1","status":200}`)
+	failedRecord := committed(t, 3, dispatchapi.DispatchFailed, "target_rejected_422", "")
+	successRecord := committed(t, 3, dispatchapi.DispatchSucceeded, "", `{"idempotency":"key","reference":"ch_1","status":200}`)
 	for _, row := range []struct {
 		name       string
 		completion Completion
@@ -327,7 +360,7 @@ func TestCompleteRecoversOnlyWhatTheResendConfirms(t *testing.T) {
 			[]func() (*http.Response, error){lost, reply(500, `{}`), reply(500, `{}`)}, DispatchIndeterminate, 3},
 		{"indeterminate then 400 then the record", success,
 			[]func() (*http.Response, error){reply(503, `{}`, indeterminate...), reply(400, `{}`),
-				reply(200, committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""))},
+				reply(200, committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""))},
 			DispatchRecordedOtherwise, 3},
 		// A refusal answering the resend is not definite after a
 		// possibly-committed first attempt: the first write may still be in
@@ -353,7 +386,7 @@ func TestCompleteRecoversOnlyWhatTheResendConfirms(t *testing.T) {
 			DispatchIndeterminate, 3},
 		{"500 then 400 then the record otherwise", success,
 			[]func() (*http.Response, error){reply(500, `{}`), reply(400, `{}`),
-				reply(200, committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""))},
+				reply(200, committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""))},
 			DispatchRecordedOtherwise, 3},
 		// Interim until #505: a 503 without the indeterminate header may
 		// hide a committed write (ErrExecutionAmbiguous, ErrActionCommitted),
@@ -363,7 +396,7 @@ func TestCompleteRecoversOnlyWhatTheResendConfirms(t *testing.T) {
 			[]func() (*http.Response, error){reply(503, `{"code":"unavailable"}`), reply(200, successRecord)}, "", 2},
 		{"plain 503 then the record otherwise", success,
 			[]func() (*http.Response, error){reply(503, `{}`),
-				reply(200, committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""))},
+				reply(200, committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""))},
 			DispatchRecordedOtherwise, 2},
 		{"plain 503 twice", failure,
 			[]func() (*http.Response, error){reply(503, `{}`), reply(503, `{}`)}, DispatchIndeterminate, 2},
@@ -394,45 +427,45 @@ func TestCompleteRecoversOnlyWhatTheResendConfirms(t *testing.T) {
 		{"409", success, []func() (*http.Response, error){reply(409, `{"code":"conflict"}`)}, DispatchConflict, 1},
 		// Recorded otherwise: every reported field is compared.
 		{"failure recorded with another code", failure,
-			[]func() (*http.Response, error){reply(200, committed(t, 3, fleet.DispatchFailed, "outcome_unknown", ""))},
+			[]func() (*http.Response, error){reply(200, committed(t, 3, dispatchapi.DispatchFailed, "outcome_unknown", ""))},
 			DispatchRecordedOtherwise, 1},
 		{"success recorded with other output", success,
-			[]func() (*http.Response, error){reply(200, committed(t, 3, fleet.DispatchSucceeded, "", `{"status":200,"idempotency":"key"}`))},
+			[]func() (*http.Response, error){reply(200, committed(t, 3, dispatchapi.DispatchSucceeded, "", `{"status":200,"idempotency":"key"}`))},
 			DispatchRecordedOtherwise, 1},
 		{"success recorded as failed", success,
-			[]func() (*http.Response, error){reply(400, `{}`), reply(200, committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""))},
+			[]func() (*http.Response, error){reply(400, `{}`), reply(200, committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""))},
 			DispatchRecordedOtherwise, 2},
 		// With the fence, 200 comes for this claim generation's terminal
 		// record at any version past ExpectedVersion: an extension or an
 		// ambiguity report may have moved the version since the worker last
 		// saw it, and the fence, not the version, binds the completion.
 		{"version past the report under the fence", failure,
-			[]func() (*http.Response, error){reply(200, committed(t, 5, fleet.DispatchFailed, "target_rejected_422", ""))},
+			[]func() (*http.Response, error){reply(200, committed(t, 5, dispatchapi.DispatchFailed, "target_rejected_422", ""))},
 			"", 1},
 		// Another fence is another generation's record, never this report's.
 		// But the route answered success, so something committed: resend and
 		// read the record through the replay branch, never protocol alone.
 		{"another fence then the record", failure,
-			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, fleet.DispatchFailed, "target_rejected_422", "")),
+			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchFailed, "target_rejected_422", "")),
 				reply(200, failedRecord)}, "", 2},
 		{"another fence twice then the record", failure,
-			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, fleet.DispatchFailed, "target_rejected_422", "")),
-				reply(200, committedUnder(t, 2, 3, fleet.DispatchFailed, "target_rejected_422", "")), reply(200, failedRecord)}, "", 3},
+			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchFailed, "target_rejected_422", "")),
+				reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchFailed, "target_rejected_422", "")), reply(200, failedRecord)}, "", 3},
 		{"another fence three times", success,
-			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, fleet.DispatchSucceeded, "", `{}`)),
-				reply(200, committedUnder(t, 2, 3, fleet.DispatchSucceeded, "", `{}`)),
-				reply(200, committedUnder(t, 2, 3, fleet.DispatchSucceeded, "", `{}`))},
+			[]func() (*http.Response, error){reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchSucceeded, "", `{}`)),
+				reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchSucceeded, "", `{}`)),
+				reply(200, committedUnder(t, 2, 3, dispatchapi.DispatchSucceeded, "", `{}`))},
 			DispatchIndeterminate, 3},
 		{"version not past the report, three times", failure,
-			[]func() (*http.Response, error){reply(200, committed(t, 2, fleet.DispatchFailed, "target_rejected_422", "")),
-				reply(200, committed(t, 2, fleet.DispatchFailed, "target_rejected_422", "")),
-				reply(200, committed(t, 2, fleet.DispatchFailed, "target_rejected_422", ""))},
+			[]func() (*http.Response, error){reply(200, committed(t, 2, dispatchapi.DispatchFailed, "target_rejected_422", "")),
+				reply(200, committed(t, 2, dispatchapi.DispatchFailed, "target_rejected_422", "")),
+				reply(200, committed(t, 2, dispatchapi.DispatchFailed, "target_rejected_422", ""))},
 			DispatchIndeterminate, 3},
 		{"undecodable 2xx then the record", success,
 			[]func() (*http.Response, error){reply(200, `not json`), reply(200, successRecord)}, "", 2},
 		{"undecodable 2xx then the record otherwise", success,
 			[]func() (*http.Response, error){reply(201, `{"id":"!!"}`),
-				reply(200, committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""))},
+				reply(200, committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""))},
 			DispatchRecordedOtherwise, 2},
 		{"undecodable 2xx then lost", success,
 			[]func() (*http.Response, error){reply(200, `not json`), lost}, DispatchIndeterminate, 2},
@@ -509,17 +542,17 @@ func TestCompleteTakesARecordedOutcomeFromOneRequest(t *testing.T) {
 		completion Completion
 		record     string
 		kind       DispatchErrorKind
-		state      fleet.DispatchState
+		state      dispatchapi.DispatchState
 		code       string
 	}{
 		{"reported failure", Completion{ExpectedVersion: 2, ClaimID: []byte("claim"), ClaimFence: 1, Failed: true,
 			ErrorCode: TargetRejected(422)},
-			committed(t, 3, fleet.DispatchFailed, "target_rejected_422", ""),
-			"", fleet.DispatchFailed, "target_rejected_422"},
+			committed(t, 3, dispatchapi.DispatchFailed, "target_rejected_422", ""),
+			"", dispatchapi.DispatchFailed, "target_rejected_422"},
 		{"success recorded otherwise", Completion{ExpectedVersion: 2, ClaimID: []byte("claim"), ClaimFence: 1,
 			Output: json.RawMessage(`{"status":200}`)},
-			committed(t, 3, fleet.DispatchFailed, "invalid_executor_output", ""),
-			DispatchRecordedOtherwise, fleet.DispatchFailed, "invalid_executor_output"},
+			committed(t, 3, dispatchapi.DispatchFailed, "invalid_executor_output", ""),
+			DispatchRecordedOtherwise, dispatchapi.DispatchFailed, "invalid_executor_output"},
 	} {
 		transport := &scriptedTransport{replies: []func() (*http.Response, error){
 			reply(200, row.record),
@@ -601,8 +634,12 @@ func TestClaimPossiblyCommittedIsARepullSignal(t *testing.T) {
 			}
 			original := errors.Unwrap(err)
 			var cause *DispatchError
-			if !errors.As(original, &cause) || cause.Kind == DispatchRepull ||
-				!answerLost(cause) || cause.Status != dispatchErr.Status {
+			found := errors.As(original, &cause)
+			lostKind := found && (cause.Kind == DispatchTransport ||
+				cause.Kind == DispatchIndeterminate || cause.Kind == DispatchUnavailable ||
+				cause.Status == http.StatusBadGateway || cause.Status == http.StatusGatewayTimeout)
+			if !found || cause.Kind == DispatchRepull ||
+				!lostKind || cause.Status != dispatchErr.Status {
 				t.Errorf("%s: repull error lost its original kind: %#v", row.name, original)
 			}
 		}

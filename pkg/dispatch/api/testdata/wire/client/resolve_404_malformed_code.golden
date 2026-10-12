@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: not_found (HTTP 404)
+kind: not_found
+status: 404 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: not_found(404)

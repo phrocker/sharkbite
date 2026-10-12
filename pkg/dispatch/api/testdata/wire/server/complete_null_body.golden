@@ -1,0 +1,8 @@
+POST /api/v1/fleet/actions/YQD_/complete
+request content-type: application/json
+request body: "null"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: request ID is required\"}\n"

@@ -25,7 +25,7 @@ import (
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 const secretReference = "ch_9876543210"
@@ -54,7 +54,7 @@ func entry(action string, fence uint64) effectsgateway.UnrecordedEntry {
 	return effectsgateway.UnrecordedEntry{
 		ActionID: []byte(action), Fence: fence, ClaimNonce: effectsgateway.ClaimNonce{1, 2, 3},
 		RouteAction: "status", Method: "POST", PathTemplate: "/v1/status",
-		Outcome: fleet.AmbiguityEffectObserved, Target: "api.stripe.test",
+		Outcome: dispatchapi.AmbiguityEffectObserved, Target: "api.stripe.test",
 		Reference: secretReference, CorrelationID: []byte("trace-" + action),
 		Status: 404, DispatchError: effectsgateway.DispatchNotFound,
 	}

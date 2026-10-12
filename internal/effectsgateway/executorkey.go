@@ -20,15 +20,14 @@ package effectsgateway
 import (
 	"crypto/subtle"
 	"encoding/base64"
-	"errors"
-	"fmt"
-	"strings"
+
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // ExecutorKeyBytes is the width of an action's ExecutorKey: a SHA-256 digest
 // the fleet derives at enqueue over a domain tag, the action ID and the
 // caller's idempotency key, each length-prefixed.
-const ExecutorKeyBytes = 32
+const ExecutorKeyBytes = dispatchapi.ExecutorKeyBytes
 
 // ExecutorKey is the idempotency key the gateway presents to a target.
 //
@@ -44,11 +43,13 @@ type ExecutorKey struct {
 	set   bool
 }
 
-// ErrExecutorKeyMissing says the claim response carried no executor key.
-var ErrExecutorKeyMissing = errors.New("executor key is missing")
+// ErrExecutorKeyMissing says the claim response carried no executor key. It is
+// the public client's sentinel, so either matches with errors.Is.
+var ErrExecutorKeyMissing = dispatchapi.ErrExecutorKeyMissing
 
 // ParseExecutorKey decodes an ExecutorKey from either spelling the platform
-// emits for it, and refuses everything else.
+// emits for it, and refuses everything else (dispatchapi.ParseExecutorKey,
+// which the dispatch client applies to every claim response).
 //
 // The dispatch HTTP wire spells it unpadded base64url. The MCP tools return
 // fleet.ActionRecord whole, and that type has no JSON tags, so encoding/json
@@ -62,31 +63,9 @@ var ErrExecutorKeyMissing = errors.New("executor key is missing")
 // which is harmless for this value and still not something a strict decoder
 // should accept from a wire that never produces it.
 func ParseExecutorKey(encoded string) (ExecutorKey, error) {
-	if encoded == "" {
-		return ExecutorKey{}, ErrExecutorKeyMissing
-	}
-	if strings.ContainsAny(encoded, " \t\r\n") {
-		return ExecutorKey{}, errors.New("executor key must not contain whitespace")
-	}
-	var (
-		decoded []byte
-		err     error
-	)
-	switch {
-	case strings.HasSuffix(encoded, "="):
-		// Padded: only the standard alphabet is ever emitted padded.
-		decoded, err = base64.StdEncoding.Strict().DecodeString(encoded)
-	default:
-		decoded, err = base64.RawURLEncoding.Strict().DecodeString(encoded)
-	}
+	decoded, err := dispatchapi.ParseExecutorKey(encoded)
 	if err != nil {
-		return ExecutorKey{}, errors.New(
-			"executor key must be unpadded base64url or padded standard base64")
-	}
-	if len(decoded) != ExecutorKeyBytes {
-		return ExecutorKey{}, fmt.Errorf(
-			"executor key must decode to exactly %d bytes, not %d",
-			ExecutorKeyBytes, len(decoded))
+		return ExecutorKey{}, err
 	}
 	var key ExecutorKey
 	copy(key.bytes[:], decoded)

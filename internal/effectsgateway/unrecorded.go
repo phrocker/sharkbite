@@ -33,7 +33,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/dirlock"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // The unrecorded log (#514) holds lost-fence reports the explorer did not
@@ -98,7 +98,7 @@ type UnrecordedEntry struct {
 	RouteAction   string
 	Method        string
 	PathTemplate  string
-	Outcome       fleet.AmbiguityOutcome
+	Outcome       dispatchapi.AmbiguityOutcome
 	Target        string
 	Reference     string
 	CorrelationID []byte
@@ -165,7 +165,7 @@ func (w unrecordedWire) entry() (UnrecordedEntry, error) {
 	}
 	entry := UnrecordedEntry{
 		ActionID: id, Fence: w.Fence, RouteAction: w.RouteAction, Method: w.Method,
-		PathTemplate: w.PathTemplate, Outcome: fleet.AmbiguityOutcome(w.Outcome),
+		PathTemplate: w.PathTemplate, Outcome: dispatchapi.AmbiguityOutcome(w.Outcome),
 		Target: w.Target, Reference: w.Reference, CorrelationID: correlation,
 		Status: w.Status, DispatchError: DispatchErrorKind(w.DispatchError),
 		FirstAt: w.FirstAt, LastAt: w.LastAt, Attempts: w.Attempts,
@@ -184,7 +184,7 @@ func (w unrecordedWire) entry() (UnrecordedEntry, error) {
 // a hand-edited log cannot carry text a report could not.
 func (e UnrecordedEntry) check() error {
 	switch {
-	case len(e.ActionID) == 0 || len(e.ActionID) > fleet.MaxActionIDBytes:
+	case len(e.ActionID) == 0 || len(e.ActionID) > dispatchapi.MaxActionIDBytes:
 		return errors.New("action ID is outside its bound")
 	case e.Fence == 0:
 		return errors.New("fence is required")
@@ -192,9 +192,9 @@ func (e UnrecordedEntry) check() error {
 		return errors.New("outcome is not in the closed vocabulary")
 	case CheckCorrelationID(e.CorrelationID) != nil:
 		return errors.New("correlation ID is not one the explorer accepts")
-	case len(e.Target) > fleet.MaxAmbiguityTargetBytes || !printableAmbiguityText(e.Target):
+	case len(e.Target) > dispatchapi.MaxAmbiguityTargetBytes || !printableAmbiguityText(e.Target):
 		return errors.New("target is outside its bound")
-	case len(e.Reference) > fleet.MaxAmbiguityReferenceBytes || !printableAmbiguityText(e.Reference):
+	case len(e.Reference) > dispatchapi.MaxAmbiguityReferenceBytes || !printableAmbiguityText(e.Reference):
 		return errors.New("reference is outside its bound")
 	case len(e.RouteAction) > 256 || len(e.Method) > 16 || len(e.PathTemplate) > maxPathTemplateBytes:
 		return errors.New("route fields are outside their bounds")

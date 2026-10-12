@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: transport (timeout)
+kind: transport
+status: 0 code: "" failure: "timeout"
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: true
+chain: transport(0)

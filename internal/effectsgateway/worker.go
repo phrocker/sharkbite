@@ -31,7 +31,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // The worker loop (#391):
@@ -255,15 +255,15 @@ func NewWorker(cfg WorkerConfig) (*Worker, error) {
 		return nil, errors.New("worker requires the unrecorded log, whose lock is the single-replica guarantee")
 	case len(cfg.AgentID) == 0 || cfg.Capability == "" || cfg.Pod == "":
 		return nil, errors.New("worker requires an agent ID, a capability and a pod name")
-	case len(cfg.SurfaceName) > fleet.MaxAmbiguityTargetBytes || !printableAmbiguityText(cfg.SurfaceName):
+	case len(cfg.SurfaceName) > dispatchapi.MaxAmbiguityTargetBytes || !printableAmbiguityText(cfg.SurfaceName):
 		return nil, errors.New("surface name must be printable and fit an ambiguity report's target")
-	case cfg.ClaimLease <= 0 || cfg.ClaimLease > fleet.MaxActionClaimTTL:
-		return nil, errors.New("claim lease must be positive and at most " + fleet.MaxActionClaimTTL.String())
+	case cfg.ClaimLease <= 0 || cfg.ClaimLease > dispatchapi.MaxActionClaimTTL:
+		return nil, errors.New("claim lease must be positive and at most " + dispatchapi.MaxActionClaimTTL.String())
 	case cfg.OperationTimeout <= 0 || cfg.PlaneTimeout <= 0:
 		return nil, errors.New("operation and plane timeouts must be positive")
 	case cfg.MaxResponseBytes <= 0:
 		return nil, errors.New("max response bytes must be positive")
-	case cfg.PullLimit <= 0 || cfg.PullLimit > fleet.MaxDispatchListResults:
+	case cfg.PullLimit <= 0 || cfg.PullLimit > dispatchapi.MaxDispatchListResults:
 		return nil, errors.New("pull limit is outside its bound")
 	case cfg.PullInterval <= 0:
 		return nil, errors.New("pull interval must be positive")
@@ -584,7 +584,7 @@ func (w *Worker) abandonRuns(runs []*claimRun) int {
 				continue
 			}
 			entries = append(entries, run.unrecorded(w.cfg.SurfaceName,
-				fleet.AmbiguityOutcomeUnknown, "", nil))
+				dispatchapi.AmbiguityOutcomeUnknown, "", nil))
 		}
 	}
 	// Then cancel, so requests in flight stop now rather than after the
@@ -600,7 +600,7 @@ func (w *Worker) abandonRuns(runs []*claimRun) int {
 	}
 	for _, run := range written {
 		record := w.record(run, EventUnrecorded)
-		record.Ambiguity = fleet.AmbiguityOutcomeUnknown
+		record.Ambiguity = dispatchapi.AmbiguityOutcomeUnknown
 		if err != nil {
 			record.Event = EventDispatch
 		}
@@ -1048,7 +1048,7 @@ func (r *claimRun) settle() {
 
 // unrecorded is this run's entry in the unrecorded log; err is the report's
 // last failure, nil when no report was attempted.
-func (r *claimRun) unrecorded(target string, outcome fleet.AmbiguityOutcome, ref string, err error) UnrecordedEntry {
+func (r *claimRun) unrecorded(target string, outcome dispatchapi.AmbiguityOutcome, ref string, err error) UnrecordedEntry {
 	return UnrecordedEntry{
 		ActionID: r.action.ID, Fence: r.action.ClaimFence, ClaimNonce: r.nonce,
 		RouteAction: r.route.Action(), Method: r.route.Method(),
@@ -1318,7 +1318,7 @@ func (w *Worker) handle(run *claimRun) {
 	bound, err := w.cfg.Binder.Bind(run.route, run.action.Input, run.action.ExecutorKey)
 	if err != nil {
 		// Nothing was sent. The record says so, then fails the action.
-		w.report(run, fleet.AmbiguityRequestNotSent, "")
+		w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
 		if !run.isLost() {
 			w.complete(run, Classification{Outcome: OutcomeFailed, Kind: KindNotSent,
 				ErrorCode: ErrorInputInvalid}, sendResult{}, stopRenewal)
@@ -1335,7 +1335,7 @@ func (w *Worker) handle(run *claimRun) {
 		case result.lost || result.stopped == GateDraining || result.stopped == GateLease:
 			// FENCE_LOST, or draining, with nothing sent: say so and let
 			// the claim lapse for another attempt.
-			w.report(run, fleet.AmbiguityRequestNotSent, "")
+			w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
 		default:
 			// The deadline cannot hold the operation, or the credential is
 			// unavailable: nothing left, and the fence is still held.
@@ -1349,14 +1349,14 @@ func (w *Worker) handle(run *claimRun) {
 }
 
 // lostOutcome is the ambiguity outcome for what SEND observed.
-func lostOutcome(result sendResult) fleet.AmbiguityOutcome {
+func lostOutcome(result sendResult) dispatchapi.AmbiguityOutcome {
 	switch {
 	case result.final && result.class.Outcome == OutcomeSucceeded:
-		return fleet.AmbiguityEffectObserved
+		return dispatchapi.AmbiguityEffectObserved
 	case !result.sent:
-		return fleet.AmbiguityRequestNotSent
+		return dispatchapi.AmbiguityRequestNotSent
 	}
-	return fleet.AmbiguityOutcomeUnknown
+	return dispatchapi.AmbiguityOutcomeUnknown
 }
 
 func reference(class Classification) string {
@@ -1568,25 +1568,25 @@ func (w *Worker) complete(run *claimRun, class Classification, result sendResult
 // effected is the volume a failure may have let out (#427): an upper bound,
 // the request body of every attempt that may have been written. Only on an
 // egress route, and never chunks without bytes.
-func (w *Worker) effected(route *Route, result sendResult) fleet.EffectedVolume {
+func (w *Worker) effected(route *Route, result sendResult) dispatchapi.Effected {
 	if !result.sent || result.bytes <= 0 {
-		return fleet.EffectedVolume{}
+		return dispatchapi.Effected{}
 	}
 	egress := false
 	for _, effect := range route.Effects() {
-		if effect == fleet.EffectEgressesContent {
+		if effect == dispatchapi.EffectEgressesContent {
 			egress = true
 		}
 	}
 	if !egress {
-		return fleet.EffectedVolume{}
+		return dispatchapi.Effected{}
 	}
-	volume := fleet.EffectedVolume{Bytes: result.bytes, Chunks: result.chunks}
-	if volume.Bytes > fleet.MaxEffectedBytes {
-		volume.Bytes = fleet.MaxEffectedBytes
+	volume := dispatchapi.Effected{Bytes: result.bytes, Chunks: result.chunks}
+	if volume.Bytes > dispatchapi.MaxEffectedBytes {
+		volume.Bytes = dispatchapi.MaxEffectedBytes
 	}
-	if volume.Chunks > fleet.MaxEffectedChunks {
-		volume.Chunks = fleet.MaxEffectedChunks
+	if volume.Chunks > dispatchapi.MaxEffectedChunks {
+		volume.Chunks = dispatchapi.MaxEffectedChunks
 	}
 	return volume
 }
@@ -1595,7 +1595,7 @@ func (w *Worker) effected(route *Route, result sendResult) fleet.EffectedVolume 
 // explorer does not record — refused, not found, or indeterminate after the
 // retries — goes to the unrecorded log; if even that fails, the failure is
 // logged, never dropped silently.
-func (w *Worker) report(run *claimRun, outcome fleet.AmbiguityOutcome, ref string) {
+func (w *Worker) report(run *claimRun, outcome dispatchapi.AmbiguityOutcome, ref string) {
 	run.mu.Lock()
 	if run.reported {
 		run.mu.Unlock()

@@ -27,7 +27,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 const configRoutes = `[{"action":"charge","method":"POST","path":"/v1/charges",` +
@@ -93,7 +93,7 @@ func TestParseFlagsAcceptsTheBaseConfiguration(t *testing.T) {
 		t.Fatalf("config = %#v", config)
 	}
 	if !reflect.DeepEqual(config.Effects,
-		fleet.Effects{fleet.EffectEgressesContent, fleet.EffectMutatesExternal}) {
+		dispatchapi.Effects{dispatchapi.EffectEgressesContent, dispatchapi.EffectMutatesExternal}) {
 		t.Fatalf("effects = %v", config.Effects)
 	}
 	if _, ok := config.Routes.Lookup("charge"); !ok {
@@ -266,7 +266,7 @@ func TestParseFlagsAcceptsTheDocumentedExceptions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("loopback target: %v", err)
 	}
-	if !reflect.DeepEqual(config.Effects, fleet.Effects{fleet.EffectMutatesExternal}) {
+	if !reflect.DeepEqual(config.Effects, dispatchapi.Effects{dispatchapi.EffectMutatesExternal}) {
 		t.Fatalf("loopback effects = %v", config.Effects)
 	}
 	// An agent ID with surrounding whitespace is normalized, and the

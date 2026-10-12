@@ -32,7 +32,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/interaction"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
@@ -82,7 +82,7 @@ func claimedRecord(t *testing.T, version uint64, fence uint64, leaseUntil, deadl
 	t.Helper()
 	record := map[string]any{
 		"id": base64.RawURLEncoding.EncodeToString([]byte("action")), "version": version,
-		"state": fleet.DispatchClaimed, "agent_id": "",
+		"state": dispatchapi.DispatchClaimed, "agent_id": "",
 		"claim_id":    base64.RawURLEncoding.EncodeToString([]byte("claim")),
 		"claim_fence": fence, "claim_lease_until": leaseUntil, "deadline": deadline,
 		"effect_possible": true,
@@ -103,7 +103,7 @@ func TestExtendTakesTheExplorersLeaseEndAndClassifiesRefusals(t *testing.T) {
 	granted := deadline // clamped
 	renewed := claimedRecord(t, 3, 1, granted, deadline)
 	request := ExtendRequest{Context: opsContext(), ClaimID: []byte("claim"),
-		ClaimFence: 1, Lease: fleet.MaxActionClaimTTL}
+		ClaimFence: 1, Lease: dispatchapi.MaxActionClaimTTL}
 	for _, row := range []struct {
 		name    string
 		replies []func() (*http.Response, error)
@@ -172,7 +172,7 @@ func TestExtendTakesTheExplorersLeaseEndAndClassifiesRefusals(t *testing.T) {
 	}
 }
 
-func ambiguityReportWire(fence uint64, outcome fleet.AmbiguityOutcome, reference string) map[string]any {
+func ambiguityReportWire(fence uint64, outcome dispatchapi.AmbiguityOutcome, reference string) map[string]any {
 	return map[string]any{"claim_fence": fence, "outcome": outcome, "reference": reference,
 		"subject": "c3ViamVjdA", "actor": "YWN0b3I", "reported_at": time.Now().UTC()}
 }
@@ -180,12 +180,12 @@ func ambiguityReportWire(fence uint64, outcome fleet.AmbiguityOutcome, reference
 func TestReportAmbiguityClassifiesEveryAnswer(t *testing.T) {
 	now := time.Now().UTC()
 	report := AmbiguityReport{Context: opsContext(), ClaimFence: 1,
-		Outcome: fleet.AmbiguityOutcomeUnknown, Reference: "ch_42"}
+		Outcome: dispatchapi.AmbiguityOutcomeUnknown, Reference: "ch_42"}
 	recorded := claimedRecord(t, 4, 2, now.Add(time.Minute), now.Add(time.Hour),
-		ambiguityReportWire(1, fleet.AmbiguityOutcomeUnknown, "ch_42"))
+		ambiguityReportWire(1, dispatchapi.AmbiguityOutcomeUnknown, "ch_42"))
 	// A record that does not carry this report: another reference.
 	without := claimedRecord(t, 4, 2, now.Add(time.Minute), now.Add(time.Hour),
-		ambiguityReportWire(1, fleet.AmbiguityOutcomeUnknown, "ch_43"))
+		ambiguityReportWire(1, dispatchapi.AmbiguityOutcomeUnknown, "ch_43"))
 	for _, row := range []struct {
 		name       string
 		replies    []func() (*http.Response, error)
@@ -252,10 +252,10 @@ func TestReportAmbiguityBoundsTheTextAsTheExplorerDoes(t *testing.T) {
 		ok                bool
 	}{
 		"empty":                    {"", "", true},
-		"at the bound":             {strings.Repeat("t", fleet.MaxAmbiguityTargetBytes), strings.Repeat("r", fleet.MaxAmbiguityReferenceBytes), true},
+		"at the bound":             {strings.Repeat("t", dispatchapi.MaxAmbiguityTargetBytes), strings.Repeat("r", dispatchapi.MaxAmbiguityReferenceBytes), true},
 		"a space and non-ASCII":    {"api.stripe.com", "ch 42 é", true},
-		"reference past the bound": {"", strings.Repeat("r", fleet.MaxAmbiguityReferenceBytes+1), false},
-		"target past the bound":    {strings.Repeat("t", fleet.MaxAmbiguityTargetBytes+1), "", false},
+		"reference past the bound": {"", strings.Repeat("r", dispatchapi.MaxAmbiguityReferenceBytes+1), false},
+		"target past the bound":    {strings.Repeat("t", dispatchapi.MaxAmbiguityTargetBytes+1), "", false},
 		"a control character":      {"", "ch_42\n", false},
 		"a NUL":                    {"", "ch\x00", false},
 		"a bidi override":          {"", "ch_‮24", false},
@@ -265,7 +265,7 @@ func TestReportAmbiguityBoundsTheTextAsTheExplorerDoes(t *testing.T) {
 	} {
 		client, transport := opsClient(t, reply(200, `{}`), reply(200, `{}`))
 		_, err := client.ReportAmbiguity(context.Background(), []byte("action"), AmbiguityReport{
-			Context: opsContext(), ClaimFence: 1, Outcome: fleet.AmbiguityEffectObserved,
+			Context: opsContext(), ClaimFence: 1, Outcome: dispatchapi.AmbiguityEffectObserved,
 			Target: row.target, Reference: row.reference,
 		})
 		refused := DispatchKind(err) == DispatchRefusedLocal
@@ -319,12 +319,12 @@ func TestCorrelationIsSentFromTheRecordAndCheckedFirst(t *testing.T) {
 	}
 
 	// The record's correlation, on every request about it.
-	terminal := committedUnder(t, 1, 3, fleet.DispatchSucceeded, "", `{}`)
+	terminal := committedUnder(t, 1, 3, dispatchapi.DispatchSucceeded, "", `{}`)
 	client, transport = opsClient(t,
 		reply(200, claimedRecord(t, 2, 1, now.Add(time.Minute), now.Add(time.Hour))),
 		reply(200, claimedRecord(t, 3, 1, now.Add(2*time.Minute), now.Add(time.Hour))),
 		reply(200, claimedRecord(t, 4, 1, now.Add(2*time.Minute), now.Add(time.Hour),
-			ambiguityReportWire(1, fleet.AmbiguityOutcomeUnknown, ""))),
+			ambiguityReportWire(1, dispatchapi.AmbiguityOutcomeUnknown, ""))),
 		reply(200, terminal))
 	base := RequestContext{RequestID: []byte("r"), ReasonCode: "gateway_op", Deadline: time.Now().Add(time.Minute)}
 	if _, err := client.Claim(ctx, action.ID, ClaimRequest{Context: action.Correlate(base),
@@ -336,7 +336,7 @@ func TestCorrelationIsSentFromTheRecordAndCheckedFirst(t *testing.T) {
 		t.Fatalf("extend: %v", err)
 	}
 	if _, err := client.ReportAmbiguity(ctx, action.ID, AmbiguityReport{Context: action.Correlate(base),
-		ClaimFence: 1, Outcome: fleet.AmbiguityOutcomeUnknown}); err != nil {
+		ClaimFence: 1, Outcome: dispatchapi.AmbiguityOutcomeUnknown}); err != nil {
 		t.Fatalf("ambiguity: %v", err)
 	}
 	if _, err := client.Complete(ctx, action.ID, Completion{Context: action.Correlate(base),
@@ -369,7 +369,7 @@ func TestCorrelationIsSentFromTheRecordAndCheckedFirst(t *testing.T) {
 		_, checks["complete"] = client.Complete(ctx, []byte("a"), Completion{Context: malformed,
 			ExpectedVersion: 1, ClaimID: []byte("claim"), ClaimFence: 1, Output: json.RawMessage(`{}`)})
 		_, checks["ambiguity"] = client.ReportAmbiguity(ctx, []byte("a"), AmbiguityReport{Context: malformed,
-			ClaimFence: 1, Outcome: fleet.AmbiguityRequestNotSent})
+			ClaimFence: 1, Outcome: dispatchapi.AmbiguityRequestNotSent})
 		if correlation != nil {
 			_, checks["pull"] = client.Pull(ctx, malformed, "", 1)
 		}
@@ -395,14 +395,14 @@ func TestOpsRefuseLocallyBeforeSending(t *testing.T) {
 		"no claim":   func(r *ExtendRequest) { r.ClaimID = nil },
 		"no fence":   func(r *ExtendRequest) { r.ClaimFence = 0 },
 		"zero lease": func(r *ExtendRequest) { r.Lease = 0 },
-		"over TTL":   func(r *ExtendRequest) { r.Lease = fleet.MaxActionClaimTTL + 1 },
+		"over TTL":   func(r *ExtendRequest) { r.Lease = dispatchapi.MaxActionClaimTTL + 1 },
 	} {
 		changed := extend
 		mutate(&changed)
 		_, checks["extend "+name] = client.Extend(ctx, []byte("a"), changed)
 	}
 	_, checks["ambiguity no fence"] = client.ReportAmbiguity(ctx, []byte("a"),
-		AmbiguityReport{Context: request, Outcome: fleet.AmbiguityOutcomeUnknown})
+		AmbiguityReport{Context: request, Outcome: dispatchapi.AmbiguityOutcomeUnknown})
 	_, checks["ambiguity open outcome"] = client.ReportAmbiguity(ctx, []byte("a"),
 		AmbiguityReport{Context: request, ClaimFence: 1, Outcome: "it_went_fine"})
 	_, checks["complete no fence"] = client.Complete(ctx, []byte("a"), Completion{Context: request,
@@ -503,3 +503,17 @@ func TestPresentAttestationRereadsItsFiles(t *testing.T) {
 type roundTripFunc func(*http.Request) (*http.Response, error)
 
 func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) { return f(request) }
+
+// TestResolveRefusesAGateItCannotSee: an action field the gateway does not
+// know may be a gate (requires_approval and requires_attestation arrived that
+// way), so the descriptor is refused and the gateway does not start.
+func TestResolveRefusesAGateItCannotSee(t *testing.T) {
+	client, _ := opsClient(t, reply(200, `{"id":"YWdlbnQ","generation":1,"executor_ref":"gateway",`+
+		`"capabilities":[{"name":"effects.gateway","actions":[{"name":"charge","input_schema":{},`+
+		`"output_schema":{},"effects":["external"],"requires_new_gate":true}]}]}`))
+	request := opsContext()
+	request.CorrelationID = nil
+	if _, err := client.Resolve(context.Background(), []byte("agent"), request); DispatchKind(err) != DispatchProtocol {
+		t.Fatalf("resolve with an unknown gate = %v, want protocol", err)
+	}
+}

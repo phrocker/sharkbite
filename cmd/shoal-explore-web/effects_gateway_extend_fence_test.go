@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // TestTheGatewayRenewsOnTheFenceAfterAFormerHoldersReport (#629): a claim
@@ -38,7 +38,7 @@ func TestTheGatewayRenewsOnTheFenceAfterAFormerHoldersReport(t *testing.T) {
 	// Between the claim and the extend: the displaced holder's report.
 	reported, err := client.ReportAmbiguity(ctx, former.ID, effectsgateway.AmbiguityReport{
 		Context:    former.Correlate(g.context("gateway_ambiguity")),
-		ClaimFence: former.ClaimFence, Outcome: fleet.AmbiguityOutcomeUnknown,
+		ClaimFence: former.ClaimFence, Outcome: dispatchapi.AmbiguityOutcomeUnknown,
 		Target: "api.stripe.test",
 	})
 	if err != nil {
@@ -78,7 +78,7 @@ func TestTheGatewayRenewsOnTheFenceAfterAFormerHoldersReport(t *testing.T) {
 	}
 
 	completed, err := g.complete(client, current, currentClaimID, current.Version)
-	if err != nil || completed.State != fleet.DispatchSucceeded {
+	if err != nil || completed.State != dispatchapi.DispatchSucceeded {
 		t.Fatalf("complete = %+v, %v", completed.State, err)
 	}
 }

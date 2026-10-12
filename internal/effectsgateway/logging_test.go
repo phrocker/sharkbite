@@ -34,7 +34,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // TestLoggingNeverCarriesAFilledURL is the url.Error case the policy exists
@@ -126,7 +126,7 @@ func TestLogRecordAdmitsOnlyThePolicyFields(t *testing.T) {
 		"Gate":           reflect.TypeOf(GateRefusal("")),
 		"DispatchError":  reflect.TypeOf(DispatchErrorKind("")),
 		// Closed sets and a count, added with the worker loop.
-		"Ambiguity":     reflect.TypeOf(fleet.AmbiguityOutcome("")),
+		"Ambiguity":     reflect.TypeOf(dispatchapi.AmbiguityOutcome("")),
 		"Unrecorded":    reflect.TypeOf(0),
 		"NotReady":      reflect.TypeOf(NotReadyReason("")),
 		"Abandoned":     reflect.TypeOf(0),

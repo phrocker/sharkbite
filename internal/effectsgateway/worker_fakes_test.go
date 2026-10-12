@@ -39,7 +39,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 var workerEpoch = time.Date(2026, 10, 9, 12, 0, 0, 0, time.UTC)
@@ -201,7 +201,7 @@ func (e *fakeExplorer) enqueueFor(id, agent, capability, action, input string, d
 	now := e.serverNow()
 	e.records[id] = &fakeRecord{
 		action: Action{
-			ID: []byte(id), Version: 1, State: fleet.DispatchQueued, AgentID: []byte(agent),
+			ID: []byte(id), Version: 1, State: dispatchapi.DispatchQueued, AgentID: []byte(agent),
 			Capability: capability, Action: action, Deadline: deadline.UTC(),
 			CreatedAt: now.UTC(), UpdatedAt: now.UTC(), CorrelationID: []byte("trace-" + id),
 		},
@@ -268,8 +268,8 @@ func (e *fakeExplorer) Pull(ctx context.Context, request RequestContext, after s
 	for _, id := range e.order {
 		record := e.records[id]
 		switch {
-		case record.action.State == fleet.DispatchQueued,
-			record.action.State == fleet.DispatchClaimed && !now.Before(record.leaseUntil):
+		case record.action.State == dispatchapi.DispatchQueued,
+			record.action.State == dispatchapi.DispatchClaimed && !now.Before(record.leaseUntil):
 			offered := record.action
 			offered.Input, offered.ExecutorKey = nil, ExecutorKey{}
 			page.Actions = append(page.Actions, offered)
@@ -306,8 +306,8 @@ func (e *fakeExplorer) Claim(ctx context.Context, id []byte, request ClaimReques
 	if !ok || record.action.Version != request.ExpectedVersion {
 		return Action{}, conflict("claim", http.StatusConflict)
 	}
-	if record.action.State != fleet.DispatchQueued &&
-		!(record.action.State == fleet.DispatchClaimed && !now.Before(record.leaseUntil)) {
+	if record.action.State != dispatchapi.DispatchQueued &&
+		!(record.action.State == dispatchapi.DispatchClaimed && !now.Before(record.leaseUntil)) {
 		return Action{}, conflict("claim", http.StatusNotFound)
 	}
 	e.fence++
@@ -315,7 +315,7 @@ func (e *fakeExplorer) Claim(ctx context.Context, id []byte, request ClaimReques
 	if lease.After(record.action.Deadline) {
 		lease = record.action.Deadline
 	}
-	record.action.State, record.action.Version = fleet.DispatchClaimed, record.action.Version+1
+	record.action.State, record.action.Version = dispatchapi.DispatchClaimed, record.action.Version+1
 	record.action.ClaimID = append([]byte(nil), request.ClaimID...)
 	record.action.ClaimFence, record.action.ClaimLeaseUntil = e.fence, lease.UTC()
 	record.action.UpdatedAt, record.action.EffectPossible = now.UTC(), true
@@ -343,7 +343,7 @@ func (e *fakeExplorer) Extend(ctx context.Context, id []byte, request ExtendRequ
 	record := e.records[string(id)]
 	now := e.serverNow()
 	if record == nil || record.action.ClaimFence != request.ClaimFence ||
-		record.action.State != fleet.DispatchClaimed || !now.Before(record.leaseUntil) {
+		record.action.State != dispatchapi.DispatchClaimed || !now.Before(record.leaseUntil) {
 		return Action{}, &DispatchError{Op: "extend", Kind: DispatchFenceLost, Status: http.StatusConflict}
 	}
 	apply := func(now time.Time) {
@@ -389,15 +389,15 @@ func (e *fakeExplorer) Complete(ctx context.Context, id []byte, completion Compl
 	}
 	record := e.records[string(id)]
 	if record == nil || record.action.ClaimFence != completion.ClaimFence ||
-		record.action.State != fleet.DispatchClaimed {
+		record.action.State != dispatchapi.DispatchClaimed {
 		return Action{}, conflict("complete", http.StatusConflict)
 	}
 	record.action.Version++
 	if completion.Failed {
-		record.action.State, record.action.ErrorCode = fleet.DispatchFailed, completion.ErrorCode
+		record.action.State, record.action.ErrorCode = dispatchapi.DispatchFailed, completion.ErrorCode
 		record.action.Effected = completion.Effected
 	} else {
-		record.action.State, record.action.Output = fleet.DispatchSucceeded, completion.Output
+		record.action.State, record.action.Output = dispatchapi.DispatchSucceeded, completion.Output
 	}
 	return record.action, nil
 }

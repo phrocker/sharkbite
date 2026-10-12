@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/interaction"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
@@ -288,7 +289,7 @@ func TestTheGatewayExtendsToTheClampedDeadlineAndCompletesOnTheFence(t *testing.
 	if err != nil {
 		t.Fatalf("complete with the fence after the version moved: %v", err)
 	}
-	if completed.State != fleet.DispatchSucceeded || completed.ClaimFence != claimed.ClaimFence {
+	if completed.State != dispatchapi.DispatchSucceeded || completed.ClaimFence != claimed.ClaimFence {
 		t.Fatalf("completed = %+v", completed)
 	}
 	// A lost reply: the identical resend is answered by the replay branch.
@@ -350,7 +351,7 @@ func TestTheGatewayCannotExtendAfterARebindButStillCompletes(t *testing.T) {
 		t.Fatalf("the new ref's worker resolving the rebound descriptor = %+v, %v", rebound, err)
 	}
 	completed, err := g.complete(client, claimed, claimID, claimed.Version)
-	if err != nil || completed.State != fleet.DispatchSucceeded {
+	if err != nil || completed.State != dispatchapi.DispatchSucceeded {
 		t.Fatalf("complete after a rebind = %+v, %v", completed, err)
 	}
 }
@@ -370,7 +371,7 @@ func TestTheGatewayReportsAmbiguityAndNeverMistakesARefusalForSuccess(t *testing
 	report := func(fence uint64, reference string) (effectsgateway.Action, error) {
 		return client.ReportAmbiguity(ctx, claimed.ID, effectsgateway.AmbiguityReport{
 			Context:    claimed.Correlate(g.context("gateway_ambiguity")),
-			ClaimFence: fence, Outcome: fleet.AmbiguityOutcomeUnknown,
+			ClaimFence: fence, Outcome: dispatchapi.AmbiguityOutcomeUnknown,
 			Target: "api.stripe.test", Reference: reference,
 		})
 	}
@@ -431,7 +432,7 @@ func TestTheGatewayReportsAmbiguityAndNeverMistakesARefusalForSuccess(t *testing
 
 	// Nine version moves since the claim; the fence still binds.
 	completed, err := g.complete(client, claimed, claimID, claimed.Version)
-	if err != nil || completed.State != fleet.DispatchSucceeded {
+	if err != nil || completed.State != dispatchapi.DispatchSucceeded {
 		t.Fatalf("complete after the reports = %+v, %v", completed, err)
 	}
 }
@@ -459,7 +460,7 @@ func TestTheGatewayThreadsTheRecordsCorrelation(t *testing.T) {
 	}
 	if _, err := client.ReportAmbiguity(ctx, claimed.ID, effectsgateway.AmbiguityReport{
 		Context:    claimed.Correlate(g.context("gateway_ambiguity")),
-		ClaimFence: claimed.ClaimFence, Outcome: fleet.AmbiguityEffectObserved, Reference: "ch_1",
+		ClaimFence: claimed.ClaimFence, Outcome: dispatchapi.AmbiguityEffectObserved, Reference: "ch_1",
 	}); err != nil {
 		t.Fatalf("ambiguity: %v", err)
 	}

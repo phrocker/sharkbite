@@ -29,6 +29,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/effectsgateway"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 )
 
@@ -581,7 +582,7 @@ func TestARefusedReportIsHeldAndAFullLogStopsClaiming(t *testing.T) {
 		if _, err := client.ReportAmbiguity(context.Background(), []byte("w-spent"), effectsgateway.AmbiguityReport{
 			Context: effectsgateway.RequestContext{RequestID: []byte(fmt.Sprintf("spend-%d", index)),
 				CorrelationID: []byte("alice-trace-spent"), ReasonCode: "spend", Deadline: g.h.now().Add(time.Minute)},
-			ClaimFence: fence, Outcome: fleet.AmbiguityOutcomeUnknown, Reference: fmt.Sprintf("spent_%d", index),
+			ClaimFence: fence, Outcome: dispatchapi.AmbiguityOutcomeUnknown, Reference: fmt.Sprintf("spent_%d", index),
 		}); err != nil {
 			t.Fatalf("spend %d: %v", index, err)
 		}
@@ -603,7 +604,7 @@ func TestARefusedReportIsHeldAndAFullLogStopsClaiming(t *testing.T) {
 			held = entry
 		}
 	}
-	if held.Fence != fence || held.Outcome != fleet.AmbiguityEffectObserved || held.Reference != "ch_1" ||
+	if held.Fence != fence || held.Outcome != dispatchapi.AmbiguityEffectObserved || held.Reference != "ch_1" ||
 		held.Status != http.StatusBadRequest || held.RouteAction != "status" || held.PathTemplate != "/v1/status" {
 		t.Fatalf("held = %+v", held)
 	}

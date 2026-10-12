@@ -27,14 +27,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // committedWithVolume is committed() with the record's effected volume.
-func committedWithVolume(t *testing.T, code string, volume *effectedWire) string {
+func committedWithVolume(t *testing.T, code string, volume *dispatchapi.Effected) string {
 	t.Helper()
 	var record map[string]any
-	if err := json.Unmarshal([]byte(committed(t, 3, fleet.DispatchFailed, code, "")), &record); err != nil {
+	if err := json.Unmarshal([]byte(committed(t, 3, dispatchapi.DispatchFailed, code, "")), &record); err != nil {
 		t.Fatal(err)
 	}
 	if volume != nil {
@@ -59,7 +59,7 @@ func effectedClient(t *testing.T, replies ...func() (*http.Response, error)) (*D
 	return client, transport
 }
 
-func partialFailure(volume fleet.EffectedVolume) Completion {
+func partialFailure(volume dispatchapi.Effected) Completion {
 	return Completion{
 		Context: RequestContext{CorrelationID: []byte("trace"), RequestID: []byte("r"), ReasonCode: "gateway_complete",
 			Deadline: time.Now().Add(time.Minute)},
@@ -74,8 +74,8 @@ func partialFailure(volume fleet.EffectedVolume) Completion {
 // so a record that kept a different number is recorded otherwise rather than
 // taken as this report.
 func TestCompleteCarriesTheVolumeAndReadsItBack(t *testing.T) {
-	volume := fleet.EffectedVolume{Bytes: 4096, Chunks: 2}
-	wire := &effectedWire{Bytes: 4096, Chunks: 2}
+	volume := dispatchapi.Effected{Bytes: 4096, Chunks: 2}
+	wire := &dispatchapi.Effected{Bytes: 4096, Chunks: 2}
 
 	t.Run("lost then the recorded volume", func(t *testing.T) {
 		client, transport := effectedClient(t, lost,
@@ -96,9 +96,9 @@ func TestCompleteCarriesTheVolumeAndReadsItBack(t *testing.T) {
 	})
 	for _, row := range []struct {
 		name   string
-		record *effectedWire
+		record *dispatchapi.Effected
 	}{
-		{"a different volume", &effectedWire{Bytes: 4097, Chunks: 2}},
+		{"a different volume", &dispatchapi.Effected{Bytes: 4097, Chunks: 2}},
 		// What an adjudicated invalid_executor_effected looks like, apart
 		// from its code: the number was dropped.
 		{"no volume", nil},
@@ -116,7 +116,7 @@ func TestCompleteCarriesTheVolumeAndReadsItBack(t *testing.T) {
 		client, transport := effectedClient(t,
 			reply(200, committedWithVolume(t, ErrorOutcomeUnknown, nil)))
 		if _, err := client.Complete(context.Background(), []byte("action"),
-			partialFailure(fleet.EffectedVolume{})); err != nil {
+			partialFailure(dispatchapi.Effected{})); err != nil {
 			t.Fatalf("Complete = %v", err)
 		}
 		if strings.Contains(string(transport.bodies[0]), "effected") {
@@ -130,15 +130,15 @@ func TestCompleteCarriesTheVolumeAndReadsItBack(t *testing.T) {
 // malformed volume sent would become a terminal record saying the volume is
 // unknown — worse than the worker learning its own mistake here.
 func TestCompleteRefusesAVolumeThePlaneWouldNot(t *testing.T) {
-	success := partialFailure(fleet.EffectedVolume{Bytes: 10})
+	success := partialFailure(dispatchapi.Effected{Bytes: 10})
 	success.Failed, success.ErrorCode, success.Output = false, "", json.RawMessage(`{"status":200}`)
 	for name, completion := range map[string]Completion{
 		"on a success":          success,
-		"chunks without bytes":  partialFailure(fleet.EffectedVolume{Chunks: 1}),
-		"negative bytes":        partialFailure(fleet.EffectedVolume{Bytes: -1}),
-		"negative chunks":       partialFailure(fleet.EffectedVolume{Bytes: 1, Chunks: -1}),
-		"bytes past the bound":  partialFailure(fleet.EffectedVolume{Bytes: fleet.MaxEffectedBytes + 1}),
-		"chunks past the bound": partialFailure(fleet.EffectedVolume{Bytes: 1, Chunks: fleet.MaxEffectedChunks + 1}),
+		"chunks without bytes":  partialFailure(dispatchapi.Effected{Chunks: 1}),
+		"negative bytes":        partialFailure(dispatchapi.Effected{Bytes: -1}),
+		"negative chunks":       partialFailure(dispatchapi.Effected{Bytes: 1, Chunks: -1}),
+		"bytes past the bound":  partialFailure(dispatchapi.Effected{Bytes: dispatchapi.MaxEffectedBytes + 1}),
+		"chunks past the bound": partialFailure(dispatchapi.Effected{Bytes: 1, Chunks: dispatchapi.MaxEffectedChunks + 1}),
 	} {
 		client, transport := effectedClient(t)
 		_, err := client.Complete(context.Background(), []byte("action"), completion)

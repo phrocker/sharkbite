@@ -57,7 +57,13 @@ func TestFleetDispatchEvidenceWirePreservesExactAnchors(t *testing.T) {
 		},
 	}
 	wire := encodeFleetAction(record)
-	decoded, err := decodeEvidence(wire.Evidence)
+	// Through the wire: the record encodes the public evidence type and a
+	// completion decodes the handler's own, so the round trip crosses both.
+	var received []fleetEvidenceWire
+	if err := json.Unmarshal([]byte(mustJSON(t, wire.Evidence)), &received); err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := decodeEvidence(received)
 	if err != nil {
 		t.Fatal(err)
 	}

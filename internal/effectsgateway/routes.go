@@ -32,7 +32,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 )
 
 // IdempotencyMode is how a route's target collapses a repeated request.
@@ -83,7 +83,7 @@ type Route struct {
 	template    string
 	segments    []pathSegment
 	params      []string
-	effects     fleet.Effects
+	effects     dispatchapi.Effects
 	idempotency IdempotencyMode
 	query       map[string]struct{}
 	conflict    *conflictRule
@@ -123,7 +123,7 @@ func (r *Route) Idempotency() IdempotencyMode { return r.idempotency }
 
 // Effects is the route's declared set, which ParseRoutes has already required
 // to equal the set derived from the target.
-func (r *Route) Effects() fleet.Effects { return append(fleet.Effects(nil), r.effects...) }
+func (r *Route) Effects() dispatchapi.Effects { return append(dispatchapi.Effects(nil), r.effects...) }
 
 // RouteTable is the deny-by-default mapping from action name to route. An
 // action with no entry is not performed.
@@ -179,11 +179,11 @@ func (t *RouteTable) RequiresKey() bool {
 // loopback IP). A hostname that merely resolves to loopback is treated as
 // remote, which overstates; the dialer refuses private resolution unless the
 // operator allows it, so that case is already an explicit configuration.
-func DerivedEffects(target *url.URL) fleet.Effects {
+func DerivedEffects(target *url.URL) dispatchapi.Effects {
 	if target != nil && isLoopbackHost(target.Hostname()) {
-		return fleet.Effects{fleet.EffectMutatesExternal}
+		return dispatchapi.Effects{dispatchapi.EffectMutatesExternal}
 	}
-	return fleet.Effects{fleet.EffectEgressesContent, fleet.EffectMutatesExternal}
+	return dispatchapi.Effects{dispatchapi.EffectEgressesContent, dispatchapi.EffectMutatesExternal}
 }
 
 // routeWire is the strict JSON shape of one route.
@@ -219,7 +219,7 @@ type referenceWire struct {
 //
 // Each refusal names the route by index and action so an operator can find
 // it, and never repeats a value the operator did not write.
-func ParseRoutes(raw []byte, derived fleet.Effects) (*RouteTable, error) {
+func ParseRoutes(raw []byte, derived dispatchapi.Effects) (*RouteTable, error) {
 	if err := rejectDuplicateKeys(raw); err != nil {
 		return nil, fmt.Errorf("-routes: %w", err)
 	}
@@ -268,7 +268,7 @@ func ParseRoutes(raw []byte, derived fleet.Effects) (*RouteTable, error) {
 	return table, nil
 }
 
-func (w routeWire) validate(derived fleet.Effects) (*Route, error) {
+func (w routeWire) validate(derived dispatchapi.Effects) (*Route, error) {
 	if err := fleetName("action", w.Action); err != nil {
 		return nil, err
 	}
@@ -315,9 +315,9 @@ func (w routeWire) validate(derived fleet.Effects) (*Route, error) {
 	}
 	route.segments, route.params = segments, params
 
-	declared := make(fleet.Effects, 0, len(w.Effects))
+	declared := make(dispatchapi.Effects, 0, len(w.Effects))
 	for _, effect := range w.Effects {
-		declared = append(declared, fleet.Effect(effect))
+		declared = append(declared, dispatchapi.Effect(effect))
 	}
 	effects, err := canonicalEffectSet(declared)
 	if err != nil {
@@ -771,7 +771,7 @@ func (r *Route) InputSchema() json.RawMessage {
 // DescriptorAction is the part of a registered action the startup check reads.
 type DescriptorAction struct {
 	Name         string
-	Effects      fleet.Effects
+	Effects      dispatchapi.Effects
 	InputSchema  json.RawMessage
 	OutputSchema json.RawMessage
 }
@@ -841,16 +841,16 @@ func VerifyDescriptor(table *RouteTable, actions []DescriptorAction) error {
 // canonicalEffectSet sorts a set and refuses duplicates and unknown classes.
 // Unlike the fleet's own canonicalization it refuses a duplicate rather than
 // collapsing it: an operator who wrote one class twice probably meant another.
-func canonicalEffectSet(declared fleet.Effects) (fleet.Effects, error) {
+func canonicalEffectSet(declared dispatchapi.Effects) (dispatchapi.Effects, error) {
 	if len(declared) == 0 {
 		return nil, errors.New("at least one effect is required")
 	}
-	seen := make(map[fleet.Effect]struct{}, len(declared))
-	result := make(fleet.Effects, 0, len(declared))
+	seen := make(map[dispatchapi.Effect]struct{}, len(declared))
+	result := make(dispatchapi.Effects, 0, len(declared))
 	for _, effect := range declared {
 		switch effect {
-		case fleet.EffectMutatesExternal, fleet.EffectEgressesContent:
-		case fleet.EffectReadsCorpus:
+		case dispatchapi.EffectMutatesExternal, dispatchapi.EffectEgressesContent:
+		case dispatchapi.EffectReadsCorpus:
 			return nil, errors.New("reads-corpus is refused: the gateway " +
 				"never reads the corpus")
 		default:
@@ -866,7 +866,7 @@ func canonicalEffectSet(declared fleet.Effects) (fleet.Effects, error) {
 	return result, nil
 }
 
-func effectList(effects fleet.Effects) string {
+func effectList(effects dispatchapi.Effects) string {
 	names := make([]string, len(effects))
 	for i, effect := range effects {
 		names[i] = string(effect)
