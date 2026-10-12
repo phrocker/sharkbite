@@ -343,7 +343,9 @@ exists to avoid.
 | `-listen` | | required, `host:port` |
 | `-tls-cert-file`, `-tls-key-file` | | both, or neither with `-allow-plaintext-loopback` |
 | `-allow-plaintext-loopback` | false | plaintext HTTP, refused unless `-listen` is a loopback address and the bound address is loopback |
-| `-caller-token-file` | | required; at least 32 printable bytes; read on every request |
+| `-caller-token-file` | | at least 32 printable bytes; read on every request. Required unless `-client-ca-file` is set |
+| `-client-ca-file` | | PEM bundle the gateway's client certificate must chain to; requires TLS and at least one `-client-identity`; read on every request |
+| `-client-identity` | | repeatable, at most 16: `uri:<URI SAN>`, `dns:<DNS SAN>` or `spki-sha256:<digest>`; the certificate must match one |
 | `-idempotency-header` | `Idempotency-Key` | the gateway's `-idempotency-header` |
 | `-journal-dir` | | required; must hold a journal made by `journal init` (serve never creates one) |
 | `-journal-id` | | required; the identity `journal init` printed. A directory with no journal, or another journal, is refused |
@@ -368,15 +370,57 @@ bounds the stall to that copy, about a second on a local SSD. The defaults
 allow about 460 MB. During a stall the gateway sees only latency: a timed-out
 attempt is resent under the same key and answered from the journal.
 
-**Caller authentication is mandatory.** The gateway sends
-`-target-credential-file` verbatim in `-target-auth-header` (`Authorization`).
-Store `Bearer <token>` in the gateway's file and `<token>` in this service's
-`-caller-token-file`. The token is compared in constant time. An unreadable
-token file refuses every request; it never falls open. There is no
-unauthenticated mode. mTLS is not offered, because the gateway's target client
-presents no client certificate today. When it does, a pinned client identity
-can replace the token. Plaintext is allowed only on loopback, and only with
-the flag, as for the LLM gateway (#424).
+### Caller authentication
+
+**Caller authentication is mandatory**, by a bearer token, a pinned client
+certificate (#662), or both. With neither, `serve` refuses to start. There is
+no unauthenticated mode.
+
+- **Token.** The gateway sends `-target-credential-file` verbatim in
+  `-target-auth-header` (`Authorization`). Store `Bearer <token>` in the
+  gateway's file and `<token>` in this service's `-caller-token-file`. The
+  token is compared in constant time. An unreadable token file refuses every
+  request; it never falls open.
+- **Client certificate.** The gateway presents `-target-client-cert-file`
+  (`docs/effects-gateway-deploy.md`, "Client certificates"). This service
+  admits it when the chain verifies to `-client-ca-file` for client
+  authentication (extended key usage `clientAuth`, `any`, or none), it is within its
+  validity, and the leaf matches at least one `-client-identity`:
+  - `uri:<URI>`, a URI SAN compared byte for byte as the CA issued it (no
+    normalization of case, fragment or path), such as a SPIFFE ID;
+  - `dns:<name>`, a DNS SAN compared without regard to case, never a wildcard;
+  - `spki-sha256:<digest>`, the SHA-256 of the leaf's SubjectPublicKeyInfo, as
+    64 hex digits or 44 characters of base64
+    (`openssl x509 -pubkey -noout | openssl pkey -pubin -outform der | sha256sum`).
+
+  The common name is never consulted. A CA with no pin is refused at startup,
+  because it would admit every certificate the CA issues. A SAN pin is as
+  narrow as the CA's issuance: use a CA that issues the SAN to the gateway
+  alone (a cert-manager Issuer of its own, say). An SPKI pin also binds the
+  key, and must be changed whenever the gateway's key is rotated. The CA
+  bundle is read on every request, like the token, so a rotated bundle takes
+  effect at once and an unreadable one refuses every request.
+- **Both.** With both flags set, a request must pass both. This is the
+  recommended configuration. Pick one alone only when you have decided it is
+  enough.
+
+The listener *requests* a client certificate and does not verify it in the
+handshake. The handshake still proves the client holds the certificate's key,
+and the chain and the pin are checked in the request. So a refusal is an HTTP
+answer (`refused`, `unauthorized`), and a resend of a key the journal holds,
+presented with a certificate that no longer passes, is answered
+`outcome_unknown`, exactly as for a rotated token. A handshake failure could
+only be read by the gateway as "nothing was sent".
+
+Plaintext is allowed only on loopback, and only with the flag, as for the LLM
+gateway (#424). A plaintext listener has no client certificate, so
+`-client-ca-file` requires TLS.
+
+The serving certificate (`-tls-cert-file`, `-tls-key-file`) is read again at
+each handshake, so a rotated Secret takes effect without a restart. A pair
+that cannot be loaded at a handshake keeps the last one that could, and is
+logged (`tls_certificate_reload_failed`) at most once a minute. At startup
+it refuses the start.
 
 ### Timing
 
@@ -438,10 +482,28 @@ ports. The chart's per-entry NetworkPolicy assumes a single target, so a
 sidecar deployment writes its own policy.
 
 **Separate Deployment.** Serve TLS (`-tls-cert-file`, `-tls-key-file`) and
-point the gateway at `https://effects-ssh.<namespace>.svc:8443`. The gateway
-verifies the certificate against its system roots, so issue it from a CA
-those roots contain, or add that CA to the gateway image's trust store
-(`SSL_CERT_FILE`). The effects are `{external, egresses-content}`, because
+point the gateway at `https://effects-ssh.<namespace>.svc:8443`. Give the
+gateway the CA that issued the serving certificate with `-target-ca-file`,
+which replaces the system roots for the target only. For mTLS, give the
+gateway `-target-client-cert-file` and `-target-client-key-file`, and this
+service `-client-ca-file` and a `-client-identity` naming the gateway's
+certificate:
+
+```
+shoal-effects-ssh serve ... -listen 0.0.0.0:8443 \
+    -tls-cert-file /etc/effects-ssh/tls/tls.crt -tls-key-file /etc/effects-ssh/tls/tls.key \
+    -client-ca-file /etc/effects-ssh/client-ca/ca.crt \
+    -client-identity uri:spiffe://cluster.local/ns/shoal/sa/shoal-gw-ssh \
+    -caller-token-file /run/secrets/effects-ssh/token
+
+shoal-gateway run ... -target-base-url https://effects-ssh.shoal.svc:8443 \
+    -target-ca-file /var/run/shoal/target-ca/ca.crt \
+    -target-client-cert-file /var/run/shoal/target-client/tls.crt \
+    -target-client-key-file /var/run/shoal/target-client/tls.key \
+    -target-credential-file /run/secrets/effects-ssh/authorization
+```
+
+The effects are `{external, egresses-content}`, because
 the gateway cannot tell that this target is in the cluster. The route and the
 descriptor must declare both.
 
@@ -473,7 +535,5 @@ someone has looked. A file with no complete header is reported as uninitialized,
 
 - Parameters. v1 runs fixed strings only. Parameters need a schema, an
   encoding that cannot reach the shell, and a fingerprint that covers them.
-- A chart entry and an image for the extension.
-- mTLS to the gateway, once the gateway's target client can present a client
-  certificate.
+- A chart entry and an image for the extension (#662).
 - A shared module for `sshclient`, with #447.

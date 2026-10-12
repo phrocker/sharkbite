@@ -62,6 +62,11 @@ type Options struct {
 	// "Authorization: Bearer <token>". It is read on every request, so a
 	// rotated file takes effect at once.
 	CallerTokenFile string
+	// ClientAuth admits the gateway by its TLS client certificate: a chain
+	// to a configured CA and a pinned identity (#662). With both this and
+	// CallerTokenFile, a request must pass both; with neither, NewServer
+	// refuses. There is no unauthenticated mode.
+	ClientAuth *ClientAuth
 	// MaxRunning bounds concurrent runs.
 	MaxRunning int
 	// AttachWait is how long a repeat of a running key waits for the run
@@ -94,9 +99,9 @@ func NewServer(opts Options) (*Server, error) {
 		return nil, fmt.Errorf("max concurrent runs must be 1 to %d", MaxRunningLimit)
 	case opts.AttachWait <= 0:
 		return nil, errors.New("attach wait must be positive")
-	case opts.CallerTokenFile == "":
-		return nil, errors.New("a caller token file is required; there is no " +
-			"unauthenticated mode")
+	case opts.CallerTokenFile == "" && opts.ClientAuth == nil:
+		return nil, errors.New("a caller token file or a pinned client certificate " +
+			"identity is required; there is no unauthenticated mode")
 	}
 	if opts.IdempotencyHeader == "" {
 		opts.IdempotencyHeader = DefaultIdempotencyHeader
@@ -108,8 +113,10 @@ func NewServer(opts Options) (*Server, error) {
 		return nil, errors.New("idempotency header must be a valid header name " +
 			"other than Authorization and Host")
 	}
-	if _, err := readCallerToken(opts.CallerTokenFile); err != nil {
-		return nil, err
+	if opts.CallerTokenFile != "" {
+		if _, err := readCallerToken(opts.CallerTokenFile); err != nil {
+			return nil, err
+		}
 	}
 	if opts.Log == nil {
 		opts.Log = io.Discard
@@ -163,6 +170,13 @@ type logLine struct {
 	StdoutSize int64  `json:"stdout_bytes,omitempty"`
 	StderrSize int64  `json:"stderr_bytes,omitempty"`
 	Millis     int64  `json:"duration_ms,omitempty"`
+}
+
+// LogEvent writes one event line through the server's serialized log, for
+// the command's own events (a failed certificate reload). event and reason
+// are fixed strings the caller chooses; never pass a value read from a file.
+func (s *Server) LogEvent(event, reason string) {
+	s.log(logLine{Event: event, Reason: reason})
 }
 
 // log writes one JSON line. It never carries a key (only its digest), a
@@ -438,7 +452,27 @@ func (s *Server) idempotencyKey(header http.Header) (string, bool) {
 	return base64.RawURLEncoding.EncodeToString(decoded), true
 }
 
+// authorized applies every configured factor: the client certificate when
+// ClientAuth is set, and the bearer token when CallerTokenFile is set. A
+// request passes only if each configured one passes; NewServer guarantees at
+// least one is.
 func (s *Server) authorized(r *http.Request) bool {
+	if s.opts.ClientAuth == nil && s.opts.CallerTokenFile == "" {
+		return false
+	}
+	if s.opts.ClientAuth != nil {
+		if reason, ok := s.opts.ClientAuth.Verify(r.TLS); !ok {
+			s.log(logLine{Event: "caller_certificate_refused", Reason: reason})
+			return false
+		}
+	}
+	if s.opts.CallerTokenFile == "" {
+		return true
+	}
+	return s.tokenAuthorized(r)
+}
+
+func (s *Server) tokenAuthorized(r *http.Request) bool {
 	values := r.Header.Values("Authorization")
 	if len(values) != 1 {
 		return false

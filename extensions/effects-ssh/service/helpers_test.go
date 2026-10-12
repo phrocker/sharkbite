@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -156,14 +157,24 @@ type env struct {
 	http      *httptest.Server
 	logs      *lockedBuffer
 	options   Options
+	// serverTLS, when set before open, serves TLS; client is then the
+	// client requests are sent with.
+	serverTLS *tls.Config
+	client    *http.Client
 }
 
 type envOption func(*Options, *JournalOptions)
 
 func newEnv(t *testing.T, options ...envOption) *env {
 	t.Helper()
+	return newEnvWith(t, nil, options...)
+}
+
+// newEnvWith is newEnv with serverTLS set before the server opens.
+func newEnvWith(t *testing.T, serverTLS *tls.Config, options ...envOption) *env {
+	t.Helper()
 	host := newFakeHost(t)
-	e := &env{t: t, host: host, dir: t.TempDir(), logs: &lockedBuffer{}}
+	e := &env{t: t, host: host, dir: t.TempDir(), logs: &lockedBuffer{}, serverTLS: serverTLS}
 	e.tokenFile = filepath.Join(t.TempDir(), "token")
 	if err := os.WriteFile(e.tokenFile, []byte(testToken+"\n"), 0o600); err != nil {
 		t.Fatal(err)
@@ -197,7 +208,13 @@ func (e *env) open(journalOptions JournalOptions) {
 		e.t.Fatal(err)
 	}
 	e.server = server
-	e.http = httptest.NewServer(server)
+	if e.serverTLS != nil {
+		e.http = httptest.NewUnstartedServer(server)
+		e.http.TLS = e.serverTLS.Clone()
+		e.http.StartTLS()
+	} else {
+		e.http = httptest.NewServer(server)
+	}
 	e.t.Cleanup(func() {
 		e.http.Close()
 		server.Shutdown(expiredContext())
@@ -277,7 +294,11 @@ func (e *env) do(method, path, key, body string, headers map[string][]string) re
 			request.Header.Add(name, value)
 		}
 	}
-	response, err := e.http.Client().Do(request)
+	client := e.client
+	if client == nil {
+		client = e.http.Client()
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		e.t.Fatal(err)
 	}

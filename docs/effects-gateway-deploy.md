@@ -99,6 +99,8 @@ while the gateway is already pulling; and
 | `-target-base-url` | | required; https, or http to loopback; **no plaintext opt-out**; no userinfo, query or fragment |
 | `-target-credential-env` / `-target-credential-file` | `SHOAL_TARGET_CREDENTIAL` / | exactly one; sent verbatim as the value of `-target-auth-header` |
 | `-target-auth-header` | `Authorization` | must not be a header the gateway writes itself |
+| `-target-client-cert-file` / `-target-client-key-file` | | both or neither; https target only; a client certificate presented to the target (mTLS, below) |
+| `-target-ca-file` | | https target only; the CA bundle the target is verified against instead of the system roots, for the target only |
 | `-idempotency-header` | | required with any `key` route, refused without one; distinct from the auth header |
 | `-idempotency-retention` | | required with any `key` route, refused without one; must exceed `T + 5s` |
 | `-target-allow-private` | false | admits private and loopback resolution; link-local and metadata stay refused |
@@ -120,7 +122,46 @@ while the gateway is already pulling; and
 Two credential rules carried over from the LLM gateway: passing the env flag
 beside the file flag is refused even when the env flag is typed as its default,
 and an unset env variable is *absence* while an unreadable file is *breakage*.
-Absence of a target credential is accepted only for a loopback target.
+Absence of a target credential is accepted only for a loopback target, or for a
+target the gateway presents a client certificate to and no credential flag is
+passed, where the certificate is the credential. A credential that is named
+(`-target-credential-env FOO` with `FOO` unset, or an unreadable
+`-target-credential-file`) is refused either way: it was meant to be sent.
+The certificate is presented only when the target's handshake asks for one,
+so a target that does not ask for one receives no credential at all; configure
+both for a target that needs both.
+
+### Client certificates (mTLS)
+
+The target client can present a client certificate (#662). There is one target
+per gateway, so the certificate is per target: every route presents it to the
+one surface the egress policy admits.
+
+- **Presented when asked.** The pair is offered whenever the target's handshake
+  requests a client certificate, and not otherwise.
+- **Reloaded at each handshake.** Both files are read again for every new
+  connection, so a rotated Secret takes effect without a restart. A
+  connection keeps the certificate it was opened with: an idle one closes
+  after 30 seconds, and a busy one keeps its certificate until it closes. A
+  pair that cannot be loaded at a handshake (a rotation caught half written)
+  keeps the last pair that could, and the gateway says so on stderr at most
+  once a minute, naming the flags and nothing from the files. At startup there is no such
+  fallback: a missing file, a key that does not match, or a certificate whose
+  extended key usage excludes client authentication refuses the start.
+- **Never logged.** No error carries a file's contents or the certificate.
+- **The target is still verified.** A client certificate changes how the
+  gateway proves itself, not whether it checks the target. `-target-ca-file`
+  replaces the system roots for the target client only; the explorer client
+  keeps its own. It is read once at startup, so a changed bundle needs a
+  restart. Verification is never turned off.
+- **Egress is unchanged.** The certificate and the roots are TLS settings of
+  the one transport the egress policy already restricts. They add no
+  destination.
+
+With both a client certificate and a credential, both are sent. Whether the
+target needs one or both is the target's decision. effects-ssh accepts
+either, or requires both when both are configured (`docs/effects-ssh.md`,
+"Caller authentication").
 
 The executor reference the gateway's descriptor registers, and that an
 executor-bound dispatch credential names, follows one rule:
@@ -1064,7 +1105,9 @@ Refused unless `-target-allow-private`: loopback, RFC 1918, RFC 4193,
 
 No proxy from the environment, no cookie jar, no redirects, no compression.
 The explorer client is a separate client with a separate transport, and shares
-the no-proxy, no-jar and no-redirect rules.
+the no-proxy, no-jar and no-redirect rules. The target's client certificate
+and `-target-ca-file` are settings of the target transport only: the explorer
+client never presents the certificate, and never trusts the target's roots.
 
 ## Completion: lost responses, and the wire as found on main
 

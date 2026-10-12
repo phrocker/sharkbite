@@ -366,7 +366,14 @@ func (g *gateway) compose(
 	if err != nil {
 		return nil, fmt.Errorf("-target-base-url: %v", err)
 	}
-	target, err := effectsgateway.NewTargetClient(policy, targetHeaderBytes)
+	if certificate := config.TargetTLS.ClientCertificate; certificate != nil {
+		certificate.OnReloadFailure(func() {
+			fmt.Fprintln(env.Stderr, "shoal-gateway: -target-client-cert-file and "+
+				"-target-client-key-file cannot be reloaded as a pair; presenting the last "+
+				"pair that loaded until they can")
+		})
+	}
+	target, err := effectsgateway.NewTargetClientTLS(policy, targetHeaderBytes, config.TargetTLS)
 	if err != nil {
 		return nil, err
 	}

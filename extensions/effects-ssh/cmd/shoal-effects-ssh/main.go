@@ -27,6 +27,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -80,7 +81,15 @@ func parseServe(args []string, stderr io.Writer) (*serveConfig, error) {
 	plaintext := flags.Bool("allow-plaintext-loopback", false,
 		"Serve plaintext HTTP; refused unless -listen is a loopback address")
 	tokenFile := flags.String("caller-token-file", "",
-		"File holding the token the gateway presents as \"Authorization: Bearer <token>\" (required)")
+		"File holding the token the gateway presents as \"Authorization: Bearer <token>\". "+
+			"Required unless -client-ca-file is set; with both, a request needs both")
+	clientCA := flags.String("client-ca-file", "",
+		"PEM bundle the gateway's client certificate must chain to, for client "+
+			"authentication (#662). Requires TLS and at least one -client-identity. Read on every request")
+	var clientIdentities stringList
+	flags.Var(&clientIdentities, "client-identity",
+		"A pinned client identity, repeatable: uri:<URI SAN>, dns:<DNS SAN> or "+
+			"spki-sha256:<digest>. The certificate must match at least one")
 	idempotencyHeader := flags.String("idempotency-header", service.DefaultIdempotencyHeader,
 		"Header carrying the action's executor key: the gateway's -idempotency-header")
 	journalDir := flags.String("journal-dir", "", "Directory holding an initialized journal (journal init); a persistent volume (required)")
@@ -105,8 +114,11 @@ func parseServe(args []string, stderr io.Writer) (*serveConfig, error) {
 		return nil, errors.New("-config is required")
 	case *listen == "":
 		return nil, errors.New("-listen is required")
-	case *tokenFile == "":
-		return nil, errors.New("-caller-token-file is required; there is no unauthenticated mode")
+	case *tokenFile == "" && *clientCA == "":
+		return nil, errors.New("-caller-token-file or -client-ca-file is required; there is no " +
+			"unauthenticated mode")
+	case *clientCA == "" && len(clientIdentities) > 0:
+		return nil, errors.New("-client-identity requires -client-ca-file")
 	case *journalDir == "":
 		return nil, errors.New("-journal-dir is required")
 	case *journalID == "":
@@ -130,9 +142,18 @@ func parseServe(args []string, stderr io.Writer) (*serveConfig, error) {
 	case !tlsEnabled && !*plaintext:
 		return nil, errors.New("TLS is required: set -tls-cert-file and -tls-key-file, or " +
 			"-allow-plaintext-loopback with a loopback -listen address")
+	case !tlsEnabled && *clientCA != "":
+		return nil, errors.New("-client-ca-file requires TLS: a plaintext listener has no " +
+			"client certificate")
 	case !tlsEnabled && !loopback(host):
 		return nil, errors.New("-allow-plaintext-loopback requires -listen to be a loopback " +
 			"address; the caller token and every answer would cross the network in the clear")
+	}
+	var clientAuth *service.ClientAuth
+	if *clientCA != "" {
+		if clientAuth, err = service.NewClientAuth(*clientCA, clientIdentities, nil); err != nil {
+			return nil, fmt.Errorf("-client-ca-file: %w", err)
+		}
 	}
 	raw, err := os.ReadFile(*configFile)
 	if err != nil {
@@ -152,7 +173,8 @@ func parseServe(args []string, stderr io.Writer) (*serveConfig, error) {
 	}
 	server, err := service.NewServer(service.Options{
 		Config: config, Journal: journal, IdempotencyHeader: *idempotencyHeader,
-		CallerTokenFile: *tokenFile, MaxRunning: *maxRunning, AttachWait: *attachWait,
+		CallerTokenFile: *tokenFile, ClientAuth: clientAuth,
+		MaxRunning: *maxRunning, AttachWait: *attachWait,
 		Log: stderr,
 	})
 	if err != nil {
@@ -176,17 +198,89 @@ func parseServe(args []string, stderr io.Writer) (*serveConfig, error) {
 	}
 	var tlsConfig *tls.Config
 	if tlsEnabled {
-		certificate, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+		certificate, err := newServingCertificate(*certFile, *keyFile)
 		if err != nil {
 			_ = listener.Close()
 			_ = journal.Close()
-			return nil, errors.New("TLS certificate and key cannot be loaded")
+			return nil, err
 		}
-		tlsConfig = &tls.Config{MinVersion: tls.VersionTLS12, Certificates: []tls.Certificate{certificate}}
+		certificate.report = server.LogEvent
+		tlsConfig = &tls.Config{MinVersion: tls.VersionTLS12, GetCertificate: certificate.get}
+		if clientAuth != nil {
+			// Request, and do not verify, at the handshake: the handshake
+			// still proves the client holds the certificate's key, and the
+			// chain and the pin are checked in the request
+			// (service.ClientAuth), so a refusal is an answer the journal
+			// can turn into outcome_unknown for a key it holds.
+			tlsConfig.ClientAuth = tls.RequestClientCert
+		}
 	}
-	logStart(stderr, config, *retention, *maxEntries, listener.Addr().String(), tlsEnabled)
+	logStart(stderr, config, *retention, *maxEntries, listener.Addr().String(), tlsEnabled,
+		authFactors(*tokenFile != "", clientAuth != nil))
 	return &serveConfig{server: server, journal: journal, listener: listener,
 		grace: *grace, tls: tlsConfig}, nil
+}
+
+// authFactors names the caller checks in force, for the start line.
+func authFactors(token, certificate bool) []string {
+	var factors []string
+	if token {
+		factors = append(factors, "token")
+	}
+	if certificate {
+		factors = append(factors, "client_certificate")
+	}
+	return factors
+}
+
+// stringList is a repeatable flag.
+type stringList []string
+
+func (l *stringList) String() string     { return strings.Join(*l, ",") }
+func (l *stringList) Set(v string) error { *l = append(*l, v); return nil }
+
+// servingCertificate is the listener's certificate, read again at each
+// handshake so a rotated Secret takes effect without a restart. A pair that
+// cannot be loaded at a handshake keeps the last one that could; at startup
+// it refuses the start.
+type servingCertificate struct {
+	certFile, keyFile string
+	mu                sync.Mutex
+	last              *tls.Certificate
+	// report receives a failed reload (the server's serialized log), at most
+	// once a minute, so a broken rotation is seen before the last good
+	// certificate expires. It names nothing from the files.
+	report   func(event, reason string)
+	reported time.Time
+}
+
+func newServingCertificate(certFile, keyFile string) (*servingCertificate, error) {
+	certificate, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return nil, errors.New("TLS certificate and key cannot be loaded")
+	}
+	return &servingCertificate{certFile: certFile, keyFile: keyFile, last: &certificate}, nil
+}
+
+func (s *servingCertificate) get(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+	certificate, err := tls.LoadX509KeyPair(s.certFile, s.keyFile)
+	s.mu.Lock()
+	if err == nil {
+		s.last = &certificate
+		s.mu.Unlock()
+		return &certificate, nil
+	}
+	last := s.last
+	report := s.report != nil && (s.reported.IsZero() || time.Since(s.reported) >= time.Minute)
+	if report {
+		s.reported = time.Now()
+	}
+	s.mu.Unlock()
+	// Outside the lock: a blocked log writer must not stall every handshake.
+	if report {
+		s.report("tls_certificate_reload_failed", "serving_last_loaded_pair")
+	}
+	return last, nil
 }
 
 func loopback(host string) bool {
@@ -199,11 +293,11 @@ func loopback(host string) bool {
 
 // logStart records the declared bounds, so the journal's size is something an
 // operator can read off rather than discover.
-func logStart(out io.Writer, config *service.Config, retention time.Duration, maxEntries int, address string, tlsEnabled bool) {
+func logStart(out io.Writer, config *service.Config, retention time.Duration, maxEntries int, address string, tlsEnabled bool, auth []string) {
 	perEntry := service.MaxRecordBytes(config.MaxOutputBytes())
 	line, _ := json.Marshal(map[string]any{
 		"time": time.Now().UTC().Format(time.RFC3339Nano), "event": "start",
-		"listen": address, "tls": tlsEnabled, "commands": config.Names(),
+		"listen": address, "tls": tlsEnabled, "caller_auth": auth, "commands": config.Names(),
 		"journal_retention": retention.String(), "journal_max_entries": maxEntries,
 		"journal_max_entry_bytes": perEntry,
 		"journal_bound_bytes":     service.JournalBound(maxEntries, config.MaxOutputBytes()),

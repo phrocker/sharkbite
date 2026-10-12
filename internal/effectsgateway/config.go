@@ -71,12 +71,20 @@ type Config struct {
 	Capability         string
 	SurfaceName        string
 
-	TargetBaseURL        *url.URL
-	TargetCredential     func() (string, error)
-	TargetAuthHeader     string
-	TargetAllowPrivate   bool
-	IdempotencyHeader    string
-	IdempotencyRetention time.Duration
+	TargetBaseURL    *url.URL
+	TargetCredential func() (string, error)
+	// TargetCredentialNamed is true when -target-credential-env or
+	// -target-credential-file was passed: a credential was configured, so
+	// its absence is breakage even beside a client certificate.
+	TargetCredentialNamed bool
+	TargetAuthHeader      string
+	TargetAllowPrivate    bool
+	IdempotencyHeader     string
+	IdempotencyRetention  time.Duration
+	// TargetTLS is the client certificate presented to the target and the
+	// roots it is verified against (#662); the zero value is no certificate
+	// and the system roots.
+	TargetTLS TargetTLS
 
 	Routes  *RouteTable
 	Effects dispatchapi.Effects
@@ -128,16 +136,24 @@ func (c *Config) SendGate() SendGate {
 //
 // An absent credential (the env form, variable unset) is a legitimate
 // configuration only for a loopback target, which commonly has no notion of
-// one. Anywhere else absence is refused rather than sent unauthenticated: the
-// request would go out, be rejected, and be recorded as a target rejection of
-// an action that was never really attempted. A configured-but-broken
-// credential is refused everywhere.
+// one, or for a target the gateway authenticates to with a client
+// certificate (#662), where the certificate is the credential. Anywhere else
+// absence is refused rather than sent unauthenticated: the request would go
+// out, be rejected, and be recorded as a target rejection of an action that
+// was never really attempted. A configured-but-broken credential is refused
+// everywhere, client certificate or not.
 func (c *Config) TargetAuthorization() (header, value string, err error) {
 	value, err = c.TargetCredential()
 	switch {
 	case err == nil:
 		return c.TargetAuthHeader, value, nil
 	case errors.Is(err, ErrNoCredential) && isLoopbackHost(c.TargetBaseURL.Hostname()):
+		return "", "", nil
+	case errors.Is(err, ErrNoCredential) && c.TargetTLS.ClientCertificate != nil &&
+		!c.TargetCredentialNamed:
+		// Only the default variable, unset: no credential was configured.
+		// An env variable the operator named is a credential they meant to
+		// send, and its absence (a typo, a Secret never mounted) is refused.
 		return "", "", nil
 	default:
 		return "", "", errors.New("target credential is unavailable")
@@ -192,6 +208,17 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 			"must exceed -operation-timeout by the report window; an action "+
 			"whose deadline outlives it is skipped rather than performed under a "+
 			"guarantee that has lapsed")
+	targetClientCert := flags.String("target-client-cert-file", "",
+		"PEM certificate chain presented to the target when it asks for a client "+
+			"certificate (mTLS, #662). Requires -target-client-key-file and an "+
+			"https target. Read again at each TLS handshake, so a rotated Secret "+
+			"takes effect on the next connection")
+	targetClientKey := flags.String("target-client-key-file", "",
+		"PEM private key for -target-client-cert-file")
+	targetCA := flags.String("target-ca-file", "",
+		"PEM bundle of CA certificates the target's certificate is verified "+
+			"against, instead of the system roots, for the target only. Requires "+
+			"an https target. Read once at startup")
 	targetAllowPrivate := flags.Bool("target-allow-private", false,
 		"Allow the target to resolve to private or loopback addresses. "+
 			"Link-local and cloud metadata addresses are refused regardless")
@@ -306,6 +333,12 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 	if config.TargetCredential, err = credentialSource("-target-credential",
 		*targetCredentialEnv, *targetCredentialFile,
 		chosen["target-credential-env"]); err != nil {
+		return nil, err
+	}
+	config.TargetCredentialNamed = chosen["target-credential-env"] || chosen["target-credential-file"]
+	if config.TargetTLS, err = targetTLSFlags(config.TargetBaseURL,
+		strings.TrimSpace(*targetClientCert), strings.TrimSpace(*targetClientKey),
+		strings.TrimSpace(*targetCA)); err != nil {
 		return nil, err
 	}
 
@@ -548,6 +581,37 @@ func targetURL(raw string) (*url.URL, error) {
 		return nil, errors.New("must be a hierarchical URL")
 	}
 	return parsed, nil
+}
+
+// targetTLSFlags validates and loads the target's TLS flags. Both are https
+// only: over loopback plaintext there is no handshake for a certificate to be
+// presented in or a root to verify, and a setting nothing relies on suggests
+// the target URL was meant to be https.
+func targetTLSFlags(target *url.URL, certFile, keyFile, caFile string) (TargetTLS, error) {
+	var settings TargetTLS
+	if (certFile == "") != (keyFile == "") {
+		return settings, errors.New("-target-client-cert-file and -target-client-key-file " +
+			"are required together")
+	}
+	if (certFile != "" || caFile != "") && target.Scheme != "https" {
+		return settings, errors.New("-target-client-cert-file and -target-ca-file " +
+			"require an https -target-base-url: a plaintext target has no TLS handshake")
+	}
+	if certFile != "" {
+		certificate, err := LoadClientCertificate(certFile, keyFile)
+		if err != nil {
+			return settings, fmt.Errorf("-target-client-cert-file: %v", err)
+		}
+		settings.ClientCertificate = certificate
+	}
+	if caFile != "" {
+		pool, err := LoadRootCAs(caFile)
+		if err != nil {
+			return settings, fmt.Errorf("-target-ca-file: %v", err)
+		}
+		settings.RootCAs = pool
+	}
+	return settings, nil
 }
 
 func isLoopbackHost(host string) bool {

@@ -267,6 +267,15 @@ func refuseRedirect(*http.Request, []*http.Request) error {
 // the worker sends with, and a second, independent timeout here would be a
 // second clock deciding when a written request is abandoned.
 func NewTargetClient(policy *EgressPolicy, maxResponseHeaderBytes int64) (*http.Client, error) {
+	return NewTargetClientTLS(policy, maxResponseHeaderBytes, TargetTLS{})
+}
+
+// NewTargetClientTLS is NewTargetClient with the target's TLS settings: a
+// client certificate to present and roots to verify the target against
+// (#662). The egress policy is the same either way: TLS settings choose how
+// the gateway proves itself to the one target the policy admits, never which
+// targets it may reach. Verification of the target is never turned off.
+func NewTargetClientTLS(policy *EgressPolicy, maxResponseHeaderBytes int64, targetTLS TargetTLS) (*http.Client, error) {
 	if policy == nil {
 		return nil, errors.New("target client requires an egress policy")
 	}
@@ -274,7 +283,7 @@ func NewTargetClient(policy *EgressPolicy, maxResponseHeaderBytes int64) (*http.
 		Proxy:                  nil,
 		DialContext:            policy.DialContext,
 		ForceAttemptHTTP2:      true,
-		TLSClientConfig:        &tls.Config{MinVersion: tls.VersionTLS12},
+		TLSClientConfig:        targetTLS.tlsConfig(),
 		TLSHandshakeTimeout:    10 * time.Second,
 		DisableCompression:     true,
 		MaxResponseHeaderBytes: maxResponseHeaderBytes,
