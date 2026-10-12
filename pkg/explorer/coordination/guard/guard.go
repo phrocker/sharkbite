@@ -244,6 +244,11 @@ func (c *Client) AcquireMany(ctx context.Context, intents []Intent) ([]Acquisiti
 }
 
 func decide(head *Head, intent Intent) (Decision, error) {
+	// A head belongs to the store that created it, and no other writer may
+	// adopt it, whatever mode it asks for. See ownedBy.
+	if head != nil && !ownedBy(head, intent) {
+		return 0, ErrConflict
+	}
 	switch intent.Mode {
 	case ModeAppend:
 		if head != nil && head.State == StateTombstone {
@@ -256,8 +261,7 @@ func decide(head *Head, intent Intent) (Decision, error) {
 		}
 		if head.State != StateLive || head.LogicalDigest != intent.DesiredDigest ||
 			!bytes.Equal(head.WinnerID, intent.DesiredWinnerID) ||
-			!bytes.Equal(head.LPART, intent.LPART) ||
-			!bytes.Equal(head.LogicalPolicyID, intent.LogicalPolicyID) {
+			!bytes.Equal(head.LPART, intent.LPART) {
 			return 0, ErrConflict
 		}
 		return DecisionReuse, nil
@@ -274,6 +278,36 @@ func decide(head *Head, intent Intent) (Decision, error) {
 	default:
 		return 0, ErrConflict
 	}
+}
+
+// ownedBy reports whether an existing head was created by the same store as
+// the intent's writer, which is what its logical policy names.
+//
+// The head key is (domain, kind, entity ID). It carries no table or store,
+// so two stores that chose one kind letter share a key space, and an entity
+// ID one of them lets a caller choose can name the other's entity. Before
+// this, only ModeAbsentOrIdentical compared the owner. ModeMutate and
+// ModeRetire compared only the expected epoch and digest, which a writer
+// reads off the head it is about to adopt, so a writer of one store could
+// mutate another store's head (the fleet-event publication guard over an
+// approval's, both kind 'P'). The record it guarded was then unreadable for
+// good, because its head named an epoch with no committed cell.
+//
+// The owner is the logical policy, and deliberately not the LPART as well.
+// Every store names one logical policy, and no two stores share one
+// (fleet/approval/v1, fleet/dispatch/v1, fleet/registry/v1,
+// fleet-events/default, the embedded document policy). The LPART, by
+// contrast, may legitimately differ between writes of one store's entity:
+// fleet-event subscription receipt slots are partitioned by the subscription
+// that last used them, so a reused slot is mutated under a different LPART.
+// ModeAbsentOrIdentical still requires the LPART to match for a reuse, as it
+// always did.
+//
+// The comparison reads the head's stored policy, so it needs no format change
+// and moves no existing head. Pruning copies the policy from the head it
+// retires.
+func ownedBy(head *Head, intent Intent) bool {
+	return bytes.Equal(head.LogicalPolicyID, intent.LogicalPolicyID)
 }
 
 func matchesExpected(head *Head, intent Intent) bool {
