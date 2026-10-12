@@ -1,0 +1,304 @@
+[
+  {
+    "name": "completed",
+    "status": 200,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"completed\",\"reference\":\"exit-0\"}",
+    "gateway": {
+      "outcome": "succeeded",
+      "kind": "success",
+      "status": 200,
+      "output": {
+        "status": 200,
+        "idempotency": "key",
+        "reference": "exit-0"
+      }
+    }
+  },
+  {
+    "name": "completed_replayed",
+    "status": 200,
+    "header": {
+      "Content-Type": "application/json",
+      "Idempotent-Replayed": "true"
+    },
+    "body": "{\"state\":\"completed\",\"reference\":\"exit-0\"}",
+    "gateway": {
+      "outcome": "succeeded",
+      "kind": "replayed",
+      "status": 200,
+      "output": {
+        "status": 200,
+        "idempotency": "replayed",
+        "reference": "exit-0"
+      }
+    }
+  },
+  {
+    "name": "completed_exit_status_truncated",
+    "status": 200,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"completed\",\"reference\":\"exit-3-truncated\"}",
+    "gateway": {
+      "outcome": "succeeded",
+      "kind": "success",
+      "status": 200,
+      "output": {
+        "status": 200,
+        "idempotency": "key",
+        "reference": "exit-3-truncated"
+      }
+    }
+  },
+  {
+    "name": "completed_signal",
+    "status": 200,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"completed\",\"reference\":\"signal-KILL\"}",
+    "gateway": {
+      "outcome": "succeeded",
+      "kind": "success",
+      "status": 200,
+      "output": {
+        "status": 200,
+        "idempotency": "key",
+        "reference": "signal-KILL"
+      }
+    }
+  },
+  {
+    "name": "outcome_unknown",
+    "status": 409,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"outcome_unknown\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "conflict_unmatched",
+      "status": 409,
+      "error_code": "outcome_unknown"
+    }
+  },
+  {
+    "name": "outcome_unknown_replayed",
+    "status": 409,
+    "header": {
+      "Content-Type": "application/json",
+      "Idempotent-Replayed": "true"
+    },
+    "body": "{\"state\":\"outcome_unknown\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "conflict_unmatched",
+      "status": 409,
+      "error_code": "outcome_unknown"
+    }
+  },
+  {
+    "name": "in_progress",
+    "status": 503,
+    "header": {
+      "Content-Type": "application/json",
+      "Retry-After": "1"
+    },
+    "body": "{\"state\":\"in_progress\"}",
+    "gateway": {
+      "outcome": "retry",
+      "kind": "retryable_status",
+      "status": 503,
+      "retry_after_seconds": 1
+    }
+  },
+  {
+    "name": "busy",
+    "status": 503,
+    "header": {
+      "Content-Type": "application/json",
+      "Retry-After": "5"
+    },
+    "body": "{\"state\":\"busy\"}",
+    "gateway": {
+      "outcome": "retry",
+      "kind": "retryable_status",
+      "status": 503,
+      "retry_after_seconds": 5
+    }
+  },
+  {
+    "name": "not_run",
+    "status": 502,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"not_run\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 502,
+      "error_code": "target_rejected_502"
+    }
+  },
+  {
+    "name": "not_run_replayed",
+    "status": 502,
+    "header": {
+      "Content-Type": "application/json",
+      "Idempotent-Replayed": "true"
+    },
+    "body": "{\"state\":\"not_run\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 502,
+      "error_code": "target_rejected_502"
+    }
+  },
+  {
+    "name": "key_conflict",
+    "status": 409,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"key_conflict\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "conflict_unmatched",
+      "status": 409,
+      "error_code": "outcome_unknown"
+    }
+  },
+  {
+    "name": "refused_unauthorized",
+    "status": 401,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"unauthorized\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 401,
+      "error_code": "target_rejected_401"
+    }
+  },
+  {
+    "name": "refused_method_not_allowed",
+    "status": 405,
+    "header": {
+      "Content-Type": "application/json",
+      "Allow": "POST"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"method_not_allowed\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 405,
+      "error_code": "target_rejected_405"
+    }
+  },
+  {
+    "name": "refused_not_found",
+    "status": 404,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"not_found\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 404,
+      "error_code": "target_rejected_404"
+    }
+  },
+  {
+    "name": "refused_query_not_allowed",
+    "status": 400,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"query_not_allowed\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 400,
+      "error_code": "target_rejected_400"
+    }
+  },
+  {
+    "name": "refused_body_not_allowed",
+    "status": 400,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"body_not_allowed\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 400,
+      "error_code": "target_rejected_400"
+    }
+  },
+  {
+    "name": "refused_idempotency_key_invalid",
+    "status": 400,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"idempotency_key_invalid\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 400,
+      "error_code": "target_rejected_400"
+    }
+  },
+  {
+    "name": "refused_unknown_command",
+    "status": 404,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"unknown_command\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 404,
+      "error_code": "target_rejected_404"
+    }
+  },
+  {
+    "name": "refused_journal_full",
+    "status": 507,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"journal_full\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 507,
+      "error_code": "target_rejected_507"
+    }
+  },
+  {
+    "name": "refused_journal_unavailable",
+    "status": 500,
+    "header": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"state\":\"refused\",\"reason\":\"journal_unavailable\"}",
+    "gateway": {
+      "outcome": "failed",
+      "kind": "rejected",
+      "status": 500,
+      "error_code": "target_rejected_500"
+    }
+  }
+]

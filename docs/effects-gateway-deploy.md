@@ -40,8 +40,9 @@ no registrar credential (#391).
 | **#630** | a label holder's declassification (relabel narrowing, copy-down) is not audited | not the gateway's own: it concerns writes inside the explorer, so an action input built by such a write-down reaches the gateway unflagged |
 
 Out of scope for this slice, as the design says: Path B (a per-caller
-principal), protocols other than HTTP (`effects.ssh`), and more than one
-replica per surface.
+principal), protocols other than HTTP, and more than one replica per surface.
+SSH commands reach a host through this gateway with the `extensions/effects-ssh`
+service as an HTTP target (`docs/effects-ssh.md`, #450).
 
 ## What exists
 

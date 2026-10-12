@@ -100,7 +100,9 @@ both sides.
 - Versioned extractors: commands from terminal streams; input events, frames
   and UI Automation state from RDP sessions.
 - An `effects.ssh` adapter for the effects gateway, so an agent's single SSH
-  command is one Path A action.
+  command is one Path A action. Slice 1 is `extensions/effects-ssh`
+  (`docs/effects-ssh.md`). It is an HTTP target of the existing gateway, so
+  the gateway's loop is not duplicated.
 
 Extensions live under `extensions/`, each with its own `go.mod` listed in
 `go.work`, the pattern `wal-quorum-sidecar` already uses. They ship their own images and are not
@@ -239,7 +241,10 @@ the same reason.
    but not before the #421 decision.
 5. **Session gateway, RDP.** Same pipeline, `guacd` adapter.
 6. **Extractors.** Commands first, then GUI events, vision and UI Automation.
-7. **`effects.ssh`.** After #391; needs #430 for long commands.
+7. **`effects.ssh`.** Slice 1 is built (#450): `extensions/effects-ssh` and
+   `docs/effects-ssh.md`. It runs operator-registered fixed commands, at most
+   once per action, behind an ordinary `key` route, and long commands use
+   #430's renewal.
 
 Enforcement in the session gateway is not on this list. It follows only after
 shadow results justify it, under the same gate #409 sets for exclusion.

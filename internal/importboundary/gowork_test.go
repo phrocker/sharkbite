@@ -45,7 +45,8 @@ func TestRepositoryWorkspaceIsExamined(t *testing.T) {
 		}
 	}
 	work, err := parseGoWork(root, "go.work")
-	if err != nil || !slices.Contains(work.uses, "./extensions/example-collector") {
+	if err != nil || !slices.Contains(work.uses, "./extensions/example-collector") ||
+		!slices.Contains(work.uses, "./extensions/effects-ssh") {
 		t.Fatalf("go.work: %+v %v", work, err)
 	}
 }
