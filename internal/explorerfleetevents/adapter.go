@@ -929,11 +929,28 @@ func (a *Adapter) Append(
 				Repeated: result.Unchanged, Audit: request.Audit,
 			}, nil
 		}
+		// A guard entity of this publication belongs to another store (its
+		// 'P' entity, hex(eventID), is an approval's). That is no race: the
+		// head stays the other store's, so every retry here, and every retry
+		// by the caller, would be refused the same way. It is a definite
+		// refusal, not an unknown outcome; nothing was published.
+		if errors.Is(publishErr, guard.ErrForeignHead) {
+			return fleetevents.PublishResult{}, refusedPublication(publishErr)
+		}
 		if !errors.Is(publishErr, transaction.ErrConflict) {
 			return fleetevents.PublishResult{}, translate(publishErr)
 		}
 	}
 	return fleetevents.PublishResult{}, fleetevents.ErrPublicationUnknown
+}
+
+func refusedPublication(err error) error {
+	return errors.Join(
+		fleetevents.ErrPublicationRefused,
+		shoal.NewError(shoal.ErrorConflict,
+			"fleet event publication refused: its event entity belongs to another store"),
+		err,
+	)
 }
 
 func validateRetryWindow(
@@ -1376,6 +1393,15 @@ func (a *Adapter) mutationGuard(
 		LPART: lpart, LogicalPolicyID: logicalPolicy, RetirementGeneration: 1,
 	}
 	head, _, err := a.runtime.ReadEntity(ctx, entity)
+	if err == nil && head != nil && !bytes.Equal(head.LogicalPolicyID, logicalPolicy) {
+		// Another store's head (kind 'P' is shared with approvals). The
+		// guard would refuse the mutate anyway; refusing here, from the
+		// stored head, gives the same answer to every retry, where the
+		// guard's own refusal is seen only by the attempt that made it
+		// (its transaction is conflicted after that).
+		return explorercoord.GuardIntent{}, errors.Join(
+			transaction.ErrConflict, guard.ErrForeignHead)
+	}
 	if err == nil && head != nil {
 		result.Mode = guard.ModeMutate
 		result.ExpectedEpoch = head.Epoch

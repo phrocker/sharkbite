@@ -46,6 +46,15 @@ var (
 	ErrNotFound       = errors.New("entity guard: not found")
 	ErrOverflow       = errors.New("entity guard: overflow")
 	ErrBounds         = errors.New("entity guard: bound exceeded")
+
+	// ErrForeignHead is the conflict decide returns when the entity's head
+	// was written by another store, which its logical policy names (see
+	// ownedBy). Unlike every other ErrConflict, it is not a race: the head
+	// stays the other store's, so retrying the same intent can never
+	// succeed, and a caller that reports outcomes may report it as a
+	// definite refusal. It wraps ErrConflict, so errors.Is(err, ErrConflict)
+	// holds for it and every handler that keys on the conflict is unchanged.
+	ErrForeignHead = fmt.Errorf("%w: the entity head belongs to another store", ErrConflict)
 )
 
 type Mode uint8

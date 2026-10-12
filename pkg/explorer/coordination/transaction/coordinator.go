@@ -130,6 +130,12 @@ func (c *Coordinator) Publish(ctx context.Context, request Publication) (Result,
 			return Result{}, ErrConflict
 		}
 		if stored.root.State == coordination.StateConflicted {
+			// A guard refusing a head another store owns is permanent. It
+			// is returned as it is, because the bare conflict a caller
+			// would otherwise get cannot be told from a race.
+			if errors.Is(resumeErr, guard.ErrForeignHead) {
+				return result, resumeErr
+			}
 			return Result{}, ErrConflict
 		}
 		unchanged = unchanged || stored.root.State == coordination.StateCommitted

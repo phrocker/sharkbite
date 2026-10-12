@@ -56,14 +56,28 @@ func TestNoModeAdoptsAForeignHead(t *testing.T) {
 			if mode == ModeAbsentOrIdentical {
 				intent.DesiredDigest = head.LogicalDigest
 			}
-			if _, err := client.Acquire(ctx, intent); !errors.Is(err, ErrConflict) {
-				t.Fatalf("%v by a writer with %s = %v, want conflict", mode, name, err)
+			// The refusal is a conflict, so every handler keyed on
+			// ErrConflict is unchanged, and it is ErrForeignHead, so a
+			// caller can tell it is permanent rather than a race.
+			if _, err := client.Acquire(ctx, intent); !errors.Is(err, ErrConflict) ||
+				!errors.Is(err, ErrForeignHead) {
+				t.Fatalf("%v by a writer with %s = %v, want ErrForeignHead", mode, name, err)
 			}
 		}
 	}
 	current, _, err := client.Read(ctx, create.Entity)
 	if err != nil || current == nil || current.Epoch != head.Epoch {
 		t.Fatalf("the owner's head moved: %+v, %v", current, err)
+	}
+
+	// The owner's own race (a mutate against an epoch that has moved on) is
+	// a conflict, but not an ownership refusal: it may be retried.
+	stale := testIntent("shared", "txn-stale", "owner", ModeMutate)
+	stale.ExpectedEpoch, stale.ExpectedDigest = head.Epoch+1, head.LogicalDigest
+	stale.DesiredDigest = digest("stale")
+	if _, err := client.Acquire(ctx, stale); !errors.Is(err, ErrConflict) ||
+		errors.Is(err, ErrForeignHead) {
+		t.Fatalf("the owner's stale mutate = %v, want a plain conflict", err)
 	}
 
 	// The owner, by contrast, may still do everything, including under

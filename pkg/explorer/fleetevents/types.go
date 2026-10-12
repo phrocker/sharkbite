@@ -56,12 +56,15 @@ const (
 )
 
 var (
-	ErrResyncRequired       = errors.New("fleet events: resync required")
-	ErrCursorInvalid        = errors.New("fleet events: invalid cursor")
-	ErrGenerationConflict   = errors.New("fleet events: subscription generation conflict")
-	ErrActionCommitted      = errors.New("fleet events: action committed before authorization changed")
-	ErrAuditOutcomeUnknown  = errors.New("fleet events: action committed but audit outcome is unknown")
-	ErrPublicationUnknown   = errors.New("fleet events: publication outcome is unknown")
+	ErrResyncRequired      = errors.New("fleet events: resync required")
+	ErrCursorInvalid       = errors.New("fleet events: invalid cursor")
+	ErrGenerationConflict  = errors.New("fleet events: subscription generation conflict")
+	ErrActionCommitted     = errors.New("fleet events: action committed before authorization changed")
+	ErrAuditOutcomeUnknown = errors.New("fleet events: action committed but audit outcome is unknown")
+	ErrPublicationUnknown  = errors.New("fleet events: publication outcome is unknown")
+	// ErrPublicationRefused is a definite refusal: nothing was published,
+	// and retrying the same publication is refused the same way.
+	ErrPublicationRefused   = errors.New("fleet events: publication refused")
 	ErrPublicationExpired   = errors.New("fleet events: publication idempotency window expired")
 	ErrMutationExpired      = errors.New("fleet events: subscription mutation retry window expired")
 	ErrRetentionCapacity    = errors.New("fleet events: retained retry window is at capacity")

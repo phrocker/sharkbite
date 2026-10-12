@@ -245,9 +245,11 @@ func (c *Client) AcquireMany(ctx context.Context, intents []Intent) ([]Acquisiti
 
 func decide(head *Head, intent Intent) (Decision, error) {
 	// A head belongs to the store that created it, and no other writer may
-	// adopt it, whatever mode it asks for. See ownedBy.
+	// adopt it, whatever mode it asks for. See ownedBy. The refusal is
+	// ErrForeignHead, still an ErrConflict, so that a caller can tell a
+	// permanent refusal from a race it may retry.
 	if head != nil && !ownedBy(head, intent) {
-		return 0, ErrConflict
+		return 0, ErrForeignHead
 	}
 	switch intent.Mode {
 	case ModeAppend:
