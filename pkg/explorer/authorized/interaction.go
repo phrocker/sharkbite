@@ -111,9 +111,16 @@ func (c *Client) AnalyticsInteractionSink() interaction.ResultSink {
 // method because they were two separate literal comparisons of the same set,
 // and execute was missing from both — a surface that admits an operation it
 // cannot then reconcile is the 503 above with an extra step.
+//
+// Approve is the fourth (#653): an approver's decision is published as an
+// approval lifecycle event under that approver's own decision, and its
+// publication audit needs the same reconciling sink. Without it the
+// approver's decision committed and its event then failed "trusted
+// interaction reconciliation sink is unavailable", the shape above.
 func fleetActionLifecycleOperation(operation auth.Operation) bool {
 	switch operation {
-	case auth.OperationDispatch, auth.OperationInvoke, auth.OperationExecute:
+	case auth.OperationDispatch, auth.OperationInvoke, auth.OperationExecute,
+		auth.OperationActionApprove:
 		return true
 	default:
 		return false

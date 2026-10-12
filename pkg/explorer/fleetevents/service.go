@@ -27,7 +27,6 @@ import (
 	"errors"
 	"hash"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/explorerfleetcap"
@@ -62,6 +61,13 @@ type Config struct {
 	// those nodes' current access rules (#564), as the dispatch reads do.
 	// Nil withholds every such reference from every subscriber.
 	EvidenceNodes evidencelabels.NodeGate
+	// Approvals confirms each trusted approval.* publication against the
+	// durable approval transition it claims to describe (#653). Nil admits
+	// no approval event at all.
+	Approvals ApprovalLedger
+	// ApprovalVisibility is the delivery-time concealment rule for
+	// approval.* events (#653). Nil delivers them to nobody.
+	ApprovalVisibility ApprovalVisibility
 }
 
 type Service struct {
@@ -79,6 +85,8 @@ type Service struct {
 	// delivery, never under the publisher's at publish.
 	evidenceVisibility evidencelabels.Visibility
 	evidenceNodes      evidencelabels.NodeGate
+	approvals          ApprovalLedger
+	approvalVisibility ApprovalVisibility
 }
 
 func New(config Config) (*Service, error) {
@@ -132,7 +140,8 @@ func newService(
 		leases: config.LeaseValidator, auditor: config.Auditor, cursors: codec,
 		now: config.Clock, poll: config.PollInterval, maxWait: config.MaxWait,
 		reconcile: capability, evidenceVisibility: config.EvidenceVisibility,
-		evidenceNodes: config.EvidenceNodes,
+		evidenceNodes: config.EvidenceNodes, approvals: config.Approvals,
+		approvalVisibility: config.ApprovalVisibility,
 	}, nil
 }
 
@@ -306,6 +315,15 @@ func (s *Service) PublishLifecycle(
 		return PublishResult{}, shoal.NewError(
 			shoal.ErrorInvalidArgument, "fleet lifecycle receipt provenance is invalid")
 	}
+	// An approval event is admitted only as the event of a durable
+	// transition (#653). The capability proves the caller is host code, not
+	// that the transition happened.
+	if IsApprovalKind(request.Event.Kind) {
+		if err := s.verifyApprovalPublication(
+			ctx, operation, request, receipt); err != nil {
+			return PublishResult{}, err
+		}
+	}
 	return s.publish(ctx, operation, request, false, &receipt)
 }
 
@@ -319,14 +337,12 @@ func isReservedLifecycleKind(kind string) bool {
 		"action.claimed", "action.completed", "action.failed":
 		return true
 	}
-	// Every approval kind, including ones no build publishes yet (#451).
-	// Approval transitions publish nothing in this release — that needs the
-	// mixed-identity outbox fixed first (#480) — and reserving the namespace
-	// now is what stops a principal holding event_publish from forging
-	// "approval.approved" for a request nobody approved while the real events
-	// do not exist to contradict it. lifecyclePublicationPermits admits no
-	// operation for these kinds, so the reconciled path refuses them too.
-	return strings.HasPrefix(kind, "approval.")
+	// Every approval kind, including ones no build publishes (#451, #653).
+	// The public route may never carry one: an approval event is a statement
+	// that a durable transition happened, and event_publish is not evidence
+	// of that. Only the trusted lifecycle route publishes them, and only for
+	// an event the approval ledger confirms (PublishLifecycle).
+	return IsApprovalKind(kind)
 }
 
 // lifecyclePublicationPermits reports whether an operation may publish a
@@ -391,7 +407,10 @@ func lifecyclePublicationPermits(kind string, operation auth.Operation) bool {
 	case "action.claimed", "action.completed", "action.failed":
 		permitted = []auth.Operation{auth.OperationInvoke, auth.OperationExecute}
 	default:
-		return false
+		// Approval transitions (#653) have their own table. It names the one
+		// operation each transition is made under. An unknown approval
+		// kind, or any other kind, is admitted by none.
+		return approvalPublicationPermits(kind, operation)
 	}
 	for _, candidate := range permitted {
 		if operation == candidate {
@@ -762,6 +781,14 @@ func (s *Service) authorizeDelivery(
 		return Event{}, false, err
 	}
 	if !matchesFilter(subscription.Filter, event) {
+		return Event{}, false, nil
+	}
+	// An approval event is also subject to the approval's own concealment
+	// rule, asked under this subscriber's context (#653). The join above is
+	// the scope's; this is the request's.
+	if deliverable, err := s.approvalDeliverable(ctx, event); err != nil {
+		return Event{}, false, err
+	} else if !deliverable {
 		return Event{}, false, nil
 	}
 	if err := guard.Check(ctx); err != nil {

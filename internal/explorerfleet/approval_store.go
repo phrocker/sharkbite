@@ -146,6 +146,15 @@ func (s *ApprovalStore) ApplyApproval(
 	if err != nil {
 		return fleet.ApprovalRecord{}, publicError("approval", err)
 	}
+	// The transition's event row (#653), written in the same publish as the
+	// record, so a committed transition always has one.
+	var event *approvalEventWrite
+	if mutation.Publisher.Set() {
+		event, err = newApprovalEventWrite(canonical, mutation.Publisher)
+		if err != nil {
+			return fleet.ApprovalRecord{}, err
+		}
+	}
 	intentGuard := explorercoord.GuardIntent{
 		Entity: approvalEntity(canonical.ID), DesiredState: guard.StateLive,
 		// The winner is the content, not the identity. A first write is
@@ -157,6 +166,9 @@ func (s *ApprovalStore) ApplyApproval(
 	current, head, readErr := s.readApproval(ctx, canonical.ID)
 	switch {
 	case readErr == nil && reflect.DeepEqual(current, canonical):
+		if err := s.ensureApprovalEvent(ctx, event, lpart); err != nil {
+			return fleet.ApprovalRecord{}, err
+		}
 		return current, nil
 	case readErr == nil && current.Version != mutation.ExpectedVersion:
 		return fleet.ApprovalRecord{}, fleet.ErrApprovalConflict
@@ -175,23 +187,28 @@ func (s *ApprovalStore) ApplyApproval(
 	default:
 		return fleet.ApprovalRecord{}, readErr
 	}
-	_, publishErr := s.runtime.Publish(ctx, explorercoord.Request{
-		Intent: explorercoord.Intent{
-			Operation: []byte("fleet.approval.apply.v1"),
-			Token:     append([]byte(nil), mutation.Token...),
-			Cells: []explorercoord.Cell{{
-				Table: DispatchTable, Row: approvalRow(canonical.ID),
-				Family: dispatchFamily, Qualifier: dispatchQualifier,
-				Visibility: s.visibility, Value: value, EpochTimestamp: true,
-				LPART: lpart, CopyGeneration: 1,
-			}},
-			Guards: []explorercoord.GuardIntent{intentGuard},
-			Results: []explorercoord.ResultIdentity{{
-				Kind: []byte("fleet-approval"),
-				ID:   append([]byte(nil), canonical.ID...),
-			}},
-		},
-	})
+	intent := explorercoord.Intent{
+		Operation: []byte("fleet.approval.apply.v1"),
+		Token:     append([]byte(nil), mutation.Token...),
+		Cells: []explorercoord.Cell{{
+			Table: DispatchTable, Row: approvalRow(canonical.ID),
+			Family: dispatchFamily, Qualifier: dispatchQualifier,
+			Visibility: s.visibility, Value: value, EpochTimestamp: true,
+			LPART: lpart, CopyGeneration: 1,
+		}},
+		Guards: []explorercoord.GuardIntent{intentGuard},
+		Results: []explorercoord.ResultIdentity{{
+			Kind: []byte("fleet-approval"),
+			ID:   append([]byte(nil), canonical.ID...),
+		}},
+	}
+	if event != nil {
+		cell, eventGuard, result := s.approvalEventIntent(event, lpart)
+		intent.Cells = append(intent.Cells, cell)
+		intent.Guards = append(intent.Guards, eventGuard)
+		intent.Results = append(intent.Results, result)
+	}
+	_, publishErr := s.runtime.Publish(ctx, explorercoord.Request{Intent: intent})
 	if publishErr != nil {
 		// The write may have landed. Whether it did is answered by what is
 		// stored, never by the error: this record is ours if and only if it is
@@ -201,6 +218,10 @@ func (s *ApprovalStore) ApplyApproval(
 			stored, getErr := s.GetApproval(resolve, canonical.ID)
 			if getErr == nil {
 				if reflect.DeepEqual(stored, canonical) {
+					if err := s.ensureApprovalEvent(
+						resolve, event, lpart); err != nil {
+						return fleet.ApprovalRecord{}, err
+					}
 					return stored, nil
 				}
 				if stored.Version >= canonical.Version {

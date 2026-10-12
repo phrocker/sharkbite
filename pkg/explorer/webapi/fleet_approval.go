@@ -190,6 +190,21 @@ func fleetApprovalError(err error) error {
 	switch {
 	case err == nil:
 		return nil
+	// The transition committed and only its lifecycle event did not publish
+	// (#653). Unavailable and deliberately unmarked: nothing external was
+	// contacted, and the same request replays the transition and publishes
+	// its event, so a retry is exactly right. First, so that whatever the
+	// publication failed with (a conflict closing the row, say) cannot be
+	// read as the transition itself failing. It never carries a committed
+	// effect, since materialization answers the event only after the action
+	// write succeeded, but the exclusions keep it from shadowing one if that
+	// ever changes.
+	case errors.Is(err, fleet.ErrApprovalEventUnpublished) &&
+		!errors.Is(err, fleet.ErrActionCommitted) &&
+		!errors.Is(err, fleet.ErrExecutionAmbiguous):
+		return shoal.WrapError(
+			shoal.ErrorUnavailable,
+			"fleet approval transition committed; retry to publish its event", err)
 	// Above the approver mapping and the generic conflict arm (#526): a
 	// moved identity scheme makes the mapping comparison meaningless, and a
 	// caller must be told that the request can only expire, not that it

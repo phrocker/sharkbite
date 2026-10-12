@@ -698,6 +698,31 @@ func TestFleetActionInteractionSinkUsesLifecycleOperationForEvidence(t *testing.
 			"extra step", executeErr, dispatchErr)
 	}
 
+	// Approve is the fourth (#653): an approver's decision is published as an
+	// approval event under the approver's own decision, whose publication
+	// audit needs this sink and its reconciliation. Asserted the way execute
+	// is, as parity with dispatch at the gate.
+	approveDecision := f.decision(
+		t, "approve-only", [][]byte{f.sourceA}, [][]byte{f.policyA},
+		[]auth.Operation{auth.OperationActionApprove},
+	)
+	approveSink := f.clientA.FleetActionInteractionSink(auth.OperationActionApprove)
+	approveReconciler, ok := approveSink.(interface {
+		RecordReconciledInteractionResult(
+			context.Context, explorerfleetcap.Capability, interaction.Session,
+		) (interaction.Session, error)
+	})
+	if approveSink == nil || !ok {
+		t.Fatal("approve has no reconciling fleet lifecycle sink, so an " +
+			"approver's committed decision answers its event unpublished")
+	}
+	if _, approveErr := approveReconciler.RecordReconciledInteractionResult(
+		f.context(t, approveDecision), explorerfleetcap.New(), executeStored,
+	); shoal.IsErrorCode(approveErr, shoal.ErrorUnavailable) {
+		t.Fatalf("approve reconciliation was refused by the operation gate "+
+			"(%v) while dispatch was not (%v)", approveErr, dispatchErr)
+	}
+
 	// And the set is still a set: an unrelated operation gets no sink, so
 	// this is not "any operation will do".
 	if stray := f.clientA.FleetActionInteractionSink(

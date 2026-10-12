@@ -58,3 +58,33 @@ func TestApprovalErrorsNeverSurfaceAsInternal(t *testing.T) {
 		}
 	}
 }
+
+// TestAnUnpublishedApprovalEventIsAnUnmarkedRetry (#653): a transition that
+// committed and whose event did not publish answers 503, so the caller
+// retries, and is not marked indeterminate, because nothing external was
+// contacted. Its cause never decides the answer, not even a conflict, which
+// on its own maps to 409.
+func TestAnUnpublishedApprovalEventIsAnUnmarkedRetry(t *testing.T) {
+	for name, err := range map[string]error{
+		"bare": fleet.ErrApprovalEventUnpublished,
+		"with a conflicting cause": errors.Join(
+			fleet.ErrApprovalEventUnpublished, fleet.ErrApprovalConflict),
+		"coded": shoal.WrapError(shoal.ErrorUnavailable, "event backend down",
+			fleet.ErrApprovalEventUnpublished),
+	} {
+		recorder := httptest.NewRecorder()
+		writeError(recorder, fleetApprovalError(err))
+		if recorder.Code != http.StatusServiceUnavailable ||
+			recorder.Header().Get(CommitOutcomeHeader) != "" {
+			t.Fatalf("%s = %d, outcome %q", name, recorder.Code,
+				recorder.Header().Get(CommitOutcomeHeader))
+		}
+	}
+	// A committed action beside it is still marked: the exclusion holds.
+	recorder := httptest.NewRecorder()
+	writeError(recorder, fleetApprovalError(errors.Join(
+		fleet.ErrApprovalEventUnpublished, fleet.ErrActionCommitted)))
+	if recorder.Header().Get(CommitOutcomeHeader) != CommitOutcomeIndeterminate {
+		t.Fatal("a committed action joined with an unpublished event lost its mark")
+	}
+}

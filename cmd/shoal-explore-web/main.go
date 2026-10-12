@@ -30,6 +30,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -1176,6 +1177,11 @@ type serviceConfig struct {
 	// compare-and-set writes looks like to the caller — while every other
 	// dependency stays the one this function composes.
 	wrapApprovalStore func(fleet.ApprovalStore) fleet.ApprovalStore
+	// wrapApprovalEvents is the same kind of seam for approval lifecycle
+	// events (#653): nil in production. It lets a test lose a publication
+	// between a committed transition and its event, which is what a crash
+	// there looks like, while the publisher behind it is the real one.
+	wrapApprovalEvents func(fleet.ApprovalEventPublisher) fleet.ApprovalEventPublisher
 	// approverMapping returns the operator approver mapping digest in force
 	// (#451), or the zero digest. Nil means none.
 	approverMapping func(context.Context) (auth.Digest, error)
@@ -1196,10 +1202,14 @@ type openedService struct {
 	fleetEvents   webapi.FleetEventService
 	admission     webapi.AdmissionProvider
 	approvals     webapi.FleetApprovalProvider
-	attestation   webapi.FleetAttestationProvider
-	teamOverview  webapi.TeamOverviewProvider
-	client        *authorized.Client
-	backfilled    int
+	// approvalOutbox is the durable approval event outbox (#653), held so
+	// tests can confirm a transition's row against the ledger. Nothing
+	// serves it.
+	approvalOutbox fleet.ApprovalTransitionStore
+	attestation    webapi.FleetAttestationProvider
+	teamOverview   webapi.TeamOverviewProvider
+	client         *authorized.Client
+	backfilled     int
 	// labelMigration is what the startup label migration did (#570).
 	labelMigration labelMigrationOutcome
 	close          func()
@@ -1396,6 +1406,21 @@ func openService(
 			embedded.Close()
 			return closed, err
 		}
+		// Held requests (#451). The approval rows share the dispatch table
+		// under their own prefix. The store is built before the event
+		// service because it is also the approval outbox (#653), which the
+		// event service's ledger confirms every approval publication against.
+		durableApprovals, err := explorerfleet.NewApprovalStore(
+			embedded.Runtime, nil)
+		if err != nil {
+			store.Close()
+			embedded.Close()
+			return closed, err
+		}
+		// Who may see an approval's events is the approval service's rule,
+		// and that service is composed after the event service it publishes
+		// through. Until it is bound, nobody sees any.
+		var approvalVisibility atomic.Pointer[fleet.ApprovalService]
 		fleetEvents, actionEvents, err :=
 			explorerfleetevents.ComposeWithPublisherAndReader(
 				embedded.Runtime, workspacePublicationDomain, config.resolver,
@@ -1409,6 +1434,14 @@ func openService(
 				// dispatch reads below and the client's own interaction
 				// and fold reads use, so no plane answers differently.
 				client.LabelVisibility(), client.NodeGate(),
+				explorerfleetevents.WithApprovalEvents(durableApprovals,
+					func(ctx context.Context, id []byte) (bool, error) {
+						approvals := approvalVisibility.Load()
+						if approvals == nil {
+							return false, nil
+						}
+						return approvals.VisibleTo(ctx, id)
+					}),
 			)
 		if err != nil {
 			store.Close()
@@ -1481,20 +1514,16 @@ func openService(
 			embedded.Close()
 			return closed, err
 		}
-		// Held requests (#451). The approval rows share the dispatch table
-		// under their own prefix; the recorder is the same interaction
-		// recorder the action audits use, attributing each transition to
-		// the principal that made it rather than to the requester.
-		var approvalStore fleet.ApprovalStore
-		approvalStore, err = explorerfleet.NewApprovalStore(
-			embedded.Runtime, nil)
-		if err != nil {
-			store.Close()
-			embedded.Close()
-			return closed, err
-		}
+		// The recorder is the same interaction recorder the action audits
+		// use, attributing each transition to the principal that made it
+		// rather than to the requester.
+		var approvalStore fleet.ApprovalStore = durableApprovals
 		if config.wrapApprovalStore != nil {
 			approvalStore = config.wrapApprovalStore(approvalStore)
+		}
+		var approvalEvents fleet.ApprovalEventPublisher = actionEvents.Approvals()
+		if config.wrapApprovalEvents != nil {
+			approvalEvents = config.wrapApprovalEvents(approvalEvents)
 		}
 		approvalRecorder, err := explorerfleet.NewApprovalRecorder(
 			interactionRecorder, snapshots)
@@ -1522,12 +1551,16 @@ func openService(
 			// How principals are named (#526); the zero value is the
 			// sub-derived scheme every host ran before.
 			IdentityScheme: config.identityScheme.approvals(),
+			// Lifecycle events (#653): the durable store is the outbox,
+			// whatever wraps it for the service.
+			Outbox: durableApprovals, Events: approvalEvents,
 		})
 		if err != nil {
 			store.Close()
 			embedded.Close()
 			return closed, err
 		}
+		approvalVisibility.Store(approvalService)
 		boundApprovalService, err := newBoundApproval(
 			approvalService, config.resolver)
 		if err != nil {
@@ -1600,6 +1633,7 @@ func openService(
 			fleetEvents:    fleetEvents,
 			admission:      boundAdmissionService,
 			approvals:      boundApprovalService,
+			approvalOutbox: durableApprovals,
 			attestation:    optionalAttestation(attestationService),
 			teamOverview:   teamOverview,
 			client:         client,

@@ -20,6 +20,7 @@
 package explorerfleetevents
 
 import (
+	"errors"
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/explorercoord"
@@ -111,6 +112,7 @@ func ComposeWithPublisherAndReader(
 	clock func() time.Time,
 	evidenceVisibility evidencelabels.Visibility,
 	evidenceNodes evidencelabels.NodeGate,
+	options ...ComposeOption,
 ) (*fleetevents.Service, *ActionEventPublisher, error) {
 	backend, err := New(runtime, domain)
 	if err != nil {
@@ -123,7 +125,38 @@ func ComposeWithPublisherAndReader(
 	}
 	return composeWithPublisher(
 		backend, resolver, generations, auditor, leases, cursorKey, clock,
-		evidenceVisibility, evidenceNodes)
+		evidenceVisibility, evidenceNodes, options...)
+}
+
+// ComposeOption adds optional wiring to the composed event service.
+type ComposeOption func(*composeOptions) error
+
+type composeOptions struct {
+	approvals          fleetevents.ApprovalLedger
+	approvalVisibility fleetevents.ApprovalVisibility
+}
+
+// WithApprovalEvents admits approval lifecycle events (#653). transitions is
+// the durable approval outbox the ledger confirms every approval publication
+// against. visibility is the approval concealment rule asked at delivery. A
+// host binds it to fleet.ApprovalService.VisibleTo, typically late, since the
+// approval service is composed after this one. Without this option, approval
+// events are neither admitted nor delivered.
+func WithApprovalEvents(
+	transitions fleet.ApprovalTransitionStore,
+	visibility fleetevents.ApprovalVisibility,
+) ComposeOption {
+	return func(options *composeOptions) error {
+		ledger, err := NewApprovalLedger(transitions)
+		if err != nil {
+			return err
+		}
+		if visibility == nil {
+			return errors.New("fleet events: approval visibility is required")
+		}
+		options.approvals, options.approvalVisibility = ledger, visibility
+		return nil
+	}
 }
 
 func composeWithPublisher(
@@ -136,13 +169,21 @@ func composeWithPublisher(
 	clock func() time.Time,
 	evidenceVisibility evidencelabels.Visibility,
 	evidenceNodes evidencelabels.NodeGate,
+	options ...ComposeOption,
 ) (*fleetevents.Service, *ActionEventPublisher, error) {
+	var optional composeOptions
+	for _, option := range options {
+		if err := option(&optional); err != nil {
+			return nil, nil, err
+		}
+	}
 	capability := explorerfleetcap.New()
 	service, err := fleetevents.NewWithLifecycleCapability(fleetevents.Config{
 		Backend: backend, Resolver: resolver, GenerationReader: generations,
 		LeaseValidator: leases, Auditor: auditor, CursorKey: cursorKey,
 		Clock: clock, EvidenceVisibility: evidenceVisibility,
-		EvidenceNodes: evidenceNodes,
+		EvidenceNodes: evidenceNodes, Approvals: optional.approvals,
+		ApprovalVisibility: optional.approvalVisibility,
 	}, capability)
 	if err != nil {
 		return nil, nil, err

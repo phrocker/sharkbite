@@ -43,6 +43,9 @@ type approvalHarness struct {
 	isOpen    bool
 	requests  atomic.Int64
 	wrap      func(fleet.ApprovalStore) fleet.ApprovalStore
+	// wrapEvents wraps the approval event publisher (#653); nil in every
+	// test that does not lose a publication on purpose.
+	wrapEvents func(fleet.ApprovalEventPublisher) fleet.ApprovalEventPublisher
 	// mapping is the approver mapping digest the service is opened with;
 	// nil means none, as in the shipped binary without the mapping file.
 	mapping func(context.Context) (auth.Digest, error)
@@ -102,6 +105,7 @@ func (h *approvalHarness) tryOpen() error {
 		executors:           h.configuredExecutors(),
 		generationReader:    h.reader,
 		wrapApprovalStore:   h.wrap,
+		wrapApprovalEvents:  h.wrapEvents,
 		approverMapping:     h.mapping,
 		identityScheme:      h.scheme,
 		executorAttestation: h.attestation,

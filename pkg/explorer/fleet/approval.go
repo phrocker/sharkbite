@@ -443,6 +443,10 @@ type ApprovalMutation struct {
 	Token           []byte
 	ExpectedVersion uint64
 	Record          ApprovalRecord
+	// Publisher is the principal making this transition (#653). A store that
+	// keeps an approval outbox writes the transition's event row, naming it,
+	// in the same durable write as Record. Zero writes no row.
+	Publisher ApprovalPublisher
 }
 
 type ApprovalPage struct {
@@ -527,6 +531,13 @@ type ApprovalConfig struct {
 	// value configures no namespace rule and stamps nothing: a host whose
 	// principals are not OIDC-minted.
 	IdentityScheme IdentityScheme
+	// Outbox and Events publish approval lifecycle events (#653). They are
+	// optional and set together. With neither, transitions are audited and
+	// publish nothing, as before. Outbox must be the durable store that
+	// writes the rows: Store's ApplyApproval writes them, and a wrapper
+	// around Store need not expose them.
+	Outbox ApprovalTransitionStore
+	Events ApprovalEventPublisher
 }
 
 // IdentityScheme describes the identity scheme in force (#526).
@@ -683,6 +694,7 @@ type ApprovalService struct {
 	mapping     func(context.Context) (auth.Digest, error)
 	window      time.Duration
 	scheme      IdentityScheme
+	events      *approvalEvents
 }
 
 func NewApprovalService(config ApprovalConfig) (*ApprovalService, error) {
@@ -702,12 +714,23 @@ func NewApprovalService(config ApprovalConfig) (*ApprovalService, error) {
 	if err := config.IdentityScheme.validate(); err != nil {
 		return nil, err
 	}
-	return &ApprovalService{
+	if (config.Outbox == nil) != (config.Events == nil) {
+		return nil, shoal.NewError(
+			shoal.ErrorInvalidArgument,
+			"approval event outbox and publisher are configured together")
+	}
+	service := &ApprovalService{
 		dispatch: config.Dispatch, store: config.Store,
 		recorder: config.Recorder, narrowed: config.Narrowed,
 		generations: config.Generations, mapping: config.ApproverMapping,
 		window: window, scheme: cloneIdentityScheme(config.IdentityScheme),
-	}, nil
+	}
+	if config.Outbox != nil {
+		service.events = &approvalEvents{
+			outbox: config.Outbox, publisher: config.Events,
+		}
+	}
+	return service, nil
 }
 
 // approverMapping returns the approver mapping digest in force, or the zero
@@ -992,9 +1015,13 @@ func (s *ApprovalService) advance(
 			}
 			return receiptFor(expired, ActionRecord{}), nil
 		}
-		return receiptFor(current, ActionRecord{}), nil
+		// A replay: the requester asking where its request is, which is
+		// also how it reconciles its own unpublished event (#653).
+		return receiptFor(current, ActionRecord{}),
+			s.drainApprovalEvents(ctx, current.ID, 0)
 	case ApprovalRefused, ApprovalExpired:
-		return receiptFor(current, ActionRecord{}), nil
+		return receiptFor(current, ActionRecord{}),
+			s.drainApprovalEvents(ctx, current.ID, 0)
 	case ApprovalApproved:
 		// Approved and not used in time is expired, not approved. The window
 		// bounds when work may begin to exist, not merely when an approver
@@ -1069,11 +1096,22 @@ func (s *ApprovalService) advance(
 		stored, err := s.commit(
 			ctx, "approval_materialize", auth.OperationDispatch,
 			decision, next, current.Version)
+		// The approval has committed to become work whether or not its
+		// event published, so the work is created either way and an
+		// unpublished event is answered after it (#653). A retry replays at
+		// the enqueued case and publishes the event there.
+		eventErr := err
+		if !errors.Is(err, ErrApprovalEventUnpublished) {
+			eventErr = nil
+			if err != nil {
+				return ApprovalReceipt{}, err
+			}
+		}
+		action, err := s.materialize(ctx, decision, stored)
 		if err != nil {
 			return ApprovalReceipt{}, err
 		}
-		current = stored
-		fallthrough
+		return receiptFor(stored, action), eventErr
 	case ApprovalEnqueued:
 		// Past ExpiresAt is fine here and deliberate. The decision to make
 		// this work was committed inside the window by the write above; a
@@ -1089,7 +1127,8 @@ func (s *ApprovalService) advance(
 		if err != nil {
 			return ApprovalReceipt{}, err
 		}
-		return receiptFor(current, action), nil
+		return receiptFor(current, action),
+			s.drainApprovalEvents(ctx, current.ID, 0)
 	default:
 		return ApprovalReceipt{}, shoal.NewError(
 			shoal.ErrorInternal, "approval state is invalid")
@@ -1327,6 +1366,15 @@ func (s *ApprovalService) decide(
 		return ApprovalRecord{}, approvalExpired()
 	}
 	if current.State != ApprovalPending {
+		// A replay of any kind publishes this approver's own pending events
+		// first: a duplicate decision is how an approver reconciles a
+		// decision whose event did not publish, and a decide that finds the
+		// request expired is how one reconciles an expiry it wrote (#653).
+		// Only rows this caller published are touched, and this caller has
+		// already passed eligibility.
+		if err := s.drainApprovalEvents(ctx, current.ID, 0); err != nil {
+			return ApprovalRecord{}, err
+		}
 		// A duplicate of the decision already on the record replays it, so an
 		// approver whose response was lost can safely send it again. It does
 		// not perform anything a second time because deciding never performs
@@ -1667,6 +1715,84 @@ func (s *ApprovalService) Status(
 	}, nil
 }
 
+// VisibleTo reports whether the principal behind ctx may see this approval's
+// lifecycle events (#653). The event service asks it at delivery, under each
+// subscriber's own context.
+//
+// It is Status's rule, so subscribing can never show anyone more than asking
+// Status would. The requester always sees its own request. Anyone else must
+// be eligible to decide it, under every approver rule. That includes the
+// narrowing one, and here a narrowed caller is simply not shown the event.
+// Status answers such a caller 401 only when it would otherwise be eligible;
+// an event has no response to vary, so there is no oracle to keep and
+// nothing to tell. Every refusal is a false answer and never an error, so a
+// subscriber cannot tell a request it may not see from one that does not
+// exist.
+//
+// No RequestContext is involved: delivery is not a request to the approval
+// service. The decision is resolved from ctx and judged at the service's
+// clock.
+func (s *ApprovalService) VisibleTo(
+	ctx context.Context, id []byte,
+) (bool, error) {
+	if err := validateOpaque("approval ID", id, false); err != nil {
+		return false, nil
+	}
+	decision, err := s.dispatch.resolver.Resolve(ctx)
+	if err != nil {
+		if shoal.IsErrorCode(err, shoal.ErrorUnauthorized) ||
+			shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	now := s.dispatch.clock().UTC()
+	current, err := s.store.GetApproval(ctx, id)
+	if err != nil {
+		// Any read failure withholds the event and never fails the page.
+		// The read is not about the subscriber: it runs for every subscriber
+		// the scope join admits, co-tenants included, so an error here would
+		// fail all of their pages for as long as it lasts, and one that lasts
+		// (a record that does not decode, a head whose committed cell never
+		// becomes visible) would fail them forever and tell each of them that
+		// an approval event is there. Withholding costs at most one
+		// notification for a party during a store fault. Status, which is the
+		// durable truth, still answers them. A cancelled pull is the one
+		// error passed on, because it is the subscriber's own.
+		//
+		// The way a head became permanently unreadable before, another
+		// store adopting the approval's guard head through a shared kind
+		// letter, is refused by the guard itself since the head-ownership
+		// fix. This is the second line, not the first.
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return false, ctxErr
+		}
+		return false, nil
+	}
+	if sameActionPrincipal(decision, current.Request) &&
+		decision.AuthorizeObject(auth.OperationDispatch, auth.ResourceRequest{
+			AuthorizationDomain: decision.AuthorizationDomain(),
+			SourceID:            current.Request.SourceID,
+			PolicyID:            current.Request.PolicyID,
+			ObjectID:            shoal.ID(current.ID),
+		}, now) == nil {
+		return true, nil
+	}
+	// Any failure to establish eligibility is a false answer, whatever its
+	// code. Status may answer 503 where the target's binding cannot be
+	// resolved (an executor ref the host no longer configures, a moved effect
+	// ceiling), but at delivery an error fails the subscriber's whole page and
+	// pins its cursor. That would wedge the stream behind one approval event,
+	// and would tell a subscriber that should see nothing, such as the agent's
+	// registrant, that an approval event is there. Only the approval read
+	// itself, which is not about this subscriber, may fail the page, and only
+	// while it fails.
+	if _, err := s.eligibleApprover(ctx, decision, current, now); err != nil {
+		return false, nil
+	}
+	return true, nil
+}
+
 // effectiveState computes what a stored approval amounts to now.
 func (s *ApprovalService) effectiveState(
 	ctx context.Context,
@@ -1829,6 +1955,10 @@ func (s *ApprovalService) commit(
 	if err != nil {
 		return ApprovalRecord{}, err
 	}
+	publisher, err := approvalPublisherFor(decision, operation, phase)
+	if err != nil {
+		return ApprovalRecord{}, err
+	}
 	if err := s.recorder.RecordApproval(ctx, ApprovalAudit{
 		Phase: phase, Operation: operation, Record: CloneApprovalRecord(record),
 		Subject: decision.Subject(), Actor: decision.Actor(),
@@ -1840,11 +1970,23 @@ func (s *ApprovalService) commit(
 	}); err != nil {
 		return ApprovalRecord{}, errors.Join(ErrRecordingUnavailable, err)
 	}
-	return s.store.ApplyApproval(ctx, ApprovalMutation{
+	mutation := ApprovalMutation{
 		Token: transitionToken(
 			"approval-"+phase, record.ID, nil, record.Version),
 		ExpectedVersion: expectedVersion, Record: record,
-	})
+	}
+	if s.events != nil {
+		mutation.Publisher = publisher
+	}
+	stored, err := s.store.ApplyApproval(ctx, mutation)
+	if err != nil {
+		return ApprovalRecord{}, err
+	}
+	// The transition is durable, and so is its event row, written with it.
+	// Publishing it is this call's own business. A failure is answered as
+	// ErrApprovalEventUnpublished beside the committed record, so a caller
+	// can tell "committed, retry to publish" from "did not happen" (#653).
+	return stored, s.drainApprovalEvents(ctx, stored.ID, stored.Version)
 }
 
 func receiptFor(record ApprovalRecord, action ActionRecord) ApprovalReceipt {

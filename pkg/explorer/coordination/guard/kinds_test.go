@@ -39,6 +39,7 @@ var entityKinds = map[byte][]string{
 	},
 	'S': {"internal/explorerfleetevents/adapter.go"},
 	'T': {"internal/explorerfleet/dispatch_store.go"},
+	'V': {"internal/explorerfleet/approval_event_store.go"},
 	'e': {"internal/explorerfleetevents/adapter.go"},
 }
 
