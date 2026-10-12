@@ -1098,7 +1098,7 @@ func (s *ApprovalService) Request(
 	if err != nil {
 		return ApprovalReceipt{}, err
 	}
-	if reservedAdmissionID(request.ID) {
+	if reservedActionID(request.ID) {
 		return ApprovalReceipt{}, shoal.NewError(
 			shoal.ErrorInvalidArgument, "action ID is reserved")
 	}

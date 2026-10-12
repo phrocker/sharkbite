@@ -87,6 +87,36 @@ type RecordPublicationAdapter interface {
 
 var embeddedDefaultPolicy = []byte("embedded/default")
 
+// documentIDKind is the stableID kind of a document ID, so every document ID
+// is "doc_" and then 32 lowercase hex digits.
+const documentIDKind = "doc"
+
+// IsDocumentID reports whether id has the one shape a document ID takes:
+// "doc_" and then 32 lowercase hex digits.
+//
+// A document record is guarded under kind 'D' at its document ID, and fleet
+// dispatch guards its actions under 'D' at their raw action IDs. The guard
+// keeps either store from adopting the other's head, but not from occupying
+// an ID first (#669). A document ID is a digest of its source URI, so anyone
+// who knows a URI can compute the ID. A dispatcher could therefore enqueue an
+// action at that ID before the URI is ingested, and the ingestion would
+// conflict permanently. Dispatch refuses every new action ID of this shape,
+// which keeps the two ID spaces disjoint in both directions: a document can
+// only ever occupy this shape, and dispatch never mints it.
+func IsDocumentID(id []byte) bool {
+	const digits = 32
+	prefix := documentIDKind + "_"
+	if len(id) != len(prefix)+digits || !bytes.HasPrefix(id, []byte(prefix)) {
+		return false
+	}
+	for _, c := range id[len(prefix):] {
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') {
+			return false
+		}
+	}
+	return true
+}
+
 func (e *Explorer) publicationPending(ctx context.Context) (bool, error) {
 	if e.publication == nil {
 		return false, nil

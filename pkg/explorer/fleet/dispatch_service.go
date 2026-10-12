@@ -113,7 +113,10 @@ func (s *DispatchService) enqueue(
 	// admission ID, submit it here, and read occupancy off conflict versus
 	// success. It could also squat an unheld one and deny the victim its own
 	// admission by name.
-	if reservedAdmissionID(request.ID) {
+	//
+	// The explorer document ID shape is refused here as well, for the same
+	// squatting reason but against another store (reservedActionID, #669).
+	if reservedActionID(request.ID) {
 		return ActionRecord{}, shoal.NewError(
 			shoal.ErrorInvalidArgument, "action ID is reserved")
 	}

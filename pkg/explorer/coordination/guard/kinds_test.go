@@ -28,7 +28,6 @@ var entityKinds = map[byte][]string{
 	'D': {
 		"internal/explorerconformance/fixture.go",
 		"internal/explorerfleet/dispatch_store.go",
-		"internal/explorerfleetevents/adapter.go",
 		"pkg/explorer/publication.go",
 	},
 	'E': {"internal/explorerfleetevents/adapter.go"},
@@ -40,6 +39,7 @@ var entityKinds = map[byte][]string{
 	},
 	'S': {"internal/explorerfleetevents/adapter.go"},
 	'T': {"internal/explorerfleet/dispatch_store.go"},
+	'U': {"internal/explorerfleetevents/adapter.go"},
 	'V': {"internal/explorerfleet/approval_event_store.go"},
 	'e': {"internal/explorerfleetevents/adapter.go"},
 }
@@ -50,15 +50,28 @@ var entityKinds = map[byte][]string{
 // keeps the denial-of-service residual described on entityKinds.
 //
 //   - 'P': fleet approvals (raw, caller-chosen approval ID) and fleet-event
-//     publications (hex of an event ID the publisher can precompute).
-//   - 'D': fleet dispatch (raw, caller-chosen action ID), fleet-event
-//     subscription delete receipts (a digest of one of 4096 slot rows, which
-//     anyone can compute), explorer documents (document ID), and the
-//     conformance fixture (its own domain). The residual here is serious: a
-//     principal holding dispatch can enqueue actions at every delete-receipt
-//     ID first and so deny every subscription Delete, which is revocation.
-//     Closing it needs a new letter for one side and a migration of its
-//     heads; it is tracked separately.
+//     publications (hex of an event ID the publisher can precompute). For a
+//     lifecycle event, anyone who can read the committed record can compute
+//     the event ID too. So while that event is unpublished, an approval
+//     request at its hex occupies it: the event is suppressed, and the
+//     action's outbox wedges (#681).
+//
+//   - 'D': fleet dispatch (raw, caller-chosen action ID), explorer documents
+//     (document ID), and the conformance fixture (its own domain). Dispatch
+//     and documents share one domain in the shipped binary. Their ID spaces
+//     are kept disjoint rather than their letters: a document ID always has
+//     the shape explorer.IsDocumentID describes, and dispatch enqueue and
+//     approval requests refuse new action IDs of that shape (fleet's
+//     reservedActionID, #669). An action stored at such an ID before #669
+//     is the only residual.
+//
+//     Fleet-event subscription delete receipts also used 'D' before #669. Any
+//     principal holding dispatch could occupy all 4096 of their entity IDs and
+//     so deny every subscription Delete, which is revocation. Receipts now
+//     use 'U' at a new row prefix. The adapter still reads legacy receipt
+//     rows for replay, but it never builds a 'D' entity, so it is no longer
+//     registered here. Its old 'D' heads stay in storage under
+//     fleet-events/default, unread and unwritten.
 var knownSharedKinds = map[byte]bool{'P': true, 'D': true}
 
 // storePolicies is the logical policy each store that holds a shared letter

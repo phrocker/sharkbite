@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
@@ -865,6 +866,34 @@ const admissionIDPrefix = "\xff\xff\xff\xff"
 // legitimate names a dispatch caller is entitled to use.
 func reservedAdmissionID(id []byte) bool {
 	return bytes.HasPrefix(id, []byte(admissionIDPrefix))
+}
+
+// reservedActionID reports whether a caller may not name a new action with
+// id, at dispatch enqueue or an approval request (whose approved record is
+// enqueued at the same ID). There are two reserved spaces:
+//
+//   - The admission span. Admission derives IDs in it.
+//   - The explorer document ID shape (explorer.IsDocumentID). An action's
+//     guard entity is {'D', action ID}, and so is a document's, at its
+//     document ID. A document ID is a digest of its source URI, which anyone
+//     can compute. So an action enqueued there first would occupy the
+//     document's entity, and that URI's ingestion would conflict forever
+//     (#669). Refusing the shape keeps the two ID spaces disjoint.
+//
+// The check runs only at these two entry points, and it runs before the
+// store is read, as the admission check does. So a retried enqueue or
+// request at such an ID is refused too. Validate does not check the document
+// shape. An action or approval stored at such an ID before #669 still
+// decodes, and an action can still be read, claimed, completed or canceled.
+// An approval at such an ID can still be read and decided, but an approved
+// one never becomes work. Materialization runs only on the requester's
+// Request retry, and Request is now refused. Re-enqueueing such an action, or
+// the Invoke replay that reports its outcome, is refused too; Status still
+// answers. A replica built before #669 still accepts the shape during a
+// rolling upgrade. All of this needs a record created at "doc_" and 32
+// lowercase hex, which no client is expected to have chosen.
+func reservedActionID(id []byte) bool {
+	return reservedAdmissionID(id) || explorer.IsDocumentID(id)
 }
 
 // admissionActionID derives the durable record identity for a caller-supplied

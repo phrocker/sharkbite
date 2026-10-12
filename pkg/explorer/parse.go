@@ -128,7 +128,7 @@ func parseSourceWithLimits(
 	}
 	source.Title = title
 	source.Metadata = cloneMetadata(source.Metadata)
-	documentID := shoal.ID(stableID("doc", source.URI))
+	documentID := shoal.ID(stableID(documentIDKind, source.URI))
 	revisionID := shoal.ID(stableID(
 		"rev", source.URI, source.MediaType, title, source.Content,
 		canonicalMetadata(source.Metadata)))

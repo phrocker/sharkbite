@@ -4,12 +4,14 @@
 package main
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/hex"
 	"testing"
 	"time"
 
+	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleetevents"
@@ -125,4 +127,72 @@ func TestOneStoreCannotAdoptAnothersGuardHead(t *testing.T) {
 		!shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
 		t.Fatalf("status of the refused approval = %v", err)
 	}
+}
+
+// ingestVictim ingests one source at uri through the authorized client, as
+// a workspace ingester, and returns its document ID.
+func ingestVictim(t *testing.T, h *approvalHarness, uri string) (shoal.ID, error) {
+	t.Helper()
+	if h.opened.client == nil {
+		t.Fatal("the service exposes no authorized client")
+	}
+	ctx, err := h.authority.Binder().Bind(context.Background(), askDecision(
+		t, h.now(), "victim-ingest",
+		auth.OperationIngest, auth.OperationRead, auth.OperationList))
+	if err != nil {
+		t.Fatal(err)
+	}
+	result, err := h.opened.client.Ingest(ctx, explorer.Source{
+		URI: uri, Title: "Victim", MediaType: "text/markdown",
+		Content: "# Victim\n\nA document someone else wants.\n",
+	})
+	if err != nil {
+		return "", err
+	}
+	return result.Document.ID, nil
+}
+
+// TestDispatchCannotOccupyADocumentsGuardEntity is the documents half of
+// #669. A document is guarded at {'D', document ID}, and a dispatch action at
+// {'D', action ID}, in one domain. The document ID is a digest of the source
+// URI, so anyone can compute it before the URI is ingested. Before the fix, a
+// principal holding dispatch could enqueue an action at that ID, and the
+// later ingestion conflicted on a head that belonged to dispatch, for good.
+//
+// Both entry points that name a new action refuse the shape, and the
+// ingestion then succeeds. They refuse it again after the ingestion, the same
+// way, so the refusal says nothing about which documents exist.
+func TestDispatchCannotOccupyADocumentsGuardEntity(t *testing.T) {
+	// The ID an upload of this name will have, learned from another
+	// workspace: it depends on the URI alone.
+	predicted, err := ingestVictim(t, newApprovalHarness(t), "shoal://victim/release-notes.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := newApprovalHarness(t)
+	occupy := func(when string) {
+		t.Helper()
+		plain := h.held(string(predicted))
+		plain.action = "status"
+		if _, err := h.opened.fleetDispatch.Enqueue(
+			h.as(requester), h.enqueue(plain)); !shoal.IsErrorCode(
+			err, shoal.ErrorInvalidArgument) {
+			t.Fatalf("%s: an enqueue at a document's ID = %v, want refused", when, err)
+		}
+		if _, err := h.request(requester, h.held(string(predicted))); !shoal.IsErrorCode(
+			err, shoal.ErrorInvalidArgument) {
+			t.Fatalf("%s: an approval request at a document's ID = %v, want refused",
+				when, err)
+		}
+	}
+	occupy("before the ingestion")
+	got, err := ingestVictim(t, h, "shoal://victim/release-notes.md")
+	if err != nil {
+		t.Fatalf("the ingestion after an attempted squat: %v", err)
+	}
+	if got != predicted {
+		t.Fatalf("the document ID is %q, predicted %q", got, predicted)
+	}
+	occupy("after the ingestion")
 }

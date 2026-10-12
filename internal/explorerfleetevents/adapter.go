@@ -53,7 +53,9 @@ var (
 	publicationPrefix   = []byte{1, 'P'}
 	subPrefix           = []byte{1, 'S'}
 	createReceiptPrefix = []byte{1, 'C'}
-	deleteReceiptPrefix = []byte{1, 'D'}
+	// deleteReceiptPrefix holds subscription delete receipts, guarded by
+	// deleteReceiptKind (#669).
+	deleteReceiptPrefix = []byte{1, 'U'}
 	floorRow            = []byte{1, 'F'}
 	publicationGCRow    = []byte{1, 'G'}
 	recordFamily        = []byte("r")
@@ -63,6 +65,34 @@ var (
 	publicationGCEntity = guard.Entity{Kind: 'G', ID: coordination.EntityID("fleet-event-publication-gc-v1")}
 	logicalPolicy       = []byte("fleet-events/default")
 )
+
+// deleteReceiptKind is the guard kind of a subscription delete receipt, and
+// no other store holds it (guard/kinds_test.go).
+//
+// Until #669 delete receipts lived at legacyDeleteReceiptPrefix under guard
+// kind 'D'. Fleet dispatch uses 'D' too, with raw caller-chosen action IDs,
+// and anyone can compute all 4096 receipt entity IDs. So a principal holding
+// dispatch could enqueue actions at every one of them first, and every later
+// Delete, which is revocation, then conflicted on a head it does not own. The
+// receipts moved rather than dispatch because a receipt only matters within
+// its retry window and its slot is reused anyway, while an action record is
+// permanent.
+const deleteReceiptKind = 'U'
+
+// legacyDeleteReceiptPrefix is where a build before #669 wrote delete
+// receipts. Nothing writes there any more, and the rows and their 'D' heads
+// are left in place. Delete reads a legacy row only to replay a deletion
+// that an older build committed, within its retry window. It never reads or
+// writes a legacy 'D' head, so a head another store holds there blocks
+// nothing.
+//
+// Rolling upgrade: the two row spaces are disjoint, so an older replica
+// never reads a receipt at the new location and cannot misread one. The
+// one cross-version effect is on a retry. A deletion committed by this
+// build and then retried with the same token on an older replica finds no
+// receipt there, so the older replica answers ErrGenerationConflict instead
+// of replaying. The subscription is still revoked, and nothing is written.
+var legacyDeleteReceiptPrefix = []byte{1, 'D'}
 
 const (
 	DefaultRetainedEvents    = explorercoord.MaxCommittedScanLimit
@@ -685,35 +715,19 @@ func (a *Adapter) prepareSubscriptionReceipt(
 	); err != nil {
 		return 0, 0, coordination.Digest{}, nil, err
 	}
-	page, err := a.runtime.ScanCommitted(ctx, explorercoord.CommittedScanRequest{
-		Table: Table, RowPrefix: row, Family: recordFamily,
-		Qualifier: recordQualifier, Limit: 1,
-	})
+	receipt, err := a.storedSubscriptionReceipt(ctx, row)
 	if err != nil {
-		return 0, 0, coordination.Digest{}, nil, translate(err)
+		return 0, 0, coordination.Digest{}, nil, err
 	}
 	mode := guard.ModeAbsentOrIdentical
 	var expectedEpoch coordination.Epoch
 	var expectedDigest coordination.Digest
-	if len(page.Cells) == 1 && bytes.Equal(page.Cells[0].Cell.Coordinate.Row, row) {
-		var receipt subscriptionMutationReceipt
-		if err := json.Unmarshal(page.Cells[0].Cell.Value, &receipt); err != nil {
-			return 0, 0, coordination.Digest{}, nil, err
-		}
-		if receipt.RetryUntil.IsZero() ||
-			receipt.RetryUntil.Location() != time.UTC ||
-			len(receipt.MutationID) == 0 || len(receipt.RequestDigest) == 0 {
-			return 0, 0, coordination.Digest{}, nil, errors.New(
-				"fleet events: corrupt subscription mutation receipt")
-		}
+	if receipt != nil {
 		if bytes.Equal(receipt.MutationID, mutationID) {
-			if !now.Before(receipt.RetryUntil) {
-				return 0, 0, coordination.Digest{}, nil, fleetevents.ErrMutationExpired
+			if err := receipt.replayable(requestDigest, now); err != nil {
+				return 0, 0, coordination.Digest{}, nil, err
 			}
-			if !bytes.Equal(receipt.RequestDigest, requestDigest) {
-				return 0, 0, coordination.Digest{}, nil, translate(transaction.ErrConflict)
-			}
-			return 0, 0, coordination.Digest{}, &receipt, nil
+			return 0, 0, coordination.Digest{}, receipt, nil
 		}
 		if now.Before(receipt.RetryUntil) {
 			return 0, 0, coordination.Digest{}, nil, fleetevents.ErrRetentionCapacity
@@ -728,10 +742,86 @@ func (a *Adapter) prepareSubscriptionReceipt(
 	return mode, expectedEpoch, expectedDigest, nil, nil
 }
 
+// storedSubscriptionReceipt reads the receipt committed at row, or nil if
+// the slot holds none.
+func (a *Adapter) storedSubscriptionReceipt(
+	ctx context.Context, row []byte,
+) (*subscriptionMutationReceipt, error) {
+	page, err := a.runtime.ScanCommitted(ctx, explorercoord.CommittedScanRequest{
+		Table: Table, RowPrefix: row, Family: recordFamily,
+		Qualifier: recordQualifier, Limit: 1,
+	})
+	if err != nil {
+		return nil, translate(err)
+	}
+	if len(page.Cells) != 1 || !bytes.Equal(page.Cells[0].Cell.Coordinate.Row, row) {
+		return nil, nil
+	}
+	var receipt subscriptionMutationReceipt
+	if err := json.Unmarshal(page.Cells[0].Cell.Value, &receipt); err != nil {
+		return nil, err
+	}
+	if receipt.RetryUntil.IsZero() ||
+		receipt.RetryUntil.Location() != time.UTC ||
+		len(receipt.MutationID) == 0 || len(receipt.RequestDigest) == 0 {
+		return nil, errors.New(
+			"fleet events: corrupt subscription mutation receipt")
+	}
+	return &receipt, nil
+}
+
+// replayable reports whether a receipt of the caller's own mutation may be
+// replayed for a request with requestDigest: it is within its retry window
+// and it is of the same request.
+func (r *subscriptionMutationReceipt) replayable(
+	requestDigest []byte, now time.Time,
+) error {
+	if !now.Before(r.RetryUntil) {
+		return fleetevents.ErrMutationExpired
+	}
+	if !bytes.Equal(r.RequestDigest, requestDigest) {
+		return translate(transaction.ErrConflict)
+	}
+	return nil
+}
+
+// legacyDeleteReceipt returns the receipt of this deletion that a build
+// before #669 committed at legacyDeleteReceiptPrefix, or nil if there is
+// none. It answers a receipt of this deletion as prepareSubscriptionReceipt
+// would: replayed within its window and for the same request, refused
+// otherwise. A receipt of any other mutation in the slot is ignored, since
+// nothing writes there any more and so it is in nobody's way. Only the row
+// is read, never its 'D' guard head, which another store may hold.
+func (a *Adapter) legacyDeleteReceipt(
+	ctx context.Context, row, deletionToken, requestDigest []byte, now time.Time,
+) (*subscriptionMutationReceipt, error) {
+	receipt, err := a.storedSubscriptionReceipt(ctx, row)
+	if err != nil || receipt == nil ||
+		!bytes.Equal(receipt.MutationID, deletionToken) {
+		return nil, err
+	}
+	if err := receipt.replayable(requestDigest, now); err != nil {
+		return nil, err
+	}
+	return receipt, nil
+}
+
 func (a *Adapter) Delete(
 	ctx context.Context, id []byte, subscriberID shoal.ID, expected uint64,
 	retryUntil, now time.Time,
 ) (fleetevents.Subscription, bool, error) {
+	subscription, repeated, _, err := a.deleteSubscription(
+		ctx, id, subscriberID, expected, retryUntil, now)
+	return subscription, repeated, err
+}
+
+// deleteSubscription is Delete. It also returns the row that holds the
+// deletion's receipt. That is the legacy row when it replays a deletion a
+// build before #669 committed.
+func (a *Adapter) deleteSubscription(
+	ctx context.Context, id []byte, subscriberID shoal.ID, expected uint64,
+	retryUntil, now time.Time,
+) (fleetevents.Subscription, bool, []byte, error) {
 	deletionToken := digest(
 		"fleet-subscription-delete-token-v2",
 		[]byte(subscriberID), id, encodeUint64(expected))
@@ -739,48 +829,67 @@ func (a *Adapter) Delete(
 		"fleet-subscription-delete-request-v3",
 		[]byte(subscriberID), id, encodeUint64(expected), encodeTime(retryUntil),
 	)
-	receiptRow := a.subscriptionReceiptRow(deleteReceiptPrefix, deletionToken)
-	receiptEntity := a.subscriptionReceiptEntity('D', receiptRow)
-	receiptMode, receiptEpoch, receiptDigest, replay, receiptErr :=
-		a.prepareSubscriptionReceipt(
-			ctx, receiptRow, receiptEntity, deletionToken, requestDigest,
-			retryUntil, now,
-		)
-	if receiptErr != nil {
-		return fleetevents.Subscription{}, false, receiptErr
+	if err := validateRetryWindow(
+		retryUntil, now, fleetevents.ErrMutationExpired, "mutation",
+	); err != nil {
+		return fleetevents.Subscription{}, false, nil, err
+	}
+	receiptRow := a.subscriptionReceiptRow(legacyDeleteReceiptPrefix, deletionToken)
+	replay, err := a.legacyDeleteReceipt(
+		ctx, receiptRow, deletionToken, requestDigest, now)
+	if err != nil {
+		return fleetevents.Subscription{}, false, nil, err
+	}
+	var (
+		receiptEntity guard.Entity
+		receiptMode   guard.Mode
+		receiptEpoch  coordination.Epoch
+		receiptDigest coordination.Digest
+	)
+	if replay == nil {
+		receiptRow = a.subscriptionReceiptRow(deleteReceiptPrefix, deletionToken)
+		receiptEntity = a.subscriptionReceiptEntity(deleteReceiptKind, receiptRow)
+		receiptMode, receiptEpoch, receiptDigest, replay, err =
+			a.prepareSubscriptionReceipt(
+				ctx, receiptRow, receiptEntity, deletionToken, requestDigest,
+				retryUntil, now,
+			)
+		if err != nil {
+			return fleetevents.Subscription{}, false, nil, err
+		}
 	}
 	if replay != nil {
 		if replay.Subscription.SubscriberID != subscriberID {
-			return fleetevents.Subscription{}, false, fleetevents.ErrSubscriptionNotFound
+			return fleetevents.Subscription{}, false, nil, fleetevents.ErrSubscriptionNotFound
 		}
-		return replay.Subscription, true, nil
+		return replay.Subscription, true, receiptRow, nil
 	}
 	record, err := a.subscriptionRecord(ctx, id)
 	if err != nil {
-		return fleetevents.Subscription{}, false, err
+		return fleetevents.Subscription{}, false, nil, err
 	}
 	subscription := record.Subscription
 	if subscription.SubscriberID != subscriberID {
-		return fleetevents.Subscription{}, false, fleetevents.ErrSubscriptionNotFound
+		return fleetevents.Subscription{}, false, nil, fleetevents.ErrSubscriptionNotFound
 	}
 	if !subscription.RevokedAt.IsZero() {
-		return fleetevents.Subscription{}, false, fleetevents.ErrGenerationConflict
+		return fleetevents.Subscription{}, false, nil, fleetevents.ErrGenerationConflict
 	}
 	if subscription.Generation != expected {
-		return fleetevents.Subscription{}, false, fleetevents.ErrGenerationConflict
+		return fleetevents.Subscription{}, false, nil, fleetevents.ErrGenerationConflict
 	}
 	head, _, err := a.runtime.ReadEntity(ctx, a.subscriptionEntity(id))
 	if err != nil {
-		return fleetevents.Subscription{}, false, translate(err)
+		return fleetevents.Subscription{}, false, nil, translate(err)
 	}
 	if head == nil {
-		return fleetevents.Subscription{}, false, fleetevents.ErrGenerationConflict
+		return fleetevents.Subscription{}, false, nil, fleetevents.ErrGenerationConflict
 	}
 	subscription.Generation++
 	subscription.RevokedAt = now
 	value, err := json.Marshal(subscriptionRecord{Subscription: subscription})
 	if err != nil {
-		return fleetevents.Subscription{}, false, err
+		return fleetevents.Subscription{}, false, nil, err
 	}
 	receiptValue, err := json.Marshal(subscriptionMutationReceipt{
 		MutationID: deletionToken, RequestDigest: requestDigest,
@@ -788,7 +897,7 @@ func (a *Adapter) Delete(
 		Audit: mutationAudit(ctx),
 	})
 	if err != nil {
-		return fleetevents.Subscription{}, false, err
+		return fleetevents.Subscription{}, false, nil, err
 	}
 	row := a.subscriptionRow(id)
 	_, err = a.publishSubscriptionMutation(
@@ -800,9 +909,9 @@ func (a *Adapter) Delete(
 		receiptEpoch, receiptDigest, deletionToken,
 	)
 	if err != nil {
-		return fleetevents.Subscription{}, false, translate(err)
+		return fleetevents.Subscription{}, false, nil, translate(err)
 	}
-	return subscription, false, nil
+	return subscription, false, receiptRow, nil
 }
 
 func (a *Adapter) DeleteWithAudit(
@@ -810,16 +919,12 @@ func (a *Adapter) DeleteWithAudit(
 	retryUntil time.Time, audit fleetevents.LifecycleReceipt, now time.Time,
 ) (fleetevents.Subscription, fleetevents.LifecycleReceipt, bool, error) {
 	ctx = context.WithValue(ctx, mutationAuditContextKey{}, audit)
-	subscription, repeated, err := a.Delete(
+	subscription, repeated, receiptRow, err := a.deleteSubscription(
 		ctx, id, subscriberID, expected, retryUntil, now)
 	if err != nil {
 		return fleetevents.Subscription{}, fleetevents.LifecycleReceipt{}, false, err
 	}
-	deletionToken := digest(
-		"fleet-subscription-delete-token-v2",
-		[]byte(subscriberID), id, encodeUint64(expected))
-	persisted, err := a.subscriptionMutationReceipt(
-		ctx, a.subscriptionReceiptRow(deleteReceiptPrefix, deletionToken))
+	persisted, err := a.subscriptionMutationReceipt(ctx, receiptRow)
 	if err != nil {
 		return fleetevents.Subscription{}, fleetevents.LifecycleReceipt{}, false, err
 	}
