@@ -60,30 +60,40 @@ const (
 type Capability string
 
 const (
-	CapabilityDocuments    Capability = "documents"
-	CapabilityDocument     Capability = "document"
-	CapabilityRetrieve     Capability = "retrieve"
-	CapabilityVector       Capability = "vector_retrieval"
-	CapabilityNeighborhood Capability = "neighborhood"
-	CapabilityPath         Capability = "path"
-	CapabilityIngest       Capability = "ingest"
-	CapabilityExtraction   Capability = "extraction"
-	CapabilityChanges      Capability = "changes"
-	CapabilityAnalytics    Capability = "analytics"
+	CapabilityDocuments     Capability = "documents"
+	CapabilityDocument      Capability = "document"
+	CapabilityRetrieve      Capability = "retrieve"
+	CapabilityVector        Capability = "vector_retrieval"
+	CapabilityNeighborhood  Capability = "neighborhood"
+	CapabilityPath          Capability = "path"
+	CapabilityIngest        Capability = "ingest"
+	CapabilityExtraction    Capability = "extraction"
+	CapabilityChanges       Capability = "changes"
+	CapabilityAnalytics     Capability = "analytics"
+	CapabilityDecisions     Capability = "decisions"
+	CapabilityRegistrations Capability = "decision_registrations"
+	CapabilityDatasets      Capability = "decision_datasets"
+	CapabilityOutcomes      Capability = "decision_outcomes"
+	CapabilityAdjudications Capability = "decision_adjudications"
 )
 
 // Capabilities advertises only stable logical features supported by a backend.
 type Capabilities struct {
-	Documents    bool `json:"documents"`
-	Document     bool `json:"document"`
-	Retrieve     bool `json:"retrieve"`
-	Vector       bool `json:"vector_retrieval"`
-	Neighborhood bool `json:"neighborhood"`
-	Path         bool `json:"path"`
-	Ingest       bool `json:"ingest"`
-	Extraction   bool `json:"extraction"`
-	Changes      bool `json:"changes"`
-	Analytics    bool `json:"analytics"`
+	Documents     bool `json:"documents"`
+	Document      bool `json:"document"`
+	Retrieve      bool `json:"retrieve"`
+	Vector        bool `json:"vector_retrieval"`
+	Neighborhood  bool `json:"neighborhood"`
+	Path          bool `json:"path"`
+	Ingest        bool `json:"ingest"`
+	Extraction    bool `json:"extraction"`
+	Changes       bool `json:"changes"`
+	Analytics     bool `json:"analytics"`
+	Decisions     bool `json:"decisions"`
+	Registrations bool `json:"decision_registrations"`
+	Datasets      bool `json:"decision_datasets"`
+	Outcomes      bool `json:"decision_outcomes"`
+	Adjudications bool `json:"decision_adjudications"`
 }
 
 // AllCapabilities returns the complete feature set implemented by the embedded
@@ -119,6 +129,16 @@ func (c Capabilities) Supports(capability Capability) bool {
 		return c.Changes
 	case CapabilityAnalytics:
 		return c.Analytics
+	case CapabilityDecisions:
+		return c.Decisions
+	case CapabilityRegistrations:
+		return c.Registrations
+	case CapabilityDatasets:
+		return c.Datasets
+	case CapabilityOutcomes:
+		return c.Outcomes
+	case CapabilityAdjudications:
+		return c.Adjudications
 	default:
 		return false
 	}

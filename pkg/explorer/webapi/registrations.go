@@ -44,6 +44,7 @@ func (h *Handler) MountRegistrations(provider decisionapi.RegistrationProvider, 
 	for _, method := range []string{http.MethodPost, http.MethodGet, http.MethodDelete} {
 		h.mux.Handle(method+" "+RegistrationsRoute, handler)
 	}
+	h.enableDecisionCapability(CapabilityRegistrations)
 	return nil
 }
 

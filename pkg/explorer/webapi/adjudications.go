@@ -44,6 +44,7 @@ func (h *Handler) MountAdjudications(provider decisionapi.AdjudicationProvider, 
 	for _, method := range []string{http.MethodPost, http.MethodGet, http.MethodDelete} {
 		h.mux.Handle(method+" "+AdjudicationsRoute, handler)
 	}
+	h.enableDecisionCapability(CapabilityAdjudications)
 	return nil
 }
 

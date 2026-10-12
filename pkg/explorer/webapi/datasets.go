@@ -39,7 +39,11 @@ func (h *Handler) MountDatasetExports(provider decisionapi.DatasetProvider, reso
 	if e != nil {
 		return e
 	}
-	return h.MountAuthenticated(DatasetExportsRoute, handler)
+	if e = h.MountAuthenticated(DatasetExportsRoute, handler); e != nil {
+		return e
+	}
+	h.enableDecisionCapability(CapabilityDatasets)
+	return nil
 }
 
 type datasetHTTP struct {

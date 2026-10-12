@@ -30,6 +30,11 @@ const state = {
     vector_retrieval: false,
     ingest: false,
     extraction: false,
+    decisions: false,
+    decision_registrations: false,
+    decision_datasets: false,
+    decision_outcomes: false,
+    decision_adjudications: false,
   },
   uploadLimits: {
     max_upload_files: 0,
@@ -1911,6 +1916,30 @@ function applyCapabilities() {
     button.hidden = !capability("extraction");
     button.disabled = !capability("extraction");
   });
+  applyDecisionCapability();
+}
+
+function applyDecisionCapability() {
+  const tab = $("tab-decisions");
+  const panel = $("decisions");
+  const available = capability("decisions");
+  if (!tab || !panel) return;
+  tab.disabled = !available;
+  tab.setAttribute("aria-disabled", String(!available));
+  tab.classList.toggle("unavailable", !available);
+  tab.title = available
+    ? "Inspect authenticated local decision records"
+    : "Decision providers are not mounted by this host";
+  panel.dataset.capabilityUnavailable = String(!available);
+  panel.querySelectorAll("form input, form textarea, form button").forEach((control) => {
+    control.disabled = !available;
+  });
+  const status = $("decision-console-status");
+  if (!available && status) {
+    status.textContent =
+      "Decision providers are unavailable on this Explorer host. " +
+      "No decision records are being implied or synthesized.";
+  }
 }
 
 function applyIngestCapability() {
@@ -2889,6 +2918,7 @@ document.querySelectorAll(".tab").forEach((tab) => {
 });
 
 function activate(id) {
+  if (id === "decisions" && !capability("decisions")) return;
   document.querySelectorAll(".tab,.panel").forEach((element) => {
     element.classList.remove("active");
   });

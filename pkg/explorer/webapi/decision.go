@@ -52,6 +52,7 @@ func (h *Handler) MountDecisions(provider decisionapi.Provider, resolver auth.Re
 	for _, method := range []string{http.MethodPost, http.MethodGet, http.MethodDelete} {
 		h.mux.Handle(method+" "+DecisionsRoute, handler)
 	}
+	h.enableDecisionCapability(CapabilityDecisions)
 	return nil
 }
 

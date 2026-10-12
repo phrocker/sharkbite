@@ -45,6 +45,7 @@ func (h *Handler) MountOutcomes(provider decisionapi.OutcomeProvider, resolver a
 	for _, method := range []string{http.MethodPost, http.MethodGet, http.MethodDelete} {
 		h.mux.Handle(method+" "+OutcomesRoute, handler)
 	}
+	h.enableDecisionCapability(CapabilityOutcomes)
 	return nil
 }
 

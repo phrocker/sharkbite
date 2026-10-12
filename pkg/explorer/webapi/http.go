@@ -63,6 +63,8 @@ type Handler struct {
 	workspaceSettingsMounted bool
 	chatProvider             AskProvider
 	interactionProvider      InteractionProvider
+	decisionCapabilities     Capabilities
+	decisionRouteMounted     bool
 	preAuth                  map[string]preAuthenticationValidator
 	authenticatedMounts      map[string]http.Handler
 }
@@ -203,6 +205,8 @@ func (h *Handler) routes() {
 			writeError(writer, err)
 			return
 		}
+		metadata.Capabilities = mergeDecisionCapabilities(
+			metadata.Capabilities, h.decisionCapabilities)
 		metadata = applyWorkspaceMetadataLimits(request.Context(), metadata)
 		writeResponse(writer, http.StatusOK, metadata)
 	})
@@ -307,6 +311,42 @@ func (h *Handler) routes() {
 		writer.Header().Set("Content-Type", "text/html; charset=utf-8")
 		http.ServeFileFS(writer, request, content, "index.html")
 	})
+}
+
+// mergeDecisionCapabilities overlays only the host-mounted decision routes.
+// The embedded service has no decision authority by default, so these remain
+// false until a trusted provider is mounted. This keeps /api/v1/meta honest
+// for the no-authority default while letting configured hosts advertise the
+// exact surface they composed.
+func mergeDecisionCapabilities(base, mounted Capabilities) Capabilities {
+	base.Decisions = mounted.Decisions
+	base.Registrations = mounted.Registrations
+	base.Datasets = mounted.Datasets
+	base.Outcomes = mounted.Outcomes
+	base.Adjudications = mounted.Adjudications
+	return base
+}
+
+func (h *Handler) enableDecisionCapability(capability Capability) {
+	if h == nil {
+		return
+	}
+	switch capability {
+	case CapabilityDecisions:
+		h.decisionRouteMounted = true
+	case CapabilityRegistrations:
+		h.decisionCapabilities.Registrations = true
+	case CapabilityDatasets:
+		h.decisionCapabilities.Datasets = true
+	case CapabilityOutcomes:
+		h.decisionCapabilities.Outcomes = true
+	case CapabilityAdjudications:
+		h.decisionCapabilities.Adjudications = true
+	}
+	h.decisionCapabilities.Decisions = h.decisionRouteMounted &&
+		h.decisionCapabilities.Datasets &&
+		h.decisionCapabilities.Outcomes &&
+		h.decisionCapabilities.Adjudications
 }
 
 func graphMaterializeEndpoint(service Service) http.HandlerFunc {
