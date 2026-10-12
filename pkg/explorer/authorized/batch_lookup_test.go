@@ -820,6 +820,12 @@ var (
 		// no request read path reaches them.
 		"TightenRule": {}, "TighteningIndex": {},
 		"LabelMigration": {}, "PutLabelMigration": {},
+		// The declassification audit (#630): an append written by Ingest
+		// and an operator read no request read path reaches.
+		"RecordDeclassification": {}, "Declassifications": {},
+		// Claim-lineage binding and its exact lookup, used only by Ingest.
+		"BindDeclassificationClaim": {}, "DeclassificationClaimIntent": {},
+		"CloseDeclassificationClaim": {},
 	}
 )
 
