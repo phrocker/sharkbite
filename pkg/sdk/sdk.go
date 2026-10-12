@@ -6,7 +6,8 @@
 // boundary test in internal/importboundary enforces this.
 //
 // Covered today: collector enrollment, artifact and observation submission
-// and observation reads (pkg/collector/api); registered decision evaluation
+// and observation reads, and collector provisioning, revocation and
+// registration reads for a collector_admin token (pkg/collector/api); registered decision evaluation
 // and reads (pkg/decision/api); pre-call admission, report and outstanding
 // admissions (pkg/admission/api).
 //

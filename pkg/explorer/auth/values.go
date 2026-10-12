@@ -110,6 +110,23 @@ const (
 	OperationTeamOverviewRead       Operation = "team_overview_read"
 	OperationWorkspaceSettingsRead  Operation = "workspace_settings_read"
 	OperationWorkspaceSettingsWrite Operation = "workspace_settings_write"
+	// OperationCollectorAdmin is permission to provision, revoke and read an
+	// external collector's registration over HTTP (#446): to bind a principal
+	// to a collector ID with an authority ceiling, a control and a mode.
+	//
+	// It is the authority behind every collector's authority, so it is
+	// granted by nothing that grants anything else. No OIDC mapping, no
+	// workspace or approver audience, no executor mint, no development
+	// principal and no delegation mints it, and no service role allows it;
+	// workspace narrowing can only remove it. It reaches a decision only
+	// through a host that mints its own decisions for the routes it mounts
+	// (webapi.MountCollectorAdmin), which is the same operator trust as the
+	// Go provisioning API. cmd/shoal-explore-web/oidc_collector_admin_grant_test.go
+	// and the auth package's inventory tests assert all of that.
+	//
+	// It implies nothing either: an admin cannot enroll or submit as a
+	// collector, and cannot provision its own principal as one.
+	OperationCollectorAdmin Operation = "collector_admin"
 )
 
 // ParseOperation accepts one exact canonical serialized operation.
@@ -135,7 +152,8 @@ func (o Operation) Validate() error {
 		OperationEventPublish,
 		OperationAnalyticsRead, OperationTeamOverviewRead,
 		OperationWorkspaceSettingsRead,
-		OperationWorkspaceSettingsWrite:
+		OperationWorkspaceSettingsWrite,
+		OperationCollectorAdmin:
 		return nil
 	default:
 		return shoal.NewError(shoal.ErrorInvalidArgument, "unknown authorization operation")

@@ -56,6 +56,7 @@ var productActionOperations = []auth.Operation{
 	auth.OperationTeamOverviewRead,
 	auth.OperationWorkspaceSettingsRead,
 	auth.OperationWorkspaceSettingsWrite,
+	auth.OperationCollectorAdmin,
 }
 
 var authorizationOperations = append(
@@ -227,6 +228,7 @@ func TestProductActionOperationValuesAndParsingAreStable(t *testing.T) {
 		auth.OperationTeamOverviewRead:       "team_overview_read",
 		auth.OperationWorkspaceSettingsRead:  "workspace_settings_read",
 		auth.OperationWorkspaceSettingsWrite: "workspace_settings_write",
+		auth.OperationCollectorAdmin:         "collector_admin",
 	}
 	if len(expected) != len(authorizationOperations) {
 		t.Fatalf("operation inventory = %d, want %d", len(authorizationOperations), len(expected))
@@ -250,6 +252,7 @@ func TestProductActionOperationValuesAndParsingAreStable(t *testing.T) {
 
 	for _, value := range []string{
 		"", "Invoke", " invoke", "invoke ", "agent.register", "workspace_settings",
+		"collector-admin", "Collector_Admin", "collector_admin ", "collector", "admin",
 	} {
 		if parsed, err := auth.ParseOperation(value); !shoal.IsErrorCode(
 			err, shoal.ErrorInvalidArgument,
@@ -328,9 +331,40 @@ func TestServiceRoleOperationMatrixIsExhaustive(t *testing.T) {
 		for _, role := range authorizationServiceRoles {
 			permitted = permitted || roleOperationCeilings[role][operation]
 		}
+		// Collector admin is the one operation no service role may carry
+		// (#446): it assigns every collector's authority, and a role is a
+		// ceiling some service holds by configuration, not an operator's
+		// explicit grant. Any role allowing it would mint it for that role.
+		if operation == auth.OperationCollectorAdmin {
+			if permitted {
+				t.Errorf("a service role permits %q", operation)
+			}
+			continue
+		}
 		if !permitted {
 			t.Errorf("operation %q has no service-role ceiling", operation)
 		}
+	}
+}
+
+// TestNoServiceRoleOrWildcardImpliesCollectorAdmin is the role half of the
+// collector-admin guard (#446): no role, including migration's legacy
+// wildcard, allows it, so no service decision can be constructed holding it.
+func TestNoServiceRoleOrWildcardImpliesCollectorAdmin(t *testing.T) {
+	for _, role := range authorizationServiceRoles {
+		if role.Allows(auth.OperationCollectorAdmin) {
+			t.Errorf("%q allows collector_admin", role)
+		}
+		config := baseDecisionConfig()
+		config.ServiceRole = role
+		config.ServiceCeilingIdentity = "collector-admin-ceiling"
+		config.AllowedOperations = []auth.Operation{auth.OperationCollectorAdmin}
+		if _, err := auth.NewDecision(config); err == nil {
+			t.Errorf("a %q decision was minted holding collector_admin", role)
+		}
+	}
+	if err := auth.OperationCollectorAdmin.Validate(); err != nil {
+		t.Fatalf("collector_admin is not a valid operation: %v", err)
 	}
 }
 

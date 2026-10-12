@@ -686,6 +686,10 @@ func requestMayCommit(method, path string) bool {
 		"/api/v1/collectors/enroll",
 		"/api/v1/collectors/artifacts",
 		"/api/v1/collectors/observations",
+		// Admin writes commit the registration and its change log entry
+		// before the response is encoded; their receipts are fixed-shape.
+		"/api/v1/collectors/admin/provision",
+		"/api/v1/collectors/admin/revoke",
 		"/api/v1/graph/materialize",
 		"/api/v1/extract",
 		"/api/v1/derivation/recompute",

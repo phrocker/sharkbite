@@ -207,6 +207,14 @@ func parseOperations(value string) ([]auth.Operation, error) {
 		if err := operation.Validate(); err != nil {
 			return nil, fmt.Errorf("invalid identity operation %q", part)
 		}
+		// Collector admin (#446) is refused here although it is a valid
+		// operation: this process serves no collector route, so the grant
+		// could buy nothing but a decision that holds it. It is minted only
+		// by a host that mounts the collector admin routes itself.
+		if operation == auth.OperationCollectorAdmin {
+			return nil, fmt.Errorf(
+				"identity operation %q cannot be granted to an MCP process", part)
+		}
 		operations = append(operations, operation)
 	}
 	if len(operations) == 0 {
