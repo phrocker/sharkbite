@@ -26,6 +26,7 @@ THRIFT_OUT            := internal/thrift/gen
 THRIFT_PACKAGE_PREFIX := github.com/phrocker/shoal-oss/internal/thrift/gen/
 IMAGE                 ?= shoal-embed:dev
 GATEWAY_IMAGE         ?= shoal-gateway:dev
+EFFECTS_SSH_IMAGE     ?= shoal-effects-ssh:dev
 VERSION               ?= dev
 REVISION              ?= $(shell git rev-parse HEAD)
 CREATED               ?= $(shell git show -s --format=%cI HEAD)
@@ -240,6 +241,21 @@ gateway-container-build:
 gateway-container-smoke:
 	IMAGE=$(GATEWAY_IMAGE) VERSION=$(VERSION) REVISION=$(REVISION) CREATED=$(CREATED) \
 	  bash test/container/shoal-gateway-smoke.sh
+
+.PHONY: effects-ssh-container-build
+effects-ssh-container-build:
+	docker build \
+	  --file Dockerfile.shoal-effects-ssh \
+	  --build-arg VERSION=$(VERSION) \
+	  --build-arg REVISION=$(REVISION) \
+	  --build-arg CREATED=$(CREATED) \
+	  --tag $(EFFECTS_SSH_IMAGE) \
+	  .
+
+.PHONY: effects-ssh-container-smoke
+effects-ssh-container-smoke:
+	IMAGE=$(EFFECTS_SSH_IMAGE) VERSION=$(VERSION) REVISION=$(REVISION) CREATED=$(CREATED) \
+	  bash test/container/shoal-effects-ssh-smoke.sh
 
 .PHONY: capi
 capi:

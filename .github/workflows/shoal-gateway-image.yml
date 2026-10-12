@@ -5,8 +5,16 @@ name: shoal-gateway image
 # effectsGateways Deployment relies on, and `shoal-gateway grace-period`
 # running under a read-only root with every capability dropped.
 #
-# Nothing is published. Where this image is pushed, and where its base images
-# are pulled from (#638), are maintainer decisions this workflow does not make.
+# Then builds Dockerfile.shoal-effects-ssh and smoke-tests it (test/container/
+# shoal-effects-ssh-smoke.sh) the same way, with `journal init` and
+# `journal list` on a mounted journal (#662). It is a second step of the same
+# job, not a second job: the two Dockerfiles use the same digest-pinned base
+# images, so the runner pulls each once and the second build adds no
+# anonymous Docker Hub pull (#638).
+#
+# Nothing is published. Where these images are pushed, and where their base
+# images are pulled from (#638), are maintainer decisions this workflow does
+# not make.
 on:
   push:
     branches: [main]
@@ -14,14 +22,17 @@ on:
       - ".github/workflows/shoal-gateway-image.yml"
       - ".dockerignore"
       - "Dockerfile.shoal-gateway"
+      - "Dockerfile.shoal-effects-ssh"
       - "Makefile"
       - "accumulo/**"
       - "cmd/shoal-gateway/**"
+      - "extensions/effects-ssh/**"
       - "go.mod"
       - "go.sum"
       - "internal/**"
       - "pkg/**"
       - "test/container/shoal-gateway-smoke.sh"
+      - "test/container/shoal-effects-ssh-smoke.sh"
       - "wal-quorum-sidecar/go.mod"
       - "wal-quorum-sidecar/go.sum"
   pull_request:
@@ -30,14 +41,17 @@ on:
       - ".github/workflows/shoal-gateway-image.yml"
       - ".dockerignore"
       - "Dockerfile.shoal-gateway"
+      - "Dockerfile.shoal-effects-ssh"
       - "Makefile"
       - "accumulo/**"
       - "cmd/shoal-gateway/**"
+      - "extensions/effects-ssh/**"
       - "go.mod"
       - "go.sum"
       - "internal/**"
       - "pkg/**"
       - "test/container/shoal-gateway-smoke.sh"
+      - "test/container/shoal-effects-ssh-smoke.sh"
       - "wal-quorum-sidecar/go.mod"
       - "wal-quorum-sidecar/go.sum"
 
@@ -50,16 +64,26 @@ concurrency:
 
 jobs:
   validate:
+    # The job name is kept as it was, so a required check that names it still
+    # matches.
     name: Build and smoke test image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build and smoke test
+      - name: Build and smoke test the effects gateway
         run: |
           make gateway-container-smoke \
             GATEWAY_IMAGE=shoal-gateway:smoke \
+            VERSION="${GITHUB_REF_NAME}" \
+            REVISION="${GITHUB_SHA}" \
+            CREATED="$(git show -s --format=%cI HEAD)"
+
+      - name: Build and smoke test effects-ssh
+        run: |
+          make effects-ssh-container-smoke \
+            EFFECTS_SSH_IMAGE=shoal-effects-ssh:smoke \
             VERSION="${GITHUB_REF_NAME}" \
             REVISION="${GITHUB_SHA}" \
             CREATED="$(git show -s --format=%cI HEAD)"

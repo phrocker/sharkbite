@@ -738,8 +738,9 @@ func TestSyncsPrecedeTheDial(t *testing.T) {
 	e.post("restart-web", testKey("order")).is(t, loadAnswers(t), "completed")
 	mu.Lock()
 	defer mu.Unlock()
-	// The first two are journal init (file, then directory); open syncs nothing.
-	want := []string{"sync " + JournalFileName, "sync dir", "sync " + JournalFileName, "dial", "sync " + JournalFileName}
+	// The first two are journal init (the header under its temporary name,
+	// then the directory once it is linked into place); open syncs nothing.
+	want := []string{"sync " + JournalFileName + ".init", "sync dir", "sync " + JournalFileName, "dial", "sync " + JournalFileName}
 	if strings.Join(events, ",") != strings.Join(want, ",") {
 		t.Fatalf("events %q, want %q", events, want)
 	}

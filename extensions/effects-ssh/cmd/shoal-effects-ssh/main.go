@@ -26,6 +26,7 @@ import (
 	"net/netip"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"sync"
 	"syscall"
@@ -57,6 +58,9 @@ func run(args []string, stdout, stderr io.Writer, stop <-chan struct{}) int {
 		return serve(args[1:], stderr, stop)
 	case "journal":
 		return journal(args[1:], stdout, stderr)
+	case "help", "-h", "-help", "--help":
+		fmt.Fprintln(stdout, "usage: shoal-effects-ssh serve|journal init|list|show ...; see docs/effects-ssh.md")
+		return exitOK
 	}
 	fmt.Fprintf(stderr, "unknown subcommand %q; use serve or journal\n", args[0])
 	return exitUsage
@@ -439,12 +443,39 @@ func journalInit(args []string, stdout, stderr io.Writer) int {
 	flags := flag.NewFlagSet("shoal-effects-ssh journal init", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	dir := flags.String("journal-dir", "", "Existing, empty directory on the journal's volume (required)")
+	printExisting := flags.Bool("print-existing", false,
+		"When the directory already holds a journal with a complete, valid header, print "+
+			"its identity and exit 0 instead of refusing. Nothing is written either way: an "+
+			"existing journal is never replaced. For the chart's init Job, so a rerun shows the "+
+			"identity to pin rather than failing")
 	if err := flags.Parse(args); err != nil {
 		return exitUsage
 	}
 	if *dir == "" || flags.NArg() != 0 {
 		fmt.Fprintln(stderr, "-journal-dir is required")
 		return exitUsage
+	}
+	if *printExisting {
+		if _, err := os.Lstat(filepath.Join(*dir, service.JournalFileName)); err == nil {
+			// Only the header is read, in constant memory: a mature
+			// journal can be far larger than this pod's memory. A headerless
+			// or malformed header is an error, never a fresh start. The
+			// rest of the file is the server's to check when it opens it.
+			id, err := service.ReadJournalID(*dir)
+			if err == nil {
+				// An init killed between linking journal.log and syncing the
+				// directory left it undurable; make it durable before the
+				// identity is pinned.
+				err = service.SyncJournalDir(*dir)
+			}
+			if err != nil {
+				fmt.Fprintln(stderr, err)
+				return exitRuntime
+			}
+			fmt.Fprintln(stderr, "the journal already exists; its identity is printed, and nothing was written")
+			fmt.Fprintln(stdout, id)
+			return exitOK
+		}
 	}
 	id, err := service.InitJournal(*dir, nil)
 	if err != nil {

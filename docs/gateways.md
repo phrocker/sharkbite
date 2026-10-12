@@ -106,7 +106,9 @@ both sides.
 
 Extensions live under `extensions/`, each with its own `go.mod` listed in
 `go.work`, the pattern `wal-quorum-sidecar` already uses. They ship their own images and are not
-rendered by the core chart unless enabled. Core release gates do not cover them.
+rendered by the core chart unless enabled. Core release gates do not cover them,
+except where a workflow names one (effects-ssh's image is built and smoke-tested
+beside the gateway's).
 They stay in this repository while the contracts settle, so a contract change and
 the extension that exposed it can land together.
 

@@ -181,6 +181,66 @@ loopback_target=(
   --set 'effectsGateways[0].routes[0].effects={external}'
 )
 
+# A valid effects-ssh entry (#450, #662) and the gateway entry that calls it,
+# on the same principle: every refusal case below breaks exactly one thing.
+# The gateway targets the entry's Service, verifies it with the in-cluster CA,
+# presents a client certificate and a bearer token; the entry pins the
+# gateway's certificate and requires the token too. journal.id is set, so the
+# Deployment renders; the init case clears it. The host key is a real
+# ed25519 key, because the binary parses it.
+cat > "$effects_fixtures/ssh.yaml" <<'SSH'
+effectsGateways:
+  - name: web-fleet
+    enabled: true
+    agentID: d2ViLWZsZWV0
+    capability: effects.ssh
+    surfaceName: web-fleet
+    executorRef: web-fleet
+    dispatch:
+      url: http://127.0.0.1:1
+      tokenAudience: shoal-executors
+    target:
+      baseURL: https://shoal-ssh-web.default.svc:8443
+      allowPrivate: true
+      credentialSecretName: effects-ssh-web-authorization
+      caSecretName: effects-ssh-web-ca
+      clientCertificate:
+        secretName: shoal-gw-web-fleet-client
+      idempotencyHeader: Idempotency-Key
+      idempotencyRetention: 24h
+    routes:
+      - action: restart-web
+        method: POST
+        path: /v1/commands/restart-web
+        effects: [external, egresses-content]
+        idempotency: key
+        conflict: {status: [409], pointer: /state, equals: [completed]}
+        retryable: [503]
+        reference: {pointer: /reference, pattern: "(exit-[0-9]{1,10}|signal-[A-Z0-9]{1,16})(-truncated)?"}
+    networkPolicy:
+      enabled: true
+effectsSsh:
+  - name: web
+    enabled: true
+    gateway: web-fleet
+    tls: {secretName: effects-ssh-web-tls}
+    callerToken: {secretName: effects-ssh-web-token}
+    clientAuth:
+      caSecretName: effects-ssh-web-client-ca
+      identities: ["uri:spiffe://cluster.local/ns/default/sa/shoal-gw-web-fleet"]
+    sshKeys: {secretName: effects-ssh-web-keys}
+    journal: {id: 0123456789abcdef0123456789abcdef}
+    commands:
+      restart-web:
+        address: 10.0.4.17:22
+        hostKeys: ["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRh5PXk+0rm7CbKyH/ViV5hPII8CP+XNiZ58vWMgteW root@web-1"]
+        user: deploy
+        privateKeyKey: deploy
+        command: sudo systemctl restart web
+        runTimeout: 2m
+SSH
+ssh_base=(-f "$effects_fixtures/ssh.yaml")
+
 renders() {
   local description="$1"; shift
   if ! helm template shoal "$chart" "$@" >/dev/null 2>&1; then
@@ -473,6 +533,11 @@ if command -v kubeconform >/dev/null 2>&1; then
   # not, so it is a different object shape and needs its own schema pass.
   helm template shoal "$chart" "${token_file_base[@]}" |
     kubeconform -strict -summary - >/dev/null || fail "kubeconform llm gateway with a projected token"
+  # Every object effects-ssh can render, in both halves of an install.
+  helm template shoal "$chart" "${ssh_base[@]}" |
+    kubeconform -strict -summary - >/dev/null || fail "kubeconform effects-ssh serving"
+  helm template shoal "$chart" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=' |
+    kubeconform -strict -summary - >/dev/null || fail "kubeconform effects-ssh journal init"
   # Every object the effects gateway can render: the claim, the NetworkPolicy,
   # the Secret token source and the attestation volume.
   helm template shoal "$chart" "${effects_gateway_base[@]}" \
@@ -2576,7 +2641,9 @@ def scan(chart):
             if expression.startswith(".Values."):
                 return expression[len(".Values."):]
             match = re.match(r"\$(\w+)((?:\.\w+)*)$", expression)
-            if match and variables.get(match.group(1)):
+            # A variable bound to a helper's argument ($ssh := .ssh) is not a
+            # values path; a toYaml of it is then unresolved, which fails.
+            if match and isinstance(variables.get(match.group(1)), str):
                 return variables[match.group(1)] + match.group(2)
             if expression == ".":
                 # The innermost block that rebinds dot; at the top level, or
@@ -3106,8 +3173,22 @@ for argument in container["args"]:
         local = os.path.join(scratch, value.lstrip("/"))
         os.makedirs(os.path.dirname(local), exist_ok=True)
         if flag != "-unrecorded-dir":
-            with open(local, "w") as handle:
-                handle.write("credential")
+            if flag in ("-target-ca-file", "-target-client-cert-file", "-target-client-key-file"):
+                # The TLS files are loaded at startup (#662), so they are a
+                # real certificate and key: one self-signed pair serves as
+                # the CA and as the client certificate.
+                pair = os.path.join(scratch, "pair")
+                if not os.path.exists(pair + ".crt"):
+                    subprocess.run(["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256",
+                                    "-nodes", "-days", "1", "-subj", "/CN=gateway", "-keyout", pair + ".key",
+                                    "-out", pair + ".crt"], check=True, capture_output=True)
+                with open(pair + (".key" if flag == "-target-client-key-file" else ".crt")) as source:
+                    content = source.read()
+                with open(local, "w") as handle:
+                    handle.write(content)
+            else:
+                with open(local, "w") as handle:
+                    handle.write("credential")
         argument = f"{flag}={local}"
     if flag == "-health-address":
         argument = "-health-address=127.0.0.1:0"
@@ -3284,6 +3365,532 @@ print("\n".join("      " + p for p in problems))
 raise SystemExit(1 if problems else 0)
 '; then
   fail "a 24-character gateway name under a long release produces a name Kubernetes will reject"
+fi
+
+note "== effects-ssh (#662): renders, and nothing without an enabled entry =="
+# helm lint renders as release "test-release", whose Service name the gateway
+# must then target.
+helm lint "$chart" "${ssh_base[@]}" --set 'effectsGateways[0].target.baseURL=https://test-release-shoal-ssh-web.default.svc:8443' >/dev/null ||
+  fail "helm lint with effects-ssh"
+renders "an effects-ssh entry and its gateway" "${ssh_base[@]}"
+assert_absent "a disabled entry renders nothing" 'name: "shoal-ssh-' "${ssh_base[@]}" --set 'effectsSsh[0].enabled=false,effectsGateways[0].networkPolicy.enabled=false'
+assert_absent "the default values render no effects-ssh" 'effects-ssh' -f "$chart/values.yaml"
+
+ssh_objects=$(cat <<'OBJECTS'
+import hashlib, json, os, sys, yaml
+
+check = sys.argv[1]
+documents = [d for d in yaml.safe_load_all(sys.stdin) if d]
+mine = lambda kind: [d for d in documents if d["kind"] == kind and "-ssh-" in d["metadata"]["name"]]
+problems = []
+deployments, jobs, claims = mine("Deployment"), mine("Job"), mine("PersistentVolumeClaim")
+policies = {d["metadata"]["name"]: d["spec"] for d in mine("NetworkPolicy")}
+
+def pod_of(workload):
+    return workload["spec"]["template"]["spec"]
+
+def flags(container):
+    return {a.split("=", 1)[0]: a.split("=", 1)[1] for a in container["args"] if a.startswith("-") and "=" in a}
+
+if check in ("serving", "singleton", "journal", "security", "wiring", "grace", "retention"):
+    if len(deployments) != 1 or jobs:
+        print(f"      expected one Deployment and no Job, found {len(deployments)} and {len(jobs)}")
+        raise SystemExit(1)
+    deployment = deployments[0]
+    spec, pod = deployment["spec"], pod_of(deployment)
+    container = pod["containers"][0]
+    args = flags(container)
+    volumes = {v["name"]: v for v in pod.get("volumes", [])}
+    mounts = {m["name"]: m for m in container.get("volumeMounts", [])}
+
+if check == "serving":
+    # One Deployment and no Job, asserted above.
+    pass
+elif check == "singleton":
+    if spec.get("replicas") != 1:
+        problems.append(f"replicas is {spec.get('replicas')!r}, not 1")
+    if spec.get("strategy") != {"type": "Recreate"}:
+        problems.append(f"strategy is {spec.get('strategy')!r}, not exactly {{type: Recreate}}")
+    if container["args"][0] != "serve":
+        problems.append(f"the container runs {container['args'][0]!r}, not serve")
+    if any("init" in a for a in container["args"]) or container.get("command") != ["/usr/local/bin/shoal-effects-ssh"]:
+        problems.append("the pod's start runs something other than serve: journal init must never be in it")
+    if pod.get("initContainers"):
+        problems.append("the pod has init containers")
+elif check == "journal":
+    if len(claims) != 1:
+        problems.append(f"expected one journal claim, found {len(claims)}")
+    else:
+        claim = claims[0]
+        if claim["spec"].get("accessModes") != ["ReadWriteOnce"]:
+            problems.append(f"the claim's access modes are {claim['spec'].get('accessModes')!r}")
+        if claim["metadata"].get("annotations", {}).get("helm.sh/resource-policy") != "keep":
+            problems.append("the claim is not kept on uninstall")
+        if volumes.get("journal", {}).get("persistentVolumeClaim", {}).get("claimName") != claim["metadata"]["name"]:
+            problems.append("the journal volume is not the claim")
+    if any("emptyDir" in v for v in volumes.values()):
+        problems.append("an emptyDir volume is rendered")
+    if mounts.get("journal", {}).get("mountPath") != args.get("-journal-dir"):
+        problems.append(f"-journal-dir={args.get('-journal-dir')} is not the journal mount itself ({mounts.get('journal')})")
+    if args.get("-journal-id") != os.environ.get("SHOAL_EXPECTED_ID", "0123456789abcdef0123456789abcdef"):
+        problems.append(f"-journal-id is {args.get('-journal-id')!r}")
+elif check == "init":
+    if deployments:
+        problems.append("a Deployment is rendered while journal.id is empty")
+    if len(jobs) != 1:
+        problems.append(f"expected one journal-init Job, found {len(jobs)}")
+    else:
+        job = jobs[0]
+        annotations = job["metadata"].get("annotations", {})
+        if any(k.startswith("helm.sh/hook") for k in annotations):
+            problems.append(f"the Job is a hook ({annotations!r}): it must be the claim's ordinary first consumer")
+        if not job["metadata"]["name"].startswith("shoal-ssh-web-init-") or len(job["metadata"]["name"]) > 63:
+            problems.append(f"the Job is named {job['metadata']['name']!r}")
+        pod = pod_of(job)
+        container = pod["containers"][0]
+        if container["args"][:3] != ["journal", "init", "-print-existing"] or len(container["args"]) != 4:
+            problems.append(f"the Job runs {container['args']!r}, not journal init -print-existing -journal-dir")
+        directory = container["args"][-1].split("=", 1)[-1]
+        mounts = {m["name"]: m["mountPath"] for m in container.get("volumeMounts", [])}
+        volumes = {v["name"]: v for v in pod.get("volumes", [])}
+        if mounts != {"journal": directory}:
+            problems.append(f"the Job mounts {mounts}, not exactly the journal at {directory}")
+        if volumes.get("journal", {}).get("persistentVolumeClaim", {}).get("claimName") != (claims[0]["metadata"]["name"] if claims else os.environ.get("SHOAL_EXPECTED_CLAIM")):
+            problems.append("the Job's journal is not the entry's claim")
+        if pod.get("restartPolicy") != "Never":
+            problems.append("the Job's pod restarts in place: a retry is a new pod, counted by backoffLimit")
+        if pod.get("automountServiceAccountToken") is not False:
+            problems.append("the Job's pod automounts a token")
+        own = container.get("securityContext", {})
+        if own.get("readOnlyRootFilesystem") is not True or own.get("capabilities") != {"drop": ["ALL"]}:
+            problems.append("the Job's container is not read-only with every capability dropped")
+        init_policy = next((p for n, p in policies.items() if n.endswith("-init")), None)
+        job_labels = job["spec"]["template"]["metadata"]["labels"]
+        if init_policy and any(job_labels.get(k) != v for k, v in init_policy.get("podSelector", {}).get("matchLabels", {}).items()):
+            problems.append("the init policy does not select the Job's pod")
+        if init_policy and not init_policy.get("podSelector", {}).get("matchLabels"):
+            problems.append("the init policy's selector is empty")
+        if (not init_policy or init_policy.get("policyTypes") != ["Ingress", "Egress"] or init_policy.get("ingress") or init_policy.get("egress")):
+            problems.append(f"the Job's pod is not denied all network: {init_policy!r}")
+elif check == "security":
+    security = pod.get("securityContext", {})
+    for key, want in (("runAsNonRoot", True), ("runAsUser", 65532), ("runAsGroup", 65532), ("fsGroup", 65532)):
+        if security.get(key) != want:
+            problems.append(f"pod securityContext.{key} is {security.get(key)!r}, not {want!r}")
+    if security.get("seccompProfile") != {"type": "RuntimeDefault"}:
+        problems.append("the pod's seccomp profile is not RuntimeDefault")
+    own = container.get("securityContext", {})
+    for key, want in (("runAsNonRoot", True), ("readOnlyRootFilesystem", True), ("allowPrivilegeEscalation", False)):
+        if own.get(key) is not want:
+            problems.append(f"container securityContext.{key} is {own.get(key)!r}, not {want!r}")
+    if own.get("capabilities") != {"drop": ["ALL"]}:
+        problems.append(f"capabilities are {own.get('capabilities')!r}")
+    if pod.get("automountServiceAccountToken") is not False:
+        problems.append("the pod automounts a ServiceAccount token")
+    for flag in ("hostNetwork", "hostPID", "hostIPC"):
+        if pod.get(flag):
+            problems.append(f"{flag} is set")
+elif check == "wiring":
+    expected = json.loads(os.environ["SHOAL_EXPECTED_FILES"])
+    for flag, volume in (("-tls-cert-file", "tls"), ("-tls-key-file", "tls"), ("-caller-token-file", "caller-token"),
+                         ("-client-ca-file", "client-ca")):
+        value = args.get(flag)
+        if (flag in expected) != (value is not None):
+            problems.append(f"{flag} is {'missing' if value is None else 'rendered'}, expected {'present' if flag in expected else 'absent'}")
+            continue
+        if value is None:
+            if volume in volumes and volume != "tls":
+                problems.append(f"the {volume} volume is mounted with no flag reading it")
+            continue
+        mount = mounts.get(volume)
+        if not mount or not mount.get("readOnly") or os.path.dirname(value) != mount["mountPath"]:
+            problems.append(f"{flag}={value} is not in the read-only {volume} mount")
+            continue
+        items = [item["path"] for item in volumes[volume]["secret"].get("items", [])]
+        if os.path.basename(value) not in items:
+            problems.append(f"{flag} names {os.path.basename(value)}, which the {volume} volume does not hold ({items})")
+    identities = [a.split("=", 1)[1] for a in container["args"] if a.startswith("-client-identity=")]
+    if identities != expected.get("-client-identity", []):
+        problems.append(f"the pinned identities are {identities}")
+    configmaps = {d["metadata"]["name"]: d["data"] for d in mine("ConfigMap")}
+    config_volume = volumes.get("config", {}).get("configMap", {}).get("name")
+    if args.get("-config") != mounts.get("config", {}).get("mountPath", "") + "/commands.json" or config_volume not in configmaps:
+        problems.append("-config is not the ConfigMap's commands.json")
+    else:
+        registry = json.loads(configmaps[config_volume]["commands.json"])
+        if spec["template"]["metadata"]["annotations"].get("checksum/commands") != hashlib.sha256(configmaps[config_volume]["commands.json"].encode()).hexdigest():
+            problems.append("the pod's checksum is not the registry's")
+        keys = {i["path"] for i in volumes["ssh-keys"]["secret"]["items"]}
+        for name, command in registry["commands"].items():
+            if os.path.dirname(command["private_key_file"]) != mounts["ssh-keys"]["mountPath"] or os.path.basename(command["private_key_file"]) not in keys:
+                problems.append(f"command {name}'s key file is not in the ssh-keys volume")
+    if container.get("env") or container.get("envFrom"):
+        problems.append("the container has environment variables: every credential is a file")
+    if args.get("-idempotency-header") != "Idempotency-Key":
+        problems.append(f"-idempotency-header is {args.get('-idempotency-header')!r}, not the gateway's")
+    services = mine("Service")
+    if len(services) != 1 or services[0]["spec"]["selector"] != spec["selector"]["matchLabels"] or services[0]["spec"].get("type") != "ClusterIP":
+        problems.append("the Service does not select the pod as a ClusterIP")
+    for probe in ("readinessProbe", "livenessProbe"):
+        if container.get(probe, {}).get("tcpSocket", {}).get("port") != "https":
+            problems.append(f"{probe} is not a TCP probe of the listener")
+elif check == "grace":
+    if pod.get("terminationGracePeriodSeconds") != int(os.environ["SHOAL_EXPECTED_GRACE"]):
+        problems.append(f"terminationGracePeriodSeconds is {pod.get('terminationGracePeriodSeconds')!r}, want {os.environ['SHOAL_EXPECTED_GRACE']}")
+    if args.get("-shutdown-grace") != os.environ["SHOAL_EXPECTED_SHUTDOWN"]:
+        problems.append(f"-shutdown-grace is {args.get('-shutdown-grace')!r}, want {os.environ['SHOAL_EXPECTED_SHUTDOWN']}")
+elif check == "retention":
+    if args.get("-journal-retention") != os.environ["SHOAL_EXPECTED_RETENTION"]:
+        problems.append(f"-journal-retention is {args.get('-journal-retention')!r}, want {os.environ['SHOAL_EXPECTED_RETENTION']}")
+elif check == "policy":
+    ssh = policies.get("shoal-ssh-web")
+    if not ssh:
+        problems.append("no NetworkPolicy for the effects-ssh pod")
+    else:
+        if ssh.get("policyTypes") != ["Ingress", "Egress"]:
+            problems.append(f"policy types are {ssh.get('policyTypes')!r}")
+        serving = [d for d in deployments]
+        if len(serving) != 1:
+            problems.append("no effects-ssh Deployment to hold the policy against")
+        else:
+            labels = serving[0]["spec"]["template"]["metadata"]["labels"]
+            selected = ssh.get("podSelector", {}).get("matchLabels", {})
+            if not selected or any(labels.get(k) != v for k, v in selected.items()):
+                problems.append(f"the policy's selector {selected} does not select the effects-ssh pod {labels}")
+        gateway_labels = {"app.kubernetes.io/name": "shoal-gateway", "app.kubernetes.io/instance": "shoal",
+                          "app.kubernetes.io/component": "effects-gateway", "shoal.effects-gateway/name": "web-fleet"}
+        if ssh.get("ingress") != [{"from": [{"podSelector": {"matchLabels": gateway_labels}}], "ports": [{"port": "https", "protocol": "TCP"}]}]:
+            problems.append(f"ingress is {ssh.get('ingress')!r}, not the gateway's pods on the listener alone")
+        want = json.loads(os.environ["SHOAL_EXPECTED_EGRESS"])
+        got = []
+        for rule in ssh.get("egress", []):
+            if "to" not in rule or not rule["to"]:
+                problems.append(f"an egress rule has no destination: {rule!r}")
+                continue
+            if any("namespaceSelector" in peer for peer in rule["to"]):
+                peers = rule["to"]
+                if [p.get("port") for p in rule.get("ports", [])] != [53, 53] or len(peers) != 1 or \
+                        not peers[0]["namespaceSelector"].get("matchLabels") or not peers[0].get("podSelector", {}).get("matchLabels"):
+                    problems.append(f"the DNS rule is not port 53 to the DNS pods alone: {rule!r}")
+                got.append("dns")
+                continue
+            if not rule["to"] or any("ipBlock" not in peer for peer in rule["to"]):
+                problems.append(f"an egress rule reaches more than address ranges: {rule!r}")
+            got.append([[peer["ipBlock"]["cidr"] for peer in rule["to"] if "ipBlock" in peer], [p["port"] for p in rule.get("ports", [])]])
+        if got != want:
+            problems.append(f"egress is {got}, want {want}")
+    gateway = next((p for n, p in {d["metadata"]["name"]: d["spec"] for d in documents if d["kind"] == "NetworkPolicy"}.items() if "-gw-" in n), None)
+    if gateway is None:
+        problems.append("the gateway's NetworkPolicy is not rendered")
+    else:
+        targets = [rule for rule in gateway["egress"] if any("podSelector" in peer and peer["podSelector"]["matchLabels"].get("shoal.effects-ssh/name") == "web" for peer in rule.get("to", []))]
+        if deployments and targets and targets[0]["to"][0]["podSelector"]["matchLabels"] != deployments[0]["spec"]["selector"]["matchLabels"]:
+            problems.append("the gateway's egress selector is not the effects-ssh Deployment's selector")
+        if len(targets) != 1 or targets[0]["ports"] != [{"port": 8443, "protocol": "TCP"}]:
+            problems.append(f"the gateway's policy does not reach effects-ssh's pods on 8443 alone: {targets!r}")
+        if any("ipBlock" in peer for rule in gateway["egress"] for peer in rule.get("to", [])):
+            problems.append("the gateway's policy also opens address ranges")
+else:
+    problems.append(f"unknown check {check}")
+for problem in problems:
+    print("      " + problem)
+raise SystemExit(1 if problems else 0)
+OBJECTS
+)
+ssh_check() {
+  local check="$1" description="$2"; shift 2
+  local rendered
+  if ! rendered=$(helm template shoal "$chart" "$@" 2>&1); then
+    fail "should render but was refused: $description"
+    printf '%s' "$rendered" | grep -oE 'execution error.*|Error: .*' | head -1 | sed 's/^/      /' || true
+    return
+  fi
+  if ! printf '%s\n' "$rendered" | python3 -c "$ssh_objects" "$check"; then
+    fail "$description (see above)"
+  fi
+}
+
+note "== effects-ssh: one replica, Recreate, serve only =="
+ssh_check singleton "the Deployment is one replica, Recreate, and runs serve alone" "${ssh_base[@]}"
+refuses_citing "replicas must be 0 or 1" "two replicas" "${ssh_base[@]}" --set 'effectsSsh[0].replicas=2'
+refuses_citing "replicas must be 0 or 1" "a fractional replica count" "${ssh_base[@]}" --set-json 'effectsSsh[0].replicas=1.5'
+assert_renders "zero replicas stops it" '^  replicas: 0$' "${ssh_base[@]}" --set 'effectsSsh[0].replicas=0'
+assert_absent "never RollingUpdate" 'type: RollingUpdate|maxSurge' "${ssh_base[@]}" -s templates/effects-ssh.yaml
+
+note "== effects-ssh: the journal is a pinned, kept, ReadWriteOnce claim =="
+ssh_check journal "a kept ReadWriteOnce claim mounted at -journal-dir, with the pinned ID" "${ssh_base[@]}"
+SHOAL_EXPECTED_ID=fedcba9876543210fedcba9876543210 ssh_check journal "the pinned ID is the value's" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=fedcba9876543210fedcba9876543210'
+refuses_citing "there is no emptyDir" "an emptyDir journal" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=emptyDir'
+refuses_citing "journal.storage must be" "an unknown storage kind" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=hostPath'
+refuses_citing "existingClaim is required" "an existing claim with no name" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=existingClaim'
+assert_renders "an existing claim is mounted" '^ +claimName: "ssh-journal"$' "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=ssh-journal'
+refuses_citing "32 lower-case hex digits" "a malformed journal ID" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=0123456789ABCDEF0123456789ABCDEF'
+refuses_citing "32 lower-case hex digits" "a journal ID one digit short" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=0123456789abcdef0123456789abcde'
+refuses_citing "share the journal claim" "two entries on one existing claim" "${ssh_base[@]}" \
+  --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=j' \
+  --set-json 'effectsSsh[1]={"name":"web2","enabled":true,"gateway":"other","journal":{"storage":"existingClaim","existingClaim":"j"}}' \
+  --set-json 'effectsGateways[1]={"name":"other","enabled":true,"agentID":"b3RoZXI","surfaceName":"other","executorRef":"other","dispatch":{"url":"http://127.0.0.1:1","tokenAudience":"a"},"target":{"baseURL":"https://shoal-ssh-web2.default.svc:8443","allowPrivate":true,"credentialSecretName":"c","caSecretName":"ca","idempotencyHeader":"Idempotency-Key","idempotencyRetention":"24h"},"routes":[{"action":"restart-web","method":"POST","path":"/v1/commands/restart-web","effects":["external","egresses-content"],"idempotency":"key"}]}' \
+  --set 'effectsSsh[1].tls.secretName=t,effectsSsh[1].callerToken.secretName=t,effectsSsh[1].sshKeys.secretName=k,effectsSsh[1].journal.id=0123456789abcdef0123456789abcdef' \
+  --set-json 'effectsSsh[1].commands={"restart-web":{"address":"10.0.4.17:22","hostKeys":["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRh5PXk+0rm7CbKyH/ViV5hPII8CP+XNiZ58vWMgteW"],"user":"u","privateKeyKey":"k","command":"c","runTimeout":"1m"}}'
+refuses_citing "is effectsGateways[0]'s unrecorded log claim" "the journal on the gateway's unrecorded claim" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=log,effectsGateways[0].unrecorded.storage=existingClaim,effectsGateways[0].unrecorded.existingClaim=log'
+
+note "== effects-ssh: journal init is a one-off Job, never beside serve =="
+# The install's first half: no journal.id renders the claim and the init Job,
+# and no Deployment, so nothing serves a journal the chart pinned by itself;
+# the operator copies the ID the Job printed into values. With the ID set the
+# Job is gone. journal init refuses a claim that already holds a journal.
+ssh_check init "journal.id empty renders the Job and no Deployment" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id='
+SHOAL_EXPECTED_CLAIM=ssh-journal ssh_check init "the Job initializes an existing claim" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=,effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=ssh-journal'
+assert_absent "a pinned journal renders no Job" 'kind: Job' "${ssh_base[@]}" -s templates/effects-ssh.yaml
+# A Job's pod template is immutable, so a changed template must be a new Job.
+init_job_name() { helm template shoal "$chart" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=' "$@" -s templates/effects-ssh.yaml | grep -A2 '^kind: Job$' | sed -n 's/^  name: "\(.*\)"$/\1/p'; }
+first_job="$(init_job_name)"
+if [ -z "$first_job" ] || [ "$first_job" = "$(init_job_name --set 'effectsSsh[0].image.tag=other')" ] ||
+  [ "$first_job" = "$(init_job_name --set 'effectsSsh[0].resources.limits.memory=512Mi')" ] ||
+  [ "$first_job" != "$(init_job_name)" ]; then
+  fail "the journal-init Job's name does not follow its pod template ($first_job)"
+fi
+ssh_check serving "a pinned journal renders the Deployment alone" "${ssh_base[@]}"
+
+note "== effects-ssh: non-root, read-only, no capabilities =="
+ssh_check security "the pod and container security contexts" "${ssh_base[@]}"
+
+note "== effects-ssh: wiring =="
+SHOAL_EXPECTED_FILES='{"-tls-cert-file":1,"-tls-key-file":1,"-caller-token-file":1,"-client-ca-file":1,"-client-identity":["uri:spiffe://cluster.local/ns/default/sa/shoal-gw-web-fleet"]}' \
+  ssh_check wiring "token and pinned client certificate" "${ssh_base[@]}"
+SHOAL_EXPECTED_FILES='{"-tls-cert-file":1,"-tls-key-file":1,"-caller-token-file":1}' \
+  ssh_check wiring "token alone" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.caSecretName=,effectsSsh[0].clientAuth.identities=null'
+SHOAL_EXPECTED_FILES='{"-tls-cert-file":1,"-tls-key-file":1,"-client-ca-file":1,"-client-identity":["uri:spiffe://cluster.local/ns/default/sa/shoal-gw-web-fleet"]}' \
+  ssh_check wiring "pinned client certificate alone" "${ssh_base[@]}" --set 'effectsSsh[0].callerToken.secretName=,effectsGateways[0].target.credentialSecretName='
+assert_renders "the gateway verifies effects-ssh with the CA" '"-target-ca-file=/var/run/shoal/target-ca/ca.crt"' "${ssh_base[@]}"
+assert_renders "the gateway presents its client certificate" '"-target-client-key-file=/var/run/shoal/target-client/tls.key"' "${ssh_base[@]}"
+assert_absent "no effects-ssh argument is a bare scalar" '^ +- -' "${ssh_base[@]}" -s templates/effects-ssh.yaml
+
+note "== effects-ssh: retention is computed against the gateway's =="
+SHOAL_EXPECTED_RETENTION=86700000ms ssh_check retention "gateway 24h + 5m skew" "${ssh_base[@]}"
+SHOAL_EXPECTED_RETENTION=172860000ms ssh_check retention "gateway 48h + 1m skew" "${ssh_base[@]}" --set 'effectsGateways[0].target.idempotencyRetention=48h,effectsSsh[0].journal.clockSkew=1m'
+SHOAL_EXPECTED_RETENTION=259200000ms ssh_check retention "a larger retention is kept" "${ssh_base[@]}" --set 'effectsSsh[0].journal.retention=72h'
+SHOAL_EXPECTED_RETENTION=86700000ms ssh_check retention "the minimum itself is accepted" "${ssh_base[@]}" --set 'effectsSsh[0].journal.retention=24h5m'
+refuses_citing "is below effectsGateways[0].target.idempotencyRetention" "a retention one second short" "${ssh_base[@]}" --set 'effectsSsh[0].journal.retention=24h4m59s'
+refuses_citing "is below effectsGateways[0].target.idempotencyRetention" "a retention equal to the gateway's" "${ssh_base[@]}" --set 'effectsSsh[0].journal.retention=24h'
+refuses_citing "clockSkew must be positive" "no clock skew" "${ssh_base[@]}" --set 'effectsSsh[0].journal.clockSkew=0s'
+
+note "== effects-ssh: timing against the gateway =="
+SHOAL_EXPECTED_GRACE=160 SHOAL_EXPECTED_SHUTDOWN=150000ms ssh_check grace "grace is the longest command's budget + 10s" "${ssh_base[@]}"
+SHOAL_EXPECTED_GRACE=310 SHOAL_EXPECTED_SHUTDOWN=300000ms ssh_check grace "a larger shutdown grace is kept" "${ssh_base[@]}" --set 'effectsSsh[0].shutdownGrace=5m'
+SHOAL_EXPECTED_GRACE=400 SHOAL_EXPECTED_SHUTDOWN=150000ms ssh_check grace "a larger termination grace is kept" "${ssh_base[@]}" --set 'effectsSsh[0].terminationGracePeriodSeconds=400'
+refuses_citing "is below 150000ms" "a shutdown grace shorter than a command" "${ssh_base[@]}" --set 'effectsSsh[0].shutdownGrace=2m'
+refuses_citing "is below 160" "a termination grace below shutdownGrace + 10s" "${ssh_base[@]}" --set 'effectsSsh[0].terminationGracePeriodSeconds=159'
+refuses_citing "must be below effectsGateways[0].timing.operationTimeout" "a command that outlives the gateway's attempt" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.runTimeout=2m40s'
+refuses_citing "attachWait" "an attach wait as long as the operation" "${ssh_base[@]}" --set 'effectsSsh[0].attachWait=3m'
+refuses_citing "runTimeout must be positive and at most 1h" "a run timeout over 1h" "${ssh_base[@]}" --set 'effectsGateways[0].timing.renew=true,effectsGateways[0].timing.operationTimeout=2h,effectsGateways[0].target.idempotencyRetention=48h,effectsSsh[0].commands.restart-web.runTimeout=61m'
+
+note "== effects-ssh: the gateway is wired to this entry =="
+refuses_citing "names no entry of effectsGateways" "an unknown gateway" "${ssh_base[@]}" --set 'effectsSsh[0].gateway=nope,effectsGateways[0].networkPolicy.enabled=false'
+refuses_citing "is not enabled" "a disabled gateway" "${ssh_base[@]}" --set 'effectsGateways[0].enabled=false'
+refuses_citing "is served at" "the gateway pointed elsewhere" "${ssh_base[@]}" --set 'effectsGateways[0].target.baseURL=https://effects-ssh.example.test:8443,effectsGateways[0].networkPolicy.targetCIDRs={203.0.113.0/24}'
+refuses_citing "is served at" "the gateway pointed at another namespace" "${ssh_base[@]}" --namespace payments
+refuses_citing "target.caSecretName is required with effectsSsh" "a gateway with only the system roots" "${ssh_base[@]}" --set 'effectsGateways[0].target.caSecretName='
+refuses_citing "must be /v1/commands/<name>" "a templated route" "${ssh_base[@]}" --set 'effectsGateways[0].routes[0].path=/v1/commands/{name}'
+refuses_citing "must be /v1/commands/<name>" "a route to an unregistered command" "${ssh_base[@]}" --set 'effectsGateways[0].routes[0].path=/v1/commands/reboot'
+refuses_citing "method must be POST" "a PUT route" "${ssh_base[@]}" --set 'effectsGateways[0].routes[0].method=PUT'
+refuses_citing "both serve effects gateway" "two entries for one gateway" "${ssh_base[@]}" --set-json 'effectsSsh[1]={"name":"web2","enabled":true,"gateway":"web-fleet"}' --set 'effectsSsh[1].tls.secretName=t,effectsSsh[1].callerToken.secretName=t,effectsSsh[1].sshKeys.secretName=k' --set-json 'effectsSsh[1].commands={"restart-web":{"address":"10.0.4.17:22","hostKeys":["x"],"user":"u","privateKeyKey":"k","command":"c","runTimeout":"1m"}}' --set 'effectsSsh[1].journal.id=0123456789abcdef0123456789abcdef'
+refuses_citing "is also the name of effectsSsh[0]" "two entries with one name" "${ssh_base[@]}" --set-json 'effectsSsh[1]={"name":"web"}'
+
+note "== effects-ssh: caller authentication has both halves =="
+refuses_citing "there is no unauthenticated mode" "neither a token nor a client CA" "${ssh_base[@]}" --set 'effectsSsh[0].callerToken.secretName=,effectsSsh[0].clientAuth.caSecretName=,effectsSsh[0].clientAuth.identities=null'
+refuses_citing "a CA alone admits every certificate" "a client CA with no pin" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.identities=null'
+refuses_citing "a pin with nothing to verify" "a pin with no CA" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.caSecretName='
+refuses_citing "target.clientCertificate.secretName is required" "a pinned identity and a gateway with no certificate" "${ssh_base[@]}" --set 'effectsGateways[0].target.clientCertificate.secretName='
+refuses_citing "target.credentialSecretName is required: effectsSsh" "a token and a gateway with no credential" "${ssh_base[@]}" --set 'effectsGateways[0].target.credentialSecretName='
+refuses_citing "must be uri:<URI SAN>" "a common-name pin" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.identities={cn:gateway}'
+refuses_citing "must be uri:<URI SAN>" "a wildcard DNS pin" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.identities={dns:*.shoal.svc}'
+refuses_citing "must be uri:<URI SAN>" "a short SPKI digest" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.identities={spki-sha256:abcd}'
+renders "an SPKI pin" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.identities={spki-sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}'
+refuses_citing "need an https target.baseURL" "a gateway client certificate over loopback plaintext" "${effects_gateway_base[@]}" "${loopback_target[@]}" --set 'effectsGateways[0].target.clientCertificate.secretName=c'
+renders "a remote gateway with a client certificate and no credential" "${effects_gateway_base[@]}" --set 'effectsGateways[0].target.credentialSecretName=,effectsGateways[0].target.clientCertificate.secretName=c'
+
+note "== effects-ssh: the commands =="
+refuses_citing "needs at least one command" "no commands" "${ssh_base[@]}" --set 'effectsSsh[0].commands=null'
+refuses_citing "is not a command setting" "a misspelled field" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.run_timeout=1m'
+refuses_citing "hostKeys must list 1 to 8" "no pinned host key" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.hostKeys=null'
+refuses_citing "address must be host:port" "an address with no port" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=10.0.4.17'
+refuses_citing "privateKeyKey must be a Secret key" "a key path that climbs" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.privateKeyKey=../x'
+refuses_citing "holds a control, format or line-break character" "a command with a bidi override" "${ssh_base[@]}" --set-string "effectsSsh[0].commands.restart-web.command=sudo systemctl restart web$(printf '‮')"
+refuses_citing "must be one authorized_keys line" "a malformed host key" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.hostKeys={ssh-ed25519}'
+refuses_citing "must be one authorized_keys line" "a host key with options" "${ssh_base[@]}" --set-json 'effectsSsh[0].commands.restart-web.hostKeys=["from=\"10.0.0.1\" ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRh5PXk+0rm7CbKyH/ViV5hPII8CP+XNiZ58vWMgteW"]'
+refuses_citing "must be 1 to 64 printable bytes" "a user with a space" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.user=de ploy'
+refuses_citing "not starting with .." "a key name Kubernetes reserves" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.privateKeyKey=..data'
+for name in web-init web-init-0a1b web-journal web-commands; do
+  refuses_citing "ends in a suffix the chart appends" "an entry named $name" "${ssh_base[@]}" --set "effectsSsh[0].name=$name"
+done
+for bad in :/64 ::::/64 1:2/64 fd00::1:/64 1::2::3/64; do
+  refuses_citing "not an IPv4 or IPv6 CIDR" "a malformed IPv6 CIDR $bad" "${ssh_base[@]}" --set "effectsSsh[0].commands.restart-web.cidrs={$bad}"
+done
+# IPv6 ranges that carry IPv4 (#672 review): mapped, compatible and NAT64,
+# in every spelling, are refused rather than rendered into the egress rule.
+for embedded in '::ffff:0.0.0.0/96' '::ffff:0:0/96' '::ffff:0.0.0.0/97' '::FFFF:0:0/96' \
+    '0:0:0:0:0:ffff:0:0/96' '0000:0000:0000:0000:0000:FFFF:0000:0000/96' '::ffff:10.0.4.17/128' \
+    '::0.0.0.0/96' '::/96' '0::1/128' '0:0:1::/32' '64:ff9b::/96' '64:FF9B::0.0.0.0/96' \
+    '0064:ff9b:0000::/96' '64:ff9b:1::/48' '64:ff9b::a00:411/128'; do
+  refuses_citing "overlaps the IPv4-mapped" "an IPv6 range carrying IPv4: $embedded" "${ssh_base[@]}" --set "effectsSsh[0].commands.restart-web.cidrs={$embedded}"
+done
+refuses_citing "overlaps the IPv4-mapped" "an IPv4-mapped address literal's derived /128" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=[::ffff:10.0.4.17]:22'
+renders "an IPv6 /48 outside the embedding ranges" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.cidrs={2001:db8:1::/48,64:ff9c::/32,1::/32}'
+renders "an IPv6 address" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=[fd00:1::17]:22'
+assert_renders "a startup probe covers the journal's replay" '^ +startupProbe:$' "${ssh_base[@]}" -s templates/effects-ssh.yaml
+refuses_citing "commands has a command named" "a command name with a slash" "${ssh_base[@]}" --set-json 'effectsSsh[0].commands={"a/b":{}}'
+refuses_citing "bytes of live records" "a compaction bound the binary refuses" "${ssh_base[@]}" --set 'effectsSsh[0].journal.maxEntries=1048576,effectsSsh[0].commands.restart-web.maxOutputBytes=262144'
+renders "the largest compaction bound the binary allows" "${ssh_base[@]}" --set 'effectsSsh[0].journal.maxEntries=700,effectsSsh[0].commands.restart-web.maxOutputBytes=262144,effectsSsh[0].journal.size=3Gi'
+refuses_citing "is below the" "a claim smaller than the journal can grow" "${ssh_base[@]}" --set 'effectsSsh[0].journal.maxEntries=700,effectsSsh[0].commands.restart-web.maxOutputBytes=262144'
+refuses_citing "is below the" "the old 1Gi default at the default bounds" "${ssh_base[@]}" --set 'effectsSsh[0].journal.size=1Gi'
+renders "a fractional size that is large enough" "${ssh_base[@]}" --set 'effectsSsh[0].journal.size=1.5Gi'
+refuses_citing "must be a Kubernetes quantity" "a size with an unknown unit" "${ssh_base[@]}" --set 'effectsSsh[0].journal.size=2GB'
+
+note "== effects-ssh: the NetworkPolicies =="
+SHOAL_EXPECTED_EGRESS='[[["10.0.4.17/32"],[22]]]' ssh_check policy "ingress from the gateway only; egress to the registered host only, no DNS for an IP literal" "${ssh_base[@]}"
+SHOAL_EXPECTED_EGRESS='["dns",[["10.0.8.0/24"],[2222]]]' ssh_check policy "a host name address: its CIDRs on its port, and DNS" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=web-1.internal:2222' --set 'effectsSsh[0].commands.restart-web.cidrs={10.0.8.0/24}'
+refuses_citing "cidrs is required with networkPolicy.enabled" "a host name address with no CIDRs" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=web-1.internal:22'
+for wide in 0.0.0.0/0 1.2.3.4/0 0.0.0.0/00 0.0.0.0/1 10.0.0.0/7 ::0/0 0::/0 ::/0 2001:db8::/31 10.0.0.0/33 fd00::/129; do
+  refuses_citing "cidrs holds" "a CIDR the policy must not open: $wide" "${ssh_base[@]}" --set "effectsSsh[0].commands.restart-web.cidrs={$wide}"
+done
+refuses_citing "cidrs holds" "two half-spaces that open everything" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.cidrs={0.0.0.0/1,128.0.0.0/1}'
+refuses_citing "not an IPv4 or IPv6 CIDR" "an octet over 255" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.cidrs={256.0.0.1/32}'
+renders "a /8 and an IPv6 /64" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.cidrs={10.0.0.0/8,fd00:1::/64}'
+refuses_citing "must both name the cluster's DNS pods" "a host name with an empty DNS selector" "${ssh_base[@]}" --set 'effectsSsh[0].commands.restart-web.address=web-1.internal:22' --set 'effectsSsh[0].commands.restart-web.cidrs={10.0.8.0/24}' --set 'effectsSsh[0].networkPolicy.dns.podLabels=null'
+refuses_citing "target.allowPrivate must be true" "a gateway that would refuse the ClusterIP" "${ssh_base[@]}" --set 'effectsGateways[0].target.allowPrivate=false'
+refuses_citing "is effectsGateways[0]'s unrecorded log claim" "the journal on the gateway's chart-created unrecorded claim" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=shoal-gw-web-fleet-unrecorded'
+ssh_check init "the init Job's pod is denied all network" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id='
+renders "the gateway's policy needs no target CIDRs for effects-ssh" "${ssh_base[@]}"
+
+note "== effects-ssh: notes =="
+ssh_notes_probe="$(mktemp -d)"
+cp -R "$chart" "$ssh_notes_probe/shoal"
+printf '%s\n' 'notes: {{ include "shoal.effectsSshNotes" . | quote }}' > "$ssh_notes_probe/shoal/templates/zz-ssh-notes-probe.yaml"
+if notes=$(helm template shoal "$ssh_notes_probe/shoal" "${ssh_base[@]}" -s templates/zz-ssh-notes-probe.yaml --set 'effectsSsh[0].journal.id=' 2>&1); then
+  grep -qE "job/shoal-ssh-web-init-[0-9a-f]{12}([^0-9a-f]|$)" <<<"$notes" || fail "the notes do not tell the operator where the journal ID is printed"
+  grep -qF "is NOT serving yet" <<<"$notes" || fail "the notes do not say the entry is not serving"
+else
+  fail "the notes do not render with an uninitialized journal"
+fi
+rm -rf "$ssh_notes_probe"
+grep -qF '{{- include "shoal.effectsSshNotes" . -}}' "$chart/templates/NOTES.txt" ||
+  fail "NOTES.txt no longer includes shoal.effectsSshNotes"
+
+note "== effects-ssh: the binary accepts what the chart renders =="
+# Every rendered flag must parse and every startup check pass: the Deployment's
+# arguments are run against the real binary with the mounts stood in for by
+# local files (a CA and certificate from openssl, an SSH key from ssh-keygen,
+# a journal from `journal init`, whose ID replaces the fixture's), and the
+# run must reach its start line.
+ssh_binary="$effects_fixtures/shoal-effects-ssh"
+ssh_accepts=$(cat <<'ACCEPTS'
+import json, os, re, subprocess, sys, tempfile, time, yaml
+
+binary = sys.argv[1]
+documents = [d for d in yaml.safe_load_all(sys.stdin) if d]
+configmaps = {d["metadata"]["name"]: d["data"] for d in documents if d["kind"] == "ConfigMap"}
+deployment = next(d for d in documents if d["kind"] == "Deployment" and "-ssh-" in d["metadata"]["name"])
+pod = deployment["spec"]["template"]["spec"]
+container = pod["containers"][0]
+scratch = tempfile.mkdtemp()
+local = lambda path: os.path.join(scratch, path.lstrip("/"))
+for mount in container["volumeMounts"]:
+    os.makedirs(local(mount["mountPath"]), exist_ok=True)
+config_map = next(v["configMap"]["name"] for v in pod["volumes"] if v["name"] == "config")
+registry = configmaps[config_map]["commands.json"].replace('"/etc/effects-ssh/', '"' + scratch + "/etc/effects-ssh/")
+open(local("/etc/effects-ssh/config/commands.json"), "w").write(registry)
+for command in json.loads(registry)["commands"].values():
+    if not os.path.exists(command["private_key_file"]):
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-f", command["private_key_file"]], check=True)
+tls = local("/etc/effects-ssh/tls")
+subprocess.run(["openssl", "req", "-x509", "-newkey", "ec", "-pkeyopt", "ec_paramgen_curve:P-256", "-nodes", "-days", "1",
+                "-subj", "/CN=effects-ssh", "-keyout", tls + "/tls.key", "-out", tls + "/tls.crt"], check=True, capture_output=True)
+if os.path.isdir(local("/etc/effects-ssh/client-ca")):
+    open(local("/etc/effects-ssh/client-ca/ca.crt"), "w").write(open(tls + "/tls.crt").read())
+if os.path.isdir(local("/var/run/effects-ssh/token")):
+    open(local("/var/run/effects-ssh/token/token"), "w").write("t" * 40)
+journal = local("/var/lib/effects-ssh")
+identity = subprocess.run([binary, "journal", "init", "-journal-dir", journal], capture_output=True, text=True, check=True).stdout.strip()
+args = []
+for argument in container["args"]:
+    flag, _, value = argument.partition("=")
+    if value.startswith(("/etc/effects-ssh/", "/var/run/effects-ssh/", "/var/lib/effects-ssh")):
+        argument = f"{flag}={local(value)}"
+    if flag == "-listen":
+        argument = "-listen=127.0.0.1:0"
+    if flag == "-journal-id":
+        argument = f"-journal-id={identity}"
+    args.append(argument)
+process = subprocess.Popen([binary, *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+started = False
+deadline = time.time() + 20
+line = ""
+while time.time() < deadline:
+    line = process.stderr.readline()
+    if '"event":"start"' in line:
+        started = True
+        break
+    if not line and process.poll() is not None:
+        break
+process.terminate()
+try:
+    process.wait(timeout=20)
+except subprocess.TimeoutExpired:
+    process.kill()
+if not started:
+    print(f"      exit {process.returncode}: {line.strip()[:300]} {process.stderr.read().strip()[:300]}")
+    raise SystemExit(1)
+if process.returncode != 0:
+    print(f"      the binary did not stop cleanly on SIGTERM: exit {process.returncode}")
+    raise SystemExit(1)
+ACCEPTS
+)
+ssh_accepted() {
+  local description="$1"; shift
+  if [ ! -x "$ssh_binary" ]; then
+    fail "shoal-effects-ssh is not built, so the rendered arguments cannot be run: $description"
+    return
+  fi
+  if ! helm template shoal "$chart" "$@" | python3 -c "$ssh_accepts" "$ssh_binary"; then
+    fail "shoal-effects-ssh refuses the arguments the chart renders: $description (see above)"
+  fi
+}
+if ! command -v openssl >/dev/null 2>&1 || ! command -v ssh-keygen >/dev/null 2>&1; then
+  fail "openssl and ssh-keygen are required to run the rendered effects-ssh arguments"
+elif ! (cd "$repository_root/extensions/effects-ssh" && GOWORK=off go build -o "$ssh_binary" ./cmd/shoal-effects-ssh); then
+  fail "extensions/effects-ssh does not build, so the rendered arguments cannot be run"
+else
+  ssh_accepted "token and pinned client certificate" "${ssh_base[@]}"
+  ssh_accepted "token alone" "${ssh_base[@]}" --set 'effectsSsh[0].clientAuth.caSecretName=,effectsSsh[0].clientAuth.identities=null'
+  ssh_accepted "pinned client certificate alone" "${ssh_base[@]}" --set 'effectsSsh[0].callerToken.secretName=,effectsGateways[0].target.credentialSecretName='
+  ssh_accepted "longer bounds" "${ssh_base[@]}" --set 'effectsSsh[0].journal.retention=72h,effectsSsh[0].shutdownGrace=5m,effectsSsh[0].maxConcurrent=64,effectsSsh[0].journal.maxEntries=700,effectsSsh[0].commands.restart-web.maxOutputBytes=262144,effectsSsh[0].journal.size=3Gi,effectsSsh[0].commands.restart-web.connectTimeout=20s'
+  accepted "the gateway with a CA and a client certificate" "${ssh_base[@]}"
+  # The init Job's arguments, run twice on one directory: the first run
+  # creates the journal and prints its identity, the second prints the same
+  # identity and writes nothing.
+  if ! helm template shoal "$chart" "${ssh_base[@]}" --set 'effectsSsh[0].journal.id=' | python3 -c '
+import os, subprocess, sys, tempfile, yaml
+binary = sys.argv[1]
+job = next(d for d in yaml.safe_load_all(sys.stdin) if d and d["kind"] == "Job")
+container = job["spec"]["template"]["spec"]["containers"][0]
+scratch = tempfile.mkdtemp()
+args = []
+for argument in container["args"]:
+    flag, _, value = argument.partition("=")
+    if flag == "-journal-dir":
+        argument = f"{flag}={scratch}"
+    args.append(argument)
+first = subprocess.run([binary, *args], capture_output=True, text=True)
+before = open(os.path.join(scratch, "journal.log"), "rb").read() if first.returncode == 0 else b""
+second = subprocess.run([binary, *args], capture_output=True, text=True)
+after = open(os.path.join(scratch, "journal.log"), "rb").read() if second.returncode == 0 else b"?"
+if first.returncode or second.returncode or not first.stdout.strip() or first.stdout != second.stdout or before != after:
+    print(f"      first: {first.returncode} {first.stdout!r} {first.stderr.strip()[:200]}; second: {second.returncode} {second.stdout!r} {second.stderr.strip()[:200]}")
+    raise SystemExit(1)
+' "$ssh_binary"; then
+    fail "the journal-init Job's arguments do not initialize once and then print the same identity"
+  fi
 fi
 
 note "== the effects gateway guide's worked example still installs =="

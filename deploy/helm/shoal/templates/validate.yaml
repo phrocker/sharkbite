@@ -1257,8 +1257,20 @@
 {{- if and $loopbackTarget (not $target.allowPrivate) -}}
 {{- fail (printf "%s.target.baseURL %q addresses loopback, which the gateway's dialer refuses unless target.allowPrivate is true" $key $targetURL) -}}
 {{- end -}}
-{{- if and (not $loopbackTarget) (not $target.credentialSecretName) -}}
-{{- fail (printf "%s.target.credentialSecretName is required for a remote target (%q): the binary accepts no credential only for loopback" $key $targetURL) -}}
+{{- $clientCertificate := default (dict) $target.clientCertificate -}}
+{{- if not (kindIs "map" $clientCertificate) -}}
+{{- fail (printf "%s.target.clientCertificate must be a map holding secretName" $key) -}}
+{{- end -}}
+{{- if and (not $loopbackTarget) (not $target.credentialSecretName) (not $clientCertificate.secretName) -}}
+{{- fail (printf "%s.target.credentialSecretName is required for a remote target (%q): the binary accepts no credential only for loopback, or with a client certificate (target.clientCertificate.secretName)" $key $targetURL) -}}
+{{- end -}}
+{{- /* -target-ca-file and the client certificate are TLS settings: the
+       binary refuses them for a plaintext target (#662). */ -}}
+{{- if and (or $target.caSecretName $clientCertificate.secretName) (ne (toString $parsedTarget.scheme) "https") -}}
+{{- fail (printf "%s.target.caSecretName and target.clientCertificate need an https target.baseURL (got %q): a plaintext target has no TLS handshake, and the binary refuses them" $key $targetURL) -}}
+{{- end -}}
+{{- if and $target.caSecretName (not $target.caSecretKey) -}}
+{{- fail (printf "%s.target.caSecretKey is required when target.caSecretName is set" $key) -}}
 {{- end -}}
 {{- if and $target.credentialSecretName (not $target.credentialSecretKey) -}}
 {{- fail (printf "%s.target.credentialSecretKey is required when a target Secret is named" $key) -}}
@@ -1366,7 +1378,7 @@
 
 {{- /* The NetworkPolicy matches addresses; a remote target needs its CIDRs,
        or the policy refuses every request to it. */ -}}
-{{- if and $gateway.networkPolicy.enabled (not $loopbackTarget) (not $gateway.networkPolicy.targetCIDRs) -}}
+{{- if and $gateway.networkPolicy.enabled (not $loopbackTarget) (not $gateway.networkPolicy.targetCIDRs) (not (include "shoal.effectsSshForGateway" (dict "root" $ "gateway" $gateway))) -}}
 {{- fail (printf "%s.networkPolicy.targetCIDRs is required with networkPolicy.enabled and a remote target: a NetworkPolicy matches addresses, not names, so with none listed every request to %q is dropped" $key $targetURL) -}}
 {{- end -}}
 
@@ -1610,6 +1622,115 @@
 {{- $running := or (gt (int64 (default 0 $live.spec.replicas)) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
 {{- if and $running (not (has $liveName $enabledGatewayNames)) -}}
 {{- fail (printf "the effects gateway Deployment %s (entry %q) is running, and no enabled entry in effectsGateways names it any more: an entry's name is its identity, so renaming or removing a running entry overlaps the old pod's drain with the new pod's claims on one executor reference (#514) and orphans its unrecorded log. Set that entry's replicas: 0 and upgrade, acknowledge or migrate its log (docs/effects-gateway-deploy.md, Renaming an entry), and only then rename or remove it" $live.metadata.name $liveName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* effects-ssh (#450, #662). Each enabled entry's plan
+       (shoal.effectsSshPlan) is its per-entry check; here are the rules
+       across entries and against the cluster. */ -}}
+{{- $effectsSsh := default (list) .Values.effectsSsh -}}
+{{- if not (kindIs "slice" $effectsSsh) -}}
+{{- fail "effectsSsh must be a list of entries, one per effects gateway it serves (see docs/effects-ssh.md, In the chart)" -}}
+{{- end -}}
+{{- range $index, $entry := $effectsSsh -}}
+{{- if not (kindIs "map" $entry) -}}
+{{- fail (printf "effectsSsh[%d] must be a map holding one entry's settings (got %v)" $index $entry) -}}
+{{- end -}}
+{{- end -}}
+{{- $sshNames := dict -}}
+{{- $sshGateways := dict -}}
+{{- $sshClaims := dict -}}
+{{- $sshEntries := fromJsonArray (include "shoal.effectsSsh" .) -}}
+{{- $sshServing := list -}}
+{{- range $ssh := $sshEntries -}}
+{{- $key := printf "effectsSsh[%v]" $ssh._index -}}
+{{- $name := toString (default "" $ssh.name) -}}
+{{- if not (kindIs "bool" $ssh.enabled) -}}
+{{- fail (printf "%s.enabled must be a boolean, true or false (got %v)" $key $ssh.enabled) -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z]([-a-z0-9]*[a-z0-9])?$" $name) -}}
+{{- fail (printf "%s.name must be a DNS label — lower-case letters, digits and '-', starting with a letter (got %q): it names the Deployment, Service, claim and NetworkPolicy" $key $name) -}}
+{{- end -}}
+{{- if gt (len $name) 24 -}}
+{{- fail (printf "%s.name %q is %d characters, over the 24 the stem budget allows" $key $name (len $name)) -}}
+{{- end -}}
+{{- if hasKey $sshNames $name -}}
+{{- fail (printf "%s.name %q is also the name of effectsSsh[%v]: two entries with one name render one set of objects over one journal" $key $name (index $sshNames $name)) -}}
+{{- end -}}
+{{- /* An entry's objects are named <stem>-ssh-<name> plus a suffix, so a
+       name ending in one of those suffixes is another entry's object name:
+       "web-init" would collide with "web"'s init NetworkPolicy and replace
+       one of the two, leaving a pod that holds SSH keys under no policy. */ -}}
+{{- if regexMatch `-(init|journal|commands)$|-init-[0-9a-f]{4,12}$` $name -}}
+{{- fail (printf "%s.name %q ends in a suffix the chart appends to another entry's objects (-init, -init-<digest>, -journal, -commands), so its objects could collide with that entry's" $key $name) -}}
+{{- end -}}
+{{- $_ := set $sshNames $name $ssh._index -}}
+{{- if $ssh.enabled -}}
+{{- $gatewayName := toString $ssh.gateway -}}
+{{- if hasKey $sshGateways $gatewayName -}}
+{{- fail (printf "%s and effectsSsh[%v] both serve effects gateway %q: a gateway has one target, so the second would never be called, or would take over the first one's keys under a journal that has never seen them" $key (index $sshGateways $gatewayName) $gatewayName) -}}
+{{- end -}}
+{{- $_ := set $sshGateways $gatewayName $ssh._index -}}
+{{- $plan := fromJson (include "shoal.effectsSshPlan" (dict "root" $ "ssh" $ssh)) -}}
+{{- if hasKey $sshClaims $plan.claim -}}
+{{- fail (printf "%s and effectsSsh[%v] share the journal claim %q: two processes on one journal, or one journal holding two registries' keys" $key (index $sshClaims $plan.claim) $plan.claim) -}}
+{{- end -}}
+{{- $_ := set $sshClaims $plan.claim $ssh._index -}}
+{{- range $gateway := fromJsonArray (include "shoal.effectsGateways" $) -}}
+{{- $unrecordedClaim := "" -}}
+{{- if eq (toString $gateway.unrecorded.storage) "existingClaim" -}}
+{{- $unrecordedClaim = toString $gateway.unrecorded.existingClaim -}}
+{{- else if eq (toString $gateway.unrecorded.storage) "persistentVolumeClaim" -}}
+{{- $unrecordedClaim = printf "%s-unrecorded" (include "shoal.effectsGatewayName" (dict "root" $ "gateway" $gateway)) -}}
+{{- end -}}
+{{- if and $gateway.enabled (eq $unrecordedClaim $plan.claim) -}}
+{{- fail (printf "%s's journal claim %q is effectsGateways[%v]'s unrecorded log claim: the journal needs a volume of its own (docs/effects-ssh.md)" $key $plan.claim $gateway._index) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* A running entry never loses its pin (#662). journal.id empty on an
+       entry whose Deployment is running is values that lost the ID (an
+       upgrade without the values file, say): the Deployment would be
+       deleted and the journal-init Job run against the journal it was
+       serving. init only prints an existing journal's identity, but by then the service
+       is gone. So it is refused before anything changes. Set replicas: 0
+       and upgrade first if the entry is really to stop.
+
+       lookup asks the API server; under `helm template`, `helm lint` and a
+       client dry run it returns nothing, so this is silent there, as the
+       gateways' rename guard is. */ -}}
+{{- if $plan.journalID -}}
+{{- $sshServing = append $sshServing $plan.name -}}
+{{- end -}}
+{{- if not $plan.journalID -}}
+{{- $live := lookup "apps/v1" "Deployment" $.Release.Namespace $plan.name -}}
+{{- if $live -}}
+{{- $running := or (gt (int64 (default 0 (dig "spec" "replicas" 0 $live))) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
+{{- if $running -}}
+{{- fail (printf "%s.journal.id is empty, and the effects-ssh Deployment %s is running with a pinned journal: this would delete it and stop the service the gateway sends its keys to. Restore journal.id (kubectl get deployment %s -o jsonpath='{.spec.template.spec.containers[0].args}' shows it), or set replicas: 0 and upgrade first if the entry is really to stop" $key $plan.name $plan.name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* A running effects-ssh Deployment of this release that no enabled,
+       pinned entry names any more (renamed, removed, or disabled) is
+       refused, as a running gateway is: a renamed entry is a new claim and a
+       fresh journal, and the gateway's keys still within retention would run
+       again. Set its replicas: 0 and upgrade first. Silent without a
+       cluster, like every lookup guard here. */ -}}
+{{- $liveSsh := lookup "apps/v1" "Deployment" .Release.Namespace "" -}}
+{{- range $live := (default (list) (get (default (dict) $liveSsh) "items")) -}}
+{{- $podLabels := default (dict) (dig "spec" "selector" "matchLabels" (dict) $live) -}}
+{{- if and (eq (toString (get $podLabels "app.kubernetes.io/component")) "effects-ssh") (eq (toString (get $podLabels "app.kubernetes.io/instance")) $.Release.Name) -}}
+{{- $liveName := toString (get $podLabels "shoal.effects-ssh/name") -}}
+{{- $running := or (gt (int64 (default 0 $live.spec.replicas)) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
+{{- /* By object name, not entry name: a changed fullnameOverride keeps the
+       entry's name and moves it to another claim all the same. */ -}}
+{{- if and $running (not (has (toString $live.metadata.name) $sshServing)) -}}
+{{- fail (printf "the effects-ssh Deployment %s (entry %q) is running, and no enabled effectsSsh entry with a journal.id names it any more: renaming or removing a running entry, or clearing its ID, starts a different journal that has never seen the keys this one ran, and the gateway's resends would run them again. Keep the journal across a rename: set the old entry's replicas: 0 and upgrade, then name the old claim in the new entry (journal.storage: existingClaim) with the same journal.id" $live.metadata.name $liveName) -}}
 {{- end -}}
 {{- end -}}
 {{- end -}}

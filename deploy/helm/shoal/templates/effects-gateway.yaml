@@ -166,6 +166,13 @@ spec:
             {{- if $target.credentialSecretName }}
             - "-target-credential-file=/var/run/shoal/target/credential"
             {{- end }}
+            {{- if $target.caSecretName }}
+            - "-target-ca-file=/var/run/shoal/target-ca/ca.crt"
+            {{- end }}
+            {{- if $target.clientCertificate.secretName }}
+            - "-target-client-cert-file=/var/run/shoal/target-client/tls.crt"
+            - "-target-client-key-file=/var/run/shoal/target-client/tls.key"
+            {{- end }}
             {{- with $target.idempotencyHeader }}
             - {{ printf "-idempotency-header=%v" . | quote }}
             {{- end }}
@@ -243,6 +250,16 @@ spec:
               mountPath: /var/run/shoal/target
               readOnly: true
             {{- end }}
+            {{- if $target.caSecretName }}
+            - name: target-ca
+              mountPath: /var/run/shoal/target-ca
+              readOnly: true
+            {{- end }}
+            {{- if $target.clientCertificate.secretName }}
+            - name: target-client
+              mountPath: /var/run/shoal/target-client
+              readOnly: true
+            {{- end }}
             {{- if $attestation.secretName }}
             - name: attestation
               mountPath: /var/run/shoal/attestation
@@ -279,6 +296,27 @@ spec:
             items:
               - key: {{ $target.credentialSecretKey | quote }}
                 path: credential
+        {{- end }}
+        {{- if $target.caSecretName }}
+        # The target's CA (#662), for the target client only.
+        - name: target-ca
+          secret:
+            secretName: {{ $target.caSecretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $target.caSecretKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if $target.clientCertificate.secretName }}
+        # The client certificate presented to the target (#662), re-read at
+        # each handshake, so a cert-manager rotation takes effect in place.
+        - name: target-client
+          secret:
+            secretName: {{ $target.clientCertificate.secretName | quote }}
+            defaultMode: 0440
+            items:
+              - {key: tls.crt, path: tls.crt}
+              - {key: tls.key, path: tls.key}
         {{- end }}
         {{- if $attestation.secretName }}
         - name: attestation
@@ -354,7 +392,19 @@ spec:
       ports:
         - port: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.networkPolicy.explorer.port" $key) "value" (default $root.Values.explorer.containerPort $policy.explorer.port)) }}
           protocol: TCP
-    {{- if not $loopbackTarget }}
+    {{- $sshTarget := include "shoal.effectsSshForGateway" (dict "root" $root "gateway" $gateway) }}
+    {{- if $sshTarget }}
+    {{- $sshTarget = fromJson $sshTarget }}
+    # The target is this release's effects-ssh entry: reached by its pods'
+    # labels on its port, not by an address range.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $sshTarget.selector | nindent 14 }}
+      ports:
+        - port: {{ $sshTarget.port }}
+          protocol: TCP
+    {{- else if not $loopbackTarget }}
     - to:
         {{- range $cidr := $policy.targetCIDRs }}
         - ipBlock:

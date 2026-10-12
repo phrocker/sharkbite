@@ -18,6 +18,8 @@ on:
       - "cmd/shoal-gateway/**"
       - "internal/effectsgateway/**"
       - "docs/effects-gateway-deploy.md"
+      # The chart runs the effects-ssh binary on the arguments it renders.
+      - "extensions/effects-ssh/**"
   pull_request:
     branches: [main]
     paths:
@@ -29,6 +31,8 @@ on:
       - "cmd/shoal-gateway/**"
       - "internal/effectsgateway/**"
       - "docs/effects-gateway-deploy.md"
+      # The chart runs the effects-ssh binary on the arguments it renders.
+      - "extensions/effects-ssh/**"
 
 concurrency:
   group: helm-chart-${{ github.ref }}

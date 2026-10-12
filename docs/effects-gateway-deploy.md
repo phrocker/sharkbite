@@ -908,7 +908,12 @@ any change to `cmd/shoal-gateway`, `internal/effectsgateway` or the chart.
   ServiceAccount token on `dispatch.tokenAudience` (the default) or
   `dispatch.credentialSecretName`.
 - The target credential is `target.credentialSecretName`, mounted as
-  `-target-credential-file`. It is required unless the target is loopback.
+  `-target-credential-file`. It is required unless the target is loopback or
+  the gateway presents a client certificate (`target.clientCertificate`).
+- The target's CA (`target.caSecretName`) and the client certificate
+  (`target.clientCertificate.secretName`, a `kubernetes.io/tls` Secret) are
+  mounted the same way, as `-target-ca-file` and
+  `-target-client-cert-file`/`-target-client-key-file` (#662).
 - The attestation statement and key come from `attestation.secretName`
   (optional), mounted as `-attestation-statement-file` and
   `-attestation-key-file`.
@@ -964,7 +969,9 @@ Every key, with its default, is in `effectsGatewayDefaults` in
 | `target.baseURL` | | `-target-base-url` | required. https, or http to loopback; no userinfo, query or fragment |
 | `target.allowPrivate` | false | `-target-allow-private` | required for loopback |
 | `target.authHeader` | `Authorization` | `-target-auth-header` | |
-| `target.credentialSecretName`, `.credentialSecretKey` | , `credential` | `-target-credential-file` | required unless loopback |
+| `target.credentialSecretName`, `.credentialSecretKey` | , `credential` | `-target-credential-file` | required unless loopback or `target.clientCertificate` is set |
+| `target.caSecretName`, `.caSecretKey` | , `ca.crt` | `-target-ca-file` | https only; required for an effects-ssh target |
+| `target.clientCertificate.secretName` | | `-target-client-cert-file`, `-target-client-key-file` | https only; a `kubernetes.io/tls` Secret (`tls.crt`, `tls.key`) |
 | `target.idempotencyHeader`, `.idempotencyRetention` | | `-idempotency-header`, `-idempotency-retention` | required with a `key` route, refused without one; retention > T + 5s |
 | `routes` | `[]` | `-routes` via ConfigMap | required, a list of [routes](#routes) |
 | `timing.claimLease` | 4m | `-claim-lease` | `0 < L ≤ 5m` |
@@ -981,7 +988,7 @@ Every key, with its default, is in `effectsGatewayDefaults` in
 | `unrecorded.size`, `.storageClassName`, `.existingClaim` | `64Mi`, , | claim | |
 | `healthPort` | 8102 | `-health-address` | 1 to 65535 |
 | `resources`, `nodeSelector`, `tolerations`, `affinity` | small requests, none | pod spec | |
-| `networkPolicy.*` | disabled | NetworkPolicy | `targetCIDRs` required with a remote target |
+| `networkPolicy.*` | disabled | NetworkPolicy | `targetCIDRs` required with a remote target, unless the target is an `effectsSsh` entry, which the policy reaches by pod selector |
 
 Durations are Go literals built from whole numbers and `ms`, `s`, `m` or `h`
 (`90s`, `1m30s`). Every value is rendered as a quoted scalar or as JSON, and a

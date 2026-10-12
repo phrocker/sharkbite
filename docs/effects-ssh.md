@@ -438,8 +438,12 @@ it refuses the start.
 
 ## Deploying
 
-The chart does not render this extension; extensions ship their own images
-(`docs/gateways.md`). Two shapes:
+The image is `Dockerfile.shoal-effects-ssh`, built from the extension module
+alone (`GOWORK=off`), so `x/crypto/ssh` is never linked into the root module.
+CI builds and smoke-tests it in the same job as the gateway's image, which
+shares its base images, so it adds no anonymous Docker Hub pull (#638). The
+chart renders the separate-Deployment shape ("In the chart", below). Two
+shapes:
 
 **Sidecar (recommended).** Run it in the gateway's pod on loopback:
 
@@ -465,9 +469,17 @@ replica.
 
 **Initialize the journal once, and pin it.** `serve` never creates a journal.
 `journal init` writes the first line, a header with a random identity and
-the creation time, fsyncs it and its directory entry, and prints the
-identity; it refuses a directory that already holds a journal file, even an
-empty one. Put the identity in the deployment as `-journal-id`. Then a
+the creation time, fsyncs it under a temporary name and links it into place
+(so `journal.log` appears complete or not at all; this needs a filesystem
+with hard links, as ext4 and xfs have, and on one without them init fails
+with the link error and creates no journal), fsyncs the directory, and
+prints the identity. A process killed between the link and removing the
+temporary leaves `journal.log.init` beside a complete journal; it is
+harmless (nothing reads it, and serve ignores it) and may be deleted by hand.
+Init refuses a directory that already holds a journal file, even an
+empty one. With `-print-existing`, a directory holding a journal with a valid
+header prints that journal's identity and exits 0 instead, writing nothing; a
+headerless or corrupt one is still an error. Put the identity in the deployment as `-journal-id`. Then a
 volume that fails to mount, leaving the image's empty directory, refuses the
 start instead of serving a fresh journal that has forgotten every key, which
 would re-run a command whose outcome was unknown. A different journal (another
@@ -478,11 +490,16 @@ a `journal.log` that is a symlink is refused, because compaction's rename
 would replace the link with a file off the volume and leave the old journal
 behind the link. A symlinked directory is fine. A journal whose identity is
 not the pinned one is refused at its first line and left untouched. The pod's egress policy must allow the SSH hosts' addresses and
-ports. The chart's per-entry NetworkPolicy assumes a single target, so a
-sidecar deployment writes its own policy.
+ports. In the sidecar shape the gateway's pod is the one dialing SSH, and the
+gateway entry's NetworkPolicy allows one target, so a sidecar deployment
+writes its own policy; the chart's `effectsSsh` entry renders the separate
+shape with a policy of its own.
 
 **Separate Deployment.** Serve TLS (`-tls-cert-file`, `-tls-key-file`) and
-point the gateway at `https://effects-ssh.<namespace>.svc:8443`. Give the
+point the gateway at the Service, for example
+`https://effects-ssh.<namespace>.svc:8443` (the chart's is
+`https://<release stem>-ssh-<name>.<namespace>.svc:<port>`), with
+`-target-allow-private`, since a ClusterIP is a private address. Give the
 gateway the CA that issued the serving certificate with `-target-ca-file`,
 which replaces the system roots for the target only. For mTLS, give the
 gateway `-target-client-cert-file` and `-target-client-key-file`, and this
@@ -506,6 +523,109 @@ shoal-gateway run ... -target-base-url https://effects-ssh.shoal.svc:8443 \
 The effects are `{external, egresses-content}`, because
 the gateway cannot tell that this target is in the cluster. The route and the
 descriptor must declare both.
+
+### In the chart
+
+`effectsSsh` is a list, one entry per effects gateway, merged over
+`effectsSshDefaults` (`deploy/helm/shoal/values.yaml`). An entry names the
+`effectsGateways` entry that calls it (`gateway`), and renders a ClusterIP
+Service, a ServiceAccount with no token, a ConfigMap holding the command
+registry (its checksum rolls the pod), a `ReadWriteOnce` claim for the journal
+(kept on uninstall), a NetworkPolicy, and either the journal-init Job or the
+Deployment.
+
+**Installing takes two steps, so a fresh install can never pin a journal by
+itself.**
+
+1. Install with `journal.id` empty. The chart renders the claim and a one-off
+   Job, `<release stem>-ssh-<name>-init-<digest>`, that runs
+   `journal init -print-existing` on it (denied all network), and **no
+   Deployment**. Read the identity it printed with
+   `kubectl logs job/<the Job's name>`; NOTES prints the exact command.
+2. Set `journal.id` to that identity and upgrade. The Job is no longer
+   rendered, and the Deployment serves with `-journal-id` pinned.
+
+The Job is an ordinary resource, not a Helm hook. It is the claim's first
+consumer, so a `WaitForFirstConsumer` claim binds for it. `helm install
+--wait` does not wait for Jobs; add `--wait-for-jobs` to wait for the
+identity to be printed.
+Kubernetes does not rerun a finished Job, so an upgrade between the two steps
+leaves it, and its log, in place. A change to its pod template (the image, say)
+gives it a new name, since a Job's template is immutable; the new Job finds
+the journal and, with `-print-existing`, prints that journal's identity and
+writes nothing. Only the header is read, so a journal of any size is
+answered in constant memory; a missing or malformed header is an error, never
+a fresh start. A rerun is always safe, so the Job retries a lost pod
+(`backoffLimit: 3`); one that still failed is deleted by hand (`kubectl delete
+job`) and recreated by the next upgrade.
+
+`journal init` never appears in the pod's start script. After step 2, a
+claim that is lost, empty or replaced is refused at startup by the pinned
+identity, and nothing re-initializes it: re-running step 1 requires an
+operator to clear `journal.id` on purpose, and then it prints the identity of
+any journal already on the claim rather than replacing it. The chart refuses
+an empty `journal.id` while the entry's Deployment is running, and any
+running effects-ssh Deployment of the release that no enabled, pinned entry
+names any more (a rename or a removal), by `lookup` guards like the gateways'
+rename guard, silent under `helm template`. A rename starts a fresh claim and
+journal, so keep the journal across one: stop the old entry (`replicas: 0`),
+then name its claim in the new entry (`journal.storage: existingClaim`) with
+the same `journal.id`. A
+random identity also means a re-initialized journal can never match the old
+pin.
+
+**What the chart checks at render time:**
+- **One instance.** One replica (or 0), `Recreate`, and a claim, never an
+  `emptyDir`. Two entries cannot share a claim or a gateway, and a journal
+  cannot be on a gateway's unrecorded claim (chart-created or existing).
+- **Size.** A chart-created claim must hold `(3 × maxEntries + 1024)` of the
+  per-key record bound: the journal at its declared bound plus a compaction's
+  copy. The default is 2Gi, about 1.4 GB needed at the default bounds. Running
+  out is safe for once-only, but the service exits and runs end unknown.
+- **The gateway is wired to this entry.** Its `target.baseURL` must be
+  `https://<release stem>-ssh-<name>.<namespace>.svc:<port>`. It must set
+  `target.caSecretName` (the CA of `tls.secretName`) and
+  `target.allowPrivate: true`, because the Service's ClusterIP is a private
+  address the gateway's dialer otherwise refuses (link-local and metadata
+  addresses stay refused). Every route must be a
+  literal `POST /v1/commands/<registered command>` on `idempotency: key`.
+- **Both halves of caller authentication.**
+  - `callerToken` needs the gateway's `target.credentialSecretName`.
+  - `clientAuth` needs at least one pin and the gateway's
+    `target.clientCertificate.secretName`.
+  - At least one of the two is required; both is recommended.
+- **Retention.** `-journal-retention` is computed as the gateway's
+  `target.idempotencyRetention` + `journal.clockSkew` (default 5m). A
+  `journal.retention` may only raise it. This is the deployment rule above,
+  checked where both values meet.
+- **Timing.** Each command's `2 × connectTimeout + runTimeout + 10s` must be
+  below the gateway's `timing.operationTimeout`, and `attachWait` below it
+  too. `-shutdown-grace` defaults to the longest of those budgets, and
+  `terminationGracePeriodSeconds` to it + 10s; overrides may only raise them.
+- **The binary's own bounds.** Command names, the shape of host keys, users, commands, timeouts, output
+  bounds and the compaction bound are checked, and so is every setting name,
+  so a misspelling is refused rather than defaulted.
+
+**NetworkPolicy** (on by default):
+- Ingress comes only from the named gateway's pods, on the listener's port.
+- Egress goes to each command's `cidrs` on its address's port. An IP literal
+  address defaults to its own `/32` or `/128`; a host name needs `cidrs` and
+  also opens port 53 to the cluster's DNS pods only (`networkPolicy.dns`,
+  `kube-system`/`k8s-app: kube-dns` by default). A prefix shorter than /8
+  (IPv4) or /32 (IPv6) is refused, as is any malformed CIDR.
+- The journal-init Job's pod is denied all network.
+- Entry names may not end in a suffix the chart appends to another entry's
+  objects (`-init`, `-init-<digest>`, `-journal`, `-commands`), so no two
+  entries' objects can share a name and replace each other's policy.
+- The gateway's own policy reaches this entry by pod selector instead of
+  `targetCIDRs`.
+
+The Deployment has a TCP startup probe allowing ten minutes, because `serve`
+replays the journal before it listens.
+
+`deploy/helm/validate-chart.sh` asserts each of these: it renders the objects,
+refuses each broken value by its own message, and runs the rendered arguments
+against the real binary until it logs its start line.
 
 ### Operating it
 
@@ -535,5 +655,4 @@ someone has looked. A file with no complete header is reported as uninitialized,
 
 - Parameters. v1 runs fixed strings only. Parameters need a schema, an
   encoding that cannot reach the shell, and a fingerprint that covers them.
-- A chart entry and an image for the extension (#662).
 - A shared module for `sshclient`, with #447.
