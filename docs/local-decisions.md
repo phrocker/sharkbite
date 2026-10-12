@@ -476,11 +476,16 @@ review.
 The console is a thin client over the existing authenticated routes:
 `/api/v1/decisions`, `/api/v1/decision-registrations`,
 `/api/v1/dataset-exports`, `/api/v1/outcomes`, and
-`/api/v1/adjudications`. A host must explicitly mount the corresponding
-provider and trusted resolver; the UI does not create authority or make an
-unmounted service appear available. Offline quality, poisoning, calibration,
-influence, and challenger reports remain file-backed evidence until a host
-provides a read-only evidence service for them.
+`/api/v1/adjudications`. A host must explicitly compose a complete
+`webapi.DecisionSurface` (the five provider interfaces plus the same trusted
+resolver) and mount it through the
+authenticated handler. The mount is atomic: an incomplete or conflicting
+surface leaves every decision route unavailable. The UI does not create
+authority or make an unmounted service appear available, and the default
+`shoal-explore-web` binary intentionally supplies no decision surface. Offline
+quality, poisoning, calibration, influence, and challenger reports remain
+file-backed evidence until a host provides a read-only evidence service for
+them.
 
 ## Executable learning slice
 
