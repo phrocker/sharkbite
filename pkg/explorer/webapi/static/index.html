@@ -38,6 +38,11 @@
             <span>Choose a directory to upload its files in bounded batches.</span>
             <input id="upload-directory" type="file" webkitdirectory multiple>
           </label>
+          <!-- #664: sent as the declassification_reason form field when set. -->
+          <label for="upload-reason">
+            <span>Declassification reason (optional): recorded when an upload removes visibility labels from a document.</span>
+            <input id="upload-reason" type="text" maxlength="128" autocomplete="off" placeholder="ticket:SEC-1234">
+          </label>
           <button id="upload-button" type="submit">Upload</button>
         </form>
         <p id="upload-status" class="muted" role="status" aria-live="polite"></p>

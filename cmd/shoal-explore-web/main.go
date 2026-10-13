@@ -484,6 +484,23 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			"read-only at /api/v1/ontology; environment fallback "+
 			"SHOAL_ONTOLOGY_FILE",
 	)
+	requireDeclassificationReason := flags.Bool(
+		"require-declassification-reason", false,
+		"Refuse an ingest that removes visibility labels from a document "+
+			"(a declassification, #630) unless it carries a reason code: the "+
+			"declassification_reason upload field or MCP ingest argument. "+
+			"Every such ingest is audited either way; this only makes the "+
+			"reason mandatory. Off by default",
+	)
+	listDeclassificationRecords := flags.Bool(
+		"list-declassifications", false,
+		"Print the declassification audit records (relabels that removed "+
+			"visibility labels, #630) with the labels each one removed, from "+
+			"the policy catalog that -state-dir, -data and -policy-dir select, "+
+			"then exit without serving. The records name labels in the clear: "+
+			"run it with the workspace stopped, as an operator who may read "+
+			"the policy catalog (#664)",
+	)
 	listUntranslatable := flags.Bool(
 		"list-untranslatable-labels", false,
 		"Print the startup label migration's report of documents whose "+
@@ -495,9 +512,17 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
+	if *listUntranslatable && *listDeclassificationRecords {
+		return errors.New("-list-untranslatable-labels and " +
+			"-list-declassifications are separate listings: give one")
+	}
 	if *listUntranslatable {
 		_, policyDir := resolveWorkspacePaths(*stateDir, *data, *policyDirFlag)
 		return listUntranslatableLabels(ctx, output, policyDir)
+	}
+	if *listDeclassificationRecords {
+		_, policyDir := resolveWorkspacePaths(*stateDir, *data, *policyDirFlag)
+		return listDeclassifications(ctx, output, policyDir)
 	}
 	executors, err := newConfiguredFleetExecutors(
 		splitCommaList(*fleetExecutorRefs))
@@ -731,9 +756,11 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		clock:     time.Now,
 		// #655: off until the operator says every replica can read them.
 		terminalStates: *approvalTerminalStates,
-		backfill:       backfill,
-		ontology:       activeOntology,
-		executors:      executors,
+		// #664: off unless the operator requires a reason code.
+		requireDeclassificationReason: *requireDeclassificationReason,
+		backfill:                      backfill,
+		ontology:                      activeOntology,
+		executors:                     executors,
 		approverMapping: func(context.Context) (auth.Digest, error) {
 			return approverMapping, nil
 		},
@@ -1254,6 +1281,9 @@ type serviceConfig struct {
 	// terminalStates is -approval-terminal-states (#655): whether anything
 	// may write the withdrawn and stranded states.
 	terminalStates bool
+	// requireDeclassificationReason is -require-declassification-reason
+	// (#664): authorized.Config.RequireDeclassificationReason.
+	requireDeclassificationReason bool
 }
 
 // openedService is the constructed workspace service together with what the
@@ -1379,7 +1409,7 @@ func openService(
 		}
 		client, err := authorizedClient(
 			corpus, store, config.resolver, generationReader,
-			config.clock, config.mosaic)
+			config.clock, config.mosaic, config.requireDeclassificationReason)
 		if err != nil {
 			store.Close()
 			embedded.Close()
@@ -1886,6 +1916,7 @@ func authorizedClient(
 	generationReader auth.GenerationReader,
 	clock func() time.Time,
 	mosaic authorized.MosaicBudget,
+	requireDeclassificationReason bool,
 ) (*authorized.Client, error) {
 	selector, err := authorized.NewStaticPolicySelector(
 		workspaceSourceID, workspaceGrantPolicyID)
@@ -1916,6 +1947,8 @@ func authorizedClient(
 		Clock:                  clock,
 		Mosaic:                 mosaic,
 		CeilingResolver:        ceilings,
+		// #664: a narrowing without a reason code is refused.
+		RequireDeclassificationReason: requireDeclassificationReason,
 	})
 }
 

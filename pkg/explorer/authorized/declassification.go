@@ -91,8 +91,9 @@ package authorized
 // # Who can read it
 //
 // Records are reachable only through the PolicyStore (Declassifications); no
-// Client method, HTTP route or MCP tool returns them, and in shipped binaries
-// nothing reads them yet (#664). The policy catalog already persists every
+// Client method, HTTP route or MCP tool returns them. The one shipped reader
+// is the offline operator listing, shoal-explore-web
+// -list-declassifications (#664). The policy catalog already persists every
 // rule in the clear, including label policy IDs and so the label names, so a
 // record holding the replaced and new rules discloses nothing the catalog
 // does not already hold to the same operator. Label names are therefore kept
@@ -109,13 +110,23 @@ package authorized
 // nothing new. The pre-commit check applies the same rule statelessly to any
 // narrowing of the registration the claim-time check did not see: the
 // principal must be authorized under that registration's rule (NotFound
-// otherwise), and then the reason policy applies. In shipped binaries
-// nothing sets the policy or passes a reason yet (#664).
+// otherwise), and then the reason policy applies. shoal-explore-web sets
+// the policy with -require-declassification-reason, and its upload surfaces
+// (the browser route, the MCP ingest tool, the remote web API) carry a reason
+// as declassification_reason (#664).
+//
+// # Retention
+//
+// Records are append-only and loaded into memory whenever the catalog opens;
+// nothing compacts them. That is acceptable only because declassification is
+// expected to be rare. The retention policy is an open decision on #664 (see
+// docs/shoal-explore-web-deploy.md for the volume estimate).
 
 import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"time"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
@@ -355,14 +366,44 @@ func WithDeclassificationReason(
 	ctx context.Context,
 	reason string,
 ) (context.Context, error) {
-	if reason == "" {
-		return nil, shoal.NewError(shoal.ErrorInvalidArgument,
-			"declassification reason code is required")
-	}
-	if err := validateDeclassificationReason(reason); err != nil {
+	if err := ValidateDeclassificationReason(reason); err != nil {
 		return nil, err
 	}
 	return context.WithValue(ctx, declassificationReasonKey{}, reason), nil
+}
+
+// ValidateDeclassificationReason reports whether reason is a code
+// WithDeclassificationReason accepts, with the same InvalidArgument error. A
+// transport that carries a reason (#664) checks it with this before any
+// effect, so the rule lives in one place.
+func ValidateDeclassificationReason(reason string) error {
+	if reason == "" {
+		return shoal.NewError(shoal.ErrorInvalidArgument,
+			"declassification reason code is required")
+	}
+	return validateDeclassificationReason(reason)
+}
+
+// errDeclassificationReasonRequired is the cause every refusal under
+// Config.RequireDeclassificationReason carries, so a transport can recognise
+// it (IsDeclassificationReasonRequired) without matching message text.
+var errDeclassificationReasonRequired = errors.New(
+	"declassification reason code required")
+
+func declassificationReasonRequired() error {
+	return shoal.WrapError(shoal.ErrorInvalidArgument,
+		"this relabel removes visibility labels and the operator "+
+			"requires a declassification reason code",
+		errDeclassificationReasonRequired)
+}
+
+// IsDeclassificationReasonRequired reports whether err is, or wraps, the
+// refusal of a narrowing that carried no reason under
+// Config.RequireDeclassificationReason. The refusal is returned only after
+// the principal has been authorized under every rule the narrowing replaces
+// and under the new rule, so a transport may tell the caller about it.
+func IsDeclassificationReasonRequired(err error) bool {
+	return errors.Is(err, errDeclassificationReasonRequired)
 }
 
 func declassificationReason(ctx context.Context) string {
@@ -539,9 +580,7 @@ func (c *Client) recordDeclassification(
 	revisionID shoal.ID,
 ) error {
 	if c.requireDeclassificationReason && attempt.reason == "" {
-		return shoal.NewError(shoal.ErrorInvalidArgument,
-			"this relabel removes visibility labels and the operator "+
-				"requires a declassification reason code")
+		return declassificationReasonRequired()
 	}
 	if attempt.id == "" {
 		id, err := newDeclassificationAttemptID()

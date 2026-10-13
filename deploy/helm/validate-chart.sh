@@ -589,6 +589,8 @@ renders "loopback chat needs no credential" "${explorer_base[@]}" --set explorer
 renders "remote chat with a credential"     "${explorer_base[@]}" --set explorer.chat.provider=openai-compatible,explorer.chat.model=m,explorer.chat.baseURL=https://api.example.test,explorer.chat.credentialSecretName=chat
 renders "mosaic budget enabled"             "${explorer_base[@]}" --set explorer.disclosure.mosaic.maxDomains=3
 renders "withholding concealed"             "${explorer_base[@]}" --set explorer.disclosure.concealWithholding=true
+assert_renders "declassification reason required" '^ +- -require-declassification-reason$' "${explorer_base[@]}" --set explorer.declassification.requireReason=true
+assert_absent "declassification reason optional by default" 'require-declassification-reason' "${explorer_base[@]}"
 renders "ask executor wired"                "${explorer_base[@]}" --set 'explorer.fleet.executorRefs={ask}',explorer.fleet.askExecutorRef=ask,explorer.chat.provider=ollama,explorer.chat.model=m,explorer.chat.baseURL=http://localhost:11434
 renders "lexical embedding"                 "${explorer_base[@]}" --set explorer.embedding.provider=lexical,explorer.embedding.dimensions=256
 renders "scaled to zero"                    "${explorer_base[@]}" --set explorer.replicas=0

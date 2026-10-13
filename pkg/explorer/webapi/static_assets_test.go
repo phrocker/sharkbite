@@ -97,11 +97,34 @@ assert.strictEqual(uploaded.uploadRequest.url, "/api/v1/ingest");
 assert.strictEqual(uploaded.uploadRequest.options.method, "POST");
 assert.strictEqual(uploaded.uploadRequest.options.headers["x-shoal-workspace-request"], "1");
 assert.deepStrictEqual(uploaded.uploadRequest.options.body.parts.map((part) => part.filename), ["guide.md", "main.go"]);
+assert.ok(!uploaded.uploadRequest.options.body.parts.some((part) => part.name === "declassification_reason"),
+  "an empty reason field must send no reason");
 assert.match(uploaded.ids["upload-status"].textContent, /Uploaded 2 file/);
 assert.match(uploaded.ids["upload-results"].children[0].textContent, /guide\.md: applied/);
 assert.match(uploaded.ids["upload-results"].children[1].textContent, /main\.go: unchanged/);
 assert.strictEqual(uploaded.ids.documents.children.length, 1);
 assert.match(uploaded.ids.snapshot.textContent, /uploadsnap/);
+
+// #664: a reason typed into the upload form is sent as its own field.
+const reasoned = await runScenario(
+  {documents: true, document: true, ingest: true},
+  [],
+  {ingestResponse: {
+    snapshot: {id: "reasonsnapshot", as_of: "2026-08-29T01:00:00Z", frontier: 2},
+    files: [{name: "secret.md", disposition: "applied", media_type: "text/markdown", span_count: 1}],
+  }},
+);
+reasoned.ids["upload-files"].files = [{name: "secret.md"}];
+reasoned.ids["upload-reason"].value = " ticket:SEC-1 ";
+await reasoned.ids.upload.onsubmit({preventDefault() {}});
+assert.deepStrictEqual(
+  reasoned.uploadRequest.options.body.parts.filter((part) => part.name === "declassification_reason")
+    .map((part) => part.file),
+  ["ticket:SEC-1"]);
+assert.deepStrictEqual(
+  reasoned.uploadRequest.options.body.parts.filter((part) => part.name === "files")
+    .map((part) => part.filename),
+  ["secret.md"]);
 
 const extracted = await runScenario(
   {documents: true, document: true, extraction: true},
@@ -1024,7 +1047,7 @@ function makeDocument(capabilities, documents) {
     "query", "search", "search-button", "modes", "mode-vector", "mode-vector-control",
     "vector-mode-status", "evidence", "evidence-status", "evidence-results", "expand",
     "continue-expansion", "path-from", "path-to", "find-path", "graph-status",
-    "upload-section", "upload", "upload-drop", "upload-files", "upload-directory", "upload-button",
+    "upload-section", "upload", "upload-drop", "upload-files", "upload-directory", "upload-reason", "upload-button",
     "upload-status", "upload-results",
     "documents", "documents-status", "more", "graph-nodes", "graph-edges", "canvas",
     "selection", "hierarchy", "hierarchy-status", "snapshot", "identity", "identity-badge",

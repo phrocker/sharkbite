@@ -325,7 +325,18 @@ type UploadFile struct {
 // IngestRequest carries one bounded browser upload batch.
 type IngestRequest struct {
 	Files []UploadFile
+	// DeclassificationReason is an optional reason code for a relabel that
+	// removes visibility labels (#630, #664). It is recorded on every
+	// declassification audit the batch writes and satisfies an operator's
+	// -require-declassification-reason. Empty means none; anything else must
+	// pass authorized.ValidateDeclassificationReason, or the whole batch is
+	// refused with ErrorInvalidArgument before any file is ingested.
+	DeclassificationReason string `json:"declassification_reason,omitempty"`
 }
+
+// DeclassificationReasonField is the multipart form field, and the MCP ingest
+// argument, that carries IngestRequest.DeclassificationReason.
+const DeclassificationReasonField = "declassification_reason"
 
 // IngestFileResult reports the durable outcome for one uploaded file.
 type IngestFileResult struct {

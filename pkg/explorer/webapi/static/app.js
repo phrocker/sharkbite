@@ -2267,8 +2267,17 @@ function safeUploadSegment(segment) {
   return value;
 }
 
+// uploadReason is the optional declassification reason (#664). The server
+// owns the rule; an empty field sends nothing.
+function uploadReason() {
+  const input = $("upload-reason");
+  return String((input && input.value) || "").trim();
+}
+
 async function uploadBatch(batch) {
   const body = new FormData();
+  const reason = uploadReason();
+  if (reason) body.append("declassification_reason", reason);
   for (const entry of batch) body.append("files", entry.file, entry.uploadName);
   const response = await fetch("/api/v1/ingest", {
     method: "POST",

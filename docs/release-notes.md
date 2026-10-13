@@ -2,6 +2,28 @@
 
 ## Unreleased
 
+### Declassification reason codes and an offline listing (#664)
+
+Every relabel that removes visibility labels has been audited since #630. You
+could not send a reason with one, though, and nothing shipped could read the
+records.
+
+- The browser upload route, the MCP `shoal.ingest` tool and the remote web
+  API client take an optional `declassification_reason`. It is a multipart
+  form field on the route, with an optional input in the workspace upload
+  form, and a tool argument on MCP. The reason is recorded
+  on the audit. A malformed reason refuses the batch with a 400 /
+  `invalid_argument` before anything is ingested.
+- `-require-declassification-reason` (chart:
+  `explorer.declassification.requireReason`) refuses such a relabel unless
+  it carries a reason. It is off by default.
+- `shoal-explore-web -list-declassifications` prints the records, with the
+  labels each one removed, and exits. It is offline only, like
+  `-list-untranslatable-labels`. No online read of the records exists.
+- Retention is not decided. The records are append-only and loaded on every
+  start. `docs/shoal-explore-web-deploy.md` gives the expected volume, and the
+  decision is open on #664.
+
 ### The LLM gateway's listener serves TLS (#424)
 
 `shoal-llm-gateway` refused to send a prompt to a remote provider over

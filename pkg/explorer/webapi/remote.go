@@ -109,11 +109,25 @@ func (s *RemoteService) Ingest(
 	if err != nil {
 		return IngestResponse{}, err
 	}
+	// Checked here as well as upstream, so an invalid reason is refused
+	// before anything is sent and with the same error as embedded mode.
+	if _, err := declassificationReasonContext(
+		ctx, request.DeclassificationReason); err != nil {
+		return IngestResponse{}, err
+	}
 	if err := s.ensureCapability(ctx, CapabilityIngest); err != nil {
 		return IngestResponse{}, err
 	}
 	var body bytes.Buffer
 	writer := multipart.NewWriter(&body)
+	if request.DeclassificationReason != "" {
+		if err := writer.WriteField(
+			DeclassificationReasonField, request.DeclassificationReason); err != nil {
+			_ = writer.Close()
+			return IngestResponse{}, shoal.WrapError(
+				shoal.ErrorInternal, "encode workspace upload", err)
+		}
+	}
 	for _, item := range request.Files {
 		name, err := sanitizeUploadFilename(item.Name)
 		if err != nil {

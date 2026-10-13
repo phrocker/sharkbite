@@ -445,6 +445,84 @@ Residuals, stated rather than implied:
   the narrowed registration.
 - Pending edge reservations keep their old rule; committing one conflicts.
 
+### Declassification audit: reason codes, listing, retention
+
+A principal holding every label on a document may upload it again under fewer
+labels. A browser upload and the MCP `shoal.ingest` tool carry no labels, so
+re-uploading a labelled document's name removes all of them. That is allowed,
+but it is never silent: every such relabel leaves declassification audit
+records in the policy catalog (#630). One record is an `intent`, written before
+the source claim changes. The other is a `pre_commit`, written before the
+registration that lets the new readers in. Both name the principal, the
+request, the document, the revisions, the replaced rules and the new rule.
+
+**Reason codes (#664).** An upload may carry a reason code, which is recorded
+on both records:
+
+| Surface | How the reason is sent |
+| --- | --- |
+| Browser upload route (`POST /api/v1/ingest`) | a non-file multipart form field named `declassification_reason`, in any position; an empty value means none. The workspace's upload form has an optional "Declassification reason" input that sends it with every batch |
+| MCP `shoal.ingest` tool | the optional `declassification_reason` argument |
+| `webapi.RemoteService` (remote web API client) | `IngestRequest.DeclassificationReason`, forwarded as the form field above |
+
+A code is 1 to 128 bytes of ASCII letters, digits and `.`, `_`, `-`, `:` and
+`/`, for example `ticket:SEC-1234`. This is the authorized client's own rule
+(`authorized.ValidateDeclassificationReason`). One reason applies to every
+file in the batch. An invalid reason refuses the whole batch before anything
+is ingested: a 400 with `invalid_argument` and the message `declassification
+reason is invalid` (MCP: `shoal.ingest arguments are invalid`). A form with
+two reason fields is refused with `upload declassification reason is
+repeated`. A file part keeps file semantics whatever its field name.
+
+`-require-declassification-reason` (chart:
+`explorer.declassification.requireReason`) refuses a relabel that removes
+labels unless it carries a reason. It is off by default. The refusal is a 400
+whose message names `declassification_reason`. It is returned only after the
+uploader has been authorized under the rule being replaced and under the new
+one, so it tells them nothing they could not already read. An upload that
+removes no label never needs a reason. Records are written whether this flag
+is on or off. With the flag on, an MCP caller sees a reasonless relabel as a
+mutating tool failure. Like every post-dispatch MCP failure, that is reported
+as indeterminate, because an earlier file in the batch may have been ingested.
+
+A `RemoteService` client that talks to an upstream built before #664 has its
+reason dropped without an error, because that upstream ignores unknown form
+fields. The relabel is still audited there, and that upstream cannot be
+configured to require a reason.
+
+**Listing the records.** `shoal-explore-web -list-declassifications` (with the
+same `-state-dir`, `-data` or `-policy-dir`) prints every record in recording
+order and exits without serving. Each record shows its attempt, phase, time,
+source URI, document and revisions, principal, request, reason, the labels it
+removed, and any other removed component (a changed source policy, a dropped
+service role). The first line counts the attempts that have no `pre_commit`
+record: those never reached the registration. Every caller-supplied string is
+Go-quoted. The listing opens the catalog exactly as
+`-list-untranslatable-labels` does, so it writes nothing and refuses a
+directory with no catalog or with unflushed writes. Stop the workspace cleanly
+first.
+
+The listing is **offline only**, by design. The records hold the old and new
+label names in the clear, just as the catalog's rules do. An operator who can
+open the policy directory can already read them. An online read surface would
+have to restrict each record to readers who could read the replaced rule (or
+to a dedicated audit role), and must never show one to readers of the new,
+weaker rule only. No such surface exists, and none should be added without
+that restriction (#664).
+
+**Retention: an open decision.** The records are append-only. Nothing
+compacts, expires or deletes them, and every record is loaded into memory
+whenever the policy catalog opens. Retention is therefore bounded only by how
+often labels are removed. One record encodes to at most about 1.9 KB for a
+document with one label, about 3 KB for three labels and about 7 KB for ten.
+A relabel writes two records. 10,000 relabels of three-label documents
+therefore add up to about 60 MB to the catalog on disk, and a similar amount
+is held in memory after every start.
+Removing labels is expected to be rare, so this is not a concern at the
+expected volume. A retention or compaction policy is still undecided and is
+tracked on #664. Decide it before declassification happens at volume, and
+watch the policy catalog's size until then.
+
 ### Discovery, keys, and validation options
 
 | Flag / environment fallback | Default |

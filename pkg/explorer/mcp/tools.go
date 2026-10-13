@@ -29,6 +29,7 @@ import (
 
 	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
+	"github.com/phrocker/shoal-oss/pkg/explorer/authorized"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 	"github.com/phrocker/shoal-oss/pkg/ontology"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
@@ -222,6 +223,12 @@ var (
 				},
 				"minItems":1,
 				"maxItems":8
+			},
+			"declassification_reason":{
+				"type":"string",
+				"minLength":1,
+				"maxLength":128,
+				"description":"Optional reason code recorded on the audit of a relabel that removes visibility labels; required by a workspace that requires one. ASCII letters, digits and . _ - : / only"
 			}
 		},
 		"required":["files"],
@@ -616,6 +623,15 @@ func validatePathArguments(request webapi.PathRequest) error {
 }
 
 func validateIngestArguments(request webapi.IngestRequest) error {
+	// Checked before the effect, so an invalid reason is an argument error
+	// rather than an indeterminate mutating failure. The rule is the
+	// authorized client's own; an empty reason means none.
+	if request.DeclassificationReason != "" {
+		if err := authorized.ValidateDeclassificationReason(
+			request.DeclassificationReason); err != nil {
+			return err
+		}
+	}
 	if len(request.Files) == 0 ||
 		uint32(len(request.Files)) > webapi.MaxUploadFiles {
 		return errors.New("invalid upload file count")

@@ -24,6 +24,7 @@ package authorized_test
 import (
 	"context"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -293,8 +294,9 @@ func TestDeclassificationReasonPolicy(t *testing.T) {
 		}
 		before := baseDocumentCount(t, f)
 		holder := f.labelIngester(t, "holder", "secret")
-		if _, err := client.Ingest(holder, labelledSource(uri, "public", "")); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
-			t.Fatalf("narrowing without a reason = %v, want invalid argument", err)
+		if _, err := client.Ingest(holder, labelledSource(uri, "public", "")); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) ||
+			!authorized.IsDeclassificationReasonRequired(err) {
+			t.Fatalf("narrowing without a reason = %v, want the reason-required refusal", err)
 		}
 		if records := declassifications(t, store); len(records) != 0 {
 			t.Fatalf("a refused narrowing was recorded: %+v", records)
@@ -313,7 +315,8 @@ func TestDeclassificationReasonPolicy(t *testing.T) {
 		// A principal without the label is refused as before, and learns
 		// nothing about the reason policy.
 		if _, err := client.Ingest(f.labelIngester(t, "outsider"),
-			labelledSource(uri, "public", "")); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			labelledSource(uri, "public", "")); !shoal.IsErrorCode(err, shoal.ErrorNotFound) ||
+			authorized.IsDeclassificationReasonRequired(err) {
 			t.Fatalf("outsider narrowing = %v, want not found", err)
 		}
 		if _, err := client.Ingest(withReason(t, holder, "legal-hold-release"),
@@ -329,10 +332,27 @@ func TestDeclassificationReasonPolicy(t *testing.T) {
 }
 
 func TestDeclassificationReasonValidation(t *testing.T) {
-	for _, reason := range []string{"", "has space", "semi;colon", string(make([]byte, authorized.MaxDeclassificationReasonBytes+1))} {
+	longest := strings.Repeat("a", authorized.MaxDeclassificationReasonBytes)
+	for _, reason := range []string{"", "has space", "semi;colon", "caf\u00e9", longest + "a", string(make([]byte, authorized.MaxDeclassificationReasonBytes+1))} {
 		if _, err := authorized.WithDeclassificationReason(context.Background(), reason); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
 			t.Fatalf("reason %q = %v, want invalid argument", reason, err)
 		}
+		// The exported validator is the same rule (#664).
+		if err := authorized.ValidateDeclassificationReason(reason); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
+			t.Fatalf("ValidateDeclassificationReason(%q) = %v, want invalid argument", reason, err)
+		}
+	}
+	for _, reason := range []string{"ticket:SEC-1", "a/b.c_d-e", "Z9", longest} {
+		if err := authorized.ValidateDeclassificationReason(reason); err != nil {
+			t.Fatalf("ValidateDeclassificationReason(%q) = %v", reason, err)
+		}
+		if _, err := authorized.WithDeclassificationReason(context.Background(), reason); err != nil {
+			t.Fatalf("WithDeclassificationReason(%q) = %v", reason, err)
+		}
+	}
+	if authorized.IsDeclassificationReasonRequired(
+		authorized.ValidateDeclassificationReason("")) {
+		t.Fatal("a missing reason code was reported as the operator's requirement")
 	}
 }
 

@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer"
+	"github.com/phrocker/shoal-oss/pkg/explorer/authorized"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -72,6 +73,21 @@ func publicIngestError(err error) error {
 	if code == shoal.ErrorInvalidArgument && publicUploadValidationError(err) {
 		return err
 	}
+	// The authorized client refuses a reasonless narrowing only once the
+	// caller is authorized under every rule it replaces and the new one, so
+	// saying why discloses nothing the caller could not already read. Without
+	// this the refusal would be a bare "upload failed" and the operator's
+	// requirement could not be met knowingly.
+	if code == shoal.ErrorInvalidArgument &&
+		authorized.IsDeclassificationReasonRequired(err) {
+		log.Printf("shoal explorer upload rejected: %v", err)
+		public := shoal.NewError(
+			shoal.ErrorInvalidArgument, declassificationReasonRequiredMessage)
+		if explorer.IsIndeterminateCommit(err) {
+			return explorer.MarkIndeterminateCommit(public)
+		}
+		return public
+	}
 	switch code {
 	case shoal.ErrorInternal, shoal.ErrorUnavailable:
 		log.Printf("shoal explorer upload failed: %v", err)
@@ -99,7 +115,9 @@ func publicUploadValidationError(err error) bool {
 		"upload file must be valid UTF-8",
 		"upload file must be textual UTF-8",
 		"upload media type is not supported",
-		"upload filename is not allowed":
+		"upload filename is not allowed",
+		repeatedDeclassificationReasonMessage,
+		invalidDeclassificationReasonMessage:
 		return true
 	}
 	return strings.HasPrefix(
@@ -123,6 +141,7 @@ func decodeUploadRequest(
 	}
 	files := make([]UploadFile, 0, MaxUploadFiles)
 	var total uint64
+	reason, sawReason := "", false
 	for {
 		part, err := reader.NextPart()
 		if errors.Is(err, io.EOF) {
@@ -130,6 +149,23 @@ func decodeUploadRequest(
 		}
 		if err != nil {
 			return IngestRequest{}, uploadReadError(err)
+		}
+		// The reason is the one non-file part read; every other one is
+		// skipped by readUploadPart, as before.
+		isReason, err := isDeclassificationReasonPart(part)
+		if err != nil {
+			return IngestRequest{}, err
+		}
+		if isReason {
+			if sawReason {
+				return IngestRequest{}, shoal.NewError(shoal.ErrorInvalidArgument,
+					repeatedDeclassificationReasonMessage)
+			}
+			sawReason = true
+			if reason, err = readDeclassificationReasonPart(part); err != nil {
+				return IngestRequest{}, err
+			}
+			continue
 		}
 		file, ok, err := readUploadPart(part, &total)
 		if err != nil {
@@ -144,7 +180,35 @@ func decodeUploadRequest(
 		}
 		files = append(files, file)
 	}
-	return IngestRequest{Files: files}, nil
+	return IngestRequest{Files: files, DeclassificationReason: reason}, nil
+}
+
+// isDeclassificationReasonPart reports whether part is the reason field: a
+// form field of that name that is not a file. A file part keeps file
+// semantics whatever its field name.
+func isDeclassificationReasonPart(part *multipart.Part) (bool, error) {
+	_, isFile, err := uploadPartFilename(part)
+	if err != nil {
+		return false, err
+	}
+	return !isFile && part.FormName() == DeclassificationReasonField, nil
+}
+
+// readDeclassificationReasonPart reads the reason field's value, bounded so
+// an oversized one is refused without being buffered. Its content is checked
+// by the service (declassificationReasonContext), not here.
+func readDeclassificationReasonPart(part *multipart.Part) (string, error) {
+	defer part.Close()
+	value, err := io.ReadAll(io.LimitReader(
+		part, int64(authorized.MaxDeclassificationReasonBytes)+1))
+	if err != nil {
+		return "", uploadReadError(err)
+	}
+	if len(value) > authorized.MaxDeclassificationReasonBytes {
+		return "", shoal.NewError(
+			shoal.ErrorInvalidArgument, invalidDeclassificationReasonMessage)
+	}
+	return string(value), nil
 }
 
 func readUploadPart(

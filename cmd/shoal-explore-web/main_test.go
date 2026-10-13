@@ -362,6 +362,7 @@ func TestAuthorizedClientUsesRuntimeInteractionDependencies(t *testing.T) {
 		},
 		time.Now,
 		authorized.MosaicBudget{},
+		false,
 	)
 	if err != nil {
 		t.Fatal(err)

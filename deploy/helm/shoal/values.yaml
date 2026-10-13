@@ -279,6 +279,14 @@ explorer:
     mosaic:
       maxDomains: 0
       window: 1h
+  # Declassification audit (#630, #664). Every relabel that removes visibility
+  # labels from a document is audited in the policy catalog whatever this
+  # says; see docs/shoal-explore-web-deploy.md.
+  declassification:
+    # -require-declassification-reason: refuse such a relabel unless the
+    # upload carries a declassification_reason (the upload form field, or the
+    # MCP ingest argument). Off by default.
+    requireReason: false
   # Grounded chat provider. Required for the built-in reasoning executor.
   chat:
     provider: ""   # ollama or openai-compatible

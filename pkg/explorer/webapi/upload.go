@@ -29,6 +29,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer"
+	"github.com/phrocker/shoal-oss/pkg/explorer/authorized"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -49,6 +50,10 @@ func (s *EmbeddedService) Ingest(
 	ctx context.Context, request IngestRequest,
 ) (IngestResponse, error) {
 	prepared, err := prepareUploads(request)
+	if err != nil {
+		return IngestResponse{}, err
+	}
+	ctx, err = declassificationReasonContext(ctx, request.DeclassificationReason)
 	if err != nil {
 		return IngestResponse{}, err
 	}
@@ -75,6 +80,33 @@ func (s *EmbeddedService) Ingest(
 		return IngestResponse{}, err
 	}
 	return IngestResponse{Snapshot: fromExplorerSnapshot(snapshot), Files: results}, nil
+}
+
+const (
+	invalidDeclassificationReasonMessage  = "declassification reason is invalid"
+	repeatedDeclassificationReasonMessage = "upload declassification reason is repeated"
+	// declassificationReasonRequiredMessage is the public form of
+	// authorized.IsDeclassificationReasonRequired.
+	declassificationReasonRequiredMessage = "this upload removes visibility " +
+		"labels from a document and the workspace requires a " +
+		DeclassificationReasonField
+)
+
+// declassificationReasonContext attaches request's reason to ctx. An empty
+// reason leaves ctx as it is. An invalid one is refused with one stable
+// public error, whichever rule it breaks.
+func declassificationReasonContext(
+	ctx context.Context, reason string,
+) (context.Context, error) {
+	if reason == "" {
+		return ctx, nil
+	}
+	bound, err := authorized.WithDeclassificationReason(ctx, reason)
+	if err != nil {
+		return nil, shoal.NewError(
+			shoal.ErrorInvalidArgument, invalidDeclassificationReasonMessage)
+	}
+	return bound, nil
 }
 
 func prepareUploads(request IngestRequest) ([]preparedUpload, error) {
