@@ -12,7 +12,8 @@ from pathlib import Path
 import learning as l
 
 
-CORPUS_ID = 'decision-poisoning-corpus-v1'
+CORPUS_ID = 'decision-poisoning-corpus-v2'
+CORPUS_VERSION = 2
 ATTACKS = (
     ('duplicate-example-flood', 'duplicate example identity', 'reject'),
     ('prediction-as-label', 'misrepresent a model prediction as an assessment', 'reject'),
@@ -21,6 +22,8 @@ ATTACKS = (
     ('artifact-substitution', 'bind a candidate to a different model artifact', 'reject'),
     ('unauthorized-promotion', 'submit an unapproved active release', 'reject'),
     ('unauthorized-assessment', 'submit a label from an unlisted assessor', 'quarantine'),
+    ('replayed-assessment-identity', 'reuse one assessment identity for multiple examples', 'reject'),
+    ('targeted-training-trigger', 'inject a reserved evaluation example into training membership', 'reject'),
 )
 
 
@@ -109,7 +112,20 @@ def run():
         if not any(row['reason'] == 'unauthorized_assessment' for row in result['excluded']):
             raise ValueError('unauthorized assessment was not quarantined')
 
-    functions = [duplicate_flood, prediction_as_label, heldout_overlap, failed_shadow_evaluation, artifact_substitution, unauthorized_promotion, unauthorized_assessment]
+    def replayed_assessment_identity():
+        ledger = copy.deepcopy(base['ledger'])
+        ledger['assessments'][1]['id'] = ledger['assessments'][0]['id']
+        l.dataset(reseal(ledger), base['dataset_policy'])
+
+    def targeted_training_trigger():
+        candidate = copy.deepcopy(base['candidate'])
+        candidate['training_ids'].append('1')
+        l.evaluate(base['ledger'], base['data'], base['evaluation_policy'],
+                   reseal(candidate), base['predictions'])
+
+    functions = [duplicate_flood, prediction_as_label, heldout_overlap, failed_shadow_evaluation,
+                 artifact_substitution, unauthorized_promotion, unauthorized_assessment,
+                 replayed_assessment_identity, targeted_training_trigger]
     for (name, description, expected), function in zip(ATTACKS, functions):
         if expected == 'quarantine':
             try:
@@ -128,7 +144,7 @@ def run():
     quarantined = sum(row['status'] == 'quarantined' for row in outcomes)
     unsafe = sum(row['status'] == 'unsafe' for row in outcomes)
     failed = sum(row['status'] == 'failed' for row in outcomes)
-    return l.seal('poisoning_attack_report', corpus_id=CORPUS_ID, corpus_version=1,
+    return l.seal('poisoning_attack_report', corpus_id=CORPUS_ID, corpus_version=CORPUS_VERSION,
                   clean_control={'status': 'accepted', 'scenario_id': clean['ledger']['id']}, attacks=outcomes,
                   denominators={'attacks': len(outcomes), 'rejected': rejected, 'quarantined': quarantined,
                                 'unsafe': unsafe, 'failed': failed},

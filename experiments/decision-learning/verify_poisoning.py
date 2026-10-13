@@ -17,7 +17,7 @@ def verify(report):
     if not isinstance(report, dict):
         raise ValueError("report must be an object")
     l.verify(report, "poisoning_attack_report")
-    if report.get("corpus_id") != poisoning.CORPUS_ID or report.get("corpus_version") != 1:
+    if report.get("corpus_id") != poisoning.CORPUS_ID or report.get("corpus_version") != poisoning.CORPUS_VERSION:
         raise ValueError("unsupported corpus identity")
     attacks = report.get("attacks")
     if not isinstance(attacks, list) or len(attacks) != len(poisoning.ATTACKS):

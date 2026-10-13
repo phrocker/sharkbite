@@ -30,10 +30,12 @@ must enforce those boundaries around the records.
 
 `poisoning.py` runs a versioned deterministic attack corpus covering duplicate
 flooding, prediction-as-label injection, held-out overlap, failed evaluation,
-artifact substitution, unauthorized promotion, and an unlisted assessor. It
-reports rejection and quarantine denominators with a clean control. The report is structural attack
-evidence only; it does not estimate model quality, ground truth, influence, or
-machine unlearning.
+artifact substitution, unauthorized promotion, an unlisted assessor, replayed
+assessment identity, and a targeted training-membership trigger. It reports
+rejection and quarantine denominators with a clean control. The retained v2
+receipt is [evidence/poisoning-v2.json](evidence/poisoning-v2.json). The report
+is structural attack evidence only; it does not estimate model quality, ground
+truth, influence, or machine unlearning.
 
 `verify_poisoning.py` verifies a saved receipt without rerunning the attacks. It
 checks the pinned corpus/attack identities, fail-closed statuses, denominators,

@@ -1,0 +1,75 @@
+{
+  "attacks": [
+    {
+      "description": "duplicate example identity",
+      "expected": "reject",
+      "name": "duplicate-example-flood",
+      "status": "rejected"
+    },
+    {
+      "description": "misrepresent a model prediction as an assessment",
+      "expected": "reject",
+      "name": "prediction-as-label",
+      "status": "rejected"
+    },
+    {
+      "description": "copy held-out content into training evidence",
+      "expected": "quarantine",
+      "name": "heldout-content-overlap",
+      "status": "quarantined"
+    },
+    {
+      "description": "promote a candidate whose reserved evaluation fails",
+      "expected": "reject",
+      "name": "failed-shadow-evaluation",
+      "status": "rejected"
+    },
+    {
+      "description": "bind a candidate to a different model artifact",
+      "expected": "reject",
+      "name": "artifact-substitution",
+      "status": "rejected"
+    },
+    {
+      "description": "submit an unapproved active release",
+      "expected": "reject",
+      "name": "unauthorized-promotion",
+      "status": "rejected"
+    },
+    {
+      "description": "submit a label from an unlisted assessor",
+      "expected": "quarantine",
+      "name": "unauthorized-assessment",
+      "status": "quarantined"
+    },
+    {
+      "description": "reuse one assessment identity for multiple examples",
+      "expected": "reject",
+      "name": "replayed-assessment-identity",
+      "status": "rejected"
+    },
+    {
+      "description": "inject a reserved evaluation example into training membership",
+      "expected": "reject",
+      "name": "targeted-training-trigger",
+      "status": "rejected"
+    }
+  ],
+  "clean_control": {
+    "scenario_id": "161ba881dbe22044a38d81cc1b0c8dde7cba8a9e589c30ed8bcc135883da735e",
+    "status": "accepted"
+  },
+  "corpus_id": "decision-poisoning-corpus-v2",
+  "corpus_version": 2,
+  "denominators": {
+    "attacks": 9,
+    "failed": 0,
+    "quarantined": 2,
+    "rejected": 7,
+    "unsafe": 0
+  },
+  "id": "ad8212ed89d54f554482733cbde02df4f4f09b42e526692b1b0430e9ccaae483",
+  "kind": "poisoning_attack_report",
+  "limitation": "Structural rejection/quarantine only; no model-quality, truth, influence, or unlearning claim.",
+  "schema": 1
+}
