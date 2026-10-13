@@ -202,9 +202,10 @@ func iterateLeaves(
 				return fmt.Errorf("rfile/index: repeated leaf block region %+v", region)
 			}
 			state.visited[key] = struct{}{}
-			if state.lastLeaf != nil && entry.Key.Compare(state.lastLeaf) <= 0 {
+			// Equal adjacent leaf keys are legal; see validateBlockEntries.
+			if state.lastLeaf != nil && entry.Key.Compare(state.lastLeaf) < 0 {
 				return fmt.Errorf(
-					"rfile/index: leaf key %v is not strictly after previous leaf key %v",
+					"rfile/index: leaf key %v sorts before previous leaf key %v",
 					entry.Key, state.lastLeaf,
 				)
 			}
@@ -284,9 +285,12 @@ func readChildBlock(
 	if first == nil {
 		return nil, errors.New("child index block has no entries")
 	}
-	if lowerBound != nil && first.Compare(lowerBound) <= 0 {
+	// The child's first key may equal the previous sibling's final key
+	// when a run of equal leaf keys straddles two index blocks; see
+	// validateBlockEntries. It may never sort before it.
+	if lowerBound != nil && first.Compare(lowerBound) < 0 {
 		return nil, fmt.Errorf(
-			"child first key %v is not strictly after parent lower bound %v",
+			"child first key %v sorts before parent lower bound %v",
 			first, lowerBound,
 		)
 	}
@@ -300,6 +304,17 @@ func readChildBlock(
 }
 
 // ValidateBlock rejects index blocks that are unsafe for binary search.
+//
+// Entry keys must be non-decreasing. Equal adjacent keys are accepted:
+// writers before #690 cut data blocks inside a run of identical cell keys,
+// so consecutive blocks could end on the same key. That index is still
+// sound, because an entry's key is the last key of its block: every block
+// after the first of an equal run holds only that key, a seek lands on the
+// first entry whose key is >= the target, and the reader then scans
+// forward across block boundaries. The current writer emits equal keys
+// only when a single run of identical keys outgrows rfile.MaxRunBlockSize
+// and has to be cut. A key that sorts before its predecessor is always
+// rejected.
 func ValidateBlock(block *IndexBlock) error {
 	if err := validateRootLevel(block); err != nil {
 		return err
@@ -325,9 +340,9 @@ func validateBlockEntries(block *IndexBlock) (*wire.Key, *wire.Key, error) {
 		if entry.Key == nil {
 			return nil, nil, fmt.Errorf("rfile/index: entry %d has nil key", i)
 		}
-		if previous != nil && entry.Key.Compare(previous) <= 0 {
+		if previous != nil && entry.Key.Compare(previous) < 0 {
 			return nil, nil, fmt.Errorf(
-				"rfile/index: entry %d key %v is not strictly after entry %d key %v",
+				"rfile/index: entry %d key %v sorts before entry %d key %v",
 				i, entry.Key, i-1, previous,
 			)
 		}

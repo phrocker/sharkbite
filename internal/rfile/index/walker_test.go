@@ -433,7 +433,7 @@ func TestIterateLeaves_RejectsUnorderedEntries(t *testing.T) {
 		callbacks++
 		return nil
 	})
-	if err == nil || !strings.Contains(err.Error(), "not strictly after") {
+	if err == nil || !strings.Contains(err.Error(), "sorts before") {
 		t.Fatalf("IterateLeaves error = %v, want key-order rejection", err)
 	}
 	if callbacks != 0 {
@@ -503,7 +503,7 @@ func TestIterateLeaves_RejectsOverlappingChildKeyRanges(t *testing.T) {
 	})
 	lr := &fakeLevelReader{blocks: map[int64]*IndexBlock{10: first, 20: second}}
 	err := NewWalker(root, lr).IterateLeaves(func(*IndexEntry) error { return nil })
-	if err == nil || !strings.Contains(err.Error(), "not strictly after parent lower bound") {
+	if err == nil || !strings.Contains(err.Error(), "sorts before parent lower bound") {
 		t.Fatalf("IterateLeaves error = %v, want overlapping-range rejection", err)
 	}
 }

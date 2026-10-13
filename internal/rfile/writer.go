@@ -30,6 +30,13 @@ const DefaultBlockSize = 100 * 1024
 // data block and a parent-level entry pointing at it is created.
 const DefaultIndexBlockSize = 128 * 1024
 
+// MaxRunBlockSize is the raw-byte size at which a data block is cut even
+// inside a run of identical keys. Below it, the writer never cuts between
+// equal keys (see Writer). It sits well under bcfile.MaxRawBlockSize so a
+// block that reaches it, plus the cell that crosses it, stays readable.
+// A BlockSize above it raises the cap to BlockSize.
+const MaxRunBlockSize = 64 * 1024 * 1024
+
 // Writer produces an RFile by streaming bytes to an io.Writer. Use:
 //
 //	w := rfile.NewWriter(out, rfile.WriterOptions{Codec: "gz"})
@@ -39,8 +46,24 @@ const DefaultIndexBlockSize = 128 * 1024
 // Limitations:
 //   - No sample groups or vector index.
 //   - Cell ordering: caller MUST Append cells in non-decreasing Key
-//     order. The writer doesn't sort or check; out-of-order keys would
-//     produce a malformed RFile.
+//     order within a locality group. The writer doesn't sort; Append
+//     rejects a key that sorts before the previous one with
+//     ErrKeyOutOfOrder. Equal keys are allowed (the embedded memtable
+//     keeps every write to a coordinate, and PutLatest writes all share
+//     timestamp math.MaxInt64).
+//
+// Block boundaries: every index entry's key is the last key of its data
+// block. Once a block reaches BlockSize it is cut just before the next key
+// that differs from its last key, so a run of identical keys normally
+// stays in one block and index keys are strictly increasing. The one
+// exception is a run so long that its block reaches MaxRunBlockSize: the
+// block is then cut inside the run, and consecutive index entries carry
+// the same key. Without that cap a perpetually overwritten cell would grow
+// one block past bcfile.MaxRawBlockSize and every later flush or
+// compaction would fail. Equal adjacent index keys are readable by this
+// reader (it accepts them, never decreasing ones) but not by readers from
+// before #690 was fixed, which reject them; files written before the fix
+// may carry them too, from shorter runs.
 //
 // Multi-level index: the writer mirrors Java's
 // MultiLevelIndex.Writer.flush(int level, Key lastKey, boolean last).
@@ -61,6 +84,15 @@ type Writer struct {
 	blockPrev    *Key // for relkey prefix compression
 	blockLast    *Key // becomes IndexEntry.Key on flush
 	blockEntries int32
+
+	// lastKey is the most recently appended key in the current locality
+	// group. Unlike blockLast it survives block flushes, so Append can
+	// enforce key order across block boundaries.
+	lastKey *Key
+
+	// runBlockCap is the block size at which a run of identical keys is
+	// cut anyway: max(MaxRunBlockSize, BlockSize). Tests lower it.
+	runBlockCap int
 
 	// Multi-level index state.
 	levels     []*indexLevel
@@ -164,7 +196,12 @@ func NewWriter(out io.Writer, opts WriterOptions) (*Writer, error) {
 	if !opts.Compressor.Has(opts.Codec) {
 		return nil, fmt.Errorf("rfile: codec %q not registered in compressor", opts.Codec)
 	}
+	runBlockCap := MaxRunBlockSize
+	if opts.BlockSize > runBlockCap {
+		runBlockCap = opts.BlockSize
+	}
 	return &Writer{
+		runBlockCap:    runBlockCap,
 		out:            bcfile.NewWriter(out, opts.Codec),
 		comp:           opts.Compressor,
 		opts:           opts,
@@ -185,19 +222,43 @@ func newAdjBuilder(edgeCF string) *adjacency.Builder {
 	return adjacency.NewBuilder([]byte(edgeCF))
 }
 
+// ErrKeyOutOfOrder is returned by Append when a key sorts before the
+// previously appended key of the same locality group.
+var ErrKeyOutOfOrder = errors.New("rfile: key appended out of order")
+
 // Append writes one cell. key and value must be in non-decreasing Key
-// order across calls (caller's responsibility — the writer does NOT
-// sort). value may be nil (writes a zero-length value).
+// order across calls (the writer does NOT sort, and rejects a decreasing
+// key with ErrKeyOutOfOrder). value may be nil (writes a zero-length
+// value).
 //
-// After writing, if the current block's accumulated raw bytes reach
-// the block-size threshold, the block is flushed: compressed, written
-// via bcfile.Writer, and recorded in the in-memory RFile-level index.
+// When the current block has reached the block-size threshold and key
+// differs from the block's last key, the block is flushed first:
+// compressed, written via bcfile.Writer, and recorded in the in-memory
+// RFile-level index. A key equal to the block's last key joins the
+// current block, so no two blocks end on the same key, unless the block
+// has reached MaxRunBlockSize, in which case it is flushed regardless.
 func (w *Writer) Append(key *Key, value []byte) error {
 	if w.closed {
 		return errors.New("rfile: writer closed")
 	}
 	if key == nil {
 		return errors.New("rfile: nil key")
+	}
+	if w.lastKey != nil {
+		c := key.Compare(w.lastKey)
+		if c < 0 {
+			return fmt.Errorf("%w: %v sorts before %v", ErrKeyOutOfOrder, key, w.lastKey)
+		}
+		// Cut between distinct keys. Cutting inside a run of equal keys
+		// gives two blocks the same last key, i.e. two index entries with
+		// the same key (#690), which readers before the fix reject; do it
+		// only when the run would otherwise grow the block without bound.
+		size := w.blockBuf.Len()
+		if (c > 0 && size >= w.opts.BlockSize) || size >= w.runBlockCap {
+			if err := w.flushDataBlock(); err != nil {
+				return err
+			}
+		}
 	}
 	// On a fresh block, blockPrev=nil so relkey writes the cell uncompressed.
 	if err := relkey.EncodeKey(&w.blockBuf, w.blockPrev, key, value); err != nil {
@@ -209,6 +270,7 @@ func (w *Writer) Append(key *Key, value []byte) error {
 	}
 	w.blockPrev = keyClone
 	w.blockLast = keyClone
+	w.lastKey = keyClone
 	w.blockEntries++
 	w.cfCounts[string(key.ColumnFamily)]++
 
@@ -224,12 +286,8 @@ func (w *Writer) Append(key *Key, value []byte) error {
 	if w.adjBuilder != nil && bytes.Equal(key.ColumnFamily, w.adjBuilder.EdgeCF()) {
 		w.adjBuilder.Add(key.Row, key.ColumnQualifier, value, key.ColumnVisibility, key.Timestamp, key.Deleted)
 	}
-
-	if w.blockBuf.Len() >= w.opts.BlockSize {
-		if err := w.flushDataBlock(); err != nil {
-			return err
-		}
-	}
+	// A full block is flushed by the next Append with a distinct key, or
+	// by Close / AddLocalityGroup.
 	return nil
 }
 
@@ -423,6 +481,7 @@ func (w *Writer) finalizeCurrentLocalityGroup() error {
 	w.blockBuf.Reset()
 	w.blockPrev = nil
 	w.blockLast = nil
+	w.lastKey = nil
 	w.blockEntries = 0
 	w.levels = nil
 	w.totalAdded = 0

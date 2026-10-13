@@ -739,7 +739,7 @@ func TestValidateReadableIndexRejectsUnorderedRoot(t *testing.T) {
 		NumTotalEntries: 2,
 		RootIndex:       root,
 	}}})
-	if err == nil || !strings.Contains(err.Error(), "not strictly after") {
+	if err == nil || !strings.Contains(err.Error(), "sorts before") {
 		t.Fatalf("validateReadableIndex() = %v, want key-order rejection", err)
 	}
 }
