@@ -189,6 +189,7 @@ func newAdmissionHarness(t *testing.T) *approvalHarness {
 // openService composes for the shipped binary. No double stands in for the
 // dispatch store, the recorder, the restrictor or the publisher.
 func TestSDKAdmissionAgainstTheRealComposition(t *testing.T) {
+	t.Parallel()
 	h := newAdmissionHarness(t)
 	plane := newSDKAdmission(t, h, admissionCaller)
 	admission := plane.client.Admission()

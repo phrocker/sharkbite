@@ -25,6 +25,7 @@ import (
 // it must show is that its requests reach the gate rather than stopping at
 // the correlation check, and are refused there with nothing disclosed.
 func TestTheShippedAuthenticatorReachesTheAttestationGate(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	development, err := newDevelopmentAuthenticator(h.now)
 	if err != nil {

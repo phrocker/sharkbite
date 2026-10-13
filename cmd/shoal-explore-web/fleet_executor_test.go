@@ -93,6 +93,7 @@ func askDecision(
 	return decision
 }
 func TestBindRejectsUnallowlistedExecutorReference(t *testing.T) {
+	t.Parallel()
 	executor, err := webapi.NewAskExecutor(webapi.AskExecutorConfig{
 		Provider: bindStubProvider{},
 	})
@@ -124,6 +125,7 @@ func TestBindRejectsUnallowlistedExecutorReference(t *testing.T) {
 // fleet.Executor is an empty interface, so a plain nil check would admit one,
 // and it would panic mid-dispatch after the effect-admission record is written.
 func TestBindRejectsTypedNilExecutor(t *testing.T) {
+	t.Parallel()
 	registry := configuredFleetExecutors{"allowed": configuredFleetExecutor{
 		reference: "allowed",
 	}}
@@ -146,6 +148,7 @@ func TestBindRejectsTypedNilExecutor(t *testing.T) {
 // EvidenceSnapshotID and ExecutionFingerprint and authorizes every evidence
 // node.
 func TestAskExecutorCommitsEvidenceAgainstRealCorpus(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	now := time.Now().UTC().Add(time.Minute)
 	authority := auth.NewAuthority()

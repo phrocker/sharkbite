@@ -182,6 +182,7 @@ func requireRouteFiles(t *testing.T, label string, got routeOutcome, want ...web
 // batch where every file is refused stays a definite non-2xx, so a client
 // that reads only the status never mistakes any of these for success.
 func TestUploadRouteReportsEachFileOfABranchSwitch(t *testing.T) {
+	t.Parallel()
 	address, stop := startUploadWorkspace(t)
 	defer stop()
 

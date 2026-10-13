@@ -102,6 +102,7 @@ func assertCorrelation(t *testing.T, got auditedSession, want shoal.ID) {
 // join was each hop's own request ID, which names one request and threads
 // nothing.
 func TestSuppliedCorrelationJoinsApprovalToDispatchAudit(t *testing.T) {
+	t.Parallel()
 	const trace = "gateway-trace-532"
 	w := newOIDCApprovalWorld(t, nil, nil)
 	alice := call{token: w.fleetToken("alice", nil), correlation: trace}
@@ -151,6 +152,7 @@ func TestSuppliedCorrelationJoinsApprovalToDispatchAudit(t *testing.T) {
 // correlation. That generated value is what the session carries — the same
 // one the durable approval and action records hold for the same decision.
 func TestGeneratedCorrelationAppearsOnTheAudit(t *testing.T) {
+	t.Parallel()
 	w := newOIDCApprovalWorld(t, nil, nil)
 	alice := call{token: w.fleetToken("alice", nil)}
 	bob := call{token: w.approverToken("bob")}
@@ -206,6 +208,7 @@ func TestGeneratedCorrelationAppearsOnTheAudit(t *testing.T) {
 // header through the same route end to end — hold, decide, materialize — so
 // the tightening has not closed the ordinary path.
 func TestNonUTF8CorrelationIsRefusedAtTheEdge(t *testing.T) {
+	t.Parallel()
 	const (
 		invalid = "bad\xffbyte"
 		trace   = "upstream-control-532"

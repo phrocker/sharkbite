@@ -24,6 +24,7 @@ import (
 // it.
 
 func TestNoMintedListGrantsApprovalSweep(t *testing.T) {
+	t.Parallel()
 	lists := map[string][]auth.Operation{
 		"oidcFleetOperations":       oidcFleetOperations,
 		"oidcContributorOperations": oidcContributorOperations,
@@ -61,6 +62,7 @@ func TestNoMintedListGrantsApprovalSweep(t *testing.T) {
 // expression in this command's non-test code that denotes approval_sweep is
 // the system observer's mint, in approval_sweep.go.
 func TestApprovalSweepIsDenotedOnlyByTheSweepMinter(t *testing.T) {
+	t.Parallel()
 	scanner := newExecuteGrantScanner(t)
 	files := scanner.parseDir(t, ".")
 	sites := operationSites(t, scanner, files, "OperationApprovalSweep", auth.OperationApprovalSweep)
@@ -78,6 +80,7 @@ func TestApprovalSweepIsDenotedOnlyByTheSweepMinter(t *testing.T) {
 // mapping configured and every claim naming the operation, holds no
 // approval_sweep, and neither does the -dev-auth principal.
 func TestNoShippedAuthenticatorMintsApprovalSweep(t *testing.T) {
+	t.Parallel()
 	f := newExecutorFixture(t)
 	value := string(auth.OperationApprovalSweep)
 	smuggle := func(claims jwt.MapClaims) jwt.MapClaims {

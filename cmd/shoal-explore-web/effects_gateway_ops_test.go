@@ -219,6 +219,7 @@ func (g *gatewayOps) complete(
 // claim's version, which the extension has since moved, still binds on the
 // fence.
 func TestTheGatewayExtendsToTheClampedDeadlineAndCompletesOnTheFence(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	deadline := g.h.now().Add(3 * time.Minute)
@@ -304,6 +305,7 @@ func TestTheGatewayExtendsToTheClampedDeadlineAndCompletesOnTheFence(t *testing.
 // extension is refused as fence_lost (the claim runs to its lease end), and
 // the completion, judged against the ref the claim was taken under, lands.
 func TestTheGatewayCannotExtendAfterARebindButStillCompletes(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	g.enqueueUntil("stripe-rebind", "alice-trace-rebind", g.h.now().Add(time.Hour))
@@ -363,6 +365,7 @@ func TestTheGatewayCannotExtendAfterARebindButStillCompletes(t *testing.T) {
 // would refuse is refused before it is sent; and a completion after the
 // reports moved the version still binds on the fence.
 func TestTheGatewayReportsAmbiguityAndNeverMistakesARefusalForSuccess(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	g.enqueueUntil("stripe-ambiguity", "alice-trace-ambiguity", g.h.now().Add(time.Hour))
@@ -442,6 +445,7 @@ func TestTheGatewayReportsAmbiguityAndNeverMistakesARefusalForSuccess(t *testing
 // each pull sends a correlation the gateway minted for it; a malformed
 // correlation is refused before any request leaves.
 func TestTheGatewayThreadsTheRecordsCorrelation(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	const trace = "alice-trace-correlation"

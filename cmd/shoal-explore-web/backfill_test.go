@@ -52,6 +52,7 @@ func (otherAuthenticator) Authenticate(*http.Request) (auth.Decision, error) {
 // development corpus backfill may run: the development authenticator, which
 // only -dev-auth produces, and a loopback listener.
 func TestDevelopmentBackfillGate(t *testing.T) {
+	t.Parallel()
 	authority := auth.NewAuthority()
 	development, err := selectAuthenticator(true, "", oidcConfig{}, "127.0.0.1:8080", time.Now)
 	if err != nil {
@@ -174,6 +175,7 @@ func TestDevelopmentBackfillBindsAndFailsClosed(t *testing.T) {
 // 0 documents: the corpus was silently hidden. After the guard the ungated half
 // fails openService with a diagnostic, which is the behaviour asserted here.
 func TestBackfillGrantsPreExistingCorpusOnlyWhenGated(t *testing.T) {
+	t.Parallel()
 	t.Run("backfilled", func(t *testing.T) {
 		data := preExistingCorpus(t)
 		ctx := context.Background()
@@ -259,6 +261,7 @@ func TestBackfillGrantsPreExistingCorpusOnlyWhenGated(t *testing.T) {
 // use independent authorities, so this is a genuine restart rather than shared
 // in-memory state.
 func TestDurableCorpusServedAfterRestartWithoutBackfill(t *testing.T) {
+	t.Parallel()
 	data := t.TempDir()
 	ctx := context.Background()
 
@@ -411,6 +414,7 @@ func ingestOneThroughService(t *testing.T, config serviceConfig) {
 // diagnostic naming the corpus, the document count, and the empty policy
 // directory, so the lost volume is diagnosed instead of hidden.
 func TestOpenServiceRefusesSplitBrainStateDirectory(t *testing.T) {
+	t.Parallel()
 	data := t.TempDir()
 	ingestOneThroughService(t, serviceConfig{backend: "embedded", data: data})
 
@@ -446,6 +450,7 @@ func TestOpenServiceRefusesSplitBrainStateDirectory(t *testing.T) {
 // under the state root and served after a restart with the backfill disabled;
 // the split-brain guard does not fire because both directories share the mount.
 func TestStateDirLayoutSharesOneMountPoint(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	corpus, policy := resolveWorkspacePaths(root, ".shoal/explorer", "")
 	if corpus != filepath.Join(root, "corpus") {
@@ -497,6 +502,7 @@ func TestStateDirLayoutSharesOneMountPoint(t *testing.T) {
 // nests corpus/ and policy/ under one mount, -data keeps the legacy sibling
 // layout, and -policy-dir overrides the policy location in either case.
 func TestResolveWorkspacePathsPrecedence(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		name       string
 		stateDir   string
@@ -586,6 +592,7 @@ func TestRunBackfillsPreExistingCorpusOverHTTP(t *testing.T) {
 // finish authorizing. The backfill is bound by a different authority than the
 // client resolves with, so the registration attempt fails closed.
 func TestOpenServiceRefusesWhenBackfillFails(t *testing.T) {
+	t.Parallel()
 	data := preExistingCorpus(t)
 	serving := auth.NewAuthority()
 	foreign := auth.NewAuthority()
@@ -656,6 +663,7 @@ type mintSite struct {
 //
 // TEMPORARY (issue #284): delete with the backfill.
 func TestBackfillCapabilityHasOneMintSite(t *testing.T) {
+	t.Parallel()
 	const (
 		capabilityPackage = "github.com/phrocker/shoal-oss/internal/devbackfill"
 		constructor       = "NewCapability"

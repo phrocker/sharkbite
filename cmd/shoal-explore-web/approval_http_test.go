@@ -30,6 +30,7 @@ import (
 // The approval route itself answers 202 for a held request, and Path B answers
 // a denial.
 func TestApprovalRequiredOverHTTP(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	fleetHandler, err := webapi.NewFleetHandler(
 		h.opened.fleetRegistry, h.opened.fleetDispatch)

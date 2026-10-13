@@ -140,6 +140,7 @@ func pinnedScheme(t *testing.T, edit func(*oidcConfig)) (*oidcAuthenticator, oid
 // keep their stamps and namespaces. A non-default claim's digest moves, and
 // the one it had is recognised.
 func TestSubjectClaimDefaultSchemeIsUnchanged(t *testing.T) {
+	t.Parallel()
 	_, standard := pinnedScheme(t, nil)
 	if got := hex.EncodeToString(standard.digest[:]); got != preDefaultDigest {
 		t.Fatalf("the default scheme digest moved: %s, want %s", got, preDefaultDigest)
@@ -196,6 +197,7 @@ func TestSubjectClaimDefaultSchemeIsUnchanged(t *testing.T) {
 // principal oidc:<iss>#<tag>#<value>, where the tag is 16 hex digits of a
 // digest of X, and a value containing '#' stays one value in X's namespace.
 func TestSubjectClaimMintsItsOwnNamespace(t *testing.T) {
+	t.Parallel()
 	issuer := newFakeOIDCIssuer(t)
 	now := time.Now()
 	config := issuer.testConfig(fixedClock(now))
@@ -235,6 +237,7 @@ func TestSubjectClaimMintsItsOwnNamespace(t *testing.T) {
 // gives <value>. And the approval rule reads the namespaces apart: under
 // sub, a claim-tagged identity is foreign; under a claim, a sub identity is.
 func TestSubjectClaimPrefixIsUnambiguous(t *testing.T) {
+	t.Parallel()
 	issuer := newFakeOIDCIssuer(t)
 	now := time.Now()
 	config := approverTestConfig(t, issuer, fixedClock(now),
@@ -292,6 +295,7 @@ func TestSubjectClaimPrefixIsUnambiguous(t *testing.T) {
 // refusal for each claim is logged, naming the claim and never the value,
 // and then at most once per claim per interval — on both branches.
 func TestHashRefusalIsLoggedByClaim(t *testing.T) {
+	t.Parallel()
 	issuer := newFakeOIDCIssuer(t)
 	now := time.Now()
 	config := approverTestConfig(t, issuer, fixedClock(now),
@@ -362,6 +366,7 @@ func TestHashRefusalIsLoggedByClaim(t *testing.T) {
 // refusal names oidc:<iss># and not Bob. A request made under sub is
 // stranded. Control: an agent registered under the oid claim.
 func TestSubjectClaimSwitchFromSubRefusesSelfApproval(t *testing.T) {
+	t.Parallel()
 	w := newOIDCApprovalWorld(t, nil, oid("oid-owner"))
 	h := w.h
 	alice := call{token: w.fleetToken("alice", oid("oid-alice"))}
@@ -392,6 +397,7 @@ func TestSubjectClaimSwitchFromSubRefusesSelfApproval(t *testing.T) {
 // -oidc-subject-claim oid to uid. Each claim has a namespace of its own, so
 // Bob's oid registration is foreign under uid.
 func TestSubjectClaimSwitchBetweenClaimsRefusesSelfApproval(t *testing.T) {
+	t.Parallel()
 	both := func(subject string) jwt.MapClaims {
 		return jwt.MapClaims{"oid": "oid-" + subject, "uid": "uid-" + subject}
 	}
@@ -431,6 +437,7 @@ func TestSubjectClaimSwitchBetweenClaimsRefusesSelfApproval(t *testing.T) {
 // through the sub replica's real approver mapping. The claim's namespace
 // lies inside oidc:<iss># as a string, so only the flat rule keeps it out.
 func TestSubjectClaimMixedRolloutFailsClosed(t *testing.T) {
+	t.Parallel()
 	w := newOIDCApprovalWorld(t, nil, oid("oid-owner"))
 	h := w.h
 	newReplica := w.subjectClaimReplica("oid")
@@ -453,6 +460,7 @@ func TestSubjectClaimMixedRolloutFailsClosed(t *testing.T) {
 // namespace and naming the digest to migrate from; with the flag it starts,
 // and the identities the previous release minted are refused in approvals.
 func TestSubjectClaimUpgradeRefusesToStartWithoutMigrate(t *testing.T) {
+	t.Parallel()
 	w := newSubjectClaimWorld(t, "oid", oid("oid-owner"))
 	h := w.h
 	current := w.authn.Load().identityScheme()

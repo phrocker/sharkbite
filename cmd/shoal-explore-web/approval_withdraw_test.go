@@ -44,6 +44,7 @@ func (h *approvalHarness) withdraw(
 // request is final across replay and restart. It publishes one event, by the
 // requester, and never becomes work.
 func TestApprovalWithdrawalIsTheRequestersAndFinal(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("withdraw-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -155,6 +156,7 @@ func TestApprovalWithdrawalIsTheRequestersAndFinal(t *testing.T) {
 // request still materializes. A request whose window has closed is expired,
 // as a decision would find it.
 func TestApprovalWithdrawalAfterTheWindowOrADecision(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	approved := h.held("withdraw-approved")
 	refused := h.held("withdraw-refused")
@@ -212,6 +214,7 @@ func TestApprovalWithdrawalAfterTheWindowOrADecision(t *testing.T) {
 // its write wins, and the decision is refused as withdrawn. Never both, and
 // one event for the winner only.
 func TestApprovalWithdrawalAndADecisionRaceAtomically(t *testing.T) {
+	t.Parallel()
 	for _, first := range []fleet.ApprovalState{
 		fleet.ApprovalApproved, fleet.ApprovalWithdrawn,
 	} {
@@ -277,6 +280,7 @@ func TestApprovalWithdrawalAndADecisionRaceAtomically(t *testing.T) {
 // unmarked 503 every approval transition uses, and the same withdrawal sent
 // again publishes it, once.
 func TestApprovalWithdrawalEventLostIsPublishedByTheReplay(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("withdraw-lost")
 	h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -302,6 +306,7 @@ func TestApprovalWithdrawalEventLostIsPublishedByTheReplay(t *testing.T) {
 // withdrawal is the retry it asked for: it answers for that row until it
 // publishes, then answers expired.
 func TestApprovalWithdrawalAnswersForTheExpiryItWrote(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("withdraw-own-expiry")
 	h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -325,6 +330,7 @@ func TestApprovalWithdrawalAnswersForTheExpiryItWrote(t *testing.T) {
 // TestApprovalWithdrawOverHTTP: the route is served by the composed provider
 // and answers the record.
 func TestApprovalWithdrawOverHTTP(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	approvalHandler, err := webapi.NewFleetApprovalHandler(h.opened.approvals)
 	if err != nil {

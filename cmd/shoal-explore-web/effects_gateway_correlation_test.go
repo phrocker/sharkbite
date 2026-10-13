@@ -22,6 +22,7 @@ import (
 // gateway, refused locally on every poll until its deadline; a looser one
 // would send what the explorer refuses.
 func TestTheGatewayAcceptsExactlyTheCorrelationsTheExplorerAccepts(t *testing.T) {
+	t.Parallel()
 	samples := map[string]string{
 		"empty":           "",
 		"short":           "alice-trace-1",
@@ -67,6 +68,7 @@ func TestTheGatewayAcceptsExactlyTheCorrelationsTheExplorerAccepts(t *testing.T)
 // with a legal correlation of the explorer's full length is pulled, claimed,
 // extended, reported on and completed, each request carrying it.
 func TestTheGatewayWorksAnActionWithAMaximalCorrelation(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	trace := "alice-" + strings.Repeat("t", shoal.MaxIDBytes-len("alice-"))

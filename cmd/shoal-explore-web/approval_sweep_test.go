@@ -60,6 +60,7 @@ func (h *approvalHarness) requestFor(
 // nothing becomes work. A live request and a final one are left alone, and a
 // second pass changes nothing.
 func TestTheSweepRecordsWhatNobodyWillTouchAgain(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	if _, err := h.register("relay", "relay-registration", 0, true, ""); err != nil {
 		t.Fatal(err)
@@ -181,6 +182,7 @@ func TestTheSweepRecordsWhatNobodyWillTouchAgain(t *testing.T) {
 // generation ahead of the authority — what a replica still on the old
 // configuration sees during a rollout — is left alone.
 func TestTheSweepStrandsAMovedPolicyOnlyForward(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	older := h.held("sweep-policy-older")
 	h.mustRequest(requester, older, fleet.ApprovalPending)
@@ -214,6 +216,7 @@ func TestTheSweepStrandsAMovedPolicyOnlyForward(t *testing.T) {
 // deadline itself is enough. Only past the deadline by the grace, when no
 // call that could write it can still be running, is it stranded.
 func TestTheSweepWaitsForTheDeadlineOnEnqueuedWithoutAction(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	h := newCrashHarness(t, armed)
 	request := h.held("sweep-enqueued")
@@ -263,6 +266,7 @@ func TestTheSweepWaitsForTheDeadlineOnEnqueuedWithoutAction(t *testing.T) {
 // identity between the pre-commit check and the commit, so the approval can
 // never be written there. Nobody asks Status; the sweep records it.
 func TestTheSweepStrandsATakenIdentity(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	request := heldRequest{}
 	h := newHookedHarness(t, func(
@@ -306,6 +310,9 @@ func TestTheSweepStrandsATakenIdentity(t *testing.T) {
 // same clock, wrote the identical record, which the store answers as the
 // same transition rather than a second one.
 func TestConcurrentSweepsWriteOneTransition(t *testing.T) {
+	// Not parallel (#710): pinned to one core this fails even run alone,
+	// which is a defect of its own, and with the package's parallel tests
+	// competing for a small runner's cores it would fail as often.
 	h, probe := newEventHarness(t)
 	const requests = 4
 	for i := 0; i < requests; i++ {
@@ -356,6 +363,7 @@ func TestConcurrentSweepsWriteOneTransition(t *testing.T) {
 // commits. The decision is the loser here: it re-reads, finds the request
 // stranded, is refused as such, and approves nothing.
 func TestASweepAndADecisionRaceAtomically(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	var sweepTotal fleet.ApprovalSweepResult
 	var injected error
@@ -400,6 +408,7 @@ func TestASweepAndADecisionRaceAtomically(t *testing.T) {
 // event says which party observed it. An approver's Status and a
 // requester's Status of two lapsed requests are two observers.
 func TestStatusRecordsWhatTheAskingPartyObserves(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	byApprover := h.held("status-observed-approver")
 	byRequester := h.held("status-observed-requester")
@@ -454,6 +463,7 @@ func TestStatusRecordsWhatTheAskingPartyObserves(t *testing.T) {
 // TestTheSweepRetriesItsOwnUnpublishedEvent: a transition the sweep wrote
 // whose event did not publish is published by the next pass, once.
 func TestTheSweepRetriesItsOwnUnpublishedEvent(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("sweep-unpublished")
 	h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -476,6 +486,7 @@ func TestTheSweepRetriesItsOwnUnpublishedEvent(t *testing.T) {
 // still refuses an approval event no durable row describes, whoever asks.
 // A party cannot publish the observer's row either.
 func TestTheSweeperCannotPublishWhatNobodyWrote(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	held := h.held("sweep-forged")
 	lapsed := h.held("sweep-forged-lapsed")

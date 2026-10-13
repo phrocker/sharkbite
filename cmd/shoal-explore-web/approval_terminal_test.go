@@ -59,6 +59,7 @@ func newDisabledHarness(t *testing.T) (*approvalHarness, *eventProbe) {
 // Every request is then checked: never withdrawn or stranded, and every
 // outbox row a build before #655 reads (requester or approver observer).
 func TestNothingWritesATerminalStateWhileDisabled(t *testing.T) {
+	t.Parallel()
 	h, probe := newDisabledHarness(t)
 	if _, err := h.register("relay", "relay-registration", 0, true, ""); err != nil {
 		t.Fatal(err)
@@ -182,6 +183,7 @@ func TestTheSweepRequiresTheTerminalStates(t *testing.T) {
 // of the key space resumes where the last stopped, so every record is
 // reached over several passes, and the cycle then wraps to the beginning.
 func TestTheSweepCoversAStoreLargerThanOnePass(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	const requests = 5
 	for i := 0; i < requests; i++ {
@@ -229,6 +231,7 @@ func TestTheSweepCoversAStoreLargerThanOnePass(t *testing.T) {
 // TestTheSweepServesErrorCountersOnly: the health surface gains the sweep's
 // two error counters and nothing that tracks tenant workload.
 func TestTheSweepServesErrorCountersOnly(t *testing.T) {
+	t.Parallel()
 	if approvalSweepMetrics(nil) != nil || combineMetrics(nil, nil) != nil {
 		t.Fatal("a metrics writer with nothing to serve")
 	}
@@ -310,6 +313,7 @@ func (s failingScanStore) ScanApprovals(
 // cursor, pass after pass, is counted, and after a few passes the sweep wraps
 // past it, so the rest of the key space keeps being swept.
 func TestAPageThatKeepsFailingDoesNotHoldTheSweep(t *testing.T) {
+	t.Parallel()
 	h := &approvalHarness{t: t, root: t.TempDir()}
 	h.clock.Store(time.Now().UTC().Add(time.Minute).Truncate(time.Second).UnixNano())
 	authority, err := auth.NewAuthorityWithClock(h.now)
@@ -355,6 +359,7 @@ func TestAPageThatKeepsFailingDoesNotHoldTheSweep(t *testing.T) {
 // event did not publish, is left for that Request's replay; Status does not
 // publish it.
 func TestStatusTouchesNoOutboxWhileDisabled(t *testing.T) {
+	t.Parallel()
 	h, probe := newDisabledHarness(t)
 	request := h.held("disabled-status-drain")
 	h.mustRequest(requester, request, fleet.ApprovalPending)

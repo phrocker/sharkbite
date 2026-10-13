@@ -89,6 +89,7 @@ func labelHolderDecision(
 // It fails if openService leaves the evaluator or the translator off the
 // dispatch plane, or the evaluator off the event plane.
 func TestTheHostedServiceRecordsAndDecidesLabelledEvidence(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	now := time.Now().UTC().Add(time.Minute)
 	authority := auth.NewAuthority()

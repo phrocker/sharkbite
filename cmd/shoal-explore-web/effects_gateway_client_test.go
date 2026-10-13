@@ -283,6 +283,7 @@ func pulled(t *testing.T, client *effectsgateway.DispatchClient, id string) (eff
 }
 
 func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
+	t.Parallel()
 	h := newGatewayHarness(t)
 	client := h.client()
 	ctx := context.Background()
@@ -482,6 +483,7 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 // extra request on the path a gateway takes immediately after an irreversible
 // external effect, which is where an extra request is least welcome.
 func TestEffectsGatewayClientRecordsAFailureInOneRequest(t *testing.T) {
+	t.Parallel()
 	h := newGatewayHarness(t)
 	client := h.client()
 	ctx := context.Background()
@@ -604,6 +606,7 @@ func TestEffectsGatewayClientRecordsAFailureInOneRequest(t *testing.T) {
 // resend path; it is no longer reached against a server with #492, and is
 // kept for one talking to a server without it.
 func TestEffectsGatewayClientSurfacesAnOutcomeRecordedOtherwise(t *testing.T) {
+	t.Parallel()
 	h := newGatewayHarness(t, fleet.Action{
 		Name:        "strict",
 		InputSchema: json.RawMessage(`{"type":"object"}`),

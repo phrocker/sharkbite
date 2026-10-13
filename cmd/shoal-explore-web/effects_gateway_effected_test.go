@@ -62,6 +62,7 @@ func (l *loseFirstComplete) RoundTrip(request *http.Request) (*http.Response, er
 // replay comparison is real: the same failure with a different volume is not
 // accepted as this report, so the gateway's acceptance means it never sent one.
 func TestEffectsGatewayClientReportsAPartialSendOnce(t *testing.T) {
+	t.Parallel()
 	h := newGatewayHarness(t)
 	ctx := context.Background()
 	base, err := url.Parse(h.server.URL)

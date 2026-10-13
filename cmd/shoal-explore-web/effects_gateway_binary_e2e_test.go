@@ -49,6 +49,22 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 )
 
+// Under -race this package is long enough to approach go test's default
+// timeout run serially (#710), so most of its tests call t.Parallel(). Go runs
+// the top-level parallel tests together only after every serial one has
+// returned. That keeps two kinds of test serial, and correct as such:
+//
+//   - a test that changes process state: t.Setenv, or a package hook such as
+//     listenTCP or lookupListenHost, since a parallel test would observe it;
+//   - a test whose pass depends on wall-clock timing: the real-time worker
+//     tests in effects_gateway_worker_test.go and the gateway command test,
+//     which sleep to give a worker time to act, the binary end to end below,
+//     with its real leases, and the tests that start run() and wait a fixed
+//     time for it to listen.
+//
+// Every test made parallel owns its directories, its clock, its stores and
+// its servers, and none of the process state it reads changes while the
+// parallel tests run.
 func TestMain(m *testing.M) {
 	code := m.Run()
 	if gatewayBinary.dir != "" {

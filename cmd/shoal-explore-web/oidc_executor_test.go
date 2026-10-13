@@ -137,6 +137,7 @@ func (f *executorFixture) mustMint(t *testing.T, request *http.Request) auth.Dec
 }
 
 func TestExecutorTokenMintsExecuteBoundToItsReference(t *testing.T) {
+	t.Parallel()
 	f := newExecutorFixture(t)
 	claims := executorClaims(f.executor, f.now, testExecutorSubject)
 	// Claims a human's token would be granted by: none of them reaches an
@@ -216,6 +217,7 @@ func TestExecutorTokenMintsExecuteBoundToItsReference(t *testing.T) {
 // TestExecutorTokenRefusals: every check is required, and each refusal is
 // the generic denial at the trust boundary.
 func TestExecutorTokenRefusals(t *testing.T) {
+	t.Parallel()
 	f := newExecutorFixture(t)
 	f.authn.delegationClaim = "delegated_by"
 	valid := func() jwt.MapClaims { return executorClaims(f.executor, f.now, testExecutorSubject) }
@@ -349,6 +351,7 @@ func TestExecutorTokenRefusals(t *testing.T) {
 // refuses the human issuer; the human branch's own check is exercised
 // directly, since the routing makes it unreachable.
 func TestBothAudiencesAreRefusedOnTheHumanBranch(t *testing.T) {
+	t.Parallel()
 	f := newExecutorFixture(t)
 	claims := f.human.defaultClaims(f.now)
 	claims["aud"] = []string{testAudience, testExecutorAudience}
@@ -378,6 +381,7 @@ func TestBothAudiencesAreRefusedOnTheHumanBranch(t *testing.T) {
 // key, is refused in both directions; each correctly signed token passes; and
 // each branch fetched only its own issuer's JWKS.
 func TestExecutorAndHumanKeyCachesAreIsolated(t *testing.T) {
+	t.Parallel()
 	f := newExecutorFixture(t)
 	if f.human.keys[testKID] == f.executor.keys[testKID] {
 		t.Fatal("the fixture's issuers share a key")
@@ -429,6 +433,7 @@ func TestExecutorAndHumanKeyCachesAreIsolated(t *testing.T) {
 // itself. Audiences still separate the branches, and the executor branch
 // still has a cache of its own.
 func TestExecutorIssuerMayEqualTheHumanIssuer(t *testing.T) {
+	t.Parallel()
 	human := newFakeOIDCIssuer(t)
 	now := time.Now()
 	authenticator := newTestOIDCAuthenticator(t, executorTestConfig(
@@ -466,6 +471,7 @@ func TestExecutorIssuerMayEqualTheHumanIssuer(t *testing.T) {
 // workspace from starting, with a reason that names the problem and never a
 // configured value.
 func TestExecutorMappingFileRefusals(t *testing.T) {
+	t.Parallel()
 	const issuer = "https://cluster.example.test"
 	valid := func() map[string]any { return executorMappingDocument(issuer) }
 	edit := func(change func(map[string]any)) map[string]any {
@@ -673,6 +679,7 @@ func TestExecutorMappingFileRefusals(t *testing.T) {
 // TestExecutorMappingDigestPinsTheMapping: reordering entries keeps the
 // digest; changing who maps to what moves it.
 func TestExecutorMappingDigestPinsTheMapping(t *testing.T) {
+	t.Parallel()
 	const issuer = "https://cluster.example.test"
 	parse := func(document map[string]any) auth.Digest {
 		t.Helper()
@@ -716,6 +723,7 @@ func TestExecutorMappingDigestPinsTheMapping(t *testing.T) {
 // that (a) satisfies the executor service assertion, or (b) names a mapped
 // executor subject of the executor issuer. Each rule is exercised alone.
 func TestAnExecutorCredentialIsNeverAHuman(t *testing.T) {
+	t.Parallel()
 	human := newFakeOIDCIssuer(t)
 	now := time.Now()
 	shared := newTestOIDCAuthenticator(t, executorTestConfig(

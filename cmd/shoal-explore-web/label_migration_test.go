@@ -51,6 +51,7 @@ func labelMigrationConfig(root string) serviceConfig {
 }
 
 func TestStartupRunsTheLabelMigrationOnEveryStart(t *testing.T) {
+	t.Parallel()
 	root := t.TempDir()
 	config := labelMigrationConfig(root)
 	for start := 0; start < 2; start++ {
@@ -89,6 +90,7 @@ func (failingMigrator) MigrateLabelledDocuments(
 }
 
 func TestLabelMigrationFailureRefusesToServe(t *testing.T) {
+	t.Parallel()
 	_, err := runLabelMigration(context.Background(), failingMigrator{})
 	if err == nil || !strings.Contains(err.Error(), "refusing to serve") ||
 		!strings.Contains(err.Error(), "injected store failure") {
@@ -281,6 +283,7 @@ func labelMigrationProbeRule(t *testing.T) authorized.AccessRule {
 // minted only by the two startup paths that serve the authorized store, and
 // called there rather than taken as a value.
 func TestLabelMigrationCapabilityMintSites(t *testing.T) {
+	t.Parallel()
 	const (
 		capabilityPackage = "github.com/phrocker/shoal-oss/internal/labelmigration"
 		constructor       = "NewCapability"

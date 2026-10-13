@@ -232,6 +232,7 @@ func assertKinds(t *testing.T, name string, got []string, want ...string) {
 // materialization are published by the requester, and the decision by the
 // approver. A replay at any step publishes nothing more.
 func TestApprovalEventsArePublishedOncePerTransitionByItsMaker(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("events-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -290,6 +291,7 @@ func TestApprovalEventsArePublishedOncePerTransitionByItsMaker(t *testing.T) {
 // observed it, and the event says which side that was. It occurred when the
 // window closed, not when it was observed.
 func TestApprovalEventsForRefusalAndEachExpiryObserver(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	refused := h.held("events-refused")
 	byRequester := h.held("events-expired-requester")
@@ -355,6 +357,7 @@ func TestApprovalEventsForRefusalAndEachExpiryObserver(t *testing.T) {
 // not publish, as an unmarked 503. The same call, retried after a restart,
 // publishes the event exactly once.
 func TestApprovalEventLostInACrashIsRecoveredOnce(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 
 	// Lost after the event service accepted it: the requester's hold.
@@ -399,6 +402,7 @@ func TestApprovalEventLostInACrashIsRecoveredOnce(t *testing.T) {
 // does return, inside the window, the event publishes once. It is late, not
 // lost.
 func TestAStrandedApproverEventDoesNotBlockTheRequester(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("events-stranded")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -441,6 +445,7 @@ func TestAStrandedApproverEventDoesNotBlockTheRequester(t *testing.T) {
 // approver who is not independent of the request, and one whose eligibility
 // comes only through a workspace narrowing.
 func TestApprovalEventsAreConcealedLikeStatus(t *testing.T) {
+	t.Parallel()
 	h, _ := newEventHarness(t)
 	request := h.held("events-concealed")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -543,6 +548,7 @@ func TestApprovalEventsAreConcealedLikeStatus(t *testing.T) {
 // event_publish on the scope cannot publish an approval event for a request
 // nobody approved. Nor can it for one somebody did.
 func TestApprovalEventsCannotBeForgedOnThePublicRoute(t *testing.T) {
+	t.Parallel()
 	h, _ := newEventHarness(t)
 	request := h.held("events-forged")
 	h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -580,6 +586,7 @@ func TestApprovalEventsCannotBeForgedOnThePublicRoute(t *testing.T) {
 // refused. So is publishing a real row under anyone but the principal it
 // names.
 func TestTheLedgerConfirmsOnlyDurableTransitions(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("events-ledger")
 	unapproved := h.held("events-ledger-unapproved")
@@ -674,6 +681,7 @@ func TestTheLedgerConfirmsOnlyDurableTransitions(t *testing.T) {
 // that an approval event is there. Every such subscriber is answered with a
 // page that simply lacks it.
 func TestAnUnresolvableTargetDoesNotWedgeTheStream(t *testing.T) {
+	t.Parallel()
 	h, _ := newEventHarness(t)
 	request := h.held("events-unresolvable")
 	h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -705,6 +713,7 @@ func TestAnUnresolvableTargetDoesNotWedgeTheStream(t *testing.T) {
 // scope and is eligible, so the operation check alone would admit her. The
 // identity match against the row's stored publisher is what refuses her.
 func TestAnotherApproverCannotPublishTheDecidersRow(t *testing.T) {
+	t.Parallel()
 	h, probe := newEventHarness(t)
 	request := h.held("events-other-approver")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -772,6 +781,7 @@ func (s unreadableApprovals) GetApproval(
 // Since the guard head-ownership fix, another store can no longer make an
 // approval unreadable by adopting its head. This is the second line.
 func TestAPermanentlyUnreadableApprovalNeverFailsAPage(t *testing.T) {
+	t.Parallel()
 	h, _ := newEventHarness(t)
 	request := h.held("events-unreadable")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)

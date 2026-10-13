@@ -210,6 +210,7 @@ func (h *attestationHarness) status(id []byte) fleet.ActionRecord {
 // clamped end) and the record's attestation through the engine-backed
 // dispatch store, with the real verifier.
 func TestAttestationGateAgainstTheDurableStore(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	queued := h.enqueueDeploy("deploy-1")
 
@@ -272,6 +273,7 @@ func TestAttestationGateAgainstTheDurableStore(t *testing.T) {
 }
 
 func TestAttestationExtensionUsesTheClampedEndAgainstTheDurableStore(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	queued := h.enqueueDeploy("deploy-clamp")
 	// The action's deadline is an hour out. Move to three minutes before it
@@ -301,6 +303,7 @@ func TestAttestationExtensionUsesTheClampedEndAgainstTheDurableStore(t *testing.
 // attestation; a re-attested claim takes the record; the old claim's
 // completion is refused and its ambiguity report accepted; one completion.
 func TestALapsedAttestedClaimAgainstTheDurableStore(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	queued := h.enqueueDeploy("deploy-lapse")
 	first, err := h.present(attestedPresenter, "lapse-1", h.statement(attestedPresenter, "lapse-1", h.now(), 90*time.Second))
@@ -360,6 +363,7 @@ func TestALapsedAttestedClaimAgainstTheDurableStore(t *testing.T) {
 // TestAttestationPresentationVerifiesAgainstTheRealStore covers replay,
 // another principal's statement, the server clock and rollback.
 func TestAttestationPresentationVerifiesAgainstTheRealStore(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	evidence := h.statement(attestedPresenter, "replay", h.now(), time.Hour)
 	first, err := h.present(attestedPresenter, "replay", evidence)
@@ -410,6 +414,7 @@ func TestAttestationPresentationVerifiesAgainstTheRealStore(t *testing.T) {
 }
 
 func TestAttestationClaimDisclosesNothingToACallerWithoutStanding(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	attested := h.enqueueDeploy("deploy-hidden")
 	plain, err := h.opened.fleetDispatch.Enqueue(h.as(attestedWorker), fleet.EnqueueRequest{
@@ -519,6 +524,7 @@ func mountAttestationPlane(t *testing.T, h *attestationHarness, server *httptest
 // sdk.Attestation() presents, the effects gateway's dispatch client claims
 // and completes, all over HTTP against the handlers the binary mounts.
 func TestSDKAttestationEffectsGatewayClaimAndComplete(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	server := newAttestationPlane(t, h, map[string]principal{
 		"presenter": attestedPresenter, "worker": attestedWorker,
@@ -597,6 +603,7 @@ func TestSDKAttestationEffectsGatewayClaimAndComplete(t *testing.T) {
 // picked up by the next presentation. The executor-bound presenter is the
 // claimant's principal, so the claim it unlocks succeeds.
 func TestTheGatewayPresentsItsAttestationFromFiles(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	server := newAttestationPlane(t, h, map[string]principal{
 		"presenter": attestedPresenter, "worker": attestedWorker,
@@ -670,6 +677,7 @@ func TestTheGatewayPresentsItsAttestationFromFiles(t *testing.T) {
 // TestAdmissionPathBCannotBypassAttestation: the born-claimed grant goes
 // through the same gate; unattested, it is the existing durable denial.
 func TestAdmissionPathBCannotBypassAttestation(t *testing.T) {
+	t.Parallel()
 	h := newAttestationHarness(t)
 	server := newAttestationPlane(t, h, map[string]principal{"worker": attestedWorker})
 	client, err := sdk.New(sdk.Config{

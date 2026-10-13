@@ -22,6 +22,7 @@ import (
 // version it holds would be refused here, stranding the live claim. The
 // former holder's own renewal is refused as fence_lost.
 func TestTheGatewayRenewsOnTheFenceAfterAFormerHoldersReport(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	g.enqueueUntil("stripe-fence", "alice-trace-fence", g.h.now().Add(time.Hour))

@@ -31,6 +31,7 @@ import (
 )
 
 func TestTwoUserHTTPMCPDemoAcceptance(t *testing.T) {
+	t.Parallel()
 	root, err := os.MkdirTemp(".", ".demo-acceptance-")
 	if err != nil {
 		t.Fatal(err)

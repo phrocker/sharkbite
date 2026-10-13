@@ -79,6 +79,7 @@ func (w *oidcApprovalWorld) schemeDigest() auth.Digest {
 // the requester, as the agent's registrant, or as an ancestor's — while a
 // different human can. Both branches carry the caller's correlation.
 func TestStableIdentityOneHumanAcrossClientsIsOneIdentity(t *testing.T) {
+	t.Parallel()
 	const aliceTrace, bobTrace = "upstream-alice-526", "upstream-bob-526"
 	w := newStableWorld(t, []string{"oid"}, oid("oid-owner"))
 	h := w.h
@@ -180,6 +181,7 @@ func TestStableIdentityOneHumanAcrossClientsIsOneIdentity(t *testing.T) {
 // nothing. The controls are the same tokens with a valid claim — including
 // one of exactly 256 bytes — so each 401 is the claim's.
 func TestStableIdentityClaimShapesFailClosedOnBothBranches(t *testing.T) {
+	t.Parallel()
 	w := newStableWorld(t, []string{"oid"}, oid("oid-owner"))
 	h := w.h
 	held := h.held("stable-shapes")
@@ -247,6 +249,7 @@ func TestStableIdentityClaimShapesFailClosedOnBothBranches(t *testing.T) {
 // one-segment path by the nested claim; a non-object on the way, or a typed
 // value at the end, fails closed.
 func TestStableIdentityClaimPathIsNotADottedString(t *testing.T) {
+	t.Parallel()
 	nested := func(value any) jwt.MapClaims {
 		return jwt.MapClaims{"ext": map[string]any{"oid": value}}
 	}
@@ -316,6 +319,7 @@ func TestStableIdentityClaimPathIsNotADottedString(t *testing.T) {
 // oid containing '#' names its own identity, and a sub-derived identity of
 // any value never enters the stable namespace.
 func TestStableIdentityFormatCannotCollide(t *testing.T) {
+	t.Parallel()
 	w := newStableWorld(t, []string{"oid"}, oid("oid-owner"))
 	h := w.h
 	alice := call{token: w.fleetToken("alice", oid("oid-alice"))}
@@ -471,6 +475,7 @@ func assertForeignNamespace(t *testing.T, name string, got answer, namespace, hi
 // not show it. And the switch itself needs the migrate flag: a replica on
 // another scheme refuses to start, in either direction.
 func TestStableIdentitySwitchStrandsPreSwitchRequests(t *testing.T) {
+	t.Parallel()
 	w := newOIDCApprovalWorld(t, nil, oid("oid-owner"))
 	h := w.h
 	alice := call{token: w.fleetToken("alice", oid("oid-alice"))}
@@ -543,6 +548,7 @@ func TestStableIdentitySwitchStrandsPreSwitchRequests(t *testing.T) {
 // stable scheme is approvable, and so is one registered by a principal
 // outside the OIDC family, so the refusal is the namespace's.
 func TestStableIdentityLegacyRegistrationBlocksApproval(t *testing.T) {
+	t.Parallel()
 	w := newOIDCApprovalWorld(t, nil, oid("oid-owner"))
 	h := w.h
 	if err := w.switchToStable(true); err != nil {
@@ -596,6 +602,7 @@ func TestStableIdentityLegacyRegistrationBlocksApproval(t *testing.T) {
 // namespace of its own, and only the one in force is comparable, so this is
 // refused — naming oidcid:<iss>#, never Bob.
 func TestStableIdentityStableToStableSwitchIsRefused(t *testing.T) {
+	t.Parallel()
 	both := func(subject string) jwt.MapClaims {
 		return jwt.MapClaims{"oid": "oid-" + subject, "uid": "uid-" + subject}
 	}
@@ -620,6 +627,7 @@ func TestStableIdentityStableToStableSwitchIsRefused(t *testing.T) {
 // stable ["oid"] back to the default sub-derived scheme. The default scheme
 // is held to the same rule: an oidcid: registrant is foreign to it.
 func TestStableIdentityStableToDefaultSwitchIsRefused(t *testing.T) {
+	t.Parallel()
 	w := newStableWorld(t, []string{"oid"}, oid("oid-owner"))
 	h := w.h
 	w.register(w.fleetToken("bob", oid("oid-bob")), "bobs-agent", "")
@@ -656,6 +664,7 @@ func TestStableIdentityStableToDefaultSwitchIsRefused(t *testing.T) {
 // approver — with the service first on the old scheme (the old replica's
 // view) and then on the new (the new replica's). Both views refuse.
 func TestStableIdentityMixedRolloutFailsClosed(t *testing.T) {
+	t.Parallel()
 	both := func(subject string) jwt.MapClaims {
 		return jwt.MapClaims{"oid": "oid-" + subject, "uid": "uid-" + subject}
 	}
@@ -704,6 +713,7 @@ func TestStableIdentityMixedRolloutFailsClosed(t *testing.T) {
 // naming the old issuer's namespace and never the identity — under the
 // default scheme and under a stable claim alike.
 func TestStableIdentityIssuerChangeIsASchemeSwitch(t *testing.T) {
+	t.Parallel()
 	for _, probe := range []struct {
 		name  string
 		claim []string

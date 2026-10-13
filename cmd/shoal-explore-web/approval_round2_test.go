@@ -72,6 +72,7 @@ func newHookedHarness(
 // and Status must not call that action this approval's: it reports
 // unresolvable with condition identity_taken.
 func TestApprovalStatusNamesATakenIdentity(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	request := heldRequest{}
 	h := newHookedHarness(t, func(
@@ -119,6 +120,7 @@ func TestApprovalStatusNamesATakenIdentity(t *testing.T) {
 // decide. A missing ID, a request in a scope it does not hold and a request it
 // is not independent of must all answer exactly alike, on Status and Decide.
 func TestApprovalNarrowedCallerLearnsNothingAboutExistence(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	eligible := h.held("narrow-eligible")
 	eligibleReceipt := h.mustRequest(requester, eligible, fleet.ApprovalPending)
@@ -220,6 +222,7 @@ func TestApprovalNarrowedCallerLearnsNothingAboutExistence(t *testing.T) {
 // first approved → enqueued commit loses and, by the time it is retried, the
 // window has closed: the request must be expired, not enqueued.
 func TestApprovalMaterializationUsesTheAttemptsOwnTime(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	h := newHookedHarness(t, func(
 		h *approvalHarness, mutation fleet.ApprovalMutation,
@@ -250,6 +253,7 @@ func TestApprovalMaterializationUsesTheAttemptsOwnTime(t *testing.T) {
 // policy moved still carries the old generation. Neither a decision nor a
 // status read made with one may treat the request as live.
 func TestApprovalJudgesTheCurrentPolicyGeneration(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("policy-current")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)

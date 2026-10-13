@@ -48,6 +48,7 @@ func (g *gatewayOps) sdkContext(reason string) dispatchapi.Context {
 // mistake: an extension or a report after the work is done, a report at a
 // fence never held, and an identical completion resent.
 func TestSDKDispatchWorksAnActionThroughTheRealComposition(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	ctx := context.Background()
 	const trace = "alice-trace-sdk"
@@ -164,6 +165,7 @@ func TestSDKDispatchWorksAnActionThroughTheRealComposition(t *testing.T) {
 // TestSDKDispatchResolvesTheExecutorsDescriptor: the executor's own
 // descriptor resolves through sdk.Dispatch(), naming its ref.
 func TestSDKDispatchResolvesTheExecutorsDescriptor(t *testing.T) {
+	t.Parallel()
 	g := newGatewayOps(t)
 	client := sdkDispatch(t, g)
 	descriptor, err := client.Resolve(context.Background(), []byte("stripe-agent"), g.sdkContext("sdk_resolve"))

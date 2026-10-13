@@ -270,6 +270,7 @@ func TestRequireDeclassificationReasonOverTheUploadRoute(t *testing.T) {
 // TestDeclassificationReasonIsOptionalByDefault pins the default: without
 // the requirement a narrowing needs no reason, and is audited all the same.
 func TestDeclassificationReasonIsOptionalByDefault(t *testing.T) {
+	t.Parallel()
 	opened, ctx := seedLabelledUpload(t, t.TempDir(), false)
 	defer opened.close()
 	if err := uploadThroughService(ctx, opened, ""); err != nil {
@@ -289,6 +290,7 @@ func TestDeclassificationReasonIsOptionalByDefault(t *testing.T) {
 // service hands the reason to the authorized client: the requirement is met
 // by it, and it is the audit's reason code.
 func TestUploadServiceAttachesTheReason(t *testing.T) {
+	t.Parallel()
 	opened, ctx := seedLabelledUpload(t, t.TempDir(), true)
 	defer opened.close()
 	err := uploadThroughService(ctx, opened, "")
@@ -384,6 +386,7 @@ func TestListDeclassificationsIsOffline(t *testing.T) {
 // component that is not a label is listed too; and an attempt with no
 // pre_commit record is counted.
 func TestWriteDeclassificationsQuotesAndListsEveryRemovedComponent(t *testing.T) {
+	t.Parallel()
 	policy := func(grant string) auth.Policy {
 		t.Helper()
 		value, err := auth.NewPolicy(auth.PolicyConfig{

@@ -84,6 +84,7 @@ func collidingPublication(
 // refused, because an approval's first write creates absent-or-identical,
 // which always compared the owner. It is kept so that stays true.
 func TestOneStoreCannotAdoptAnothersGuardHead(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	attacker := requester
 	attacker.operations = append([]auth.Operation{
@@ -163,6 +164,7 @@ func ingestVictim(t *testing.T, h *approvalHarness, uri string) (shoal.ID, error
 // ingestion then succeeds. They refuse it again after the ingestion, the same
 // way, so the refusal says nothing about which documents exist.
 func TestDispatchCannotOccupyADocumentsGuardEntity(t *testing.T) {
+	t.Parallel()
 	// The ID an upload of this name will have, learned from another
 	// workspace: it depends on the URI alone.
 	predicted, err := ingestVictim(t, newApprovalHarness(t), "shoal://victim/release-notes.md")

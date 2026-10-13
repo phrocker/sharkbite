@@ -254,6 +254,7 @@ func assertUnauthenticated(t *testing.T, name string, got answer) {
 // real dispatch routes, and is refused another reference's — as not found,
 // on every route, including work it can name exactly.
 func TestAMappedServiceAccountWorksItsOwnReference(t *testing.T) {
+	t.Parallel()
 	w := newExecutorWorld(t)
 	alice := call{token: w.fleetToken("alice", nil)}
 	w.enqueue(alice, "stripe-1", "stripe-agent")
@@ -310,6 +311,7 @@ func TestAMappedServiceAccountWorksItsOwnReference(t *testing.T) {
 // decision without its correlation ID does not. COUNTERFACTUAL for the
 // second half: the real decision with one field changed.
 func TestTheExecutorRouteNeedsTheMintedCorrelation(t *testing.T) {
+	t.Parallel()
 	w := newExecutorWorld(t)
 	stripe := call{token: w.executorToken(testExecutorSubject)}
 	if got, _ := w.send(stripe, "/api/v1/fleet/actions/pull", map[string]any{
@@ -335,6 +337,7 @@ func TestTheExecutorRouteNeedsTheMintedCorrelation(t *testing.T) {
 // token carrying both audiences, a token the wrong issuer's key signed, and
 // a human's fleet token, all over HTTP.
 func TestNonExecutorTokensAreRefusedOnTheExecutorRoutes(t *testing.T) {
+	t.Parallel()
 	w := newExecutorWorld(t)
 	alice := call{token: w.fleetToken("alice", nil)}
 	w.enqueue(alice, "stripe-1", "stripe-agent")
@@ -398,6 +401,7 @@ func TestNonExecutorTokensAreRefusedOnTheExecutorRoutes(t *testing.T) {
 // it never enters the approval service's namespace rule; a second approval
 // on the same agent, after the executor has worked it, still succeeds.
 func TestApprovalOfExecutorTouchedWorkIsUnaffected(t *testing.T) {
+	t.Parallel()
 	w := newExecutorWorld(t)
 	h := w.h
 	alice := call{token: w.fleetToken("alice", nil)}

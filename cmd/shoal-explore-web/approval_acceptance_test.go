@@ -434,6 +434,7 @@ func (h *approvalHarness) admit(id string) (fleet.AdmissionGrant, error) {
 // durably denied, materialized exactly once on approval, a duplicate approval
 // performing nothing twice, and exactly one of two racing claims winning.
 func TestApprovalHeldWorkIsNeverPerformedBeforeApproval(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("held-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -615,6 +616,7 @@ func (s crashAfterMaterializeWrite) ApplyApproval(
 // from it after a restart — and after the approval window has closed, because
 // the decision to make the work was committed inside it.
 func TestApprovalCrashBetweenTheTwoWritesRecovers(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	h := &approvalHarness{t: t, root: t.TempDir()}
 	h.clock.Store(time.Now().UTC().Add(time.Minute).Truncate(time.Second).UnixNano())
@@ -673,6 +675,7 @@ func TestApprovalCrashBetweenTheTwoWritesRecovers(t *testing.T) {
 // approving its own request. Each is refused, and the request stays pending
 // and decidable by an independent approver afterwards.
 func TestApprovalRefusesEverySelfApproval(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	delegating := principal{
 		subject: "alice", actor: "alice-agent", onBehalfOf: []shoal.ID{"dave"},
@@ -773,6 +776,7 @@ func TestApprovalRefusesEverySelfApproval(t *testing.T) {
 // TestApprovalExpiryBoundaries covers expiry at both decision and
 // materialization, and that expiry is written rather than inferred.
 func TestApprovalExpiryBoundaries(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 
 	// Decided at exactly ExpiresAt and one nanosecond after: refused, and the
@@ -825,6 +829,7 @@ func TestApprovalExpiryBoundaries(t *testing.T) {
 // TestApprovalCoversOneExactRequest refuses every change to what was approved
 // and every approval under a superseded policy generation.
 func TestApprovalCoversOneExactRequest(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("exact-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -893,6 +898,7 @@ func TestApprovalCoversOneExactRequest(t *testing.T) {
 // registering the flag does to work already queued, and that neither a
 // re-registration nor a delegate can drop it.
 func TestApprovalIsPerActionAndSurvivesRegistration(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	// The action without the flag on the same agent is unaffected.
 	plain := h.held("plain-1")
@@ -998,6 +1004,7 @@ func TestApprovalIsPerActionAndSurvivesRegistration(t *testing.T) {
 // queue: an independent approver sees the request, the requester does not see
 // its own, and a decided request leaves the queue.
 func TestApprovalPendingListsOnlyWhatTheCallerMayDecide(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("pending-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)

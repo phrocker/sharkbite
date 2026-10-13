@@ -27,6 +27,7 @@ import (
 // registrant are parties to the work. Before the fix either could approve a
 // request against the child alone and the request materialized.
 func TestApprovalRefusesTheAgentsDelegationChain(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	// The child is registered by the same subject (delegation requires it)
 	// under a different actor, so the parent's registrant actor and the
@@ -103,6 +104,7 @@ func TestApprovalRefusesTheAgentsDelegationChain(t *testing.T) {
 // as an approver — must refuse it, because separation is judged on the
 // authority the principal holds, not on what it chose to present.
 func TestApprovalRefusesANarrowedApproverOnEveryPath(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("narrowed-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -193,6 +195,9 @@ func TestApprovalRefusesANarrowedApproverOnEveryPath(t *testing.T) {
 // conflict rather than the fleet sentinel, the replay fallback never ran, and
 // a third of the callers got "fleet registry conflict" for work that existed.
 func TestApprovalConcurrentReRequestsAgree(t *testing.T) {
+	// Not parallel (#710): pinned to one core this fails even run alone,
+	// which is a defect of its own, and with the package's parallel tests
+	// competing for a small runner's cores it would fail as often.
 	h := newApprovalHarness(t)
 	request := h.held("concurrent-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -251,6 +256,7 @@ func TestApprovalConcurrentReRequestsAgree(t *testing.T) {
 // TestApprovalStatusReportsTheEffectiveState: Status reports what a request
 // amounts to now, not merely the stored row, and writes nothing doing it.
 func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 
 	// Window closed: Status writes the expiry it observes (#655), as the
@@ -325,6 +331,7 @@ func TestApprovalStatusReportsTheEffectiveState(t *testing.T) {
 // either moves, Status reports the approval as unresolvable rather than as
 // live work, and the docs no longer promise recovery "at any later time".
 func TestApprovalEnqueuedWithoutActionStrandsHonestly(t *testing.T) {
+	t.Parallel()
 	armed := &atomic.Bool{}
 	h := newCrashHarness(t, armed)
 
@@ -390,6 +397,7 @@ func TestApprovalEnqueuedWithoutActionStrandsHonestly(t *testing.T) {
 // approved rather than becoming an enqueued approval naming work that does not
 // exist.
 func TestApprovalRefusesASquattedIdentityBeforeCommitting(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("squatted")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
@@ -415,6 +423,7 @@ func TestApprovalRefusesASquattedIdentityBeforeCommitting(t *testing.T) {
 // materialization on a replica whose clock is behind the one that wrote the
 // row clamps its timestamps forward instead of failing validation.
 func TestApprovalToleratesClockSkewBetweenReplicas(t *testing.T) {
+	t.Parallel()
 	h := newApprovalHarness(t)
 	request := h.held("skew-1")
 	receipt := h.mustRequest(requester, request, fleet.ApprovalPending)
