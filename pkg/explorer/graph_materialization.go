@@ -200,12 +200,15 @@ func (e *Explorer) CommitGraphMaterialization(
 	}
 	copy := planned
 	e.graphMaterializations[planned.ID] = &copy
+	// The record is durable from here, so a later failure is indeterminate
+	// (#687): it keeps its code, but the caller must not read it as nothing
+	// written.
 	if err := e.rebuildCurrentGraphLocked(); err != nil {
-		return GraphMaterializationResult{}, err
+		return GraphMaterializationResult{}, MarkIndeterminateCommit(err)
 	}
 	e.refreshSnapshotLocked()
 	if err := e.registerSnapshotLocked(e.snapshot); err != nil {
-		return GraphMaterializationResult{}, err
+		return GraphMaterializationResult{}, MarkIndeterminateCommit(err)
 	}
 	return graphMaterializationResult(planned, IngestApplied, e.snapshot), nil
 }

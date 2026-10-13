@@ -452,7 +452,17 @@ func (e *Explorer) IngestWithOptions(
 
 func (e *Explorer) ingest(
 	ctx context.Context, source Source, createdAt time.Time,
-) (IngestResult, error) {
+) (returned IngestResult, returnedErr error) {
+	// Once the document record is durably written the revision is
+	// published: a retry finds it. Any error after that (the graph
+	// rebuild) is marked indeterminate, keeping its code, so a caller never
+	// takes a published revision for a definite failure (#687).
+	written := false
+	defer func() {
+		if written && returnedErr != nil {
+			returnedErr = MarkIndeterminateCommit(returnedErr)
+		}
+	}()
 	if err := contextError(ctx); err != nil {
 		return IngestResult{}, err
 	}
@@ -577,6 +587,7 @@ func (e *Explorer) ingest(
 	); err != nil {
 		return IngestResult{}, err
 	}
+	written = true
 	if e.documents[record.Document.ID] == nil {
 		e.documents[record.Document.ID] = make(map[shoal.ID]*persistedDocument)
 	}

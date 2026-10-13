@@ -2117,6 +2117,8 @@ async function uploadFiles(fileList) {
     const results = [...plan.skipped];
     let uploaded = 0;
     let failed = 0;
+    let refused = 0;
+    let partial = false;
     const failureMessages = [];
     let latestSnapshot = null;
     for (let index = 0; index < plan.batches.length; index++) {
@@ -2132,14 +2134,32 @@ async function uploadFiles(fileList) {
         results.push(...uploadedFiles);
         latestSnapshot = value.snapshot || latestSnapshot;
       } catch (error) {
-        failed += batch.length;
         failureMessages.push(error.message || String(error));
-        // This append is load-bearing; TestStaticWorkspaceUploadReportsMidBatchFailure pins
-        // that earlier successful batches remain visible when a later batch fails.
-        results.push(...batch.map((entry) => failedUploadResult(entry, error)));
+        const outcomes = batchUploadOutcomes(batch, error);
+        if (!outcomes) {
+          failed += batch.length;
+          // This append is load-bearing; TestStaticWorkspaceUploadReportsMidBatchFailure pins
+          // that earlier successful batches remain visible when a later batch fails.
+          results.push(...batch.map((entry) => failedUploadResult(entry, error)));
+          continue;
+        }
+        // This branch is load-bearing; TestStaticWorkspaceUploadReportsPerFileOutcomes pins
+        // that a failed batch reports each file's own outcome (#687) instead of
+        // marking files the server applied as failed.
+        for (const outcome of outcomes) {
+          results.push(outcome.result);
+          if (outcome.counted === "uploaded") uploaded++;
+          else if (outcome.counted === "refused") refused++;
+          else failed++;
+        }
+        // Files of this batch were applied (a partial batch) or may have been
+        // after the last successful snapshot, so the refresh must read the
+        // latest one.
+        if (outcomes.some((outcome) => outcome.mayHaveCommitted)) latestSnapshot = null;
+        if (outcomes.some((outcome) => outcome.counted === "uploaded" && outcome.mayHaveCommitted)) partial = true;
       }
     }
-    if (uploaded > 0 || failed > 0) {
+    if (uploaded > 0 || failed > 0 || refused > 0) {
       // This reset is load-bearing; TestStaticWorkspaceUploadReportsMidBatchFailure pins
       // that document views refresh from upload state without discarding partial results.
       clearSnapshotDependentViews();
@@ -2150,10 +2170,10 @@ async function uploadFiles(fileList) {
       } else {
         clearPinnedSnapshot();
       }
-      renderUploadResults(results, uploadSummary(files.length, uploaded, failed, plan.skipped.length, failureMessages));
+      renderUploadResults(results, uploadSummary(files.length, uploaded, failed, plan.skipped.length, failureMessages, refused) + partialUploadNote(partial));
       await loadDocuments(true);
     } else {
-      renderUploadResults(results, uploadSummary(files.length, uploaded, failed, plan.skipped.length, failureMessages));
+      renderUploadResults(results, uploadSummary(files.length, uploaded, failed, plan.skipped.length, failureMessages, refused) + partialUploadNote(partial));
     }
   } catch (error) {
     showActionError($("upload-status"), error, "upload files");
@@ -2285,8 +2305,62 @@ async function uploadBatch(batch) {
     body,
   });
   const value = await response.json();
-  if (!response.ok) throw apiError(value, response);
+  if (!response.ok) {
+    const error = apiError(value, response);
+    // The per-file outcomes of a batch that did not fully succeed (#687).
+    if (value && Array.isArray(value.files)) error.files = value.files;
+    throw error;
+  }
   return value;
+}
+
+// batchUploadOutcomes maps the server's per-file outcomes of a failed batch
+// (#687) onto its entries, or returns null when the error carries none that
+// match the batch, so every file is reported failed as before.
+function batchUploadOutcomes(batch, error) {
+  const files = error && error.files;
+  if (!Array.isArray(files) || files.length !== batch.length) return null;
+  for (let index = 0; index < batch.length; index++) {
+    if (!files[index] || files[index].name !== batch[index].uploadName) return null;
+  }
+  return batch.map((entry, index) => uploadOutcome(entry, files[index], error));
+}
+
+const refusalHints = {
+  historical_revision: "its content matches an earlier revision of the document, so the document was left unchanged; change the content to upload it",
+  declassification_reason_required: "it removes visibility labels and the workspace requires a declassification reason; enter one and upload it again",
+};
+
+function uploadOutcome(entry, outcome, error) {
+  const base = {name: entry.uploadName, original_name: entry.sourcePath, media_type: ""};
+  const status = String(outcome.status || "");
+  switch (status) {
+    case "applied":
+    case "unchanged":
+    case "historical":
+      return {counted: "uploaded", mayHaveCommitted: status !== "historical", result: {...base, disposition: status}};
+    case "refused": {
+      const reason = String(outcome.reason || "");
+      const detail = String(outcome.message || refusalHints[reason] || "refused by the server");
+      return {
+        counted: "refused",
+        mayHaveCommitted: false,
+        result: {...base, disposition: "refused", message: `Refused ${entry.sourcePath}: ${detail}`},
+      };
+    }
+    case "not_attempted":
+      return {
+        counted: "failed",
+        mayHaveCommitted: false,
+        result: {...base, disposition: "not attempted",
+          message: `Not attempted ${entry.sourcePath}: the batch stopped at an earlier failure; upload it again.`},
+      };
+    default: {
+      const result = failedUploadResult(entry, error);
+      if (outcome.indeterminate) result.message += ". It may have been applied; check the documents before retrying";
+      return {counted: "failed", mayHaveCommitted: Boolean(outcome.indeterminate), result};
+    }
+  }
 }
 
 function skippedUploadResult(entry, reason) {
@@ -2311,15 +2385,24 @@ function failedUploadResult(entry, error) {
   };
 }
 
-function uploadSummary(total, uploaded, failed, skipped, failureMessages = []) {
-  if (failed > 0 || skipped > 0) {
+function uploadSummary(total, uploaded, failed, skipped, failureMessages = [], refused = 0) {
+  if (failed > 0 || skipped > 0 || refused > 0) {
     const parts = [`Uploaded ${uploaded} of ${total} file(s)`];
+    if (refused > 0) parts.push(`${refused} refused`);
     if (failed > 0) parts.push(`${failed} failed`);
     if (skipped > 0) parts.push(`${skipped} skipped`);
     const detail = failureMessages.length > 0 ? `: ${failureMessages[0]}` : "";
     return `${parts.join("; ")}${detail}.`;
   }
   return `Uploaded ${uploaded} file(s).`;
+}
+
+// partialUploadNote explains a batch that was refused or failed in part
+// while its other files took effect (#687).
+function partialUploadNote(partial) {
+  return partial
+    ? " Files listed as applied or unchanged took effect; uploading the same files again is safe, they come back unchanged."
+    : "";
 }
 
 function formatBytes(bytes) {

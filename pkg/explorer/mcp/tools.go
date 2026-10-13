@@ -723,10 +723,14 @@ type structuredToolFailure struct {
 type toolFailure struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
+	// Files is the per-file outcome of a shoal.ingest batch that did not
+	// fully succeed (#687). Code and Message stay the batch's outcome.
+	Files []webapi.IngestFileOutcome `json:"files,omitempty"`
 }
 
 func (s *Server) toolErrorResult(err error) ToolResult {
 	failure := boundedToolFailure(publicToolFailure(err))
+	failure.Files = webapi.IngestFileOutcomes(err)
 	encoded, marshalErr := json.Marshal(structuredToolFailure{Error: failure})
 	if marshalErr != nil || uint64(len(encoded)) > webapi.MaxResponseBytes {
 		encoded = []byte(`{"error":{"code":"internal","message":"tool execution failed"}}`)

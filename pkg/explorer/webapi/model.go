@@ -20,6 +20,7 @@
 package webapi
 
 import (
+	"errors"
 	"time"
 
 	"github.com/phrocker/shoal-oss/pkg/document"
@@ -364,6 +365,127 @@ type SkillFileResult struct {
 type IngestResponse struct {
 	Snapshot Snapshot           `json:"snapshot"`
 	Files    []IngestFileResult `json:"files"`
+}
+
+// IngestFileStatus is what happened to one file of an upload batch that did
+// not fully succeed (#687). The first three equal the file's
+// explorer.IngestDisposition.
+type IngestFileStatus string
+
+const (
+	IngestFileApplied    IngestFileStatus = IngestFileStatus(explorer.IngestApplied)
+	IngestFileUnchanged  IngestFileStatus = IngestFileStatus(explorer.IngestUnchanged)
+	IngestFileHistorical IngestFileStatus = IngestFileStatus(explorer.IngestHistorical)
+	// IngestFileRefused is a deterministic refusal that left nothing
+	// committed for the file; IngestFileOutcome.Reason names it. The batch
+	// went on with the next file.
+	IngestFileRefused IngestFileStatus = "refused"
+	// IngestFileFailed is the failure that stopped the batch. The top-level
+	// error describes it; IngestFileOutcome.Indeterminate says whether the
+	// file may have been applied.
+	IngestFileFailed IngestFileStatus = "failed"
+	// IngestFileNotAttempted follows the failure that stopped the batch.
+	IngestFileNotAttempted IngestFileStatus = "not_attempted"
+)
+
+// IngestRefusalReason names a deterministic per-file refusal. Retrying the
+// same file returns the same refusal until the caller changes its content
+// (historical) or supplies a reason (reason required).
+type IngestRefusalReason string
+
+const (
+	IngestRefusedHistoricalRevision     IngestRefusalReason = "historical_revision"
+	IngestRefusedDeclassificationReason IngestRefusalReason = "declassification_reason_required"
+)
+
+// IngestFileOutcome reports one file of an upload batch that did not fully
+// succeed, in request order (#687).
+type IngestFileOutcome struct {
+	Name   string              `json:"name"`
+	Status IngestFileStatus    `json:"status"`
+	Reason IngestRefusalReason `json:"reason,omitempty"`
+	// Message is the public form of a refusal; it is set only for
+	// IngestFileRefused.
+	Message string `json:"message,omitempty"`
+	// Indeterminate is set only for IngestFileFailed, when the failure
+	// leaves the file's own commit outcome unknown.
+	Indeterminate bool `json:"indeterminate,omitempty"`
+}
+
+// IngestBatchError is the error of an upload batch that did not fully
+// succeed. It unwraps to the batch's top-level error, which keeps the code,
+// message and indeterminate marker a caller that ignores Files relies on:
+// the failure that stopped the batch or, when every file was tried, the
+// first refusal. Files reports every file of the request (#687).
+//
+// The top-level error is indeterminate only when a file's own outcome is
+// unknown (the failure that stopped the batch was indeterminate). A file
+// that returned a result has a known outcome, so a batch whose files were
+// applied or unchanged beside refusals is definite and partial
+// (IngestBatchPartial). It unwraps only as a multi-error, so one file's
+// explorer.IsRefusedWithoutEffect guarantee never reads as the batch's;
+// errors.Is, errors.As and the Shoal error code see through it as usual.
+type IngestBatchError struct {
+	Files []IngestFileOutcome
+	err   error
+}
+
+func (e *IngestBatchError) Error() string { return e.err.Error() }
+
+func (e *IngestBatchError) Unwrap() []error { return []error{e.err} }
+
+// IngestFileOutcomes returns the per-file outcomes err carries, or nil.
+func IngestFileOutcomes(err error) []IngestFileOutcome {
+	var batch *IngestBatchError
+	if !errors.As(err, &batch) || batch == nil {
+		return nil
+	}
+	return append([]IngestFileOutcome(nil), batch.Files...)
+}
+
+// IngestOutcomeKnown reports whether err is a batch error in which every
+// file was tried and has a known outcome: each returned a result or a
+// refusal that guaranteed nothing was committed, and the error is not
+// indeterminate. A batch stopped by a failure is not reported as known, even
+// a definite one, so a caller that treats every other failure as uncertain
+// (the MCP tool) keeps doing so.
+func IngestOutcomeKnown(err error) bool {
+	files := IngestFileOutcomes(err)
+	if files == nil || explorer.IsIndeterminateCommit(err) {
+		return false
+	}
+	for _, file := range files {
+		switch file.Status {
+		case IngestFileApplied, IngestFileUnchanged, IngestFileHistorical,
+			IngestFileRefused:
+		default:
+			return false
+		}
+	}
+	return true
+}
+
+// IngestBatchPartial reports whether err is a batch error in which some file
+// was applied or unchanged, so the batch took effect in part. Retrying the
+// same batch is idempotent for those files: they come back unchanged.
+func IngestBatchPartial(err error) bool {
+	return ingestOutcomesPartial(IngestFileOutcomes(err))
+}
+
+func ingestOutcomesPartial(files []IngestFileOutcome) bool {
+	for _, file := range files {
+		if file.Status == IngestFileApplied || file.Status == IngestFileUnchanged {
+			return true
+		}
+	}
+	return false
+}
+
+func withIngestFileOutcomes(err error, files []IngestFileOutcome) error {
+	if err == nil || files == nil {
+		return err
+	}
+	return &IngestBatchError{Files: files, err: err}
 }
 
 type ExtractRequest struct {

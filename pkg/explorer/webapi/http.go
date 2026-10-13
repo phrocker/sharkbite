@@ -46,6 +46,12 @@ const (
 	// CommitOutcomeIndeterminate tells clients to inspect state or retry with
 	// the same idempotency key rather than assuming rollback.
 	CommitOutcomeIndeterminate = "indeterminate"
+	// CommitOutcomePartial is sent only by the upload route (#687), on a
+	// definite failure of a batch in which some files were applied or
+	// unchanged: every file's outcome is known and listed in the body's
+	// "files". Retrying the same batch is idempotent for those files. A
+	// client that tests for CommitOutcomeIndeterminate is unaffected.
+	CommitOutcomePartial = "partial"
 )
 
 //go:embed static/*
@@ -659,6 +665,9 @@ func writeError(writer http.ResponseWriter, err error) {
 			CommitOutcomeHeader, CommitOutcomeIndeterminate)
 		status, code = http.StatusServiceUnavailable, shoal.ErrorUnavailable
 	} else {
+		if IngestBatchPartial(err) {
+			writer.Header().Set(CommitOutcomeHeader, CommitOutcomePartial)
+		}
 		switch code {
 		case shoal.ErrorInvalidArgument:
 			status, code = http.StatusBadRequest, shoal.ErrorInvalidArgument
@@ -687,9 +696,16 @@ func writeError(writer http.ResponseWriter, err error) {
 		Message       string                    `json:"message"`
 		Embedding     *wireEmbeddingQueryReport `json:"embedding,omitempty"`
 		Indeterminate bool                      `json:"indeterminate,omitempty"`
+		// Files is the per-file outcome of an upload batch that did not
+		// fully succeed (#687); the fields above stay the batch's outcome.
+		Files []IngestFileOutcome `json:"files,omitempty"`
+		// Partial is set when some file of such a batch was applied or
+		// unchanged (#687).
+		Partial bool `json:"partial,omitempty"`
 	}{
 		Code: code, Message: err.Error(),
 		Embedding: embedding, Indeterminate: indeterminate,
+		Files: IngestFileOutcomes(err), Partial: IngestBatchPartial(err),
 	})
 }
 

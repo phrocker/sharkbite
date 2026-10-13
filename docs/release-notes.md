@@ -2,6 +2,57 @@
 
 ## Unreleased
 
+### An upload batch reports each file, and refusals no longer stop it (#687)
+
+A workspace upload stopped at the first file that failed, and the workspace UI
+then marked every file of the batch failed, including the ones it had
+applied. After #674, re-uploading a directory after switching branches back
+showed one refused file per attempt.
+
+- Two per-file refusals no longer stop the batch: a file whose content matches
+  an earlier revision, and a relabel that needs a declassification reason. The
+  authorized client marks each as leaving nothing committed
+  (`explorer.IsRefusedWithoutEffect`), only after the claim has rolled back
+  with nothing registered. Any other failure still stops the batch, and the
+  files after it are not tried.
+- A batch that did not fully succeed is still an error, never a `200`. Its
+  body keeps `code`, `message`, `indeterminate` and the commit-outcome header,
+  and adds `files`. That is one entry per file, with a `status`: `applied`,
+  `unchanged`, `historical`, `refused` with a `reason`, `failed`, or
+  `not_attempted`.
+- A batch is indeterminate only when a file's own outcome is unknown, which is
+  when the failure that stopped it was indeterminate. Before, every failure
+  after the first file was. A batch whose files were applied or unchanged
+  beside refusals now keeps the refusal's definite status (for example a
+  `409`) and is marked partial: `Shoal-Commit-Outcome: partial` (a new header
+  value) and `"partial": true`. Retrying it converges, because applied files
+  come back unchanged. A batch where every file was refused has no header.
+- The workspace UI lists each file's own outcome, with the refusal's reason,
+  and counts refused files apart. It says when files of a failed batch took
+  effect and refreshes the document list.
+- The MCP `shoal.ingest` tool returns the same `files` in its error. It
+  reports a batch whose every file was tried (and has a known outcome) with
+  its definite code, partial or not. A batch stopped by a failure stays
+  `indeterminate`. `webapi.RemoteService` passes an upstream's `files` on
+  after checking them against the request and keeps the upstream's verified
+  definite or partial outcome. With an upstream built before #687 (no
+  `files`), a multi-file failure stays indeterminate, over MCP too.
+- The authorized client conceals the no-effect marker on any error it did not
+  mark itself, including one from its base.
+- `explorer.Ingest` marks an error after its durable document write (a failed
+  graph rebuild) indeterminate. Graph materialization and extraction do the
+  same after their records are durable. Before, such an error was definite
+  although the revision was published.
+- A snapshot read that fails after every file of an upload went through is
+  reported with the files' outcomes, as partial when any was applied or
+  unchanged. Before, it was a bare `503` with no commit-outcome header.
+- Every error an authorized ingest returns after its base may have written is
+  now indeterminate: a failed read, audit, registration or guard after an
+  applied write, a commit-time reason refusal, and a failed re-registration.
+  Before, some of these were returned as definite errors. With the batch rule
+  above, a batch stopped by one of them would otherwise have been reported as
+  definite.
+
 ### Re-ingesting an earlier revision says so (#674)
 
 Re-ingesting content byte-identical to an earlier revision of a document used
@@ -23,7 +74,9 @@ again) was told it worked.
 - A multi-file upload that fails on any file after the first now reports an
   indeterminate commit outcome, as the remote client already did, because
   earlier files of the batch may have been applied (an earlier file that was
-  unchanged wrote nothing). Like every indeterminate write it is a 503
+  unchanged wrote nothing). #687 replaces this with a definite, partial
+  outcome, and lets the batch go on past the two refusals below; see its
+  entry above. Like every indeterminate write it is a 503
   `unavailable` with the `Shoal-Commit-Outcome: indeterminate` header and
   `"indeterminate": true`, and it keeps the file's message. This covers the
   historical refusal and the missing-reason 400. A failure on the first file

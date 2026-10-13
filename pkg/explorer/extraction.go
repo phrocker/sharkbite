@@ -288,8 +288,10 @@ func (e *Explorer) CommitExtraction(
 	copy := published
 	e.extractions[published.ID] = &copy
 	if e.graphInitialized {
+		// The extraction record is durable, so a rebuild failure is
+		// indeterminate (#687), keeping its code.
 		if err := e.rebuildCurrentGraphLocked(); err != nil {
-			return ExtractionResult{}, err
+			return ExtractionResult{}, MarkIndeterminateCommit(err)
 		}
 	}
 	return extractionSummaryLocked(planned.Plan, published, e.snapshot), nil

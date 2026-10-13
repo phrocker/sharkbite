@@ -68,7 +68,14 @@ func ingestEndpoint(service Service) http.HandlerFunc {
 	}
 }
 
+// publicIngestError is the public form of an ingest error. The per-file
+// outcomes of a batch (#687) are carried over unchanged: Ingest builds them
+// from public reasons and messages only.
 func publicIngestError(err error) error {
+	return withIngestFileOutcomes(publicIngestCause(err), IngestFileOutcomes(err))
+}
+
+func publicIngestCause(err error) error {
 	code := primaryErrorCode(err)
 	if code == shoal.ErrorInvalidArgument && publicUploadValidationError(err) {
 		return err

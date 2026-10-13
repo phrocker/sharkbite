@@ -453,6 +453,62 @@ claim is rolled back and nothing is registered, so the document, its current
 rule and its claim are exactly as before. A narrowing request still leaves its
 declassification intent record, which records an attempt, not an outcome.
 
+Two authorized ingest refusals carry `explorer.IsRefusedWithoutEffect`
+(#687): this historical refusal, once its claim rollback has succeeded, and
+the `-require-declassification-reason` refusal raised before the source claim
+(`authorized.IsDeclassificationReasonRequired`). The marker means the call
+left the document, its registrations and its source claim as they were; the
+only record it may leave is a narrowing's declassification intent, which
+records an attempt. It is not set when the claim rollback failed, and it
+is never reported beside an indeterminate-commit marker or through a joined
+error. Other errors, including a reason refusal raised later in the ingest,
+do not carry it.
+
+The workspace upload batch (`POST /api/v1/ingest`, `webapi.IngestProvider`)
+reports either marked refusal per file and goes on with the rest. Any other
+per-file failure stops the batch. A batch that did not fully succeed is a
+`webapi.IngestBatchError`. It unwraps to the batch's top-level error, which
+keeps its code, message and indeterminate marker, and it carries one
+`webapi.IngestFileOutcome` per file (`webapi.IngestFileOutcomes`; the wire
+field `files` in the error body). Statuses are `applied`, `unchanged`,
+`historical`, `refused` (with `reason` `historical_revision` or
+`declassification_reason_required`), `failed` and `not_attempted`. The
+top-level error is marked indeterminate only when a file's own outcome is
+unknown, which is when the failure that stopped the batch was itself
+indeterminate. A file that returned a result has a known outcome. So a batch
+where files were applied or unchanged beside refusals, or before a definite
+failure, keeps that definite error and is partial (`webapi.IngestBatchPartial`).
+Over HTTP that means the `Shoal-Commit-Outcome: partial` header and
+`"partial": true`. Retrying a partial batch converges, because its applied
+files come back `unchanged`. The batch error unwraps only as a multi-error, so
+it is never `explorer.IsRefusedWithoutEffect` itself; `errors.Is`, `errors.As`
+and the Shoal code see through it. `webapi.IngestOutcomeKnown` reports a
+batch in which every file was tried and has a known outcome.
+
+The authorized client returns the no-effect marker only on the refusals it
+gives itself. Any other error it returns, including one passed on from its
+base, has the marker concealed (`explorer.ConcealRefusedWithoutEffect`).
+
+Every error an authorized ingest returns once something durable may have
+changed is indeterminate (`explorer.IsIndeterminateCommit`). That is from the
+moment the base reports a write (any disposition but `unchanged` or
+`historical`), or the registration is attempted. A failed read after the
+write, a failed pre-commit audit, a commit-time reason refusal, a failed
+registration and a failed guard all qualify: each may leave the claim pending
+or a revision registered. The marker only adds, so codes and `errors.Is`
+identities are kept. An error before any write stays definite, and so does an
+error after an `unchanged` result that fails before the registration. The
+base's own errors are classified by the base, and the client trusts an
+unmarked one as definite, as its claim rollback does.
+
+The base holds to that. Once `explorer.Ingest` has durably written the
+document record, the revision is published: a retry finds it. Any later error
+from the same call, such as a failed graph rebuild, is marked indeterminate
+with its code kept. A graph materialization or extraction whose record is
+durable reports a later rebuild or snapshot-registration failure the same
+way. Interaction and fold writes already mark such failures with
+`MarkCommittedInteraction`.
+
 `pkg/code` retains its existing typed stable-ID algorithms. `Source.Ref` is
 excluded from `Source.ID` and the ingestion key because multiple refs can
 resolve to one immutable revision. Retrying a committed identical ingestion

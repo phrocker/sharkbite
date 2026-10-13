@@ -393,6 +393,131 @@ assert.strictEqual(
 `)
 }
 
+// TestStaticWorkspaceUploadReportsPerFileOutcomes pins #687 in the browser:
+// a failed batch that carries per-file outcomes reports each file's own
+// outcome (applied, unchanged, refused with its reason, failed, not
+// attempted) as text, counts them apart, and refreshes documents from the
+// latest snapshot since files of the failed batch were applied. A batch
+// without outcomes is still reported failed file by file.
+func TestStaticWorkspaceUploadReportsPerFileOutcomes(t *testing.T) {
+	runNodeUITest(t, `
+const historical = 'upload file "dir__c.md" matches an earlier revision of its document, so the document was left unchanged; change the content to upload it';
+const scenario = await runScenario(
+  {documents: true, document: true, ingest: true},
+  [],
+  {
+    meta: {max_upload_files: 4, max_upload_file_bytes: 100, max_upload_total_bytes: 400},
+    ingestResponses: [{
+      snapshot: {id: "snap1", as_of: "2026-08-29T01:00:00Z", frontier: 1},
+      files: [0, 1, 2, 3].map((index) => ({name: "dir__a" + index + ".md", disposition: "applied", media_type: "text/markdown", span_count: 1})),
+    }],
+    ingestErrors: [null, {statusText: "Service Unavailable", body: {
+      code: "unavailable", message: "unavailable: conflict: " + historical, indeterminate: true,
+      files: [
+        {name: "dir__b.md", status: "applied"},
+        {name: "dir__c.md", status: "refused", reason: "historical_revision", message: historical},
+        {name: "dir__d.md", status: "refused", reason: "declassification_reason_required",
+          message: "this upload removes visibility labels from a document and the workspace requires a declassification_reason"},
+        {name: "dir__e.md", status: "unchanged"},
+      ],
+    }}, {statusText: "Service Unavailable", body: {
+      code: "unavailable", message: "unavailable: upload failed", indeterminate: true,
+      files: [
+        {name: "dir__x_img src=x_.md", status: "refused", reason: "historical_revision"},
+        {name: "dir__y.md", status: "failed", indeterminate: true},
+        {name: "dir__z.md", status: "not_attempted"},
+      ],
+    }}],
+  },
+);
+scenario.ids["upload-directory"].files = [
+  "a0.md", "a1.md", "a2.md", "a3.md", "b.md", "c.md", "d.md", "e.md", "x<img src=x>.md", "y.md", "z.md",
+].map((name) => ({name, webkitRelativePath: "dir/" + name, size: 1}));
+await scenario.ids.upload.onsubmit({preventDefault() {}});
+assert.strictEqual(scenario.uploadRequests.length, 3);
+const text = renderedText(scenario.ids["upload-results"]);
+assert.match(text, /dir__b\.md: applied/, "an applied file of a failed batch must read applied");
+assert.match(text, /dir__e\.md: unchanged/, "an unchanged file of a failed batch must read unchanged");
+assert.match(text, /dir__c\.md: refused .*Refused dir\/c\.md: upload file "dir__c\.md" matches an earlier revision/,
+  "a historical refusal must name its file and reason");
+assert.match(text, /dir__d\.md: refused .*requires a declassification_reason/,
+  "a reason-required refusal must say what is required");
+assert.match(text, /Refused dir\/x<img src=x>\.md: its content matches an earlier revision/,
+  "a refusal without a message must fall back to its reason, as text");
+assert.match(text, /dir__y\.md: failed .*Failed dir\/y\.md: unavailable: upload failed\. It may have been applied/,
+  "the failure that stopped the batch must say it may have been applied");
+assert.match(text, /dir__z\.md: not attempted .*the batch stopped at an earlier failure/,
+  "files after the stop must read not attempted");
+assert.doesNotMatch(text, /dir__b\.md: failed|Failed dir\/b\.md/, "an applied file must not be marked failed");
+const items = scenario.ids["upload-results"].children;
+assert.ok(items.every((item) => item.children.length === 0), "outcomes must be rendered as text only");
+assert.match(
+  scenario.ids["upload-status"].textContent,
+  /Uploaded 6 of 11 file\(s\); 3 refused; 2 failed/,
+  "the summary must count applied, refused and failed files apart",
+);
+assert.match(
+  scenario.ids["upload-status"].textContent,
+  /took effect; uploading the same files again is safe/,
+  "a partly applied batch must say its applied files took effect and a retry is safe",
+);
+const finalDocumentRequest = scenario.documentBodies[scenario.documentBodies.length - 1];
+assert.notStrictEqual(
+  finalDocumentRequest.snapshot && finalDocumentRequest.snapshot.id,
+  "snap1",
+  "files applied by a failed batch must not be hidden behind an earlier snapshot",
+);
+
+const legacy = await runScenario(
+  {documents: true, document: true, ingest: true},
+  [],
+  {
+    meta: {max_upload_files: 2, max_upload_file_bytes: 100, max_upload_total_bytes: 200},
+    ingestErrors: [{statusText: "Conflict", body: {code: "conflict", message: "conflict: upload failed",
+      files: [{name: "someone-else.md", status: "applied"}, {name: "dir__b.md", status: "applied"}]}}],
+  },
+);
+legacy.ids["upload-directory"].files = ["a.md", "b.md"].map((name) => ({name, webkitRelativePath: "dir/" + name, size: 1}));
+await legacy.ids.upload.onsubmit({preventDefault() {}});
+assert.match(renderedText(legacy.ids["upload-results"]), /Failed dir\/a\.md: conflict: upload failed/,
+  "outcomes that do not match the batch must not be trusted");
+assert.match(legacy.ids["upload-status"].textContent, /Uploaded 0 of 2 file\(s\); 2 failed/);
+assert.doesNotMatch(legacy.ids["upload-status"].textContent, /took effect/,
+  "a batch without trusted outcomes must not claim files took effect");
+
+const refusedOnly = await runScenario(
+  {documents: true, document: true, ingest: true},
+  [],
+  {
+    meta: {max_upload_files: 2, max_upload_file_bytes: 100, max_upload_total_bytes: 200},
+    ingestErrors: [{statusText: "Conflict", body: {code: "conflict", message: "conflict: refused",
+      files: [{name: "dir__a.md", status: "refused", reason: "historical_revision"},
+        {name: "dir__b.md", status: "historical"}]}}],
+  },
+);
+refusedOnly.ids["upload-directory"].files = ["a.md", "b.md"].map((name) => ({name, webkitRelativePath: "dir/" + name, size: 1}));
+await refusedOnly.ids.upload.onsubmit({preventDefault() {}});
+assert.match(refusedOnly.ids["upload-status"].textContent, /Uploaded 1 of 2 file\(s\); 1 refused/);
+assert.doesNotMatch(refusedOnly.ids["upload-status"].textContent, /took effect/,
+  "a batch where nothing took effect must not be called partial");
+
+const extra = await runScenario(
+  {documents: true, document: true, ingest: true},
+  [],
+  {
+    meta: {max_upload_files: 2, max_upload_file_bytes: 100, max_upload_total_bytes: 200},
+    ingestErrors: [{statusText: "Conflict", body: {code: "conflict", message: "conflict: upload failed",
+      files: [{name: "dir__a.md", status: "applied"}, {name: "dir__b.md", status: "applied"},
+        {name: "dir__c.md", status: "applied"}]}}],
+  },
+);
+extra.ids["upload-directory"].files = ["a.md", "b.md"].map((name) => ({name, webkitRelativePath: "dir/" + name, size: 1}));
+await extra.ids.upload.onsubmit({preventDefault() {}});
+assert.match(extra.ids["upload-status"].textContent, /Uploaded 0 of 2 file\(s\); 2 failed/,
+  "outcomes for more files than the batch must not be trusted");
+`)
+}
+
 func TestStaticWorkspaceUploadRequiresMetadataBounds(t *testing.T) {
 	runNodeUITest(t, `
 const scenario = await runScenario(

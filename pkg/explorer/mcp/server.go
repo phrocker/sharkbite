@@ -702,8 +702,14 @@ func (s *Server) callTool(ctx context.Context, request Request) *Response {
 		}
 	}
 	value, err := tool.call(bound, arguments)
+	// An ingest batch in which every file was tried and has a known outcome
+	// (#687: applied, unchanged, historical, or refused with nothing
+	// committed) is reported as its definite error with the per-file
+	// outcomes, partial or not. A batch stopped by a failure stays
+	// indeterminate here, like every other post-dispatch failure.
 	if mutating && err != nil &&
 		!isPreEffectToolError(err) &&
+		!webapi.IngestOutcomeKnown(err) &&
 		!explorer.IsIndeterminateCommit(err) {
 		err = explorer.MarkIndeterminateCommit(shoal.WrapError(
 			shoal.ErrorUnavailable,

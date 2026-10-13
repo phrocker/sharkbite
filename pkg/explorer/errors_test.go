@@ -68,3 +68,58 @@ func TestCommittedInteractionMarkerPreservesErrorChain(t *testing.T) {
 		t.Fatal("nil error acquired a committed marker")
 	}
 }
+
+// TestRefusedWithoutEffectMarkerIsStrict pins the #687 guarantee marker:
+// detected through wrapping and kept with its code, but not through a join
+// (which may carry a second failure) and never beside an indeterminate
+// marker.
+func TestRefusedWithoutEffectMarkerIsStrict(t *testing.T) {
+	refusal := shoal.NewError(shoal.ErrorConflict, "refused")
+	marked := explorer.MarkRefusedWithoutEffect(refusal)
+	if !explorer.IsRefusedWithoutEffect(marked) ||
+		!shoal.IsErrorCode(marked, shoal.ErrorConflict) ||
+		!errors.Is(marked, refusal) || marked.Error() != refusal.Error() {
+		t.Fatalf("marked refusal = %v", marked)
+	}
+	wrapped := shoal.WrapError(shoal.ErrorConflict, "upload", marked)
+	if !explorer.IsRefusedWithoutEffect(wrapped) {
+		t.Fatal("wrapping hid the marker")
+	}
+	for name, err := range map[string]error{
+		"unmarked":      refusal,
+		"nil":           nil,
+		"joined":        errors.Join(marked, errors.New("rollback failed")),
+		"wrapped join":  shoal.WrapError(shoal.ErrorConflict, "upload", errors.Join(marked)),
+		"indeterminate": explorer.MarkIndeterminateCommit(marked),
+		"marked indeterminate": explorer.MarkRefusedWithoutEffect(
+			explorer.MarkIndeterminateCommit(refusal)),
+	} {
+		if explorer.IsRefusedWithoutEffect(err) {
+			t.Fatalf("%s: %v reported as refused without effect", name, err)
+		}
+	}
+	if explorer.MarkRefusedWithoutEffect(nil) != nil {
+		t.Fatal("marking nil returned an error")
+	}
+}
+
+// TestConcealRefusedWithoutEffectKeepsEverythingElse pins that concealing
+// hides only the guarantee: text, code, errors.Is and the indeterminate
+// marker all survive, and an unmarked error is returned as it is.
+func TestConcealRefusedWithoutEffectKeepsEverythingElse(t *testing.T) {
+	cause := errors.New("cause")
+	refusal := shoal.WrapError(shoal.ErrorConflict, "refused", cause)
+	concealed := explorer.ConcealRefusedWithoutEffect(
+		explorer.MarkRefusedWithoutEffect(refusal))
+	if explorer.IsRefusedWithoutEffect(concealed) ||
+		!shoal.IsErrorCode(concealed, shoal.ErrorConflict) ||
+		!errors.Is(concealed, cause) || concealed.Error() != refusal.Error() {
+		t.Fatalf("concealed = %v", concealed)
+	}
+	if got := explorer.ConcealRefusedWithoutEffect(refusal); got != error(refusal) {
+		t.Fatalf("an unmarked error was rewrapped: %v", got)
+	}
+	if explorer.ConcealRefusedWithoutEffect(nil) != nil {
+		t.Fatal("concealing nil returned an error")
+	}
+}

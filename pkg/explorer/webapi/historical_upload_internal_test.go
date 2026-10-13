@@ -181,12 +181,14 @@ func TestHTTPIngestNamesOnlyAConflictRefusal(t *testing.T) {
 	}
 }
 
-// TestHTTPIngestMarksAPartlyAppliedBatchIndeterminate pins that a refusal
-// after an earlier file of the batch went through reports the indeterminate
-// outcome (so a caller does not believe nothing happened), still naming the
-// file, while the earlier file stays applied. The same holds for any
-// per-file failure; another conflict stands in for the rest.
-func TestHTTPIngestMarksAPartlyAppliedBatchIndeterminate(t *testing.T) {
+// TestHTTPIngestReportsAPartlyAppliedBatchAsPartial pins that a failure
+// after an earlier file of the batch went through keeps its definite status
+// and message, still naming the file, and reports the partial commit outcome
+// (so a caller does not believe nothing happened) while the earlier file
+// stays applied (#687; #684 reported it indeterminate). The same holds for
+// any definite per-file failure; another conflict stands in for the rest.
+// These refusals are unmarked, so the batch stops at them.
+func TestHTTPIngestReportsAPartlyAppliedBatchAsPartial(t *testing.T) {
 	for _, test := range []struct {
 		name    string
 		err     error
@@ -200,9 +202,9 @@ func TestHTTPIngestMarksAPartlyAppliedBatchIndeterminate(t *testing.T) {
 			got := postUpload(t, server,
 				filePart("fresh.txt", "fresh content\n"),
 				filePart("old.txt", "old content\n"))
-			if got.status != http.StatusServiceUnavailable ||
-				got.header != CommitOutcomeIndeterminate || !got.marked ||
-				!strings.HasSuffix(got.message, test.message) {
+			if got.status != http.StatusConflict ||
+				got.header != CommitOutcomePartial || got.marked ||
+				got.message != "conflict: "+test.message {
 				t.Fatalf("mid-batch refusal = %+v", got)
 			}
 			documents, err := corpus.Documents(context.Background())
@@ -223,10 +225,10 @@ func TestHTTPIngestMarksAPartlyAppliedBatchIndeterminate(t *testing.T) {
 	}
 }
 
-// TestEmbeddedIngestMarksOnlyAPartlyAppliedBatch pins the same rule below
-// HTTP, for the MCP tool and the remote route alike, and that the error
-// still identifies the historical refusal.
-func TestEmbeddedIngestMarksOnlyAPartlyAppliedBatch(t *testing.T) {
+// TestEmbeddedIngestReportsAPartlyAppliedBatchAsPartial pins the same rule
+// below HTTP, for the MCP tool and the remote route alike, and that the
+// error still identifies the historical refusal.
+func TestEmbeddedIngestReportsAPartlyAppliedBatchAsPartial(t *testing.T) {
 	corpus, err := explorer.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
@@ -251,7 +253,7 @@ func TestEmbeddedIngestMarksOnlyAPartlyAppliedBatch(t *testing.T) {
 	}})
 	if !errors.Is(err, authorized.ErrHistoricalRevision) ||
 		!shoal.IsErrorCode(err, shoal.ErrorConflict) ||
-		!explorer.IsIndeterminateCommit(err) {
+		explorer.IsIndeterminateCommit(err) || !IngestBatchPartial(err) {
 		t.Fatalf("mid-batch refusal = %v", err)
 	}
 }

@@ -167,12 +167,7 @@ func (s *RemoteService) Ingest(
 	}
 	defer httpResponse.Body.Close()
 	if httpResponse.StatusCode < 200 || httpResponse.StatusCode >= 300 {
-		remoteErr, verified := decodeRemoteErrorOutcome(httpResponse)
-		if (len(request.Files) > 1 || !verified) &&
-			!explorer.IsIndeterminateCommit(remoteErr) {
-			remoteErr = explorer.MarkIndeterminateCommit(remoteErr)
-		}
-		return IngestResponse{}, remoteErr
+		return IngestResponse{}, decodeRemoteIngestError(httpResponse, prepared)
 	}
 	var response IngestResponse
 	if err := decodeOneJSON(httpResponse.Body, &response, maxRemoteResponseBytes); err != nil {
@@ -726,6 +721,112 @@ func validateRemoteDocumentSummary(summary explorer.DocumentSummary) error {
 		return remoteContractError("remote document summary has inconsistent ownership", nil)
 	}
 	return nil
+}
+
+// decodeRemoteIngestError decodes a failed remote upload. A multi-file
+// failure is marked indeterminate unless the remote reported a valid,
+// verified per-file outcome for every file of the request (#687), which a
+// server that predates it never sends. With one, the remote's verified
+// commit outcome is kept: a definite failure stays definite, partial or not
+// (IngestBatchPartial follows from the files), unless an outcome itself says
+// a file's result is unknown. Outcomes that do not match the request are
+// dropped, and the batch is then treated as before.
+func decodeRemoteIngestError(
+	response *http.Response, prepared []preparedUpload,
+) error {
+	raw, readErr := io.ReadAll(io.LimitReader(
+		response.Body, maxRemoteMetadataResponseBytes+1))
+	if readErr != nil {
+		raw = nil
+	}
+	replay := *response
+	replay.Body = io.NopCloser(bytes.NewReader(raw))
+	if readErr != nil {
+		replay.Body = io.NopCloser(io.MultiReader(
+			bytes.NewReader(raw), errorReader{err: readErr}))
+	}
+	remoteErr, verified := decodeRemoteErrorOutcome(&replay)
+	var files []IngestFileOutcome
+	if verified && readErr == nil {
+		var payload struct {
+			Files []IngestFileOutcome `json:"files"`
+		}
+		if json.Unmarshal(raw, &payload) == nil &&
+			validRemoteIngestOutcomes(prepared, payload.Files) {
+			files = payload.Files
+		}
+	}
+	if (!verified || (len(prepared) > 1 && files == nil) ||
+		ingestOutcomesUnknown(files)) &&
+		!explorer.IsIndeterminateCommit(remoteErr) {
+		remoteErr = explorer.MarkIndeterminateCommit(remoteErr)
+	}
+	return withIngestFileOutcomes(remoteErr, files)
+}
+
+// ingestOutcomesUnknown reports whether a file of files has an unknown
+// outcome, so a remote that reported the batch as definite is not believed.
+func ingestOutcomesUnknown(files []IngestFileOutcome) bool {
+	// validRemoteIngestOutcomes admits the flag only on a failed file.
+	for _, file := range files {
+		if file.Indeterminate {
+			return true
+		}
+	}
+	return false
+}
+
+type errorReader struct{ err error }
+
+func (r errorReader) Read([]byte) (int, error) { return 0, r.err }
+
+// validRemoteIngestOutcomes reports whether files is a per-file outcome the
+// embedded workspace could have produced for request: one entry per file in
+// request order, statuses in batch order (no file after a failure was tried,
+// at most one failure), and a refusal's message exactly the public one.
+func validRemoteIngestOutcomes(
+	request []preparedUpload, files []IngestFileOutcome,
+) bool {
+	if len(files) != len(request) {
+		return false
+	}
+	stopped := false
+	for index, file := range files {
+		if file.Name != request[index].name {
+			return false
+		}
+		if stopped != (file.Status == IngestFileNotAttempted) {
+			return false
+		}
+		if file.Status != IngestFileRefused && (file.Reason != "" || file.Message != "") {
+			return false
+		}
+		if file.Status != IngestFileFailed && file.Indeterminate {
+			return false
+		}
+		switch file.Status {
+		case IngestFileApplied, IngestFileUnchanged, IngestFileHistorical,
+			IngestFileNotAttempted:
+		case IngestFileFailed:
+			stopped = true
+		case IngestFileRefused:
+			switch file.Reason {
+			case IngestRefusedHistoricalRevision:
+				if file.Message != historicalUploadMessage(file.Name) {
+					return false
+				}
+			case IngestRefusedDeclassificationReason:
+				if file.Message != declassificationReasonRequiredMessage {
+					return false
+				}
+			default:
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
 }
 
 func validateRemoteIngestResponse(
