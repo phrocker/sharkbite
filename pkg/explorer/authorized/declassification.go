@@ -115,6 +115,61 @@ package authorized
 // (the browser route, the MCP ingest tool, the remote web API) carry a reason
 // as declassification_reason (#664).
 //
+// # Copy-down through declared inputs (#663)
+//
+// Copy-down is the other half of #630: a principal who can read labelled
+// content writes it into material stored under a weaker rule. Where an
+// operation names its inputs, the comparison is precise. Each such operation
+// in this package binds its output to those inputs on every read:
+//
+//   - Connect stores an application edge under the edge policy, which can
+//     never carry a label (selectEdgeRule). So an edge to a labelled
+//     document is stored under a rule weaker than that endpoint's. Every
+//     read of an edge also requires both endpoints' current rules
+//     (edgeAllowsResolved, edgeEndpointsAllow), and a neighborhood drops an
+//     edge whose endpoint it hides.
+//   - An interaction's stored output restriction (RequiredVisibility) may
+//     carry none of its evidence's labels. An MCP tool call, for example,
+//     records only the workspace output policy. Every read also requires the
+//     current rule of every touched node and edge
+//     (authorizeInteractionRecords, interactionEvidenceAllows), and a fold
+//     requires every member.
+//   - ExtractDocument registers what it extracts under the source document's
+//     own rule. An extracted registration is conjoined with the document's
+//     current rule once that document is relabelled (derived_rule.go).
+//
+// None of them serves, at the write, the output's content to a reader its
+// inputs would refuse. The effective rule of each output is its stored rule
+// AND its inputs' current rules, which never narrows the inputs. This is a
+// claim about content. Existence and count signals are separate gaps (below). So they write no
+// DeclassificationRecord, and RequireDeclassificationReason does not apply to
+// them. A record would describe a widening that does not happen, at one record
+// per MCP read of labelled content, which breaks the retention premise below.
+// Refusing them would refuse ordinary reads. The copy-down tests
+// (copy_down_test.go) pin this binding for each operation.
+//
+// Known gaps, tracked separately:
+//
+//   - Interactions and application edges follow their inputs' CURRENT rule,
+//     not the rule of the revision they were derived from (#695). An
+//     authorized relabel that removes a label (audited here) leaves the
+//     replaced revision closed (revisionAllows), but opens what was derived
+//     from it. Extracted registrations do not have this gap.
+//   - A fleet action's Output names its evidence but is served to readers
+//     whose evidence refs are withheld (#696). That is a precise copy-down
+//     that is not bound to its inputs.
+//   - Existence and count oracles: a bounded neighborhood's scan limit
+//     reveals the exact number of hidden edges and interactions on a
+//     visible node (#698); a Connect ID colliding with a hidden edge reveals
+//     it, and through intrinsic edge IDs a hidden document by URI (#699); a
+//     shared extracted entity first owned by a later-labelled document
+//     reveals its entity key (#700).
+//
+// Copy-down that names no input stays undetected: labelled text ingested
+// under a new source URI, or placed in a MaterializeGraph node. Only session
+// correlation or content similarity can link such a write to what the writer
+// read. Those are operator signals, never gates (#694).
+//
 // # Retention
 //
 // Records are append-only and loaded into memory whenever the catalog opens;

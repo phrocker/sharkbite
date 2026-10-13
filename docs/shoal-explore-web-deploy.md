@@ -572,6 +572,38 @@ reason dropped without an error, because that upstream ignores unknown form
 fields. The relabel is still audited there, and that upstream cannot be
 configured to require a reason.
 
+**Copy-down is not a declassification here (#663).** An operation can name
+a labelled document as its input and write content read from it into
+something stored under a weaker rule. That covers an application edge
+(`Connect`) to the document, an interaction (a chat answer or an MCP tool
+call) that has it as evidence, and what is extracted from it. None of these
+writes a declassification record, and `-require-declassification-reason`
+never refuses one, because none of them admits a new reader when it is
+written. Every read of such an output also requires its inputs' current
+rules. An edge needs both endpoints, an interaction needs every node and
+edge it touched, and an extracted entity or relation needs its document. No
+content of these outputs is served to a reader without the label. Their
+existence is not fully hidden yet: see the gaps below.
+
+Known gaps:
+
+- When the labelled document is later relabelled to fewer labels (audited
+  as above), its earlier labelled revision stays closed, but interactions and
+  edges derived from that revision open with the document (#695). Extracted
+  entities and relations stay closed.
+- A fleet action's `Output` is shown to readers whose view of the action's
+  evidence is withheld (#696).
+- Existence and count oracles. A bounded neighborhood's scan limit reveals
+  the exact number of hidden edges and interactions on a visible node
+  (#698). A `Connect` whose edge ID collides with a hidden edge reveals that
+  edge, and through intrinsic edge IDs, a hidden document by URI (#699). An
+  extracted entity shared with a document that is labelled later reveals the
+  entity key (#700).
+- Copy-down that names no input is not detected. Examples are labelled text
+  pasted into an upload under a new name, or into a graph materialization.
+  Detection needs session correlation or content similarity, which can only
+  flag a write for an operator to review (#694).
+
 **Listing the records.** `shoal-explore-web -list-declassifications` (with the
 same `-state-dir`, `-data` or `-policy-dir`) prints every record in recording
 order and exits without serving. Each record shows its attempt, phase, time,
