@@ -893,12 +893,10 @@ func (t *Tablet) Compact(stack []iterrt.IterSpec) error {
 	for _, path := range t.files {
 		existingNames[filepath.Base(path)] = struct{}{}
 	}
-	base := uniqueCompactionBase(
-		t.nextNameMillis(),
-		len(runs),
-		t.opts.FileFormat.extension(),
-		existingNames,
-	)
+	base, err := t.freeCompactionBaseLocked(len(runs), existingNames)
+	if err != nil {
+		return err
+	}
 	t.nameHighWater = base
 	for index, run := range runs {
 		inputs := make([]compaction.Input, len(run.inputs))
@@ -1021,6 +1019,74 @@ func uniqueCompactionBase(
 		}
 		base++
 	}
+}
+
+// freeCompactionBaseLocked is uniqueCompactionBase, also skipping names an
+// object already has under the tablet directory although the tablet does not
+// track it — a file another engine exported straight into this directory
+// after Open (see objectExists). Caller holds t.mu.
+func (t *Tablet) freeCompactionBaseLocked(outputs int, existing map[string]struct{}) (int64, error) {
+	extension := t.opts.FileFormat.extension()
+	for {
+		base := uniqueCompactionBase(t.nextNameMillis(), outputs, extension, existing)
+		taken := false
+		for index := 0; index < outputs; index++ {
+			name := fmt.Sprintf("C%013d-%03d%s", base, index, extension)
+			present, err := objectExists(t.backend, filepath.Join(t.dir, name))
+			if err != nil {
+				return 0, fmt.Errorf("tablet: probe compaction name %s: %w", name, err)
+			}
+			if present {
+				existing[name] = struct{}{}
+				taken = true
+				break // retry from the next base
+			}
+		}
+		if !taken {
+			return base, nil
+		}
+	}
+}
+
+// freeFlushNameLocked is uniqueFlushName, also skipping names an untracked
+// object already has (see freeCompactionBaseLocked). Caller holds t.mu.
+func (t *Tablet) freeFlushNameLocked(existing map[string]struct{}) (string, error) {
+	for {
+		name := uniqueFlushName(t.nextNameMillis(), t.opts.FileFormat.extension(), existing)
+		present, err := objectExists(t.backend, filepath.Join(t.dir, name))
+		if err != nil {
+			return "", fmt.Errorf("tablet: probe flush name %s: %w", name, err)
+		}
+		if !present {
+			return name, nil
+		}
+		existing[name] = struct{}{}
+	}
+}
+
+// objectExists reports whether an object is present at path. A tablet's
+// names are unique among the files it tracks, but an export made without a
+// ProducerID writes "F<ms>.rf" objects straight into the destination tablet
+// directory, which may be a live engine's: one shipped after Open is in no
+// list the tablet keeps, and a flush or compaction choosing its name would
+// replace it (#704). One probe per chosen name avoids that. It narrows the
+// window rather than closing it: the local, memory and HDFS backends' writes
+// replace an existing object instead of creating exclusively, so an object
+// landing between the probe and the write is still replaced, while the cloud
+// backends' writes are conditional from Create onward. (The opposite order —
+// an export overwriting a name a flush took first — is the exporter's to
+// avoid, with a ProducerID.) Any error other than not-found fails the probe:
+// a name is never assumed free.
+func objectExists(b storage.Backend, path string) (bool, error) {
+	f, err := b.Open(context.Background(), path)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return false, nil
+		}
+		return false, err
+	}
+	_ = f.Close()
+	return true, nil
 }
 
 // wallMillis is the clock file names are derived from (a variable so tests
@@ -1156,7 +1222,10 @@ func (t *Tablet) flushLocked() error {
 	for _, path := range t.files {
 		existingNames[filepath.Base(path)] = struct{}{}
 	}
-	outName := uniqueFlushName(t.nextNameMillis(), t.opts.FileFormat.extension(), existingNames)
+	outName, err := t.freeFlushNameLocked(existingNames)
+	if err != nil {
+		return fmt.Errorf("flush: %w", err)
+	}
 	t.nameHighWater = namesHighWater(t.nameHighWater, outName)
 	outPath := filepath.Join(t.dir, outName)
 	if err := storage.WriteAll(context.Background(), t.backend, outPath, data); err != nil {
