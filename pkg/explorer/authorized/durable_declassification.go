@@ -38,16 +38,25 @@ const (
 	policyRowDeclassification  = "audit/declassification/"
 	policyKindDeclassification = byte(10)
 
-	// Claim-lineage bindings: which intent a source claim version descends
-	// from. A separate append-only prefix and kind; the source-claim record
-	// itself is unchanged.
-	policyRowDeclassificationClaim  = "audit/declassification-claim/"
-	policyKindDeclassificationClaim = byte(11)
+	// Retired: claim-lineage bindings and closures, written by the
+	// declassification lineage that #667 merged and #665 removed. Once a
+	// claim commits only with its registration and the replaced
+	// registration is authorized before any write, a lineage grants
+	// nothing, so its rows carry no state anyone needs. They were on main
+	// for a few hours and no release wrote them. A catalog that holds some
+	// still opens: load decodes each such row strictly (this prefix and
+	// exactly this kind, a valid checksummed envelope, the old record shape)
+	// and then ignores it, keeping only its sequence number. Any other
+	// unknown kind, and a malformed row under this prefix, still fails
+	// closed. Never reuse the prefix or the kind.
+	retiredPolicyRowDeclassificationClaim  = "audit/declassification-claim/"
+	retiredPolicyKindDeclassificationClaim = byte(11)
 )
 
-// persistedDeclassificationClaim is a binding, or with Closed the end of a
-// bound version's lineage (written under its own row).
-type persistedDeclassificationClaim struct {
+// retiredPersistedDeclassificationClaim is the shape #667 wrote under
+// retiredPolicyRowDeclassificationClaim. It is decoded only to validate and
+// skip such rows.
+type retiredPersistedDeclassificationClaim struct {
 	Seq       uint64
 	SourceURI string
 	Version   uint64
@@ -55,145 +64,30 @@ type persistedDeclassificationClaim struct {
 	Closed    bool
 }
 
-func policyDeclassificationClaimRow(sourceURI string, version uint64) []byte {
-	digest := sha256.Sum256([]byte(sourceURI))
-	return []byte(fmt.Sprintf("%s%s/%020d", policyRowDeclassificationClaim,
-		hex.EncodeToString(digest[:]), version))
-}
-
-func policyDeclassificationClaimRowFor(
-	record persistedDeclassificationClaim,
-) []byte {
-	row := policyDeclassificationClaimRow(record.SourceURI, record.Version)
+// validateRetiredDeclassificationClaim checks a decoded retired row against
+// the exact row key #667 wrote it under. A closure carries no attempt ID; a
+// binding must.
+func validateRetiredDeclassificationClaim(
+	row string,
+	record retiredPersistedDeclassificationClaim,
+) error {
+	if err := validateSourceURI(record.SourceURI); err != nil {
+		return err
+	}
+	if record.Version == 0 {
+		return fmt.Errorf("retired claim binding version is zero")
+	}
+	if record.Closed != (record.AttemptID == "") {
+		return fmt.Errorf("retired claim binding attempt ID is inconsistent")
+	}
+	digest := sha256.Sum256([]byte(record.SourceURI))
+	expected := fmt.Sprintf("%s%s/%020d", retiredPolicyRowDeclassificationClaim,
+		hex.EncodeToString(digest[:]), record.Version)
 	if record.Closed {
-		row = append(row, "/closed"...)
+		expected += "/closed"
 	}
-	return row
-}
-
-// CloseDeclassificationClaim validates the closure, writes it through to the
-// engine, and only then makes it observable in memory.
-func (s *DurablePolicyStore) CloseDeclassificationClaim(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-) error {
-	if s == nil {
-		return (*MemoryPolicyStore)(nil).CloseDeclassificationClaim(
-			ctx, sourceURI, version)
-	}
-	if err := contextFailure(ctx); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return catalogUnavailable()
-	}
-	s.memory.mu.RLock()
-	closed, err := s.memory.checkCloseDeclassificationClaimLocked(
-		sourceURI, version)
-	s.memory.mu.RUnlock()
-	if err != nil || closed {
-		return err
-	}
-	record := persistedDeclassificationClaim{
-		Seq: s.nextSeq(), SourceURI: sourceURI, Version: version, Closed: true,
-	}
-	if err := s.writeRow(
-		policyDeclassificationClaimRowFor(record),
-		policyKindDeclassificationClaim, record,
-	); err != nil {
-		return err
-	}
-	return s.memory.CloseDeclassificationClaim(
-		context.WithoutCancel(ctx), sourceURI, version)
-}
-
-// BindDeclassificationClaim validates the binding, writes it through to the
-// engine, and only then makes it observable in memory.
-func (s *DurablePolicyStore) BindDeclassificationClaim(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-	attemptID shoal.ID,
-) error {
-	if s == nil {
-		return (*MemoryPolicyStore)(nil).BindDeclassificationClaim(
-			ctx, sourceURI, version, attemptID)
-	}
-	if err := contextFailure(ctx); err != nil {
-		return err
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.closed {
-		return catalogUnavailable()
-	}
-	s.memory.mu.RLock()
-	bound, err := s.memory.checkDeclassificationClaimLocked(
-		sourceURI, version, attemptID)
-	s.memory.mu.RUnlock()
-	if err != nil || bound {
-		return err
-	}
-	if err := s.writeRow(
-		policyDeclassificationClaimRow(sourceURI, version),
-		policyKindDeclassificationClaim,
-		persistedDeclassificationClaim{
-			Seq: s.nextSeq(), SourceURI: sourceURI, Version: version,
-			AttemptID: string(attemptID),
-		},
-	); err != nil {
-		return err
-	}
-	return s.memory.BindDeclassificationClaim(
-		context.WithoutCancel(ctx), sourceURI, version, attemptID)
-}
-
-// DeclassificationClaimIntent is a pure read delegated to the memory store.
-func (s *DurablePolicyStore) DeclassificationClaimIntent(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-) (DeclassificationRecord, bool, error) {
-	return s.memoryStore().DeclassificationClaimIntent(ctx, sourceURI, version)
-}
-
-// restoreDeclassifications rebuilds the records, their intent index and the
-// claim bindings on open. A binding naming no recorded intent for its source
-// fails closed.
-func (s *MemoryPolicyStore) restoreDeclassifications(
-	records []DeclassificationRecord,
-	claims []persistedDeclassificationClaim,
-) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.declassifications = nil
-	s.declassificationIntents = nil
-	s.declassificationClaims = nil
-	s.closedDeclassificationClaims = nil
-	for _, record := range records {
-		s.appendDeclassificationLocked(record)
-	}
-	for _, claim := range claims {
-		if claim.Closed {
-			continue
-		}
-		if err := s.bindDeclassificationClaimLocked(
-			claim.SourceURI, claim.Version, shoal.ID(claim.AttemptID),
-		); err != nil {
-			return err
-		}
-	}
-	for _, claim := range claims {
-		if !claim.Closed {
-			continue
-		}
-		if err := s.closeDeclassificationClaimLocked(
-			claim.SourceURI, claim.Version); err != nil {
-			return err
-		}
+	if row != expected {
+		return fmt.Errorf("retired claim binding row does not match its record")
 	}
 	return nil
 }
@@ -274,13 +168,18 @@ func (s *DurablePolicyStore) RecordDeclassification(
 	if err != nil {
 		return catalogUnavailable()
 	}
-	if err := s.writeRow(
+	// This write precedes the memory change, so its failure leaves the two
+	// in agreement and does not make the store diverge.
+	if err := s.writeRowBeforeApply(
 		policyDeclassificationRow(record), policyKindDeclassification,
 		persisted,
 	); err != nil {
 		return err
 	}
-	return s.memory.RecordDeclassification(context.WithoutCancel(ctx), record)
+	// The record is durable; if memory now refused it, the two would
+	// disagree, so the store fails closed until it reloads from disk.
+	return s.persisted(
+		s.memory.RecordDeclassification(context.WithoutCancel(ctx), record))
 }
 
 // Declassifications is a pure read delegated to the memory store, whose

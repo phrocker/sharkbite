@@ -420,7 +420,12 @@ func TestTightenRulePendingClaim(t *testing.T) {
 		if _, err := tightenFor(store, "doc-1", "rev-2", tightenURI, w.bare, w.secret); err != nil {
 			t.Fatal(err)
 		}
-		for _, s := range []PolicyStore{store, reopen()} {
+		// Read the live store before reopening: a closed durable store
+		// serves no reads.
+		for index, s := range []PolicyStore{store, nil} {
+			if index == 1 {
+				s = reopen()
+			}
 			claim, ok, err := s.SourceClaim(ctx, tightenURI)
 			if err != nil || !ok || !claim.Pending || claim.PreviousRule == nil {
 				t.Fatalf("pending claim = %+v, %v, %v", claim, ok, err)

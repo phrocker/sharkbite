@@ -46,21 +46,21 @@ func TestDeclassificationRecordKindIsNew(t *testing.T) {
 			t.Fatalf("%s kind = %d, want %d", name, actual[name], kind)
 		}
 		if kind == policyKindDeclassification ||
-			kind == policyKindDeclassificationClaim {
+			kind == retiredPolicyKindDeclassificationClaim {
 			t.Fatalf("declassification kind collides with %s", name)
 		}
 	}
-	if policyKindDeclassification != 10 ||
-		policyRowDeclassification != "audit/declassification/" ||
-		policyKindDeclassificationClaim != 11 ||
-		policyRowDeclassificationClaim != "audit/declassification-claim/" {
-		t.Fatalf("declassification kinds/prefixes = %d %q %d %q",
-			policyKindDeclassification, policyRowDeclassification,
-			policyKindDeclassificationClaim, policyRowDeclassificationClaim)
+	if retiredPolicyKindDeclassificationClaim != 11 ||
+		retiredPolicyRowDeclassificationClaim != "audit/declassification-claim/" ||
+		strings.HasPrefix(retiredPolicyRowDeclassificationClaim, policyRowDeclassification) ||
+		strings.HasPrefix(policyRowDeclassification, retiredPolicyRowDeclassificationClaim) {
+		t.Fatalf("retired lineage kind/prefix changed or overlaps: %d %q",
+			retiredPolicyKindDeclassificationClaim, retiredPolicyRowDeclassificationClaim)
 	}
-	if strings.HasPrefix(policyRowDeclassificationClaim, policyRowDeclassification) ||
-		strings.HasPrefix(policyRowDeclassification, policyRowDeclassificationClaim) {
-		t.Fatal("declassification record and claim-binding prefixes overlap")
+	if policyKindDeclassification != 10 ||
+		policyRowDeclassification != "audit/declassification/" {
+		t.Fatalf("declassification kind/prefix = %d %q",
+			policyKindDeclassification, policyRowDeclassification)
 	}
 	for _, prefix := range []string{
 		policyRowSourceClaim, policyRowRevision, policyRowCurrent,
@@ -68,9 +68,7 @@ func TestDeclassificationRecordKindIsNew(t *testing.T) {
 		policyRowSourceVersion, policyRowCoOccurrence, policyRowLabelMigration,
 	} {
 		if strings.HasPrefix(policyRowDeclassification, prefix) ||
-			strings.HasPrefix(prefix, policyRowDeclassification) ||
-			strings.HasPrefix(policyRowDeclassificationClaim, prefix) ||
-			strings.HasPrefix(prefix, policyRowDeclassificationClaim) {
+			strings.HasPrefix(prefix, policyRowDeclassification) {
 			t.Fatalf("declassification prefix overlaps %q", prefix)
 		}
 	}

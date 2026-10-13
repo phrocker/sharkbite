@@ -128,9 +128,8 @@ type Config struct {
 	// document's rule (removes a visibility label or any other rule
 	// component, #630) unless its context carries a reason code from
 	// WithDeclassificationReason. Every narrowing is audited regardless.
-	// It is enforced where the narrowing is decided (the source claim), by
-	// the Client making it, so every Client sharing one PolicyStore should
-	// be configured alike.
+	// It is enforced by the Client making the narrowing, so every Client
+	// sharing one PolicyStore should be configured alike.
 	RequireDeclassificationReason bool
 }
 
@@ -281,7 +280,7 @@ func (c *Client) Ingest(
 	if err := guard.Check(ctx); err != nil {
 		return explorer.IngestResult{}, err
 	}
-	claim, declassification, lineage, err := c.claimSourceMutation(
+	claim, declassification, err := c.claimSourceMutation(
 		ctx, ownedSource.URI, decision, rule, now)
 	if err != nil {
 		return explorer.IngestResult{}, err
@@ -312,17 +311,6 @@ func (c *Client) Ingest(
 			}
 		}
 	}()
-	// Bind the new claim version to the intent it descends from (this
-	// ingest's own, or one inherited from a lagging narrowing) before the
-	// base is written, so a later retry can complete that narrowing as a
-	// reconciliation and nothing else can (#630). A failure rolls the
-	// claim back; a later pend or commit keeps the bound version.
-	if lineage != "" {
-		if err := c.policyStore.BindDeclassificationClaim(
-			ctx, ownedSource.URI, claim.Version, lineage); err != nil {
-			return explorer.IngestResult{}, policyCatalogWriteError(ctx, err)
-		}
-	}
 	if err := guard.Check(ctx); err != nil {
 		return explorer.IngestResult{}, err
 	}
@@ -333,8 +321,27 @@ func (c *Client) Ingest(
 		}
 		return explorer.IngestResult{}, err
 	}
+	// An applied base write is not yet a committed claim (#665). The claim
+	// commits only once the revision is registered current below. Until
+	// then any failure ends it as Pend, keeping both the desired rule and
+	// the rule it replaces (PreviousRule), so a retry must be authorized
+	// under both. Before #665 the claim committed here, and a failure
+	// before registration left a committed claim under the new rule that
+	// any holder of that rule alone could finish. That is how a principal
+	// lacking the old rule could complete someone else's half-finished
+	// relabel, and how a refused attempt could leave a claim behind.
+	//
+	// Two consequences are intended and fail closed:
+	//   - a claim holder without the replaced rule can no longer complete
+	//     someone else's half-finished change;
+	//   - a pending claim admits only a retry selecting exactly its rule,
+	//     so it blocks a different relabel of the URI until someone
+	//     authorized under both rules retries it.
+	//
+	// The pending state is the one a crash already leaves (a held claim
+	// recovers as pending), so this needs no new persisted state.
 	if result.Disposition == explorer.IngestApplied {
-		claimOutcome = sourceClaimCommit
+		claimOutcome = sourceClaimPend
 	}
 	view, err := c.base.Document(
 		ctx, result.Document.ID, result.Revision.ID)
@@ -374,12 +381,19 @@ func (c *Client) Ingest(
 	if err != nil {
 		return explorer.IngestResult{}, inconsistentBase()
 	}
+	// The pre-write check authorized the registration of the document the
+	// Explorer derives from the URI, so the base must have written exactly
+	// that document; anything else is an inconsistent base, refused before
+	// it is registered (#665).
+	if result.Document.ID != explorer.SourceDocumentID(ownedSource.URI) {
+		return explorer.IngestResult{}, inconsistentBase()
+	}
 	// The registration below is what lets a narrowed rule's new readers
 	// in, so a narrowing is audited immediately before it (#630).
 	if current {
 		if err := c.declassificationCommit(
 			ctx, decision, now, ownedSource.URI, result.Document.ID,
-			result.Revision.ID, rule, declassification, claim.Version,
+			result.Revision.ID, rule, declassification,
 		); err != nil {
 			return explorer.IngestResult{}, err
 		}
@@ -397,22 +411,6 @@ func (c *Client) Ingest(
 	}
 	if current {
 		claimOutcome = sourceClaimCommit
-		// The registration is current, so no narrowing lags behind this
-		// claim version any more: end its lineage, so later ingests
-		// inherit nothing and write nothing (#630).
-		if lineage != "" {
-			// The registration is already current, so a caller's
-			// cancellation must not skip the close (as with the claim
-			// cleanup). A close that still fails only leaves the lineage
-			// open: covering needs the registration to be a rule the
-			// narrowing replaced, which it no longer is, and the next
-			// ingest on this lineage closes it.
-			if err := c.policyStore.CloseDeclassificationClaim(
-				context.WithoutCancel(ctx), ownedSource.URI,
-				claim.Version); err != nil {
-				return explorer.IngestResult{}, policyCatalogWriteError(ctx, err)
-			}
-		}
 	}
 	sectionCount, spanCount := documentViewCounts(view)
 	cloned := explorer.IngestResult{
@@ -459,90 +457,100 @@ const (
 // base is changed. Existing claims authorize retries after a base commit even
 // when revision registration failed. Legacy registered documents may backfill
 // a missing claim only after authorization under their current rule.
-//
-// Once the principal is authorized under the replaced rule(s) and the
-// selected one, a selected rule that narrows any replaced rule is audited
-// (declassificationIntent) before the claim is swapped, and the returned
-// attempt carries that audit to the registration step (#630). The returned
-// lineage is the intent the new claim version must be bound to before the
-// base is written (see declassificationLineage), or empty.
 func (c *Client) claimSourceMutation(
 	ctx context.Context,
 	sourceURI string,
 	decision auth.Decision,
 	selectedRule AccessRule,
 	now time.Time,
-) (SourcePolicyClaim, *declassificationAttempt, shoal.ID, error) {
+) (SourcePolicyClaim, *declassificationAttempt, error) {
 	if err := validateSourceURI(sourceURI); err != nil {
-		return SourcePolicyClaim{}, nil, "", err
+		return SourcePolicyClaim{}, nil, err
 	}
 	existingClaim, claimed, err := c.policyStore.SourceClaim(ctx, sourceURI)
 	if err != nil {
-		return SourcePolicyClaim{}, nil, "", policyCatalogReadError(ctx, err)
+		return SourcePolicyClaim{}, nil, policyCatalogReadError(ctx, err)
 	}
 	var expected *SourcePolicyClaim
-	var priorRules []AccessRule
-	var legacyDocument, legacyRevision shoal.ID
+	var authorized []AccessRule
+	var priorDocument, priorRevision shoal.ID
 	if claimed {
 		allowed, ruleErr := sourceClaimAllowsMutation(
 			existingClaim, selectedRule, decision, now)
 		if ruleErr != nil {
-			return SourcePolicyClaim{}, nil, "", ruleErr
+			return SourcePolicyClaim{}, nil, ruleErr
 		}
 		if !allowed {
-			return SourcePolicyClaim{}, nil, "", auth.ObjectNotFound()
+			return SourcePolicyClaim{}, nil, auth.ObjectNotFound()
 		}
 		expected = &existingClaim
-		priorRules = append(priorRules, existingClaim.Rule)
+		authorized = append(authorized, existingClaim.Rule)
 		if existingClaim.Pending && existingClaim.PreviousRule != nil {
-			priorRules = append(priorRules, *existingClaim.PreviousRule)
+			authorized = append(authorized, *existingClaim.PreviousRule)
 		}
 	} else {
 		legacy, err := c.authorizeLegacySource(
 			ctx, sourceURI, decision, now)
 		if err != nil {
-			return SourcePolicyClaim{}, nil, "", err
+			return SourcePolicyClaim{}, nil, err
 		}
 		if legacy != nil {
-			priorRules = append(priorRules, legacy.Rule)
-			legacyDocument = legacy.DocumentID
-			legacyRevision = legacy.RevisionID
+			authorized = append(authorized, legacy.Rule)
+			priorDocument = legacy.DocumentID
+			priorRevision = legacy.RevisionID
 		}
 	}
-	declassification, err := c.declassificationIntent(
-		ctx, decision, now, sourceURI, selectedRule, priorRules,
-		legacyDocument, legacyRevision)
+	// Before anything is written, the registration this ingest would
+	// replace must be one the principal is authorized under. The claim
+	// above normally shows that, but not for a pending claim with no
+	// previous rule, or for a catalog that diverged from its base (a
+	// registration with no claim and no base document). So this looks the
+	// registration up by the document identity the Explorer derives from
+	// the URI. A refused principal therefore writes nothing to the base and
+	// leaves no claim behind (#665).
+	documentID := explorer.SourceDocumentID(sourceURI)
+	replaced, err := c.authorizeReplacedRegistration(
+		ctx, decision, now, documentID, authorized)
 	if err != nil {
-		return SourcePolicyClaim{}, nil, "", err
+		return SourcePolicyClaim{}, nil, err
 	}
-	lineage, err := c.declassificationLineage(
-		ctx, sourceURI, expected, selectedRule, declassification)
+	// Every rule this ingest replaces has now authorized the principal, so
+	// a narrowing of any of them is audited (and the reason policy applied)
+	// before the claim is swapped or the base written (#630).
+	if replaced != nil {
+		authorized = appendDistinctRule(authorized, replaced.Rule)
+		priorDocument = documentID
+		priorRevision = replaced.RevisionID
+	}
+	declassification, err := c.declassificationIntent(
+		ctx, decision, now, sourceURI, selectedRule, authorized,
+		priorDocument, priorRevision)
 	if err != nil {
-		return SourcePolicyClaim{}, nil, "", err
+		return SourcePolicyClaim{}, nil, err
 	}
 	claim, err := c.policyStore.CompareAndSwapSourceClaim(
 		ctx, sourceURI, expected, selectedRule)
 	if err == nil {
-		return claim, declassification, lineage, nil
+		return claim, declassification, nil
 	}
 	if !shoal.IsErrorCode(err, shoal.ErrorConflict) {
-		return SourcePolicyClaim{}, nil, "", policyCatalogWriteError(ctx, err)
+		return SourcePolicyClaim{}, nil, policyCatalogWriteError(ctx, err)
 	}
 	latest, ok, readErr := c.policyStore.SourceClaim(ctx, sourceURI)
 	if readErr != nil {
-		return SourcePolicyClaim{}, nil, "", policyCatalogReadError(ctx, readErr)
+		return SourcePolicyClaim{}, nil, policyCatalogReadError(ctx, readErr)
 	}
 	if ok {
 		allowed, ruleErr := sourceClaimAllowsMutation(
 			latest, selectedRule, decision, now)
 		if ruleErr != nil {
-			return SourcePolicyClaim{}, nil, "", ruleErr
+			return SourcePolicyClaim{}, nil, ruleErr
 		}
 		if !allowed {
-			return SourcePolicyClaim{}, nil, "", auth.ObjectNotFound()
+			return SourcePolicyClaim{}, nil, auth.ObjectNotFound()
 		}
 	}
-	return SourcePolicyClaim{}, nil, "", policyCatalogWriteError(ctx, err)
+	return SourcePolicyClaim{}, nil, policyCatalogWriteError(ctx, err)
 }
 
 func sourceClaimAllowsMutation(
@@ -621,6 +629,48 @@ func (c *Client) authorizeLegacySource(
 		return nil, auth.ObjectNotFound()
 	}
 	return &registration, nil
+}
+
+// authorizeReplacedRegistration runs before anything is written, against the
+// document the Explorer derives from the source URI (Ingest then refuses a
+// base that wrote any other document). Replacing the document's current
+// registration requires authorization under that registration's rule. The
+// claim-time check normally covered it (it authorized under the claim's rule, a pending
+// claim's previous rule, or a legacy document's registration). When it did
+// not, this check is the first authorization under that rule, and a principal
+// outside it gets NotFound, as at claim time (#665). That happens when the
+// catalog and base diverged: a registration exists for a URI with no claim
+// and no base document. It also happens when a pending claim recorded no
+// previous rule because it was created over an unclaimed, registered
+// document.
+func (c *Client) authorizeReplacedRegistration(
+	ctx context.Context,
+	decision auth.Decision,
+	now time.Time,
+	documentID shoal.ID,
+	claimAuthorized []AccessRule,
+) (*RevisionRegistration, error) {
+	current, ok, err := c.policyStore.CurrentRevision(ctx, documentID)
+	if err != nil {
+		return nil, policyCatalogReadError(ctx, err)
+	}
+	if !ok {
+		return nil, nil
+	}
+	for _, authorized := range claimAuthorized {
+		if authorized.equal(current.Rule) {
+			return &current, nil
+		}
+	}
+	allowed, err := ruleAllows(
+		current.Rule, decision, auth.OperationIngest, now)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, auth.ObjectNotFound()
+	}
+	return &current, nil
 }
 
 func (c *Client) begin(
@@ -968,6 +1018,12 @@ func policyCatalogReadError(ctx context.Context, _ error) error {
 func policyCatalogWriteError(ctx context.Context, err error) error {
 	if contextErr := contextFailure(ctx); contextErr != nil {
 		return contextErr
+	}
+	// A record the catalog refused before changing anything is the caller's
+	// input, and retrying it cannot succeed: report it as such.
+	if errors.Is(err, errPolicyRecordTooLarge) {
+		return shoal.NewError(shoal.ErrorInvalidArgument,
+			"this write is too large for the authorization policy catalog")
 	}
 	if shoal.IsErrorCode(err, shoal.ErrorConflict) {
 		return catalogConflict()

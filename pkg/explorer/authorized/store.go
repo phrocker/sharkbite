@@ -123,7 +123,11 @@ type SourcePolicyClaim struct {
 // invariant violations. That token is a capability: SourceClaim must return
 // only observable claim state and never a value a finalizer would accept, so
 // that reading a claim cannot finalize one. Fallible durable coordination
-// belongs to M3.
+// belongs to M3. A write that reports an error must not be observable by any
+// later read (DurablePolicyStore fails closed rather than serve a change it
+// could not persist): authorization decides on these reads, and a
+// registration or claim that did not persist must never stand in for the
+// one it replaced (#665).
 type PolicyStore interface {
 	AcquireMutation(context.Context) (MutationLease, error)
 	SourceClaim(context.Context, string) (SourcePolicyClaim, bool, error)
@@ -191,19 +195,6 @@ type PolicyStore interface {
 	// attempt; whether the narrowing took effect is the catalog's revision
 	// registration (a pre_commit record's RevisionID being current).
 	Declassifications(context.Context) ([]DeclassificationRecord, error)
-	// BindDeclassificationClaim durably records, before the base is
-	// written, that a source claim version descends from a recorded intent,
-	// so a later retry completing that narrowing can be told apart from one
-	// whose claim no reason-checked intent produced.
-	BindDeclassificationClaim(context.Context, string, uint64, shoal.ID) error
-	// CloseDeclassificationClaim durably ends a bound claim version's
-	// lineage once its narrowing is registered.
-	CloseDeclassificationClaim(context.Context, string, uint64) error
-	// DeclassificationClaimIntent returns the intent a source claim version
-	// is bound to, if any and while its lineage is open, by exact lookup.
-	DeclassificationClaimIntent(
-		context.Context, string, uint64,
-	) (DeclassificationRecord, bool, error)
 }
 
 type revisionKey struct {
@@ -240,13 +231,6 @@ type MemoryPolicyStore struct {
 	labelMigration *LabelMigrationRecord
 	// declassifications is append-only (#630).
 	declassifications []DeclassificationRecord
-	// declassificationIntents indexes intent records by attempt ID.
-	declassificationIntents map[shoal.ID]int
-	// declassificationClaims binds source claim versions to the intent they
-	// descend from.
-	declassificationClaims map[declassificationClaimKey]shoal.ID
-	// closedDeclassificationClaims marks bound versions whose lineage ended.
-	closedDeclassificationClaims map[declassificationClaimKey]struct{}
 }
 
 // NewMemoryPolicyStore constructs an empty reference catalog.

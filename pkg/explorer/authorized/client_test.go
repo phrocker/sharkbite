@@ -1852,6 +1852,17 @@ func TestHistoricalRevisionRetryIsIdempotent(t *testing.T) {
 	}
 }
 
+// TestHistoricalRetryCannotTransitionCurrentSourceClaim pins what a failed
+// registration after an applied base write leaves behind (#665). The claim
+// is pending under the desired rule A with the replaced rule B as its
+// previous rule; it is not committed under A. So:
+//   - a historical retry under B cannot transition it (a pending claim admits
+//     only its own rule);
+//   - neither a holder of B alone nor a holder of A alone can finish it
+//     (before #665 a holder of A alone could complete the reclassification
+//     it never had the authority to start);
+//   - a principal authorized under both rules completes it, and only then is
+//     the claim committed under A.
 func TestHistoricalRetryCannotTransitionCurrentSourceClaim(t *testing.T) {
 	f := newFixture(t)
 	const uri = "file:///historical-claim-transition.txt"
@@ -1883,47 +1894,39 @@ func TestHistoricalRetryCannotTransitionCurrentSourceClaim(t *testing.T) {
 		t.Fatalf("newer base revision was not applied: %#v", current)
 	}
 	newRevisionID := current[0].Revision.ID
-	claimA, ok, err := f.store.SourceClaim(context.Background(), uri)
-	if err != nil || !ok {
-		t.Fatalf("policy A source claim: ok=%v err=%v", ok, err)
+	pending, ok, err := f.store.SourceClaim(context.Background(), uri)
+	if err != nil || !ok || !pending.Pending || pending.PreviousRule == nil {
+		t.Fatalf("claim after a failed registration = %#v ok=%v err=%v, want pending with the replaced rule",
+			pending, ok, err)
 	}
 
-	retried, err := f.clientB.Ingest(f.admin(t), oldSource)
-	if err != nil {
-		t.Fatal(err)
+	// A historical retry under B is refused and does not transition it.
+	if _, err := f.clientB.Ingest(f.admin(t), oldSource); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("historical policy B retry on a pending policy A claim = %v, want not found", err)
 	}
-	if retried.Disposition != explorer.IngestUnchanged ||
-		retried.Revision.ID != old.Revision.ID {
-		t.Fatalf("historical policy B retry = %#v", retried)
-	}
-	claimAfterRetry, ok, err := f.store.SourceClaim(
-		context.Background(), uri)
-	if err != nil || !ok {
-		t.Fatalf("source claim after historical retry: ok=%v err=%v", ok, err)
-	}
-	if claimAfterRetry.Version != claimA.Version ||
-		claimAfterRetry.Rule.String() != claimA.Rule.String() {
-		t.Fatalf(
-			"historical retry transitioned claim: before=%#v after=%#v",
-			claimA, claimAfterRetry,
-		)
-	}
-
 	if _, err := f.clientB.Ingest(f.bob(t), explorer.Source{
 		URI: uri, MediaType: explorer.MediaTypeText,
 		Content: "policy B overwrite attempt",
 	}); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-		t.Fatalf("policy B overwrite after historical retry = %v", err)
+		t.Fatalf("policy B overwrite of a pending claim = %v, want not found", err)
+	}
+	// A holder of A alone cannot finish a reclassification away from B.
+	if _, err := f.clientA.Ingest(f.alice(t), newSource); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("policy A holder finishing a B to A reclassification = %v, want not found", err)
+	}
+	after, ok, err := f.store.SourceClaim(context.Background(), uri)
+	if err != nil || !ok || after.Version != pending.Version || !after.Pending {
+		t.Fatalf("refused retries transitioned the claim: before=%#v after=%#v", pending, after)
 	}
 	current, err = f.base.Documents(context.Background())
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(current) != 1 || current[0].Revision.ID != newRevisionID {
-		t.Fatalf("policy B attempt changed current base: %#v", current)
+		t.Fatalf("refused retries changed the current base: %#v", current)
 	}
 
-	reconciled, err := f.clientA.Ingest(f.alice(t), newSource)
+	reconciled, err := f.clientA.Ingest(f.admin(t), newSource)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1935,6 +1938,10 @@ func TestHistoricalRetryCannotTransitionCurrentSourceClaim(t *testing.T) {
 		f.alice(t), reconciled.Document.ID, reconciled.Revision.ID,
 	); err != nil {
 		t.Fatalf("reconciled current revision: %v", err)
+	}
+	resolved, ok, err := f.store.SourceClaim(context.Background(), uri)
+	if err != nil || !ok || resolved.Pending || resolved.PreviousRule != nil {
+		t.Fatalf("resolved claim = %#v ok=%v err=%v", resolved, ok, err)
 	}
 }
 

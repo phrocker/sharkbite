@@ -128,7 +128,7 @@ func parseSourceWithLimits(
 	}
 	source.Title = title
 	source.Metadata = cloneMetadata(source.Metadata)
-	documentID := shoal.ID(stableID(documentIDKind, source.URI))
+	documentID := SourceDocumentID(source.URI)
 	revisionID := shoal.ID(stableID(
 		"rev", source.URI, source.MediaType, title, source.Content,
 		canonicalMetadata(source.Metadata)))
@@ -577,6 +577,13 @@ func inferredTitle(uri string, lines []sourceLine, mediaType string) string {
 		return "Untitled"
 	}
 	return trimmed
+}
+
+// SourceDocumentID returns the document identity the Explorer derives for a
+// source URI. It depends on the URI alone, so a caller can name a source's
+// document before ingesting it.
+func SourceDocumentID(uri string) shoal.ID {
+	return shoal.ID(stableID(documentIDKind, uri))
 }
 
 func stableID(kind string, parts ...string) string {

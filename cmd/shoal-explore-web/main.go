@@ -29,6 +29,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -1064,6 +1065,14 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	// read every probe failure as the workspace being down.
 	health := (*healthsurface.Server)(nil)
 	state := &healthsurface.State{}
+	// A policy catalog whose write-through failed fails closed: every
+	// authorized request answers unavailable until the process reopens it
+	// from disk (#665). Say so once on stderr, naming no document, rule or
+	// principal, and drop readiness so the orchestrator stops routing here.
+	// Readiness is the signal because the health port may carry readiness
+	// and operational counts only; liveness stays ok, so a probe policy that
+	// restarts on prolonged unreadiness restarts it.
+	watchPolicyCatalogDivergence(opened.policyStore, state, os.Stderr)
 	if address := strings.TrimSpace(*healthAddress); address != "" {
 		health, err = healthsurface.StartWithConfig(address, state,
 			healthsurface.Config{Metrics: combineMetrics(
@@ -1086,6 +1095,13 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		shutdownDone <- healthsurface.Drain(shutdown, state, server, health)
 	}()
 	state.MarkReady()
+	// A catalog that diverged during startup already ran the hook above,
+	// which this MarkReady would undo. The store's flag is set before its
+	// hook runs, so checking it after marking ready leaves the instance
+	// not ready whichever order the two happen in.
+	if opened.policyStore.Diverged() {
+		state.MarkDraining()
+	}
 	err = server.Serve(listener)
 	if errors.Is(err, http.ErrServerClosed) {
 		return <-shutdownDone
@@ -1261,7 +1277,10 @@ type openedService struct {
 	attestation    webapi.FleetAttestationProvider
 	teamOverview   webapi.TeamOverviewProvider
 	client         *authorized.Client
-	backfilled     int
+	// policyStore is the durable policy catalog, held so the host can
+	// signal when it diverges and fails closed (#665).
+	policyStore *authorized.DurablePolicyStore
+	backfilled  int
 	// labelMigration is what the startup label migration did (#570).
 	labelMigration labelMigrationOutcome
 	close          func()
@@ -1705,6 +1724,7 @@ func openService(
 			attestation:     optionalAttestation(attestationService),
 			teamOverview:    teamOverview,
 			client:          client,
+			policyStore:     store,
 			backfilled:      backfilled,
 			labelMigration:  labelMigration,
 			close: func() {
@@ -1896,5 +1916,30 @@ func authorizedClient(
 		Clock:                  clock,
 		Mosaic:                 mosaic,
 		CeilingResolver:        ceilings,
+	})
+}
+
+// divergenceSignaller is the part of *authorized.DurablePolicyStore the
+// divergence watch uses.
+type divergenceSignaller interface {
+	OnDiverged(func())
+}
+
+// watchPolicyCatalogDivergence logs a diverged policy catalog once and marks
+// the instance not ready.
+func watchPolicyCatalogDivergence(
+	store divergenceSignaller,
+	state *healthsurface.State,
+	log io.Writer,
+) {
+	if store == nil || reflect.ValueOf(store).IsNil() || state == nil {
+		return
+	}
+	store.OnDiverged(func() {
+		fmt.Fprintln(log, "shoal-explore-web: policy catalog write-through "+
+			"failed; the catalog now refuses every request and this "+
+			"instance is not ready. Restart the process to reload the "+
+			"catalog from disk.")
+		state.MarkDraining()
 	})
 }

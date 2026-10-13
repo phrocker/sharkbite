@@ -141,6 +141,16 @@ func openWorkspace(
 	closeWorkspace := func() error {
 		return errors.Join(store.Close(), corpus.Close())
 	}
+	// A catalog whose write-through failed refuses every request until the
+	// process reopens it (#665). There is no readiness surface here, so say
+	// it once on diagnostics.
+	if diagnostics := config.diagnostics; diagnostics != nil {
+		store.OnDiverged(func() {
+			fmt.Fprintln(diagnostics, "shoal-mcp: policy catalog write-through "+
+				"failed; the catalog now refuses every request. Restart the "+
+				"process to reload it from disk.")
+		})
+	}
 	if err := refuseUnregisteredCorpus(
 		ctx, corpus, store, config.corpusDir, config.policyDir); err != nil {
 		return nil, nil, noClose, errors.Join(err, closeWorkspace())

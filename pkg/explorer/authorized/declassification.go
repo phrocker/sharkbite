@@ -61,19 +61,18 @@ package authorized
 // the catalog's revision registrations record the outcome. Ingest writes:
 //
 //   - DeclassificationIntent, at source-claim time, after the principal has
-//     been authorized under both the replaced and the new rule and before
-//     the claim is swapped or the base is written. It compares the new rule
-//     with the claim's rule (and a pending claim's PreviousRule), or with a
-//     legacy unclaimed document's current registration.
+//     been authorized under every rule it would replace and under the new
+//     rule, and before the claim is swapped or the base is written. It
+//     compares the new rule with the claim's rule, a pending claim's
+//     PreviousRule, a legacy unclaimed document's registration, and the
+//     current registration of the document the URI names (#665 authorizes
+//     the principal under that registration at the same point).
 //   - DeclassificationPreCommit, immediately before the PutRevision that
 //     makes the narrowed revision current, which is the write that actually
-//     lets the new readers in. It is written BEFORE that registration, so
-//     it records that the narrowing was about to be committed, not that it
-//     was. It compares the new rule with the document's current
-//     registration as well, so a narrowing is caught at the visibility
-//     commit even if the claim and the registration ever disagreed (for
-//     example a retry after an earlier attempt registered nothing). It
-//     carries the document and revision identities.
+//     lets the new readers in. It is written BEFORE that registration, so it
+//     records that the narrowing was about to be committed, not that it was.
+//     It compares the new rule with the document's current registration
+//     again and carries the document and revision identities.
 //
 // If either audit write fails, the ingest fails before the step it guards, so
 // no narrowing becomes visible without at least one durable record of it. A
@@ -82,69 +81,36 @@ package authorized
 // registration: a narrowing took effect iff the record's RevisionID is (or
 // was) the document's current registration.
 //
+// Since #665 a source claim commits only once its revision is registered, so
+// there is no state in which one principal's half-finished narrowing can be
+// completed by another who lacks the replaced rule. A retry of an
+// interrupted narrowing is an ordinary narrowing: it is authorized under the
+// replaced rule (the pending claim's PreviousRule, or the registration), its
+// own intent is recorded, and the reason policy applies to it.
+//
 // # Who can read it
 //
 // Records are reachable only through the PolicyStore (Declassifications); no
-// Client method, HTTP route or MCP tool returns them. The policy catalog
-// already persists every rule in the clear, including label policy IDs and so
-// the label names, so a record holding the replaced and new rules discloses
-// nothing the catalog does not already hold to the same operator. Label names
-// are therefore kept in the clear rather than digested, because an auditor
-// needs them. A future read surface must restrict them to readers who could
-// read the replaced rule, and is out of scope here.
+// Client method, HTTP route or MCP tool returns them, and in shipped binaries
+// nothing reads them yet (#664). The policy catalog already persists every
+// rule in the clear, including label policy IDs and so the label names, so a
+// record holding the replaced and new rules discloses nothing the catalog
+// does not already hold to the same operator. Label names are therefore kept
+// in the clear rather than digested, because an auditor needs them. A future
+// read surface must restrict them to readers who could read the replaced
+// rule.
 //
 // # Reason codes
 //
 // Config.RequireDeclassificationReason makes a narrowing that carries no
-// reason (WithDeclassificationReason) fail with InvalidArgument at its first
-// check. The refusal always comes after the principal has been authorized
-// under the replaced and the new rule, so it tells them nothing new.
-//
-//   - Normally the first check is the intent check, before anything is
-//     written. It compares against the claim, a pending claim's previous
-//     rule, or an unclaimed URI's registration found through the base.
-//   - A narrowing first seen at the pre-commit check, where the claim this
-//     ingest holds does not descend from an intent covering it, is also a
-//     first check. The claim-time check had nothing to compare with because
-//     the catalog and the base diverged: for example, a base restored from
-//     backup no longer holds a document the catalog still registers, or
-//     such a state let an attempt create a claim without passing this
-//     check. The principal is first authorized under the registration it
-//     replaces (NotFound otherwise), and then the reason policy applies,
-//     after the base write and before the registration. This holds even
-//     when the ingest recorded its own intent against the claim: that
-//     intent authorized the principal under the claim, not under a
-//     registration it never compared with.
-//   - A narrowing first seen at the pre-commit check, where the claim DOES
-//     descend from a covering intent, is a reconciliation. Claim lineage
-//     works like this: every claim version created by a CAS that followed an
-//     intent is bound to that intent (BindDeclassificationClaim, written
-//     before the base). A later ingest that records no intent and keeps
-//     every component of the replaced claim's rule and of the bound
-//     intent's rule inherits that binding while the lineage is open: its
-//     own version is bound to the same intent, also before the base write,
-//     so the lineage survives its failures, pends and restarts. When an
-//     ingest on a bound version registers its revision as current, the
-//     narrowing no longer lags, and the lineage is closed
-//     (CloseDeclassificationClaim). Ordinary later ingests therefore
-//     inherit nothing, write nothing, and keep the pre-#630 claim commit on
-//     apply. "Covering" means the same URI, the selected rule keeping
-//     every component of the intent's rule (a retry may be stricter), and
-//     the current registration's rule being exactly one of the intent's
-//     replaced rules. Here the claim already holds the narrow rule while the
-//     registration lags (#665), and that intent already passed the reason
-//     policy. The narrowing is recorded but not refused. The claim is the
-//     mutation authority, so the claim holder completing it need not be
-//     authorized under the lagging registration, and a refusal would
-//     disclose that the registration carries labels.
-//
-// An intent on file that the current claim does not descend from never
-// counts: one left by a CAS conflict, a failed base write, or an old
-// completed narrowing. Neither does a claim created without an intent.
-//
-// The invariant: a narrowing never becomes current unless the reason policy
-// was applied at its first check. That check is either an earlier attempt's
-// recorded intent or a check this ingest makes itself.
+// reason (WithDeclassificationReason) fail with InvalidArgument at the intent
+// check, before anything is written and only after the principal has been
+// authorized under every rule it replaces and the new rule, so it tells them
+// nothing new. The pre-commit check applies the same rule statelessly to any
+// narrowing of the registration the claim-time check did not see: the
+// principal must be authorized under that registration's rule (NotFound
+// otherwise), and then the reason policy applies. In shipped binaries
+// nothing sets the policy or passes a reason yet (#664).
 
 import (
 	"context"
@@ -200,8 +166,8 @@ type DeclassificationRecord struct {
 	// is held under.
 	SourceURI string
 	// DocumentID and PriorRevisionID name the replaced current revision when
-	// it is known (always on a pre-commit record). RevisionID is the
-	// narrowed revision, set only on a pre-commit record.
+	// it is known (always on a pre-commit record). RevisionID is the narrowed
+	// revision, set only on a pre-commit record.
 	DocumentID      shoal.ID
 	PriorRevisionID shoal.ID
 	RevisionID      shoal.ID
@@ -436,9 +402,6 @@ type declassificationAttempt struct {
 	reason     string
 	documentID shoal.ID
 	priorRev   shoal.ID
-	// reconciliation marks a narrowing first seen at the pre-commit check,
-	// which completes an earlier, already-audited attempt.
-	reconciliation bool
 }
 
 func newDeclassificationAttemptID() (shoal.ID, error) {
@@ -490,6 +453,13 @@ func (c *Client) declassificationIntent(
 // declassificationCommit runs immediately before the registration that makes
 // revisionID current. It audits a narrowing against the document's current
 // registration, and always audits an attempt whose intent was recorded.
+//
+// A narrowing of the registration that the claim-time check did not compare
+// with (its rule is not among the attempt's replaced rules) is checked here
+// statelessly: the principal must be authorized under that registration's
+// rule (NotFound otherwise), and the reason policy applies. #665's pre-write
+// check normally makes this unreachable; it stays as the guard at the step
+// that actually lets new readers in.
 func (c *Client) declassificationCommit(
 	ctx context.Context,
 	decision auth.Decision,
@@ -498,7 +468,6 @@ func (c *Client) declassificationCommit(
 	documentID, revisionID shoal.ID,
 	selected AccessRule,
 	attempt *declassificationAttempt,
-	claimVersion uint64,
 ) error {
 	current, ok, err := c.policyStore.CurrentRevision(ctx, documentID)
 	if err != nil {
@@ -509,15 +478,18 @@ func (c *Client) declassificationCommit(
 		priorRules = append(priorRules, attempt.priorRules...)
 	}
 	priorRevision := shoal.ID("")
-	// uncovered is a narrowing of the current registration that the
-	// claim-time check neither compared with nor authorized the principal
-	// under. That check authorized every rule in attempt.priorRules.
-	uncovered := false
 	if ok && current.RevisionID != revisionID {
 		priorRevision = current.RevisionID
 		if ruleNarrows(current.Rule, selected) {
 			if attempt == nil || !containsRule(attempt.priorRules, current.Rule) {
-				uncovered = true
+				allowed, err := ruleAllows(
+					current.Rule, decision, auth.OperationIngest, now)
+				if err != nil {
+					return err
+				}
+				if !allowed {
+					return auth.ObjectNotFound()
+				}
 			}
 			priorRules = appendDistinctRule(priorRules, current.Rule)
 		}
@@ -525,64 +497,8 @@ func (c *Client) declassificationCommit(
 	if len(priorRules) == 0 {
 		return nil
 	}
-	if uncovered {
-		covering, err := c.claimIntentCovers(
-			ctx, sourceURI, claimVersion, selected, current.Rule)
-		reconciled := covering != ""
-		if err != nil {
-			return err
-		}
-		switch {
-		case reconciled && attempt == nil:
-			// The claim this ingest holds descends from an earlier
-			// attempt's intent (its claim lineage, not merely some intent
-			// on file), which narrowed exactly this registration and passed
-			// the reason policy. The claim already holds the narrow rule
-			// while the registration lags (an earlier pre-commit audit or
-			// PutRevision failed after the base write, #665). The claim is
-			// the mutation authority, so any claim holder may complete it,
-			// exactly as before #630. The reason policy is not re-applied:
-			// refusing would tell a claim holder outside the
-			// registration's rule that the registration carries labels it
-			// lacks. The record names the principal whose ingest makes the
-			// narrowing current.
-			attempt = &declassificationAttempt{
-				reason:         declassificationReason(ctx),
-				reconciliation: true,
-			}
-		case reconciled:
-			// This ingest's own intent (reason-checked at claim time)
-			// covers the registration through its lineage.
-		default:
-			// The claim does not descend from an intent covering this
-			// narrowing of the registration, so this is its first check
-			// against it: the claim-time check had nothing to compare
-			// with, because the catalog and the base diverged (a current
-			// registration for a URI whose base document is gone, for
-			// example a base restored from backup), or the claim was
-			// created by an attempt that never passed this check. That
-			// holds whether or not this ingest recorded an intent against
-			// the claim: such an intent authorized the principal under the
-			// claim, not under this registration. An intent on file that
-			// this claim does not descend from (a CAS conflict, a failed
-			// base write, an old completed narrowing) never counts. The
-			// principal must be authorized under the registration it
-			// replaces (NotFound otherwise, so nothing about its labels is
-			// disclosed), and the reason policy applies.
-			allowed, err := ruleAllows(
-				current.Rule, decision, auth.OperationIngest, now)
-			if err != nil {
-				return err
-			}
-			if !allowed {
-				return auth.ObjectNotFound()
-			}
-			if attempt == nil {
-				attempt = &declassificationAttempt{
-					reason: declassificationReason(ctx),
-				}
-			}
-		}
+	if attempt == nil {
+		attempt = &declassificationAttempt{reason: declassificationReason(ctx)}
 	}
 	attempt.priorRules = priorRules
 	attempt.documentID = documentID
@@ -601,69 +517,6 @@ func containsRule(rules []AccessRule, rule AccessRule) bool {
 		}
 	}
 	return false
-}
-
-// claimIntentCovers returns the attempt ID of the intent the held claim
-// version (sourceURI, version) is bound to, while that lineage is open, when
-// it covers narrowing prior to selected, or "". Covering means the same URI,
-// a rule whose every component selected keeps (a retry may choose a stricter
-// rule), and prior exactly among its replaced rules. Only such an intent
-// passed the reason policy for this narrowing on this claim's lineage.
-func (c *Client) claimIntentCovers(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-	selected, prior AccessRule,
-) (shoal.ID, error) {
-	if version == 0 {
-		return "", nil
-	}
-	intent, ok, err := c.policyStore.DeclassificationClaimIntent(
-		ctx, sourceURI, version)
-	if err != nil {
-		return "", policyCatalogReadError(ctx, err)
-	}
-	if !ok || intent.Phase != DeclassificationIntent ||
-		intent.SourceURI != sourceURI || ruleNarrows(intent.Rule, selected) ||
-		!containsRule(intent.PriorRules, prior) {
-		return "", nil
-	}
-	return intent.AttemptID, nil
-}
-
-// declassificationLineage returns the intent the new claim version must be
-// bound to before the base is written, or "". That is this ingest's own
-// intent, if it recorded one. Otherwise, it is the intent the replaced claim
-// version is bound to, while that lineage is open (its narrowing has not yet
-// been registered) and the selected rule keeps every component of both the
-// replaced claim's rule and the intent's rule. So a retry completing a lagging
-// narrowing (#665) stays on its lineage across failures, pends and restarts,
-// and a claim created without an intent never acquires one. Once a narrowing
-// is registered its lineage is closed, so ordinary later ingests inherit
-// nothing and write nothing. A selected rule that narrows the replaced claim
-// always records its own intent, so that rule test is defensive.
-func (c *Client) declassificationLineage(
-	ctx context.Context,
-	sourceURI string,
-	existing *SourcePolicyClaim,
-	selected AccessRule,
-	attempt *declassificationAttempt,
-) (shoal.ID, error) {
-	if attempt != nil {
-		return attempt.id, nil
-	}
-	if existing == nil || ruleNarrows(existing.Rule, selected) {
-		return "", nil
-	}
-	intent, ok, err := c.policyStore.DeclassificationClaimIntent(
-		ctx, sourceURI, existing.Version)
-	if err != nil {
-		return "", policyCatalogReadError(ctx, err)
-	}
-	if !ok || ruleNarrows(intent.Rule, selected) {
-		return "", nil
-	}
-	return intent.AttemptID, nil
 }
 
 func appendDistinctRule(rules []AccessRule, rule AccessRule) []AccessRule {
@@ -685,8 +538,7 @@ func (c *Client) recordDeclassification(
 	attempt *declassificationAttempt,
 	revisionID shoal.ID,
 ) error {
-	if c.requireDeclassificationReason && attempt.reason == "" &&
-		!attempt.reconciliation {
+	if c.requireDeclassificationReason && attempt.reason == "" {
 		return shoal.NewError(shoal.ErrorInvalidArgument,
 			"this relabel removes visibility labels and the operator "+
 				"requires a declassification reason code")
@@ -751,20 +603,8 @@ func (s *MemoryPolicyStore) RecordDeclassification(
 	if s.hasDeclassificationLocked(record.AttemptID, record.Phase) {
 		return duplicateDeclassification()
 	}
-	s.appendDeclassificationLocked(cloned)
+	s.declassifications = append(s.declassifications, cloned)
 	return nil
-}
-
-func (s *MemoryPolicyStore) appendDeclassificationLocked(
-	record DeclassificationRecord,
-) {
-	if record.Phase == DeclassificationIntent {
-		if s.declassificationIntents == nil {
-			s.declassificationIntents = make(map[shoal.ID]int)
-		}
-		s.declassificationIntents[record.AttemptID] = len(s.declassifications)
-	}
-	s.declassifications = append(s.declassifications, record)
 }
 
 // hasDeclassification reports whether (attemptID, phase) is recorded. Records
@@ -818,177 +658,4 @@ func (s *MemoryPolicyStore) Declassifications(
 		records = append(records, cloned)
 	}
 	return records, nil
-}
-
-// declassificationClaimKey names one source claim version. Versions come from
-// one monotonic counter, are kept by commit and pend, and are restored by
-// rollback, so a version identifies one claim state for its whole life.
-type declassificationClaimKey struct {
-	sourceURI string
-	version   uint64
-}
-
-// BindDeclassificationClaim records that source claim version version of
-// sourceURI descends from the intent attemptID. The intent must already be
-// recorded for the same URI. Rebinding a version to the same intent is a
-// no-op; to a different one, a conflict.
-func (s *MemoryPolicyStore) BindDeclassificationClaim(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-	attemptID shoal.ID,
-) error {
-	if err := contextFailure(ctx); err != nil {
-		return err
-	}
-	if s == nil {
-		return catalogUnavailable()
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.bindDeclassificationClaimLocked(sourceURI, version, attemptID)
-}
-
-func (s *MemoryPolicyStore) checkDeclassificationClaimLocked(
-	sourceURI string,
-	version uint64,
-	attemptID shoal.ID,
-) (bool, error) {
-	if err := validateSourceURI(sourceURI); err != nil {
-		return false, err
-	}
-	if version == 0 {
-		return false, shoal.NewError(shoal.ErrorInvalidArgument,
-			"declassification claim version is required")
-	}
-	if err := shoal.ValidateRequiredID(
-		"declassification attempt ID", attemptID); err != nil {
-		return false, err
-	}
-	intent, ok := s.declassificationIntentLocked(attemptID)
-	if !ok || intent.SourceURI != sourceURI {
-		return false, shoal.NewError(shoal.ErrorInvalidArgument,
-			"declassification claim binding names no intent for its source")
-	}
-	key := declassificationClaimKey{sourceURI: sourceURI, version: version}
-	if existing, bound := s.declassificationClaims[key]; bound {
-		if existing != attemptID {
-			return false, duplicateDeclassification()
-		}
-		return true, nil
-	}
-	return false, nil
-}
-
-func (s *MemoryPolicyStore) bindDeclassificationClaimLocked(
-	sourceURI string,
-	version uint64,
-	attemptID shoal.ID,
-) error {
-	bound, err := s.checkDeclassificationClaimLocked(
-		sourceURI, version, attemptID)
-	if err != nil || bound {
-		return err
-	}
-	if s.declassificationClaims == nil {
-		s.declassificationClaims = make(map[declassificationClaimKey]shoal.ID)
-	}
-	s.declassificationClaims[declassificationClaimKey{
-		sourceURI: sourceURI, version: version,
-	}] = attemptID
-	return nil
-}
-
-func (s *MemoryPolicyStore) declassificationIntentLocked(
-	attemptID shoal.ID,
-) (DeclassificationRecord, bool) {
-	index, ok := s.declassificationIntents[attemptID]
-	if !ok || index >= len(s.declassifications) {
-		return DeclassificationRecord{}, false
-	}
-	return s.declassifications[index], true
-}
-
-// CloseDeclassificationClaim ends the lineage of a bound source claim
-// version: its narrowing has been registered, so nothing lags behind it.
-// Closing an unbound version is refused; closing twice is a no-op.
-func (s *MemoryPolicyStore) CloseDeclassificationClaim(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-) error {
-	if err := contextFailure(ctx); err != nil {
-		return err
-	}
-	if s == nil {
-		return catalogUnavailable()
-	}
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.closeDeclassificationClaimLocked(sourceURI, version)
-}
-
-func (s *MemoryPolicyStore) checkCloseDeclassificationClaimLocked(
-	sourceURI string,
-	version uint64,
-) (bool, error) {
-	key := declassificationClaimKey{sourceURI: sourceURI, version: version}
-	if _, bound := s.declassificationClaims[key]; !bound {
-		return false, shoal.NewError(shoal.ErrorInvalidArgument,
-			"declassification claim to close is not bound")
-	}
-	_, closed := s.closedDeclassificationClaims[key]
-	return closed, nil
-}
-
-func (s *MemoryPolicyStore) closeDeclassificationClaimLocked(
-	sourceURI string,
-	version uint64,
-) error {
-	closed, err := s.checkCloseDeclassificationClaimLocked(sourceURI, version)
-	if err != nil || closed {
-		return err
-	}
-	if s.closedDeclassificationClaims == nil {
-		s.closedDeclassificationClaims = make(map[declassificationClaimKey]struct{})
-	}
-	s.closedDeclassificationClaims[declassificationClaimKey{
-		sourceURI: sourceURI, version: version,
-	}] = struct{}{}
-	return nil
-}
-
-// DeclassificationClaimIntent returns the intent record source claim version
-// version of sourceURI is bound to, if any and only while that lineage is
-// open (not closed). It is an exact indexed read.
-func (s *MemoryPolicyStore) DeclassificationClaimIntent(
-	ctx context.Context,
-	sourceURI string,
-	version uint64,
-) (DeclassificationRecord, bool, error) {
-	if err := contextFailure(ctx); err != nil {
-		return DeclassificationRecord{}, false, err
-	}
-	if s == nil {
-		return DeclassificationRecord{}, false, catalogUnavailable()
-	}
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-	key := declassificationClaimKey{sourceURI: sourceURI, version: version}
-	attemptID, ok := s.declassificationClaims[key]
-	if !ok {
-		return DeclassificationRecord{}, false, nil
-	}
-	if _, closed := s.closedDeclassificationClaims[key]; closed {
-		return DeclassificationRecord{}, false, nil
-	}
-	intent, ok := s.declassificationIntentLocked(attemptID)
-	if !ok {
-		return DeclassificationRecord{}, false, catalogUnavailable()
-	}
-	cloned, err := cloneDeclassificationRecord(intent)
-	if err != nil {
-		return DeclassificationRecord{}, false, catalogUnavailable()
-	}
-	return cloned, true, nil
 }
