@@ -328,8 +328,29 @@ func TestListDeclassificationsIsOffline(t *testing.T) {
 	}
 	opened.close()
 
-	// A cleanly closed catalog with no record lists none, and is unchanged.
+	// So is one open but idle, with an empty WAL: its holder has the
+	// catalog's directory lock (#686).
+	idle, err := authorized.OpenDurablePolicyStore(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
 	before := directoryEntries(t, policy)
+	err = run(context.Background(),
+		[]string{"-list-declassifications", "-state-dir", root}, &output)
+	if after := directoryEntries(t, policy); strings.Join(before, "\n") != strings.Join(after, "\n") {
+		idle.Close()
+		t.Fatalf("the refused listing changed the policy directory:\n%q\n->\n%q", before, after)
+	}
+	if err == nil || !strings.Contains(err.Error(), "is already open") {
+		idle.Close()
+		t.Fatalf("listing an idle open catalog = %v", err)
+	}
+	if err := idle.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// A cleanly closed catalog with no record lists none, and is unchanged.
+	before = directoryEntries(t, policy)
 	output.Reset()
 	if err := run(context.Background(),
 		[]string{"-list-declassifications", "-state-dir", root}, &output); err != nil {

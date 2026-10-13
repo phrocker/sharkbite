@@ -75,6 +75,7 @@ func TestDurablePolicyStoreFailsClosedWhenAWriteThroughFails(t *testing.T) {
 	if store.HasRegistrations() {
 		t.Fatal("a diverged store still reports registrations")
 	}
+	_ = store.lock.Close()
 	store.closed = true
 
 	reopened, err := OpenDurablePolicyStore(dir)
@@ -237,6 +238,7 @@ func TestDurablePolicyStoreDivergesOnEveryWriteThrough(t *testing.T) {
 				t.Fatalf("diverged=%v fired=%d read=%v, want the store still serving",
 					store.Diverged(), fired, readErr)
 			}
+			_ = store.lock.Close()
 			store.closed = true
 		})
 	}
@@ -259,6 +261,7 @@ func TestDurablePolicyStoreOnDivergedAfterTheFact(t *testing.T) {
 	if fired != 1 {
 		t.Fatalf("late hook fired %d times, want 1", fired)
 	}
+	_ = store.lock.Close()
 	store.closed = true
 }
 

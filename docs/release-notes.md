@@ -31,6 +31,36 @@ again) was told it worked.
   same batch returns the same response. Change the named file's content, or
   supply a reason, before retrying.
 
+### The offline catalog listings refuse a running workspace (#686)
+
+`-list-declassifications` and `-list-untranslatable-labels` checked only that
+the policy catalog's WAL was empty. A workspace that was idle passed that
+check and could then write before the listing opened the catalog. The listing
+would replay those writes and, on exit, flush them and truncate the WAL the
+workspace was still appending to.
+
+- Every process that opens the policy catalog (`shoal-explore-web`,
+  `shoal-mcp` and the listings) now holds an exclusive lock on
+  `.shoal-policy-catalog.lock` in the policy directory while the catalog is
+  open. A second opener is refused with "is already open". That includes a
+  second workspace started on the same directory.
+- The listings try the lock without waiting and refuse a running workspace,
+  idle or not. With the lock held they check the catalog again before opening
+  it. They write nothing, not even the lock file: they refuse a catalog
+  without one. **After upgrading, start and cleanly stop the workspace once
+  before running a listing.**
+- The kernel releases the lock when its process exits, however it exits. A
+  lock file left behind by a crash does not block the next start.
+- The lock file is created mode `0600` by the workspace's user. A listing run
+  as a different (non-root) user gets a permission error, not "already open".
+  Run the listings as the workspace's user. Any lock failure other than
+  another holder, such as a filesystem without lock support, is reported as
+  itself.
+- **Rolling back reopens #686.** A workspace older than this release ignores
+  the lock. If you roll back after a newer release has created the lock file,
+  a current listing will take the lock and open the catalog under the running
+  old workspace. Stop the workspace before running a listing.
+
 ### Declassification reason codes and an offline listing (#664)
 
 Every relabel that removes visibility labels has been audited since #630. You

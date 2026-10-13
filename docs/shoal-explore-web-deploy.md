@@ -408,7 +408,17 @@ Operator steps:
    table, give a bare table a WAL, or replay a WAL), it refuses a directory
    with no policy catalog, a catalog with unflushed writes (a non-empty
    `wal.log`: the workspace is running, or stopped without a clean shutdown),
-   and a catalog with no committed records. Stop the workspace cleanly and run
+   and a catalog with no committed records. It also refuses a catalog that a
+   running `shoal-explore-web` or `shoal-mcp` (or another listing) has open,
+   even an idle one: every process that opens the policy catalog holds an
+   exclusive lock on `.shoal-policy-catalog.lock` in its directory for as long
+   as it has the catalog open, and the listing tries that lock without
+   waiting (#686). The kernel releases the lock when its process exits, so the
+   file a crashed workspace leaves behind blocks nothing; do not delete it.
+   The listing never creates the lock file, so it refuses a catalog that no
+   workspace of this version has opened yet. The file is mode `0600` and
+   belongs to the workspace's user, so run the listing as that user; any other
+   non-root user gets a permission error. Stop the workspace cleanly and run
    it then.
 5. **Relabel** each listed document by ingesting its content again under a
    **new source URI**, with labels inside the charset, as a principal holding
@@ -509,8 +519,8 @@ service role). The first line counts the attempts that have no `pre_commit`
 record: those never reached the registration. Every caller-supplied string is
 Go-quoted. The listing opens the catalog exactly as
 `-list-untranslatable-labels` does, so it writes nothing and refuses a
-directory with no catalog or with unflushed writes. Stop the workspace cleanly
-first.
+directory with no catalog, with unflushed writes, or open in a running
+workspace. Stop the workspace cleanly first.
 
 The listing is **offline only**, by design. The records hold the old and new
 label names in the clear, just as the catalog's rules do. An operator who can
@@ -1315,12 +1325,20 @@ The short version of why:
 
 Two Azure Files risks are sized honestly in the artifact README. The genuine
 gate is the non-root uid `65532` writing an SMB mount (a first-boot check settles
-it). The SMB-semantics worry is **largely retired by evidence**: this binary has
-no memory-mapped I/O anywhere in the tree and never reaches the only `flock` code
-(`internal/promotion`, absent from `go list -deps ./cmd/shoal-explore-web` on both
-Windows and Linux) — the two mechanisms that make embedded stores unsafe on SMB —
-so Azure Files SMB is a reasonable default, with NFS or AKS + Azure Disk kept as
-escalation paths only if a specific problem shows up. TLS terminates at the App Service front end and the
+it). The SMB-semantics worry is **largely retired by evidence**. This binary has
+no memory-mapped I/O anywhere in the tree. It does take file locks:
+`internal/dirlock` (flock on Linux, LockFileEx on Windows) holds an exclusive,
+non-blocking lock on the corpus directory (`.shoal-explorer-runtime.lock`, which
+also covers the workspace settings sharing its engine) and on the policy catalog
+(`.shoal-policy-catalog.lock`, #686) for as long as each is open. (`internal/promotion`'s blocking flock is not
+in `go list -deps ./cmd/shoal-explore-web` on either OS.) These locks fail
+closed. The Linux CIFS client implements flock as an SMB byte-range lock, which
+the file server enforces for every client. On a mount where flock is not
+supported, the lock call fails and the workspace refuses to start, reporting
+that error itself rather than "already open". So on SMB the risk is a failed
+first boot, which the same first-boot check catches, not two writers sharing a
+store. Azure Files SMB is a reasonable default, with NFS or AKS + Azure Disk
+kept as escalation paths only if a specific problem shows up. TLS terminates at the App Service front end and the
 app runs the OIDC authenticator (`-oidc-*` / `SHOAL_OIDC_*`). The
 host-authority gate (gap #3) is closed by **PR #295** (merged to `main` at
 `3670e00`): the template sets `SHOAL_ALLOWED_HOST` to the App Service hostname

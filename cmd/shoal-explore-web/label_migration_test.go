@@ -99,8 +99,10 @@ func TestLabelMigrationFailureRefusesToServe(t *testing.T) {
 	}
 }
 
-// directoryEntries lists every path under dir, for proving a read leaves it
-// untouched.
+// directoryEntries lists every path under dir with its modification time
+// and, for a file, its bytes, for proving a read leaves it untouched: a file
+// rewritten with the same bytes still moves its mtime, and an entry created
+// or removed moves its directory's.
 func directoryEntries(t *testing.T, dir string) []string {
 	t.Helper()
 	var entries []string
@@ -108,15 +110,20 @@ func directoryEntries(t *testing.T, dir string) []string {
 		if err != nil {
 			return err
 		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		modified := info.ModTime().Format(time.RFC3339Nano)
 		if entry.IsDir() {
-			entries = append(entries, path+"/")
+			entries = append(entries, path+"/ "+modified)
 			return nil
 		}
 		content, err := os.ReadFile(path)
 		if err != nil {
 			return err
 		}
-		entries = append(entries, path+" "+string(content))
+		entries = append(entries, path+" "+modified+" "+string(content))
 		return nil
 	}); err != nil {
 		t.Fatal(err)
@@ -190,6 +197,21 @@ func TestListUntranslatableLabelsFlag(t *testing.T) {
 	if err := listUnchanged(t, root, &output); err == nil ||
 		!strings.Contains(err.Error(), "unflushed writes") {
 		t.Fatalf("listing a catalog with an unflushed WAL = %v", err)
+	}
+	if err := store.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	// A running workspace that is idle, so its WAL is empty, is refused too:
+	// it holds the catalog's directory lock (#686).
+	store, err = authorized.OpenDurablePolicyStore(policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := listUnchanged(t, root, &output); err == nil ||
+		!strings.Contains(err.Error(), "is already open") {
+		store.Close()
+		t.Fatalf("listing an idle open catalog = %v", err)
 	}
 	if err := store.Close(); err != nil {
 		t.Fatal(err)

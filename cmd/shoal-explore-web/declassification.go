@@ -41,8 +41,8 @@ import (
 // policy catalog at policyDir, in recording order, and serves nothing. It
 // opens the catalog exactly as listUntranslatableLabels does
 // (authorized.OpenExistingDurablePolicyStore), so a directory that holds no
-// cleanly closed catalog is refused and left as it was. Run it with the
-// workspace stopped.
+// cleanly closed catalog, or that a running workspace has open, is refused
+// and left as it was. Run it with the workspace stopped.
 func listDeclassifications(
 	ctx context.Context,
 	output io.Writer,

@@ -126,6 +126,7 @@ func TestIngestOnADivergingCatalogRecoversPending(t *testing.T) {
 	if !store.Diverged() {
 		t.Fatal("the store did not diverge")
 	}
+	_ = store.lock.Close()
 	store.closed = true
 
 	reopened, err := OpenDurablePolicyStore(dir)

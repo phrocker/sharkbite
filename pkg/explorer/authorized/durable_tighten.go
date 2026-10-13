@@ -21,11 +21,14 @@ package authorized
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 
 	"github.com/phrocker/shoal-oss/internal/cclient"
+	"github.com/phrocker/shoal-oss/internal/dirlock"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -79,22 +82,67 @@ type persistedUntranslatable struct {
 //
 // What remains is a cleanly closed catalog, which the engine opens without
 // writing.
+//
+// Those checks alone would race a running workspace: one idle with an empty
+// WAL passes them and can write before the engine replays its WAL here (#686).
+// So the catalog's directory lock (see OpenDurablePolicyStore), which every
+// open store holds for its whole life, is tried without blocking and a held
+// lock is refused; the checks then run again under the lock, where no other
+// opener can change the directory, and the engine is opened only after they
+// pass. (The unlocked round only gives a refused directory its precise
+// error.)
+//
+// The lock file is only opened and locked, never created, so the listing
+// writes nothing at all. A catalog without one has not been opened since the
+// lock was introduced, possibly not by anything that takes it, and is refused
+// like a catalog with no committed records: start and cleanly stop the
+// workspace once. Creating the file here instead would also leave it owned by
+// whoever ran the listing, root included, which could lock the workspace out.
 func OpenExistingDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
+	if err := requireCleanlyClosedCatalog(dir); err != nil {
+		return nil, err
+	}
+	openExistingBeforeLock()
+	lock, err := dirlock.AcquireExistingFile(dir, policyLockFile)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, shoal.WrapError(shoal.ErrorUnavailable,
+			"policy catalog "+dir+" has no "+policyLockFile+": it has not "+
+				"been opened by a workspace of this version. Start and "+
+				"cleanly stop the workspace once, then try again", err)
+	}
+	if err != nil {
+		return nil, policyCatalogLockError(dir, err)
+	}
+	if err := requireCleanlyClosedCatalog(dir); err != nil {
+		_ = lock.Close()
+		return nil, err
+	}
+	return openLockedDurablePolicyStore(dir, lock)
+}
+
+// openExistingBeforeLock runs between OpenExistingDurablePolicyStore's
+// unlocked checks and its lock. It does nothing; a test replaces it to change
+// the directory inside that window.
+var openExistingBeforeLock = func() {}
+
+// requireCleanlyClosedCatalog refuses, without writing, every directory that
+// OpenExistingDurablePolicyStore must not open.
+func requireCleanlyClosedCatalog(dir string) error {
 	info, err := os.Stat(dir)
 	if err != nil || !info.IsDir() {
-		return nil, shoal.NewError(shoal.ErrorNotFound,
+		return shoal.NewError(shoal.ErrorNotFound,
 			"no policy catalog at "+dir)
 	}
 	tableDir := filepath.Join(dir, policyTable)
 	table, err := os.Stat(tableDir)
 	if err != nil || !table.IsDir() {
-		return nil, shoal.NewError(shoal.ErrorNotFound,
+		return shoal.NewError(shoal.ErrorNotFound,
 			"no policy catalog at "+dir+": it holds no "+policyTable+" table")
 	}
 	tabletDirs := []string{tableDir}
 	entries, err := os.ReadDir(tableDir)
 	if err != nil {
-		return nil, shoal.WrapError(shoal.ErrorUnavailable,
+		return shoal.WrapError(shoal.ErrorUnavailable,
 			"read policy catalog "+dir, err)
 	}
 	for _, entry := range entries {
@@ -106,7 +154,7 @@ func OpenExistingDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 	for _, tabletDir := range tabletDirs {
 		wal, err := os.Stat(filepath.Join(tabletDir, "wal.log"))
 		if err == nil && wal.Size() > 0 {
-			return nil, shoal.NewError(shoal.ErrorUnavailable,
+			return shoal.NewError(shoal.ErrorUnavailable,
 				"policy catalog "+dir+" has unflushed writes: stop the "+
 					"workspace (a clean shutdown flushes them) and try again")
 		}
@@ -115,12 +163,12 @@ func OpenExistingDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 		}
 	}
 	if !committed {
-		return nil, shoal.NewError(shoal.ErrorUnavailable,
+		return shoal.NewError(shoal.ErrorUnavailable,
 			"policy catalog "+dir+" holds no committed records: start and "+
 				"cleanly stop the workspace so the migration's report is "+
 				"flushed, then try again")
 	}
-	return OpenDurablePolicyStore(dir)
+	return nil
 }
 
 // policyRow is one record of a batched durable write.

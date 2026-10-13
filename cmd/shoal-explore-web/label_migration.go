@@ -121,8 +121,10 @@ func writeUntranslatable(output io.Writer, record authorized.LabelMigrationRecor
 // listUntranslatableLabels prints the label migration report stored in the
 // policy catalog at policyDir and serves nothing. A directory that holds no
 // policy catalog is refused and left as it was
-// (authorized.OpenExistingDurablePolicyStore). Run it with the workspace
-// stopped: the catalog's storage engine takes no cross-process lock.
+// (authorized.OpenExistingDurablePolicyStore), and so is a catalog that a
+// running workspace has open: the listing tries the catalog's directory lock
+// and refuses if another process holds it (#686). Run it with the workspace
+// stopped.
 func listUntranslatableLabels(
 	ctx context.Context,
 	output io.Writer,

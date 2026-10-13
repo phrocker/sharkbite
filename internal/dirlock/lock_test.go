@@ -166,3 +166,43 @@ func TestAcquireExistingNeverCreatesTheDirectory(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+// TestAcquireExistingFileCreatesNothing: a missing lock file (or directory)
+// is an fs.ErrNotExist error and stays missing; an existing lock file
+// excludes Acquire and is excluded by it.
+func TestAcquireExistingFileCreatesNothing(t *testing.T) {
+	dir := t.TempDir()
+	if _, err := AcquireExistingFile(dir, ".store.lock"); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing lock file: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(dir, ".store.lock")); !os.IsNotExist(err) {
+		t.Fatalf("AcquireExistingFile created the lock file: %v", err)
+	}
+	missing := filepath.Join(dir, "missing")
+	if _, err := AcquireExistingFile(missing, ".store.lock"); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("missing directory: %v", err)
+	}
+	if _, err := os.Stat(missing); !os.IsNotExist(err) {
+		t.Fatalf("AcquireExistingFile created the directory: %v", err)
+	}
+	owner, err := Acquire(dir, ".store.lock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := AcquireExistingFile(dir, ".store.lock"); !errors.Is(err, ErrLocked) {
+		t.Fatalf("acquire under an owner: %v", err)
+	}
+	if err := owner.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reader, err := AcquireExistingFile(dir, ".store.lock")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Acquire(dir, ".store.lock"); !errors.Is(err, ErrLocked) {
+		t.Fatalf("acquire under a reader: %v", err)
+	}
+	if err := reader.Close(); err != nil {
+		t.Fatal(err)
+	}
+}

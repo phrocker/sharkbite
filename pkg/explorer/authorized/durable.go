@@ -34,6 +34,7 @@ import (
 	"time"
 
 	"github.com/phrocker/shoal-oss/internal/cclient"
+	"github.com/phrocker/shoal-oss/internal/dirlock"
 	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
@@ -65,6 +66,8 @@ type DurablePolicyStore struct {
 	mu     sync.Mutex
 	memory *MemoryPolicyStore
 	engine *engine.Engine
+	// lock is the catalog directory's exclusive ownership (policyLockFile).
+	lock   *dirlock.Lock
 	seq    uint64
 	closed bool
 	// diverged is set once a write-through fails after the memory store was
@@ -245,9 +248,50 @@ type persistedCoOccurrence struct {
 // OpenDurablePolicyStore opens or creates a durable policy catalog rooted at
 // dir. It reconstructs the catalog from any previously persisted records; a
 // record that fails to decode or validate fails closed by refusing to open.
+//
+// The store owns dir exclusively until Close: it holds an OS lock on
+// policyLockFile (internal/dirlock) from before the engine opens until after
+// it closes, so a second opener in this or any other process, the offline
+// listings included (OpenExistingDurablePolicyStore), is refused instead of
+// replaying, flushing or truncating the owner's WAL (#686). The kernel drops
+// the lock when its holder exits, however it exits, so the lock file a crash
+// leaves behind does not block the next start.
 func OpenDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
+	lock, err := dirlock.Acquire(dir, policyLockFile)
+	if err != nil {
+		return nil, policyCatalogLockError(dir, err)
+	}
+	return openLockedDurablePolicyStore(dir, lock)
+}
+
+// policyLockFile is the catalog directory's ownership lock file. It is a
+// plain file, which the storage engine (it treats every subdirectory as a
+// table) ignores.
+const policyLockFile = ".shoal-policy-catalog.lock"
+
+// policyCatalogLockError words a failure to take dir's lock for the operator.
+// Only contention says another process has the catalog; any other failure
+// (a lock file this user may not open, a filesystem without locks) carries
+// its cause in the message, which shoal.Error does not print otherwise.
+func policyCatalogLockError(dir string, err error) error {
+	if errors.Is(err, dirlock.ErrLocked) {
+		return shoal.WrapError(shoal.ErrorUnavailable,
+			"policy catalog "+dir+" is already open, in a running workspace "+
+				"or another tool: stop it and try again", err)
+	}
+	return shoal.WrapError(shoal.ErrorUnavailable,
+		"acquire policy catalog "+dir+": "+err.Error(), err)
+}
+
+// openLockedDurablePolicyStore opens the catalog in dir under lock, which the
+// returned store then owns. On failure it releases the lock.
+func openLockedDurablePolicyStore(
+	dir string,
+	lock *dirlock.Lock,
+) (*DurablePolicyStore, error) {
 	eng, err := engine.Open(dir, engine.Options{})
 	if err != nil {
+		_ = lock.Close()
 		return nil, shoal.WrapError(
 			shoal.ErrorUnavailable, "open policy catalog storage", err)
 	}
@@ -261,6 +305,7 @@ func OpenDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 	if !found {
 		if err := eng.CreateTable(policyTable, engine.TableOptions{}); err != nil {
 			_ = eng.Close()
+			_ = lock.Close()
 			return nil, shoal.WrapError(
 				shoal.ErrorInternal, "create policy catalog table", err)
 		}
@@ -268,15 +313,18 @@ func OpenDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 	store := &DurablePolicyStore{
 		memory: NewMemoryPolicyStore(),
 		engine: eng,
+		lock:   lock,
 	}
 	if err := store.load(); err != nil {
 		_ = eng.Close()
+		_ = lock.Close()
 		return nil, err
 	}
 	return store, nil
 }
 
-// Close flushes and closes the durable catalog's storage.
+// Close flushes and closes the durable catalog's storage, then releases its
+// directory lock.
 func (s *DurablePolicyStore) Close() error {
 	if s == nil {
 		return nil
@@ -288,9 +336,17 @@ func (s *DurablePolicyStore) Close() error {
 	}
 	s.closed = true
 	s.shut.Store(true)
-	if err := s.engine.Close(); err != nil {
+	// The lock goes only once the engine has closed, and even if closing
+	// failed: either way this process writes the directory no more.
+	engineErr := s.engine.Close()
+	lockErr := s.lock.Close()
+	if engineErr != nil {
 		return shoal.WrapError(
-			shoal.ErrorInternal, "close policy catalog storage", err)
+			shoal.ErrorInternal, "close policy catalog storage", engineErr)
+	}
+	if lockErr != nil {
+		return shoal.WrapError(
+			shoal.ErrorInternal, "release policy catalog lock", lockErr)
 	}
 	return nil
 }
