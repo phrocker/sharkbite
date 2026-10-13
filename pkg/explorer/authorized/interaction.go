@@ -220,8 +220,10 @@ func (s operationInteractionSink) RecordReconciledInteractionResult(
 
 // RecordInteraction appends one redacted interaction after verifying that its
 // pinned authorization is the exact current decision and that every source
-// node it retrieved or cited is still authorized. A revoked or missing source
-// fails the inference instead of creating an under-authorized record.
+// node it retrieved or cited is still authorized. Every document revision
+// and assertion it cites, with that assertion's own evidence, must be
+// readable by the recorder too (#714). A revoked or missing source fails the
+// inference instead of creating an under-authorized record.
 func (c *Client) RecordInteraction(
 	ctx context.Context, session interaction.Session,
 ) error {
@@ -338,6 +340,15 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 	); err != nil {
 		return interaction.Session{}, err
 	}
+	// Every cited revision and assertion must be readable by the recorder,
+	// refused exactly as one that never existed (#714). What the cited
+	// assertions' evidence reaches is bound with the session.
+	assertionEvidence, err := c.verifyInteractionCitations(
+		ctx, evidence, canonical.TouchedEdgeIDs(),
+		decision, evidenceOperation, now)
+	if err != nil {
+		return interaction.Session{}, err
+	}
 	// The stored output restriction is what reads evaluate (#564, #567), so
 	// it must hold terms a reader can hold. A producer derives it from the
 	// shoal.visibility of the nodes it touched, which is free-form ("secret")
@@ -451,12 +462,18 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 		return interaction.Session{}, err
 	}
 	validatedRevisions, err := c.interactionSourceRevisions(
-		ctx, canonical.TouchedNodeIDs(), edgeIDs, references, recorder)
+		ctx, append(canonical.TouchedNodeIDs(), assertionEvidence.nodeIDs...),
+		edgeIDs, references, recorder)
 	if err != nil {
 		return interaction.Session{}, err
 	}
 	sourceRevisions, err = unionRevisionReferences(
 		sourceRevisions, validatedRevisions)
+	if err != nil {
+		return interaction.Session{}, inconsistentBase()
+	}
+	sourceRevisions, err = unionRevisionReferences(
+		sourceRevisions, assertionEvidence.revisions)
 	if err != nil {
 		return interaction.Session{}, inconsistentBase()
 	}

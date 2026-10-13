@@ -736,6 +736,42 @@ func (e *Explorer) ExtractionAssertions(
 	return result, nil
 }
 
+// EdgeAssertions returns the assertion the current graph attaches to each
+// requested edge: the one the trusted interaction validator checks a cited
+// assertion against (edgeAssertionLocked). Edges with none, and interaction
+// edges, are omitted. It reads under the shared lock and touches only the
+// requested edges, so an authorizing caller resolving cited assertions need
+// not read a whole neighborhood (#714).
+func (e *Explorer) EdgeAssertions(
+	ctx context.Context, edgeIDs []shoal.ID,
+) (map[shoal.ID]ontology.Assertion, error) {
+	if err := contextError(ctx); err != nil {
+		return nil, err
+	}
+	for _, id := range edgeIDs {
+		if err := shoal.ValidateRequiredID("assertion edge ID", id); err != nil {
+			return nil, err
+		}
+	}
+	if err := e.acquireReadWithGraph(); err != nil {
+		return nil, err
+	}
+	defer e.mu.RUnlock()
+	result := make(map[shoal.ID]ontology.Assertion)
+	for _, id := range edgeIDs {
+		if interaction.IsInteractionID(id) {
+			continue
+		}
+		if _, ok := e.graphEdges[id]; !ok {
+			continue
+		}
+		if assertion, ok := e.graphAssertions[id]; ok {
+			result[id] = assertion
+		}
+	}
+	return result, nil
+}
+
 // extractionAssertionSetsLocked indexes, once per graph build, every
 // assertion of each relation edge that more than one contributing
 // extraction asserts, under the contribution rule computeCurrentGraph

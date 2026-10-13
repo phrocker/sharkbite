@@ -174,6 +174,7 @@ type Client struct {
 	snapshotValidator   SnapshotValidator
 	derivedAssertions   DerivedAssertionReader
 	relationAssertions  ExtractionAssertionReader
+	edgeAssertions      EdgeAssertionReader
 	foldSource          FoldStore
 	ontologyInterpreter explorer.OntologyInterpreter
 	ontologyProposals   explorer.OntologyProposalStore
@@ -247,6 +248,11 @@ func NewClient(config Config) (*Client, error) {
 	if hasSnapshotValidator {
 		relationAssertions, _ = config.SnapshotValidator.(ExtractionAssertionReader)
 	}
+	// Likewise promoted from SnapshotValidator only (#714).
+	var edgeAssertions EdgeAssertionReader
+	if hasSnapshotValidator {
+		edgeAssertions, _ = config.SnapshotValidator.(EdgeAssertionReader)
+	}
 	foldStore := config.FoldStore
 	if isNilDependency(foldStore) && hasSnapshotValidator {
 		foldStore, _ = config.SnapshotValidator.(FoldStore)
@@ -278,6 +284,7 @@ func NewClient(config Config) (*Client, error) {
 		snapshotValidator:   config.SnapshotValidator,
 		derivedAssertions:   derivedAssertions,
 		relationAssertions:  relationAssertions,
+		edgeAssertions:      edgeAssertions,
 		foldSource:          foldStore,
 		publications:        publications,
 		ontologyInterpreter: config.OntologyInterpreter,
