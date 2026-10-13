@@ -97,6 +97,12 @@ At minimum it contains:
 - Extraction failures, unresolved references, stale observations, missing inputs,
   unsupported constructs, and bounds reached. Diagnostics visible to a caller
   must not disclose the existence of unauthorized objects.
+- Incident references, when available, are joined through a generic lineage
+  chain: incident/alert, service and environment, deployment, artifact digest,
+  source revision, and change identifier. A linked record requires the full
+  chain; unresolved or conflicting records retain a bounded reason and remain
+  evidence gaps. Incidents can prioritize inspection, but they are not labels
+  or permission grants.
 - Exact evidence-anchor IDs and input serialization digest, tokenizer identity,
   effective token budgets, preflight token counts, and truncation disposition.
 - Origin and author-control classification for evidence. PR descriptions, review

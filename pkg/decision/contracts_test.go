@@ -20,6 +20,7 @@
 package decision_test
 
 import (
+	"encoding/json"
 	"strings"
 	"testing"
 	"time"
@@ -148,6 +149,26 @@ func TestPictureCopyIsolationAndCoverage(t *testing.T) {
 		t.Fatal("lost source pins")
 	}
 }
+
+func TestPictureWithoutIncidentsRetainsLegacyIdentity(t *testing.T) {
+	pack, config := fixture(t)
+	encoded, err := json.Marshal(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(encoded), `"Incidents"`) {
+		t.Fatalf("empty incident field changed legacy JSON shape: %s", encoded)
+	}
+	picture, err := decision.NewPictureManifest(pack, config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const legacyID = "decision:picture:v1:868409a1a63f5386bc0869a876baf6741c2fd23467f9ea19dd5b8fa8318352ad"
+	if picture.ID() != legacyID {
+		t.Fatalf("legacy picture identity changed: got %s, want %s", picture.ID(), legacyID)
+	}
+}
+
 func TestPictureIdentityAndChronology(t *testing.T) {
 	pack, c := fixture(t)
 	a, err := decision.NewPictureManifest(pack, c)
@@ -190,6 +211,131 @@ func TestPictureIdentityAndChronology(t *testing.T) {
 			}
 			if b.Snapshot().AsOf() != a.Snapshot().AsOf() {
 				t.Fatal("rewrote source snapshot time")
+			}
+		})
+	}
+}
+
+func linkedIncident() decision.IncidentReference {
+	return decision.IncidentReference{
+		IncidentID:        "incident:outage-1",
+		ServiceID:         "service:api",
+		EnvironmentID:     "environment:prod",
+		DeploymentID:      "deployment:2026-10-13",
+		ArtifactID:        "source",
+		RevisionID:        "revision",
+		ChangeID:          "change:pr-1",
+		AuthorityPolicyID: "incident-authority:1",
+		Digest:            strings.Repeat("c", 64),
+		State:             decision.IncidentLinked,
+		ObservedAt:        now.Add(-2 * time.Minute),
+		ReceivedAt:        now.Add(-time.Minute),
+	}
+}
+
+func TestPictureIncidentLineageIsBoundAndCanonical(t *testing.T) {
+	pack, c := fixture(t)
+	c.Incidents = []decision.IncidentReference{linkedIncident()}
+	a, err := decision.NewPictureManifest(pack, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := a.Config().Incidents[0].State; got != decision.IncidentLinked {
+		t.Fatalf("state = %q, want linked", got)
+	}
+	changed := a.Config()
+	changed.Incidents[0].ChangeID = "change:pr-2"
+	b, err := decision.NewPictureManifest(pack, changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ID() == b.ID() {
+		t.Fatal("incident lineage substitution did not change picture identity")
+	}
+	changed = a.Config()
+	changed.Incidents[0].ObservedAt = changed.Incidents[0].ObservedAt.In(time.FixedZone("elsewhere", 3600))
+	changed.Incidents[0].ReceivedAt = changed.Incidents[0].ReceivedAt.In(time.FixedZone("elsewhere", 3600))
+	b, err = decision.NewPictureManifest(pack, changed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if a.ID() != b.ID() {
+		t.Fatal("equivalent incident times changed identity")
+	}
+}
+
+func TestPictureIncidentUncertaintyIsRetained(t *testing.T) {
+	pack, c := fixture(t)
+	c.Incidents = []decision.IncidentReference{{
+		IncidentID: "incident:unresolved", Digest: strings.Repeat("d", 64),
+		State: decision.IncidentUnresolved, Reason: "deployment mapping unavailable",
+		ObservedAt: now.Add(-time.Minute), ReceivedAt: now,
+	}}
+	p, err := decision.NewPictureManifest(pack, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := p.Config().Incidents[0]
+	if got.State != decision.IncidentUnresolved || got.Reason == "" || got.DeploymentID != "" {
+		t.Fatalf("incident uncertainty was not retained: %#v", got)
+	}
+}
+
+func TestPictureRejectsInvalidIncidentLineage(t *testing.T) {
+	cases := map[string]func(*decision.PictureConfig){
+		"duplicate": func(c *decision.PictureConfig) {
+			c.Incidents = []decision.IncidentReference{linkedIncident(), linkedIncident()}
+		},
+		"missing linked lineage": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.RevisionID = ""
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"linked source mismatch": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.ArtifactID, i.RevisionID = "other-artifact", "other-revision"
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"unresolved reason": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.State, i.Reason = decision.IncidentUnresolved, ""
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"linked reason": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.Reason = "ambiguous"
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"future receipt": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.ReceivedAt = c.Cutoff.Add(time.Second)
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"bad digest": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.Digest = strings.Repeat("G", 64)
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"unknown state": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			i.State = "predicted"
+			c.Incidents = []decision.IncidentReference{i}
+		},
+		"too many": func(c *decision.PictureConfig) {
+			i := linkedIncident()
+			c.Incidents = make([]decision.IncidentReference, decision.MaxIncidents+1)
+			for n := range c.Incidents {
+				i.IncidentID = shoal.ID("incident:" + string(rune('a'+n%26)) + string(rune('0'+n/26)))
+				c.Incidents[n] = i
+			}
+		},
+	}
+	for name, mutate := range cases {
+		t.Run(name, func(t *testing.T) {
+			pack, c := fixture(t)
+			mutate(&c)
+			if _, err := decision.NewPictureManifest(pack, c); err == nil {
+				t.Fatal("accepted invalid incident lineage")
 			}
 		})
 	}

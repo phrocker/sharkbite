@@ -39,6 +39,7 @@ const (
 	MaxQuestions     = 64
 	MaxLabels        = 64
 	MaxSources       = 1024
+	MaxIncidents     = 256
 	MaxSubjects      = 4096
 	MaxMeasurements  = 64
 	MaxManifestBytes = 4 * 1024 * 1024
@@ -211,6 +212,39 @@ type Source struct {
 	ReceivedAt        time.Time
 }
 
+// IncidentLinkState describes how far an incident can be joined to the
+// deployed artifact and source change represented by a picture. A state is an
+// evidence condition, not a risk label and never grants authority.
+type IncidentLinkState string
+
+const (
+	IncidentLinked     IncidentLinkState = "linked"
+	IncidentUnresolved IncidentLinkState = "unresolved"
+	IncidentConflicted IncidentLinkState = "conflicted"
+)
+
+// IncidentReference binds an incident or alert observation to operational
+// lineage. ChangeID is intentionally generic: an external showcase may use a
+// pull request, changeset, or release candidate without importing GitHub into
+// the decision core. Linked records require the complete chain; unresolved or
+// conflicted records retain a bounded reason so consumers can abstain rather
+// than mistake missing lineage for a low-risk observation.
+type IncidentReference struct {
+	IncidentID        shoal.ID
+	ServiceID         shoal.ID
+	EnvironmentID     shoal.ID
+	DeploymentID      shoal.ID
+	ArtifactID        shoal.ID
+	RevisionID        shoal.ID
+	ChangeID          shoal.ID
+	AuthorityPolicyID shoal.ID
+	Digest            string
+	State             IncidentLinkState
+	Reason            string
+	ObservedAt        time.Time
+	ReceivedAt        time.Time
+}
+
 type Disposition string
 
 const (
@@ -260,6 +294,7 @@ type PictureConfig struct {
 	Truncated            bool
 	Cutoff               time.Time
 	Sources              []Source
+	Incidents            []IncidentReference `json:",omitempty"`
 	Subjects             []Subject
 	Measurements         []Measurement
 }
@@ -274,7 +309,7 @@ func NewPictureManifest(pack inference.ContextPack, config PictureConfig) (Pictu
 	if err := pack.Validate(); err != nil {
 		return PictureManifest{}, err
 	}
-	if len(config.Sources) == 0 || len(config.Sources) > MaxSources || len(config.Subjects) == 0 || len(config.Subjects) > MaxSubjects || len(config.Measurements) > MaxMeasurements {
+	if len(config.Sources) == 0 || len(config.Sources) > MaxSources || len(config.Incidents) > MaxIncidents || len(config.Subjects) == 0 || len(config.Subjects) > MaxSubjects || len(config.Measurements) > MaxMeasurements {
 		return PictureManifest{}, invalid("invalid picture counts")
 	}
 	// Check nested counts before cloning caller-owned slices.
@@ -341,6 +376,53 @@ func NewPictureManifest(pack inference.ContextPack, config PictureConfig) (Pictu
 		}
 		s.ObservedAt = utc(s.ObservedAt)
 		s.ReceivedAt = utc(s.ReceivedAt)
+	}
+	sort.Slice(config.Incidents, func(i, j int) bool { return config.Incidents[i].IncidentID < config.Incidents[j].IncidentID })
+	incidents := map[shoal.ID]struct{}{}
+	for i := range config.Incidents {
+		incident := &config.Incidents[i]
+		if err := requiredID(incident.IncidentID); err != nil {
+			return PictureManifest{}, err
+		}
+		if _, exists := incidents[incident.IncidentID]; exists {
+			return PictureManifest{}, invalid("duplicate incident")
+		}
+		incidents[incident.IncidentID] = struct{}{}
+		if !digestValid(incident.Digest) {
+			return PictureManifest{}, invalid("invalid incident digest")
+		}
+		if !validTime(incident.ObservedAt) || !validTime(incident.ReceivedAt) || incident.ReceivedAt.Before(incident.ObservedAt) || incident.ReceivedAt.After(config.Cutoff) {
+			return PictureManifest{}, invalid("invalid incident chronology")
+		}
+		incident.ObservedAt = utc(incident.ObservedAt)
+		incident.ReceivedAt = utc(incident.ReceivedAt)
+		switch incident.State {
+		case IncidentLinked:
+			for _, id := range []shoal.ID{incident.ServiceID, incident.EnvironmentID, incident.DeploymentID, incident.ArtifactID, incident.RevisionID, incident.ChangeID, incident.AuthorityPolicyID} {
+				if err := requiredID(id); err != nil {
+					return PictureManifest{}, invalid("linked incident is missing lineage")
+				}
+			}
+			matchedSource := false
+			for _, source := range config.Sources {
+				if source.ArtifactID == incident.ArtifactID && source.RevisionID == incident.RevisionID {
+					matchedSource = true
+					break
+				}
+			}
+			if !matchedSource {
+				return PictureManifest{}, invalid("linked incident artifact and revision are outside sources")
+			}
+			if incident.Reason != "" {
+				return PictureManifest{}, invalid("linked incident cannot carry unresolved reason")
+			}
+		case IncidentUnresolved, IncidentConflicted:
+			if err := requiredText(incident.Reason); err != nil {
+				return PictureManifest{}, invalid("unresolved incident requires reason")
+			}
+		default:
+			return PictureManifest{}, invalid("unknown incident link state")
+		}
 	}
 	anchors := map[shoal.ID]inference.EvidenceAnchor{}
 	used := map[shoal.ID]bool{}
@@ -417,13 +499,56 @@ func NewPictureManifest(pack inference.ContextPack, config PictureConfig) (Pictu
 	// not serialize its private fields as an empty JSON object.
 	payload := struct {
 		PackID shoal.ID
-		Config PictureConfig
-	}{pack.ID(), config}
+		Config any
+	}{pack.ID(), pictureIdentityConfig(config)}
 	id, err := identity("picture", payload)
 	if err != nil {
 		return PictureManifest{}, err
 	}
 	return PictureManifest{id, pack, config}, nil
+}
+
+// pictureIdentityConfig preserves the pre-incident JSON shape for existing
+// pictures. Adding an optional field to PictureConfig must not change the
+// identity of a legacy picture that has no incident references; otherwise
+// durable receipts and replayed requests would appear to point at new input.
+func pictureIdentityConfig(c PictureConfig) any {
+	if len(c.Incidents) != 0 {
+		return c
+	}
+	return struct {
+		TaskID               shoal.ID
+		ObservationID        shoal.ID
+		EnumerationID        shoal.ID
+		ScopeID              shoal.ID
+		BuilderID            shoal.ID
+		OntologyProjectionID shoal.ID
+		InputDigest          string
+		TokenizerID          shoal.ID
+		InputTokens          uint64
+		TokenBudget          uint64
+		Truncated            bool
+		Cutoff               time.Time
+		Sources              []Source
+		Subjects             []Subject
+		Measurements         []Measurement
+	}{
+		TaskID:               c.TaskID,
+		ObservationID:        c.ObservationID,
+		EnumerationID:        c.EnumerationID,
+		ScopeID:              c.ScopeID,
+		BuilderID:            c.BuilderID,
+		OntologyProjectionID: c.OntologyProjectionID,
+		InputDigest:          c.InputDigest,
+		TokenizerID:          c.TokenizerID,
+		InputTokens:          c.InputTokens,
+		TokenBudget:          c.TokenBudget,
+		Truncated:            c.Truncated,
+		Cutoff:               c.Cutoff,
+		Sources:              c.Sources,
+		Subjects:             c.Subjects,
+		Measurements:         c.Measurements,
+	}
 }
 
 // ContextPack returns the immutable evidence pack pinned by this picture.
@@ -457,6 +582,7 @@ func (p PictureManifest) InventoryCoverage() (supported, total int) {
 }
 func clonePicture(c PictureConfig) PictureConfig {
 	c.Sources = append([]Source(nil), c.Sources...)
+	c.Incidents = append([]IncidentReference(nil), c.Incidents...)
 	c.Subjects = append([]Subject(nil), c.Subjects...)
 	for i := range c.Subjects {
 		c.Subjects[i].EvidenceIDs = append([]shoal.ID(nil), c.Subjects[i].EvidenceIDs...)
@@ -586,6 +712,19 @@ func pictureSize(c PictureConfig) error {
 			return err
 		}
 		for _, v := range []string{s.Digest, string(s.Role), string(s.Control)} {
+			if err := b.text(v); err != nil {
+				return err
+			}
+		}
+	}
+	for _, incident := range c.Incidents {
+		if err := b.charge(1024); err != nil {
+			return err
+		}
+		if err := b.ids(incident.IncidentID, incident.ServiceID, incident.EnvironmentID, incident.DeploymentID, incident.ArtifactID, incident.RevisionID, incident.ChangeID, incident.AuthorityPolicyID); err != nil {
+			return err
+		}
+		for _, v := range []string{incident.Digest, string(incident.State), incident.Reason} {
 			if err := b.text(v); err != nil {
 				return err
 			}
