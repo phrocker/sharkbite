@@ -18,6 +18,9 @@
 package iterrt
 
 import (
+	"fmt"
+	"math"
+	"math/rand"
 	"sort"
 	"testing"
 )
@@ -184,4 +187,143 @@ func rowN(i int) string {
 	b[2] = digits[(i/10)%10]
 	b[3] = digits[i%10]
 	return string(b)
+}
+
+// TestMerge_IdenticalKeysEarlierSourceFirst: keys identical down to the
+// timestamp and delete flag (what PutLatest produces for every overwrite)
+// surface in source order — the earlier (newer) source first — regardless
+// of how many sources there are or where the heap places them (#692).
+func TestMerge_IdenticalKeysEarlierSourceFirst(t *testing.T) {
+	for n := 2; n <= 9; n++ {
+		srcs := make([]SortedKeyValueIterator, n)
+		want := make([]string, n)
+		for i := 0; i < n; i++ {
+			v := fmt.Sprintf("src%d", i)
+			srcs[i] = newSliceSource(
+				kv{mk("a", "cf", "q", "", 5), []byte("a" + v)},
+				kv{mk("r", "cf", "q", "", math.MaxInt64), []byte(v)},
+				kv{mk("z", "cf", "q", "", 5), []byte("z" + v)},
+			)
+			want[i] = v
+		}
+		m := NewMergingIterator(srcs...)
+		seekAll(t, m)
+		// Seek straight onto the identical run as well as from the start.
+		ranges := []Range{
+			InfiniteRange(),
+			{Start: mk("r", "cf", "q", "", math.MaxInt64), StartInclusive: true, InfiniteEnd: true},
+		}
+		for _, r := range ranges {
+			if err := m.Seek(r, nil, false); err != nil {
+				t.Fatal(err)
+			}
+			got, err := drain(m)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var run []string
+			for _, c := range got {
+				if string(c.k.Row) == "r" {
+					run = append(run, string(c.v))
+				}
+			}
+			if !eqStr(run, want) {
+				t.Fatalf("n=%d: identical keys surfaced %v, want source order %v", n, run, want)
+			}
+		}
+	}
+}
+
+// TestMerge_IdenticalKeysWithinSourceKeepOrder: a source that itself holds
+// identical keys (a memtable with several PutLatest overwrites, or a file
+// flushed from one) keeps its own order, and the whole run sits between
+// the runs of the sources before and after it.
+func TestMerge_IdenticalKeysWithinSourceKeepOrder(t *testing.T) {
+	key := mk("r", "cf", "q", "", math.MaxInt64)
+	newer := newSliceSource(kv{key, []byte("n1")}, kv{key, []byte("n2")})
+	middle := newSliceSource(kv{key, []byte("m1")}, kv{key, []byte("m2")}, kv{key, []byte("m3")})
+	older := newSliceSource(kv{key, []byte("o1")})
+	m := NewMergingIterator(newer, middle, older)
+	seekAll(t, m)
+	got, err := drain(m)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gs := valStrings(got); !eqStr(gs, []string{"n1", "n2", "m1", "m2", "m3", "o1"}) {
+		t.Fatalf("got %v", gs)
+	}
+}
+
+// TestMerge_IdenticalKeysUnderVersioning: maxVersions=1 over identical keys
+// keeps the earliest source's value.
+func TestMerge_IdenticalKeysUnderVersioning(t *testing.T) {
+	key := mk("r", "cf", "q", "", math.MaxInt64)
+	m := NewMergingIterator(
+		newSliceSource(kv{key, []byte("newest")}),
+		newSliceSource(kv{key, []byte("middle")}),
+		newSliceSource(kv{key, []byte("oldest")}),
+	)
+	if err := m.Init(nil, nil, IteratorEnvironment{}); err != nil {
+		t.Fatal(err)
+	}
+	v := NewVersioningIterator()
+	if err := v.Init(m, map[string]string{VersioningOption: "1"}, IteratorEnvironment{}); err != nil {
+		t.Fatal(err)
+	}
+	if err := v.Seek(InfiniteRange(), nil, false); err != nil {
+		t.Fatal(err)
+	}
+	got, err := drain(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if gs := valStrings(got); !eqStr(gs, []string{"newest"}) {
+		t.Fatalf("got %v, want [newest]", gs)
+	}
+}
+
+// TestMerge_FuzzStableByPriority: the merge of K random sorted streams
+// with many identical keys equals a stable sort of the concatenation of
+// the sources in priority order — key order, then source order, then
+// in-source order. Also checked through a DeepCopy.
+func TestMerge_FuzzStableByPriority(t *testing.T) {
+	rng := rand.New(rand.NewSource(692))
+	for iter := 0; iter < 200; iter++ {
+		k := 1 + rng.Intn(8)
+		var all []kv
+		srcs := make([]SortedKeyValueIterator, k)
+		for s := 0; s < k; s++ {
+			var cells []kv
+			n := rng.Intn(40)
+			for i := 0; i < n; i++ {
+				ts := int64(math.MaxInt64)
+				if rng.Intn(3) == 0 {
+					ts = int64(rng.Intn(3))
+				}
+				key := mk(rowN(rng.Intn(6)), "cf", "q", "", ts)
+				if rng.Intn(5) == 0 {
+					key.Deleted = true
+				}
+				cells = append(cells, kv{key, []byte(fmt.Sprintf("s%d-%d", s, i))})
+			}
+			sort.SliceStable(cells, func(i, j int) bool { return cells[i].k.Compare(cells[j].k) < 0 })
+			all = append(all, cells...)
+			srcs[s] = newSliceSource(cells...)
+		}
+		sort.SliceStable(all, func(i, j int) bool { return all[i].k.Compare(all[j].k) < 0 })
+		m := NewMergingIterator(srcs...)
+		seekAll(t, m)
+		for pass, it := range []SortedKeyValueIterator{m, m.DeepCopy(IteratorEnvironment{})} {
+			if pass == 1 {
+				seekAll(t, it)
+			}
+			got, err := drain(it)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if gs, ws := valStrings(got), valStrings(all); !eqStr(gs, ws) {
+				t.Fatalf("iter %d pass %d:\n got %v\nwant %v", iter, pass, gs, ws)
+			}
+		}
+	}
 }

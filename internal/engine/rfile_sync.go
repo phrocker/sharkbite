@@ -132,6 +132,10 @@ func (e *Engine) ExportRFilesIncremental(ctx context.Context, tableName string, 
 		dstPath := joinBackendPath(dst, opts.DestinationRoot, filepath.FromSlash(rel))
 		current[rel] = true
 
+		// Skipping by path is sound because a tablet never reuses a file
+		// name: local names stay above the persisted name high-water mark
+		// (even after deletion or a clock step back), and import names carry
+		// a random nonce. A path therefore always names the same bytes.
 		if prev, ok := priorShipped[rel]; ok && prev.DestinationPath == dstPath {
 			prev.Format = string(fileFormatForPath(f.Path))
 			prev.Role = ExportRoleAuthoritative
@@ -168,11 +172,11 @@ func (e *Engine) ExportRFilesIncremental(ctx context.Context, tableName string, 
 		}
 	}
 
+	// Group by tablet but keep each tablet's recency order (from rfiles):
+	// an importer registers files in manifest order, and that order is how
+	// it resolves keys rewritten with the same timestamp (#692).
 	sort.SliceStable(manifest.RFiles, func(i, j int) bool {
-		if manifest.RFiles[i].TabletIndex != manifest.RFiles[j].TabletIndex {
-			return manifest.RFiles[i].TabletIndex < manifest.RFiles[j].TabletIndex
-		}
-		return manifest.RFiles[i].DestinationPath < manifest.RFiles[j].DestinationPath
+		return manifest.RFiles[i].TabletIndex < manifest.RFiles[j].TabletIndex
 	})
 	manifest.Version = exportManifestVersion(manifest)
 	sort.Strings(uploaded)

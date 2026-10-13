@@ -339,11 +339,11 @@ func (e *Engine) ExportRFiles(ctx context.Context, tableName string, dst storage
 			Role:            ExportRoleAuthoritative,
 		})
 	}
+	// Group by tablet but keep each tablet's recency order (from rfiles):
+	// an importer registers files in manifest order, and that order is how
+	// it resolves keys rewritten with the same timestamp (#692).
 	sort.SliceStable(manifest.RFiles, func(i, j int) bool {
-		if manifest.RFiles[i].TabletIndex != manifest.RFiles[j].TabletIndex {
-			return manifest.RFiles[i].TabletIndex < manifest.RFiles[j].TabletIndex
-		}
-		return manifest.RFiles[i].DestinationPath < manifest.RFiles[j].DestinationPath
+		return manifest.RFiles[i].TabletIndex < manifest.RFiles[j].TabletIndex
 	})
 	manifest.Version = exportManifestVersion(manifest)
 
@@ -997,9 +997,19 @@ func (e *Engine) ImportRFileManifest(ctx context.Context, manifest *RFileExportM
 			return fmt.Errorf("engine: mkdir imported tablet: %w", err)
 		}
 	}
-	filesByTablet := make(map[int][]string)
+	filesByTablet := make(map[int][]tablet.ImportedFile)
 	for _, file := range stagedFiles {
-		filesByTablet[file.TabletIndex] = append(filesByTablet[file.TabletIndex], file.DestinationPath)
+		filesByTablet[file.TabletIndex] = append(filesByTablet[file.TabletIndex], tablet.ImportedFile{
+			Path:   file.DestinationPath,
+			Source: importSourceIdentity(file),
+		})
+	}
+	importedPaths := func(files []tablet.ImportedFile) []string {
+		paths := make([]string, len(files))
+		for i, file := range files {
+			paths[i] = file.Path
+		}
+		return paths
 	}
 
 	e.mu.Lock()
@@ -1037,7 +1047,7 @@ func (e *Engine) ImportRFileManifest(ctx context.Context, manifest *RFileExportM
 		tabletDir := filepath.Join(tableDir, fmt.Sprintf("t-%04d", i))
 		publishErr := tablet.PublishImmutableFiles(e.backend, tabletDir, filesByTablet[i])
 		if publishErr == nil || storage.IsCommittedWriteError(publishErr) {
-			rollback.release(filesByTablet[i])
+			rollback.release(importedPaths(filesByTablet[i]))
 		}
 		if publishErr != nil {
 			return fmt.Errorf("engine: publish imported tablet %d manifest: %w", i, publishErr)
@@ -1159,6 +1169,25 @@ func stageVerifiedImportFiles(
 		staged[i].DestinationPath = stagedPath
 	}
 	return staged, nil
+}
+
+// importSourceIdentity is a manifest file's PRODUCER identity
+// (tablet.ImportedFile.Source): which file of which producer table it is,
+// plus its content digest. The relative path is relative to the producer's
+// engine directory — table, tablet, optional producer prefix and the file
+// name — so it survives the producer's data directory moving (the absolute
+// source path deliberately does not take part). A producer never reissues a
+// file name for different bytes (flush and compaction names stay above a
+// persisted high-water mark; import names carry a nonce), so two producer
+// files with identical bytes get different identities and the same producer
+// file always gets the same one. A manifest entry with no relative path has
+// none (empty), and the importer falls back to its content digest.
+func importSourceIdentity(file RFileExportFile) string {
+	if file.RelativePath == "" {
+		return ""
+	}
+	sum := sha256.Sum256([]byte(file.RelativePath + "\x00" + file.SHA256))
+	return "v1:" + hex.EncodeToString(sum[:])
 }
 
 func cleanupFailedStagedImports(
@@ -1369,11 +1398,12 @@ func (t *table) rfiles() []tableRFile {
 			out = append(out, tableRFile{TabletIndex: i, Path: p})
 		}
 	}
+	// Within a tablet, keep the tablet's recency order (oldest first), not
+	// name order: an export manifest lists files in this order and an
+	// import registers them in it, so the importing engine resolves keys
+	// rewritten with the same timestamp to the same (newest) value (#692).
 	sort.SliceStable(out, func(i, j int) bool {
-		if out[i].TabletIndex != out[j].TabletIndex {
-			return out[i].TabletIndex < out[j].TabletIndex
-		}
-		return out[i].Path < out[j].Path
+		return out[i].TabletIndex < out[j].TabletIndex
 	})
 	return out
 }

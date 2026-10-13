@@ -35,6 +35,16 @@ import (
 //     coordinate's versions by timestamp DESCENDING — the source hands
 //     them to us newest-first, so we emit the first maxVersions and skip
 //     the rest of that coordinate.
+//   - Keys identical down to the timestamp (every PutLatest overwrite of
+//     a cell carries ts=MaxInt64) are NOT collapsed: each counts as a
+//     version, exactly as in Java. Their relative order comes from the
+//     source — newest write first within a memtable or file, and newest
+//     source first across a MergingIterator — so maxVersions=1 keeps the
+//     latest write and maxVersions=N returns the N most recent writes,
+//     newest first. Collapsing them here (or at flush/compaction) is
+//     deliberately not done: it would diverge from Java compaction output,
+//     and pkg/explorer reads the older copy of an interaction record that
+//     a later same-key write marked deleted.
 //   - The Java VersioningIterator is NOT delete-aware: a tombstone is
 //     just another version and counts toward maxVersions. It does no
 //     scope branching — same behaviour at scan/minc/majc. We replicate

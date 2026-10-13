@@ -101,6 +101,15 @@ func (e *Explorer) loadExtractionRecord(row, qualifier, encoded []byte) error {
 		return shoal.NewError(
 			shoal.ErrorInternal, "stored explorer extraction row is invalid")
 	}
+	// ExtractDocument rewrites this stable row in place with PutLatest, so
+	// every version of an extraction is the same full key and load's raw
+	// scan sees all of them. The engine surfaces identical keys newest
+	// first (memtable order within a source, source recency across files;
+	// see iterrt.MergingIterator), so the FIRST version seen is the latest
+	// publication. Later ones are superseded (#692).
+	if _, loaded := e.extractions[record.ID]; loaded {
+		return nil
+	}
 	copy := record
 	e.extractions[record.ID] = &copy
 	return nil

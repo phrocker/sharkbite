@@ -139,7 +139,10 @@ func (s *Server) scanTabletRangeWAL(
 		return nil, 0, false, walErr
 	}
 	if memLeaf != nil {
-		leaves = append(leaves, memLeaf)
+		// The WAL memtable is the newest source: put it first so it wins
+		// ties between identical keys (iterrt.MergingIterator surfaces
+		// identical keys in leaf order).
+		leaves = append([]iterrt.SortedKeyValueIterator{memLeaf}, leaves...)
 	}
 	defer cleanup()
 

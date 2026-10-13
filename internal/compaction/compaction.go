@@ -79,9 +79,15 @@ type Input struct {
 // Spec describes a single compaction unit fully: the inputs, the
 // iterator stack to apply, the scope, and the output RFile's encoding.
 type Spec struct {
-	// Inputs are the immutable files to merge, in any order — the MergingIterator
-	// sorts across them. An empty Inputs list produces an empty (but
-	// valid) output RFile.
+	// Inputs are the immutable files to merge, NEWEST FIRST. The
+	// MergingIterator sorts cells across them by key; for keys identical
+	// down to the timestamp and delete flag (every overwrite written with
+	// PutLatest), an earlier input's cells come first, and the output file
+	// keeps them in that order so a later read still finds the newest
+	// first. Callers without recency information (e.g. files listed from
+	// Accumulo metadata, whose servers assign distinct timestamps) may pass
+	// any order; ties then follow that order. An empty Inputs list produces
+	// an empty (but valid) output RFile.
 	Inputs []Input
 
 	// Stack is the iterator stack applied above the merge, bottom-first
