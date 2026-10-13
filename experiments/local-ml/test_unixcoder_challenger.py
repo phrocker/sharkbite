@@ -20,6 +20,17 @@ def manifest():
 
 
 class UnixCoderChallengerTests(unittest.TestCase):
+    def test_device_guard_rejects_unavailable_cuda(self):
+        with self.assertRaisesRegex(RuntimeError, 'cuda device is unavailable'):
+            challenger._validate_device('cuda', False)
+
+    def test_device_guard_accepts_available_cuda(self):
+        challenger._validate_device('cuda', True)
+
+    def test_device_guard_rejects_unknown_device(self):
+        with self.assertRaisesRegex(ValueError, 'unsupported device'):
+            challenger._validate_device('tpu', False)
+
     def test_fake_encoder_head_replays_without_network(self):
         rows = [{'id': str(i), 'split': 'train', 'label': i % 2, 'code': 'removed check' if i % 2 else 'comment'} for i in range(6)]
         def embed(texts):

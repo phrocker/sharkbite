@@ -5,6 +5,13 @@ import math
 import challenger_manifest as contract
 
 
+def _validate_device(device, cuda_available):
+    if device not in ('cpu', 'cuda'):
+        raise ValueError('unsupported device')
+    if device == 'cuda' and not cuda_available:
+        raise RuntimeError('requested cuda device is unavailable')
+
+
 def _recipe(manifest):
     matches = [recipe for recipe in manifest['recipes'] if recipe['name'] == 'unixcoder-linear-v1']
     if len(matches) != 1:
@@ -107,13 +114,12 @@ class FrozenUnixCoder:
     def __init__(self, manifest, device='cpu'):
         contract.validate(manifest)
         recipe = _recipe(manifest)
-        if device not in ('cpu', 'cuda'):
-            raise ValueError('unsupported device')
         try:
             import torch
             from transformers import AutoModel, AutoTokenizer
         except ImportError as error:
             raise RuntimeError('transformers and torch are required for UniXcoder inference') from error
+        _validate_device(device, torch.cuda.is_available())
         self._torch = torch
         self._device = device
         self._tokenizer = AutoTokenizer.from_pretrained(recipe['model_repo'], revision=recipe['tokenizer_revision'], local_files_only=True)
