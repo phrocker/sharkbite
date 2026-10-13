@@ -115,6 +115,7 @@ func TestCopyDownConnectEdgeStaysBoundToItsEndpoints(t *testing.T) {
 		}
 		// No reason is given and the operator requires one for every
 		// declassification: this is not one, so it is not refused.
+		edge.ID = appEdgeID(t, w.client, holder, edge.ID)
 		if err := w.client.Connect(holder, edge); err != nil {
 			t.Fatalf("connect: %v", err)
 		}

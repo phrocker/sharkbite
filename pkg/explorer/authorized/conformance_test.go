@@ -146,6 +146,7 @@ func TestUnauthorizedBackendResultConformance(t *testing.T) {
 	edge := edgeFixture.Edge
 	edge.From = visible.Document.ID
 	edge.To = hidden.Document.ID
+	edge.ID = appEdgeID(t, client, adminConnect.Context, edge.ID)
 	if err := client.Connect(adminConnect.Context, edge); err != nil {
 		t.Fatal(err)
 	}
@@ -656,8 +657,15 @@ func (s *conformancePolicySelector) SelectEdgePolicy(
 	if err := contextError(ctx); err != nil {
 		return auth.Policy{}, err
 	}
+	// Connect accepts only IDs in the caller's namespace (#699); the
+	// fixtures name edges by the local ID the harness chose.
+	local, ok := authorized.ApplicationEdgeLocalID(decision, edge.ID)
+	if !ok {
+		return auth.Policy{}, shoal.NewError(
+			shoal.ErrorUnauthorized, "authorization denied")
+	}
 	identity, ok := s.edges[conformanceEdgeKey{
-		id:       edge.ID,
+		id:       local,
 		edgeType: edge.Type,
 		weight:   edge.Weight,
 	}]

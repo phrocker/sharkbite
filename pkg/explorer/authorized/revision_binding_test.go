@@ -164,10 +164,17 @@ func (w *bindingWorld) connect(
 ) {
 	w.t.Helper()
 	if err := client.Connect(w.as(w.holder), graph.Edge{
-		ID: id, From: from, To: to, Type: "references", Weight: 1,
+		ID: w.edgeID(client, id), From: from, To: to, Type: "references", Weight: 1,
 	}); err != nil {
 		w.t.Fatalf("connect %s: %v", id, err)
 	}
+}
+
+// edgeID is the ID of the holder's application edge it calls local: the
+// holder connects every edge in this world (#699).
+func (w *bindingWorld) edgeID(client *authorized.Client, local shoal.ID) shoal.ID {
+	w.t.Helper()
+	return appEdgeID(w.t, client, w.as(w.holder), local)
 }
 
 // relabel re-ingests the labelled URI with entirely new, unlabelled content,
@@ -266,6 +273,7 @@ func (w *bindingWorld) edgeVisible(
 	client *authorized.Client, decision auth.Decision, edgeID shoal.ID,
 ) bool {
 	w.t.Helper()
+	edgeID = w.edgeID(client, edgeID)
 	around, err := client.Neighborhood(w.as(decision), explorer.NeighborhoodRequest{
 		NodeIDs: []shoal.ID{w.open.Document.ID}, Depth: 1,
 	})

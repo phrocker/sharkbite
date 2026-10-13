@@ -2056,7 +2056,7 @@ func TestGenerationChangeBetweenSelectionAndMutationPreventsSideEffects(
 			t.Fatal(err)
 		}
 		err = client.Connect(f.admin(t), graph.Edge{
-			ID:   "selection-generation-edge",
+			ID:   appEdgeID(t, client, f.admin(t), "selection-generation-edge"),
 			From: first.Document.ID, To: second.Document.ID,
 			Type: "link", Weight: 1,
 		})

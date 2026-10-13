@@ -66,11 +66,13 @@ func TestGraphAuthorizationReachabilityAndConjunction(t *testing.T) {
 			Type: "link", Weight: 1,
 		},
 	} {
+		edge.ID = appEdgeID(t, f.clientA, admin, edge.ID)
 		if err := f.clientA.Connect(admin, edge); err != nil {
 			t.Fatal(err)
 		}
 	}
-	storedEdge, ok, err := f.store.Edge(context.Background(), "a-to-hidden")
+	storedEdge, ok, err := f.store.Edge(context.Background(),
+		appEdgeID(t, f.clientA, admin, "a-to-hidden"))
 	if err != nil || !ok {
 		t.Fatalf("stored edge: ok=%v err=%v", ok, err)
 	}
@@ -110,7 +112,8 @@ func TestGraphAuthorizationReachabilityAndConjunction(t *testing.T) {
 	}
 
 	deniedEdge := graph.Edge{
-		ID: "denied-endpoint", From: first.Document.ID, To: hidden.Document.ID,
+		ID:   appEdgeID(t, f.clientA, f.alice(t), "denied-endpoint"),
+		From: first.Document.ID, To: hidden.Document.ID,
 		Type: "denied", Weight: 1, Properties: shoal.Metadata{"secret": "caller"},
 	}
 	propertiesCopy := cloneMetadata(deniedEdge.Properties)
@@ -140,7 +143,7 @@ func TestGraphAuthorizationReachabilityAndConjunction(t *testing.T) {
 	guardedClient := f.newClient(
 		t, f.base, f.store, f.sourceA, f.policyA, edgePolicyB)
 	guarded := graph.Edge{
-		ID:   "edge-conjunction",
+		ID:   appEdgeID(t, guardedClient, admin, "edge-conjunction"),
 		From: first.Document.ID, To: last.Document.ID,
 		Type: "guarded", Weight: 1,
 	}
@@ -194,7 +197,8 @@ func TestConnectCatalogFailureRetryReconciles(t *testing.T) {
 	failing := &failStore{PolicyStore: f.store, edgeFailures: 1}
 	client := f.newClient(t, f.base, failing, f.sourceA, f.policyA, nil)
 	edge := graph.Edge{
-		ID: "edge-retry", From: first.Document.ID, To: second.Document.ID,
+		ID:   appEdgeID(t, client, f.admin(t), "edge-retry"),
+		From: first.Document.ID, To: second.Document.ID,
 		Type: "retry", Weight: 1,
 	}
 	if err := client.Connect(f.admin(t), edge); !shoal.IsErrorCode(
@@ -251,8 +255,9 @@ func TestConnectPinsEndpointsThroughBaseMutation(t *testing.T) {
 	connectErr := make(chan error, 1)
 	go func() {
 		connectErr <- client.Connect(f.admin(t), graph.Edge{
-			ID: "pinned-edge", From: endpoint.Document.ID,
-			To: endpoint.Document.ID, Type: "link", Weight: 1,
+			ID:   appEdgeID(t, client, f.admin(t), "pinned-edge"),
+			From: endpoint.Document.ID,
+			To:   endpoint.Document.ID, Type: "link", Weight: 1,
 		})
 	}()
 	<-started
@@ -344,7 +349,7 @@ func TestExistingEdgeUsesCurrentEndpointRules(t *testing.T) {
 		t.Fatal(err)
 	}
 	edge := graph.Edge{
-		ID:   "dynamic-endpoint-edge",
+		ID:   appEdgeID(t, f.clientA, admin, "dynamic-endpoint-edge"),
 		From: first.Document.ID, To: second.Document.ID,
 		Type: "dynamic", Weight: 1,
 	}
@@ -437,8 +442,9 @@ func TestGraphRejectsUncatalogedCurrentRevision(t *testing.T) {
 		t.Fatalf("stale neighborhood seed error = %v", err)
 	}
 	err = f.clientA.Connect(f.alice(t), graph.Edge{
-		ID: "stale-connect", From: registered.Document.ID,
-		To: registered.Document.ID, Type: "link", Weight: 1,
+		ID:   appEdgeID(t, f.clientA, f.alice(t), "stale-connect"),
+		From: registered.Document.ID,
+		To:   registered.Document.ID, Type: "link", Weight: 1,
 	})
 	if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		t.Fatalf("stale connect endpoint error = %v", err)
@@ -499,7 +505,8 @@ func TestCrossDomainConnectIsForbidden(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = f.clientA.Connect(f.admin(t), graph.Edge{
-		ID: "cross-domain", From: first.Document.ID, To: second.Document.ID,
+		ID:   appEdgeID(t, f.clientA, f.admin(t), "cross-domain"),
+		From: first.Document.ID, To: second.Document.ID,
 		Type: "cross", Weight: 1,
 	})
 	if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {

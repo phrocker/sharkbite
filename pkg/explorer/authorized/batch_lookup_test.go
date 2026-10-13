@@ -443,13 +443,15 @@ func connectBatchEdge(
 	admin context.Context,
 	edgeID shoal.ID,
 	from, to shoal.ID,
-) {
+) shoal.ID {
 	t.Helper()
+	edgeID = appEdgeID(t, f.clientA, admin, edgeID)
 	if err := f.clientA.Connect(admin, graph.Edge{
 		ID: edgeID, From: from, To: to, Type: "link", Weight: 1,
 	}); err != nil {
 		t.Fatal(err)
 	}
+	return edgeID
 }
 
 // TestNeighborhoodBatchesLookupsPerPage pins the total policy-store round-trip
@@ -771,8 +773,8 @@ func TestNeighborhoodDeniesEdgeMissingFromBatchResult(t *testing.T) {
 	edgeIDs := make([]shoal.ID, 0, len(documents)-1)
 	for index := 1; index < len(documents); index++ {
 		edgeID := shoal.ID(fmt.Sprintf("missing-edge-%d", index))
-		connectBatchEdge(t, f, admin, edgeID, documents[0], documents[index])
-		edgeIDs = append(edgeIDs, edgeID)
+		edgeIDs = append(edgeIDs,
+			connectBatchEdge(t, f, admin, edgeID, documents[0], documents[index]))
 	}
 	request := explorer.NeighborhoodRequest{
 		NodeIDs: []shoal.ID{documents[0]}, Depth: 2, EdgeTypes: []string{"link"},
@@ -827,13 +829,14 @@ func TestBoundedNeighborhoodDeniesEdgeMissingFromBatchResult(t *testing.T) {
 		MaxScannedEdges: 16, EdgeTypes: []string{"link"},
 		Direction: explorer.GraphDirectionOutgoing,
 	}
-	counting.withholdEdges("bounded-missing-edge-2")
+	missing := appEdgeID(t, f.clientA, admin, "bounded-missing-edge-2")
+	counting.withholdEdges(missing)
 	page, err := client.BoundedNeighborhood(f.alice(t), request)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, edge := range page.Neighborhood.Edges {
-		if edge.ID == "bounded-missing-edge-2" {
+		if edge.ID == missing {
 			t.Fatal("bounded page authorized an edge absent from the batch result")
 		}
 	}

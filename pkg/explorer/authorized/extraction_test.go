@@ -243,8 +243,9 @@ func TestExtractDocumentAuthorizationControlsDerivedGraph(t *testing.T) {
 		t.Fatalf("authorized direct seed missed extracted entity %s", extracted.EntityNodeIDs[0])
 	}
 	err = f.clientA.Connect(f.admin(t), graph.Edge{
-		ID: "visible-to-hidden-extracted-skill", From: visible.Document.ID,
-		To: extracted.EntityNodeIDs[0], Type: "mentions", Weight: 1,
+		ID:   appEdgeID(t, f.clientA, f.admin(t), "visible-to-hidden-extracted-skill"),
+		From: visible.Document.ID,
+		To:   extracted.EntityNodeIDs[0], Type: "mentions", Weight: 1,
 	})
 	if err != nil {
 		t.Fatal(err)

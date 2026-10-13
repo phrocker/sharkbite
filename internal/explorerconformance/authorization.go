@@ -1239,10 +1239,37 @@ func connectFixture(
 	edge := cloneGraphEdge(fixture.Edge)
 	edge.From = from
 	edge.To = to
+	edge.ID = applicationEdgeID(t, client, ctx, edge.ID)
 	if err := client.Connect(ctx, edge); err != nil {
 		t.Fatalf("connect %s: %v", name, err)
 	}
 	return edge
+}
+
+// applicationEdgeNamer is a client whose Connect accepts only edge IDs in the
+// caller's own namespace, such as the authorized client (#699).
+type applicationEdgeNamer interface {
+	ApplicationEdgeID(context.Context, shoal.ID) (shoal.ID, error)
+}
+
+// applicationEdgeID returns the ID under which the caller connects the edge
+// it calls localID: localID itself unless the client namespaces edge IDs.
+func applicationEdgeID(
+	t *testing.T,
+	client explorer.Client,
+	ctx context.Context,
+	localID shoal.ID,
+) shoal.ID {
+	t.Helper()
+	namer, ok := client.(applicationEdgeNamer)
+	if !ok {
+		return localID
+	}
+	id, err := namer.ApplicationEdgeID(ctx, localID)
+	if err != nil {
+		t.Fatalf("application edge ID %s: %v", localID, err)
+	}
+	return id
 }
 
 func fixtureSource(

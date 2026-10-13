@@ -614,8 +614,12 @@ Known gaps:
   evidence is withheld (#696).
 - Existence and count oracles. A bounded neighborhood's scan limit reveals
   the exact number of hidden edges and interactions on a visible node
-  (#698). A `Connect` whose edge ID collides with a hidden edge reveals that
-  edge, and through intrinsic edge IDs, a hidden document by URI (#699). An
+  (#698). Ingest still reveals whether a hidden document exists at a guessed
+  URI, over HTTP upload and MCP (#712). `Connect` no longer does (#699): its
+  edge IDs live in the writer's identity namespace. That namespace binds the
+  identity, not its current authority, so a narrowed session of the same
+  identity can still tell whether one of its own edge IDs exists (library
+  callers only; `Connect` has no HTTP or MCP route). An
   extracted entity shared with a document that is labelled later reveals the
   entity key (#700).
 - Copy-down that names no input is not detected. Examples are labelled text

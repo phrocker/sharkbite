@@ -465,8 +465,12 @@ func TestAnalyticsInteractionSinkReauthorizesExactEdgeEvidence(t *testing.T) {
 	fixture := newAnalyticsFixture(t)
 	from := fixture.ingest(t, fixture.clientA, "memory://a1", "alpha")
 	to := fixture.ingest(t, fixture.clientA, "memory://a2", "bravo")
+	exactID, err := fixture.clientA.ApplicationEdgeID(fixture.adminContext(t), "edge-a1-a2")
+	if err != nil {
+		t.Fatal(err)
+	}
 	exact := graph.Edge{
-		ID: "edge-a1-a2", From: from, To: to, Type: "related", Weight: 1,
+		ID: exactID, From: from, To: to, Type: "related", Weight: 1,
 	}
 	if err := fixture.clientA.Connect(fixture.adminContext(t), exact); err != nil {
 		t.Fatal(err)
@@ -876,8 +880,13 @@ func (f *analyticsFixture) connect(
 	to shoal.ID,
 ) {
 	t.Helper()
+	// Connect accepts only IDs in the caller's namespace (#699).
+	id, err := client.ApplicationEdgeID(f.adminContext(t), shoal.ID(edgeID))
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := client.Connect(f.adminContext(t), graph.Edge{
-		ID: shoal.ID(edgeID), From: from, To: to, Type: "related", Weight: 1,
+		ID: id, From: from, To: to, Type: "related", Weight: 1,
 	}); err != nil {
 		t.Fatal(err)
 	}

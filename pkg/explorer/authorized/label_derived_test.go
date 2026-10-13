@@ -139,8 +139,13 @@ func TestLabelRelabelClosesExtractedEntities(t *testing.T) {
 				return err
 			},
 			"Connect": func(ctx context.Context) error {
+				id, err := client.ApplicationEdgeID(ctx,
+					shoal.ID("entity-self-"+ctx.Value(labelProbeKey{}).(string)))
+				if err != nil {
+					return err
+				}
 				return client.Connect(ctx, graph.Edge{
-					ID:   shoal.ID("entity-self-" + string(ctx.Value(labelProbeKey{}).(string))),
+					ID:   id,
 					From: entity, To: entity, Type: "reader_connect", Weight: 1,
 				})
 			},

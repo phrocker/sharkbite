@@ -17,6 +17,23 @@ that facade. Deployments must use it with a trusted `pkg/explorer/auth`
 resolver, policy selector, policy catalog, and generation reader; constructing
 or retaining an unwrapped client remains an explicitly unauthenticated path.
 
+The authorized client's `Connect` accepts only edge IDs in the caller's own
+application edge namespace (#699). `Client.ApplicationEdgeID(ctx, localID)`
+returns that ID: a fixed prefix, a digest of the caller's identity (the
+authorization domain, subject, actor, client ID, on-behalf-of chain and
+service identity), `/`, then `localID`. Any other edge ID is
+`InvalidArgument`, before an endpoint or the catalog is read. Reads report the
+namespaced ID. A writer's retry under the same identity reaches the same ID,
+and two identities never share one, so whether `Connect` succeeds never
+depends on an edge connected under another identity. The namespace binds the
+identity, not its current authority: a narrowed session of the same identity
+(workspace narrowing, a down-scoped token, a revoked label) shares it, and can
+still tell whether a local ID that identity's broader sessions connected
+exists. This is library-only today; `Connect` has no HTTP or MCP route.
+Trusted edge policy selectors that
+key on the edge ID can recover the caller's local ID with
+`authorized.ApplicationEdgeLocalID`.
+
 ## Identity, bytes, and bounds
 
 - `shoal.ID` is an opaque byte string. Implementations MUST retain every byte,

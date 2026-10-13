@@ -58,6 +58,12 @@ func (c *Client) withCanonicalDocumentIndex(
 
 // Connect authorizes both current endpoints and stores only the trusted
 // edge-local policy. Endpoint rules are re-evaluated dynamically on every use.
+//
+// The edge ID must be in the caller's application edge namespace
+// (ApplicationEdgeID); any other ID is InvalidArgument, before anything is
+// read. An ID outside it could collide with an edge the caller cannot read,
+// and whether Connect then failed would disclose that edge, or through an
+// intrinsic edge ID a hidden document at a guessed URI (#699).
 func (c *Client) Connect(ctx context.Context, edge graph.Edge) error {
 	if err := edge.Validate(); err != nil {
 		return err
@@ -65,6 +71,9 @@ func (c *Client) Connect(ctx context.Context, edge graph.Edge) error {
 	ownedEdge := cloneGraphEdge(edge)
 	decision, guard, now, err := c.begin(ctx, auth.OperationConnect)
 	if err != nil {
+		return err
+	}
+	if err := requireApplicationEdgeNamespace(decision, ownedEdge.ID); err != nil {
 		return err
 	}
 

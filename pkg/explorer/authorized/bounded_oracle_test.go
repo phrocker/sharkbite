@@ -165,8 +165,13 @@ func (w *oracleWorld) ingest(name, visibility string) shoal.ID {
 
 func (w *oracleWorld) connect(id, from, to string) {
 	w.t.Helper()
+	// Connect accepts only IDs in the caller's namespace (#699).
+	edgeID, err := w.client.ApplicationEdgeID(w.owner(), shoal.ID(id))
+	if err != nil {
+		w.t.Fatal(err)
+	}
 	if err := w.client.Connect(w.owner(), graph.Edge{
-		ID: shoal.ID(id), From: w.docs[from], To: w.docs[to],
+		ID: edgeID, From: w.docs[from], To: w.docs[to],
 		Type: oracleEdgeType, Weight: 1,
 	}); err != nil {
 		w.t.Fatalf("connect %s: %v", id, err)

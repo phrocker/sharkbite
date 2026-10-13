@@ -77,6 +77,8 @@ type labelTarget struct {
 	sessionID  shoal.ID
 	foldID     shoal.ID
 	proposalID shoal.ID
+	// hubEdges are the IDs of the edges from the hub and back (#699).
+	hubEdges [2]shoal.ID
 }
 
 type labelWorld struct {
@@ -265,12 +267,14 @@ func newLabelWorld(t *testing.T, store authorized.PolicyStore) *labelWorld {
 			t.Fatal(err)
 		}
 		// Both endpoints: one edge from the hub to the target and one back.
-		for _, edge := range []graph.Edge{
+		for index, edge := range []graph.Edge{
 			{ID: shoal.ID("hub-to-" + spec.name), From: hub.Document.ID,
 				To: target.current.Document.ID, Type: labelHubEdgeType, Weight: 1},
 			{ID: shoal.ID(spec.name + "-to-hub"), From: target.current.Document.ID,
 				To: hub.Document.ID, Type: labelHubEdgeType, Weight: 1},
 		} {
+			edge.ID = appEdgeID(t, w.clientA, admin, edge.ID)
+			target.hubEdges[index] = edge.ID
 			if err := w.clientA.Connect(admin, edge); err != nil {
 				t.Fatalf("connect %s: %v", edge.ID, err)
 			}
@@ -490,8 +494,8 @@ func neighborhoodShowsTarget(
 	if !visible && len(touching) != 0 {
 		t.Fatalf("%s returned an edge to a hidden endpoint: %v", path, touching)
 	}
-	if visible && (!touching[shoal.ID("hub-to-"+target.name)] ||
-		!touching[shoal.ID(target.name+"-to-hub")]) {
+	if visible && (!touching[target.hubEdges[0]] ||
+		!touching[target.hubEdges[1]]) {
 		t.Fatalf("%s showed %s without both hub edges: %v", path, target.name, touching)
 	}
 	return visible
@@ -859,7 +863,8 @@ func labelRows() []labelRow {
 		{"connect", "Connect", func(t *testing.T, w *labelWorld, ctx context.Context, target *labelTarget) bool {
 			w.sequence++
 			err := w.clientA.Connect(ctx, graph.Edge{
-				ID:   shoal.ID("reader-edge-" + strconv.Itoa(w.sequence)),
+				ID: appEdgeID(t, w.clientA, ctx,
+					shoal.ID("reader-edge-"+strconv.Itoa(w.sequence))),
 				From: w.hub.Document.ID, To: target.current.Document.ID,
 				Type: "reader_connect", Weight: 1,
 			})
@@ -908,6 +913,7 @@ var labelExcludedMethods = map[string]string{
 	"LabelVisibility":                         "returns the reader label evaluator, a host wiring seam; reads no data (label_visibility_test.go)",
 	"LabelTranslator":                         "returns the record-time label translator, a host wiring seam; reads no data (label_visibility_test.go)",
 	"NodeGate":                                "returns the current-rule node gate, a host wiring seam; reads no data (dispatch and delivery relabel tests)",
+	"ApplicationEdgeID":                       "a digest of the caller's own identity and the ID it passed; reads no catalog or corpus data (edge_namespace_test.go)",
 }
 
 func TestLabelConformanceCoversEveryClientMethod(t *testing.T) {

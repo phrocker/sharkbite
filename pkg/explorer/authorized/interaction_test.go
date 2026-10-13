@@ -412,6 +412,7 @@ func TestAuthorizedInteractionReauthorizesExactSourceEdge(t *testing.T) {
 		Type:   "supports",
 		Weight: 1,
 	}
+	edge.ID = appEdgeID(t, f.clientA, f.admin(t), edge.ID)
 	if err := f.clientA.Connect(f.admin(t), edge); err != nil {
 		t.Fatal(err)
 	}
@@ -552,6 +553,7 @@ func TestFleetActionInteractionSinkUsesLifecycleOperationForEvidence(t *testing.
 		ID: "dispatch-evidence-edge", From: receipt.Document.ID,
 		To: firstSpanID(t, view), Type: "supports", Weight: 1,
 	}
+	edge.ID = appEdgeID(t, f.clientA, f.admin(t), edge.ID)
 	if err := f.clientA.Connect(f.admin(t), edge); err != nil {
 		t.Fatal(err)
 	}

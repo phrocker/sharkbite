@@ -219,7 +219,8 @@ func TestConnectRefusesLabelNamespaceEdgePolicy(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = client.Connect(ctx, graph.Edge{
-		ID: "label-namespace-edge", From: from.Document.ID, To: to.Document.ID,
+		ID:   appEdgeID(t, client, ctx, "label-namespace-edge"),
+		From: from.Document.ID, To: to.Document.ID,
 		Type: "related_to", Weight: 1,
 	})
 	if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) ||
@@ -496,7 +497,8 @@ func TestLabelGraphMaterializationDoesNotLeakLabelledContent(t *testing.T) {
 		}
 		team := result.Nodes[0].ID
 		if err := client.Connect(admin, graph.Edge{
-			ID: "team-to-secret", From: team, To: secret.Document.ID,
+			ID:   appEdgeID(t, client, admin, "team-to-secret"),
+			From: team, To: secret.Document.ID,
 			Type: "owns", Weight: 1,
 		}); err != nil {
 			t.Fatal(err)

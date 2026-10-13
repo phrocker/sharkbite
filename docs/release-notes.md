@@ -2,6 +2,60 @@
 
 ## Unreleased
 
+### `Connect` edge IDs live in the writer's namespace (#699)
+
+`authorized.Client.Connect` returned Conflict for any edge ID already in the
+corpus, whatever its rule. Intrinsic `contains` edge IDs are derived from a
+document's URI and self-edges are allowed, so a reader with one readable node
+could test whether a hidden document existed at a guessed URI, or whether a
+hidden application edge ID existed. Each probe that succeeded also created an
+edge.
+
+**API change.** `Connect` now accepts only an edge ID in the caller's own
+namespace, which `Client.ApplicationEdgeID(ctx, localID)` returns:
+`app-edge_<digest of the caller's identity>/<localID>`. Any other ID is
+`InvalidArgument: graph edge ID is outside the caller's application edge
+namespace`, before an endpoint or the policy catalog is read. So:
+
+- the refusal depends on the caller's identity and the ID it sent, never on
+  what the corpus holds;
+- no server-derived ID (document, section, span, intrinsic edge, extraction,
+  derivation, interaction, materialized) can be in the namespace;
+- another identity's namespace differs by a 128-bit digest, so an accepted ID
+  can only collide with an edge connected under the same identity. A
+  writer's identical retry still succeeds, and a different edge under its
+  own ID still conflicts.
+
+The identity is the authorization domain, subject, actor, client ID,
+on-behalf-of chain and service role and ceiling. It leaves out the request,
+the grants and the policy generation, so a retry under new grants lands in
+the same namespace.
+
+**Caveat.** The namespace binds the identity, not its current authority. A
+narrowed session of the same identity (workspace narrowing, a down-scoped
+token, a revoked label) shares the namespace of that identity's broader
+sessions, so it can still tell whether one of their local edge IDs exists:
+Conflict for a different edge under that ID. This is library-only today
+(`Connect` has no HTTP or MCP route).
+
+`Connect` no longer discloses a hidden document by URI, but Ingest still
+does, over HTTP upload and MCP (#712).
+
+Migrating callers:
+
+- call `ApplicationEdgeID` and connect under the result. Reads (for example
+  `Neighborhood`) report the namespaced ID;
+- a trusted `EdgePolicySelector` that selects by edge ID gets the namespaced
+  ID. `authorized.ApplicationEdgeLocalID(decision, id)` returns the local ID;
+- application edges connected before this release keep their IDs and stay
+  readable as before. A retry of one now gets `InvalidArgument` instead of
+  succeeding;
+- the conformance harness (`internal/explorerconformance`) maps fixture edge
+  IDs through `ApplicationEdgeID` when the client under test provides it.
+
+The unwrapped `explorer.Client` is unchanged: it has no authorization and
+accepts any edge ID.
+
 ### Interactions, folds and edges stay bound to the revision they came from (#695)
 
 An interaction (and every fold of it) and an application edge (`Connect`)
@@ -79,7 +133,9 @@ Found while checking this and filed:
 - #698, #699, #700: existence and count oracles. A bounded neighborhood's
   scan limit reveals the exact count of hidden edges and interactions on a
   visible node. A `Connect` ID colliding with a hidden edge reveals that
-  edge, and through intrinsic edge IDs, a hidden document by URI. A shared
+  edge, and through intrinsic edge IDs, a hidden document by URI. `Connect`
+  no longer discloses either (#699, above); Ingest is still a URI existence
+  oracle over HTTP upload and MCP (#712). A shared
   extracted entity first owned by a later-labelled document reveals the
   entity key.
 - #694: heuristic detection of copy-down that names no input (session

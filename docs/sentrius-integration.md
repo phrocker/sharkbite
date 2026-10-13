@@ -52,7 +52,8 @@ match, onto `graph.Edge{ID, From, To, Type, Weight, Properties}`
 Two conditions current callers do not satisfy: `Connect` requires both endpoints
 to be already-registered, already-authorized nodes (`authorizedNode`,
 `graph.go:399-426`) whose rules share an authorization domain
-(`graph.go:90-93`), and the caller supplies the edge ID. Today
+(`graph.go:90-93`), and the caller supplies the edge ID, which must be in the
+caller's own namespace (`Client.ApplicationEdgeID`, #699). Today
 `BehavioralPatternAgent.java:225-234` creates a routine node and its edges in one
 pass; against Shoal that becomes materialize-then-connect, or one
 `MaterializeGraph` batch — whose `GraphRelationSpec`

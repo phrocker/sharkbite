@@ -91,14 +91,14 @@ func newGateWorld(t *testing.T) gateWorld {
 	if err != nil {
 		t.Fatal(err)
 	}
-	g.intoD2 = "edge-into-d2"
+	g.intoD2 = appEdgeID(t, w.client, w.owner, "edge-into-d2")
 	g.edgeFrom, g.edgeTo = d2Ingest.Document.ID, firstSpanID(t, view)
 	if err := w.client.Connect(w.owner, graph.Edge{
 		ID: g.intoD2, From: g.edgeFrom, To: g.edgeTo, Type: "supports", Weight: 1,
 	}); err != nil {
 		t.Fatal(err)
 	}
-	g.connected = "edge-into-closed"
+	g.connected = appEdgeID(t, w.client, w.owner, "edge-into-closed")
 	if err := w.client.Connect(w.owner, graph.Edge{
 		ID: g.connected, From: g.publicFrom, To: closed.Document.ID,
 		Type: "mentions", Weight: 1,

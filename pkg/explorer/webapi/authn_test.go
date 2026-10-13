@@ -163,8 +163,13 @@ func newAuthnFixture(t *testing.T) *authnFixture {
 	fixture.documentID = first.Document.ID
 	fixture.from = firstSpanID(t, firstView.Root)
 	fixture.to = firstSpanID(t, secondView.Root)
+	// Connect accepts only IDs in the caller's namespace (#699).
+	edgeID, err := client.ApplicationEdgeID(ctx, "granted-edge")
+	if err != nil {
+		t.Fatal(err)
+	}
 	if err := client.Connect(ctx, graph.Edge{
-		ID: "granted-edge", From: fixture.from, To: fixture.to,
+		ID: edgeID, From: fixture.from, To: fixture.to,
 		Type: "informs", Weight: 1,
 	}); err != nil {
 		t.Fatal(err)

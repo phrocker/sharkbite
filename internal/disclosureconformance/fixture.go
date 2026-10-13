@@ -146,8 +146,12 @@ func NewCorpus(t *testing.T) *Corpus {
 	// path probe can hold the source constant and vary only the target. The
 	// cleared principal can resolve this path; the uncleared one must not be
 	// able to distinguish it from a path to a node that does not exist.
+	probeEdge, err := open.ApplicationEdgeID(admin, "disclosure_probe")
+	if err != nil {
+		t.Fatalf("probe edge ID: %v", err)
+	}
 	if err := open.Connect(admin, graph.Edge{
-		ID: "edge_disclosure_probe", From: corpus.open, To: corpus.restricted,
+		ID: probeEdge, From: corpus.open, To: corpus.restricted,
 		Type: "references", Weight: 1,
 	}); err != nil {
 		t.Fatalf("connect the probe edge: %v", err)
