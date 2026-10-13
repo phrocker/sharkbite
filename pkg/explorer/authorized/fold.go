@@ -303,7 +303,8 @@ func (c *Client) foldLabelsPermitted(
 	fold interaction.Fold,
 ) (bool, error) {
 	labels, nodeIDs, edgeIDs := foldVisibility(fold)
-	translated, err := c.structuredLabels(ctx, labels, nodeIDs, edgeIDs)
+	translated, err := c.structuredLabels(
+		ctx, readerFor(decision, auth.OperationRead, now), labels, nodeIDs, edgeIDs)
 	if err != nil {
 		return false, err
 	}

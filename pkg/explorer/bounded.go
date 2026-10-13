@@ -136,7 +136,8 @@ func (e *Explorer) validateEvidenceSnapshotLocked(
 		}
 	}
 	for _, reference := range references {
-		if err := e.validateEvidenceReferenceLocked(reference); err != nil {
+		// Recording: only the current, canonical rendering is authoritative.
+		if err := e.validateEvidenceReferenceLocked(reference, false); err != nil {
 			return err
 		}
 		for _, assertion := range reference.Assertions {
@@ -155,8 +156,17 @@ func (e *Explorer) validateEvidenceSnapshotLocked(
 	return nil
 }
 
+// validateEvidenceReferenceLocked checks one evidence reference against the
+// current corpus. stored marks the re-validation of evidence a record already
+// holds: its graph anchor may then also match the rendering extracted nodes
+// and relations had before shared content was canonical (#700), reproduced
+// from the stored extraction records, so history recorded before the
+// upgrade stays readable. A new recording (stored false) must match the
+// canonical rendering alone; accepting a legacy one there would let a
+// recorder probe another document's surface text.
 func (e *Explorer) validateEvidenceReferenceLocked(
 	reference interaction.EvidenceReference,
+	stored bool,
 ) error {
 	canonical, err := reference.Canonical()
 	if err != nil {
@@ -221,7 +231,7 @@ func (e *Explorer) validateEvidenceReferenceLocked(
 			Nodes: make([]graph.Node, len(canonical.NodeIDs)),
 			Edges: make([]graph.Edge, len(canonical.EdgeIDs)),
 		}
-		authoritativeAssertions := make(map[interaction.AssertionReference]struct{})
+		assertedEdges := make(map[shoal.ID]bool)
 		for index, nodeID := range canonical.NodeIDs {
 			node, ok := e.graphNodes[nodeID]
 			if !ok || interaction.IsInteractionKind(node.Kind) {
@@ -241,15 +251,17 @@ func (e *Explorer) validateEvidenceReferenceLocked(
 				)
 			}
 			path.Edges[index] = cloneEdge(edge)
-			if assertion, ok := e.graphAssertions[edgeID]; ok {
-				authoritativeAssertions[interaction.AssertionReference{
-					AssertionID: assertion.ID(), EdgeID: edgeID,
-					Origin: assertion.Origin(),
-				}] = struct{}{}
+			if _, ok := e.graphAssertions[edgeID]; ok {
+				assertedEdges[edgeID] = false
 			}
 		}
+		// Each asserted edge of the path is cited by exactly one of its
+		// authoritative assertions: the graph's, or, for a relation several
+		// extractions assert, any one of theirs (#700), so a recorder shown
+		// the assertion it may read records it.
 		for _, assertion := range canonical.Assertions {
-			if _, ok := authoritativeAssertions[assertion]; !ok {
+			cited, asserted := assertedEdges[assertion.EdgeID]
+			if !asserted || cited {
 				return shoal.NewError(
 					shoal.ErrorConflict,
 					"interaction graph assertion is not authoritative",
@@ -259,9 +271,13 @@ func (e *Explorer) validateEvidenceReferenceLocked(
 				assertion); err != nil {
 				return err
 			}
-			delete(authoritativeAssertions, assertion)
+			assertedEdges[assertion.EdgeID] = true
 		}
-		if len(authoritativeAssertions) != 0 {
+		omitted := false
+		for _, cited := range assertedEdges {
+			omitted = omitted || !cited
+		}
+		if omitted {
 			return shoal.NewError(
 				shoal.ErrorConflict,
 				"interaction graph evidence omits authoritative assertions",
@@ -269,6 +285,13 @@ func (e *Explorer) validateEvidenceReferenceLocked(
 		}
 		anchor, err := inference.NewGraphAnchorWithAssertions(
 			path, canonical.Assertions)
+		if (err != nil || anchor.ID() != canonical.AnchorID) && stored {
+			// Load-bearing: TestStoredLegacyEvidenceStaysReadable pins it.
+			if legacy, ok := e.legacyRenderings.path(path); ok {
+				anchor, err = inference.NewGraphAnchorWithAssertions(
+					legacy, canonical.Assertions)
+			}
+		}
 		if err != nil || anchor.ID() != canonical.AnchorID {
 			return shoal.NewError(
 				shoal.ErrorConflict,
@@ -340,9 +363,8 @@ func (e *Explorer) validateAssertionReferenceLocked(
 		"interaction assertion edge ID", reference.EdgeID); err != nil {
 		return err
 	}
-	assertion, found := e.graphAssertions[reference.EdgeID]
-	if !found || assertion.ID() != reference.AssertionID ||
-		assertion.Origin() != reference.Origin {
+	assertion, found := e.edgeAssertionLocked(reference)
+	if !found {
 		return shoal.NewError(
 			shoal.ErrorConflict,
 			"interaction assertion does not match current authoritative data",

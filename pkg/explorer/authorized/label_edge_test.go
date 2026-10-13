@@ -20,10 +20,10 @@
 package authorized_test
 
 // Extracted relation edges are bound to the document revision that asserted
-// them (#570). Shared entities collapse into one node owned by the first
-// document that extracted them, and relation-edge IDs do not depend on the
+// them (#570). Shared entities collapse into one node owned by every document
+// that extracted them (#700), and relation-edge IDs do not depend on the
 // document, so an edge between two shared entities must carry its own
-// asserting document; checking the endpoints' owners is not enough.
+// asserting documents; checking the endpoints' owners is not enough.
 
 import (
 	"context"
@@ -157,23 +157,22 @@ func TestLabelRelabelClosesRelationBetweenSharedEntities(t *testing.T) {
 	})
 }
 
-// TestLabelSharedRelationBelongsToFirstAsserter defines what happens when two
-// documents state the same relation and one of them is later labelled. The
-// registration belongs to the first asserter.
-//
-//   - Public document first: relabelling the other document leaves the
-//     relation visible, because a public document still states it. No leak.
-//   - Labelled-later document first: the relation closes for readers without
-//     the label even though a public document also states it. That fails
-//     closed and is accepted.
-func TestLabelSharedRelationBelongsToFirstAsserter(t *testing.T) {
+// TestLabelSharedRelationVisibleThroughAnyAsserter defines what happens when
+// two documents state the same relation and one of them is later labelled.
+// Every asserter owns the relation (#700), so whichever document asserted it
+// first, relabelling the other leaves it visible: a public document still
+// states it. (Before #700 the registration belonged to the first asserter
+// alone, so a relabelled first asserter closed the relation for readers of
+// the public one, which told them that a document they cannot read states
+// it.)
+func TestLabelSharedRelationVisibleThroughAnyAsserter(t *testing.T) {
 	for _, test := range []struct {
 		name          string
 		publicFirst   bool
 		readerSeesAll bool
 	}{
 		{"public asserter first", true, true},
-		{"relabelled asserter first", false, false},
+		{"relabelled asserter first", false, true},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			withPolicyStores(t, func(t *testing.T, store authorized.PolicyStore) {

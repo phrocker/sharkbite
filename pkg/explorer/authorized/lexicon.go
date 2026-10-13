@@ -129,7 +129,8 @@ func (c *Client) ResolveMentions(
 	if err != nil {
 		return nil, policyCatalogReadError(ctx, err)
 	}
-	registrations, err = c.effectiveNodeRegistrations(ctx, registrations)
+	registrations, err = c.effectiveNodeRegistrations(ctx, registrations,
+		readerFor(decision, auth.OperationNeighborhood, now))
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +287,8 @@ func (c *Client) LexiconScopeNodes(
 		}
 		ids[index] = node.ID
 	}
-	resolved, err := c.resolveNodes(ctx, ids)
+	resolved, err := c.resolveNodes(
+		ctx, ids, readerFor(decision, auth.OperationNeighborhood, now))
 	if err != nil {
 		return lexicon.ScopedNodes{}, err
 	}

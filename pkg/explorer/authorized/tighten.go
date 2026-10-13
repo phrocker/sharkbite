@@ -33,14 +33,27 @@ import (
 // and intrinsic-edge projections are not listed: they are rebuilt from the
 // current revision on load.
 type tightenChanges struct {
-	revisions   []revisionKey
-	nodes       []shoal.ID
-	edges       []shoal.ID
+	revisions []revisionKey
+	nodes     []shoal.ID
+	edges     []shoal.ID
+	// nodeOwners and edgeOwners are the co-owners (#700) whose rules were
+	// rewritten; their registrations' first owners are listed in nodes and
+	// edges only when those changed too.
+	nodeOwners  []ownerKey
+	edgeOwners  []ownerKey
 	sourceClaim string
+}
+
+// ownerKey names one co-owner of one shared registration.
+type ownerKey struct {
+	objectID   shoal.ID
+	documentID shoal.ID
+	revisionID shoal.ID
 }
 
 func (c tightenChanges) changed() bool {
 	return len(c.revisions) > 0 || len(c.nodes) > 0 || len(c.edges) > 0 ||
+		len(c.nodeOwners) > 0 || len(c.edgeOwners) > 0 ||
 		c.sourceClaim != ""
 }
 
@@ -59,8 +72,8 @@ type RuleTightening struct {
 	// persisted before RegistrationKind existed decodes as
 	// RegistrationApplication with no document. Each one registered as
 	// RegistrationApplication takes the delta; one registered as
-	// RegistrationExtracted keeps the binding of whichever document asserted
-	// it first, as extractedEdgeMerge does.
+	// RegistrationExtracted takes it only on the owners of it (first owner
+	// or co-owner, #700) the tightening covers, like every extracted edge.
 	AssertedEdgeIDs []shoal.ID
 }
 
@@ -73,11 +86,13 @@ type RuleTightening struct {
 // revision, endpoints) before it is touched, so a stale entry can never widen
 // scope.
 type TighteningIndex struct {
-	revisions      map[shoal.ID][]shoal.ID
+	revisions map[shoal.ID][]shoal.ID
+	// extractedNodes and extractedEdges group each extracted registration
+	// under every document that owns it, first owner or co-owner (#700).
 	extractedNodes map[shoal.ID][]shoal.ID
 	extractedEdges map[shoal.ID][]shoal.ID
 	// applicationEdges groups each application edge under the document that
-	// owns an extracted endpoint of it (both, when they differ).
+	// solely owns an extracted endpoint of it (both, when they differ).
 	applicationEdges map[shoal.ID][]shoal.ID
 }
 
@@ -124,15 +139,39 @@ func (s *MemoryPolicyStore) buildTighteningIndexLocked(only shoal.ID) *Tightenin
 	for _, revisions := range index.revisions {
 		sortIDs(revisions)
 	}
+	// ownerDocuments is every distinct document owning a registration.
+	ownerDocuments := func(primary shoal.ID, coOwners []ExtractionOwner) []shoal.ID {
+		documents := []shoal.ID{primary}
+		if len(coOwners) == 0 {
+			return documents
+		}
+		known := map[shoal.ID]struct{}{primary: {}}
+		for _, owner := range coOwners {
+			if _, duplicate := known[owner.DocumentID]; !duplicate {
+				known[owner.DocumentID] = struct{}{}
+				documents = append(documents, owner.DocumentID)
+			}
+		}
+		return documents
+	}
 	for nodeID, registration := range s.nodes {
-		if registration.Kind == RegistrationExtracted && wanted(registration.DocumentID) {
-			index.extractedNodes[registration.DocumentID] = append(
-				index.extractedNodes[registration.DocumentID], nodeID)
+		if registration.Kind != RegistrationExtracted {
+			continue
+		}
+		for _, documentID := range ownerDocuments(
+			registration.DocumentID, registration.CoOwners) {
+			if wanted(documentID) {
+				index.extractedNodes[documentID] = append(
+					index.extractedNodes[documentID], nodeID)
+			}
 		}
 	}
+	// A shared endpoint (#700) is not a sole owner's: other owners' readers
+	// read an edge touching it, so one owner's tightening must not close it.
 	extractedOwner := func(nodeID shoal.ID) (shoal.ID, bool) {
 		registration, ok := s.nodes[nodeID]
 		if !ok || registration.Kind != RegistrationExtracted ||
+			len(registration.CoOwners) > 0 ||
 			!wanted(registration.DocumentID) {
 			return "", false
 		}
@@ -141,9 +180,12 @@ func (s *MemoryPolicyStore) buildTighteningIndexLocked(only shoal.ID) *Tightenin
 	for edgeID, registration := range s.edges {
 		switch registration.Kind {
 		case RegistrationExtracted:
-			if wanted(registration.DocumentID) {
-				index.extractedEdges[registration.DocumentID] = append(
-					index.extractedEdges[registration.DocumentID], edgeID)
+			for _, documentID := range ownerDocuments(
+				registration.DocumentID, registration.CoOwners) {
+				if wanted(documentID) {
+					index.extractedEdges[documentID] = append(
+						index.extractedEdges[documentID], edgeID)
+				}
 			}
 		case RegistrationApplication:
 			fromOwner, fromOK := extractedOwner(registration.Edge.From)
@@ -181,13 +223,16 @@ func (s *MemoryPolicyStore) buildTighteningIndexLocked(only shoal.ID) *Tightenin
 //     registration of the document, historical ones included; the current
 //     node and intrinsic-edge projections (rebuilt from the tightened current
 //     revision); every RegistrationExtracted node and edge bound to the
-//     document, whatever revision asserted it; the application edges described
+//     document, whatever revision asserted it, where the document may be its
+//     first owner or a co-owner (#700) and only that owner's rule takes the
+//     delta, never another owner's; the application edges described
 //     below; and the committed or pending source claim for SourceURI, whose
 //     Rule and PreviousRule both take the delta and whose version advances. A
 //     URI with no claim is not an error; a claim held by an in-flight
 //     mutation conflicts.
 //   - RevisionID is a historical revision: that revision registration, and
-//     the extracted nodes and edges bound to exactly that revision, plus the
+//     the extracted nodes and edges bound to exactly that revision (as first
+//     owner or co-owner), plus the
 //     application edges described below. SourceURI is ignored. This lets a
 //     caller translate a historical revision's own labels, which may differ
 //     from the current revision's.
@@ -203,15 +248,19 @@ func (s *MemoryPolicyStore) buildTighteningIndexLocked(only shoal.ID) *Tightenin
 // relation from a Connect edge. Two sets of them take the delta:
 //
 //   - every application edge with an endpoint among the in-scope extracted
-//     nodes. Reading such an edge already requires reading that endpoint, so
-//     this changes no read; it keeps the stored rule self-describing.
+//     nodes that the document owns alone. Reading such an edge already
+//     requires reading that endpoint, so this changes no read; it keeps the
+//     stored rule self-describing. An endpoint with co-owners (#700) is read
+//     through other documents too, so tightening its edges would change their
+//     readers' reads; the edge's revision binding (#695) already holds it to
+//     the revision its connector read the endpoint through.
 //   - every application edge named in AssertedEdgeIDs: the relations the
 //     base's extraction records say this document asserted. This is what
 //     closes a relation that only this document states between two entities
 //     first extracted by OTHER documents: its endpoints stay visible, so
 //     nothing else would hide it. If another, unlabelled document asserts the
-//     same relation, the relation closes anyway (fail closed, like
-//     extractedEdgeMerge's first-asserter rule).
+//     same relation, the relation closes anyway (fail closed: such a legacy
+//     registration records no other asserter).
 //
 // Either can only narrow. The cost is that retrying an identical Connect
 // afterwards conflicts, because the stored rule no longer equals the one the
@@ -320,26 +369,37 @@ func (s *MemoryPolicyStore) tightenRule(
 	nodes := make(map[shoal.ID]NodeRegistration)
 	scoped := make(map[shoal.ID]struct{})
 	for _, nodeID := range index.extractedNodes[documentID] {
-		registration, ok := s.nodes[nodeID]
-		if !ok || registration.Kind != RegistrationExtracted ||
-			!inScope(registration.DocumentID, registration.RevisionID) {
+		if _, done := nodes[nodeID]; done {
 			continue
 		}
-		scoped[nodeID] = struct{}{}
-		rule, changed, err := conjoinDelta(registration.Rule, delta)
+		registration, ok := s.nodes[nodeID]
+		if !ok || registration.Kind != RegistrationExtracted {
+			continue
+		}
+		primaryInScope := inScope(registration.DocumentID, registration.RevisionID)
+		if primaryInScope && len(registration.CoOwners) == 0 {
+			scoped[nodeID] = struct{}{}
+		}
+		tightened, primaryChanged, owners, err := tightenOwners(
+			nodeID, registration.Rule, registration.CoOwners,
+			primaryInScope, inScope, delta)
 		if err != nil {
 			return tightenChanges{}, err
 		}
-		if !changed {
+		if !primaryChanged && len(owners) == 0 {
 			continue
 		}
-		tightened, err := cloneNodeRegistration(registration)
+		next, err := cloneNodeRegistration(registration)
 		if err != nil {
 			return tightenChanges{}, catalogUnavailable()
 		}
-		tightened.Rule = rule
-		nodes[nodeID] = tightened
-		changes.nodes = append(changes.nodes, nodeID)
+		next.Rule = tightened.rule
+		next.CoOwners = tightened.coOwners
+		nodes[nodeID] = next
+		if primaryChanged {
+			changes.nodes = append(changes.nodes, nodeID)
+		}
+		changes.nodeOwners = append(changes.nodeOwners, owners...)
 	}
 	// Candidate edges: extracted edges bound to the document, application
 	// edges touching an in-scope extracted node, and the asserted edges.
@@ -371,9 +431,30 @@ func (s *MemoryPolicyStore) tightenRule(
 		}
 		switch registration.Kind {
 		case RegistrationExtracted:
-			if !inScope(registration.DocumentID, registration.RevisionID) {
+			// Every owner of it this tightening covers takes the delta
+			// (#700); others keep their rules.
+			tightened, primaryChanged, owners, err := tightenOwners(
+				candidate.id, registration.Rule, registration.CoOwners,
+				inScope(registration.DocumentID, registration.RevisionID),
+				inScope, delta)
+			if err != nil {
+				return tightenChanges{}, err
+			}
+			if !primaryChanged && len(owners) == 0 {
 				continue
 			}
+			next, err := cloneEdgeRegistrationChecked(registration)
+			if err != nil {
+				return tightenChanges{}, catalogUnavailable()
+			}
+			next.Rule = tightened.rule
+			next.CoOwners = tightened.coOwners
+			edges[candidate.id] = next
+			if primaryChanged {
+				changes.edges = append(changes.edges, candidate.id)
+			}
+			changes.edgeOwners = append(changes.edgeOwners, owners...)
+			continue
 		case RegistrationApplication:
 			_, fromScoped := scoped[registration.Edge.From]
 			_, toScoped := scoped[registration.Edge.To]
@@ -444,7 +525,73 @@ func (s *MemoryPolicyStore) tightenRule(
 	})
 	sortIDs(changes.nodes)
 	sortIDs(changes.edges)
+	sortOwnerKeys(changes.nodeOwners)
+	sortOwnerKeys(changes.edgeOwners)
 	return changes, nil
+}
+
+// tightenedOwners is a shared registration's rules after a tightening.
+type tightenedOwners struct {
+	rule     AccessRule
+	coOwners []ExtractionOwner
+}
+
+// tightenOwners conjoins delta onto the first owner's rule when it is in
+// scope, and onto every co-owner in scope (#700). It reports whether the
+// first owner's rule changed and which co-owners' did.
+func tightenOwners(
+	objectID shoal.ID,
+	rule AccessRule,
+	coOwners []ExtractionOwner,
+	primaryInScope bool,
+	inScope func(document, revision shoal.ID) bool,
+	delta []auth.Policy,
+) (tightenedOwners, bool, []ownerKey, error) {
+	result := tightenedOwners{rule: rule}
+	primaryChanged := false
+	if primaryInScope {
+		next, changed, err := conjoinDelta(rule, delta)
+		if err != nil {
+			return tightenedOwners{}, false, nil, err
+		}
+		result.rule, primaryChanged = next, changed
+	}
+	owners, err := cloneOwners(coOwners)
+	if err != nil {
+		return tightenedOwners{}, false, nil, catalogUnavailable()
+	}
+	var changedOwners []ownerKey
+	for index, owner := range owners {
+		if !inScope(owner.DocumentID, owner.RevisionID) {
+			continue
+		}
+		next, changed, err := conjoinDelta(owner.Rule, delta)
+		if err != nil {
+			return tightenedOwners{}, false, nil, err
+		}
+		if !changed {
+			continue
+		}
+		owners[index].Rule = next
+		changedOwners = append(changedOwners, ownerKey{
+			objectID: objectID, documentID: owner.DocumentID,
+			revisionID: owner.RevisionID,
+		})
+	}
+	result.coOwners = owners
+	return result, primaryChanged, changedOwners, nil
+}
+
+func sortOwnerKeys(keys []ownerKey) {
+	sort.Slice(keys, func(left, right int) bool {
+		if compared := shoal.CompareID(keys[left].objectID, keys[right].objectID); compared != 0 {
+			return compared < 0
+		}
+		return compareRevisionReferences(
+			RevisionReference{DocumentID: keys[left].documentID, RevisionID: keys[left].revisionID},
+			RevisionReference{DocumentID: keys[right].documentID, RevisionID: keys[right].revisionID},
+		) < 0
+	})
 }
 
 // LabelMigration returns the recorded label-migration marker.

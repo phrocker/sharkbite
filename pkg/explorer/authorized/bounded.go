@@ -320,6 +320,32 @@ type neighborhoodAuthorizationCache struct {
 	resolved           registeredNodes
 	resolvedIDs        map[shoal.ID]struct{}
 	canonicalDocuments map[shoal.ID]*canonicalRetrievalDocument
+	// operation is the operation resolved holds projections for: a shared
+	// extracted node is projected onto an owner the reader may use for that
+	// operation (#700), so a cache serves one operation only.
+	operation    auth.Operation
+	operationSet bool
+}
+
+// forOperation returns the cache when it holds (or may hold) projections
+// for operation, and otherwise a fresh one.
+func (cache *neighborhoodAuthorizationCache) forOperation(
+	operation auth.Operation,
+) *neighborhoodAuthorizationCache {
+	if !cache.operationSet {
+		cache.operation, cache.operationSet = operation, true
+		return cache
+	}
+	if cache.operation == operation {
+		return cache
+	}
+	return &neighborhoodAuthorizationCache{
+		resolved:           make(registeredNodes),
+		resolvedIDs:        make(map[shoal.ID]struct{}),
+		canonicalDocuments: make(map[shoal.ID]*canonicalRetrievalDocument),
+		operation:          operation,
+		operationSet:       true,
+	}
 }
 
 func withNeighborhoodAuthorizationCache(ctx context.Context) context.Context {
@@ -351,6 +377,7 @@ func (c *Client) resolveNeighborhoodNodes(
 	ctx context.Context,
 	nodeIDs []shoal.ID,
 	cache *neighborhoodAuthorizationCache,
+	reader *registrationReader,
 ) (registeredNodes, error) {
 	missing := make([]shoal.ID, 0, len(nodeIDs))
 	for _, nodeID := range nodeIDs {
@@ -361,7 +388,7 @@ func (c *Client) resolveNeighborhoodNodes(
 		missing = append(missing, nodeID)
 	}
 	if len(missing) > 0 {
-		resolved, err := c.resolveNodes(ctx, missing)
+		resolved, err := c.resolveNodes(ctx, missing, reader)
 		if err != nil {
 			for _, nodeID := range missing {
 				delete(cache.resolvedIDs, nodeID)
@@ -969,7 +996,8 @@ func (c *Client) filterNeighborhood(
 	allowMissingProvenanceSeeds bool,
 	operation auth.Operation,
 ) (explorer.Neighborhood, error) {
-	cache := neighborhoodCache(ctx)
+	cache := neighborhoodCache(ctx).forOperation(operation)
+	reader := readerFor(decision, operation, now)
 	candidates := make(map[shoal.ID]graph.Node, len(raw.Nodes))
 	registrations := make(map[shoal.ID]NodeRegistration, len(raw.Nodes))
 	rawNodes := make(map[shoal.ID]graph.Node, len(raw.Nodes))
@@ -1045,7 +1073,7 @@ func (c *Client) filterNeighborhood(
 		}
 		rawNodeIDs = append(rawNodeIDs, assertion.Subject(), target)
 	}
-	resolved, err := c.resolveNeighborhoodNodes(ctx, rawNodeIDs, cache)
+	resolved, err := c.resolveNeighborhoodNodes(ctx, rawNodeIDs, cache, reader)
 	if err != nil {
 		return explorer.Neighborhood{}, err
 	}
@@ -1160,10 +1188,13 @@ func (c *Client) filterNeighborhood(
 		candidateEdges = append(candidateEdges, edge)
 		candidateEdgeIDs = append(candidateEdgeIDs, edge.ID)
 	}
-	resolvedEdges, err := c.resolveEdges(ctx, candidateEdgeIDs)
+	resolvedEdges, err := c.resolveEdges(ctx, candidateEdgeIDs, reader)
 	if err != nil {
 		return explorer.Neighborhood{}, err
 	}
+	admittedGraphEdges := make([]graph.Edge, 0, len(candidateEdges))
+	graphEdges := make(map[shoal.ID]graph.Edge, len(candidateEdges))
+	extractionAssertions := make(map[shoal.ID]ontology.Assertion)
 	for _, edge := range candidateEdges {
 		registration, ok := resolvedEdges[edge.ID]
 		if !ok || !graphEdgesEqual(registration.Edge, edge) {
@@ -1180,8 +1211,32 @@ func (c *Client) filterNeighborhood(
 		if _, duplicate := admittedEdges[edge.ID]; duplicate {
 			return explorer.Neighborhood{}, inconsistentBase()
 		}
+		if _, duplicate := graphEdges[edge.ID]; duplicate {
+			return explorer.Neighborhood{}, inconsistentBase()
+		}
+		admittedGraphEdges = append(admittedGraphEdges, edge)
+		graphEdges[edge.ID] = edge
+		if assertion, ok := derivedAssertions[edge.ID]; ok {
+			extractionAssertions[edge.ID] = assertion
+		}
+	}
+	// A shared relation (#700) carries the base's assertion of it, whose
+	// evidence quotes whichever document asserted it last. Each reader is
+	// shown an assertion it may read every piece of evidence of instead,
+	// and an edge with none is withheld. This is load-bearing;
+	// TestSharedRelationShowsOnlyReadableEvidence pins it.
+	readableAssertions, err := c.readerSafeExtractionAssertions(
+		ctx, graphEdges, extractionAssertions, visibleNodes,
+		decision, operation, now)
+	if err != nil {
+		return explorer.Neighborhood{}, err
+	}
+	for _, edge := range admittedGraphEdges {
+		assertion, hasAssertion := readableAssertions[edge.ID]
+		if _, asserted := extractionAssertions[edge.ID]; asserted && !hasAssertion {
+			continue
+		}
 		admittedEdges[edge.ID] = cloneGraphEdge(edge)
-		assertion, hasAssertion := derivedAssertions[edge.ID]
 		if operation == auth.OperationAnalyticsRead &&
 			edge.Properties[extractionRelationshipIDProperty] != "" &&
 			(!hasAssertion || !extractionAssertionMatchesEdge(assertion, edge)) {
@@ -1402,11 +1457,12 @@ func extractionAssertionMatchesEdge(
 	if !ok {
 		return false
 	}
+	// An extracted relation's weight is canonical (#700); its confidence is
+	// the assertion's alone.
 	return edge.From == assertion.Subject() &&
 		edge.To == target &&
 		edge.Properties[extractionRelationshipIDProperty] ==
-			string(assertion.Predicate()) &&
-		scoresEqual(edge.Weight, assertion.Confidence())
+			string(assertion.Predicate())
 }
 
 func producerDerivationEdgeMatches(

@@ -393,6 +393,8 @@ func (s *DurablePolicyStore) load() error {
 	var declassifications []sequencedDeclassification
 	declassificationSeqs := make(map[string]struct{})
 	interactionRevisions := make(map[string]persistedInteractionRevisions)
+	nodeOwners := make(map[string]persistedOwner)
+	edgeOwners := make(map[string]persistedOwner)
 	var (
 		floorRecord     persistedFormatFloor
 		haveFloor       bool
@@ -432,6 +434,20 @@ func (s *DurablePolicyStore) load() error {
 			if !haveFloor || record.Seq >= floorRecord.Seq {
 				floorRecord = record
 				haveFloor = true
+			}
+			maxSeq = maxUint64(maxSeq, record.Seq)
+		case bytes.HasPrefix(row, []byte(policyRowNodeOwner)),
+			bytes.HasPrefix(row, []byte(policyRowEdgeOwner)):
+			prefix, kind, owners := policyRowNodeOwner, policyKindNodeOwner, nodeOwners
+			if bytes.HasPrefix(row, []byte(policyRowEdgeOwner)) {
+				prefix, kind, owners = policyRowEdgeOwner, policyKindEdgeOwner, edgeOwners
+			}
+			record, err := decodeOwnerRecord(prefix, kind, rowStr, value)
+			if err != nil {
+				return corruptPolicyRecord("extraction co-owner", err)
+			}
+			if prev, ok := owners[rowStr]; !ok || record.Seq >= prev.Seq {
+				owners[rowStr] = record
 			}
 			maxSeq = maxUint64(maxSeq, record.Seq)
 		case bytes.HasPrefix(row, []byte(policyRowInteractionRevisions)):
@@ -599,6 +615,9 @@ func (s *DurablePolicyStore) load() error {
 	if err := s.reconstructRevisionBindings(
 		haveFloor, edges, edgeClaims, interactionRevisions,
 	); err != nil {
+		return err
+	}
+	if err := s.reconstructOwners(haveFloor, nodeOwners, edgeOwners); err != nil {
 		return err
 	}
 	if haveMigration {
@@ -881,7 +900,8 @@ func (s *DurablePolicyStore) PutRevision(
 }
 
 // PutNode registers an extracted graph node in memory and persists the node
-// registration.
+// registration, or, when another revision extracted the same entity, only
+// the co-owner it adds (#700).
 func (s *DurablePolicyStore) PutNode(
 	ctx context.Context,
 	nodeID shoal.ID,
@@ -901,8 +921,29 @@ func (s *DurablePolicyStore) PutNode(
 	}); err != nil {
 		return err
 	}
-	if err := s.memory.PutNode(ctx, nodeID, registration); err != nil {
+	if registration.Kind == RegistrationExtracted {
+		if err := admitOwner(policyKindNodeOwner, nodeID, ExtractionOwner{
+			DocumentID: registration.DocumentID,
+			RevisionID: registration.RevisionID,
+			Rule:       registration.Rule,
+		}); err != nil {
+			return err
+		}
+		// A co-owner is only ever written after the floor; see
+		// durable_owner.go.
+		if err := s.ensureFormatFloor(); err != nil {
+			return err
+		}
+	}
+	change, err := s.memory.putNode(ctx, nodeID, registration)
+	if err != nil {
 		return err
+	}
+	if change.owner != nil {
+		return s.persisted(s.persistOwner(false, ownerKey{
+			objectID: nodeID, documentID: change.owner.DocumentID,
+			revisionID: change.owner.RevisionID,
+		}))
 	}
 	return s.persisted(s.persistNode(nodeID))
 }
@@ -1004,13 +1045,32 @@ func (s *DurablePolicyStore) PutEdge(
 	if err := admitEdge(registration); err != nil {
 		return err
 	}
-	if edgeRegistrationBound(registration) {
+	if edgeRegistrationBound(registration) ||
+		registration.Kind == RegistrationExtracted {
 		if err := s.ensureFormatFloor(); err != nil {
 			return err
 		}
 	}
-	if err := s.memory.PutEdge(ctx, registration); err != nil {
+	if registration.Kind == RegistrationExtracted {
+		if err := admitOwner(policyKindEdgeOwner, registration.Edge.ID, ExtractionOwner{
+			DocumentID: registration.DocumentID,
+			RevisionID: registration.RevisionID,
+			Rule:       registration.Rule,
+		}); err != nil {
+			return err
+		}
+	}
+	change, err := s.memory.putEdge(ctx, registration)
+	if err != nil {
 		return err
+	}
+	if change.owner != nil {
+		// Only the co-owner changed; an extracted edge has no reservation
+		// (see putEdge), so there is no claim row to tombstone.
+		return s.persisted(s.persistOwner(true, ownerKey{
+			objectID: registration.Edge.ID, documentID: change.owner.DocumentID,
+			revisionID: change.owner.RevisionID,
+		}))
 	}
 	if err := s.persisted(s.persistApplicationEdge(registration.Edge.ID)); err != nil {
 		return err

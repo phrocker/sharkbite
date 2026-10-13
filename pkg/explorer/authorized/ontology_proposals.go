@@ -45,7 +45,7 @@ func (c *Client) OntologyProposals(
 	visible := make([]ontology.GovernedProposal, 0, len(proposals))
 	for _, proposal := range proposals {
 		allowed, err := c.ontologyProposalEvidenceAllows(
-			ctx, proposal, decision, auth.OperationRead, now)
+			ctx, proposal, decision, auth.OperationRead, now, true)
 		if err != nil {
 			return nil, err
 		}
@@ -79,8 +79,10 @@ func (c *Client) CreateOntologyProposal(
 	if err := proposal.Validate(); err != nil {
 		return err
 	}
+	// A new proposal's evidence must match the catalog exactly (stored
+	// false); see ontologyEvidenceAllows.
 	allowed, err := c.ontologyProposalEvidenceAllows(
-		ctx, proposal, decision, auth.OperationIngest, now)
+		ctx, proposal, decision, auth.OperationIngest, now, false)
 	if err != nil {
 		return err
 	}
@@ -139,7 +141,7 @@ func (c *Client) OntologyProposalMutationState(
 		}
 		for _, item := range evidence {
 			allowed, evidenceErr := c.ontologyEvidenceAllows(
-				ctx, item, decision, auth.OperationIngest, now)
+				ctx, item, decision, auth.OperationIngest, now, true)
 			if evidenceErr != nil {
 				return explorer.OntologyProposalMutationState{}, evidenceErr
 			}
@@ -287,7 +289,7 @@ func (c *Client) publishedOntologyCatalog(
 			continue
 		}
 		allowed, err := c.ontologyProposalEvidenceAllows(
-			ctx, proposal, decision, operation, now)
+			ctx, proposal, decision, operation, now, true)
 		if err != nil {
 			return ontology.PublishedCatalog{}, err
 		}
@@ -375,7 +377,7 @@ func (c *Client) transitionOntologyProposal(
 	}
 	for _, item := range evidence {
 		allowed, evidenceErr := c.ontologyEvidenceAllows(
-			ctx, item, decision, auth.OperationIngest, now)
+			ctx, item, decision, auth.OperationIngest, now, true)
 		if evidenceErr != nil {
 			return ontology.GovernedProposal{}, evidenceErr
 		}
@@ -424,6 +426,7 @@ func (c *Client) ontologyProposalEvidenceAllows(
 	decision auth.Decision,
 	operation auth.Operation,
 	now time.Time,
+	stored bool,
 ) (bool, error) {
 	if err := proposal.Validate(); err != nil {
 		return false, inconsistentBase()
@@ -431,7 +434,7 @@ func (c *Client) ontologyProposalEvidenceAllows(
 	for _, morphism := range proposal.Morphisms() {
 		for _, evidence := range morphism.Evidence() {
 			allowed, err := c.ontologyEvidenceAllows(
-				ctx, evidence, decision, operation, now)
+				ctx, evidence, decision, operation, now, stored)
 			if err != nil || !allowed {
 				return allowed, err
 			}
@@ -440,12 +443,21 @@ func (c *Client) ontologyProposalEvidenceAllows(
 	return true, nil
 }
 
+// ontologyEvidenceAllows authorizes one piece of proposal evidence. stored
+// marks the re-validation of evidence a proposal already holds: an
+// extracted node or relation in its graph path may then be in the rendering
+// it had before shared extraction content was canonical (#700), so it is
+// compared in canonical form. That evidence matched the catalog exactly when
+// it was proposed. New evidence (stored false) must match the catalog's
+// canonical content exactly, or a proposer could store and serve any kind,
+// labels or properties on an extracted node.
 func (c *Client) ontologyEvidenceAllows(
 	ctx context.Context,
 	evidence ontology.EvidenceRef,
 	decision auth.Decision,
 	operation auth.Operation,
 	now time.Time,
+	stored bool,
 ) (bool, error) {
 	if err := evidence.Validate(); err != nil {
 		return false, inconsistentBase()
@@ -519,7 +531,7 @@ func (c *Client) ontologyEvidenceAllows(
 	for index, node := range path.Nodes {
 		nodeIDs[index] = node.ID
 	}
-	nodes, err := c.resolveNodes(ctx, nodeIDs)
+	nodes, err := c.resolveNodes(ctx, nodeIDs, readerFor(decision, operation, now))
 	if err != nil {
 		return false, err
 	}
@@ -542,7 +554,12 @@ func (c *Client) ontologyEvidenceAllows(
 		return false, err
 	}
 	for _, node := range path.Nodes {
-		if !graphNodesEqual(canonicalNodes[node.ID], node) {
+		// Load-bearing: TestProposalEvidenceIsExactAtCreateAndCanonicalWhenStored.
+		evidenceNode := node
+		if stored {
+			evidenceNode, _ = explorer.CanonicalExtractedNode(node)
+		}
+		if !graphNodesEqual(canonicalNodes[node.ID], evidenceNode) {
 			return false, nil
 		}
 	}
@@ -551,7 +568,11 @@ func (c *Client) ontologyEvidenceAllows(
 		if err != nil {
 			return false, policyCatalogReadError(ctx, err)
 		}
-		if !ok || !graphEdgesEqual(edgeRegistration.Edge, edge) {
+		evidenceEdge := edge
+		if stored {
+			evidenceEdge, _ = explorer.CanonicalExtractedRelation(edge)
+		}
+		if !ok || !graphEdgesEqual(edgeRegistration.Edge, evidenceEdge) {
 			return false, nil
 		}
 		allowed, err := c.edgeAllows(

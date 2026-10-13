@@ -275,10 +275,14 @@ func (g *NodeGate) GraphsVisibleToReader(
 	if err != nil {
 		return nil, resolverFailure(ctx, err)
 	}
-	permits, err := c.labelVisibility.evaluatorFor(ctx, decision, c.clock())
+	now := c.clock()
+	permits, err := c.labelVisibility.evaluatorFor(ctx, decision, now)
 	if err != nil {
 		return nil, err
 	}
+	// Shared extracted nodes and relations are projected onto an owner this
+	// reader can read (#700), so the terms below are a readable owner's.
+	reader := readerFor(decision, auth.OperationRead, now)
 
 	// Gather the distinct members of every graph.
 	var edgeIDs []shoal.ID
@@ -299,7 +303,7 @@ func (g *NodeGate) GraphsVisibleToReader(
 	edges := registeredEdges{}
 	for start := 0; start < len(edgeIDs); {
 		end := chunkEnd(start, len(edgeIDs), maxInteractionAuthorizationIDs)
-		resolved, err := c.resolveEdges(ctx, edgeIDs[start:end])
+		resolved, err := c.resolveEdges(ctx, edgeIDs[start:end], reader)
 		if err != nil {
 			return nil, err
 		}
@@ -328,7 +332,7 @@ func (g *NodeGate) GraphsVisibleToReader(
 	nodes := registeredNodes{}
 	for start := 0; start < len(nodeIDs); {
 		end := chunkEnd(start, len(nodeIDs), maxInteractionAuthorizationIDs)
-		resolved, err := c.resolveNodes(ctx, nodeIDs[start:end])
+		resolved, err := c.resolveNodes(ctx, nodeIDs[start:end], reader)
 		if err != nil {
 			return nil, err
 		}
@@ -485,7 +489,7 @@ func (g *NodeGate) pathJoins(
 	}
 	for start := 0; start < len(edgeIDs); {
 		end := chunkEnd(start, len(edgeIDs), maxInteractionAuthorizationIDs)
-		resolved, err := g.client.resolveEdges(ctx, edgeIDs[start:end])
+		resolved, err := g.client.resolveEdges(ctx, edgeIDs[start:end], nil)
 		if err != nil {
 			return false, err
 		}
@@ -529,14 +533,18 @@ func (t *LabelTranslator) StructuredVisibility(
 		return nil, shoal.NewError(
 			shoal.ErrorUnavailable, "label translator is unavailable")
 	}
-	return t.client.structuredLabels(ctx, visibility, nodeIDs, edgeIDs)
+	// A trusted seam with no reader: a shared extracted node is translated
+	// over its first contributing owner, as before #700.
+	return t.client.structuredLabels(ctx, nil, visibility, nodeIDs, edgeIDs)
 }
 
 // structuredLabels translates labels over the current rules of nodeIDs and
-// of the endpoints of edgeIDs. A set with no free-form term is returned as
+// of the endpoints of edgeIDs, each shared extracted one projected for reader
+// (nil for a reader-free use). A set with no free-form term is returned as
 // is, without a catalog read.
 func (c *Client) structuredLabels(
-	ctx context.Context, labels []string, nodeIDs, edgeIDs []shoal.ID,
+	ctx context.Context, reader *registrationReader,
+	labels []string, nodeIDs, edgeIDs []shoal.ID,
 ) ([]string, error) {
 	if !hasFreeFormTerm(labels) {
 		return append([]string(nil), labels...), nil
@@ -547,7 +555,7 @@ func (c *Client) structuredLabels(
 		end := chunkEnd(start, len(edgeIDs), maxInteractionAuthorizationIDs)
 		chunk := edgeIDs[start:end]
 		start = end
-		edges, err := c.resolveEdges(ctx, chunk)
+		edges, err := c.resolveEdges(ctx, chunk, reader)
 		if err != nil {
 			return nil, err
 		}
@@ -563,7 +571,7 @@ func (c *Client) structuredLabels(
 	registrations := make(registeredNodes, len(nodes))
 	for start := 0; start < len(nodes); {
 		end := chunkEnd(start, len(nodes), maxInteractionAuthorizationIDs)
-		resolved, err := c.resolveNodes(ctx, nodes[start:end])
+		resolved, err := c.resolveNodes(ctx, nodes[start:end], reader)
 		if err != nil {
 			return nil, err
 		}

@@ -156,18 +156,20 @@ func TestRegistrationKindIsRequiredAndTyped(t *testing.T) {
 	if err := store.PutEdge(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	// A second asserter under the same rule leaves the first in place.
+	// A second asserter leaves the first in place and becomes a co-owner
+	// (#700).
 	second := first
 	second.DocumentID, second.RevisionID = "doc-2", "rev-2"
 	if err := store.PutEdge(ctx, second); err != nil {
 		t.Fatalf("second asserter of a shared edge: %v", err)
 	}
 	stored, _, err := store.Edge(ctx, "relation")
-	if err != nil || stored.DocumentID != "doc-1" {
-		t.Fatalf("shared edge owner = %+v (%v), want the first asserter", stored, err)
+	if err != nil || stored.DocumentID != "doc-1" || len(stored.CoOwners) != 1 ||
+		stored.CoOwners[0].DocumentID != "doc-2" {
+		t.Fatalf("shared edge owners = %+v (%v), want doc-1 then doc-2", stored, err)
 	}
-	// A different rule, or an application edge over an extracted one,
-	// conflicts.
+	// The same asserter under a different rule, or an application edge over
+	// an extracted one, conflicts.
 	differentRule := second
 	differentRule.Rule = other
 	if err := store.PutEdge(ctx, differentRule); !shoal.IsErrorCode(err, shoal.ErrorConflict) {

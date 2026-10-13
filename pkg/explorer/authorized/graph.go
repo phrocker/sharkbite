@@ -222,8 +222,10 @@ func (c *Client) edgeAllows(
 	operation auth.Operation,
 	now time.Time,
 ) (bool, error) {
+	reader := readerFor(decision, operation, now)
 	effective, err := c.effectiveEdgeRegistrations(
-		ctx, map[shoal.ID]EdgeRegistration{registration.Edge.ID: registration})
+		ctx, map[shoal.ID]EdgeRegistration{registration.Edge.ID: registration},
+		reader)
 	if err != nil {
 		return false, err
 	}
@@ -236,7 +238,7 @@ func (c *Client) edgeAllows(
 		return allowed, err
 	}
 	resolved, err := c.resolveNodes(
-		ctx, []shoal.ID{registration.Edge.From, registration.Edge.To})
+		ctx, []shoal.ID{registration.Edge.From, registration.Edge.To}, reader)
 	if err != nil {
 		return false, err
 	}
@@ -292,10 +294,13 @@ func (c *Client) resolveCurrentRevisions(
 // endpoint. Identifiers the store does not know are omitted from the result,
 // preserving the fail-closed path a point lookup takes when it reports !ok.
 // Registrations for identifiers that were not requested are discarded so a
-// misbehaving store cannot widen a page.
+// misbehaving store cannot widen a page. A shared extracted node is projected
+// onto an owner reader can read (#700); a nil reader is a trusted,
+// reader-free use.
 func (c *Client) resolveNodes(
 	ctx context.Context,
 	nodeIDs []shoal.ID,
+	reader *registrationReader,
 ) (registeredNodes, error) {
 	distinct := make([]shoal.ID, 0, len(nodeIDs))
 	requested := make(map[shoal.ID]struct{}, len(nodeIDs))
@@ -321,7 +326,7 @@ func (c *Client) resolveNodes(
 		}
 		resolved[nodeID] = registration
 	}
-	effective, err := c.effectiveNodeRegistrations(ctx, resolved)
+	effective, err := c.effectiveNodeRegistrations(ctx, resolved, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -338,10 +343,12 @@ type registeredEdges map[shoal.ID]EdgeRegistration
 // trip under the same discipline as resolveNodes: deduplicate first, skip the
 // round trip entirely when there is nothing to resolve, treat omission from the
 // result as the fail-closed !ok path, and discard registrations for identifiers
-// that were not requested.
+// that were not requested. Shared relations are projected for reader as
+// resolveNodes projects shared entities.
 func (c *Client) resolveEdges(
 	ctx context.Context,
 	edgeIDs []shoal.ID,
+	reader *registrationReader,
 ) (registeredEdges, error) {
 	distinct := make([]shoal.ID, 0, len(edgeIDs))
 	requested := make(map[shoal.ID]struct{}, len(edgeIDs))
@@ -367,7 +374,7 @@ func (c *Client) resolveEdges(
 		}
 		resolved[edgeID] = registration
 	}
-	effective, err := c.effectiveEdgeRegistrations(ctx, resolved)
+	effective, err := c.effectiveEdgeRegistrations(ctx, resolved, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -446,7 +453,8 @@ func (c *Client) authorizedNode(
 		return NodeRegistration{}, auth.ObjectNotFound()
 	}
 	effective, err := c.effectiveNodeRegistrations(
-		ctx, map[shoal.ID]NodeRegistration{nodeID: registration})
+		ctx, map[shoal.ID]NodeRegistration{nodeID: registration},
+		readerFor(decision, operation, now))
 	if err != nil {
 		return NodeRegistration{}, err
 	}

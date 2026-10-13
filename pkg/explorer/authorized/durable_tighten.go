@@ -216,7 +216,8 @@ func (s *DurablePolicyStore) TightenRule(
 		}
 	}()
 	rows := make([]policyRow, 0,
-		len(changes.revisions)+len(changes.nodes)+len(changes.edges)+2)
+		len(changes.revisions)+len(changes.nodes)+len(changes.edges)+
+			len(changes.nodeOwners)+len(changes.edgeOwners)+2)
 	for _, key := range changes.revisions {
 		row, err := s.revisionRow(key)
 		if err != nil {
@@ -241,6 +242,20 @@ func (s *DurablePolicyStore) TightenRule(
 			return false, catalogUnavailable()
 		}
 		rows = append(rows, policyRow{policyEdgeRow(edgeID), policyKindEdge, record})
+	}
+	for _, key := range changes.nodeOwners {
+		row, err := s.ownerRow(false, key)
+		if err != nil {
+			return false, err
+		}
+		rows = append(rows, row)
+	}
+	for _, key := range changes.edgeOwners {
+		row, err := s.ownerRow(true, key)
+		if err != nil {
+			return false, err
+		}
+		rows = append(rows, row)
 	}
 	if changes.sourceClaim != "" {
 		claimRows, err := s.sourceClaimRows(changes.sourceClaim)

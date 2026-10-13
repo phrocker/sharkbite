@@ -175,7 +175,8 @@ func (c *Client) verifyInteractionGraphEvidence(
 	decision auth.Decision,
 	now time.Time,
 ) error {
-	nodes, err := c.resolveNodes(ctx, reference.NodeIDs)
+	reader := readerFor(decision, auth.OperationRetrieve, now)
+	nodes, err := c.resolveNodes(ctx, reference.NodeIDs, reader)
 	if err != nil {
 		return err
 	}
@@ -186,7 +187,7 @@ func (c *Client) verifyInteractionGraphEvidence(
 	if err != nil {
 		return err
 	}
-	edges, err := c.resolveEdges(ctx, reference.EdgeIDs)
+	edges, err := c.resolveEdges(ctx, reference.EdgeIDs, reader)
 	if err != nil {
 		return err
 	}
@@ -246,6 +247,31 @@ func (c *Client) verifyInteractionGraphEvidence(
 	if err != nil {
 		return err
 	}
+	// The recorder was shown, for each extracted relation, an assertion it
+	// may read (readerSafeExtractionAssertions); a shared relation's may
+	// not be the base's own (#700). Expect exactly that one.
+	extracted := make(map[shoal.ID]ontology.Assertion)
+	pathEdges := make(map[shoal.ID]graph.Edge, len(edges))
+	for edgeID, registration := range edges {
+		pathEdges[edgeID] = registration.Edge
+		if assertion, ok := rawAssertions[edgeID]; ok &&
+			assertion.Origin() != ontology.AssertionDerived {
+			extracted[edgeID] = assertion
+		}
+	}
+	readable, err := c.readerSafeExtractionAssertions(
+		ctx, pathEdges, extracted, canonicalNodes,
+		decision, auth.OperationRetrieve, now)
+	if err != nil {
+		return err
+	}
+	for edgeID := range extracted {
+		if assertion, ok := readable[edgeID]; ok {
+			rawAssertions[edgeID] = assertion
+		} else {
+			delete(rawAssertions, edgeID)
+		}
+	}
 	expectedAssertions, err := interactionAssertionsForEdges(edges, rawAssertions)
 	if err != nil ||
 		!sameAssertionReferences(reference.Assertions, expectedAssertions) {
@@ -282,7 +308,9 @@ func interactionAssertionsForEdges(
 		if !targetOK ||
 			assertion.Subject() != registration.Edge.From ||
 			target != registration.Edge.To ||
-			assertion.Confidence() != registration.Edge.Weight {
+			// An extracted relation's weight is canonical (#700).
+			(registration.Edge.Properties["ontology_relationship_id"] == "" &&
+				assertion.Confidence() != registration.Edge.Weight) {
 			return nil, authorizationDenied()
 		}
 		if relationship := registration.Edge.Properties["ontology_relationship_id"]; relationship != "" &&

@@ -61,6 +61,8 @@ type Explorer struct {
 	graphNodes                     map[shoal.ID]graph.Node
 	graphEdges                     map[shoal.ID]graph.Edge
 	graphAssertions                map[shoal.ID]ontology.Assertion
+	extractionAssertionSets        map[shoal.ID][]ontology.Assertion // #700: every assertion of a shared relation, in extraction order
+	legacyRenderings               legacyExtractionRenderings        // #700: pre-canonical content, for stored evidence only
 	outgoing                       map[shoal.ID][]shoal.ID
 	incoming                       map[shoal.ID][]shoal.ID
 	interactionOutgoing            map[shoal.ID][]shoal.ID
@@ -963,6 +965,11 @@ func (e *Explorer) computeCurrentGraph() (
 			continue
 		}
 		for _, node := range record.Nodes {
+			// Shared extraction content is its identity alone, for records
+			// stored before that rule too (#700).
+			if canonicalSharedContent {
+				node, _ = CanonicalExtractedNode(node)
+			}
 			if existing, exists := nodes[node.ID]; exists && !nodesEqual(existing, node) {
 				continue
 			}
@@ -974,6 +981,9 @@ func (e *Explorer) computeCurrentGraph() (
 			}
 			if _, to := nodes[edge.To]; !to {
 				continue
+			}
+			if canonicalSharedContent {
+				edge, _ = CanonicalExtractedRelation(edge)
 			}
 			if existing, exists := edges[edge.ID]; exists && !edgesEqual(existing, edge) {
 				return nil, nil, nil, shoal.NewError(
@@ -1142,10 +1152,20 @@ func (e *Explorer) ensureGraphLocked() error {
 
 func (e *Explorer) rebuildCurrentGraphLocked() error {
 	nodes, edges, assertions, err := e.computeCurrentGraph()
+	var sets map[shoal.ID][]ontology.Assertion
+	if err == nil {
+		sets, err = e.extractionAssertionSetsLocked(nodes, edges)
+	}
+	var legacy legacyExtractionRenderings
+	if err == nil {
+		legacy = e.legacyExtractionRenderingsLocked(nodes, edges)
+	}
 	if err != nil {
 		e.graphNodes = make(map[shoal.ID]graph.Node)
 		e.graphEdges = make(map[shoal.ID]graph.Edge)
 		e.graphAssertions = make(map[shoal.ID]ontology.Assertion)
+		e.extractionAssertionSets = nil
+		e.legacyRenderings = legacyExtractionRenderings{}
 		e.outgoing = make(map[shoal.ID][]shoal.ID)
 		e.incoming = make(map[shoal.ID][]shoal.ID)
 		e.interactionOutgoing = make(map[shoal.ID][]shoal.ID)
@@ -1184,6 +1204,8 @@ func (e *Explorer) rebuildCurrentGraphLocked() error {
 		}
 	}
 	e.graphNodes, e.graphEdges, e.graphAssertions = nodes, edges, assertions
+	e.extractionAssertionSets = sets
+	e.legacyRenderings = legacy
 	e.outgoing, e.incoming = outgoing, incoming
 	e.interactionOutgoing, e.interactionIncoming = interactionOutgoing, interactionIncoming
 	e.graphErr = nil

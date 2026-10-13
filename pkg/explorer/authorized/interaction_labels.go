@@ -77,7 +77,8 @@ func (c *Client) readableInteraction(
 	record explorer.InteractionRecord,
 ) (explorer.InteractionRecord, bool, error) {
 	required, err := c.structuredLabels(
-		ctx, record.Session.RequiredVisibility,
+		ctx, readerFor(decision, auth.OperationRead, now),
+		record.Session.RequiredVisibility,
 		record.TouchedNodeIDs, record.TouchedEdgeIDs)
 	if err != nil {
 		return explorer.InteractionRecord{}, false, err
@@ -111,7 +112,8 @@ func (c *Client) expressionPermitted(
 		return true, nil
 	}
 	labels, err := c.structuredLabels(
-		ctx, auth.SplitVisibilityConjunction(expression), nodeIDs, edgeIDs)
+		ctx, readerFor(decision, auth.OperationRead, now),
+		auth.SplitVisibilityConjunction(expression), nodeIDs, edgeIDs)
 	if err != nil {
 		return false, err
 	}

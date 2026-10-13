@@ -321,8 +321,10 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 	if err != nil {
 		return interaction.Session{}, err
 	}
+	recorder := readerFor(decision, evidenceOperation, now)
 	sourceRevisions, err := c.interactionSourceRevisions(
-		ctx, canonical.TouchedNodeIDs(), canonical.TouchedEdgeIDs(), evidence)
+		ctx, canonical.TouchedNodeIDs(), canonical.TouchedEdgeIDs(), evidence,
+		recorder)
 	if err != nil {
 		return interaction.Session{}, err
 	}
@@ -343,7 +345,7 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 	// the label policy enforcing it on those nodes (#570). Translated before
 	// the retry comparison, so an exact retry compares like with like.
 	canonical.RequiredVisibility, err = c.structuredLabels(
-		ctx, canonical.RequiredVisibility,
+		ctx, recorder, canonical.RequiredVisibility,
 		canonical.TouchedNodeIDs(), canonical.TouchedEdgeIDs())
 	if err != nil {
 		return interaction.Session{}, err
@@ -449,7 +451,7 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 		return interaction.Session{}, err
 	}
 	validatedRevisions, err := c.interactionSourceRevisions(
-		ctx, canonical.TouchedNodeIDs(), edgeIDs, references)
+		ctx, canonical.TouchedNodeIDs(), edgeIDs, references, recorder)
 	if err != nil {
 		return interaction.Session{}, err
 	}
@@ -791,7 +793,8 @@ func (c *Client) authorizeInteractionBatch(
 		}
 		return nil
 	}
-	edges, err := c.resolveEdges(ctx, batchEdgeIDs)
+	reader := readerFor(decision, auth.OperationRead, now)
+	edges, err := c.resolveEdges(ctx, batchEdgeIDs, reader)
 	if err != nil {
 		return err
 	}
@@ -799,7 +802,7 @@ func (c *Client) authorizeInteractionBatch(
 		batchNodeIDs = append(
 			batchNodeIDs, registration.Edge.From, registration.Edge.To)
 	}
-	registrations, err := c.resolveNodes(ctx, batchNodeIDs)
+	registrations, err := c.resolveNodes(ctx, batchNodeIDs, reader)
 	if err != nil {
 		return err
 	}
@@ -1034,11 +1037,12 @@ func (c *Client) interactionEvidenceAllowsBounded(
 	operation auth.Operation,
 	now time.Time,
 ) (bool, error) {
+	reader := readerFor(decision, operation, now)
 	for start := 0; start < len(edgeIDs); {
 		end := chunkEnd(start, len(edgeIDs), maxInteractionAuthorizationIDs/2)
 		chunk := edgeIDs[start:end]
 		start = end
-		edges, err := c.resolveEdges(ctx, chunk)
+		edges, err := c.resolveEdges(ctx, chunk, reader)
 		if err != nil {
 			return false, err
 		}
@@ -1047,7 +1051,7 @@ func (c *Client) interactionEvidenceAllowsBounded(
 			endpoints = append(
 				endpoints, registration.Edge.From, registration.Edge.To)
 		}
-		registrations, err := c.resolveNodes(ctx, endpoints)
+		registrations, err := c.resolveNodes(ctx, endpoints, reader)
 		if err != nil {
 			return false, err
 		}
@@ -1061,7 +1065,7 @@ func (c *Client) interactionEvidenceAllowsBounded(
 		end := chunkEnd(start, len(nodeIDs), maxInteractionAuthorizationIDs)
 		chunk := nodeIDs[start:end]
 		start = end
-		registrations, err := c.resolveNodes(ctx, chunk)
+		registrations, err := c.resolveNodes(ctx, chunk, reader)
 		if err != nil {
 			return false, err
 		}

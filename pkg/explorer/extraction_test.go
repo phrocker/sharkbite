@@ -138,6 +138,72 @@ func TestExtractDocumentRerunReusesSkillEntities(t *testing.T) {
 	}
 }
 
+// TestExtractDocumentContextNodesSelectsGroundingEntities: ContextNodes sees
+// the existing entities in ascending order, and only the ones it returns are
+// offered as graph context, so an entity it withholds is created afresh
+// rather than reported as reused (#700). An error from it fails the plan.
+func TestExtractDocumentContextNodesSelectsGroundingEntities(t *testing.T) {
+	ctx := context.Background()
+	corpus, err := explorer.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = corpus.Close() })
+	ingested, err := corpus.Ingest(ctx, explorer.Source{
+		URI: "file:///SKILL.md", MediaType: explorer.MediaTypeMarkdown,
+		Content: sampleSkillMarkdown,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	version := skillsOntologyVersion(t)
+	request := explorer.ExtractionRequest{
+		DocumentID: ingested.Document.ID, RevisionID: ingested.Revision.ID,
+		Version: version,
+	}
+	first, err := corpus.ExtractDocument(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var offered []shoal.ID
+	request.ContextNodes = func(_ context.Context, ids []shoal.ID) ([]shoal.ID, error) {
+		offered = append([]shoal.ID(nil), ids...)
+		return nil, nil
+	}
+	withheld, err := corpus.ExtractDocument(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(offered) != first.EntityCount {
+		t.Fatalf("ContextNodes was offered %d entities, want %d", len(offered), first.EntityCount)
+	}
+	for index := 1; index < len(offered); index++ {
+		if shoal.CompareID(offered[index-1], offered[index]) >= 0 {
+			t.Fatalf("ContextNodes candidates are not in ascending order: %v", offered)
+		}
+	}
+	if withheld.ReusedEntities != 0 || withheld.CreatedEntities != first.EntityCount {
+		t.Fatalf("withheld context = created:%d reused:%d, want every entity created",
+			withheld.CreatedEntities, withheld.ReusedEntities)
+	}
+	request.ContextNodes = func(_ context.Context, ids []shoal.ID) ([]shoal.ID, error) {
+		return ids, nil
+	}
+	kept, err := corpus.ExtractDocument(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if kept.ReusedEntities != first.EntityCount {
+		t.Fatalf("offered context reused %d entities, want %d", kept.ReusedEntities, first.EntityCount)
+	}
+	request.ContextNodes = func(context.Context, []shoal.ID) ([]shoal.ID, error) {
+		return nil, shoal.NewError(shoal.ErrorUnavailable, "context unavailable")
+	}
+	if _, err := corpus.PlanExtractDocument(ctx, request); !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+		t.Fatalf("plan with a failing ContextNodes = %v, want its error", err)
+	}
+}
+
 func TestExtractDocumentCollapsesSharedToolAcrossSkillFiles(t *testing.T) {
 	ctx := context.Background()
 	corpus, err := explorer.Open(t.TempDir())

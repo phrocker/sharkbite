@@ -227,7 +227,7 @@ func TestResolveNodesDeduplicatesAndConfinesResults(t *testing.T) {
 	client := &Client{policyStore: store}
 	resolved, err := client.resolveNodes(context.Background(), []shoal.ID{
 		"node-a", "node-b", "node-a", "node-c", "node-b", "node-a",
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -314,7 +314,7 @@ func TestResolveCurrentRevisionsPropagatesStoreFailureAsRead(t *testing.T) {
 func TestResolveNodesSkipsEmptyBatch(t *testing.T) {
 	store := &recordingNodeStore{}
 	client := &Client{policyStore: store}
-	resolved, err := client.resolveNodes(context.Background(), nil)
+	resolved, err := client.resolveNodes(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -333,7 +333,7 @@ func TestResolveNodesPropagatesStoreFailureAsRead(t *testing.T) {
 	store := &recordingNodeStore{err: catalogUnavailable()}
 	client := &Client{policyStore: store}
 	if _, err := client.resolveNodes(
-		context.Background(), []shoal.ID{"node-a"},
+		context.Background(), []shoal.ID{"node-a"}, nil,
 	); !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
 		t.Fatalf("batch failure error = %v", err)
 	}
@@ -546,7 +546,7 @@ func TestResolveEdgesDeduplicatesAndConfinesResults(t *testing.T) {
 	client := &Client{policyStore: store}
 	resolved, err := client.resolveEdges(context.Background(), []shoal.ID{
 		"edge-a", "edge-b", "edge-a", "edge-c", "edge-b", "edge-a",
-	})
+	}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -573,7 +573,7 @@ func TestResolveEdgesDeduplicatesAndConfinesResults(t *testing.T) {
 func TestResolveEdgesSkipsEmptyBatch(t *testing.T) {
 	store := &recordingNodeStore{}
 	client := &Client{policyStore: store}
-	resolved, err := client.resolveEdges(context.Background(), nil)
+	resolved, err := client.resolveEdges(context.Background(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,7 +592,7 @@ func TestResolveEdgesPropagatesStoreFailureAsRead(t *testing.T) {
 	store := &recordingNodeStore{edgeErr: catalogUnavailable()}
 	client := &Client{policyStore: store}
 	if _, err := client.resolveEdges(
-		context.Background(), []shoal.ID{"edge-a"},
+		context.Background(), []shoal.ID{"edge-a"}, nil,
 	); !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
 		t.Fatalf("batch failure error = %v", err)
 	}

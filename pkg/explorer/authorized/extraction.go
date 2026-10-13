@@ -21,6 +21,7 @@ package authorized
 
 import (
 	"context"
+	"time"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
@@ -82,6 +83,15 @@ func (c *Client) ExtractDocument(
 	request.RevisionID = source.RevisionID
 	// This namespace is load-bearing; TestAuthorizedExtractDocumentCrossTenantSharedEntityGetsDistinctNodes pins that attacker-chosen entity keys cannot collide across authorization scopes.
 	request.EntityNamespace = source.Rule.extractionEntityNamespace()
+	// The extraction grounds only on entities this principal may read, so
+	// neither its prompt nor what it reports as reused depends on a document
+	// the principal cannot read (#700). This filter is load-bearing;
+	// TestExtractionContextOmitsUnreadableEntities pins it.
+	request.ContextNodes = func(
+		ctx context.Context, nodeIDs []shoal.ID,
+	) ([]shoal.ID, error) {
+		return c.readableNodeIDs(ctx, nodeIDs, decision, auth.OperationRead, now)
+	}
 	result, err := backend.PlanExtractDocument(ctx, request)
 	if err != nil {
 		return explorer.ExtractionResult{}, directBaseError(err)
@@ -124,6 +134,42 @@ func (c *Client) ExtractDocument(
 	}
 	c.invalidateAuthorizedVectorAvailability()
 	return result, nil
+}
+
+// readableNodeIDs returns, in order, the nodes among nodeIDs the decision may
+// read, resolved in bounded batches.
+func (c *Client) readableNodeIDs(
+	ctx context.Context,
+	nodeIDs []shoal.ID,
+	decision auth.Decision,
+	operation auth.Operation,
+	now time.Time,
+) ([]shoal.ID, error) {
+	reader := readerFor(decision, operation, now)
+	visible := make([]shoal.ID, 0, len(nodeIDs))
+	for start := 0; start < len(nodeIDs); {
+		end := chunkEnd(start, len(nodeIDs), maxInteractionAuthorizationIDs)
+		chunk := nodeIDs[start:end]
+		start = end
+		resolved, err := c.resolveNodes(ctx, chunk, reader)
+		if err != nil {
+			return nil, err
+		}
+		for _, nodeID := range chunk {
+			registration, ok := resolved[nodeID]
+			if !ok {
+				continue
+			}
+			allowed, err := ruleAllows(registration.Rule, decision, operation, now)
+			if err != nil {
+				return nil, err
+			}
+			if allowed {
+				visible = append(visible, nodeID)
+			}
+		}
+	}
+	return visible, nil
 }
 
 func extractionCatalogWriteError(ctx context.Context, err error) error {

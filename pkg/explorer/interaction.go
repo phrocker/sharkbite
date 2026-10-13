@@ -939,7 +939,7 @@ func (e *Explorer) currentInteractionVisibilityLocked(
 		return "", err
 	}
 	for _, reference := range references {
-		if err := e.validateEvidenceReferenceLocked(reference); err != nil {
+		if err := e.validateEvidenceReferenceLocked(reference, true); err != nil {
 			return "", err
 		}
 	}

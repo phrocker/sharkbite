@@ -449,11 +449,15 @@ func (c *Client) connectedLegacyEdges(
 // of every document a touched node or edge (or a touched edge's endpoint)
 // belongs to, each touched application edge's own binding, and every
 // revision its document evidence cites. It reads registrations directly, in
-// bounded batches.
+// bounded batches. A shared extracted node or relation (#700) contributes the
+// revision of the owner the recorder (reader) sees it through, never another
+// owner's: binding a session to a revision its recorder cannot read would
+// hide the recorder's own session whenever that revision is closed.
 func (c *Client) interactionSourceRevisions(
 	ctx context.Context,
 	nodeIDs, edgeIDs []shoal.ID,
 	references []interaction.EvidenceReference,
+	reader *registrationReader,
 ) ([]RevisionReference, error) {
 	var revisions []RevisionReference
 	nodeIDs = append([]shoal.ID(nil), nodeIDs...)
@@ -469,6 +473,10 @@ func (c *Client) interactionSourceRevisions(
 		}
 	}
 	nodes, edges, err := c.rawRegistrations(ctx, nodeIDs, edgeIDs)
+	if err != nil {
+		return nil, err
+	}
+	nodes, edges, err = c.projectSharedRegistrations(ctx, nodes, edges, reader)
 	if err != nil {
 		return nil, err
 	}
@@ -519,6 +527,60 @@ func (c *Client) rawRegistrations(
 		}
 		for id, registration := range batch {
 			nodes[id] = registration
+		}
+	}
+	return nodes, edges, nil
+}
+
+// projectSharedRegistrations replaces each raw registration that has
+// co-owners (#700) with its first owner or the co-owner reader sees it
+// through, keeping every other field. A registration none of whose owners
+// still contributes is left as stored: authorizing it denies anyway.
+func (c *Client) projectSharedRegistrations(
+	ctx context.Context,
+	nodes map[shoal.ID]NodeRegistration,
+	edges map[shoal.ID]EdgeRegistration,
+	reader *registrationReader,
+) (map[shoal.ID]NodeRegistration, map[shoal.ID]EdgeRegistration, error) {
+	sharedNodes := make(map[shoal.ID]NodeRegistration)
+	for id, registration := range nodes {
+		if registration.Kind == RegistrationExtracted && len(registration.CoOwners) > 0 {
+			sharedNodes[id] = registration
+		}
+	}
+	sharedEdges := make(map[shoal.ID]EdgeRegistration)
+	for id, registration := range edges {
+		if registration.Kind == RegistrationExtracted && len(registration.CoOwners) > 0 {
+			sharedEdges[id] = registration
+		}
+	}
+	if len(sharedNodes) > 0 {
+		projected, err := c.effectiveNodeRegistrations(ctx, sharedNodes, reader)
+		if err != nil {
+			return nil, nil, err
+		}
+		for id, registration := range sharedNodes {
+			if owner, ok := projected[id]; ok {
+				registration.DocumentID = owner.DocumentID
+				registration.RevisionID = owner.RevisionID
+			}
+			registration.CoOwners = nil
+			nodes[id] = registration
+		}
+	}
+	if len(sharedEdges) > 0 {
+		projected, err := effectiveRegistrations(c, ctx, sharedEdges, reader,
+			edgeOwnedFields, edgeWithOwner)
+		if err != nil {
+			return nil, nil, err
+		}
+		for id, registration := range sharedEdges {
+			if owner, ok := projected[id]; ok {
+				registration.DocumentID = owner.DocumentID
+				registration.RevisionID = owner.RevisionID
+			}
+			registration.CoOwners = nil
+			edges[id] = registration
 		}
 	}
 	return nodes, edges, nil

@@ -173,6 +173,7 @@ type Client struct {
 	publications        PublicationReader
 	snapshotValidator   SnapshotValidator
 	derivedAssertions   DerivedAssertionReader
+	relationAssertions  ExtractionAssertionReader
 	foldSource          FoldStore
 	ontologyInterpreter explorer.OntologyInterpreter
 	ontologyProposals   explorer.OntologyProposalStore
@@ -241,6 +242,11 @@ func NewClient(config Config) (*Client, error) {
 	if isNilDependency(publications) && hasSnapshotValidator {
 		publications, _ = config.SnapshotValidator.(PublicationReader)
 	}
+	// Promoted from SnapshotValidator only, never from Base (#700).
+	var relationAssertions ExtractionAssertionReader
+	if hasSnapshotValidator {
+		relationAssertions, _ = config.SnapshotValidator.(ExtractionAssertionReader)
+	}
 	foldStore := config.FoldStore
 	if isNilDependency(foldStore) && hasSnapshotValidator {
 		foldStore, _ = config.SnapshotValidator.(FoldStore)
@@ -271,6 +277,7 @@ func NewClient(config Config) (*Client, error) {
 		interactionSource:   config.InteractionReader,
 		snapshotValidator:   config.SnapshotValidator,
 		derivedAssertions:   derivedAssertions,
+		relationAssertions:  relationAssertions,
 		foldSource:          foldStore,
 		publications:        publications,
 		ontologyInterpreter: config.OntologyInterpreter,
