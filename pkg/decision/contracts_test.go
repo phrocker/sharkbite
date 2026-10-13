@@ -281,6 +281,34 @@ func TestPictureIncidentUncertaintyIsRetained(t *testing.T) {
 	}
 }
 
+func TestPictureIncidentCoverageIsMeasurementOnly(t *testing.T) {
+	pack, c := fixture(t)
+	linked := linkedIncident()
+	unresolved := decision.IncidentReference{
+		IncidentID: "incident:unresolved", Digest: strings.Repeat("d", 64),
+		State: decision.IncidentUnresolved, Reason: "deployment mapping unavailable",
+		ObservedAt: now.Add(-3 * time.Minute), ReceivedAt: now.Add(-2 * time.Minute),
+		ServiceID: "service:api", EnvironmentID: "environment:prod",
+	}
+	c.Incidents = []decision.IncidentReference{linked, unresolved}
+	p, err := decision.NewPictureManifest(pack, c)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := p.IncidentCoverage()
+	want := decision.IncidentCoverage{
+		Total: 2, Linked: 1, Unresolved: 1, Services: 1, Environments: 1,
+		Deployments: 1, EarliestObservedAt: unresolved.ObservedAt.UTC(),
+		LatestReceivedAt: linked.ReceivedAt.UTC(),
+	}
+	if got != want {
+		t.Fatalf("coverage = %#v, want %#v", got, want)
+	}
+	if empty := (decision.PictureManifest{}).IncidentCoverage(); empty != (decision.IncidentCoverage{}) {
+		t.Fatalf("empty coverage = %#v", empty)
+	}
+}
+
 func TestPictureRejectsInvalidIncidentLineage(t *testing.T) {
 	cases := map[string]func(*decision.PictureConfig){
 		"duplicate": func(c *decision.PictureConfig) {

@@ -580,6 +580,64 @@ func (p PictureManifest) InventoryCoverage() (supported, total int) {
 	}
 	return supported, len(p.config.Subjects)
 }
+
+// IncidentCoverage is a derived, measurement-only summary of incident links
+// in a picture. It describes what the snapshot contains; it is not a risk
+// score, label, permission, or claim that an incident is causally related to a
+// source change. Zero times mean that the picture contains no incidents.
+type IncidentCoverage struct {
+	Total              int
+	Linked             int
+	Unresolved         int
+	Conflicted         int
+	Services           int
+	Environments       int
+	Deployments        int
+	EarliestObservedAt time.Time
+	LatestReceivedAt   time.Time
+}
+
+// IncidentCoverage returns bounded counts and time bounds over the immutable
+// incident slice retained by the picture. Distinct scope counts include only
+// non-empty identifiers, so unresolved records remain measurable without
+// being treated as linked.
+func (p PictureManifest) IncidentCoverage() IncidentCoverage {
+	coverage := IncidentCoverage{}
+	services := map[shoal.ID]struct{}{}
+	environments := map[shoal.ID]struct{}{}
+	deployments := map[shoal.ID]struct{}{}
+	for _, incident := range p.config.Incidents {
+		coverage.Total++
+		switch incident.State {
+		case IncidentLinked:
+			coverage.Linked++
+		case IncidentUnresolved:
+			coverage.Unresolved++
+		case IncidentConflicted:
+			coverage.Conflicted++
+		}
+		if incident.ServiceID != "" {
+			services[incident.ServiceID] = struct{}{}
+		}
+		if incident.EnvironmentID != "" {
+			environments[incident.EnvironmentID] = struct{}{}
+		}
+		if incident.DeploymentID != "" {
+			deployments[incident.DeploymentID] = struct{}{}
+		}
+		if coverage.EarliestObservedAt.IsZero() || incident.ObservedAt.Before(coverage.EarliestObservedAt) {
+			coverage.EarliestObservedAt = incident.ObservedAt
+		}
+		if coverage.LatestReceivedAt.IsZero() || incident.ReceivedAt.After(coverage.LatestReceivedAt) {
+			coverage.LatestReceivedAt = incident.ReceivedAt
+		}
+	}
+	coverage.Services = len(services)
+	coverage.Environments = len(environments)
+	coverage.Deployments = len(deployments)
+	return coverage
+}
+
 func clonePicture(c PictureConfig) PictureConfig {
 	c.Sources = append([]Source(nil), c.Sources...)
 	c.Incidents = append([]IncidentReference(nil), c.Incidents...)
