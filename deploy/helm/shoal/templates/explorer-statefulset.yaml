@@ -111,6 +111,10 @@ spec:
             {{- if $explorer.declassification.requireReason }}
             - -require-declassification-reason
             {{- end }}
+            {{- $maxNodeAdjacency := int64 ((($explorer.graph | default dict).maxNodeAdjacency) | default 0) }}
+            {{- if gt $maxNodeAdjacency 0 }}
+            - {{ printf "-max-bounded-node-adjacency=%d" $maxNodeAdjacency | quote }}
+            {{- end }}
             - {{ printf "-oidc-issuer=%v" ($oidc.issuer) | quote }}
             - {{ printf "-oidc-audience=%v" (join "," $oidc.audiences) | quote }}
             - {{ printf "-oidc-authorization-claim=%v" ($oidc.authorizationClaim) | quote }}

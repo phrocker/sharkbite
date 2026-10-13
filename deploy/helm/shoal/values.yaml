@@ -287,6 +287,14 @@ explorer:
     # upload carries a declassification_reason (the upload form field, or the
     # MCP ingest argument). Off by default.
     requireReason: false
+  # Bounded graph reads (#698). -max-bounded-node-adjacency: a node whose
+  # total adjacency in the requested direction exceeds this fails every
+  # bounded read that expands it, uniformly for every reader whatever their
+  # fanout or cursor. Whether a node exceeds it is the one bit edges a reader
+  # cannot see can show, so keep it high. 0 keeps the binary default
+  # (1048576); at most 4294967295.
+  graph:
+    maxNodeAdjacency: 0
   # Grounded chat provider. Required for the built-in reasoning executor.
   chat:
     provider: ""   # ollama or openai-compatible

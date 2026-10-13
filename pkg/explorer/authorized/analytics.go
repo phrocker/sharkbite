@@ -35,6 +35,9 @@ import (
 // OperationAnalyticsRead. It pages each expanded node independently through
 // the production authorization filter so hidden edges never consume the
 // caller-visible fanout. Any incomplete page or exhausted bound fails closed.
+// Every bound that can fail is one on the visible subgraph, except the
+// uniform per-node MaxBoundedNodeAdjacency (#698); request.MaxScannedEdges
+// must be nonzero but, being caller-chosen, does not decide the outcome.
 func (c *Client) MaterializeAnalytics(
 	ctx context.Context,
 	request explorer.BoundedNeighborhoodRequest,

@@ -769,6 +769,12 @@ func (e *Explorer) BoundedNeighborhood(
 	}
 	edges := make(map[shoal.ID]graph.Edge)
 	explicit := idSet(normalized.NodeIDs)
+	interactionSeeds := make([]shoal.ID, 0)
+	for _, id := range frontier {
+		if interaction.IsInteractionKind(e.graphNodes[id].Kind) {
+			interactionSeeds = append(interactionSeeds, id)
+		}
+	}
 	truncated := false
 	cursorEligible := len(normalized.NodeIDs) == 1 && normalized.Depth == 1
 	nextAfter := request.AfterEdgeID
@@ -783,7 +789,7 @@ func (e *Explorer) BoundedNeighborhood(
 				after = request.AfterEdgeID
 			}
 			edgeIDs, limited := e.boundedEdgeIDs(
-				seed, request.Direction, request.Fanout, after)
+				seed, request.Direction, request.Fanout, after, interactionSeeds)
 			if limited {
 				truncated = true
 				if cursorEligible {
@@ -864,54 +870,138 @@ func (e *Explorer) BoundedNeighborhood(
 	if !continuation {
 		nextAfter = ""
 	}
-	return BoundedNeighborhood{
+	bounded := BoundedNeighborhood{
 		Neighborhood: result, Truncated: truncated,
 		NextAfterEdgeID: nextAfter, Continuation: continuation,
 		ScannedEdges: scannedEdges, ScannedEdgesKnown: true,
-	}, nil
+	}
+	if cursorEligible {
+		bounded.NodeAdjacency = e.nodeAdjacencySize(
+			normalized.NodeIDs[0], request.Direction)
+		bounded.NodeAdjacencyKnown = true
+	}
+	return bounded, nil
 }
 
-func (e *Explorer) boundedEdgeIDs(
-	nodeID shoal.ID, direction GraphDirection, fanout uint32, after shoal.ID,
-) ([]shoal.ID, bool) {
-	switch direction {
-	case GraphDirectionOutgoing:
-		return limitEdgeIDsAfter(e.outgoing[nodeID], fanout, after)
-	case GraphDirectionIncoming:
-		return limitEdgeIDsAfter(e.incoming[nodeID], fanout, after)
+// nodeAdjacencySize is the number of adjacency entries a bounded scan of
+// nodeID in this direction would examine from the start, in O(1): the
+// lengths of the same indexes boundedEdgeIDs merges for a lone seed. A self
+// edge counts once per direction it is indexed under.
+func (e *Explorer) nodeAdjacencySize(nodeID shoal.ID, direction GraphDirection) uint64 {
+	seedIsInteraction := interaction.IsInteractionKind(e.graphNodes[nodeID].Kind)
+	size := uint64(0)
+	if direction != GraphDirectionIncoming {
+		size += uint64(len(e.outgoing[nodeID]))
+		if seedIsInteraction {
+			size += uint64(len(e.interactionOutgoing[nodeID]))
+		}
 	}
-	outgoing := afterEdge(e.outgoing[nodeID], after)
-	incoming := afterEdge(e.incoming[nodeID], after)
+	if direction != GraphDirectionOutgoing {
+		size += uint64(len(e.incoming[nodeID]))
+		if seedIsInteraction {
+			size += uint64(len(e.interactionIncoming[nodeID]))
+		}
+	}
+	return size
+}
+
+// boundedEdgeIDs returns at most fanout adjacency entries of nodeID after the
+// cursor, in edge ID order, and whether more remain. Interaction adjacency is
+// excluded before fanout is charged (#698): a source node's scan examines
+// only source edges, plus the edges joining it to an explicit interaction
+// seed (the only interaction edges the bounded API serves from it). An
+// interaction node examines its own adjacency. So neither the fanout a
+// reader asks for nor the scan count can be consumed by interactions a
+// caller did not seed.
+func (e *Explorer) boundedEdgeIDs(
+	nodeID shoal.ID,
+	direction GraphDirection,
+	fanout uint32,
+	after shoal.ID,
+	interactionSeeds []shoal.ID,
+) ([]shoal.ID, bool) {
+	lists := make([][]shoal.ID, 0, 4)
+	seedIsInteraction := interaction.IsInteractionKind(e.graphNodes[nodeID].Kind)
+	if direction != GraphDirectionIncoming {
+		lists = append(lists, afterEdge(e.outgoing[nodeID], after))
+		if seedIsInteraction {
+			lists = append(lists, afterEdge(e.interactionOutgoing[nodeID], after))
+		} else if extra := e.seededInteractionEdgeIDs(
+			nodeID, interactionSeeds, true); len(extra) > 0 {
+			lists = append(lists, afterEdge(extra, after))
+		}
+	}
+	if direction != GraphDirectionOutgoing {
+		lists = append(lists, afterEdge(e.incoming[nodeID], after))
+		if seedIsInteraction {
+			lists = append(lists, afterEdge(e.interactionIncoming[nodeID], after))
+		} else if extra := e.seededInteractionEdgeIDs(
+			nodeID, interactionSeeds, false); len(extra) > 0 {
+			lists = append(lists, afterEdge(extra, after))
+		}
+	}
+	return mergeEdgeIDLists(lists, fanout)
+}
+
+// seededInteractionEdgeIDs returns, sorted, the edges joining a source node
+// to an explicit interaction seed: outgoing from nodeID when outgoing is
+// true, incoming otherwise. Only the seeds' own (bounded) adjacency is read.
+func (e *Explorer) seededInteractionEdgeIDs(
+	nodeID shoal.ID, interactionSeeds []shoal.ID, outgoing bool,
+) []shoal.ID {
+	var result []shoal.ID
+	for _, seed := range interactionSeeds {
+		if seed == nodeID {
+			continue
+		}
+		candidates := e.interactionOutgoing[seed]
+		if outgoing {
+			candidates = e.interactionIncoming[seed]
+		}
+		for _, edgeID := range candidates {
+			edge := e.graphEdges[edgeID]
+			if (outgoing && edge.From == nodeID) || (!outgoing && edge.To == nodeID) {
+				result = append(result, edgeID)
+			}
+		}
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return shoal.CompareID(result[i], result[j]) < 0
+	})
+	return result
+}
+
+// mergeEdgeIDLists merges sorted edge ID lists without duplicates, stopping
+// once it has fanout entries and knows whether another one remains.
+func mergeEdgeIDLists(lists [][]shoal.ID, fanout uint32) ([]shoal.ID, bool) {
+	positions := make([]int, len(lists))
 	result := make([]shoal.ID, 0)
-	left, right := 0, 0
-	for uint32(len(result)) <= fanout && (left < len(outgoing) || right < len(incoming)) {
-		var next shoal.ID
-		switch {
-		case right >= len(incoming):
-			next, left = outgoing[left], left+1
-		case left >= len(outgoing):
-			next, right = incoming[right], right+1
-		case shoal.CompareID(outgoing[left], incoming[right]) <= 0:
-			next, left = outgoing[left], left+1
-		default:
-			next, right = incoming[right], right+1
+	for uint32(len(result)) <= fanout {
+		best := -1
+		for index, list := range lists {
+			if positions[index] >= len(list) {
+				continue
+			}
+			if best < 0 || shoal.CompareID(
+				list[positions[index]], lists[best][positions[best]]) < 0 {
+				best = index
+			}
 		}
-		if len(result) == 0 || result[len(result)-1] != next {
-			result = append(result, next)
+		if best < 0 {
+			break
 		}
+		next := lists[best][positions[best]]
+		for index, list := range lists {
+			if positions[index] < len(list) && list[positions[index]] == next {
+				positions[index]++
+			}
+		}
+		result = append(result, next)
 	}
 	if uint32(len(result)) > fanout {
 		return result[:fanout], true
 	}
 	return result, false
-}
-
-func limitEdgeIDsAfter(values []shoal.ID, fanout uint32, after shoal.ID) ([]shoal.ID, bool) {
-	values = afterEdge(values, after)
-	if uint32(len(values)) <= fanout {
-		return values, false
-	}
-	return values[:fanout], true
 }
 
 func afterEdge(values []shoal.ID, after shoal.ID) []shoal.ID {

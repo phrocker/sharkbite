@@ -24,6 +24,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -492,6 +493,14 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			"Every such ingest is audited either way; this only makes the "+
 			"reason mandatory. Off by default",
 	)
+	maxNodeAdjacency := flags.Uint(
+		"max-bounded-node-adjacency", uint(authorized.DefaultMaxBoundedNodeAdjacency),
+		"Cap on the total adjacency (in the requested direction) of any node "+
+			"a bounded graph read expands. A node above it fails uniformly for "+
+			"every reader whatever their fanout or cursor (#698); whether a "+
+			"node exceeds it is the one bit hidden edges can show. Positive, "+
+			"at most 4294967295",
+	)
 	listDeclassificationRecords := flags.Bool(
 		"list-declassifications", false,
 		"Print the declassification audit records (relabels that removed "+
@@ -511,6 +520,10 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	)
 	if err := flags.Parse(args); err != nil {
 		return err
+	}
+	if *maxNodeAdjacency == 0 || uint64(*maxNodeAdjacency) > math.MaxUint32 {
+		return fmt.Errorf("-max-bounded-node-adjacency must be between 1 and %d",
+			uint32(math.MaxUint32))
 	}
 	if *listUntranslatable && *listDeclassificationRecords {
 		return errors.New("-list-untranslatable-labels and " +
@@ -758,6 +771,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		terminalStates: *approvalTerminalStates,
 		// #664: off unless the operator requires a reason code.
 		requireDeclassificationReason: *requireDeclassificationReason,
+		maxNodeAdjacency:              uint32(*maxNodeAdjacency),
 		backfill:                      backfill,
 		ontology:                      activeOntology,
 		executors:                     executors,
@@ -1284,6 +1298,9 @@ type serviceConfig struct {
 	// requireDeclassificationReason is -require-declassification-reason
 	// (#664): authorized.Config.RequireDeclassificationReason.
 	requireDeclassificationReason bool
+	// maxNodeAdjacency is -max-bounded-node-adjacency (#698):
+	// authorized.Config.MaxBoundedNodeAdjacency; zero means the default.
+	maxNodeAdjacency uint32
 }
 
 // openedService is the constructed workspace service together with what the
@@ -1409,7 +1426,8 @@ func openService(
 		}
 		client, err := authorizedClient(
 			corpus, store, config.resolver, generationReader,
-			config.clock, config.mosaic, config.requireDeclassificationReason)
+			config.clock, config.mosaic, config.requireDeclassificationReason,
+			config.maxNodeAdjacency)
 		if err != nil {
 			store.Close()
 			embedded.Close()
@@ -1917,6 +1935,7 @@ func authorizedClient(
 	clock func() time.Time,
 	mosaic authorized.MosaicBudget,
 	requireDeclassificationReason bool,
+	maxNodeAdjacency uint32,
 ) (*authorized.Client, error) {
 	selector, err := authorized.NewStaticPolicySelector(
 		workspaceSourceID, workspaceGrantPolicyID)
@@ -1949,6 +1968,8 @@ func authorizedClient(
 		CeilingResolver:        ceilings,
 		// #664: a narrowing without a reason code is refused.
 		RequireDeclassificationReason: requireDeclassificationReason,
+		// #698: zero means authorized.DefaultMaxBoundedNodeAdjacency.
+		MaxBoundedNodeAdjacency: maxNodeAdjacency,
 	})
 }
 

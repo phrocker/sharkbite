@@ -148,17 +148,17 @@ func TestAuthorizedDerivedAssertionsShareCanonicalNodeHydration(t *testing.T) {
 	counted := &countingCanonicalBase{Explorer: f.base}
 	base := &pagedCountingCanonicalBase{
 		countingCanonicalBase: counted,
-		pages:                 3,
+		pages:                 1,
 	}
 	client := f.newClient(t, base, f.store, f.sourceA, f.policyA, nil)
 	result, err := client.BoundedNeighborhood(
 		f.alice(t),
 		explorer.BoundedNeighborhoodRequest{
 			NodeIDs: []shoal.ID{source.Document.ID},
-			Depth:   1, Fanout: 64, MaxNodes: 64,
+			Depth:   2, Fanout: 64, MaxNodes: 64,
 			MaxScannedEdges: 256,
 			EdgeTypes:       []string{authorizedLatentEdgeType(t)},
-			Direction:       explorer.GraphDirectionOutgoing,
+			Direction:       explorer.GraphDirectionBoth,
 		},
 	)
 	if err != nil {
@@ -170,8 +170,10 @@ func TestAuthorizedDerivedAssertionsShareCanonicalNodeHydration(t *testing.T) {
 			len(result.Neighborhood.Assertions), len(cells),
 		)
 	}
-	if base.pageCalls != base.pages {
-		t.Fatalf("bounded page calls = %d, want %d", base.pageCalls, base.pages)
+	// Depth two expands every target with its own bounded scan (#698); the
+	// canonical hydration below must still be shared across those scans.
+	if base.pageCalls != len(cells)+1 {
+		t.Fatalf("bounded scan calls = %d, want %d", base.pageCalls, len(cells)+1)
 	}
 	if counted.documentsCalls != 2 || counted.documentCalls != 3 {
 		t.Fatalf(

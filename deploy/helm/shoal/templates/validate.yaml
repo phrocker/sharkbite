@@ -88,6 +88,13 @@
 {{- fail "explorer.allowedHosts needs at least one non-blank value: the workspace binds a non-loopback address in a pod, and with no allow-list every request is refused with 421 Misdirected Request. List the external authority clients actually send (usually the port-less ingress name)" -}}
 {{- end -}}
 
+{{- /* The bounded graph node adjacency cap (#698): 0 keeps the binary
+       default; anything else must be a whole number the flag accepts. */ -}}
+{{- $maxNodeAdjacency := (($explorer.graph | default dict).maxNodeAdjacency) | default 0 -}}
+{{- if or (not (or (kindIs "int" $maxNodeAdjacency) (kindIs "int64" $maxNodeAdjacency) (kindIs "float64" $maxNodeAdjacency))) (lt (float64 $maxNodeAdjacency) 0.0) (gt (float64 $maxNodeAdjacency) 4294967295.0) (ne (float64 (int64 $maxNodeAdjacency)) (float64 $maxNodeAdjacency)) -}}
+{{- fail (printf "explorer.graph.maxNodeAdjacency must be a whole number from 0 (the binary default) to 4294967295 (got %v): the workspace refuses any other -max-bounded-node-adjacency at startup" $maxNodeAdjacency) -}}
+{{- end -}}
+
 {{- /* The approver mapping and the stable identity claim (#451, #526). The
        claim is a list of path segments, never a dotted string, and the
        mapping must restate it as identity_claim exactly when it is set: the

@@ -25,6 +25,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -35,6 +36,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/phrocker/shoal-oss/pkg/explorer/authorized"
 	"github.com/phrocker/shoal-oss/pkg/explorer/mcp"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 )
@@ -49,7 +51,10 @@ type commandConfig struct {
 	policyDir          string
 	contextBudgetBytes int
 	toolCallsPerMinute int
-	identity           identityConfig
+	// maxNodeAdjacency is -max-bounded-node-adjacency (#698):
+	// authorized.Config.MaxBoundedNodeAdjacency.
+	maxNodeAdjacency uint32
+	identity         identityConfig
 	// diagnostics receives startup reports such as the label migration's
 	// (#570). Nil discards them.
 	diagnostics io.Writer
@@ -309,6 +314,16 @@ func parseCommandConfig(
 		),
 		"Positive per-process MCP tool-call limit (environment: SHOAL_MCP_TOOL_CALLS_PER_MINUTE)",
 	)
+	maxNodeAdjacencyValue := flags.String(
+		"max-bounded-node-adjacency",
+		firstNonEmpty(
+			getenv("SHOAL_MCP_MAX_BOUNDED_NODE_ADJACENCY"),
+			strconv.FormatUint(uint64(authorized.DefaultMaxBoundedNodeAdjacency), 10),
+		),
+		"Positive cap on the total adjacency of any node a bounded graph read "+
+			"expands; a node above it fails uniformly for every reader (#698) "+
+			"(environment: SHOAL_MCP_MAX_BOUNDED_NODE_ADJACENCY)",
+	)
 	if err := flags.Parse(args); err != nil {
 		return zero, err
 	}
@@ -344,6 +359,12 @@ func parseCommandConfig(
 			mcp.MaxToolCallsPerMinute,
 		)
 	}
+	maxNodeAdjacency, err := strconv.ParseUint(
+		strings.TrimSpace(*maxNodeAdjacencyValue), 10, 32)
+	if err != nil || maxNodeAdjacency == 0 {
+		return zero, fmt.Errorf(
+			"max bounded node adjacency must be between 1 and %d", uint32(math.MaxUint32))
+	}
 	identity, err := configureIdentity(identityOptions{
 		development:      *development,
 		subject:          *subject,
@@ -370,6 +391,7 @@ func parseCommandConfig(
 		policyDir:          policy,
 		contextBudgetBytes: int(contextBudgetBytes),
 		toolCallsPerMinute: int(toolCallsPerMinute),
+		maxNodeAdjacency:   uint32(maxNodeAdjacency),
 		identity:           identity,
 		diagnostics:        diagnostics,
 	}, nil

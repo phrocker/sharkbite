@@ -149,6 +149,19 @@ type Config struct {
 	// It is enforced by the Client making the narrowing, so every Client
 	// sharing one PolicyStore should be configured alike.
 	RequireDeclassificationReason bool
+	// MaxBoundedNodeAdjacency caps the total adjacency entries (in the
+	// requested direction, interaction adjacency of a source node excluded)
+	// of any node an authorized bounded graph read expands (#698). Below it,
+	// a bounded read's outcome depends only on the graph the reader can see.
+	// A node above it fails uniformly with ErrorUnavailable for every reader,
+	// whatever their fanout, cursor or MaxScannedEdges; so whether a node's
+	// total adjacency exceeds it is the one bit hidden adjacency can show.
+	// Hidden adjacency also costs scan time, so latency can grow with hidden
+	// density: an expansion streams up to the node's whole adjacency, so a
+	// node near the default cap of about a million entries can take seconds
+	// per expansion, and a request up to MaxNodes expansions. Lower the cap
+	// to bound that. Zero means DefaultMaxBoundedNodeAdjacency.
+	MaxBoundedNodeAdjacency uint32
 }
 
 // Client enforces trusted-context authorization around an Explorer client.
@@ -177,6 +190,9 @@ type Client struct {
 	mutationMu                    sync.Mutex
 	vectorMu                      sync.Mutex
 	vectorAvailability            authorizedVectorAvailabilityCache
+	// maxNodeAdjacency is Config.MaxBoundedNodeAdjacency; zero means the
+	// default.
+	maxNodeAdjacency uint32
 }
 
 type authorizedVectorAvailabilityCache struct {
@@ -270,6 +286,7 @@ func NewClient(config Config) (*Client, error) {
 		labelVisibility:     labelVisibility,
 
 		requireDeclassificationReason: config.RequireDeclassificationReason,
+		maxNodeAdjacency:              config.MaxBoundedNodeAdjacency,
 	}, nil
 }
 

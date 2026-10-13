@@ -63,6 +63,8 @@ type Explorer struct {
 	graphAssertions                map[shoal.ID]ontology.Assertion
 	outgoing                       map[shoal.ID][]shoal.ID
 	incoming                       map[shoal.ID][]shoal.ID
+	interactionOutgoing            map[shoal.ID][]shoal.ID
+	interactionIncoming            map[shoal.ID][]shoal.ID
 	graphErr                       error
 	graphInitialized               bool
 	embedder                       model.Embedder
@@ -874,6 +876,18 @@ func (e *Explorer) requireOpen() error {
 	return nil
 }
 
+// interactionAdjacencyEdge reports whether an edge touches an interaction
+// node and so belongs in the interaction adjacency index rather than the
+// source adjacency index.
+func interactionAdjacencyEdge(nodes map[shoal.ID]graph.Node, edge graph.Edge) bool {
+	for _, id := range []shoal.ID{edge.From, edge.To} {
+		if node, ok := nodes[id]; ok && interaction.IsInteractionKind(node.Kind) {
+			return true
+		}
+	}
+	return false
+}
+
 // excludedInteractionEdge reports whether graph expansion must not cross an
 // edge because doing so would surface an interaction node that the caller did
 // not explicitly seed. This is the default-exclusion property: a model that
@@ -1134,29 +1148,44 @@ func (e *Explorer) rebuildCurrentGraphLocked() error {
 		e.graphAssertions = make(map[shoal.ID]ontology.Assertion)
 		e.outgoing = make(map[shoal.ID][]shoal.ID)
 		e.incoming = make(map[shoal.ID][]shoal.ID)
+		e.interactionOutgoing = make(map[shoal.ID][]shoal.ID)
+		e.interactionIncoming = make(map[shoal.ID][]shoal.ID)
 		e.graphErr = err
 		e.graphInitialized = true
 		e.refreshSnapshotLocked()
 		return err
 	}
+	// outgoing and incoming index source adjacency only: edges with no
+	// interaction-kind endpoint. Edges touching an interaction node go to
+	// the interaction indexes, so a bounded scan of a source node never
+	// examines, or charges fanout for, interaction adjacency, which the
+	// bounded API serves only from an explicit interaction seed (#698).
 	outgoing := make(map[shoal.ID][]shoal.ID, len(nodes))
 	incoming := make(map[shoal.ID][]shoal.ID, len(nodes))
+	interactionOutgoing := make(map[shoal.ID][]shoal.ID)
+	interactionIncoming := make(map[shoal.ID][]shoal.ID)
 	for id, edge := range edges {
+		if interactionAdjacencyEdge(nodes, edge) {
+			interactionOutgoing[edge.From] = append(interactionOutgoing[edge.From], id)
+			interactionIncoming[edge.To] = append(interactionIncoming[edge.To], id)
+			continue
+		}
 		outgoing[edge.From] = append(outgoing[edge.From], id)
 		incoming[edge.To] = append(incoming[edge.To], id)
 	}
-	for id := range outgoing {
-		sort.Slice(outgoing[id], func(i, j int) bool {
-			return shoal.CompareID(outgoing[id][i], outgoing[id][j]) < 0
-		})
-	}
-	for id := range incoming {
-		sort.Slice(incoming[id], func(i, j int) bool {
-			return shoal.CompareID(incoming[id][i], incoming[id][j]) < 0
-		})
+	for _, index := range []map[shoal.ID][]shoal.ID{
+		outgoing, incoming, interactionOutgoing, interactionIncoming,
+	} {
+		for id := range index {
+			values := index[id]
+			sort.Slice(values, func(i, j int) bool {
+				return shoal.CompareID(values[i], values[j]) < 0
+			})
+		}
 	}
 	e.graphNodes, e.graphEdges, e.graphAssertions = nodes, edges, assertions
 	e.outgoing, e.incoming = outgoing, incoming
+	e.interactionOutgoing, e.interactionIncoming = interactionOutgoing, interactionIncoming
 	e.graphErr = nil
 	e.graphInitialized = true
 	e.refreshSnapshotLocked()

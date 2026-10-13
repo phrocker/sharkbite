@@ -176,7 +176,8 @@ func openWorkspace(
 			domain:     append([]byte(nil), config.identity.domain...),
 			generation: config.identity.policyGeneration,
 		},
-		Clock: clock,
+		Clock:                   clock,
+		MaxBoundedNodeAdjacency: config.maxNodeAdjacency,
 	})
 	if err != nil {
 		return nil, nil, noClose, errors.Join(err, closeWorkspace())

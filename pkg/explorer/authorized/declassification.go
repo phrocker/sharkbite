@@ -157,12 +157,13 @@ package authorized
 //   - A fleet action's Output names its evidence but is served to readers
 //     whose evidence refs are withheld (#696). That is a precise copy-down
 //     that is not bound to its inputs.
-//   - Existence and count oracles: a bounded neighborhood's scan limit
-//     reveals the exact number of hidden edges and interactions on a
-//     visible node (#698); a Connect ID colliding with a hidden edge reveals
-//     it, and through intrinsic edge IDs a hidden document by URI (#699); a
-//     shared extracted entity first owned by a later-labelled document
-//     reveals its entity key (#700).
+//   - Existence and count oracles: a bounded neighborhood shows hidden
+//     adjacency on a visible node only as one uniform bit, whether its
+//     total adjacency exceeds MaxBoundedNodeAdjacency, and as scan time
+//     that grows with hidden density (#698); a Connect ID colliding with a
+//     hidden edge reveals it, and through intrinsic edge IDs a hidden
+//     document by URI (#699); a shared extracted entity first owned by a
+//     later-labelled document reveals its entity key (#700).
 //
 // Copy-down that names no input stays undetected: labelled text ingested
 // under a new source URI, or placed in a MaterializeGraph node. Only session

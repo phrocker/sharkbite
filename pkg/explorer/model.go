@@ -191,9 +191,11 @@ type BoundedNeighborhoodRequest struct {
 	Depth    uint32
 	Fanout   uint32
 	MaxNodes uint32
-	// MaxScannedEdges optionally caps total adjacency entries an
-	// authorization-filtering wrapper may scan to fill one authorized page.
-	// A zero value defaults to Fanout.
+	// MaxScannedEdges is advisory. The authorized wrapper does not let it
+	// decide an outcome: a caller-chosen scan cutoff could be swept to count
+	// adjacency the reader cannot see (#698). It streams each node's adjacency
+	// instead and fails only on a uniform cap on a node's total adjacency
+	// (authorized.Config.MaxBoundedNodeAdjacency).
 	MaxScannedEdges uint32
 	EdgeTypes       []string
 	Direction       GraphDirection
@@ -216,9 +218,19 @@ type BoundedNeighborhood struct {
 	NextAfterEdgeID shoal.ID
 	Continuation    bool
 	// ScannedEdges is the number of adjacency entries consumed to produce
-	// this page, including entries suppressed before materialization.
+	// this page, including entries suppressed before materialization. The
+	// authorized wrapper never reports one (zero, not known), since it would
+	// count adjacency the reader cannot see.
 	ScannedEdges      uint32
 	ScannedEdgesKnown bool
+	// NodeAdjacency is, for a single-seed depth-one request, the seed's total
+	// adjacency entries in the requested direction, independent of the
+	// cursor, fanout and edge types (interaction adjacency of a source node
+	// excluded). NodeAdjacencyKnown reports whether it was set. The
+	// authorized wrapper uses it for its uniform per-node cap and never
+	// reports one, since it counts adjacency the reader cannot see.
+	NodeAdjacency      uint64
+	NodeAdjacencyKnown bool
 }
 
 // BoundedClient is the backend boundary required by scalable Explorer

@@ -331,7 +331,14 @@ func TestSelfEdgeDoesNotCreateFalseContinuation(t *testing.T) {
 	}
 }
 
-func TestBoundedNeighborhoodReportsSuppressedAdjacencyScans(t *testing.T) {
+// TestBoundedNeighborhoodExcludesInteractionAdjacencyBeforeFanout pins that
+// a source node's bounded scan never examines its interaction adjacency
+// (#698): the interaction edge neither takes the fanout slot nor counts as
+// scanned, so the visible edge comes back on the first page with an exact
+// count, as it would if the interaction did not exist. An explicit
+// interaction seed still serves its own edges, and a source node expanded
+// from it still reaches back to it.
+func TestBoundedNeighborhoodExcludesInteractionAdjacencyBeforeFanout(t *testing.T) {
 	corpus := &Explorer{
 		graphInitialized: true,
 		graphNodes: map[shoal.ID]graph.Node{
@@ -341,7 +348,7 @@ func TestBoundedNeighborhoodReportsSuppressedAdjacencyScans(t *testing.T) {
 		},
 		graphEdges: map[shoal.ID]graph.Edge{
 			"a-hidden": {
-				ID: "a-hidden", From: "source", To: "hidden",
+				ID: "a-hidden", From: "hidden", To: "source",
 				Type: "interaction.retrieved", Weight: 1,
 			},
 			"b-visible": {
@@ -350,40 +357,92 @@ func TestBoundedNeighborhoodReportsSuppressedAdjacencyScans(t *testing.T) {
 			},
 		},
 		outgoing: map[shoal.ID][]shoal.ID{
-			"source": {"a-hidden", "b-visible"},
+			"source": {"b-visible"},
 		},
-		incoming: map[shoal.ID][]shoal.ID{},
+		incoming: map[shoal.ID][]shoal.ID{
+			"visible": {"b-visible"},
+		},
+		interactionOutgoing: map[shoal.ID][]shoal.ID{
+			"hidden": {"a-hidden"},
+		},
+		interactionIncoming: map[shoal.ID][]shoal.ID{
+			"source": {"a-hidden"},
+		},
 	}
 	first, err := corpus.BoundedNeighborhood(
 		context.Background(),
 		BoundedNeighborhoodRequest{
 			NodeIDs: []shoal.ID{"source"}, Depth: 1,
-			Fanout: 1, MaxNodes: 2, Direction: GraphDirectionOutgoing,
+			Fanout: 1, MaxNodes: 2, Direction: GraphDirectionBoth,
 		},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.ScannedEdges != 1 || len(first.Neighborhood.Edges) != 0 ||
-		!first.Truncated || !first.Continuation ||
-		first.NextAfterEdgeID != "a-hidden" {
-		t.Fatalf("suppressed first page = %#v", first)
+	if first.ScannedEdges != 1 || !first.ScannedEdgesKnown ||
+		len(first.Neighborhood.Edges) != 1 ||
+		first.Neighborhood.Edges[0].ID != "b-visible" ||
+		first.Truncated || first.Continuation || first.NextAfterEdgeID != "" {
+		t.Fatalf("interaction adjacency was scanned = %#v", first)
 	}
-	second, err := corpus.BoundedNeighborhood(
+	// The reported node adjacency counts what such a scan examines: source
+	// adjacency in each requested direction, and an interaction seed's own.
+	for _, probe := range []struct {
+		node      shoal.ID
+		direction GraphDirection
+		want      uint64
+	}{
+		{"source", GraphDirectionBoth, 1},
+		{"source", GraphDirectionIncoming, 0},
+		{"visible", GraphDirectionBoth, 1},
+		{"visible", GraphDirectionOutgoing, 0},
+		{"hidden", GraphDirectionBoth, 1},
+		{"hidden", GraphDirectionOutgoing, 1},
+		{"hidden", GraphDirectionIncoming, 0},
+	} {
+		result, err := corpus.BoundedNeighborhood(context.Background(),
+			BoundedNeighborhoodRequest{
+				NodeIDs: []shoal.ID{probe.node}, Depth: 1, Fanout: 1,
+				MaxNodes: 2, Direction: probe.direction, AfterEdgeID: "z",
+			})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !result.NodeAdjacencyKnown || result.NodeAdjacency != probe.want {
+			t.Fatalf("%s %s node adjacency = %d (known %t), want %d",
+				probe.node, probe.direction, result.NodeAdjacency,
+				result.NodeAdjacencyKnown, probe.want)
+		}
+	}
+	seeded, err := corpus.BoundedNeighborhood(
 		context.Background(),
 		BoundedNeighborhoodRequest{
-			NodeIDs: []shoal.ID{"source"}, Depth: 1,
-			Fanout: 1, MaxNodes: 2, Direction: GraphDirectionOutgoing,
-			AfterEdgeID: first.NextAfterEdgeID,
+			NodeIDs: []shoal.ID{"hidden"}, Depth: 2,
+			Fanout: 4, MaxNodes: 4, Direction: GraphDirectionBoth,
 		},
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if second.ScannedEdges != 1 ||
-		len(second.Neighborhood.Edges) != 1 ||
-		second.Neighborhood.Edges[0].ID != "b-visible" {
-		t.Fatalf("visible second page = %#v", second)
+	if len(seeded.Neighborhood.Edges) != 2 || seeded.ScannedEdges != 3 ||
+		seeded.Truncated {
+		t.Fatalf("explicit interaction seed = %#v", seeded)
+	}
+	both, err := corpus.BoundedNeighborhood(
+		context.Background(),
+		BoundedNeighborhoodRequest{
+			NodeIDs: []shoal.ID{"source", "hidden"}, Depth: 1,
+			Fanout: 4, MaxNodes: 4, Direction: GraphDirectionIncoming,
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// source's incoming scan reaches the explicit interaction seed's edge;
+	// hidden has no incoming edges.
+	if len(both.Neighborhood.Edges) != 1 ||
+		both.Neighborhood.Edges[0].ID != "a-hidden" || both.ScannedEdges != 1 {
+		t.Fatalf("source expanded beside an interaction seed = %#v", both)
 	}
 }
 

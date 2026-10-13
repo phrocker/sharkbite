@@ -152,17 +152,17 @@ func TestBoundedNeighborhoodPagesPastHiddenEdges(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if base.calls != 2 {
-		t.Fatalf("base page calls = %d, want 2", base.calls)
+	if base.calls != 1 {
+		t.Fatalf("base scan calls = %d, want 1", base.calls)
 	}
 	if len(got.Neighborhood.Edges) != 1 || got.Neighborhood.Edges[0].ID != visibleEdge.ID {
-		t.Fatalf("visible edge after hidden page was not returned: %#v", got)
+		t.Fatalf("visible edge after hidden edge was not returned: %#v", got)
 	}
 	if got.Continuation || got.Truncated || got.NextAfterEdgeID != "" {
-		t.Fatalf("hidden base pagination leaked through result flags: %#v", got)
+		t.Fatalf("hidden adjacency leaked through result flags: %#v", got)
 	}
-	if got.ScannedEdgesKnown || got.ScannedEdges != 2 {
-		t.Fatalf("legacy scan accounting = %#v", got)
+	if got.ScannedEdgesKnown || got.ScannedEdges != 0 {
+		t.Fatalf("scan accounting leaked hidden adjacency: %#v", got)
 	}
 }
 
@@ -265,41 +265,89 @@ func TestVerifyDocumentViewRegistrationAcceptsLegacyDigest(t *testing.T) {
 	}
 }
 
-func TestBoundedNeighborhoodFailsClosedWhenAuthorizedScanLimitExhausts(t *testing.T) {
-	ctx := context.Background()
+// TestBoundedNeighborhoodStreamsSuppressedAdjacencyInGrowingChunks pins how
+// suppressed adjacency is scanned (#698): from the cursor, in chunks that
+// start at the visible edges a page needs plus a fixed slack and double up
+// to the chunk cap,
+// never stopping on a work budget, whatever MaxScannedEdges says. A base that
+// keeps paging past the node adjacency it reported is refused.
+func TestBoundedNeighborhoodStreamsSuppressedAdjacencyInGrowingChunks(t *testing.T) {
 	client, base := authorizedPaginationClient(t, true)
-	_, err := client.BoundedNeighborhood(ctx, explorer.BoundedNeighborhoodRequest{
-		NodeIDs: []shoal.ID{"node-seed"}, Depth: 1, Fanout: 1, MaxNodes: 2,
-		MaxScannedEdges: 2, Direction: explorer.GraphDirectionOutgoing,
-	})
-	if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
-		t.Fatalf("error = %v", err)
-	}
-	if base.calls != 2 {
-		t.Fatalf("scan calls = %d", base.calls)
-	}
-}
-
-func TestBoundedNeighborhoodChargesSuppressedEdgesAgainstScanLimit(t *testing.T) {
-	client, base := authorizedPaginationClient(t, false)
-	base.omittedOnly = true
-	_, err := client.BoundedNeighborhood(
-		context.Background(),
+	base.adjacency = 12
+	_, err := client.BoundedNeighborhood(context.Background(),
 		explorer.BoundedNeighborhoodRequest{
-			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1,
-			Fanout: 1, MaxNodes: 2, MaxScannedEdges: 2,
-			Direction: explorer.GraphDirectionOutgoing,
-		},
-	)
-	if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
-		t.Fatalf("suppressed-edge scan error = %v", err)
+			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1, Fanout: 1, MaxNodes: 2,
+			MaxScannedEdges: 1, Direction: explorer.GraphDirectionOutgoing,
+			AfterEdgeID: "edge-a",
+		})
+	if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("paging past reported adjacency error = %v", err)
 	}
-	if base.calls != 2 {
-		t.Fatalf("suppressed-edge page calls = %d, want 2", base.calls)
+	if base.calls != 14 {
+		t.Fatalf("scan calls = %d, want reported adjacency + 2", base.calls)
+	}
+	want := []uint32{66, 132, 264, 528, 1024, 1024}
+	for index, chunk := range want {
+		if base.requests[index].Fanout != chunk ||
+			base.requests[index].MaxNodes != chunk+1 {
+			t.Fatalf("chunk %d = %#v, want fanout %d", index, base.requests[index], chunk)
+		}
+	}
+	if base.requests[0].AfterEdgeID != "edge-a" {
+		t.Fatalf("stream did not start at the cursor: %#v", base.requests[0])
 	}
 }
 
-func TestBoundedNeighborhoodDoesNotTrustUnderreportedScanCount(t *testing.T) {
+// TestBoundedNeighborhoodChargesSuppressedEdgesAgainstScanLimit pins that
+// suppressed adjacency still bounds the scan (#698), now through the one
+// uniform cap: a node whose reported total adjacency exceeds
+// MaxBoundedNodeAdjacency fails after a single chunk, with one error,
+// whatever fanout, cursor or MaxScannedEdges the caller passes, so neither
+// can be swept to count the suppressed edges. At the cap it is streamed.
+func TestBoundedNeighborhoodChargesSuppressedEdgesAgainstScanLimit(t *testing.T) {
+	const limit = 7
+	var messages []string
+	for _, request := range []explorer.BoundedNeighborhoodRequest{
+		{Fanout: 1, MaxNodes: 2, MaxScannedEdges: 2},
+		{Fanout: 3, MaxNodes: 4},
+		{Fanout: 64, MaxNodes: 64, MaxScannedEdges: 1 << 20},
+		{Fanout: 1, MaxNodes: 2, AfterEdgeID: "edge-omitted-0001"},
+	} {
+		client, base := authorizedPaginationClient(t, false)
+		client.maxNodeAdjacency = limit
+		base.omittedOnly = true
+		base.adjacency = limit + 1
+		request.NodeIDs = []shoal.ID{"node-seed"}
+		request.Depth = 1
+		request.Direction = explorer.GraphDirectionOutgoing
+		_, err := client.BoundedNeighborhood(context.Background(), request)
+		if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+			t.Fatalf("over-cap error = %v", err)
+		}
+		messages = append(messages, err.Error())
+		if base.calls != 1 {
+			t.Fatalf("over-cap scan calls = %d, want 1", base.calls)
+		}
+		// At the cap the same suppressed adjacency is streamed, bounded by
+		// the reported adjacency.
+		client, base = authorizedPaginationClient(t, false)
+		client.maxNodeAdjacency = limit
+		base.omittedOnly = true
+		base.adjacency = limit
+		request.AfterEdgeID = ""
+		_, err = client.BoundedNeighborhood(context.Background(), request)
+		if !shoal.IsErrorCode(err, shoal.ErrorInternal) || base.calls != limit+2 {
+			t.Fatalf("at-cap stream = %v after %d calls", err, base.calls)
+		}
+	}
+	for _, message := range messages[1:] {
+		if message != messages[0] {
+			t.Fatalf("cap errors differ by request: %q", messages)
+		}
+	}
+}
+
+func TestBoundedNeighborhoodRejectsContinuationThatDoesNotAdvance(t *testing.T) {
 	client, base := authorizedPaginationClient(t, false)
 	base.underreportedScans = true
 	_, err := client.BoundedNeighborhood(
@@ -310,11 +358,11 @@ func TestBoundedNeighborhoodDoesNotTrustUnderreportedScanCount(t *testing.T) {
 			Direction: explorer.GraphDirectionOutgoing,
 		},
 	)
-	if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
-		t.Fatalf("underreported scan error = %v", err)
+	if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("stalled continuation error = %v", err)
 	}
-	if base.calls != 1 {
-		t.Fatalf("underreported scan calls = %d, want 1", base.calls)
+	if base.calls != 2 {
+		t.Fatalf("stalled continuation calls = %d, want 2", base.calls)
 	}
 }
 
@@ -332,12 +380,63 @@ func TestBoundedNeighborhoodRejectsScanCountAbovePageFanout(t *testing.T) {
 	if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
 		t.Fatalf("overreported scan error = %v", err)
 	}
+	if base.requests[0].Fanout != 66 {
+		t.Fatalf("scan fanout = %d, want fanout + 1 + slack", base.requests[0].Fanout)
+	}
 	if base.calls != 1 {
 		t.Fatalf("overreported scan calls = %d, want 1", base.calls)
 	}
 }
 
-func TestBoundedNeighborhoodPreservesKnownZeroScanCount(t *testing.T) {
+func TestBoundedNeighborhoodRejectsPageAboveChunk(t *testing.T) {
+	client, base := authorizedPaginationClient(t, false)
+	base.oversizedPage = true
+	_, err := client.BoundedNeighborhood(
+		context.Background(),
+		explorer.BoundedNeighborhoodRequest{
+			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1,
+			Fanout: 1, MaxNodes: 4, Direction: explorer.GraphDirectionOutgoing,
+		},
+	)
+	if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("oversized base page error = %v", err)
+	}
+}
+
+func TestBoundedNeighborhoodRejectsEdgeAtOrBeforeCursor(t *testing.T) {
+	client, base := authorizedPaginationClient(t, false)
+	_, err := client.BoundedNeighborhood(
+		context.Background(),
+		explorer.BoundedNeighborhoodRequest{
+			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1,
+			Fanout: 1, MaxNodes: 4, Direction: explorer.GraphDirectionOutgoing,
+			AfterEdgeID: "edge-z",
+		},
+	)
+	if !shoal.IsErrorCode(err, shoal.ErrorInternal) || base.calls != 1 {
+		t.Fatalf("edge before cursor = %v after %d calls", err, base.calls)
+	}
+}
+
+func TestBoundedNeighborhoodRequiresReportedNodeAdjacency(t *testing.T) {
+	client, base := authorizedPaginationClient(t, false)
+	base.unknownAdjacency = true
+	_, err := client.BoundedNeighborhood(
+		context.Background(),
+		explorer.BoundedNeighborhoodRequest{
+			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1,
+			Fanout: 1, MaxNodes: 2, Direction: explorer.GraphDirectionOutgoing,
+		},
+	)
+	if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+		t.Fatalf("unreported adjacency error = %v", err)
+	}
+}
+
+// TestBoundedNeighborhoodNeverReportsBaseScanCount pins that an authorized
+// result reports no scan count and no node adjacency (#698): both count
+// adjacency the reader may not see, even an exact zero.
+func TestBoundedNeighborhoodNeverReportsBaseScanCount(t *testing.T) {
 	client, base := authorizedPaginationClient(t, false)
 	base.knownZero = true
 	result, err := client.BoundedNeighborhood(
@@ -352,8 +451,9 @@ func TestBoundedNeighborhoodPreservesKnownZeroScanCount(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !result.ScannedEdgesKnown || result.ScannedEdges != 0 {
-		t.Fatalf("known zero scan count = %#v", result)
+	if result.ScannedEdgesKnown || result.ScannedEdges != 0 ||
+		result.NodeAdjacencyKnown || result.NodeAdjacency != 0 {
+		t.Fatalf("base scan count was reported = %#v", result)
 	}
 }
 
@@ -396,10 +496,15 @@ func TestBoundedNeighborhoodRejectsAdvanceWithoutContinuation(t *testing.T) {
 	}
 }
 
-func TestBoundedNeighborhoodPreservesNonCursorTruncation(t *testing.T) {
+// TestBoundedNeighborhoodFailsClosedOnIncompleteBaseAdjacency pins that a
+// base reporting truncation without a cursor is refused rather than served as
+// a truncated page: a one-seed depth-one chunk is never node-bounded, and the
+// visible page cannot be computed from an incomplete adjacency without
+// depending on what the base left out.
+func TestBoundedNeighborhoodFailsClosedOnIncompleteBaseAdjacency(t *testing.T) {
 	client, base := authorizedPaginationClient(t, false)
 	base.truncatedWithoutContinuation = true
-	result, err := client.BoundedNeighborhood(
+	_, err := client.BoundedNeighborhood(
 		context.Background(),
 		explorer.BoundedNeighborhoodRequest{
 			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1,
@@ -407,14 +512,56 @@ func TestBoundedNeighborhoodPreservesNonCursorTruncation(t *testing.T) {
 			Direction: explorer.GraphDirectionOutgoing,
 		},
 	)
-	if err != nil {
-		t.Fatal(err)
+	if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("incomplete base adjacency error = %v", err)
 	}
-	if !result.Truncated || result.Continuation ||
-		result.NextAfterEdgeID != "" ||
-		len(result.Neighborhood.Nodes) != 1 ||
-		len(result.Neighborhood.Edges) != 0 {
-		t.Fatalf("non-cursor truncation was lost: %#v", result)
+}
+
+// TestBoundedNeighborhoodAdjacencyChangeMidStreamIsConflict pins that the
+// streamed node's reported adjacency changing between chunks is a conflict
+// (a concurrent write), not an internal error, even when the base snapshot
+// does not move, so it cannot single out a hidden write on the node.
+func TestBoundedNeighborhoodAdjacencyChangeMidStreamIsConflict(t *testing.T) {
+	client, base := authorizedPaginationClient(t, true)
+	base.adjacency = 50
+	base.adjacencyGrows = true
+	_, err := client.BoundedNeighborhood(context.Background(),
+		explorer.BoundedNeighborhoodRequest{
+			NodeIDs: []shoal.ID{"node-seed"}, Depth: 1, Fanout: 1, MaxNodes: 2,
+			Direction: explorer.GraphDirectionOutgoing,
+		})
+	if !shoal.IsErrorCode(err, shoal.ErrorConflict) || base.calls != 2 {
+		t.Fatalf("adjacency change mid-stream = %v after %d calls, want conflict after 2",
+			err, base.calls)
+	}
+}
+
+// TestBoundedNeighborhoodProvenanceSeedAboveCapIsNotFound pins the ordering
+// for a provenance seed (#698): its visibility is only learnt by filtering its
+// adjacency, which the cap forbids, so a provenance seed above the cap is
+// answered as an invisible one would be, for every reader, rather than with
+// the cap error that would confirm it exists.
+func TestBoundedNeighborhoodProvenanceSeedAboveCapIsNotFound(t *testing.T) {
+	for _, depth := range []uint32{1, 2} {
+		client, base := authorizedPaginationClient(t, false)
+		client.maxNodeAdjacency = 1
+		base.adjacency = 2
+		_, err := client.BoundedNeighborhood(context.Background(),
+			explorer.BoundedNeighborhoodRequest{
+				NodeIDs: []shoal.ID{"producer_hidden"}, Depth: depth,
+				Fanout: 1, MaxNodes: 2,
+			})
+		if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			t.Fatalf("depth %d provenance seed above cap = %v, want not found", depth, err)
+		}
+		_, err = client.BoundedNeighborhood(context.Background(),
+			explorer.BoundedNeighborhoodRequest{
+				NodeIDs: []shoal.ID{"node-seed"}, Depth: depth,
+				Fanout: 1, MaxNodes: 2,
+			})
+		if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+			t.Fatalf("depth %d source seed above cap = %v, want unavailable", depth, err)
+		}
 	}
 }
 
@@ -681,6 +828,7 @@ func authorizedPaginationClient(t *testing.T, hiddenOnly bool) (*Client, *pagedB
 
 type pagedBoundedBase struct {
 	calls                        int
+	requests                     []explorer.BoundedNeighborhoodRequest
 	view                         explorer.DocumentView
 	nodes                        map[shoal.ID]graph.Node
 	hiddenOnly                   bool
@@ -693,6 +841,13 @@ type pagedBoundedBase struct {
 	underreportedScans           bool
 	overreportedScans            bool
 	truncatedWithoutContinuation bool
+	oversizedPage                bool
+	unknownAdjacency             bool
+	// adjacency is the node adjacency the fake reports; zero means 2.
+	adjacency uint64
+	// adjacencyGrows adds one to the reported adjacency on every call, as
+	// a write landing on the node mid-stream would.
+	adjacencyGrows bool
 }
 
 func (b *pagedBoundedBase) InterpretAssertions(
@@ -742,10 +897,42 @@ func (b *pagedBoundedBase) Snapshot(context.Context) (explorer.Snapshot, error) 
 }
 
 func (b *pagedBoundedBase) BoundedNeighborhood(
-	_ context.Context,
+	ctx context.Context,
 	request explorer.BoundedNeighborhoodRequest,
 ) (explorer.BoundedNeighborhood, error) {
 	b.calls++
+	b.requests = append(b.requests, request)
+	result, err := b.boundedPage(ctx, request)
+	if err == nil && !b.unknownAdjacency {
+		result.NodeAdjacency = b.adjacency
+		if result.NodeAdjacency == 0 {
+			result.NodeAdjacency = 2
+		}
+		if b.adjacencyGrows {
+			result.NodeAdjacency += uint64(b.calls)
+		}
+		result.NodeAdjacencyKnown = true
+	}
+	return result, err
+}
+
+func (b *pagedBoundedBase) boundedPage(
+	_ context.Context,
+	request explorer.BoundedNeighborhoodRequest,
+) (explorer.BoundedNeighborhood, error) {
+	if b.oversizedPage {
+		edges := make([]graph.Edge, 0, request.Fanout+1)
+		for index := uint32(0); index <= request.Fanout; index++ {
+			edges = append(edges, graph.Edge{
+				ID: shoal.ID(fmt.Sprintf("edge-over-%04d", index)), From: "node-seed",
+				To: "node-visible", Type: "related", Weight: 1,
+			})
+		}
+		return explorer.BoundedNeighborhood{Neighborhood: explorer.Neighborhood{
+			Nodes: []graph.Node{b.nodes["node-seed"], b.nodes["node-visible"]},
+			Edges: edges,
+		}}, nil
+	}
 	if b.knownZeroContinuation {
 		return explorer.BoundedNeighborhood{
 			Neighborhood: explorer.Neighborhood{
@@ -769,7 +956,7 @@ func (b *pagedBoundedBase) BoundedNeighborhood(
 			Neighborhood: explorer.Neighborhood{
 				Nodes: []graph.Node{b.nodes["node-seed"]},
 			},
-			ScannedEdges: 2, ScannedEdgesKnown: true,
+			ScannedEdges: request.Fanout + 1, ScannedEdgesKnown: true,
 		}, nil
 	}
 	if b.advanceWithoutContinuation {
@@ -786,7 +973,6 @@ func (b *pagedBoundedBase) BoundedNeighborhood(
 			Neighborhood: explorer.Neighborhood{
 				Nodes: []graph.Node{b.nodes["node-seed"]},
 			},
-			NextAfterEdgeID:   request.AfterEdgeID,
 			ScannedEdgesKnown: true,
 		}, nil
 	}
@@ -805,6 +991,24 @@ func (b *pagedBoundedBase) BoundedNeighborhood(
 				Nodes: []graph.Node{b.nodes["node-seed"]},
 			},
 			Truncated: true, NextAfterEdgeID: edgeID, Continuation: true,
+		}, nil
+	}
+	if request.AfterEdgeID == "" && !b.hiddenOnly && request.Fanout >= 2 {
+		return explorer.BoundedNeighborhood{
+			Neighborhood: explorer.Neighborhood{
+				Nodes: []graph.Node{
+					b.nodes["node-seed"],
+					{ID: "node-hidden", Kind: "entity"},
+					b.nodes["node-visible"],
+				},
+				Edges: []graph.Edge{{
+					ID: "edge-a-hidden", From: "node-seed", To: "node-hidden",
+					Type: "related", Weight: 1,
+				}, {
+					ID: "edge-b-visible", From: "node-seed", To: "node-visible",
+					Type: "related", Weight: 1,
+				}},
+			},
 		}, nil
 	}
 	if request.AfterEdgeID == "" || b.hiddenOnly {

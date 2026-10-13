@@ -591,6 +591,11 @@ renders "mosaic budget enabled"             "${explorer_base[@]}" --set explorer
 renders "withholding concealed"             "${explorer_base[@]}" --set explorer.disclosure.concealWithholding=true
 assert_renders "declassification reason required" '^ +- -require-declassification-reason$' "${explorer_base[@]}" --set explorer.declassification.requireReason=true
 assert_absent "declassification reason optional by default" 'require-declassification-reason' "${explorer_base[@]}"
+assert_renders "bounded node adjacency cap set" '^ +- "-max-bounded-node-adjacency=4096"$' "${explorer_base[@]}" --set explorer.graph.maxNodeAdjacency=4096
+assert_absent "bounded node adjacency cap defaults in the binary" 'max-bounded-node-adjacency' "${explorer_base[@]}"
+refuses_citing "explorer.graph.maxNodeAdjacency must be" "negative bounded node adjacency cap" "${explorer_base[@]}" --set explorer.graph.maxNodeAdjacency=-1
+refuses_citing "explorer.graph.maxNodeAdjacency must be" "oversized bounded node adjacency cap" "${explorer_base[@]}" --set explorer.graph.maxNodeAdjacency=4294967296
+refuses_citing "explorer.graph.maxNodeAdjacency must be" "non-numeric bounded node adjacency cap" "${explorer_base[@]}" --set-string explorer.graph.maxNodeAdjacency=lots
 renders "ask executor wired"                "${explorer_base[@]}" --set 'explorer.fleet.executorRefs={ask}',explorer.fleet.askExecutorRef=ask,explorer.chat.provider=ollama,explorer.chat.model=m,explorer.chat.baseURL=http://localhost:11434
 renders "lexical embedding"                 "${explorer_base[@]}" --set explorer.embedding.provider=lexical,explorer.embedding.dimensions=256
 renders "scaled to zero"                    "${explorer_base[@]}" --set explorer.replicas=0
