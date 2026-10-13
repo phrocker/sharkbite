@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import platform
+import subprocess
 import time
 from pathlib import Path
 
@@ -27,6 +28,27 @@ ROWS = (
 
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def cuda_provenance(torch):
+    if not torch.cuda.is_available():
+        raise RuntimeError('requested cuda device is unavailable')
+    try:
+        raw = subprocess.run(
+            ['nvidia-smi', '--query-gpu=name,driver_version,memory.total', '--format=csv,noheader'],
+            check=True, capture_output=True, text=True, timeout=5,
+        ).stdout.strip().splitlines()
+    except (OSError, subprocess.SubprocessError) as error:
+        raise RuntimeError('cuda driver provenance unavailable') from error
+    if len(raw) != 1:
+        raise RuntimeError('expected exactly one CUDA device')
+    fields = [field.strip() for field in raw[0].split(',')]
+    if len(fields) != 3 or not all(fields):
+        raise RuntimeError('invalid CUDA driver provenance')
+    return {
+        'gpu_name': fields[0], 'gpu_driver': fields[1], 'gpu_memory': fields[2],
+        'cuda_runtime': torch.version.cuda or '',
+    }
 
 
 def manifest(snapshot):
@@ -58,6 +80,9 @@ def manifest(snapshot):
 
 def run(snapshot, device):
     value, weights_path, tokenizer_digest = manifest(snapshot)
+    import torch
+    import transformers
+    gpu_provenance = cuda_provenance(torch) if device == 'cuda' else {}
     model = challenger.FrozenUnixCoder(value, device=device)
     train = [{'id': row_id, 'split': 'train', 'label': label, 'code': code} for row_id, label, code in ROWS]
     test = [dict(row, id='test-' + row['id'], split='test') for row in train]
@@ -65,9 +90,7 @@ def run(snapshot, device):
     artifact = challenger.train(train, value, model)
     result = challenger.predict(test, value, artifact, model)
     elapsed = time.monotonic() - started
-    import torch
-    import transformers
-    return {
+    report = {
         'schema': 1, 'kind': 'unixcoder_real_smoke', 'repo': REPO, 'revision': REVISION,
         'snapshot_revision': REVISION, 'weights_sha256': digest(weights_path),
         'tokenizer_sha256': tokenizer_digest, 'manifest_id': value['id'],
@@ -78,12 +101,14 @@ def run(snapshot, device):
         'optimization_enabled': result['optimization_enabled'],
         'label_authority': 'synthetic smoke labels; no quality claim',
     }
+    report.update(gpu_provenance)
+    return report
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--snapshot', type=Path, required=True)
-    parser.add_argument('--device', choices=('cpu',), default='cpu')
+    parser.add_argument('--device', choices=('cpu', 'cuda'), default='cpu')
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     if not args.snapshot.is_dir() or args.snapshot.name != REVISION:
