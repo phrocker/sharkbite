@@ -219,8 +219,10 @@ Invoke-RestMethod http://127.0.0.1:8080/api/v1/meta
 When the backend advertises the `ingest` capability, the workspace shows an
 upload area above the corpus list. Use the file picker or drag and drop bounded
 Markdown, plain-text, or source-code files. Each successful upload reports
-whether the revision was `applied` or already `unchanged`, and then refreshes
-the snapshot and corpus list.
+whether the revision was `applied` or already `unchanged`, or `historical`
+when the file matches an earlier revision that was not made current again
+(the current revision is left as it was), and then refreshes the snapshot and
+corpus list.
 
 Expected observable outcome: `/api/v1/meta` publishes the server bounds
 (`max_page_size`, `max_top_k`, `max_depth`, `max_fanout`, `max_nodes`,

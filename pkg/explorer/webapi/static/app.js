@@ -2375,6 +2375,9 @@ function renderUploadResults(files, statusText = "") {
     if (details.length > 0) text += ` (${details.join(", ")})`;
     if (file.original_name && file.original_name !== file.name) text += ` from ${file.original_name}`;
     if (file.message) text += `. ${file.message}`;
+    if (file.disposition === "historical") {
+      text += ". Matches an earlier revision; the current revision was not changed";
+    }
     // This rendering is load-bearing; TestStaticWorkspaceDirectoryUploadRenamesSkillCollisions
     // pins that recognized agent skill metadata is visible per file.
     if (file.skill_file) text += `. ${skillFileText(file.skill_file)}`;

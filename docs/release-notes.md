@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### Re-ingesting an earlier revision says so (#674)
+
+Re-ingesting content byte-identical to an earlier revision of a document used
+to report success while the document kept serving its current revision. An
+operator undoing a relabel (secret, then public, then the secret content
+again) was told it worked.
+
+- `explorer.Ingest` reports a new disposition, `historical`, when the content
+  matches a non-current revision. It is still a success and never makes the
+  old revision current again. There is no restore operation; change the
+  content by any byte to make it current.
+- The authorized client refuses that case with a `conflict` error wrapping
+  `authorized.ErrHistoricalRevision`, and changes nothing.
+- The browser upload route returns it naming the file (a 409 when it is the
+  first file of the batch; see the next item otherwise): `upload file
+  "<name>" matches an earlier revision of its document, so the document was
+  left unchanged; change the content to upload it`. This is common when a
+  directory is re-uploaded after switching branches back.
+- A multi-file upload that fails on any file after the first now reports an
+  indeterminate commit outcome, as the remote client already did, because
+  earlier files of the batch may have been applied (an earlier file that was
+  unchanged wrote nothing). Like every indeterminate write it is a 503
+  `unavailable` with the `Shoal-Commit-Outcome: indeterminate` header and
+  `"indeterminate": true`, and it keeps the file's message. This covers the
+  historical refusal and the missing-reason 400. A failure on the first file
+  keeps its own status. Those two refusals are deterministic: retrying the
+  same batch returns the same response. Change the named file's content, or
+  supply a reason, before retrying.
+
 ### Declassification reason codes and an offline listing (#664)
 
 Every relabel that removes visibility labels has been audited since #630. You

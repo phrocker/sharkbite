@@ -248,6 +248,65 @@ func TestAmbiguousLegacyRevisionOrderFailsImplicitCurrent(t *testing.T) {
 	}
 }
 
+// TestReingestOfAmbiguousLegacyRevisionIsUnavailable pins #674's legacy
+// rule: re-ingesting the exact content of a document whose revisions are all
+// legacy cannot say whether that revision is current, so it reports the
+// unavailable publication-order error rather than unchanged or historical,
+// and writes nothing. A document with a single legacy revision is still
+// unambiguous and reports unchanged.
+func TestReingestOfAmbiguousLegacyRevisionIsUnavailable(t *testing.T) {
+	ctx := context.Background()
+	dataDir := t.TempDir()
+	corpus, err := Open(dataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sources := []Source{
+		{URI: "file:///legacy.txt", MediaType: MediaTypeText, Content: "first legacy"},
+		{URI: "file:///legacy.txt", MediaType: MediaTypeText, Content: "second legacy"},
+		{URI: "file:///single.txt", MediaType: MediaTypeText, Content: "only legacy"},
+	}
+	parsed := make([]parsedSource, len(sources))
+	for index, source := range sources {
+		parsed[index], err = parseSource(source,
+			time.Date(2020+index, 1, 1, 0, 0, 0, 0, time.UTC))
+		if err != nil {
+			t.Fatal(err)
+		}
+		writeLegacyDocument(t, corpus, persistedFromParsed(parsed[index]))
+	}
+	if err := corpus.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	corpus, err = Open(dataDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer corpus.Close()
+	for index, source := range sources[:2] {
+		result, err := corpus.Ingest(ctx, source)
+		if !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+			t.Fatalf("re-ingest of ambiguous legacy revision %d = %+v, %v, want unavailable",
+				index, result, err)
+		}
+	}
+	revisions := corpus.documents[parsed[0].document.ID]
+	if len(revisions) != 2 {
+		t.Fatalf("ambiguous legacy document has %d revisions, want 2", len(revisions))
+	}
+	for id, record := range revisions {
+		if record.PublicationSequence != 0 {
+			t.Fatalf("re-ingest published legacy revision %s at %d", id, record.PublicationSequence)
+		}
+	}
+	single, err := corpus.Ingest(ctx, sources[2])
+	if err != nil || single.Disposition != IngestUnchanged ||
+		single.Revision.ID != parsed[2].revision.ID {
+		t.Fatalf("re-ingest of a single legacy revision = %+v, %v, want unchanged", single, err)
+	}
+}
+
 func TestSingleLegacyRevisionRemainsCurrent(t *testing.T) {
 	dataDir := t.TempDir()
 	corpus, err := Open(dataDir)

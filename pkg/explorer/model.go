@@ -57,12 +57,27 @@ type IngestOptions struct {
 }
 
 // IngestDisposition reports whether ingestion created a revision or found the
-// same immutable revision already present.
+// same immutable revision already present, and if so whether that revision is
+// the document's current one. The string values are stable wire encodings.
 type IngestDisposition string
 
 const (
-	IngestApplied   IngestDisposition = "applied"
+	// IngestApplied means the request published a new revision, which is now
+	// the document's current revision.
+	IngestApplied IngestDisposition = "applied"
+	// IngestUnchanged means the content matches the document's current
+	// revision. Nothing was written.
 	IngestUnchanged IngestDisposition = "unchanged"
+	// IngestHistorical means the content matches an earlier, non-current
+	// revision of the document. Nothing was written, and that revision was
+	// NOT made current again: the document still serves its current revision
+	// (#674). It is a successful result, so a delayed retry of an ingest that
+	// has since been superseded does not fail. A caller that needs the
+	// content to be current must treat it as "not done". There is no restore
+	// operation; to make old content current again, change it by any byte.
+	//
+	// Graph materialization never reports it.
+	IngestHistorical IngestDisposition = "historical"
 )
 
 // IngestResult identifies the durable artifacts created for one source.

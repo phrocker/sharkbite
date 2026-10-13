@@ -318,6 +318,38 @@ func TestProvisionIsIdempotentAndUsesDistinctOwners(t *testing.T) {
 	}
 }
 
+// TestProvisionRefusesAHistoricalFixture pins that a fixture the server
+// reports as matching an earlier, non-current revision (#674) fails the seed
+// instead of being recorded as seeded.
+func TestProvisionRefusesAHistoricalFixture(t *testing.T) {
+	state := newProvisionServerState()
+	state.fileDisposition = "historical"
+	server := httptest.NewServer(http.HandlerFunc(state.serveHTTP))
+	defer server.Close()
+	value := validConfig(server.URL)
+	if err := value.validate(); err != nil {
+		t.Fatal(err)
+	}
+	generated, err := buildScenario(value)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokens := map[string]string{
+		"SHOAL_DEMO_TOKEN_A":     "token-a",
+		"SHOAL_DEMO_TOKEN_B":     "token-b",
+		"SHOAL_DEMO_AGENT_KEY_A": "agent-key-a",
+		"SHOAL_DEMO_AGENT_KEY_B": "agent-key-b",
+	}
+	provision := provisioner{
+		client: server.Client(),
+		getenv: func(name string) string { return tokens[name] },
+	}
+	_, err = provision.provision(context.Background(), value, generated)
+	if err == nil || !strings.Contains(err.Error(), "earlier, non-current revision") {
+		t.Fatalf("provision with a historical fixture = %v", err)
+	}
+}
+
 func TestConfigValidation(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -507,6 +539,8 @@ type provisionServerState struct {
 	tokenWorkspaces map[string]map[string]struct{}
 	graph           []byte
 	agents          map[string]int64
+	// fileDisposition, when set, replaces every upload's disposition.
+	fileDisposition string
 }
 
 func newProvisionServerState() *provisionServerState {
@@ -763,10 +797,14 @@ func (s *provisionServerState) ingest(
 		}
 		s.files[key] = append([]byte(nil), content...)
 		s.tokenWorkspaces[token][workspaceID] = struct{}{}
+		forced := s.fileDisposition
 		s.mu.Unlock()
 		disposition := "applied"
 		if found {
 			disposition = "unchanged"
+		}
+		if forced != "" {
+			disposition = forced
 		}
 		results = append(results, result{
 			Name: name, Disposition: disposition,

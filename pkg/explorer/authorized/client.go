@@ -370,6 +370,35 @@ func (c *Client) Ingest(
 	if !current {
 		claimOutcome = sourceClaimRollback
 	}
+	// The pre-write check authorized the registration of the document the
+	// Explorer derives from the URI, so the base must have written exactly
+	// that document; anything else is an inconsistent base, refused before
+	// it is registered (#665).
+	if result.Document.ID != explorer.SourceDocumentID(ownedSource.URI) {
+		return explorer.IngestResult{}, inconsistentBase()
+	}
+	// Content that resolves to an existing revision which is not current
+	// changed nothing: the base does not make an earlier revision current
+	// again (#674). Before #674 this was registered non-current and reported
+	// as success, so an operator re-ingesting R1's exact content to undo a
+	// relabel was told it worked while the document kept serving R2. The
+	// request's rule and claim were not applied, so it is refused: the claim
+	// rolls back (above), nothing is registered and no pre-commit audit is
+	// written. A narrowing request's intent record stays, as an attempt with
+	// no outcome. An IngestUnchanged that is not current is refused the same
+	// way, so a base that predates IngestHistorical cannot reopen the hole.
+	switch result.Disposition {
+	case explorer.IngestApplied:
+	case explorer.IngestUnchanged, explorer.IngestHistorical:
+		if !current {
+			return explorer.IngestResult{}, historicalRevisionRefused()
+		}
+		if result.Disposition == explorer.IngestHistorical {
+			return explorer.IngestResult{}, inconsistentBase()
+		}
+	default:
+		return explorer.IngestResult{}, inconsistentBase()
+	}
 	var intrinsicEdges []graph.Edge
 	if current {
 		intrinsicEdges, err = c.intrinsicEdges(ctx, nodeIDs)
@@ -379,13 +408,6 @@ func (c *Client) Ingest(
 	}
 	digest, err := documentViewDigest(view)
 	if err != nil {
-		return explorer.IngestResult{}, inconsistentBase()
-	}
-	// The pre-write check authorized the registration of the document the
-	// Explorer derives from the URI, so the base must have written exactly
-	// that document; anything else is an inconsistent base, refused before
-	// it is registered (#665).
-	if result.Document.ID != explorer.SourceDocumentID(ownedSource.URI) {
 		return explorer.IngestResult{}, inconsistentBase()
 	}
 	// The registration below is what lets a narrowed rule's new readers
@@ -419,10 +441,6 @@ func (c *Client) Ingest(
 		Revision:     cloneRevision(view.Revision),
 		SectionCount: sectionCount,
 		SpanCount:    spanCount,
-	}
-	if cloned.Disposition != explorer.IngestApplied &&
-		cloned.Disposition != explorer.IngestUnchanged {
-		return explorer.IngestResult{}, inconsistentBase()
 	}
 	if err := guard.Check(ctx); err != nil {
 		return explorer.IngestResult{}, err
@@ -1029,6 +1047,23 @@ func policyCatalogWriteError(ctx context.Context, err error) error {
 		return catalogConflict()
 	}
 	return catalogUnavailable()
+}
+
+// ErrHistoricalRevision identifies an authorized Ingest refused because its
+// content matches an earlier, non-current revision of the document (#674).
+// The document was not changed: its current revision, rule and source claim
+// are what they were before the call. Test for it with errors.Is; the
+// returned error also carries shoal.ErrorConflict, the code this package uses
+// for a request whose precondition no longer holds. Ingest has no restore
+// operation; to make old content current again, change it by any byte.
+var ErrHistoricalRevision = errors.New(
+	"content matches a non-current revision of the document")
+
+func historicalRevisionRefused() error {
+	return shoal.WrapError(shoal.ErrorConflict,
+		"the content matches a non-current revision of the document; "+
+			"the document was not changed",
+		ErrHistoricalRevision)
 }
 
 func authorizationDenied() error {

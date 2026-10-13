@@ -474,8 +474,9 @@ func (e *Explorer) ingest(
 	}
 	if revisions := e.documents[parsed.document.ID]; revisions != nil {
 		if existing := revisions[parsed.revision.ID]; existing != nil {
+			result, err := existingRevisionResult(revisions, existing)
 			e.mu.RUnlock()
-			return ingestResult(existing, IngestUnchanged), nil
+			return result, err
 		}
 	}
 	e.mu.RUnlock()
@@ -520,7 +521,7 @@ func (e *Explorer) ingest(
 	}
 	if revisions := e.documents[record.Document.ID]; revisions != nil {
 		if existing := revisions[record.Revision.ID]; existing != nil {
-			return ingestResult(existing, IngestUnchanged), nil
+			return existingRevisionResult(revisions, existing)
 		}
 	}
 	if !attempted {
@@ -1247,6 +1248,30 @@ func buildSectionView(record *persistedDocument) (SectionView, error) {
 			shoal.ErrorInternal, "stored document root is missing")
 	}
 	return build(record.Document.RootSectionID)
+}
+
+// existingRevisionResult reports an ingest whose content resolved to a
+// revision the document already has. Revisions are immutable and
+// content-addressed, so nothing is written either way. The disposition says
+// whether that revision is the document's current one (IngestUnchanged) or an
+// earlier one that stays historical (IngestHistorical, #674). Ingest never
+// makes an earlier revision current again: that would let a delayed stale
+// retry silently roll the document back to old content.
+//
+// When the document's publication order is unavailable (all of its revisions
+// are legacy ones), which revision is current is unknown, so that error is
+// reported instead of either disposition.
+func existingRevisionResult(
+	revisions map[shoal.ID]*persistedDocument, existing *persistedDocument,
+) (IngestResult, error) {
+	current, err := latestRevision(revisions)
+	if err != nil {
+		return IngestResult{}, err
+	}
+	if current.Revision.ID != existing.Revision.ID {
+		return ingestResult(existing, IngestHistorical), nil
+	}
+	return ingestResult(existing, IngestUnchanged), nil
 }
 
 func ingestResult(record *persistedDocument, disposition IngestDisposition) IngestResult {

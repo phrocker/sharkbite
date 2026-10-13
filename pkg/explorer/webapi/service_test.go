@@ -127,6 +127,35 @@ func TestRemoteServiceMatchesEmbeddedResponses(t *testing.T) {
 		remoteUnchanged.Files[0].Disposition != explorer.IngestUnchanged {
 		t.Fatalf("remote repeated ingest = %+v", remoteUnchanged)
 	}
+	// Superseding the upload makes its first content historical (#674): the
+	// stable "historical" wire value round-trips and the remote client
+	// accepts it.
+	superseded, err := remote.Ingest(ctx, webapi.IngestRequest{
+		Files: []webapi.UploadFile{{
+			Name:    "remote.go",
+			Content: []byte("package remote\n\nconst ExactCitation = \"superseded\"\n"),
+		}},
+	})
+	if err != nil || len(superseded.Files) != 1 ||
+		superseded.Files[0].Disposition != explorer.IngestApplied {
+		t.Fatalf("remote superseding ingest = %+v, %v", superseded, err)
+	}
+	remoteHistorical, err := remote.Ingest(ctx, ingestRequest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(remoteHistorical.Files) != 1 ||
+		remoteHistorical.Files[0].Disposition != explorer.IngestHistorical ||
+		remoteHistorical.Files[0].Revision.ID != remoteIngest.Files[0].Revision.ID {
+		t.Fatalf("remote historical ingest = %+v", remoteHistorical)
+	}
+	encoded, err := json.Marshal(remoteHistorical)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(encoded), `"disposition":"historical"`) {
+		t.Fatalf("historical wire encoding = %s", encoded)
+	}
 }
 
 func assertServiceBoundsAndSnapshot(

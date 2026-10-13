@@ -749,8 +749,13 @@ func validateRemoteIngestResponse(
 		if file.MediaType != request[index].mediaType {
 			return remoteContractError("remote ingest response media type does not match the request", nil)
 		}
-		if file.Disposition != explorer.IngestApplied &&
-			file.Disposition != explorer.IngestUnchanged {
+		switch file.Disposition {
+		case explorer.IngestApplied, explorer.IngestUnchanged:
+		case explorer.IngestHistorical:
+			// The content matches an earlier, non-current revision and the
+			// server left the document unchanged (#674). It is a valid
+			// result that callers must not read as "now current".
+		default:
 			return remoteContractError("remote ingest response disposition is invalid", nil)
 		}
 		if file.SectionCount < 0 || file.SectionCount > document.MaxSectionsPerRevision ||

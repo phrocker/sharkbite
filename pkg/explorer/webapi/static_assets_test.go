@@ -87,21 +87,24 @@ const uploaded = await runScenario(
       files: [
         {name: "guide.md", disposition: "applied", media_type: "text/markdown", span_count: 1},
         {name: "main.go", disposition: "unchanged", media_type: "text/x-source-code", span_count: 1},
+        {name: "old.txt", disposition: "historical", media_type: "text/plain", span_count: 1},
       ],
     },
   },
 );
-uploaded.ids["upload-files"].files = [{name: "guide.md"}, {name: "main.go"}];
+uploaded.ids["upload-files"].files = [{name: "guide.md"}, {name: "main.go"}, {name: "old.txt"}];
 await uploaded.ids.upload.onsubmit({preventDefault() {}});
 assert.strictEqual(uploaded.uploadRequest.url, "/api/v1/ingest");
 assert.strictEqual(uploaded.uploadRequest.options.method, "POST");
 assert.strictEqual(uploaded.uploadRequest.options.headers["x-shoal-workspace-request"], "1");
-assert.deepStrictEqual(uploaded.uploadRequest.options.body.parts.map((part) => part.filename), ["guide.md", "main.go"]);
+assert.deepStrictEqual(uploaded.uploadRequest.options.body.parts.map((part) => part.filename), ["guide.md", "main.go", "old.txt"]);
 assert.ok(!uploaded.uploadRequest.options.body.parts.some((part) => part.name === "declassification_reason"),
   "an empty reason field must send no reason");
-assert.match(uploaded.ids["upload-status"].textContent, /Uploaded 2 file/);
+assert.match(uploaded.ids["upload-status"].textContent, /Uploaded 3 file/);
 assert.match(uploaded.ids["upload-results"].children[0].textContent, /guide\.md: applied/);
 assert.match(uploaded.ids["upload-results"].children[1].textContent, /main\.go: unchanged/);
+assert.doesNotMatch(uploaded.ids["upload-results"].children[1].textContent, /earlier revision/);
+assert.match(uploaded.ids["upload-results"].children[2].textContent, /old\.txt: historical .*Matches an earlier revision; the current revision was not changed/);
 assert.strictEqual(uploaded.ids.documents.children.length, 1);
 assert.match(uploaded.ids.snapshot.textContent, /uploadsnap/);
 

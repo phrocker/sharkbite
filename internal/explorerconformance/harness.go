@@ -688,6 +688,29 @@ func restart(t *testing.T, factory ClientFactory) {
 		unchanged.Revision.ID != ingested.Revision.ID {
 		t.Fatalf("restarted idempotent ingest = %+v", unchanged)
 	}
+	// Once superseded, the same content is historical: a successful result
+	// that does not make the earlier revision current again (#674).
+	superseding := source
+	superseding.Content = "restart superseding revision"
+	newer, err := lifecycle.Client.Ingest(ctx, superseding)
+	if err != nil || newer.Disposition != explorer.IngestApplied {
+		t.Fatalf("superseding ingest = %+v, %v", newer, err)
+	}
+	historical, err := lifecycle.Client.Ingest(ctx, source)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if historical.Disposition != explorer.IngestHistorical ||
+		historical.Revision.ID != ingested.Revision.ID {
+		t.Fatalf("superseded ingest = %+v, want historical", historical)
+	}
+	documents, err = lifecycle.Client.Documents(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(documents) != 1 || documents[0].Revision.ID != newer.Revision.ID {
+		t.Fatalf("a historical ingest changed the current revision: %+v", documents)
+	}
 }
 
 func openLifecycle(

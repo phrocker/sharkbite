@@ -1122,7 +1122,17 @@ func (p *provisioner) ingest(
 			return nil, fmt.Errorf(
 				"ingest returned unexpected file %q", file.Name)
 		}
-		if file.Disposition != "applied" && file.Disposition != "unchanged" {
+		switch file.Disposition {
+		case "applied", "unchanged":
+		case "historical":
+			// The fixture matches an earlier revision, so the server left a
+			// newer one current and the seed did not take effect (#674).
+			return nil, fmt.Errorf(
+				"ingest left %s at a newer revision: the fixture matches an "+
+					"earlier, non-current revision and was not made current",
+				file.Name,
+			)
+		default:
 			return nil, fmt.Errorf(
 				"ingest returned invalid disposition %q for %s",
 				file.Disposition, file.Name,

@@ -1817,15 +1817,20 @@ func TestIngestSurfacesOriginalAndCleanupFailures(t *testing.T) {
 	})
 }
 
-func TestHistoricalRevisionRetryIsIdempotent(t *testing.T) {
+// TestHistoricalRevisionRetryIsRefused is the plain stale retry under the
+// same rule: R1, then R2, then a delayed retry of R1. The base reports it
+// historical (a success); the authorized client refuses it with
+// ErrHistoricalRevision rather than report success for content it did not
+// make current (#674). Before #674 it returned IngestUnchanged with R1. The
+// current revision and the source claim are unchanged.
+func TestHistoricalRevisionRetryIsRefused(t *testing.T) {
 	f := newFixture(t)
 	admin := f.admin(t)
 	firstSource := explorer.Source{
 		URI: "file:///history.txt", MediaType: explorer.MediaTypeText,
 		Content: "first historical revision",
 	}
-	first, err := f.clientA.Ingest(admin, firstSource)
-	if err != nil {
+	if _, err := f.clientA.Ingest(admin, firstSource); err != nil {
 		t.Fatal(err)
 	}
 	second, err := f.clientA.Ingest(admin, explorer.Source{
@@ -1835,13 +1840,14 @@ func TestHistoricalRevisionRetryIsIdempotent(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	before := readCatalogState(t, f.store, firstSource.URI, second.Document.ID)
 	retried, err := f.clientA.Ingest(admin, firstSource)
-	if err != nil {
-		t.Fatal(err)
+	requireHistoricalRefusal(t, err)
+	if !reflect.DeepEqual(retried, explorer.IngestResult{}) {
+		t.Fatalf("historical retry returned a result: %#v", retried)
 	}
-	if retried.Disposition != explorer.IngestUnchanged ||
-		retried.Revision.ID != first.Revision.ID {
-		t.Fatalf("historical retry = %#v", retried)
+	if after := readCatalogState(t, f.store, firstSource.URI, second.Document.ID); !reflect.DeepEqual(after, before) {
+		t.Fatalf("historical retry changed the catalog:\nbefore %+v\nafter  %+v", before, after)
 	}
 	summaries, err := f.clientA.Documents(f.alice(t))
 	if err != nil {

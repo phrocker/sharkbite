@@ -308,7 +308,9 @@ these calls, so they inherit it.
   the same node is decided by the node's current rule and stays visible to a
   holder of the new labels. A cross-plane test pins both verdict tables.
 - Re-ingesting a document's earlier revision exactly (same content, same
-  labels) returns that revision and does not move any rule back.
+  labels) does not make it current and does not move any rule back. The
+  authorized client refuses it with `authorized.ErrHistoricalRevision`
+  (`conflict`) rather than report success (#674).
 
 ### Cross-session provenance traversal
 
@@ -423,6 +425,34 @@ additive storage APIs use this vocabulary:
 These are requirements on future APIs, not permission to add epoch/tombstone
 fields to existing public values.
 
+`explorer.Ingest` is content-addressed. Its `IngestDisposition` (wire field
+`disposition`) takes exactly one of three stable values:
+
+- `applied` (`IngestApplied`): a new revision was published and is now the
+  document's current revision;
+- `unchanged` (`IngestUnchanged`): the content matches the document's current
+  revision; nothing was written;
+- `historical` (`IngestHistorical`, #674): the content matches an earlier,
+  non-current revision; nothing was written and that revision was **not** made
+  current again. The document keeps serving its current revision.
+
+`historical` is a successful result, so a delayed retry of an ingest that has
+since been superseded still succeeds on the base. Ingest never makes an
+earlier revision current again, because a stale retry would otherwise roll the
+document back silently. There is no restore operation; to make earlier
+content current again, change it by any byte. When the document's
+publication order is unavailable (only legacy revisions), the base reports
+that `unavailable` error instead of either disposition. Graph materialization
+reports only `applied` and `unchanged`.
+
+The authorized client (`pkg/explorer/authorized`) does not report success for
+content it did not make current. It refuses a `historical` result (and an
+`unchanged` one whose revision is not current) with a `conflict` error that
+wraps `authorized.ErrHistoricalRevision` (test with `errors.Is`). The source
+claim is rolled back and nothing is registered, so the document, its current
+rule and its claim are exactly as before. A narrowing request still leaves its
+declassification intent record, which records an attempt, not an outcome.
+
 `pkg/code` retains its existing typed stable-ID algorithms. `Source.Ref` is
 excluded from `Source.ID` and the ingestion key because multiple refs can
 resolve to one immutable revision. Retrying a committed identical ingestion
@@ -492,8 +522,10 @@ document/graph relationships that a later storage adapter must persist.
   ownership. Definite failure restores the pending state, another indeterminate
   result keeps it pending, and successful current registration commits the
   desired rule. M3 supplies durable outcome reconciliation across processes.
-  Only a returned current revision may finalize a claim transition; registering
-  an unchanged historical revision restores the previous source-wide claim.
+  Only a returned current revision may finalize a claim transition. Content
+  that resolves to a historical revision restores the previous source-wide
+  claim, registers nothing, and is refused with
+  `authorized.ErrHistoricalRevision` (#674).
   M2 claim finalization is local and atomic: commit, pend, and rollback of an
   exact acquired token are infallible and idempotent for the same outcome.
   Finalization errors therefore mean an invalid token or catalog invariant

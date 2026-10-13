@@ -88,6 +88,26 @@ func publicIngestError(err error) error {
 		}
 		return public
 	}
+	// The authorized client refuses content that matches an earlier,
+	// non-current revision only after authorizing the caller under the
+	// rules it replaces and the one it selected, and after the base write
+	// (which wrote nothing) (#674). The caller supplied both the file name
+	// and the content, so naming the file and saying its content is an
+	// earlier revision tells it nothing it was not authorized to learn by
+	// ingesting; no rule or label is included. Without this the refusal
+	// would be a bare "upload failed" naming no file.
+	var file *uploadFileError
+	if code == shoal.ErrorConflict &&
+		errors.Is(err, authorized.ErrHistoricalRevision) &&
+		errors.As(err, &file) {
+		log.Printf("shoal explorer upload rejected: %v", err)
+		public := shoal.NewError(
+			shoal.ErrorConflict, historicalUploadMessage(file.name))
+		if explorer.IsIndeterminateCommit(err) {
+			return explorer.MarkIndeterminateCommit(public)
+		}
+		return public
+	}
 	switch code {
 	case shoal.ErrorInternal, shoal.ErrorUnavailable:
 		log.Printf("shoal explorer upload failed: %v", err)

@@ -479,8 +479,18 @@ repeated`. A file part keeps file semantics whatever its field name.
 labels unless it carries a reason. It is off by default. The refusal is a 400
 whose message names `declassification_reason`. It is returned only after the
 uploader has been authorized under the rule being replaced and under the new
-one, so it tells them nothing they could not already read. An upload that
-removes no label never needs a reason. Records are written whether this flag
+one, so it tells them nothing they could not already read. Unlike an invalid
+reason, it is decided per file, so it is not a pre-batch refusal. If an
+earlier file of the same batch already went through, the batch may be partly
+applied (an earlier file that was unchanged wrote nothing), so the response
+reports an indeterminate commit outcome like any indeterminate write: a 503
+with `unavailable`, the `Shoal-Commit-Outcome: indeterminate` header and
+`"indeterminate": true`, keeping the same message. That holds for every
+per-file failure of a multi-file upload, and matches the remote client. A
+failure on the first file changed nothing and keeps its own status (here the
+400). This refusal, like the refusal of a file whose content matches an
+earlier revision, is deterministic: retrying the same batch returns the same
+response. Supply a reason, or change the named file, before retrying. An upload that removes no label never needs a reason. Records are written whether this flag
 is on or off. With the flag on, an MCP caller sees a reasonless relabel as a
 mutating tool failure. Like every post-dispatch MCP failure, that is reported
 as indeterminate, because an earlier file in the batch may have been ingested.

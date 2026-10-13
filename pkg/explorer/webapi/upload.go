@@ -58,11 +58,24 @@ func (s *EmbeddedService) Ingest(
 		return IngestResponse{}, err
 	}
 	results := make([]IngestFileResult, 0, len(prepared))
-	for _, item := range prepared {
+	for index, item := range prepared {
 		result, err := s.client.Ingest(ctx, item.source)
 		if err != nil {
-			return IngestResponse{}, shoal.WrapError(
-				primaryErrorCode(err), "ingest upload file", err)
+			wrapped := error(&uploadFileError{
+				name: item.name,
+				cause: shoal.WrapError(
+					primaryErrorCode(err), "ingest upload file", err),
+			})
+			// Files are ingested one at a time, so once an earlier file of
+			// this batch went through, a failure leaves the batch partly
+			// applied. The caller cannot tell which files took effect from
+			// the error alone, so it is marked indeterminate, as
+			// RemoteService marks every failed multi-file upload. A failure
+			// on the first file changed nothing and stays definite.
+			if index > 0 {
+				wrapped = explorer.MarkIndeterminateCommit(wrapped)
+			}
+			return IngestResponse{}, wrapped
 		}
 		results = append(results, IngestFileResult{
 			Name:         item.name,
@@ -80,6 +93,26 @@ func (s *EmbeddedService) Ingest(
 		return IngestResponse{}, err
 	}
 	return IngestResponse{Snapshot: fromExplorerSnapshot(snapshot), Files: results}, nil
+}
+
+// uploadFileError names the upload file whose ingest failed. The name is
+// the sanitized filename the caller supplied, so it can be shown back to
+// that caller.
+type uploadFileError struct {
+	name  string
+	cause error
+}
+
+func (e *uploadFileError) Error() string { return e.cause.Error() }
+
+func (e *uploadFileError) Unwrap() error { return e.cause }
+
+// historicalUploadMessage is the public form of
+// authorized.ErrHistoricalRevision for upload file name (#674).
+func historicalUploadMessage(name string) string {
+	return fmt.Sprintf("upload file %q matches an earlier revision of its "+
+		"document, so the document was left unchanged; change the content "+
+		"to upload it", name)
 }
 
 const (
