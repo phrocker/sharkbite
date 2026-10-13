@@ -49,6 +49,11 @@ type policyStoreTrips struct {
 	currentRevision  int
 	currentRevisions int
 	sourceClaim      int
+	// documentRevisionRules and interactionRevisions are the revision
+	// binding's batched reads (#695).
+	documentRevisionRules int
+	revisionRules         int
+	interactionRevisions  int
 
 	batchedNodeIDs       int
 	batchedEdgeIDs       int
@@ -70,6 +75,10 @@ type roundTripCounts struct {
 	currentRevision  int
 	currentRevisions int
 	sourceClaim      int
+
+	documentRevisionRules int
+	revisionRules         int
+	interactionRevisions  int
 }
 
 // roundTrips is every counted policy-store call, without the batch-size
@@ -78,15 +87,19 @@ func (t policyStoreTrips) roundTrips() roundTripCounts {
 	return roundTripCounts{
 		node: t.node, nodes: t.nodes, edge: t.edge, edges: t.edges,
 		revision: t.revision, currentRevision: t.currentRevision,
-		currentRevisions: t.currentRevisions,
-		sourceClaim:      t.sourceClaim,
+		currentRevisions:      t.currentRevisions,
+		sourceClaim:           t.sourceClaim,
+		documentRevisionRules: t.documentRevisionRules,
+		revisionRules:         t.revisionRules,
+		interactionRevisions:  t.interactionRevisions,
 	}
 }
 
 // total is every policy-store round trip, batched or not.
 func (t policyStoreTrips) total() int {
 	return t.node + t.nodes + t.edge + t.edges +
-		t.revision + t.currentRevision + t.currentRevisions + t.sourceClaim
+		t.revision + t.currentRevision + t.currentRevisions + t.sourceClaim +
+		t.documentRevisionRules + t.revisionRules + t.interactionRevisions
 }
 
 // perItem is the round trips that still cost one call per item, and is the
@@ -101,8 +114,11 @@ func (t policyStoreTrips) byMethod() map[string]int {
 	return map[string]int{
 		"Node": t.node, "Nodes": t.nodes, "Edge": t.edge, "Edges": t.edges,
 		"Revision": t.revision, "CurrentRevision": t.currentRevision,
-		"CurrentRevisions": t.currentRevisions,
-		"SourceClaim":      t.sourceClaim,
+		"CurrentRevisions":      t.currentRevisions,
+		"SourceClaim":           t.sourceClaim,
+		"DocumentRevisionRules": t.documentRevisionRules,
+		"RevisionRules":         t.revisionRules,
+		"InteractionRevisions":  t.interactionRevisions,
 	}
 }
 
@@ -323,6 +339,30 @@ func (s *countingPolicyStore) SourceClaim(
 ) (authorized.SourcePolicyClaim, bool, error) {
 	s.enterRead(func(trips *policyStoreTrips) { trips.sourceClaim++ })
 	return s.PolicyStore.SourceClaim(ctx, sourceURI)
+}
+
+func (s *countingPolicyStore) DocumentRevisionRules(
+	ctx context.Context,
+	documentIDs []shoal.ID,
+) (map[shoal.ID][]authorized.RevisionRule, error) {
+	s.enterRead(func(trips *policyStoreTrips) { trips.documentRevisionRules++ })
+	return s.PolicyStore.DocumentRevisionRules(ctx, documentIDs)
+}
+
+func (s *countingPolicyStore) RevisionRules(
+	ctx context.Context,
+	references []authorized.RevisionReference,
+) (map[shoal.ID][]authorized.RevisionRule, error) {
+	s.enterRead(func(trips *policyStoreTrips) { trips.revisionRules++ })
+	return s.PolicyStore.RevisionRules(ctx, references)
+}
+
+func (s *countingPolicyStore) InteractionRevisions(
+	ctx context.Context,
+	sessionIDs []shoal.ID,
+) (map[shoal.ID][]authorized.RevisionReference, error) {
+	s.enterRead(func(trips *policyStoreTrips) { trips.interactionRevisions++ })
+	return s.PolicyStore.InteractionRevisions(ctx, sessionIDs)
 }
 
 // batchFixture ingests documents and returns their node identifiers along with
@@ -809,7 +849,8 @@ var (
 	countedPolicyStoreReads = map[string]struct{}{
 		"Node": {}, "Nodes": {}, "Edge": {}, "Edges": {},
 		"Revision": {}, "CurrentRevision": {}, "CurrentRevisions": {},
-		"SourceClaim": {},
+		"SourceClaim": {}, "DocumentRevisionRules": {}, "RevisionRules": {},
+		"InteractionRevisions": {},
 	}
 	uncountedPolicyStoreMethods = map[string]struct{}{
 		"AcquireMutation": {}, "CompareAndSwapSourceClaim": {},
@@ -823,6 +864,8 @@ var (
 		// The declassification audit (#630): an append written by Ingest
 		// and an operator read no request read path reaches.
 		"RecordDeclassification": {}, "Declassifications": {},
+		// The revision binding's write (#695), made while recording.
+		"PutInteractionRevisions": {},
 	}
 )
 
@@ -887,6 +930,17 @@ func TestCountingPolicyStoreCountsEveryPolicyStoreRead(t *testing.T) {
 		},
 		"SourceClaim": func(s *countingPolicyStore) {
 			_, _, _ = s.SourceClaim(ctx, "file:///source-a.txt")
+		},
+		"DocumentRevisionRules": func(s *countingPolicyStore) {
+			_, _ = s.DocumentRevisionRules(ctx, []shoal.ID{"document-a"})
+		},
+		"RevisionRules": func(s *countingPolicyStore) {
+			_, _ = s.RevisionRules(ctx, []authorized.RevisionReference{{
+				DocumentID: "document-a", RevisionID: "revision-a",
+			}})
+		},
+		"InteractionRevisions": func(s *countingPolicyStore) {
+			_, _ = s.InteractionRevisions(ctx, []shoal.ID{"session-a"})
 		},
 	}
 	if len(invocations) != len(countedPolicyStoreReads) {

@@ -2,6 +2,46 @@
 
 ## Unreleased
 
+### Interactions, folds and edges stay bound to the revision they came from (#695)
+
+An interaction (and every fold of it) and an application edge (`Connect`)
+were authorized on read against their inputs' current rules only. After an
+authorized relabel that removed a label, the labelled revision stayed closed
+but everything derived from it opened. Now:
+
+- A session records, when it is written, the revisions of every document it
+  touched or cited; every read also requires each of those revisions' rules
+  (and, for a revision that is no longer current, the document's current
+  rule). Folds follow their members.
+- An application edge records the revision each endpoint belonged to when it
+  was connected, and its effective rule includes those revisions' rules.
+- Outputs recorded before this release carry no such record:
+  - A session is held to every revision of its documents up to the one that
+    was current at the session's snapshot (by the corpus's publication
+    sequence, which a wall-clock step cannot reorder), plus the current one.
+  - An application edge is held to every revision its endpoints' documents
+    ever had, plus the current one. So an edge connected before this release
+    to a document that was ever labelled stays closed to a reader without
+    that label.
+  - Edges extracted or materialized before registration kinds existed are
+    not affected.
+
+**Policy catalog format: back up before upgrading.** The first time this
+release opens a policy catalog read-write (`shoal-explore-web`,
+`shoal-mcp`), it writes a format-floor row, `sourceclaim/\xffformat-floor`
+with record kind 12, and logs that it did. Older `shoal-explore-web` and
+`shoal-mcp` binaries, and their `-list-*` offline listings, then refuse to
+open the catalog with `internal: stored policy source claim record is
+corrupt`. The catalog is **not** corrupt: that refusal is deliberate, because
+an older binary would otherwise ignore the new bindings and reopen what they
+close. Back up the policy directory (`-policy-dir`, or the policy catalog
+under `-state-dir`) before upgrading. To roll back, restore that backup; do
+not delete the row. The offline listings of this release do not write the
+row. The corpus volume does not need to be restored with it: a document
+ingested after the backup has no registration in the restored catalog, so it
+is withheld from every reader (fail closed) until it is ingested again.
+Restore the corpus volume from the same point if you want the two to agree.
+
 ### Copy-down through edges, interactions and extraction is not a declassification (#663)
 
 #663 asked whether labelled content written into weaker-labelled material
@@ -10,10 +50,12 @@ through an operation that names its inputs should be audited like a relabel
 reader when it is made.
 
 - An application edge (`Connect`) is stored under the edge policy, which never
-  carries a label, but every read also requires both endpoints' current rules.
+  carries a label, but every read also requires both endpoints' current rules
+  and, since #695, the rule of the revision each endpoint was connected to.
 - An interaction's output restriction may omit its evidence's labels (an MCP
   tool call records only the workspace output policy), but every read also
-  requires every touched node's and edge's current rule.
+  requires every touched node's and edge's current rule and, since #695, the
+  rule of every revision it was derived from.
 - Extracted entities and relations are registered under their document's own
   rule and follow it through a relabel.
 
@@ -31,7 +73,7 @@ Found while checking this and filed:
 - #695: interactions and application edges follow their inputs' current
   rule, not the rule of the revision they were derived from. So a relabel
   that removes a label opens what was derived from the labelled revision,
-  while that revision itself stays closed.
+  while that revision itself stays closed. Fixed in this release (above).
 - #696: a fleet action's `Output` is served to readers whose evidence refs
   are withheld.
 - #698, #699, #700: existence and count oracles. A bounded neighborhood's

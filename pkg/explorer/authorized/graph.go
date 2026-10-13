@@ -107,8 +107,15 @@ func (c *Client) Connect(ctx context.Context, edge graph.Edge) error {
 	if err := guard.Check(ctx); err != nil {
 		return err
 	}
+	// The edge is bound to the revisions its endpoints belong to now, so a
+	// later relabel of either cannot open it (#695).
+	sources, err := connectSourceRevisions(from, to)
+	if err != nil {
+		return inconsistentBase()
+	}
 	registration := EdgeRegistration{
 		Edge: ownedEdge, Rule: edgeRule, Kind: RegistrationApplication,
+		SourceRevisions: sources, SourceRevisionsBound: true,
 	}
 	if err := c.policyStore.ReserveEdge(ctx, registration); err != nil {
 		return policyCatalogWriteError(ctx, err)

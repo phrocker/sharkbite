@@ -117,7 +117,8 @@ func OpenExistingDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 		_ = lock.Close()
 		return nil, err
 	}
-	return openLockedDurablePolicyStore(dir, lock)
+	// An offline listing never writes, so it leaves the floor alone.
+	return openLockedDurablePolicyStore(dir, lock, false)
 }
 
 // openExistingBeforeLock runs between OpenExistingDurablePolicyStore's

@@ -70,6 +70,9 @@ type DurablePolicyStore struct {
 	lock   *dirlock.Lock
 	seq    uint64
 	closed bool
+	// formatFloor reports that the catalog holds the format floor revision
+	// bindings require (revision_binding_durable.go).
+	formatFloor bool
 	// diverged is set once a write-through fails after the memory store was
 	// already mutated, so memory may hold state the engine does not. From
 	// then on the store fails closed: every read and write reports the
@@ -206,14 +209,22 @@ type persistedCurrent struct {
 // Kind is RegistrationKind. Records written before it existed decode with a
 // zero Kind and take the explicit legacy path (legacyEdgeKind,
 // legacyNodeKind) once, at load.
+//
+// SourceRevisions and SourceRevisionsBound are EdgeRegistration's revision
+// binding (#695). A record written before they existed decodes with neither,
+// which is exactly an unbound (legacy) registration. A bound record is only
+// ever written after the catalog's format floor (revision_binding_durable.go),
+// which a binary that predates the binding refuses to open over.
 type persistedEdge struct {
-	Seq        uint64
-	Tombstone  bool
-	Edge       persistedGraphEdge
-	DocumentID string
-	RevisionID string
-	Rule       persistedRule
-	Kind       uint8
+	Seq                  uint64
+	Tombstone            bool
+	Edge                 persistedGraphEdge
+	DocumentID           string
+	RevisionID           string
+	Rule                 persistedRule
+	Kind                 uint8
+	SourceRevisions      []persistedRevisionReference
+	SourceRevisionsBound bool
 }
 
 type persistedNode struct {
@@ -256,12 +267,16 @@ type persistedCoOccurrence struct {
 // replaying, flushing or truncating the owner's WAL (#686). The kernel drops
 // the lock when its holder exits, however it exits, so the lock file a crash
 // leaves behind does not block the next start.
+//
+// It writes the catalog's format floor (revision_binding_durable.go) if the
+// catalog has none, so from the first read-write open by this binary on, a
+// binary from before #695 refuses the catalog.
 func OpenDurablePolicyStore(dir string) (*DurablePolicyStore, error) {
 	lock, err := dirlock.Acquire(dir, policyLockFile)
 	if err != nil {
 		return nil, policyCatalogLockError(dir, err)
 	}
-	return openLockedDurablePolicyStore(dir, lock)
+	return openLockedDurablePolicyStore(dir, lock, true)
 }
 
 // policyLockFile is the catalog directory's ownership lock file. It is a
@@ -288,6 +303,7 @@ func policyCatalogLockError(dir string, err error) error {
 func openLockedDurablePolicyStore(
 	dir string,
 	lock *dirlock.Lock,
+	writeFloor bool,
 ) (*DurablePolicyStore, error) {
 	eng, err := engine.Open(dir, engine.Options{})
 	if err != nil {
@@ -319,6 +335,13 @@ func openLockedDurablePolicyStore(
 		_ = eng.Close()
 		_ = lock.Close()
 		return nil, err
+	}
+	if writeFloor {
+		if err := store.writeFormatFloorAtOpen(dir); err != nil {
+			_ = eng.Close()
+			_ = lock.Close()
+			return nil, err
+		}
 	}
 	return store, nil
 }
@@ -369,7 +392,10 @@ func (s *DurablePolicyStore) load() error {
 	coOccurrences := make(map[string]persistedCoOccurrence)
 	var declassifications []sequencedDeclassification
 	declassificationSeqs := make(map[string]struct{})
+	interactionRevisions := make(map[string]persistedInteractionRevisions)
 	var (
+		floorRecord     persistedFormatFloor
+		haveFloor       bool
 		versionRecord   persistedSourceVersion
 		haveVersion     bool
 		migrationRecord persistedLabelMigration
@@ -391,6 +417,38 @@ func (s *DurablePolicyStore) load() error {
 		// Every cell is decoded, not just the winning one, so a corrupt or
 		// truncated record that a newer write shadows still fails closed.
 		switch {
+		case bytes.Equal(row, []byte(policyRowFormatFloor)):
+			// Before the source-claim prefix it shares (see
+			// policyRowFormatFloor).
+			var record persistedFormatFloor
+			if err := decodePolicyRecord(
+				value, policyKindFormatFloor, &record,
+			); err != nil {
+				return corruptPolicyRecord("format floor", err)
+			}
+			if err := validateFormatFloor(record); err != nil {
+				return err
+			}
+			if !haveFloor || record.Seq >= floorRecord.Seq {
+				floorRecord = record
+				haveFloor = true
+			}
+			maxSeq = maxUint64(maxSeq, record.Seq)
+		case bytes.HasPrefix(row, []byte(policyRowInteractionRevisions)):
+			var record persistedInteractionRevisions
+			if err := decodePolicyRecord(
+				value, policyKindInteractionRevisions, &record,
+			); err != nil {
+				return corruptPolicyRecord("interaction revisions", err)
+			}
+			if string(policyInteractionRevisionsRow(shoal.ID(record.SessionID))) != rowStr {
+				return corruptPolicyRecord("interaction revisions",
+					fmt.Errorf("interaction revisions row does not match its record"))
+			}
+			if prev, ok := interactionRevisions[rowStr]; !ok || record.Seq >= prev.Seq {
+				interactionRevisions[rowStr] = record
+			}
+			maxSeq = maxUint64(maxSeq, record.Seq)
 		case bytes.Equal(row, []byte(policyRowSourceVersion)):
 			var record persistedSourceVersion
 			if err := decodePolicyRecord(
@@ -538,6 +596,11 @@ func (s *DurablePolicyStore) load() error {
 	); err != nil {
 		return err
 	}
+	if err := s.reconstructRevisionBindings(
+		haveFloor, edges, edgeClaims, interactionRevisions,
+	); err != nil {
+		return err
+	}
 	if haveMigration {
 		migration, err := labelMigrationFromPersisted(migrationRecord)
 		if err != nil {
@@ -596,6 +659,8 @@ func (s *DurablePolicyStore) reconstruct(
 			Rule:           rule,
 		}
 		memory.revisionIDs[key.revisionID] = key
+		memory.documentRevisions[key.documentID] = append(
+			memory.documentRevisions[key.documentID], key.revisionID)
 	}
 
 	for _, record := range currents {
@@ -897,6 +962,11 @@ func (s *DurablePolicyStore) ReserveEdge(
 	if err := admitEdge(registration); err != nil {
 		return err
 	}
+	if edgeRegistrationBound(registration) {
+		if err := s.ensureFormatFloor(); err != nil {
+			return err
+		}
+	}
 	if err := s.memory.ReserveEdge(ctx, registration); err != nil {
 		return err
 	}
@@ -933,6 +1003,11 @@ func (s *DurablePolicyStore) PutEdge(
 	defer s.mu.Unlock()
 	if err := admitEdge(registration); err != nil {
 		return err
+	}
+	if edgeRegistrationBound(registration) {
+		if err := s.ensureFormatFloor(); err != nil {
+			return err
+		}
 	}
 	if err := s.memory.PutEdge(ctx, registration); err != nil {
 		return err
@@ -1494,13 +1569,15 @@ func edgeToPersisted(
 		return persistedEdge{}, err
 	}
 	return persistedEdge{
-		Seq:        seq,
-		Tombstone:  tombstone,
-		Edge:       graphEdgeToPersisted(registration.Edge),
-		DocumentID: string(registration.DocumentID),
-		RevisionID: string(registration.RevisionID),
-		Rule:       rule,
-		Kind:       uint8(registration.Kind),
+		Seq:                  seq,
+		Tombstone:            tombstone,
+		Edge:                 graphEdgeToPersisted(registration.Edge),
+		DocumentID:           string(registration.DocumentID),
+		RevisionID:           string(registration.RevisionID),
+		Rule:                 rule,
+		Kind:                 uint8(registration.Kind),
+		SourceRevisions:      revisionReferencesToPersisted(registration.SourceRevisions),
+		SourceRevisionsBound: registration.SourceRevisionsBound,
 	}, nil
 }
 
@@ -1519,13 +1596,26 @@ func edgeRegistrationFromPersisted(
 	if kind == RegistrationUnspecified {
 		kind = legacyEdgeKind()
 	}
-	return normalizeApplicationEdgeRegistration(EdgeRegistration{
-		Edge:       edge,
-		DocumentID: shoal.ID(record.DocumentID),
-		RevisionID: shoal.ID(record.RevisionID),
-		Rule:       rule,
-		Kind:       kind,
+	sources := revisionReferencesFromPersisted(record.SourceRevisions)
+	normalized, err := normalizeApplicationEdgeRegistration(EdgeRegistration{
+		Edge:                 edge,
+		DocumentID:           shoal.ID(record.DocumentID),
+		RevisionID:           shoal.ID(record.RevisionID),
+		Rule:                 rule,
+		Kind:                 kind,
+		SourceRevisions:      sources,
+		SourceRevisionsBound: record.SourceRevisionsBound,
 	})
+	if err != nil {
+		return EdgeRegistration{}, err
+	}
+	// Strict: a binding is stored exactly as normalization writes it, so a
+	// reordered, duplicated or otherwise rewritten one is corrupt rather
+	// than silently repaired.
+	if !revisionReferencesEqual(normalized.SourceRevisions, sources) {
+		return EdgeRegistration{}, fmt.Errorf("edge source revisions are not canonical")
+	}
+	return normalized, nil
 }
 
 // legacyEdgeKind is the kind of an edge record persisted before

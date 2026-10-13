@@ -35,7 +35,9 @@ import (
 //
 // Every other kind keeps its registered rule: intrinsic (document) nodes and
 // edges always name the current revision, and materialized and application
-// registrations are not derived from any document. The decision is made on
+// registrations are not asserted by any document. An application edge is,
+// however, bound to the revisions its endpoints belonged to when it was
+// connected (#695, revision_binding.go). The decision is made on
 // the stored RegistrationKind, never on which fields happen to be empty.
 
 // effectiveNodeRegistrations applies the extracted-registration rule to node
@@ -64,7 +66,7 @@ func (c *Client) effectiveEdgeRegistrations(
 	ctx context.Context,
 	registrations map[shoal.ID]EdgeRegistration,
 ) (map[shoal.ID]EdgeRegistration, error) {
-	return effectiveRegistrations(c, ctx, registrations,
+	effective, err := effectiveRegistrations(c, ctx, registrations,
 		func(registration EdgeRegistration) (RegistrationKind, shoal.ID, shoal.ID, AccessRule) {
 			return registration.Kind, registration.DocumentID,
 				registration.RevisionID, registration.Rule
@@ -73,6 +75,11 @@ func (c *Client) effectiveEdgeRegistrations(
 			registration.Rule = rule
 			return registration
 		})
+	if err != nil {
+		return nil, err
+	}
+	// Application edges are bound to their endpoints' revisions (#695).
+	return c.bindEdgeSourceRevisions(ctx, effective)
 }
 
 func effectiveRegistrations[R any](

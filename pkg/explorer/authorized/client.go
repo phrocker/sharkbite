@@ -41,6 +41,16 @@ type SnapshotValidator interface {
 	ValidateSnapshot(context.Context, shoal.ID, time.Time, []shoal.ID) error
 }
 
+// PublicationReader reports how the corpus published each stored revision
+// and which application edges it connected (*explorer.Explorer implements
+// it).
+type PublicationReader interface {
+	RevisionPublications(
+		context.Context, []shoal.ID,
+	) (map[shoal.ID]map[shoal.ID]explorer.RevisionPublication, error)
+	ConnectedEdges(context.Context, []shoal.ID) (map[shoal.ID]bool, error)
+}
+
 // EvidenceSnapshotValidator additionally binds exact source evidence to the
 // pinned corpus frontier.
 type EvidenceSnapshotValidator interface {
@@ -96,6 +106,14 @@ type Config struct {
 	// trusted dependency also implements DerivedAssertionReader. Base is never
 	// promoted implicitly.
 	DerivedAssertionReader DerivedAssertionReader
+	// PublicationReader is the optional explicitly trusted source of how the
+	// corpus published each revision and which application edges it
+	// connected.
+	// It narrows what an output recorded before #695 is held to (see
+	// revision_binding.go). When omitted, NewClient may use
+	// SnapshotValidator if that dependency also implements it; without one,
+	// such an output is held to every revision of its documents.
+	PublicationReader PublicationReader
 	// FoldStore is the explicitly trusted durable fold source. When omitted,
 	// NewClient may use SnapshotValidator if that separately trusted
 	// dependency also implements FoldStore. Base is never promoted implicitly.
@@ -139,6 +157,7 @@ type Client struct {
 	vectorScorer        VectorScorer
 	interactionSink     explorer.InteractionWriter
 	interactionSource   explorer.InteractionReader
+	publications        PublicationReader
 	snapshotValidator   SnapshotValidator
 	derivedAssertions   DerivedAssertionReader
 	foldSource          FoldStore
@@ -202,6 +221,10 @@ func NewClient(config Config) (*Client, error) {
 		derivedAssertions, _ =
 			config.SnapshotValidator.(DerivedAssertionReader)
 	}
+	publications := config.PublicationReader
+	if isNilDependency(publications) && hasSnapshotValidator {
+		publications, _ = config.SnapshotValidator.(PublicationReader)
+	}
 	foldStore := config.FoldStore
 	if isNilDependency(foldStore) && hasSnapshotValidator {
 		foldStore, _ = config.SnapshotValidator.(FoldStore)
@@ -233,6 +256,7 @@ func NewClient(config Config) (*Client, error) {
 		snapshotValidator:   config.SnapshotValidator,
 		derivedAssertions:   derivedAssertions,
 		foldSource:          foldStore,
+		publications:        publications,
 		ontologyInterpreter: config.OntologyInterpreter,
 		ontologyProposals:   config.OntologyProposalStore,
 		resolver:            config.Resolver,

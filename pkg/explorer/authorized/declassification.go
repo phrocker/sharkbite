@@ -126,21 +126,25 @@ package authorized
 //     never carry a label (selectEdgeRule). So an edge to a labelled
 //     document is stored under a rule weaker than that endpoint's. Every
 //     read of an edge also requires both endpoints' current rules
-//     (edgeAllowsResolved, edgeEndpointsAllow), and a neighborhood drops an
-//     edge whose endpoint it hides.
+//     (edgeAllowsResolved, edgeEndpointsAllow), and the rule of the revision
+//     each endpoint belonged to when it was connected (#695,
+//     revision_binding.go). A neighborhood drops an edge whose endpoint it
+//     hides.
 //   - An interaction's stored output restriction (RequiredVisibility) may
 //     carry none of its evidence's labels. An MCP tool call, for example,
 //     records only the workspace output policy. Every read also requires the
 //     current rule of every touched node and edge
-//     (authorizeInteractionRecords, interactionEvidenceAllows), and a fold
-//     requires every member.
+//     (authorizeInteractionRecords, interactionEvidenceAllows), and
+//     revisionAllows for every revision the session was derived from
+//     (#695). A fold requires every member.
 //   - ExtractDocument registers what it extracts under the source document's
 //     own rule. An extracted registration is conjoined with the document's
 //     current rule once that document is relabelled (derived_rule.go).
 //
 // None of them serves, at the write, the output's content to a reader its
 // inputs would refuse. The effective rule of each output is its stored rule
-// AND its inputs' current rules, which never narrows the inputs. This is a
+// AND its inputs' current rules AND the rules of the revisions it was derived
+// from, which never narrows the inputs, not even after a relabel. This is a
 // claim about content. Existence and count signals are separate gaps (below). So they write no
 // DeclassificationRecord, and RequireDeclassificationReason does not apply to
 // them. A record would describe a widening that does not happen, at one record
@@ -150,11 +154,6 @@ package authorized
 //
 // Known gaps, tracked separately:
 //
-//   - Interactions and application edges follow their inputs' CURRENT rule,
-//     not the rule of the revision they were derived from (#695). An
-//     authorized relabel that removes a label (audited here) leaves the
-//     replaced revision closed (revisionAllows), but opens what was derived
-//     from it. Extracted registrations do not have this gap.
 //   - A fleet action's Output names its evidence but is served to readers
 //     whose evidence refs are withheld (#696). That is a precise copy-down
 //     that is not bound to its inputs.

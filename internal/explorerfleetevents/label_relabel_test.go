@@ -264,10 +264,12 @@ func (p labelPlane) recordSession(t *testing.T, id shoal.ID) {
 //     every reader, holders of the new labels included, until it is
 //     re-recorded (staleDerivedVisibilityError). Dispatch decides by the
 //     current rules, so a holder of the new labels sees the reference.
-//   - After loosening to unlabelled, the interaction record is visible to
-//     every reader, since its touched nodes are now public. The dispatch
+//   - After loosening to unlabelled, both planes agree again. The dispatch
 //     reference cites the revision that was labelled secret, and that
 //     revision is still readable only with secret, so the reference is too.
+//     The interaction session is bound to the revision it was recorded over
+//     (#695), so it is held to secret as well, even though its touched nodes
+//     are now public.
 //
 // This test is what showed the cited revision mattered: a gate that checked
 // only current node rules would have made the loosened dispatch row all
@@ -288,7 +290,7 @@ func TestDispatchAndInteractionReadsAgreeAcrossARelabel(t *testing.T) {
 	}{
 		{"recorded", "", []bool{false, true, false, true}, []bool{false, true, false, true}},
 		{"tightened", "secret&pii", []bool{false, false, false, true}, []bool{false, false, false, false}},
-		{"loosened", "-", []bool{false, true, false, true}, []bool{true, true, true, true}},
+		{"loosened", "-", []bool{false, true, false, true}, []bool{false, true, false, true}},
 	} {
 		switch stage.labels {
 		case "":

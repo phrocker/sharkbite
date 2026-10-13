@@ -581,16 +581,35 @@ writes a declassification record, and `-require-declassification-reason`
 never refuses one, because none of them admits a new reader when it is
 written. Every read of such an output also requires its inputs' current
 rules. An edge needs both endpoints, an interaction needs every node and
-edge it touched, and an extracted entity or relation needs its document. No
-content of these outputs is served to a reader without the label. Their
-existence is not fully hidden yet: see the gaps below.
+edge it touched, and an extracted entity or relation needs its document.
+Each also needs the rule of the revision it was derived from, so when the
+labelled document is later relabelled to fewer labels (audited as above),
+what was derived from the labelled revision stays closed with that revision
+(#695). No content of these outputs is served to a reader without the label.
+Their existence is not fully hidden yet: see the gaps below.
+
+**Upgrading past #695: back up the policy directory first.** The first
+read-write open by a release with #695 writes a format-floor row
+(`sourceclaim/\xffformat-floor`, record kind 12) and logs "policy catalog
+format floor written". From then on an older `shoal-explore-web` or
+`shoal-mcp`, including its `-list-*` listings, refuses the catalog with
+`internal: stored policy source claim record is corrupt`. The catalog is not
+corrupt; the older binary would otherwise ignore the new bindings. To roll
+back, restore the backup taken before the upgrade. Do not delete the row.
+The corpus volume need not be restored with it: a document ingested after
+the backup has no registration in the restored catalog and is withheld from
+every reader (fail closed) until it is ingested again. Restore the corpus
+from the same point if you want the two to agree.
 
 Known gaps:
 
-- When the labelled document is later relabelled to fewer labels (audited
-  as above), its earlier labelled revision stays closed, but interactions and
-  edges derived from that revision open with the document (#695). Extracted
-  entities and relations stay closed.
+- Interactions and edges recorded before #695 carry no record of the
+  revision they were derived from. A session is held to every revision of
+  its documents up to the one current at its snapshot (by publication
+  sequence) and the current one, so it may close over an earlier labelled
+  revision it did not use. An edge is held to every revision its endpoints'
+  documents ever had, so an old edge to a once-labelled document stays
+  closed to readers without that label.
 - A fleet action's `Output` is shown to readers whose view of the action's
   evidence is withheld (#696).
 - Existence and count oracles. A bounded neighborhood's scan limit reveals

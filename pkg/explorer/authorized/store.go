@@ -84,12 +84,20 @@ type NodeRegistration struct {
 // current node catalog on every authorization. DocumentID and RevisionID are
 // set for revision-intrinsic edges and for extracted edges (the asserting
 // revision), and empty for application and materialized edges.
+//
+// SourceRevisions and SourceRevisionsBound bind an application edge to the
+// document revisions its endpoints belonged to when it was connected (#695);
+// see revision_binding.go. SourceRevisionsBound distinguishes an edge
+// connected with that binding (possibly empty, when neither endpoint belongs
+// to a document) from one registered before it existed.
 type EdgeRegistration struct {
-	Edge       graph.Edge
-	DocumentID shoal.ID
-	RevisionID shoal.ID
-	Rule       AccessRule
-	Kind       RegistrationKind
+	Edge                 graph.Edge
+	DocumentID           shoal.ID
+	RevisionID           shoal.ID
+	Rule                 AccessRule
+	Kind                 RegistrationKind
+	SourceRevisions      []RevisionReference
+	SourceRevisionsBound bool
 }
 
 // MutationLease serializes base mutations shared by clients using one store.
@@ -195,6 +203,33 @@ type PolicyStore interface {
 	// attempt; whether the narrowing took effect is the catalog's revision
 	// registration (a pre_commit record's RevisionID being current).
 	Declassifications(context.Context) ([]DeclassificationRecord, error)
+	// DocumentRevisionRules returns, for each requested document that has
+	// any registered revision, the rule of every one of its revisions and
+	// which of them is current (#695). Absence is the fail-closed signal, as
+	// for Nodes; unrequested documents are never reported.
+	DocumentRevisionRules(
+		context.Context, []shoal.ID,
+	) (map[shoal.ID][]RevisionRule, error)
+	// RevisionRules returns, for each document the references name, the
+	// rules of the referenced revisions that are registered and of the
+	// current revision, under DocumentRevisionRules's contract. It is what a
+	// bound output needs without a document's whole history.
+	RevisionRules(
+		context.Context, []RevisionReference,
+	) (map[shoal.ID][]RevisionRule, error)
+	// PutInteractionRevisions durably records, before returning nil, that
+	// the interaction session was derived from the given document revisions
+	// (#695). A repeated call unions with what is recorded and never removes
+	// a revision, so a recording can only narrow who reads the session.
+	PutInteractionRevisions(
+		context.Context, shoal.ID, []RevisionReference,
+	) error
+	// InteractionRevisions returns the revisions recorded for each requested
+	// session. A session absent from the result has no recording: it was
+	// recorded before #695, or touched no document.
+	InteractionRevisions(
+		context.Context, []shoal.ID,
+	) (map[shoal.ID][]RevisionReference, error)
 }
 
 type revisionKey struct {
@@ -231,6 +266,12 @@ type MemoryPolicyStore struct {
 	labelMigration *LabelMigrationRecord
 	// declassifications is append-only (#630).
 	declassifications []DeclassificationRecord
+	// documentRevisions indexes every registered revision ID by document,
+	// (#695).
+	documentRevisions map[shoal.ID][]shoal.ID
+	// interactionRevisions is what PutInteractionRevisions recorded, in
+	// canonical order (#695).
+	interactionRevisions map[shoal.ID][]RevisionReference
 }
 
 // NewMemoryPolicyStore constructs an empty reference catalog.
@@ -245,6 +286,9 @@ func NewMemoryPolicyStore() *MemoryPolicyStore {
 		edgeClaims:     make(map[shoal.ID]EdgeRegistration),
 		edges:          make(map[shoal.ID]EdgeRegistration),
 		coOccurrence:   make(map[string]CoOccurrenceRecord),
+
+		documentRevisions:    make(map[shoal.ID][]shoal.ID),
+		interactionRevisions: make(map[shoal.ID][]RevisionReference),
 	}
 }
 
@@ -657,6 +701,10 @@ func (s *MemoryPolicyStore) PutRevision(
 
 	stored := cloneRevisionRegistration(normalized)
 	stored.Current = false
+	if _, known := s.revisions[key]; !known {
+		s.documentRevisions[key.documentID] = append(
+			s.documentRevisions[key.documentID], key.revisionID)
+	}
 	s.revisions[key] = stored
 	s.revisionIDs[normalized.RevisionID] = key
 	if normalized.Current {
@@ -1026,6 +1074,11 @@ func (s *MemoryPolicyStore) PutEdge(
 			delete(s.edgeClaims, normalized.Edge.ID)
 			return nil
 		case edgeMergeReplace:
+			// The replaced application edge's revision binding (#695)
+			// is kept: replacing may only narrow who reads the edge.
+			normalized.SourceRevisions = append(
+				[]RevisionReference(nil), existing.SourceRevisions...)
+			normalized.SourceRevisionsBound = existing.SourceRevisionsBound
 			s.edges[normalized.Edge.ID] = cloneEdgeRegistration(normalized)
 			delete(s.edgeClaims, normalized.Edge.ID)
 			return nil
@@ -1216,6 +1269,12 @@ func (s *MemoryPolicyStore) initialize() {
 	}
 	if s.coOccurrence == nil {
 		s.coOccurrence = make(map[string]CoOccurrenceRecord)
+	}
+	if s.documentRevisions == nil {
+		s.documentRevisions = make(map[shoal.ID][]shoal.ID)
+	}
+	if s.interactionRevisions == nil {
+		s.interactionRevisions = make(map[shoal.ID][]RevisionReference)
 	}
 }
 
@@ -1532,6 +1591,26 @@ func normalizeApplicationEdgeRegistration(
 		Edge: cloneGraphEdge(registration.Edge), Rule: rule,
 		Kind: registration.Kind,
 	}
+	sources, err := canonicalRevisionReferences(registration.SourceRevisions)
+	if err != nil {
+		return EdgeRegistration{}, err
+	}
+	if len(sources) > 0 && !registration.SourceRevisionsBound {
+		return EdgeRegistration{}, shoal.NewError(shoal.ErrorInvalidArgument,
+			"edge source revisions require a bound registration")
+	}
+	if registration.SourceRevisionsBound {
+		// Only Connect (application) binds; an extracted edge carries the
+		// binding of the application edge it replaced (extractedEdgeMerge).
+		switch registration.Kind {
+		case RegistrationApplication, RegistrationUnspecified, RegistrationExtracted:
+		default:
+			return EdgeRegistration{}, shoal.NewError(shoal.ErrorInvalidArgument,
+				"only application and extracted edges carry source revisions")
+		}
+		normalized.SourceRevisions = sources
+		normalized.SourceRevisionsBound = true
+	}
 	switch registration.Kind {
 	case RegistrationUnspecified:
 		// The pre-kind PutEdge/ReserveEdge contract registered Connect edges.
@@ -1628,7 +1707,9 @@ func edgeRegistrationsEqual(left, right EdgeRegistration) bool {
 		graphEdgesEqual(left.Edge, right.Edge) &&
 		left.DocumentID == right.DocumentID &&
 		left.RevisionID == right.RevisionID &&
-		left.Rule.equal(right.Rule)
+		left.Rule.equal(right.Rule) &&
+		left.SourceRevisionsBound == right.SourceRevisionsBound &&
+		revisionReferencesEqual(left.SourceRevisions, right.SourceRevisions)
 }
 
 func nodeRegistrationsEqual(left, right NodeRegistration) bool {
@@ -1680,6 +1761,8 @@ func cloneEdgeRegistrationChecked(
 	}
 	registration.Edge = cloneGraphEdge(registration.Edge)
 	registration.Rule = rule
+	registration.SourceRevisions = append(
+		[]RevisionReference(nil), registration.SourceRevisions...)
 	return registration, nil
 }
 

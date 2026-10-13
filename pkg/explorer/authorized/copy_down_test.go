@@ -28,8 +28,8 @@ package authorized_test
 // that no declassification record is written and that
 // RequireDeclassificationReason does not refuse the write. See
 // declassification.go, "Copy-down through declared inputs". The binding is to
-// the inputs' current rules; binding to the revision an output was derived
-// from is #695.
+// the inputs' current rules; the binding to the revision an output was
+// derived from (#695) is pinned in revision_binding_test.go.
 
 import (
 	"context"
@@ -321,7 +321,7 @@ func TestCopyDownExtractionCarriesItsSourceRule(t *testing.T) {
 		if records := declassifications(t, store); len(records) != 0 {
 			t.Fatalf("extraction was recorded as a declassification: %+v", records)
 		}
-		// Unlike an interaction or an edge (#695), what was extracted from
+		// Like an interaction or an edge (#695), what was extracted from
 		// the labelled revision stays closed when the document is relabelled
 		// to no label: its own rule is conjoined with the current one.
 		if _, err := client.Ingest(withReason(t, holder, "ticket:SEC-663"), explorer.Source{

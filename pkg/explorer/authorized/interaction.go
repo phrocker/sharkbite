@@ -312,6 +312,20 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 	if err != nil {
 		return interaction.Session{}, err
 	}
+	// The revisions the session was derived from (#695), read before its
+	// sources are authorized and again once its snapshot is validated, and
+	// recorded as the union: whichever revision the catalog named at either
+	// point is bound. (The corpus also refuses the write if a source changed
+	// after validation; TestRelabelRacingARecordingNeverOpensTheSession.)
+	evidence, err := canonical.EvidenceReferences()
+	if err != nil {
+		return interaction.Session{}, err
+	}
+	sourceRevisions, err := c.interactionSourceRevisions(
+		ctx, canonical.TouchedNodeIDs(), canonical.TouchedEdgeIDs(), evidence)
+	if err != nil {
+		return interaction.Session{}, err
+	}
 	if err := c.authorizeInteractionEvidence(
 		ctx,
 		canonical.TouchedNodeIDs(),
@@ -432,6 +446,20 @@ func (c *Client) recordInteractionWithEvidenceOperation(
 		return interaction.Session{}, directBaseError(err)
 	}
 	if err := guard.Check(ctx); err != nil {
+		return interaction.Session{}, err
+	}
+	validatedRevisions, err := c.interactionSourceRevisions(
+		ctx, canonical.TouchedNodeIDs(), edgeIDs, references)
+	if err != nil {
+		return interaction.Session{}, err
+	}
+	sourceRevisions, err = unionRevisionReferences(
+		sourceRevisions, validatedRevisions)
+	if err != nil {
+		return interaction.Session{}, inconsistentBase()
+	}
+	if err := c.recordInteractionSourceRevisions(
+		ctx, canonical.ID, sourceRevisions); err != nil {
 		return interaction.Session{}, err
 	}
 	admittedAt := c.clock().UTC()
@@ -607,6 +635,12 @@ func (c *Client) InteractionRecords(
 	}
 	allowed, err := c.authorizeInteractionRecords(ctx, records, decision, now)
 	if err != nil {
+		return nil, err
+	}
+	if err := c.authorizeInteractionRevisions(
+		ctx, c.newRevisionGate(decision, auth.OperationRead, now),
+		records, allowed,
+	); err != nil {
 		return nil, err
 	}
 	visible := make([]explorer.InteractionRecord, 0, len(records))
@@ -826,6 +860,17 @@ func (c *Client) InteractionRecord(
 		}
 		return explorer.InteractionRecord{}, err
 	}
+	// The revisions it was derived from (#695), decided like
+	// revisionAllows; a denial is exactly a record that was never written.
+	if !record.Summary.Deleted {
+		bound, err := c.interactionRevisionsAllow(ctx, decision, now, record)
+		if err != nil {
+			return explorer.InteractionRecord{}, err
+		}
+		if !bound {
+			return explorer.InteractionRecord{}, auth.ObjectNotFound()
+		}
+	}
 	readable, ok, err := c.readableInteraction(ctx, decision, now, record)
 	if err != nil {
 		return explorer.InteractionRecord{}, err
@@ -908,6 +953,13 @@ func (c *Client) InteractionSubgraph(
 			return explorer.Neighborhood{}, auth.ObjectNotFound()
 		}
 		return explorer.Neighborhood{}, err
+	}
+	bound, err := c.interactionRevisionsAllow(ctx, decision, now, record)
+	if err != nil {
+		return explorer.Neighborhood{}, err
+	}
+	if !bound {
+		return explorer.Neighborhood{}, auth.ObjectNotFound()
 	}
 	subgraph, err := reader.InteractionSubgraph(ctx, sessionID)
 	if err != nil {
