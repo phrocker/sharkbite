@@ -77,7 +77,7 @@ func (s *EmbeddedService) Ingest(
 	var refusal error
 	for index, item := range prepared {
 		outcomes[index].Name = item.name
-		result, err := s.client.Ingest(ctx, item.source)
+		result, notice, err := s.ingestUpload(ctx, item.source)
 		if err != nil {
 			wrapped := error(&uploadFileError{
 				name: item.name,
@@ -112,6 +112,7 @@ func (s *EmbeddedService) Ingest(
 			SectionCount: result.SectionCount,
 			SpanCount:    result.SpanCount,
 			SkillFile:    item.skillFile,
+			NameNotice:   notice,
 		})
 	}
 	if refusal != nil {
@@ -127,6 +128,54 @@ func (s *EmbeddedService) Ingest(
 		), outcomes)
 	}
 	return IngestResponse{Snapshot: fromExplorerSnapshot(snapshot), Files: results}, nil
+}
+
+// uploadRouter is the authorized client's ingest that reports where an
+// upload by name was written (#712).
+type uploadRouter interface {
+	IngestUpload(context.Context, explorer.Source) (
+		explorer.IngestResult, authorized.UploadRoute, error)
+}
+
+// ingestUpload ingests one upload, with the name notice of its route when
+// the client routes uploads.
+func (s *EmbeddedService) ingestUpload(
+	ctx context.Context, source explorer.Source,
+) (explorer.IngestResult, *IngestNameNotice, error) {
+	router, ok := s.client.(uploadRouter)
+	if !ok {
+		result, err := s.client.Ingest(ctx, source)
+		return result, nil, err
+	}
+	result, route, err := router.IngestUpload(ctx, source)
+	if err != nil {
+		return explorer.IngestResult{}, nil, err
+	}
+	return result, uploadNameNotice(route), nil
+}
+
+// uploadNameNotice is the notice for a route that left eligible documents of
+// the name unchanged, and nil for any other.
+func uploadNameNotice(route authorized.UploadRoute) *IngestNameNotice {
+	if route.OtherDocuments == 0 {
+		return nil
+	}
+	written := "your own document of this name"
+	if route.Kind == authorized.UploadRouteLegacy {
+		written = "the document stored under this name before uploads were " +
+			"kept per uploader"
+	}
+	message := fmt.Sprintf("uploaded to %s; %d other document(s) of this "+
+		"name that you may upload to were not changed", written, route.OtherDocuments)
+	if route.Ambiguous {
+		message = fmt.Sprintf("this name matches %d documents of other uploaders "+
+			"that you may upload to, so it was uploaded to your own document "+
+			"of this name and none of them was changed", route.OtherDocuments)
+	}
+	return &IngestNameNotice{
+		Route: string(route.Kind), SourceURI: route.SourceURI, OtherDocuments: route.OtherDocuments,
+		Ambiguous: route.Ambiguous, Message: message,
+	}
 }
 
 // ingestRefusal reports whether err is a per-file refusal the batch may go

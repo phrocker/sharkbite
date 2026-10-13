@@ -349,6 +349,32 @@ type IngestFileResult struct {
 	SectionCount int                        `json:"section_count"`
 	SpanCount    int                        `json:"span_count"`
 	SkillFile    *SkillFileResult           `json:"skill_file,omitempty"`
+	// NameNotice is set when the upload did not change other documents of
+	// its name that the caller may upload to (#712).
+	NameNotice *IngestNameNotice `json:"name_notice,omitempty"`
+}
+
+// IngestNameNotice says that an upload left other documents of its name
+// unchanged, documents the caller is authorized to ingest under (#712): the
+// name went to the caller's own document, or to the document stored under
+// it before #712. It is sent only then, so a client built before it still
+// reads every other reply. Only such documents are counted, so the notice
+// discloses nothing the caller could not have written itself.
+type IngestNameNotice struct {
+	// Route is where the upload went: "own" (the caller's own document of
+	// the name) or "legacy" (the document stored under the name before
+	// #712).
+	Route string `json:"route"`
+	// SourceURI is the source URI of the document written.
+	SourceURI string `json:"source_uri"`
+	// OtherDocuments counts the documents of the name left unchanged.
+	OtherDocuments int `json:"other_documents"`
+	// Ambiguous is set when the caller had no document of the name and
+	// several other uploaders' documents of it were eligible, so none of
+	// them was chosen.
+	Ambiguous bool `json:"ambiguous,omitempty"`
+	// Message is the notice's public text.
+	Message string `json:"message"`
 }
 
 // SkillFileResult describes whether a markdown upload matches the agent skill

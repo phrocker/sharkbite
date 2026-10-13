@@ -459,7 +459,15 @@ Residuals, stated rather than implied:
 
 A principal holding every label on a document may upload it again under fewer
 labels. A browser upload and the MCP `shoal.ingest` tool carry no labels, so
-re-uploading a labelled document's name removes all of them. That is allowed,
+re-uploading a labelled document's name removes all of them. An upload's name
+reaches another uploader's document only when the uploader has no document of
+the name itself and that document is the only one of the name it is
+authorized to ingest under, or is the one stored under the name before #712.
+Otherwise the upload goes to the uploader's own document of the name, and its
+per-file result carries a `name_notice` saying how many documents of the name
+were left unchanged: a relabel by name that finds the name ambiguous changes
+nothing and records nothing (#712). A library host can relabel a specific
+document by ingesting at its `source_uri`. That is allowed,
 but it is never silent: every such relabel leaves declassification audit
 records in the policy catalog (#630). One record is an `intent`, written before
 the source claim changes. The other is a `pre_commit`, written before the
@@ -614,8 +622,20 @@ Known gaps:
   evidence is withheld (#696).
 - Existence and count oracles. A bounded neighborhood's scan limit reveals
   the exact number of hidden edges and interactions on a visible node
-  (#698). Ingest still reveals whether a hidden document exists at a guessed
-  URI, over HTTP upload and MCP (#712). `Connect` no longer does (#699): its
+  (#698). An upload no longer reveals whether a hidden document exists under
+  a guessed filename (#712): a name routes to the uploader's own namespace
+  unless the uploader is authorized to ingest under another uploader's
+  document of the name. That namespace also binds the identity, not its
+  authority, so a narrowed session of the same identity can still tell
+  whether that identity uploaded a name it cannot read, and an uploader whose
+  own document of a name was relabelled away from it is refused on that name
+  until it is relabelled back. A namespaced `source_uri` shows a document's
+  readers an unkeyed digest of its first uploader's identity (#721). The
+  identity includes the client, so the browser and an MCP client upload to
+  different namespaces.
+  Source URIs other than uploads (`file://` and the like) are trusted
+  ingest only and are not namespaced: no HTTP or MCP route accepts one.
+  `Connect` no longer reveals a hidden document by URI either (#699): its
   edge IDs live in the writer's identity namespace. That namespace binds the
   identity, not its current authority, so a narrowed session of the same
   identity can still tell whether one of its own edge IDs exists (library

@@ -2464,6 +2464,8 @@ function renderUploadResults(files, statusText = "") {
     // This rendering is load-bearing; TestStaticWorkspaceDirectoryUploadRenamesSkillCollisions
     // pins that recognized agent skill metadata is visible per file.
     if (file.skill_file) text += `. ${skillFileText(file.skill_file)}`;
+    // An upload that left other documents of its name unchanged says so (#712).
+    if (file.name_notice && file.name_notice.message) text += `. Note: ${file.name_notice.message}`;
     item.textContent = text;
     results.append(item);
   }

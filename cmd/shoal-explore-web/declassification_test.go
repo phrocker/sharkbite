@@ -176,8 +176,14 @@ func uploadWithReason(
 // reason lands on the audit that -list-declassifications prints.
 func TestRequireDeclassificationReasonOverTheUploadRoute(t *testing.T) {
 	root := t.TempDir()
-	seeded, _ := seedLabelledUpload(t, root, false)
+	seeded, seededCtx := seedLabelledUpload(t, root, false)
+	// The seed is an upload by name, so it is stored in the development
+	// principal's upload namespace, where the uploads below route (#712).
+	storedURI, err := seeded.client.OwnUploadSourceURI(seededCtx, declassifiedName)
 	seeded.close()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -248,7 +254,7 @@ func TestRequireDeclassificationReasonOverTheUploadRoute(t *testing.T) {
 	for _, want := range []string{
 		"2 record(s), 1 attempt(s), 0 without a pre_commit record",
 		" intent at ", " pre_commit at ",
-		`source "` + declassifiedURI + `"`,
+		`source "` + storedURI + `"`,
 		`reason "ticket:SEC-42"`,
 		`removed labels: "secret"`,
 	} {

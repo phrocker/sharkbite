@@ -34,6 +34,33 @@ Trusted edge policy selectors that
 key on the edge ID can recover the caller's local ID with
 `authorized.ApplicationEdgeLocalID`.
 
+The authorized client's `Ingest` treats `upload://workspace/<name>`
+(`authorized.UploadSourceURIPrefix` and one URI segment, as the upload route
+and the MCP ingest tool build it) as a request to upload `<name>`, not as a
+URI (#712). Before anything is written it routes the name to the first of: the
+caller's own URI of it, `upload://workspace/u-<digest of the caller's
+identity>/<name>`, when anything is stored there; the un-namespaced URI of the
+name (how every upload was stored before #712) when it is eligible; the one
+other identity's URI of the name that is eligible, when there is exactly one;
+the caller's own URI. A URI is eligible when something is recorded for it and
+the caller is authorized to ingest under every rule recorded for it. Every
+other URI is skipped exactly as if it were absent, so the outcome never
+depends on another identity's document the caller is not authorized to ingest
+under; it does depend on the caller's own identity's document of the name,
+whatever its rule. The result's document is the one written.
+`Client.IngestUpload` also returns the route (`authorized.UploadRoute`),
+including how many other eligible documents of the name it left unchanged;
+the upload route and the MCP ingest tool report that as a file's
+`name_notice`. `Client.OwnUploadSourceURI(ctx, name)` returns the caller's own
+URI of a name. An ingest at another identity's namespaced URI is accepted only
+when it is eligible, and otherwise refused with one `InvalidArgument`
+whatever is stored there; any other URI under the prefix that is not one
+segment is `InvalidArgument` before anything is read. Other source URIs are
+stored as given and are trusted ingest only: ingesting one over a document the
+caller cannot read is `NotFound`. The upload namespace binds the identity
+(including the client and acting application), not its current authority, as
+the application edge namespace does.
+
 ## Identity, bytes, and bounds
 
 - `shoal.ID` is an opaque byte string. Implementations MUST retain every byte,

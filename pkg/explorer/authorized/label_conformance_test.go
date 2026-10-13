@@ -914,6 +914,8 @@ var labelExcludedMethods = map[string]string{
 	"LabelTranslator":                         "returns the record-time label translator, a host wiring seam; reads no data (label_visibility_test.go)",
 	"NodeGate":                                "returns the current-rule node gate, a host wiring seam; reads no data (dispatch and delivery relabel tests)",
 	"ApplicationEdgeID":                       "a digest of the caller's own identity and the ID it passed; reads no catalog or corpus data (edge_namespace_test.go)",
+	"IngestUpload":                            "Ingest with its upload route; the same write and refusals as Ingest (upload_namespace_test.go)",
+	"OwnUploadSourceURI":                      "a digest of the caller's own identity and the name it passed; reads no catalog or corpus data (upload_namespace_test.go)",
 }
 
 func TestLabelConformanceCoversEveryClientMethod(t *testing.T) {

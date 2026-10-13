@@ -69,6 +69,15 @@ const applicationEdgeNamespaceVersion = "shoal/authorized/application-edge-names
 // IDs) and what changes per grant (policies, generation), so a writer's
 // retry lands in the same namespace.
 func applicationEdgeNamespace(decision auth.Decision) string {
+	return applicationEdgeIDPrefix +
+		identityNamespaceDigest(applicationEdgeNamespaceVersion, decision) + "/"
+}
+
+// identityNamespaceDigest is the hex digest, under version, of every
+// component that identifies who is writing (see applicationEdgeNamespace).
+// Each caller-scoped namespace (application edges, uploads) uses its own
+// version, so the same identity's namespaces are unrelated.
+func identityNamespaceDigest(version string, decision auth.Decision) string {
 	digest := sha256.New()
 	var length [8]byte
 	write := func(value []byte) {
@@ -76,7 +85,7 @@ func applicationEdgeNamespace(decision auth.Decision) string {
 		_, _ = digest.Write(length[:])
 		_, _ = digest.Write(value)
 	}
-	write([]byte(applicationEdgeNamespaceVersion))
+	write([]byte(version))
 	write(decision.AuthorizationDomain())
 	write([]byte(decision.Subject()))
 	write([]byte(decision.Actor()))
@@ -92,8 +101,7 @@ func applicationEdgeNamespace(decision auth.Decision) string {
 	}
 	write([]byte(decision.ServiceRole()))
 	write([]byte(decision.ServiceCeilingIdentity()))
-	return applicationEdgeIDPrefix +
-		hex.EncodeToString(digest.Sum(nil)[:16]) + "/"
+	return hex.EncodeToString(digest.Sum(nil)[:16])
 }
 
 // applicationEdgeID places localID in the decision's namespace.

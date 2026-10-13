@@ -2,6 +2,124 @@
 
 ## Unreleased
 
+### Uploads by name live in the uploader's namespace (#712)
+
+The browser upload route and the MCP `shoal.ingest` tool store a file as
+`upload://workspace/<escaped filename>`. Before this release that URI was the
+same for every principal. Ingesting at a URI whose source claim the caller
+cannot read is refused with `not_found` (writing over a hidden document is not
+acceptable), while a name never uploaded succeeds. So a reader could test
+whether a hidden document existed under a guessed filename, for example
+`merger-plan.md`, on the memory and durable catalogs alike.
+
+**Behaviour change.** `upload://workspace/<name>` is now a request to upload
+`<name>`, which `authorized.Client.Ingest` routes, under the mutation lock and
+before anything is written, to the first of:
+
+1. the caller's own URI of the name, `upload://workspace/u-<digest of the
+   caller's identity>/<name>`, when anything is stored there;
+2. the name's un-namespaced URI (every upload before this release), when it is
+   eligible: something is recorded for it and the caller is authorized to
+   **ingest** under every rule recorded for it (its claim's rule, a pending
+   claim's previous rule and its current registration);
+3. the one other identity's URI of the name, stored in the base, that is
+   eligible, when there is exactly one;
+4. the caller's own URI of the name. When two or more other identities'
+   documents of the name are eligible, the name is ambiguous and none of them
+   is written.
+
+Steps 2 and 3 skip every URI that is not eligible, exactly as if it were
+absent. So the outcome of uploading a name never depends on another
+identity's document that the caller is not authorized to ingest under: a
+reader uploading a hidden document's name gets what it gets for a name never
+uploaded, its own new document, and the hidden one is untouched. (It does
+depend on the caller's own identity's document of the name; see below.) The
+identity is the one the application edge namespace hashes (#699), under a
+different version string. It includes the client and acting application, so
+one person uploading through the browser and through an MCP client has two
+namespaces, and two documents of a name uploaded both ways.
+
+**Name notices.** An upload that leaves other eligible documents of its name
+unchanged says so, so a fork is never silent. That happens when the caller
+already has its own document of the name (step 1) or the name was ambiguous
+(step 4), and when it went to the pre-#712 document while other eligible ones
+exist (step 2). The upload route's and MCP tool's per-file result then carries
+`name_notice`: `route` (`own` or `legacy`), `source_uri` (the document
+written), `other_documents` (how many were left unchanged), `ambiguous`, and a
+public `message`, which the workspace UI shows. Only eligible documents are
+counted, so the notice discloses nothing the caller could not have written
+itself. For example, if a labelled document and a reader's public document
+share a name, another holder of the label re-uploading the name to declassify
+the labelled one gets its own document, and the notice says two documents of
+the name were not changed. The labelled document keeps its labels and no
+declassification is recorded. `name_notice` is sent only then, so a
+`webapi.RemoteService` client built before this release, which refuses unknown
+fields, fails only on such a reply.
+
+**Reaching a specific document.** A library caller can ingest at a document's
+source URI: its own (`Client.OwnUploadSourceURI(ctx, name)`), or another
+uploader's namespaced URI when it is eligible.
+`Client.IngestUpload(ctx, source)` is `Ingest` that also returns the route
+(`authorized.UploadRoute`). Over HTTP and MCP there is no per-file target yet.
+There, a name reaches another uploader's document only by steps 2 and 3, so
+an ambiguity is resolved by whoever holds the colliding documents (relabelling
+or re-uploading under another name) or through a library host.
+
+What stays the same:
+
+- **Shared documents.** Principals authorized under a document still share it
+  by name. A re-upload, a relabel by any holder of its labels (#630, #680),
+  the reason policy and its ordering (#664, #685), the historical refusal
+  (#674) and per-file batch outcomes (#687, #689) all act on that document.
+- **Uploads stored before this release** keep their un-namespaced URIs, read
+  exactly as before, and stay re-uploadable and relabelable by name by
+  everyone authorized to ingest under them. Nothing is rewritten on upgrade.
+  Uploads from catalogs older than source claims (a registration and no
+  claim) are covered the same way, by their registration's rule.
+
+What changes:
+
+- New uploads get namespaced source URIs (`source_uri` in document listings
+  and the declassification listing). Titles and the `source_label` metadata
+  are still the filename.
+- Two principals who cannot ingest under each other's document of a name now
+  get two documents, where the second used to be refused with `not_found`.
+- **Your own document comes first.** If someone else relabels your own
+  document of a name to a rule you are not authorized under, your uploads of
+  that name are refused with `not_found`, as an ingest over any document you
+  cannot read is. That lasts until a holder relabels it back or you get the
+  labels back. You can upload under another name meanwhile. The route does
+  not skip your own document in that case, because the upload would then
+  silently write another uploader's document of the name, or land on your
+  own URI anyway. This was already so before this release, at the shared URI.
+- Library callers: an ingest at a namespaced URI outside the caller's own
+  namespace that is not eligible is `InvalidArgument`. It is the same whether
+  a document the caller is outside is stored there or nothing is. Any other
+  URI under `upload://workspace/` that is not a bare name is `InvalidArgument`
+  before anything is read. The policy selector still sees the source as
+  requested.
+
+Not changed, and documented as trusted ingest only: source URIs outside
+`upload://workspace/` (`file://`, `https://`, a host's own schemes) are stored
+as given, and ingesting one over a hidden document is still `not_found`. No
+HTTP or MCP route lets a caller choose such a URI; they come from operator
+configuration, `cmd/shoal-explore` (the unwrapped corpus) and library hosts.
+A host that ingests caller-chosen URIs of its own must namespace them itself.
+
+**Residuals.**
+
+- The namespace binds the identity, not its current authority, as #699's
+  does. A narrowed session of the same identity (a token with fewer label
+  claims, say) routes to the same namespace, so it can still tell whether
+  that identity's broader sessions uploaded a name it cannot read. Unlike
+  `Connect`, this is reachable over HTTP and MCP, but only about the caller's
+  own identity's uploads.
+- A namespaced source URI shows readers of a document an unkeyed digest of
+  its first uploader's identity. They can tell which readable uploads came
+  from the same identity, and confirm a guess of who that is by recomputing
+  the digest. The same holds for #699's application edge IDs. Keying both
+  digests is tracked on #721.
+
 ### `Connect` edge IDs live in the writer's namespace (#699)
 
 `authorized.Client.Connect` returned Conflict for any edge ID already in the
@@ -38,8 +156,8 @@ sessions, so it can still tell whether one of their local edge IDs exists:
 Conflict for a different edge under that ID. This is library-only today
 (`Connect` has no HTTP or MCP route).
 
-`Connect` no longer discloses a hidden document by URI, but Ingest still
-does, over HTTP upload and MCP (#712).
+`Connect` no longer discloses a hidden document by URI. Neither does an
+upload by name since #712 (above).
 
 Migrating callers:
 
@@ -134,8 +252,8 @@ Found while checking this and filed:
   scan limit reveals the exact count of hidden edges and interactions on a
   visible node. A `Connect` ID colliding with a hidden edge reveals that
   edge, and through intrinsic edge IDs, a hidden document by URI. `Connect`
-  no longer discloses either (#699, above); Ingest is still a URI existence
-  oracle over HTTP upload and MCP (#712). A shared
+  no longer discloses either (#699, above), and neither does an upload by
+  name (#712, above). A shared
   extracted entity first owned by a later-labelled document reveals the
   entity key.
 - #694: heuristic detection of copy-down that names no input (session
