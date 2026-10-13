@@ -1,0 +1,53 @@
+{
+  "artifact_digests_equal": true,
+  "cpu_device": "cpu",
+  "gpu_device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 4070 Ti",
+  "purpose": "runtime/device comparison only",
+  "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+  "samples": [
+    {
+      "cpu_choice": "review",
+      "cpu_ms": [
+        545.0668362900615,
+        354.8994129523635
+      ],
+      "gpu_choice": "review",
+      "gpu_ms": [
+        720.7547770813107,
+        17.825225833803415
+      ],
+      "id": "removed-check",
+      "max_probability_delta": 0.011899999999999966
+    },
+    {
+      "cpu_choice": "routine",
+      "cpu_ms": [
+        371.6397709213197,
+        374.257680028677
+      ],
+      "gpu_choice": "routine",
+      "gpu_ms": [
+        16.998837236315012,
+        17.512951977550983
+      ],
+      "id": "comment-only",
+      "max_probability_delta": 0.006000000000000005
+    },
+    {
+      "cpu_choice": "insufficient",
+      "cpu_ms": [
+        397.8202370926738,
+        411.7041020654142
+      ],
+      "gpu_choice": "insufficient",
+      "gpu_ms": [
+        16.212182585150003,
+        16.379711218178272
+      ],
+      "id": "missing-helper",
+      "max_probability_delta": 0.00520000000000001
+    }
+  ],
+  "schema": 1
+}
