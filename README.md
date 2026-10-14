@@ -1,4 +1,9 @@
-# Shoal
+# Sharkbite
+
+Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
+
+Shoal remains the name of the underlying Go engine and its stable evidence, provenance, and decision contracts.
+
 
 Shoal is an evidence and enforcement layer for AI systems. It keeps the chain
 from **what was observed** to **what an agent may do** inspectable:
@@ -161,8 +166,8 @@ Requirements for the normal Go workflow are Go 1.25+, Python 3.9+ for the
 compatibility package, `make`, and a native C toolchain.
 
 ```bash
-git clone https://github.com/phrocker/shoal-oss.git
-cd shoal-oss
+git clone https://github.com/phrocker/sharkbite.git
+cd sharkbite
 
 make build
 make test
