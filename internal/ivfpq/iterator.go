@@ -18,10 +18,10 @@ const IteratorClassName = "org.apache.accumulo.core.graph.ann.IvfPqDistanceItera
 
 // Option keys (mirror the constants in IvfPqDistanceIterator.java).
 const (
-	OptQuery     = "query.b64"
+	OptQuery      = "query.b64"
 	OptPQCodebook = "pq.b64"
-	OptTopK      = "topK"
-	OptThreshold = "threshold"
+	OptTopK       = "topK"
+	OptThreshold  = "threshold"
 )
 
 // Iterator is the Go equivalent of IvfPqDistanceIterator. Construct
@@ -203,4 +203,3 @@ func (h *minHeap) collect() []*scoredCell {
 	h.items = h.items[:0]
 	return out
 }
-

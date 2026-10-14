@@ -26,11 +26,11 @@ import (
 // keeps using them; eviction just removes the cache entry, the bytes
 // stay alive until GC reclaims them.
 type fileCache struct {
-	mu       sync.Mutex
-	cap      int64
-	bytes    int64
-	lru      *list.List
-	lookup   map[string]*list.Element
+	mu     sync.Mutex
+	cap    int64
+	bytes  int64
+	lru    *list.List
+	lookup map[string]*list.Element
 
 	hits   atomic.Int64
 	misses atomic.Int64

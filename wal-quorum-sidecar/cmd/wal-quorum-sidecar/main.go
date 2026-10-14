@@ -28,12 +28,12 @@ import (
 
 func main() {
 	var (
-		udsPath        = flag.String("uds", "/var/run/wal-quorum/wal-quorum.sock", "Unix domain socket path for local gRPC server")
-		peerPort       = flag.Int("peer-port", 9710, "TCP port for peer-to-peer gRPC server")
-		walDir         = flag.String("wal-dir", "/mnt/data/accumulo/wal", "Directory for WAL segment storage")
-		logLevel       = flag.String("log-level", "info", "Log level: debug, info, warn, error")
-		gcsPrefix      = flag.String("gcs-prefix", "wal", "GCS object prefix for uploaded segments")
-		gcsWorkers     = flag.Int("gcs-workers", 2, "Number of concurrent GCS upload workers")
+		udsPath    = flag.String("uds", "/var/run/wal-quorum/wal-quorum.sock", "Unix domain socket path for local gRPC server")
+		peerPort   = flag.Int("peer-port", 9710, "TCP port for peer-to-peer gRPC server")
+		walDir     = flag.String("wal-dir", "/mnt/data/accumulo/wal", "Directory for WAL segment storage")
+		logLevel   = flag.String("log-level", "info", "Log level: debug, info, warn, error")
+		gcsPrefix  = flag.String("gcs-prefix", "wal", "GCS object prefix for uploaded segments")
+		gcsWorkers = flag.Int("gcs-workers", 2, "Number of concurrent GCS upload workers")
 	)
 	flag.Parse()
 
@@ -121,8 +121,8 @@ func main() {
 	}
 
 	localGRPC := grpc.NewServer(
-		grpc.MaxRecvMsgSize(4 * 1024 * 1024), // 4 MB
-		grpc.MaxSendMsgSize(4 * 1024 * 1024),
+		grpc.MaxRecvMsgSize(4*1024*1024), // 4 MB
+		grpc.MaxSendMsgSize(4*1024*1024),
 	)
 	localSrv := server.NewLocalServer(mgr, cfg, pool, quorum, uploader, logger)
 	localSrv.Register(localGRPC)

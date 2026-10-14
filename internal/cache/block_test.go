@@ -65,7 +65,7 @@ func TestBlockCache_MoveToFrontProtectsRecent(t *testing.T) {
 }
 
 func TestBlockCache_DropPath(t *testing.T) {
-	c := NewBlockCache(1<<16)
+	c := NewBlockCache(1 << 16)
 	c.Put("a.rf", 0, []byte("a0"))
 	c.Put("a.rf", 1, []byte("a1"))
 	c.Put("b.rf", 0, []byte("b0"))

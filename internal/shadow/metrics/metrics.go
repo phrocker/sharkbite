@@ -79,8 +79,8 @@ type TableMetrics struct {
 
 	// T3LookupsProbed is the total number of point-lookups attempted
 	// across all oracle runs for this table.
-	T3LookupsProbed   atomic.Int64
-	T3LookupsMatched  atomic.Int64
+	T3LookupsProbed  atomic.Int64
+	T3LookupsMatched atomic.Int64
 
 	// InputsMissing counts compactions we couldn't shadow because the
 	// input files had already been GC'd by the time we tried to fetch.

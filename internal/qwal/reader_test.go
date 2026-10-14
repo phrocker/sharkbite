@@ -261,8 +261,8 @@ func TestReaderNoPeers(t *testing.T) {
 }
 
 func TestReaderSealedDivergence(t *testing.T) {
-	a := []byte("aaaaaaaaaa")          // 10 bytes, sealed
-	b := []byte("bbbbbbb")             // 7 bytes, unsealed quorum
+	a := []byte("aaaaaaaaaa") // 10 bytes, sealed
+	b := []byte("bbbbbbb")    // 7 bytes, unsealed quorum
 	peers := map[string]*fakePeer{
 		"ts0:9710": {uuid: "seg-1", bytes: a, sealed: true},
 		"ts1:9710": {uuid: "seg-1", bytes: b},

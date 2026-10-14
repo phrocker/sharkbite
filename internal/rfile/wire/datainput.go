@@ -10,8 +10,9 @@
 // timestamp and a bool deleted flag.
 //
 // References:
-//   core/.../data/Key.java   — Key.write / readFields
-//   java DataInput / DataOutput interfaces (java.io)
+//
+//	core/.../data/Key.java   — Key.write / readFields
+//	java DataInput / DataOutput interfaces (java.io)
 package wire
 
 import (
