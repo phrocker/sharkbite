@@ -1,0 +1,7 @@
+outcome router.proposal.action
+  Proposed, not run: the router proposes action restart of capability ops on agent agent-ops, with mode graceful and service node-payments. Nothing has been executed, enqueued or decided, and the action would still require approval.
+  record=proposal:router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd proposal=router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops node=node-payments
+  identifiers restart ops agent-ops mode graceful service node-payments
+next router.next.action
+  To act on it, a caller would request the action through dispatch, where admission and approval still apply.
+  record=proposal:router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd

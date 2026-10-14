@@ -1,0 +1,48 @@
+{
+  "candidates": [
+    [
+      "original",
+      false
+    ],
+    [
+      "diff",
+      false
+    ],
+    [
+      "diff_callers",
+      false
+    ],
+    [
+      "diff_callers",
+      true
+    ]
+  ],
+  "folds": {
+    "329": 0,
+    "342": 1,
+    "343": 2,
+    "345": 3,
+    "347": 4,
+    "349": 0,
+    "350": 1,
+    "351": 2,
+    "352": 3,
+    "353": 4,
+    "354": 0,
+    "356": 1,
+    "368": 2,
+    "377": 3,
+    "381": 4,
+    "382": 0,
+    "383": 1,
+    "392": 2,
+    "394": 3,
+    "397": 4
+  },
+  "inputs_id": "60a3f90d20391e3cf5bb62df322e9dee61fc768eb7fbe97577f5e3ce5c0a00fe",
+  "optimization_enabled": false,
+  "recipe": "char_wb3-5,max_features20000,sublinear_tf; logistic C1 balanced; seed42; optional sqrt(diff_bytes/median) clipped .25..4",
+  "status": "development_only",
+  "target_relevance_recall": 0.95,
+  "utility": "fraction of function-diff bytes proposed for reduced review"
+}

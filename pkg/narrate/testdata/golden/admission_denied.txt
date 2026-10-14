@@ -1,0 +1,11 @@
+outcome dispatch.outcome.canceled
+  Admission of action close-ticket on agent agent-7 was refused at 2026-10-08 12:00:00 UTC; nothing was permitted.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.canceled
+  Nothing further happens to this action.
+  record=action:act-1

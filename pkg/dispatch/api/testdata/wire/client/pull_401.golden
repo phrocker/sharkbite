@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/pull
+error: dispatch pull: unauthorized (HTTP 401, unauthorized)
+kind: unauthorized
+status: 401 code: "unauthorized" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: unauthorized(401)

@@ -1,0 +1,19 @@
+{{- if and (eq (include "shoal.explorerEnabled" .) "true") .Values.explorer.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "shoal.explorerName" . }}
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: explorer
+spec:
+  # maxUnavailable: 0 means the Eviction API (kubectl drain,
+  # cluster-autoscaler consolidation) refuses to evict this pod rather than
+  # taking the only authorized plane offline. It does NOT block an
+  # operator-initiated rolling update: the StatefulSet controller replaces pods
+  # directly and is not subject to PDBs.
+  maxUnavailable: {{ .Values.explorer.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "shoal.explorerSelectorLabels" . | nindent 6 }}
+{{- end }}

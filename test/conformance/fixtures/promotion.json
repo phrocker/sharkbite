@@ -1,0 +1,24 @@
+{
+  "schema_version": 3,
+  "role": "promotion",
+  "adapter": "promotion-equivalence-v2",
+  "accumulo_version": "4.0.0-SNAPSHOT",
+  "accumulo_revision": "1a716b2c1bb5762ead4b46d2bc4f53e13873b314",
+  "summary": "promotion adapter preserves every staged artifact across a three-tablet before/after replay",
+  "evidence": [
+    {
+      "gate": "before-after-equivalence",
+      "kind": "go-test",
+      "reference": "internal/promotion/promote_test.go#TestPromoteEndToEndThreeTabletSuccess",
+      "source_sha256": "a9911bf3647ed70919236e233a73a073afef42f63e4bf4baa4bbfbdec29f3933",
+      "replay_command": ["go", "test", "./internal/promotion", "-run", "^TestPromoteEndToEndThreeTabletSuccess$", "-count=1"]
+    },
+    {
+      "gate": "java-readability",
+      "kind": "go-test",
+      "reference": "internal/promotion/promote_test.go#TestPromoteReconcilesSplitsThenStagesThenSubmitsForMultiTabletManifest",
+      "source_sha256": "a9911bf3647ed70919236e233a73a073afef42f63e4bf4baa4bbfbdec29f3933",
+      "replay_command": ["go", "test", "./internal/promotion", "-run", "^TestPromoteReconcilesSplitsThenStagesThenSubmitsForMultiTabletManifest$", "-count=1"]
+    }
+  ]
+}

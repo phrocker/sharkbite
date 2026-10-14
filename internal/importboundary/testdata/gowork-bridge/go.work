@@ -1,0 +1,10 @@
+go 1.25.0
+
+use (
+	.
+	./hidden
+	./extensions/e
+	../outside
+)
+
+replace github.com/phrocker/shoal-oss/extensions/e => ./extensions/e

@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    name: build / vet / test
+    runs-on: ubuntu-latest
+    env:
+      # The repository's go.work overlays a private, local-only module
+      # (wal-quorum-sidecar) that CI cannot fetch. Disable the workspace so the
+      # build resolves against go.mod alone. The handful of packages that need
+      # the sidecar (internal/qwal, internal/memtable, internal/scanserver and
+      # the cmd/shoal server that wires them) are excluded from the package set
+      # below; everything else — the RFile core, engine, tablet, iterators,
+      # compaction, storage backends and the shoal-embed tool — builds cleanly.
+      GOWORK: off
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so the formatting gate can diff against the base.
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install Apache Thrift 0.17.0
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bison flex
+          # Build outside the checkout: the tarball holds Go modules that are
+          # not part of this repository. Later steps use only $THRIFT.
+          cd "$RUNNER_TEMP"
+          curl --fail --location --silent --show-error \
+            https://archive.apache.org/dist/thrift/0.17.0/thrift-0.17.0.tar.gz \
+            --output thrift-0.17.0.tar.gz
+          echo "b272c1788bb165d99521a2599b31b97fa69e5931d099015d91ae107a0b0cc58f  thrift-0.17.0.tar.gz" \
+            | sha256sum --check -
+          tar -xzf thrift-0.17.0.tar.gz
+          cmake -S thrift-0.17.0 -B thrift-build \
+            -DBUILD_COMPILER=ON \
+            -DBUILD_LIBRARIES=OFF \
+            -DBUILD_TESTING=OFF \
+            -DTHRIFT_COMPILER_C_GLIB=OFF \
+            -DTHRIFT_COMPILER_CPP=OFF \
+            -DTHRIFT_COMPILER_D=OFF \
+            -DTHRIFT_COMPILER_DART=OFF \
+            -DTHRIFT_COMPILER_DELPHI=OFF \
+            -DTHRIFT_COMPILER_ERL=OFF \
+            -DTHRIFT_COMPILER_GO=ON \
+            -DTHRIFT_COMPILER_GV=OFF \
+            -DTHRIFT_COMPILER_HAXE=OFF \
+            -DTHRIFT_COMPILER_HTML=OFF \
+            -DTHRIFT_COMPILER_JAVA=OFF \
+            -DTHRIFT_COMPILER_JAVAME=OFF \
+            -DTHRIFT_COMPILER_JS=OFF \
+            -DTHRIFT_COMPILER_JSON=OFF \
+            -DTHRIFT_COMPILER_KOTLIN=OFF \
+            -DTHRIFT_COMPILER_LUA=OFF \
+            -DTHRIFT_COMPILER_MARKDOWN=OFF \
+            -DTHRIFT_COMPILER_NETSTD=OFF \
+            -DTHRIFT_COMPILER_OCAML=OFF \
+            -DTHRIFT_COMPILER_PERL=OFF \
+            -DTHRIFT_COMPILER_PHP=OFF \
+            -DTHRIFT_COMPILER_PY=OFF \
+            -DTHRIFT_COMPILER_RB=OFF \
+            -DTHRIFT_COMPILER_RS=OFF \
+            -DTHRIFT_COMPILER_ST=OFF \
+            -DTHRIFT_COMPILER_SWIFT=OFF \
+            -DTHRIFT_COMPILER_XML=OFF \
+            -DTHRIFT_COMPILER_XSD=OFF
+          cmake --build thrift-build --target thrift-compiler --parallel 2
+          THRIFT_PATH="$(find "$PWD/thrift-build" -type f -name thrift -perm -111 -print -quit)"
+          test -n "$THRIFT_PATH"
+          echo "THRIFT=$THRIFT_PATH" >> "$GITHUB_ENV"
+
+      - name: Verify generated Thrift bindings
+        run: make thrift-verify
+
+      - name: Check formatting (changed Go files)
+        run: |
+          # Gate only the files this push/PR touches: new code must be
+          # gofmt-clean without forcing a repo-wide reformat of pre-existing
+          # files. CI runs on Linux (LF), so gofmt is accurate here.
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            base="${{ github.event.pull_request.base.sha }}"
+          else
+            base="${{ github.event.before }}"
+          fi
+          if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            echo "No usable base ref; skipping changed-file formatting check."
+            exit 0
+          fi
+          files=$(git diff --name-only --diff-filter=ACM "$base" HEAD -- '*.go' \
+            | grep -vE '^internal/thrift/gen/' || true)
+          if [ -z "$files" ]; then
+            echo "No Go files changed."
+            exit 0
+          fi
+          unformatted=$(gofmt -l $files)
+          if [ -n "$unformatted" ]; then
+            echo "These changed files are not gofmt-clean (run: gofmt -w <file>):"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "Changed Go files are gofmt-clean."
+
+      - name: Compute package set
+        id: pkgs
+        run: |
+          # Exclude packages that depend on the private wal-quorum-sidecar.
+          # Emit as a single space-separated line so it expands to arguments
+          # (not separate commands) in the build/vet/test steps below.
+          pkgs=$(go list -e ./... \
+            | grep -vE '/internal/(qwal|memtable|scanserver)$' \
+            | grep -vE '/cmd/shoal$' \
+            | tr '\n' ' ')
+          echo "Selected $(echo $pkgs | wc -w) packages"
+          echo "list=$pkgs" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: go build ${{ steps.pkgs.outputs.list }}
+
+      - name: Vet
+        run: go vet ${{ steps.pkgs.outputs.list }}
+
+      - name: Test (race)
+        run: go test -race -count=1 ${{ steps.pkgs.outputs.list }}
+
+      # Protocol adapters (SSH, RDP, Guacamole) live in extensions/ with their
+      # own go.mod. Fail if any of them is linked into a core package. go list
+      # runs on its own so a listing failure fails the step instead of being
+      # mistaken for "nothing leaked".
+      - name: Core links no SSH, RDP or Guacamole package
+        run: |
+          set -euo pipefail
+          deps="$RUNNER_TEMP/core-deps.txt"
+          go list -deps ${{ steps.pkgs.outputs.list }} > "$deps"
+          test -s "$deps"
+          if grep -iE 'golang\.org/x/crypto/ssh|guacamole|freerdp|grdp' "$deps"; then
+            echo "Core packages depend on protocol adapter code (listed above)."
+            exit 1
+          fi
+
+      # Extension modules are outside the root package set. Build each on its
+      # own go.mod (GOWORK stays off) so it cannot lean on the workspace. Find
+      # modules at any depth, matching internal/importboundary.
+      - name: Extensions (vet / test)
+        run: |
+          set -euo pipefail
+          find extensions -name go.mod -type f -print0 \
+            | while IFS= read -r -d '' mod; do
+                dir=$(dirname "$mod")
+                echo "== $dir"
+                (cd "$dir" && go vet ./... && go test -race -count=1 ./...)
+              done
+
+  docker:
+    name: docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # amd64 is built natively and loaded so the binaries can actually be run.
+      - name: Build image (linux/amd64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: false
+          load: true
+          tags: shoal:ci
+
+      - name: Smoke test the image
+        run: docker run --rm shoal:ci
+
+      # The Dockerfile pins its build stage to the native platform and drives
+      # the target through GOOS/GOARCH, so arm64 cross-compiles without QEMU.
+      # Nothing is pushed; this only proves the foreign-arch image assembles.
+      - name: Build image (linux/arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/arm64
+          push: false

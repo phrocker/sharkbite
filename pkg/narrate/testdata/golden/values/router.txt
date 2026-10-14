@@ -1,0 +1,111 @@
+== proposal kind=action
+outcome router.proposal.action
+  Proposed, not run: the router proposes action restart of capability ops on agent agent-ops, with mode graceful and service node-payments. Nothing has been executed, enqueued or decided.
+  record=proposal:router.proposal:v1:e90388a0d7b76950516c6849ab622e8128feb877f07f417f071a693690cbfa30 proposal=router.proposal:v1:e90388a0d7b76950516c6849ab622e8128feb877f07f417f071a693690cbfa30 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops node=node-payments
+  identifiers restart ops agent-ops mode graceful service node-payments
+next router.next.action
+  To act on it, a caller would request the action through dispatch, where admission still applies.
+  record=proposal:router.proposal:v1:e90388a0d7b76950516c6849ab622e8128feb877f07f417f071a693690cbfa30
+
+== proposal kind=action approval
+outcome router.proposal.action
+  Proposed, not run: the router proposes action restart of capability ops on agent agent-ops, with mode graceful and service node-payments. Nothing has been executed, enqueued or decided, and the action would still require approval.
+  record=proposal:router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd proposal=router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops node=node-payments
+  identifiers restart ops agent-ops mode graceful service node-payments
+next router.next.action
+  To act on it, a caller would request the action through dispatch, where admission and approval still apply.
+  record=proposal:router.proposal:v1:17501bfccf96cc435c0ec21e8a4f53cd1e4eb3955eb88689add9356e973a9fbd
+
+== proposal kind=decision
+outcome router.proposal.decision
+  Proposed, not run: the router proposes decision profile service-operation-risk revision r1 (task task-risk), with mode graceful and service node-payments. Nothing has been executed, enqueued or decided; the decision’s own predictor decides over its own evidence, never over the text.
+  record=proposal:router.proposal:v1:27e2628d4e83332595f2d39dd1a6f79bc67342ad5d1e0641091b22bd730d1f29 proposal=router.proposal:v1:27e2628d4e83332595f2d39dd1a6f79bc67342ad5d1e0641091b22bd730d1f29 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x profile=service-operation-risk task=task-risk node=node-payments
+  identifiers service-operation-risk r1 task-risk mode graceful service node-payments
+next router.next.decision
+  To answer it, a caller would request the decision from its registered task, which computes it from its own evidence.
+  record=proposal:router.proposal:v1:27e2628d4e83332595f2d39dd1a6f79bc67342ad5d1e0641091b22bd730d1f29
+
+== proposal kind=lookup
+outcome router.proposal.lookup
+  Proposed, not run: the router proposes lookup template lookup:owned_by:out, with subject node-payments. Nothing has been executed, enqueued or decided; the template is answered over the graph, never from the text.
+  record=proposal:router.proposal:v1:df986676b6bf96b12f5e8d2380fd4f8ac3b3b3d99d3c127abd68acf9e3c2c3e7 proposal=router.proposal:v1:df986676b6bf96b12f5e8d2380fd4f8ac3b3b3d99d3c127abd68acf9e3c2c3e7 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x template=lookup:owned_by:out node=node-payments
+  identifiers lookup:owned_by:out subject node-payments
+next router.next.lookup
+  To answer it, a caller would run the lookup template over the graph as it is now.
+  record=proposal:router.proposal:v1:df986676b6bf96b12f5e8d2380fd4f8ac3b3b3d99d3c127abd68acf9e3c2c3e7
+
+== abstain reason=ambiguous_executor
+outcome router.abstain.ambiguous_executor
+  The router abstained because more than one agent offers the action it matched, and it does not choose between them. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:1f78a9c403f5236ae57881ed2aca72ab93e73bae16205ac65adc9f8ceaae8764 proposal=router.proposal:v1:1f78a9c403f5236ae57881ed2aca72ab93e73bae16205ac65adc9f8ceaae8764 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:1f78a9c403f5236ae57881ed2aca72ab93e73bae16205ac65adc9f8ceaae8764
+
+== abstain reason=ambiguous_mention
+outcome router.abstain.ambiguous_mention
+  The router abstained on action restart of capability ops on agent agent-ops because a name in the text could mean more than one thing for environment and service; it does not guess. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:b1a499d93dcc6b93913715dd96cda535a154f546bc64c3c8bf22cac80093676b proposal=router.proposal:v1:b1a499d93dcc6b93913715dd96cda535a154f546bc64c3c8bf22cac80093676b router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops
+  identifiers restart ops agent-ops environment service
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:b1a499d93dcc6b93913715dd96cda535a154f546bc64c3c8bf22cac80093676b
+
+== abstain reason=ambiguous_target
+outcome router.abstain.ambiguous_target
+  The router abstained because the text matched more than one target, and it does not choose between them. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:0f8ff8427685cc123a249a8ef06d917c3e12dee36c50663bf88ac78cdf39d3c7 proposal=router.proposal:v1:0f8ff8427685cc123a249a8ef06d917c3e12dee36c50663bf88ac78cdf39d3c7 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:0f8ff8427685cc123a249a8ef06d917c3e12dee36c50663bf88ac78cdf39d3c7
+
+== abstain reason=empty_text
+outcome router.abstain.empty_text
+  The router abstained because the text has no words. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:8f0750a0eb715886c4daab73d30acad630470bd4ad1d6673938781c1532094fe proposal=router.proposal:v1:8f0750a0eb715886c4daab73d30acad630470bd4ad1d6673938781c1532094fe router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:8f0750a0eb715886c4daab73d30acad630470bd4ad1d6673938781c1532094fe
+
+== abstain reason=invalid_input
+outcome router.abstain.invalid_input
+  The router abstained on action restart of capability ops on agent agent-ops because the filled input does not match the target’s input schema. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:6ac40d13d7b3fe363f98cc9973cc790f228c3e2797a01182b83e8fceefc367b0 proposal=router.proposal:v1:6ac40d13d7b3fe363f98cc9973cc790f228c3e2797a01182b83e8fceefc367b0 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops
+  identifiers restart ops agent-ops
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:6ac40d13d7b3fe363f98cc9973cc790f228c3e2797a01182b83e8fceefc367b0
+
+== abstain reason=missing_slot
+outcome router.abstain.missing_slot
+  The router abstained on action restart of capability ops on agent agent-ops because the text does not name environment and service. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:fcd9fc2cffcdf3374f593961547edcc5f33cedae6e144bbcb5529cfb7934f024 proposal=router.proposal:v1:fcd9fc2cffcdf3374f593961547edcc5f33cedae6e144bbcb5529cfb7934f024 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops
+  identifiers restart ops agent-ops environment service
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:fcd9fc2cffcdf3374f593961547edcc5f33cedae6e144bbcb5529cfb7934f024
+
+== abstain reason=no_target
+outcome router.abstain.no_target
+  The router abstained because the text matched no target the caller can use. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:b96c67d78444169dbac64c432fa06789bb5d8ffb13966aeec46b2aebdd516caf proposal=router.proposal:v1:b96c67d78444169dbac64c432fa06789bb5d8ffb13966aeec46b2aebdd516caf router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:b96c67d78444169dbac64c432fa06789bb5d8ffb13966aeec46b2aebdd516caf
+
+== abstain reason=slot_mismatch
+outcome router.abstain.slot_mismatch
+  The router abstained on action restart of capability ops on agent agent-ops because what the text names does not fit environment and service. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:ac1f95c3bbd438b72486f6809335fcee0c102a5d62b3de2e13be63c91c17eae0 proposal=router.proposal:v1:ac1f95c3bbd438b72486f6809335fcee0c102a5d62b3de2e13be63c91c17eae0 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa feature_schema=router.pair/v1 router_task=decision:task:v1:t picture=decision:picture:v1:p decision_request=decision:request:v1:r predictor=decision:predictor:v1:m prediction=decision:prediction:v1:x agent=agent-ops
+  identifiers restart ops agent-ops environment service
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:ac1f95c3bbd438b72486f6809335fcee0c102a5d62b3de2e13be63c91c17eae0
+
+== abstain reason=text_out_of_bounds
+outcome router.abstain.text_out_of_bounds
+  The router abstained because the text is longer than it reads. Nothing was proposed or run.
+  record=proposal:router.proposal:v1:617e919546271ae3a913b6e307c6fdc30713730ace3a8a44ecf46d4e43b90c97 proposal=router.proposal:v1:617e919546271ae3a913b6e307c6fdc30713730ace3a8a44ecf46d4e43b90c97 router=shoal.router/v1 catalog=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb grammar_set=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+next router.next.abstain
+  Nothing will run from this abstention; rephrase the request, or name a registered target and its subjects.
+  record=proposal:router.proposal:v1:617e919546271ae3a913b6e307c6fdc30713730ace3a8a44ecf46d4e43b90c97

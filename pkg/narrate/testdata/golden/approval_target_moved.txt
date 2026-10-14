@@ -1,0 +1,22 @@
+outcome approval.outcome.unresolvable.target_moved
+  The request to run action close-ticket on agent agent-7 can no longer progress.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.target_moved
+  Agent agent-7 has moved past generation 3, or is gone, since the request was made.
+  record=approval:act-1
+  identifiers agent-7
+reason approval.reason.stored_differs
+  The stored record still says approved; this status is computed and nothing was written.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+next approval.next.target_moved
+  Make a new request against the agent’s current generation; it needs its own approval.
+  record=approval:act-1

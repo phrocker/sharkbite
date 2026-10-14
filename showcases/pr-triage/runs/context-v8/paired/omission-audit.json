@@ -1,0 +1,188 @@
+{
+  "rows": [
+    {
+      "unit_id": "2504f9d92dabec32fb09fabce983904f72ab857da3bc3a8ed0aa128535a6fd13",
+      "pr": 314,
+      "symbol": "function:RetrievalResponse.MarshalJSON",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "2724b3e5de1ddc208c64b0e590885c2aa44910c28a9b51802f260c3bd8b57744",
+      "pr": 312,
+      "symbol": "function:*ExtractRequest.UnmarshalJSON",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "3aaa9324372845a2c967d44069095bc3ff10e83f4009b42d94fa6bfd4580a61b",
+      "pr": 312,
+      "symbol": "function:ExtractRequest.MarshalJSON",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "5bf10a9f39c010e886504618bfa937a99f026ee0f1d2e36258cae4d828fbe9a2",
+      "pr": 311,
+      "symbol": "function:graphNodeFromPersisted",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "3220e33f53bc0fa5bb84a20271aa99cd149757cc5ec0649beea2686b7baec330",
+      "pr": 311,
+      "symbol": "function:policyNodeRow",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "e8b08a613114653ec61abd15008db5534dbaa6f5437e221ade537efc11cc08c1",
+      "pr": 311,
+      "symbol": "function:extractedNodeWithKey",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "5cc44303949a788c9b1bbc0044a940456c00362d8901d640556439ac7cad230a",
+      "pr": 311,
+      "symbol": "function:failingPutNodeStore.PutNode",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "febb91e0d689b7b0ec62f98812c913edbed82a0211fa3b35d4d1513e27a729c0",
+      "pr": 311,
+      "symbol": "function:*Explorer.loadExtractionRecord",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "40bdc2b593b4a7c4b37427852818d8e41f99524588233548bd80186629f00afe",
+      "pr": 311,
+      "symbol": "function:cloneNodes",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "b2717a96a97f3db46df078c1dbc503839a4378083ecb0792261ec8a399c63633",
+      "pr": 311,
+      "symbol": "function:conceptsByID",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "1e3b39cde53f2a407a4b8a8d2b209681b3dbc2110fd836ba4d92c427ae9ffb33",
+      "pr": 311,
+      "symbol": "function:entityDisplayName",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "7e15ea1ef7b4342db0158e304d4578bce2c16d1e93f35f3f9ea4a6c5256023ba",
+      "pr": 311,
+      "symbol": "function:heuristicConcept",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "b558e58814f3e8c7c399e20f393fc7bba1932b4f35841a921db11029e8f88b88",
+      "pr": 311,
+      "symbol": "function:relationshipAssertionKey",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "88755bd50402698e3e8744c79326402c77114eaaec05aa6f366f1f9ee05670b0",
+      "pr": 311,
+      "symbol": "function:relationshipsByID",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "3820d64c7a622525cb76b7181af2aa28844935fc68dcd04438676905463997c0",
+      "pr": 311,
+      "symbol": "function:persistProvenance",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "e82d6725d99402d9c9451e32714a00d95e7e1a62679c9e7b4313aeb5489a0c29",
+      "pr": 311,
+      "symbol": "function:countEdgesOfType",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "573f32097c701dd4fa7f787642ab368385db1341674ebb2e6e5ab7d7f76eb5e6",
+      "pr": 311,
+      "symbol": "function:countNodesWithEntityKey",
+      "complete_body_still_present": true
+    },
+    {
+      "unit_id": "09ec30aa2a5ccea7df4bc4502c46b19c02c72179078e77cfef74196ae089d5f1",
+      "pr": 311,
+      "symbol": "function:countOntologyNodes",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "7d3e123e50e75f506e0c0b1c799c316f8a4d4eb96fdd7c9c4cc92c5ca71a154c",
+      "pr": 311,
+      "symbol": "function:extractedNodeWithKey",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "7961eb93231fa645ab2eab719d1752c4ae587f3b7d3a178630a078b403f88ea6",
+      "pr": 311,
+      "symbol": "function:skillsOntologyVersion",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "83206a3304f64a7fd439ac8dd515e4f18eb8d79a2bef37a86c8e21a4e975690c",
+      "pr": 311,
+      "symbol": "function:extractionRecordRow",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "047d0a6ef9abe3efa05ef857161ed46de551fc2f531d37c137752a11633c5532",
+      "pr": 311,
+      "symbol": "function:webapiSkillsOntologyVersion",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "aa8dfd305c4cd7fe971a5c3d6a9d6e45bb122ba77fbd20571e87d2ba9968be1f",
+      "pr": 311,
+      "symbol": "function:cleanListItem",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "9dc849cbd059db8ba6da0509e61e3a972e33af4aa222f19272dd764898a9e544",
+      "pr": 311,
+      "symbol": "function:markdownTitle",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "fc42f7d7e990f89d6f3aea8224f42fdc0695dd016739e1f30c543f22bb0e141c",
+      "pr": 311,
+      "symbol": "function:stringProperty",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "323863f52df61d7f0dbf0d11647db092153507c63805189121f1e1dea3071129",
+      "pr": 311,
+      "symbol": "function:uniqueCandidates",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "72e9624c5f76d263633162fec8ce4f50b1aa51c8886ae889fc3299e831635278",
+      "pr": 310,
+      "symbol": "function:TestStaticWorkspaceDirectoryPickerMarkup",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "1b48182b9538182aa948c227a7ec03028009c98b833e46dbdc3068ecb0220be3",
+      "pr": 310,
+      "symbol": "function:expectedSkillUploadName",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "e1c2517f9a840ccdde864f9d109d87f99ed1aa0ce6e8e4aacbeab0fc541c675c",
+      "pr": 310,
+      "symbol": "function:trimYAMLScalar",
+      "complete_body_still_present": false
+    },
+    {
+      "unit_id": "f5a41b65ef4d4407eb6802429197830c9a6c918e86707bb5322a21e61c6ddbc2",
+      "pr": 310,
+      "symbol": "function:IngestResponse.MarshalJSON",
+      "complete_body_still_present": false
+    }
+  ],
+  "proposed_omissions": 30,
+  "complete_bodies_still_present": 1,
+  "limitation": "Exact body text check; common fragments and other contextual evidence can remain.",
+  "id": "1c3f0ab75abdef228396d789c65a884eafb7e4aeb61f4d1504d737f42095cad2"
+}

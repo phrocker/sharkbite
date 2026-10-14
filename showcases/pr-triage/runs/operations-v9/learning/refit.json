@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "kind": "refit",
+  "dataset_id": "6a939db447acf91217f4f8914ae7fb3a0c76aa146c9d3aafa7d3727baa4fa004",
+  "candidate_id": "388741deda4b04b1da6ac841bbea2b477ada3a3e98b842edc4272515c0151d75",
+  "evaluated_rows": 188,
+  "training_rows": 988,
+  "maximum_score_delta": 0.0,
+  "learner": [
+    "code",
+    "linear_svm"
+  ],
+  "threshold": 0.2876853412223288,
+  "runner_digest": "4f35dceee86526b528dd68cd0ceb7cc8f4376b46db2e8d09d550faa2902f0f7c",
+  "optimization_enabled": false,
+  "id": "6021734156b8627e27bdc968b2e8ff345818a841a5c801fb4cd75789368c4463"
+}

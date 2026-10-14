@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: unexpected_status (HTTP 502)
+kind: unexpected_status
+status: 502 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: unexpected_status(502)

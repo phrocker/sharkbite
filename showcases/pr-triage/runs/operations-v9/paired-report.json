@@ -1,0 +1,685 @@
+{
+  "id": "e9df5d9c513db5573db5dae366008f3bf85208b219b64e1727cf8eab48a4ec6c",
+  "input_token_reduction": 0.16385070041845995,
+  "limitations": [
+    "One stochastic call per arm per PR; findings are not defect ground truth.",
+    "Shared provider caching and variable output confound billed cost; total input includes cache reads and writes.",
+    "Elapsed sum is call duration, not parallel wall time; concurrency and service load confound speed.",
+    "Both arms contain partial source context; consult omission audit and pinned-source adjudication."
+  ],
+  "optimization_enabled": false,
+  "packet_byte_reduction": 0.17402507352530705,
+  "packet_manifest_id": "b8c045da075112825c5bb57ed7b7dc5e48b782acc746f9bd5007786e34ca50a0",
+  "rows": [
+    {
+      "arm": "full",
+      "cost_usd": 0.1511756,
+      "elapsed_seconds": 20.43232885794714,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The new suppression only covers the one known-bad case (majc and not full). Every other scope defaults to emitting ranks. If this iterator is ever attached at minor-compaction scope, the minc sees only the in-memory map, which is a partial view of the graph. It would then compute ranks from that subset and persist them as authoritative with timestamp maxTS+1. This is exactly the integrity failure the change is meant to prevent. A fail-closed version would emit only when env.Scope == ScopeMajc && env.FullMajorCompaction (plus scan, if scan-time emission is intended).",
+            "missing_context": "Whether GraphRankIterator can be configured at minc scope (the type doc calls it 'the majc iterator', but no scope enforcement appears in the supplied code). Also missing: the definitions of the IteratorScope enum, its zero value, and how IteratorEnvironment is populated for each scope.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "low",
+            "symbol": "function:*GraphRankIterator.Init",
+            "witness": "g.suppressRankEmission = env.Scope == ScopeMajc && !env.FullMajorCompaction"
+          }
+        ],
+        "summary": "The change stops rank materialization during partial major compactions and propagates the suppression through DeepCopy, so a copy cannot regain emission. Both changes move toward fail-closed behavior. Pass-through on suppression preserves the source cells unchanged, and the new tests include a non-vacuous control. The only concrete concern is that the condition deny-lists partial majc instead of allow-listing full majc. Other partial-view persistence scopes, notably minc if configurable, would still persist non-authoritative ranks. No authorization, tenant-isolation, or new disclosure defects are introduced by the diff itself.",
+        "unknowns": [
+          "Whether the zero-value IteratorEnvironment (e.g., one built by callers that omit Scope) maps to a scope that is not ScopeMajc. If so, such callers would bypass suppression and emit ranks.",
+          "Whether any path constructs GraphRankIterator without calling Init (e.g., NewGraphRankIterator followed directly by DeepCopy/Seek). In that case suppressRankEmission stays at its zero value false and emission proceeds.",
+          "Pre-existing and not changed here: rank cells take their visibility from the vertex label cell, but the rank value is derived from edge cells whose visibility may be more restrictive. The rank value could therefore disclose the existence or count of edges the reader cannot see. The supplied evidence cannot determine whether this is mitigated elsewhere (e.g., by visibility filtering upstream of this iterator at scan scope).",
+          "Pre-existing: scan-scope Seek over a bounded range also computes ranks from a partial view. Whether scan-scope use is supported or restricted is not shown."
+        ]
+      },
+      "input_tokens_including_cache": 16732,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 14572,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.1511756,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1708,
+          "provider": "firstParty",
+          "thinkingTokens": 708,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1708,
+      "pr": 303,
+      "prompt_bytes": 26083,
+      "response_sha256": "b314b4db5e69517dfa3360baf2822161420d0c0878c885ab8c3b6318687fe07f",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 14572,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 14572,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 14572,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 14572,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1708,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1708,
+        "output_tokens_details": {
+          "thinking_tokens": 708
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.1437436,
+      "elapsed_seconds": 16.80052473815158,
+      "findings": {
+        "findings": [],
+        "summary": "The change adds suppressRankEmission. Init sets it for non-full major compactions; Seek then returns source cells unchanged, and DeepCopy inherits the flag rather than re-deriving it from the new environment. That makes DeepCopy fail closed: a copy cannot regain emission. No new authorization, isolation, or disclosure path is introduced, and no concrete security defect is attributable to the changed code. The main residual concern is pre-existing: rank cells aggregate edges across visibilities but are labeled with the vertex label visibility. The unsuppressed minc scope is a separate correctness question.",
+        "unknowns": [
+          "Pre-existing and unchanged by this diff: Seek computes each vertex's rank from edge cells of any ColumnVisibility, but emits the rank under the vertex/label visibility (`ColumnVisibility: append([]byte(nil), vertex.visibility...)`). In majc/minc scope the iterator sees every cell regardless of authorizations. The persisted rank can therefore reveal whether more-restricted edges exist, and how many, to readers who can only see the label. Whether this matters depends on the deployment's visibility model; the change neither introduces nor fixes it.",
+          "Suppression is keyed only on `env.Scope == ScopeMajc && !env.FullMajorCompaction`. Minor-compaction (minc) scope also runs over a partial view (memory only), and this change does not suppress rank emission there. Whether GraphRankIterator can be configured at minc scope, and whether minc-emitted ranks are persisted as authoritative, is not in the packet. This is a correctness concern rather than a demonstrated security defect.",
+          "The zero value of IteratorEnvironment.Scope and the default of FullMajorCompaction are not shown. It is unknown how callers that build IteratorEnvironment without setting these fields are classified.",
+          "initGraphRankEnv was omitted, so the tests' exact path through Init (for example, whether they set defaults such as maxVertices, vertexCF and edgeCFPrefix) cannot be verified.",
+          "The packet does not show how the iterator is configured (for example, whether table/iterator options are restricted to authorized administrators) or how emitted cells are subject to visibility checks at scan time."
+        ]
+      },
+      "input_tokens_including_cache": 16563,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 14403,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.1437436,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1404,
+          "provider": "firstParty",
+          "thinkingTokens": 646,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1404,
+      "pr": 303,
+      "prompt_bytes": 25753,
+      "response_sha256": "e8bfcfa470a1ae37431b014a5a162d2b880a95fc7740666ab1c8eb0b07f6b90c",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 14403,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 14403,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 14403,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 14403,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1404,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1404,
+        "output_tokens_details": {
+          "thinking_tokens": 646
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.6361315999999999,
+      "elapsed_seconds": 18.59535884903744,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The production ontology provider performs no authorization. Any authenticated principal can read the full active ontology, including Entra callers mapped to no reader or contributor role, whom startup output says 'receive no corpus access'. The tests and UI assume a 'describe ontology' authorization decision that can deny, but only a test fixture ever produces that denial. EmbeddedService checks only ctx.Err() and returns *s.ontologyVersion without consulting the request's auth.Decision or the authorized client.",
+            "missing_context": "Whether NewAuthenticatedHandler or the Binder enforces a per-route operation grant (for example, requiring a read operation for GET /api/v1/ontology) before the mux handler runs. Whether the ontology schema is intended to be visible to authenticated-but-unmapped principals. Whether ontology reference values or descriptions can carry sensitive object IDs or names.",
+            "path": "pkg/explorer/webapi/ontology.go",
+            "severity": "medium",
+            "symbol": "function:*EmbeddedService.ActiveOntology",
+            "witness": "func (s *EmbeddedService) ActiveOntology(ctx context.Context) (...) { ... if err := ctx.Err(); err != nil {...}; if s.ontologyVersion == nil {...}; return *s.ontologyVersion, true, nil }  // and in routes(): h.mux.HandleFunc(\"GET /api/v1/ontology\", ... ontologyFor(request.Context(), h.service) ...)  // vs TestOntologyEndpointPropagatesAuthorizationDenial, which relies on ontologyFixtureService{err: ErrorUnauthorized \"operation describe ontology is not authorized\"}"
+          }
+        ],
+        "summary": "The change adds an operator-configured, read-only ontology description endpoint. Route registration keeps the endpoint behind authentication, which tests assert, and the file loader fails closed by rejecting unknown fields, trailing data, unresolved keys, and duplicates, aborting startup on error. The one concrete concern is that the real EmbeddedService.ActiveOntology applies no authorization decision. Unless the middleware enforces per-route operations, which the packet does not show, any authenticated principal can read the ontology, including role-less Entra callers. The tests and UI imply a 'describe ontology' authorization gate that only exists in a test fixture. The remote backend remains refused, so it is unaffected.",
+        "unknowns": [
+          "Whether the authenticated handler gates each route by operation, or only by authentication. If it only authenticates, /api/v1/meta and /api/v1/ontology are both readable by unmapped principals.",
+          "The implementation of publiclyReachable and the auth middleware in pkg/explorer/webapi, which are not in the packet.",
+          "Whether ontology.Value reference constraints (ValueReference) can name concrete corpus object IDs, which would expose object identifiers outside per-document authorization.",
+          "ontology.OntologyVersion.Validate and the constructor semantics, such as whether pattern constraints are regex-compiled. These matter only for operator-supplied input and are not an authorization issue.",
+          "Whether SetOntologyVersion can be called after serving starts, which would race on s.ontologyVersion without synchronization. In this change it is called only at startup."
+        ]
+      },
+      "input_tokens_including_cache": 77464,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 75304,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.6361315999999999,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1663,
+          "provider": "firstParty",
+          "thinkingTokens": 565,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1663,
+      "pr": 298,
+      "prompt_bytes": 152685,
+      "response_sha256": "2a47b1a0b31164b8f1a1d7c776dce3fbf9f4ab39a295bbf250b259ae42998392",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 75304,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 75304,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 75304,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 75304,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1663,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1663,
+        "output_tokens_details": {
+          "thinking_tokens": 565
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.5270636,
+      "elapsed_seconds": 20.77154599595815,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The new GET /api/v1/ontology route has no per-principal authorization in production. ontologyFor type-asserts h.service to ActiveOntologyProvider and calls ActiveOntology, and EmbeddedService.ActiveOntology returns the stored snapshot after checking only ctx != nil and ctx.Err(). It never consults the auth.Decision bound to the request context or the authorized client, which every other data route goes through. So any caller who passes authentication gets the full ontology: concepts, relationships, property constraints, regex patterns and allowed_values literals. That includes Entra callers with no mapped reader/contributor role, whom run() describes as 'unmapped callers receive no corpus access'. The denial path in TestOntologyEndpointPropagatesAuthorizationDenial ('operation describe ontology is not authorized') and the UI 'denied' state are exercised only through ontologyFixtureService, which injects the error. The real EmbeddedService can never produce that denial.",
+            "missing_context": "Whether NewAuthenticatedHandler or the binder middleware applies a route-level authorization check (beyond authentication) before handlers run; whether the ontology description is intended to be visible to every authenticated principal, including unmapped Entra callers; how GET /api/v1/meta is authorized, for comparison.",
+            "path": "pkg/explorer/webapi/ontology.go",
+            "severity": "medium",
+            "symbol": "function:*EmbeddedService.ActiveOntology",
+            "witness": "if s.ontologyVersion == nil {\n\t\treturn ontology.OntologyVersion{}, false, nil\n\t}\n\treturn *s.ontologyVersion, true, nil   // no decision/authorization lookup; routed via h.mux.HandleFunc(\"GET /api/v1/ontology\", ... ontologyFor(request.Context(), h.service))"
+          }
+        ],
+        "summary": "The change adds a read-only, startup-configured ontology description endpoint for the embedded backend; the remote backend is still refused. The route appears to require authentication, but the production EmbeddedService.ActiveOntology does no per-principal authorization. Any authenticated caller, including ones granted no corpus access, can read the full schema with its constraint literals. The authorization-denial behavior shown in the tests and UI exists only in a test fixture. No other concrete authorization, isolation or fail-closed regressions are visible in the supplied evidence.",
+        "unknowns": [
+          "loadOntologyVersionFile and ontologyValueFromConfig are omitted, so the file-read size limit, strict JSON decoding (unknown fields/trailing data) and path handling for -ontology-file / SHOAL_ONTOLOGY_FILE cannot be checked.",
+          "enforceOntologyBounds runs only at request time, not in SetOntologyVersion or at startup. An oversized configured ontology therefore loads successfully and then fails every request. This fails closed, but whether startup should refuse it is a design question.",
+          "Whether ontology.OntologyVersion is deeply immutable. SetOntologyVersion's 'cloned := version' is a shallow copy, so shared slices could alias caller-owned data.",
+          "Whether the omitted ontologyBoundError returns an error code that maps to a non-2xx status, and whether provider error messages are safe to echo verbatim through writeError.",
+          "The Handler middleware (authentication gate, publiclyReachable, host allow-list) is not in the packet. The claim that the route requires authentication rests on the tests TestOntologyEndpointRequiresAuthentication and TestOntologyEndpointIsNotPubliclyReachable."
+        ]
+      },
+      "input_tokens_including_cache": 63228,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 61068,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.5270636,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1904,
+          "provider": "firstParty",
+          "thinkingTokens": 690,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1904,
+      "pr": 298,
+      "prompt_bytes": 123325,
+      "response_sha256": "cf63d980d29e9c04d162a73cf4635429f67cedff11cced0570e2dda6353d769a",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 61068,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 61068,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 61068,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 61068,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1904,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1904,
+        "output_tokens_details": {
+          "thinking_tokens": 690
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.4630356,
+      "elapsed_seconds": 36.01972113735974,
+      "findings": {
+        "findings": [
+          {
+            "claim": "Each emitted rank cell carries only the target vertex's label visibility. Its value, however, is computed from incoming edge cells and from the ranks of source vertices, and those cells can have different or more restrictive visibilities (including other tenants' labels stamped by visibilityStamp). A reader authorized only for the target's visibility can therefore learn how many restricted neighbors link to the vertex and how those neighbors are connected. This is an inference and disclosure leak across visibility and tenant boundaries. The emission never combines the edge or neighbor visibilities.",
+            "missing_context": "Whether the Java GraphRankIterator has the same behavior and this is accepted parity. Whether graph tables ever mix visibilities or tenants within one compaction range. Where graphRank sits relative to visibilityStamp in configured majc stacks.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "medium",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "ColumnVisibility: append([]byte(nil), vertex.visibility...) combined with rankSum += neighborRank / float64(outDegree). The loop reads cq and row from edge keys and ignores k.ColumnVisibility on edges. TestGraphRank_EmitsPageRankForIncomingEdges pins B's rank at 0.6166… with visibility \"visB\", even though A (visA) and C (visC) contribute to it. TestGraphRank_SourceCellsPassThroughUnchanged uses \"edgeVis\" on an edge that feeds the ranks."
+          },
+          {
+            "claim": "The vertex visibility is chosen from whichever cell happens to come first or last, not from an authorization-aware rule. If a vertex row has no labelCQ cell, the visibility is taken from the first vertexCF cell in sort order, which may be an unrestricted property (empty visibility). The rank cell is then emitted publicly and reveals that the vertex exists and how it is connected. If there are several label cells with different visibilities, the last one in sort order silently overwrites the others, and it may be the least restrictive. The failure mode is open rather than closed.",
+            "missing_context": "Whether the schema guarantees exactly one label cell per vertex with the most restrictive visibility. Whether rows without a label are possible in practice.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "medium",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "vertex = &graphRankVertex{visibility: append([]byte(nil), k.ColumnVisibility...)} on the first cf == g.vertexCF cell, followed by an unconditional overwrite when cq == g.labelCQ."
+          },
+          {
+            "claim": "Seek does not check k.Deleted. In a partial major compaction or an offline context, delete markers can reach user iterators because propagateDeletes defaults to true when the compaction is not full. In that case a tombstone on a vertexCF cell creates a vertex, and a tombstoned edge still counts toward rank. The rank cell is written at maxTS+1, which is newer than any delete marker in range, so it survives the delete. The result is a resurrected rank cell for a deleted vertex that still carries the deleted label's visibility, and ranks derived from deleted edges.",
+            "missing_context": "Whether BuildStack always places DeletingIterator beneath user iterators with propagateDeletes=false for majc and offline. Whether graphRank is restricted to full major compactions.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "low",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "for g.source.HasTop() { k := ...; if cf == g.vertexCF {...} if strings.HasPrefix(cf, g.edgeCFPrefix) {...} }, which has no k.Deleted check, and rankTS := maxTS + 1."
+          }
+        ],
+        "summary": "This change adds a majc/offline PageRank iterator and registers it. The main concern is disclosure: emitted rank cells take only the target vertex's label visibility, while their values encode edges and neighbors under other, possibly tenant-stamped, visibilities. A test pins this behavior. The vertex visibility choice can also fail open when a vertex has no label cell or several differently labeled ones. Delete markers are not handled, which could resurrect rank cells during non-full compactions. Registry and doc changes are consistent with each other and add no scan-context capability.",
+        "unknowns": [
+          "Whether the Java parity target also ignores edge and neighbor visibilities. If so, finding 1 is inherited design rather than a regression.",
+          "Stack ordering between graphRank, visibilityStamp and deleting in real majc configurations.",
+          "Who can configure majc or offline iterator options such as maxIterations, maxVertices and dampingFactor. None of these are bounded, and Seek buffers every source cell before the maxVertices check. That is a resource-exhaustion concern if non-admins can set them, which is out of the requested categories.",
+          "Behavior when Seek is called on a sub-range. Ranks would then be computed from a partial graph."
+        ]
+      },
+      "input_tokens_including_cache": 51762,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 49602,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.4630356,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3289,
+          "provider": "firstParty",
+          "thinkingTokens": 1590,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 3289,
+      "pr": 300,
+      "prompt_bytes": 90317,
+      "response_sha256": "934187f2a3a06284e2a8c4c16c47d279df4c47ca48fc67a785b7cc4743fa25dc",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 49602,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 49602,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 49602,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 49602,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 3289,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 3289,
+        "output_tokens_details": {
+          "thinking_tokens": 1590
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.36815159999999997,
+      "elapsed_seconds": 27.222965855151415,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The emitted rank cell carries only the target vertex's label (or first V-cell) visibility. Its value, however, is computed from edge cells and neighbor vertices under other, possibly stricter, visibilities. A principal authorized only for the target vertex's label can read the _rank value and infer the existence, count, and out-degree of edges and neighbor vertices they cannot see. The GraphRank registration makes it active only in majc/offline, and the VisibilityFilter's ActiveContexts is scan-only, so no authorization filtering appears to apply to the cells feeding the computation. Derived data is downgraded to a less restrictive label.",
+            "missing_context": "Whether the Java GraphRankIterator has the same behavior, which would make this intentional parity. Whether graph tables are ever multi-visibility or multi-tenant, e.g. used with IterVisibilityStamp. Whether any scan-time or policy layer restricts reading _rank cells.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "high",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "outgoing[row] = append(outgoing[row], cq) / sources[row] = struct{}{} collect edges regardless of k.ColumnVisibility; emission uses ColumnVisibility: append([]byte(nil), vertex.visibility...) where vertex.visibility is set only from cf == g.vertexCF cells. TestGraphRank_EmitsPageRankForIncomingEdges asserts B's rank (0.6167, driven by edges from visA/visC vertices) is emitted at \"visB\". TestGraphRank_SourceCellsPassThroughUnchanged uses an edge at \"edgeVis\" that still contributes."
+          },
+          {
+            "claim": "If a vertex has no labelCQ cell, the rank's visibility falls back to whichever V cell sorts first for that row. That can be an arbitrary property with a weaker label than the vertex's other cells, so the rank may be exposed under an unrelated, less restrictive visibility.",
+            "missing_context": "Schema guarantees that every vertex has a label cell, and Java parity for this fallback.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "medium",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "vertex = &graphRankVertex{visibility: append([]byte(nil), k.ColumnVisibility...)} on first V cell; overwritten only when cq == g.labelCQ"
+          },
+          {
+            "claim": "Seek does not inspect delete markers. In non-full majc, DeletingIterator defaults to propagateDeletes=true, so tombstones can reach this iterator. Deleted vertex and edge cells would then be counted as live, and a fresh _rank cell stamped maxTS+1 (newer than any tombstone in range) would be emitted for a deleted vertex. This fails open: data survives deletion and removed edges keep influencing visible ranks.",
+            "missing_context": "Whether wire.Key carries a delete flag. Where the mandatory DeletingIterator sits relative to user majc iterators, and whether propagated deletes are visible here. Omitted Init/sortOut bodies.",
+            "path": "internal/iterrt/graphrank.go",
+            "severity": "medium",
+            "symbol": "function:*GraphRankIterator.Seek",
+            "witness": "loop treats every source cell as a vertex/edge with no k.Deleted (or equivalent) check; rankTS := maxTS + 1 applied to emitted cells"
+          }
+        ],
+        "summary": "The new majc GraphRankIterator computes PageRank over all cells in range, including edges and neighbors under other visibilities. It writes the result under only the target vertex's label visibility, which is a likely information-flow downgrade. The visibility fallback when a label is absent is arbitrary. Delete markers appear to be ignored, which may resurrect deleted vertices via newer-timestamped rank cells. All findings need confirmation against the omitted Init code, the stack ordering, and Java parity intent.",
+        "unknowns": [
+          "Init, NewGraphRankIterator, DeepCopy, and option parsing bodies are omitted, so option validation (e.g., negative or huge maxIterations/maxVertices, NaN damping) could not be checked.",
+          "Who may configure majc iterators and their options on a table, i.e., whether iterator configuration is an authorization boundary.",
+          "Whether BuildStack enforces capability contexts, preventing GraphRank from running at scan scope.",
+          "Whether rank cells written at compaction are later readable by principals lacking the auths of the contributing edges.",
+          "maxVertices bounds only vertex count; buffering of all source cells and edges is unbounded (resource concern, not verified against caller limits)."
+        ]
+      },
+      "input_tokens_including_cache": 41824,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 39664,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.36815159999999997,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2520,
+          "provider": "firstParty",
+          "thinkingTokens": 939,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 2520,
+      "pr": 300,
+      "prompt_bytes": 72762,
+      "response_sha256": "62812538ebfb48f4c8c1214638d98dad068912411b8239d8040e56202912abc9",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 39664,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 39664,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 39664,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 39664,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 2520,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 2520,
+        "output_tokens_details": {
+          "thinking_tokens": 939
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.3474516,
+      "elapsed_seconds": 31.482389437034726,
+      "findings": {
+        "findings": [
+          {
+            "claim": "A derived assertion is never checked against the derivation it cites. Validate only requires one derivation-backed EvidenceRef. It never compares derivation.sourceEndpoint or targetEndpoint with the assertion's subject or object, and never requires a relationship predicate. A valid derivation computed for entities (A,B) can therefore back a derived assertion about an unrelated subject C, or a property assertion with an arbitrary literal value. The assertion still passes validation and is labelled as reproducibly derived. This breaks the new guarantee that a derived assertion is 'attributable to one reproducible derivation record', and lets provenance be attached to facts it does not support.",
+            "missing_context": "Whether a higher layer (a latent-edge ingestion path or store) enforces endpoint, subject, and object binding before persisting derived assertions; the body of mustAssertion; what fixture.person.ID() and fixture.title.ID() resolve to; and whether loose attribution is intended.",
+            "path": "pkg/ontology/model.go",
+            "severity": "medium",
+            "symbol": "function:Assertion.Validate",
+            "witness": "if a.origin == AssertionDerived && !evidence.hasDerivation { return invalid(\"derived assertion requires derivation evidence\") } — no check that evidence.derivation.sourceEndpoint == a.subject or that targetEndpoint relates to a.object. The tests confirm this is accepted: TestDerivedAssertionRejectsMultipleDerivations builds a derived assertion on subject \"entity:person-1\", predicate fixture.title.ID() (a property) and string object \"subject\", and it fails only because of the evidence count. TestDerivedAssertionCarriesDerivationEvidence expects success with subject fixture.person.ID() and predicate fixture.title.ID(), while the derivation targets entity:project-1."
+          }
+        ],
+        "summary": "The change adds derivation-backed evidence and a \"derived\" assertion origin. Origin handling is fail-closed: unknown origins are rejected, evidence kinds cannot be mixed, extraction requests reject derivation evidence in both preflight and Validate, and option maps are cloned on construction, access and clone. The one concrete defect is that a derived assertion's cited derivation is not bound to the assertion's subject, predicate or object, so valid derivation provenance can be attached to unrelated facts. Result-side acceptance of derived assertions and downstream origin handling are outside the supplied evidence.",
+        "unknowns": [
+          "Extraction result/response validation is not included. Assertion.Validate now accepts origin \"derived\", so it is unknown whether an extractor or model output can emit AssertionDerived assertions. This would expand capability unless result validation requires assertion evidence to be a subset of request evidence, which now cannot contain derivations.",
+          "Downstream consumers that switch on AssertionOrigin, or treat origin != AssertionInferred as explicit/cited, are not shown. They may misclassify the new \"derived\" origin or fail open on it.",
+          "Any deserialization or wire decoding path that builds EvidenceRef or AssertionDerivation directly is not shown. EvidenceRef.Validate's citation branch does not require the derivation field to be zero when hasDerivation is false, so the safety of such decoders is unknown.",
+          "Derivation endpoints are checked only with validateReference. There is no evidence about tenant or namespace scoping of sourceEndpoint and targetEndpoint relative to the assertion or its caller.",
+          "assertionID is not shown, so it is unknown whether evidence metadata or derivation content participates in assertion identity beyond the evidence ID. derivedEvidenceID excludes evidence metadata, which is consistent with citation evidenceID."
+        ]
+      },
+      "input_tokens_including_cache": 38289,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 36129,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.3474516,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2899,
+          "provider": "firstParty",
+          "thinkingTokens": 1649,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 2899,
+      "pr": 299,
+      "prompt_bytes": 71274,
+      "response_sha256": "54598358200dc3e90d9d573d4781df61e6f7cdc892a073400170db610f911187",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 36129,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 36129,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 36129,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 36129,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 2899,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 2899,
+        "output_tokens_details": {
+          "thinking_tokens": 1649
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.2973636,
+      "elapsed_seconds": 27.150153170805424,
+      "findings": {
+        "findings": [
+          {
+            "claim": "A derived assertion is never checked against the derivation it cites. Validate requires exactly one derivation-backed EvidenceRef and checks that the derivation is internally canonical. It does not require derivation.sourceEndpoint to equal a.subject, or derivation.targetEndpoint to match a.object or a.objectType. One valid derivation record (for example, entity:person-1 to entity:project-1 above threshold) can therefore be attached as evidence to a derived assertion about any other subject, predicate, or object, and the assertion still validates. Downstream consumers would see an 'attributable, reproducible' derived fact that the cited derivation does not actually support. This is an integrity and attribution fail-open in the new evidence kind.",
+            "missing_context": "The bodies of NewAssertionDerivation, validateDerivationFields, derivationID, derivedEvidenceID and assertionID are omitted. The packet also doesn't show whether any caller that persists or accepts derived assertions enforces endpoint binding. The test TestDerivedAssertionCarriesDerivationEvidence uses fixture.person.ID() as subject and fixture.title.ID() as predicate with a derivation whose endpoints are entity:person-1 and entity:project-1. That suggests no binding is expected, but the fixture values are not visible.",
+            "path": "pkg/ontology/model.go",
+            "severity": "medium",
+            "symbol": "function:Assertion.Validate",
+            "witness": "if a.origin == AssertionDerived && len(a.evidence) != 1 { ... }\nfor index, evidence := range a.evidence {\n\tif err := evidence.Validate(); err != nil { return err }\n\tif a.origin == AssertionDerived && !evidence.hasDerivation { ... }\n\tif a.origin != AssertionDerived && evidence.hasDerivation { ... }\n// no comparison of evidence.derivation.sourceEndpoint/targetEndpoint with a.subject/a.object"
+          }
+        ],
+        "summary": "The change adds a 'derived' assertion origin backed by exactly one AssertionDerivation evidence record. Unknown and empty origins fail closed, evidence kinds cannot be mixed across origins, and derivation evidence is rejected in all three extraction-request paths (Validate, extractionRequestID, preflight). The clone and accessor tests cover option-map aliasing. The one concrete gap is that derived assertions are not bound to the subject and object of the derivation they cite, so a valid derivation can attest to an unrelated fact. Whether extractor responses can inject derived assertions depends on response validation that is not in this packet.",
+        "unknowns": [
+          "Whether extraction result/response validation (not in packet) restricts returned assertions' evidence to the request's evidence set. If it does not, an untrusted extractor/model response could return AssertionDerived assertions carrying fabricated but self-consistent derivation evidence, because derivation Validate only checks canonical ID/fields, not provenance of the derivation.",
+          "Whether validateDerivationFields bounds or validates iteratorOptions, endpoints, embedding model strings and tessellationCell (wire validity, size). validateBoundedEvidenceMetadata now bounds iteratorOptions, but it is only reached for non-derivation items in preflightExtractionRequest, since derivation items are rejected earlier.",
+          "Whether derivedEvidenceID incorporates evidence metadata or only the derivation, and whether assertionID includes evidence metadata. If neither does, metadata on derivation evidence is unauthenticated by identity, matching existing citation behavior.",
+          "Whether EvidenceRef.clone deep-copies derivation.iteratorOptions via AssertionDerivation.clone. It is omitted; the tests suggest it does.",
+          "Whether the cited-evidence branch of EvidenceRef.Validate should reject a non-zero derivation field when hasDerivation is false. Only internal construction could produce this, so it was not reported.",
+          "*payloadCounter.addDerivation body is omitted. It is unreachable from preflightExtractionRequest, because derivation evidence is rejected before counter.addEvidence."
+        ]
+      },
+      "input_tokens_including_cache": 32443,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 30283,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.2973636,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2733,
+          "provider": "firstParty",
+          "thinkingTokens": 1348,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 2733,
+      "pr": 299,
+      "prompt_bytes": 59288,
+      "response_sha256": "925b3d899ce1f591b136effcd92790c56a26b6410024d6ab0a67db61dacd577b",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 30283,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 30283,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 30283,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 30283,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 2733,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 2733,
+        "output_tokens_details": {
+          "thinking_tokens": 1348
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    }
+  ],
+  "totals": {
+    "candidate": {
+      "cost_usd": 1.3363223999999998,
+      "elapsed_seconds": 91.94518976006657,
+      "input_tokens_including_cache": 154058,
+      "output_tokens": 8561,
+      "prompt_bytes": 281128
+    },
+    "full": {
+      "cost_usd": 1.5977944,
+      "elapsed_seconds": 106.52979828137904,
+      "input_tokens_including_cache": 184247,
+      "output_tokens": 9559,
+      "prompt_bytes": 340359
+    }
+  }
+}

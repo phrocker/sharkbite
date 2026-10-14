@@ -1,0 +1,218 @@
+{
+  "arm_comparison": {
+    "candidate_reported_supported_new_manifestations": [
+      "399-admission-via-generic-dispatch"
+    ],
+    "causality": "No causal exclusion claim: core service code for both full-only supported manifestations remained identical in candidate. One stochastic call per arm cannot separate attention/context effects from sampling variation.",
+    "cost_quality_interpretation": "Observed input reduction is5.8779 percent. Candidate did not surface every supported manifestation raised by full, so no quality-parity claim. This four-PR comparison is not defect recall and does not establish downstream savings at equal quality.",
+    "full_reported_supported_new_manifestations": [
+      "399-report-concurrent-different-outcome",
+      "399-admission-via-generic-dispatch",
+      "399-dispatch-via-admission"
+    ],
+    "grouping_caveat": "Forward/reverse admission-dispatch confusion share a missing type/lifecycle boundary; concurrent report replay is a distinct path. These lists are manifestations, not a calibrated defect count or recall denominator.",
+    "implicated_code_retention": [
+      {
+        "after_characters": 2474,
+        "after_identical": true,
+        "after_sha256": "cb9758f1a19e908bdc6cd77bde275519d78e08a479c3d6a8c3f5773a1ffb4fdc",
+        "candidate_present": true,
+        "full_present": true,
+        "symbol": "function:*AdmissionService.Outstanding"
+      },
+      {
+        "after_characters": 5227,
+        "after_identical": true,
+        "after_sha256": "745c5a8e482429b35525d7b1816b0d961cf70373956cce6ba4542aff20782db0",
+        "candidate_present": true,
+        "full_present": true,
+        "symbol": "function:*AdmissionService.Report"
+      },
+      {
+        "after_characters": 1571,
+        "after_identical": true,
+        "after_sha256": "88273bd2b792859418a4757a34db0b0399665e8dbeb0e54e8cdf202d6cfbb4cf",
+        "candidate_present": true,
+        "full_present": true,
+        "symbol": "function:admitted"
+      }
+    ],
+    "other_prs": {
+      "357": "Neither V2 arm reported a finding. Prior Import staging concern remains a separate partial-support adjudication, not a newly detected V2 finding.",
+      "360": "Neither arm reported a finding.",
+      "361": "Neither arm reported a finding."
+    },
+    "unchanged_dependency_context": "CompleteClaim and Claim implementations are absent as declaration bodies from both packets; adjudication inspected them independently at the pinned revision."
+  },
+  "findings": [
+    {
+      "id": "399-report-concurrent-different-outcome",
+      "impact_bound": "False successful acknowledgement of a differing report; durable record remains B outcome, not a demonstrated second write or outcome overwrite. Same principal, valid authorization, claim identity and expected version still required.",
+      "interleaving": [
+        "Reports A and B use the same admission token and different valid outcomes.",
+        "A reads version v, state claimed through Report.authorizedCurrent; A pauses before calling CompleteClaim.",
+        "B completes and commits its different outcome at version v+1 under the same claim.",
+        "A enters CompleteClaim, which reads the now-terminal record and returns it with nil error from its terminal replay branch.",
+        "Report A accepts that nil error and reports success without checking whether the returned outcome matches A."
+      ],
+      "pr": 399,
+      "proof_limit": "No concurrency reproduction executed; pinned control flow supports the explicit interleaving.",
+      "recommendation": "Validate returned successful completion against sameReportedOutcome and normalized output, or implement an outcome-aware completion primitive that enforces admission replay semantics for every interleaving.",
+      "reported_as_finding_by": [
+        "full"
+      ],
+      "severity": "medium",
+      "source": "pkg/explorer/fleet/admission.go:666-712",
+      "supporting_sources": [
+        "pkg/explorer/fleet/dispatch_service.go:479-502",
+        "pkg/explorer/fleet/admission.go:758-770",
+        "internal/explorerfleet/dispatch_store.go:269-275"
+      ],
+      "verdict": "supported_new_by_static_control_flow",
+      "why_cas_does_not_prevent": "In this interleaving A never attempts a mutation or CAS. It takes CompleteClaim terminal replay after B has already committed. Other timings may conflict; the claim need not occur on every concurrent call.",
+      "witness": "Report checks current.State.terminal() on its first read, but after CompleteClaim returns nil error it returns that record without sameReportedOutcome validation. CompleteClaim re-reads current and terminal-replays solely on state/version/claim, without comparing output or failure code."
+    },
+    {
+      "confirmed_manifestations": [
+        {
+          "arms": [
+            "full",
+            "candidate"
+          ],
+          "kind": "completion_bypasses_admission_replay_contract",
+          "witness": "The grant exposes action ID, TokenID=ClaimID and version. Generic HTTP complete forwards these to bound CompleteClaim, then DispatchService.CompleteClaim. No layer excludes records with nonempty AdmittedEffects. A later differing completion under the same expected version and claim succeeds through terminal replay without outcome equality, unlike AdmissionService.Report intended contract."
+        },
+        {
+          "arms_as_finding": [
+            "full"
+          ],
+          "arms_as_unknown": [
+            "candidate"
+          ],
+          "bound": "Original admission obligations are not recomputed by Claim. Claim still reauthorizes principal and current descriptor; authorized effect ceiling remains in force. No unpermitted external effect was dynamically demonstrated.",
+          "kind": "expired_admission_can_be_reclaimed",
+          "witness": "Claim rejects live claimed records and terminal states, but accepts an expired DispatchClaimed admission before its action deadline. It clones the record, increments version/fence, installs a new claim ID/lease, and resolves ordinary descriptor effects. AdmittedEffects validation enforces declaration shape only; it does not forbid claimed-to-claimed transitions. Pull also includes expired claimed admissions."
+        }
+      ],
+      "id": "399-admission-via-generic-dispatch",
+      "pr": 399,
+      "proof_limit": "Static code and handler inspection; no HTTP exploit or external-effect reproduction.",
+      "recommendation": "Separate admissions from dispatch records/routes or explicitly reject admission records in generic Pull/Claim/Complete/Execute paths, with a shared internal completion primitive reserved for legitimate Report calls.",
+      "refuted_or_unproven_extensions": [
+        "Canceled/denied admissions cannot be reclaimed: Claim checks current.State.terminal() and returns ErrActionTerminal.",
+        "No cross-principal takeover: authorizedCurrent verifies subject, actor, client, delegation chain, object and registry binding.",
+        "No claim of execution beyond registry/executor effect ceilings; the narrower admission lifecycle is bypassed, while ordinary dispatch authorization remains enforced."
+      ],
+      "reported_as_finding_by": [
+        "full",
+        "candidate"
+      ],
+      "severity": "medium",
+      "source": "pkg/explorer/fleet/admission.go:420-441",
+      "supporting_sources": [
+        "pkg/explorer/webapi/fleet_dispatch.go:128-201",
+        "cmd/shoal-explore-web/fleet.go:265-290",
+        "pkg/explorer/fleet/dispatch_service.go:230-335",
+        "pkg/explorer/fleet/dispatch_service.go:479-507",
+        "pkg/explorer/fleet/dispatch_model.go:157-185",
+        "pkg/explorer/fleet/dispatch_service.go:944-985"
+      ],
+      "verdict": "supported_new_by_static_control_flow"
+    },
+    {
+      "candidate_difference": "Candidate did not report this direction of type confusion. Outstanding, Report and admitted full source are byte-identical and retained in both packets; no causal evidence that code omission caused the difference.",
+      "id": "399-dispatch-via-admission",
+      "impact_bound": "An invoke-only client with the same subject/actor/client/delegation tuple can newly learn a live worker claim and submit completion through admission. No cross-principal access established.",
+      "pr": 399,
+      "relationship": "Shares missing admission-versus-dispatch discrimination with reverse-direction finding; do not count the two directions as wholly independent root causes without an explicit counting rule.",
+      "reported_as_finding_by": [
+        "full"
+      ],
+      "severity": "medium",
+      "source": "pkg/explorer/fleet/admission.go:795-826",
+      "supporting_sources": [
+        "pkg/explorer/fleet/admission.go:666-710",
+        "pkg/explorer/fleet/dispatch_service.go:1103-1117",
+        "pkg/explorer/fleet/dispatch_service.go:787-795",
+        "pkg/explorer/fleet/dispatch_service.go:944-983"
+      ],
+      "verdict": "supported_new_by_static_control_flow",
+      "witness": "Outstanding includes ordinary live dispatch claims because it filters state/principal but not AdmittedEffects. It returns ClaimID as TokenID. Report forwards that token to CompleteClaim without admission discrimination. Pre-existing invoke Pull withholds unexpired claimed records; Status requires dispatch permission."
+    },
+    {
+      "count_as_new_defect": false,
+      "id": "399-global-cursor",
+      "pr": 399,
+      "reported_as_finding_by": [
+        "full"
+      ],
+      "source": "pkg/explorer/fleet/admission.go:795-805",
+      "supporting_sources": [
+        "internal/explorerfleet/dispatch_store.go:107-108",
+        "pkg/explorer/fleet/dispatch_service.go:944-958"
+      ],
+      "verdict": "supported_preexisting_disclosure_surface_repeated_by_new_endpoint",
+      "witness": "Store cursor is raw action ID. Outstanding returns it before principal filtering. Existing invoke Pull already exposes the identical cursor behavior."
+    },
+    {
+      "count_as_new_defect": false,
+      "id": "399-request-id-oracle",
+      "pr": 399,
+      "reported_as_finding_by": [
+        "candidate"
+      ],
+      "source": "pkg/explorer/fleet/admission.go:321-340",
+      "supporting_sources": [
+        "pkg/explorer/fleet/admission.go:374-375",
+        "pkg/explorer/fleet/dispatch_service.go:64-83",
+        "pkg/explorer/fleet/dispatch_service.go:1299-1304"
+      ],
+      "verdict": "supported_preexisting_oracle_pattern_repeated_by_new_endpoint",
+      "witness": "Valid authorized request yields conflict for an occupied guessed ID and proceeds for an unused one. Existing enqueue/Invoke already behaves this way. queuedRecord authorizes the supplied target before lookup; equivalentEnqueue binds principal and authorization fingerprint."
+    }
+  ],
+  "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+  "id": "3ea3fe9ae5e85afae20c7a80a6b7488ea1f8ddad5e6be62925e3a3ade2aa1d29",
+  "method_limits": [
+    "Read-only pinned source inspection, no source edits or GitHub comments. Only this requested JSON artifact written.",
+    "No dynamic concurrency, route exploit, or end-to-end external-effect reproduction.",
+    "Principal/registry checks remain relevant and are not bypassed by the confirmed admission-specific contract gaps.",
+    "Billed cost still includes unequal cache effects and variable output; use ordinary plus cache creation plus cache read for total input.",
+    "Harness fixes and unchanged current prompt verification were reported by parent; this pass focuses on source adjudication rather than re-auditing every harness fix."
+  ],
+  "packet_manifest_id": "247e7f6302418917b69c1a4ed7184904925af2465a6cb99bd477d0aebe1b778c",
+  "paired_report_id": "7eaae6c7e301baf98cdded51210e2c3069b5d0420a26d34778bd124f2bb3dd6e",
+  "source_files": [
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "pkg/explorer/fleet/admission.go",
+      "raw_sha256": "c5d7c764023e07c3ccf5b9622629d129e2b4a9c030a2bd9ca417322ae1c218f3"
+    },
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "raw_sha256": "0f24389a17e52ca3e024c1fe784f417ced3f0603558743b95b44f8240f0fec7b"
+    },
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "pkg/explorer/fleet/dispatch_model.go",
+      "raw_sha256": "22cdf99959684828389f6b7f9f29b11bbae2f83c92e6386591259be5ae9ef5e3"
+    },
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "pkg/explorer/webapi/fleet_dispatch.go",
+      "raw_sha256": "764f513e1d895755ea921d8b460cabe596c3392af13a8ce31a528e571f48df05"
+    },
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "raw_sha256": "9f03be6efa1ddb7d80921d8699c094032c34db71d9710f300dc16612531d2934"
+    },
+    {
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "path": "internal/explorerfleet/dispatch_store.go",
+      "raw_sha256": "3b20e0ea4c062d5de8215cca06b90aaa90d76fe1c8a8af1889a976cb59916a29"
+    }
+  ],
+  "status": "source_adjudication_proposals_from_pinned_code_not_exploit_ground_truth"
+}

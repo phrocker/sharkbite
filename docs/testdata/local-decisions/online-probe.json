@@ -1,0 +1,562 @@
+{
+  "checks": {
+    "invalid_token_budget": 422,
+    "missing_auth": 401,
+    "missing_questions": 400,
+    "null_state": 400,
+    "oversized_state": {
+      "raw_state_tokens": 1207,
+      "response": {
+        "answers": {
+          "boundary": {
+            "action": {
+              "act_probability": 1.0
+            },
+            "answer_confidence": 0.3828,
+            "choice": "review",
+            "confidence": 0.006,
+            "probabilities": {
+              "insufficient": 0.3277,
+              "review": 0.3828,
+              "routine": 0.2894
+            },
+            "type": "choice"
+          },
+          "priority": {
+            "action": {
+              "act_probability": 1.0
+            },
+            "answer_confidence": 0.4064,
+            "confidence": 0.0284,
+            "legend": {
+              "0": "routine",
+              "1": "inspect",
+              "2": "urgent"
+            },
+            "probabilities": {
+              "0": 0.4064,
+              "1": 0.3724,
+              "2": 0.2211
+            },
+            "score": 0.8147,
+            "type": "score"
+          },
+          "removed_check": {
+            "action": {
+              "act_probability": 1.0
+            },
+            "answer_confidence": 0.8069,
+            "confidence": 0.8069,
+            "noul": 0.8069,
+            "type": "noul"
+          }
+        },
+        "model": "laya-rl-agent",
+        "routing": {
+          "detection": null,
+          "model": "english",
+          "reason": "explicit model='english'",
+          "repo": "convaiinnovations/laya",
+          "workflow": null
+        },
+        "usage": {
+          "input_tokens": 1536,
+          "output_tokens": 0
+        }
+      },
+      "status": 200
+    },
+    "unknown_model": {
+      "routing": {
+        "detection": {
+          "diacritic_rate": 0.0,
+          "is_english": true,
+          "language": null,
+          "language_undecided": true,
+          "mixed_segment": null,
+          "non_latin_fraction": 0.0,
+          "script": "latin",
+          "script_profile": {
+            "latin": 1.0
+          }
+        },
+        "model": "english",
+        "reason": "Latin script, language not identified and no non-English letters; using default (english)",
+        "repo": "convaiinnovations/laya",
+        "workflow": null
+      },
+      "status": 200
+    },
+    "unknown_question_type": 422
+  },
+  "device": "cuda",
+  "effective_artifacts_sha256": {
+    "encoder/config.json": "bf3ab80598fdccf414855a2ce80f22859e4492d06ca8a62ddd1cfb63972f8979",
+    "model.safetensors": "891102d372688fc2a094dac56a384bc537b87c63f21f9f3dac0be2b7cbc8d86c",
+    "rl_agent_config.json": "ae287b56bbcf5f8c4f4541ae9dfd00c914c4c48b940b8398c3058af37ba92bbd",
+    "tokenizer/tokenizer.json": "6c8aaa9a542084f2457eab775d4eeb51f92a70c0fd9de28d5edb0ddec3c08d30",
+    "tokenizer/tokenizer_config.json": "50044de60daaa73df97d262e15a40d4faf0160e7d742df64b377877a1320dd12"
+  },
+  "gpu": "NVIDIA GeForce RTX 4070 Ti",
+  "health": {
+    "checkpoint_devices": {
+      "english": "cuda"
+    },
+    "cpu_fallbacks": {
+      "english": {
+        "count": 0,
+        "last_reason": null
+      }
+    },
+    "device": "cuda",
+    "device_is_preference": false,
+    "loaded": [
+      "english"
+    ],
+    "revisions": {
+      "english": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851"
+    },
+    "status": "ok"
+  },
+  "load_seconds": 1.6608092091046274,
+  "load_warnings": [
+    "laya: this checkpoint ships invalid temperatures or values outside [0.5, 5]; using choice:11+=0.10058280825614929 -> 0.5. Treat confidence from the affected entries as uncalibrated."
+  ],
+  "model_limits": {
+    "encoder": "answerdotai/ModernBERT-large",
+    "head_max_len": 192,
+    "max_len": 512
+  },
+  "offline": false,
+  "probability_rounding_tolerance": "0.00005 * label_count + 1e-9; values retained without renormalization",
+  "purpose": "synthetic runtime/HTTP-contract probe, not accuracy or calibration evidence",
+  "python": "3.11.14",
+  "questions": {
+    "boundary": {
+      "criteria": {
+        "insufficient": "Required code or caller context is unavailable.",
+        "review": "Changes permission checks, tenant isolation, or denial handling.",
+        "routine": "Changes comments or presentation without changing access control."
+      },
+      "instructions": "Does this Go change affect an authorization boundary?",
+      "type": "choice"
+    },
+    "priority": {
+      "criteria": [
+        "routine",
+        "inspect",
+        "urgent"
+      ],
+      "instructions": "How much authorization review does this change need?",
+      "type": "score"
+    },
+    "removed_check": {
+      "criteria": {
+        "false": "No explicit permission check is removed by this change.",
+        "true": "An explicit permission check present before is absent after."
+      },
+      "instructions": "Does the change remove an explicit permission check?",
+      "type": "noul"
+    }
+  },
+  "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+  "samples": [
+    {
+      "elapsed_ms": [
+        344.5735271088779,
+        16.16095006465912
+      ],
+      "input": {
+        "after": "return read(object)",
+        "before": "if !allowed(user, object) { return ErrDenied }; return read(object)",
+        "id": "removed-check"
+      },
+      "outputs": [
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.4899,
+              "choice": "review",
+              "confidence": 0.0623,
+              "probabilities": {
+                "insufficient": 0.1907,
+                "review": 0.4899,
+                "routine": 0.3194
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.8191,
+              "confidence": 0.4728,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.8191,
+                "1": 0.0497,
+                "2": 0.1313
+              },
+              "score": 0.3122,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.875,
+              "confidence": 0.875,
+              "noul": 0.875,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 253,
+            "output_tokens": 0
+          }
+        },
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.4899,
+              "choice": "review",
+              "confidence": 0.0623,
+              "probabilities": {
+                "insufficient": 0.1907,
+                "review": 0.4899,
+                "routine": 0.3194
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.8191,
+              "confidence": 0.4728,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.8191,
+                "1": 0.0497,
+                "2": 0.1313
+              },
+              "score": 0.3122,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.875,
+              "confidence": 0.875,
+              "noul": 0.875,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 253,
+            "output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "elapsed_ms": [
+        16.206956934183836,
+        17.745257820934057
+      ],
+      "input": {
+        "after": "// Read returns the requested object.\nreturn read(object)",
+        "before": "// Read returns the object.\nreturn read(object)",
+        "id": "comment-only"
+      },
+      "outputs": [
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5473,
+              "choice": "routine",
+              "confidence": 0.0918,
+              "probabilities": {
+                "insufficient": 0.1937,
+                "review": 0.259,
+                "routine": 0.5473
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.8783,
+              "confidence": 0.6046,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.8783,
+                "1": 0.0268,
+                "2": 0.0949
+              },
+              "score": 0.2165,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.6345,
+              "confidence": 0.6345,
+              "noul": 0.3655,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 253,
+            "output_tokens": 0
+          }
+        },
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5473,
+              "choice": "routine",
+              "confidence": 0.0918,
+              "probabilities": {
+                "insufficient": 0.1937,
+                "review": 0.259,
+                "routine": 0.5473
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.8783,
+              "confidence": 0.6046,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.8783,
+                "1": 0.0268,
+                "2": 0.0949
+              },
+              "score": 0.2165,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.6345,
+              "confidence": 0.6345,
+              "noul": 0.3655,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 253,
+            "output_tokens": 0
+          }
+        }
+      ]
+    },
+    {
+      "elapsed_ms": [
+        17.384473234415054,
+        17.10477191954851
+      ],
+      "input": {
+        "after": "return newRead(user, object)",
+        "before": "return authorizeAndRead(user, object)",
+        "id": "missing-helper",
+        "unavailable": "newRead implementation and caller context"
+      },
+      "outputs": [
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5171,
+              "choice": "insufficient",
+              "confidence": 0.0653,
+              "probabilities": {
+                "insufficient": 0.5171,
+                "review": 0.2508,
+                "routine": 0.2321
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5574,
+              "confidence": 0.139,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.5574,
+                "1": 0.1208,
+                "2": 0.3218
+              },
+              "score": 0.7644,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.502,
+              "confidence": 0.502,
+              "noul": 0.498,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 262,
+            "output_tokens": 0
+          }
+        },
+        {
+          "answers": {
+            "boundary": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5171,
+              "choice": "insufficient",
+              "confidence": 0.0653,
+              "probabilities": {
+                "insufficient": 0.5171,
+                "review": 0.2508,
+                "routine": 0.2321
+              },
+              "type": "choice"
+            },
+            "priority": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.5574,
+              "confidence": 0.139,
+              "legend": {
+                "0": "routine",
+                "1": "inspect",
+                "2": "urgent"
+              },
+              "probabilities": {
+                "0": 0.5574,
+                "1": 0.1208,
+                "2": 0.3218
+              },
+              "score": 0.7644,
+              "type": "score"
+            },
+            "removed_check": {
+              "action": {
+                "act_probability": 1.0
+              },
+              "answer_confidence": 0.502,
+              "confidence": 0.502,
+              "noul": 0.498,
+              "type": "noul"
+            }
+          },
+          "model": "laya-rl-agent",
+          "routing": {
+            "detection": null,
+            "model": "english",
+            "reason": "explicit model='english'",
+            "repo": "convaiinnovations/laya",
+            "workflow": null
+          },
+          "usage": {
+            "input_tokens": 262,
+            "output_tokens": 0
+          }
+        }
+      ]
+    }
+  ],
+  "versions": {
+    "fastapi": "0.141.1",
+    "httpx": "0.28.1",
+    "huggingface-hub": "1.33.0",
+    "laya": "0.3.21",
+    "tokenizers": "0.23.2",
+    "torch": "2.8.0",
+    "transformers": "5.17.0"
+  }
+}

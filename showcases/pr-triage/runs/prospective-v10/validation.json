@@ -1,0 +1,37 @@
+{
+  "tests": {
+    "showcase_python": 62,
+    "learning_core_python": 13,
+    "go_packages": [
+      "showcases/pr-triage/extract",
+      "showcases/pr-triage/operations"
+    ]
+  },
+  "archive_members_verified": 36,
+  "report_replay_identical": true,
+  "report_id": "55ec989c9e5cdd42da3ed26a8366a703dcb972770f79b51e9249f0cca6c5fd97",
+  "api_file_inventory_matches_git_collection": true,
+  "paid_replay_calls": 0,
+  "adversarial_review": "Fixed report path that created a missing budget database; reports now open read-only and reconcile assessed call hashes and costs.",
+  "copilot_review_fixes": [
+    "Canonical reviewer prompts and preparer identity verified against pinned manifest/protocol",
+    "Boolean scores rejected",
+    "Exact duplicate-free input, sample and prediction coverage required",
+    "Duplicate PR families rejected in collection and evaluation",
+    "Call receipts bound to expected pass/batch ID and paid runner identity",
+    "Registration < inventory observation <= source acquisition required in projection and evaluation",
+    "Frozen scores and per-unit dispositions independently recomputed before evaluation",
+    "Model-consumed code features, source byte counts and overlap hashes reconstructed from sampled source",
+    "Priced pending calls rejected until ledger settlement",
+    "Temporal strata reported and gated separately",
+    "Sample and picture rebuilt from the retained full collected manifest",
+    "Selected families reconciled with retained raw inventory, head, creation time, eligibility and order",
+    "Empty cohorts explicitly remain pending"
+  ],
+  "report_replay_identical_after_copilot_fixes": true,
+  "original_report_id": "158437a074e483803dc14531a8c6b164a0e08d8fb656552ea2cdab0895dee7eb",
+  "report_change": "Added separate temporal metrics, per-stratum gate reasons and recomputation receipt; original measurements and costs identical.",
+  "forged_scores_rejected_end_to_end": true,
+  "original_archived_measurements_unchanged": true,
+  "full_manifest_selection_reconstructed": true
+}

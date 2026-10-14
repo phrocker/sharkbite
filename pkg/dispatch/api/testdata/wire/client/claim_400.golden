@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: invalid_argument (HTTP 400, invalid_argument)
+kind: invalid_argument
+status: 400 code: "invalid_argument" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: invalid_argument(400)

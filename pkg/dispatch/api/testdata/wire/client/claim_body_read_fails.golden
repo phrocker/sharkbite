@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: repull (HTTP 200) (reset)
+kind: repull
+status: 200 code: "" failure: "reset"
+is ambiguity unrecorded: false
+is unexpected EOF: true is deadline: false
+chain: repull(200) > transport(200)

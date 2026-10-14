@@ -1,0 +1,253 @@
+services:
+  zookeeper:
+    image: zookeeper:3.9.5
+    hostname: zookeeper
+    environment:
+      ZOO_4LW_COMMANDS_WHITELIST: ruok,srvr
+    ports:
+      - "127.0.0.1:2181:2181"
+    healthcheck:
+      test: ["CMD-SHELL", "zkServer.sh status"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - zookeeper-data:/data
+      - zookeeper-log:/datalog
+
+  namenode:
+    image: apache/hadoop:3.4.2
+    user: "0:0"
+    hostname: namenode
+    command:
+      - /bin/bash
+      - -c
+      - |
+        if [ ! -d /tmp/shoal-hdfs/name/current ]; then
+          hdfs namenode -format -force -nonInteractive
+        fi
+        exec hdfs namenode
+    ports:
+      - "127.0.0.1:8020:8020"
+      - "127.0.0.1:9870:9870"
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -fs hdfs://namenode:8020 -safemode get"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - namenode-data:/tmp/shoal-hdfs/name
+
+  datanode:
+    image: apache/hadoop:3.4.2
+    user: "0:0"
+    hostname: datanode
+    command: ["hdfs", "datanode"]
+    depends_on:
+      namenode:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:9864:9864"
+      - "127.0.0.1:9866:9866"
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -report | grep -q 'Live datanodes (1)'"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - datanode-data:/tmp/shoal-hdfs/data
+
+  hdfs-init:
+    image: apache/hadoop:3.4.2
+    hostname: hdfs-init
+    depends_on:
+      datanode:
+        condition: service_healthy
+    command:
+      - /bin/bash
+      - -c
+      - |
+        set -euo pipefail
+        hdfs dfs -mkdir -p /accumulo
+        hdfs dfs -chmod 755 /accumulo
+    environment:
+      HADOOP_USER_NAME: accumulo
+    volumes:
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
+  accumulo-init:
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: accumulo-init
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        set -euo pipefail
+        accumulo inst init \
+          --instance-name "shoal" \
+          --password "secret" \
+          --upload-accumulo-props
+    depends_on:
+      zookeeper:
+        condition: service_healthy
+      hdfs-init:
+        condition: service_completed_successfully
+    environment:
+      HADOOP_USER_NAME: accumulo
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./smoke:/opt/shoal-smoke:ro
+
+  manager:
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: manager
+    command: ["proc", "manager"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms128m -Xmx512m
+      HADOOP_USER_NAME: accumulo
+    ports:
+      - "127.0.0.1:9999:9999"
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./smoke:/opt/shoal-smoke:ro
+
+  tserver:
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: tserver
+    command: ["proc", "tserver"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms128m -Xmx768m
+      HADOOP_USER_NAME: accumulo
+    ports:
+      - "127.0.0.1:9997:9997"
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./smoke:/opt/shoal-smoke:ro
+
+  shoal-tserver:
+    profiles: ["shoal"]
+    image: shoal/conformance:local
+    build:
+      context: ../..
+      dockerfile: test/accumulo/shoal.Dockerfile
+    hostname: shoal-tserver
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        export SHOAL_SYSTEM_TOKEN_BASE64="$$(cat /run/shoal/system-token)"
+        exec shoal-tserver \
+          -listen :9997 -advertise shoal-tserver:9997 \
+          -metrics-address :9998 -zk zookeeper:2181 -instance shoal \
+          -accumulo-version 4.0.0-SNAPSHOT \
+          -instance-secret shoal-test-instance-secret \
+          -password secret -storage hdfs -enable-ingest \
+          -flush-cells 1 -wal-root /var/lib/shoal/wal \
+          -state-root /var/lib/shoal/minc-state \
+          -minc-root hdfs://namenode:8020/accumulo/tables
+    depends_on:
+      manager:
+        condition: service_started
+      datanode:
+        condition: service_healthy
+    environment:
+      SHOAL_HDFS_NAMENODE: namenode:8020
+    ports:
+      - "127.0.0.1:19997:9997"
+      - "127.0.0.1:19998:9998"
+    volumes:
+      - ./.live:/run/shoal:ro
+      - shoal-tserver-state:/var/lib/shoal
+
+  shoal-compactor:
+    profiles: ["shoal"]
+    image: shoal/conformance:local
+    build:
+      context: ../..
+      dockerfile: test/accumulo/shoal.Dockerfile
+    hostname: shoal-compactor
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        export SHOAL_SYSTEM_TOKEN_BASE64="$$(cat /run/shoal/system-token)"
+        exec shoal-compactor \
+          -listen :9810 -advertise shoal-compactor:9810 \
+          -metrics-address :9811 -zk zookeeper:2181 -instance shoal \
+          -instance-secret shoal-test-instance-secret \
+          -accumulo-version 4.0.0-SNAPSHOT -password secret \
+          -group shoal_default -hdfs-namenode namenode:8020 \
+          -state-file /var/lib/shoal-compactor/completion.json \
+          -cancel-interval 100ms
+    depends_on:
+      manager:
+        condition: service_started
+      datanode:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:19810:9810"
+      - "127.0.0.1:19811:9811"
+    volumes:
+      - ./.live:/run/shoal:ro
+      - shoal-compactor-state:/var/lib/shoal-compactor
+
+  garbage-collector:
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: garbage-collector
+    command: ["proc", "gc"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms64m -Xmx256m
+      HADOOP_USER_NAME: accumulo
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./smoke:/opt/shoal-smoke:ro
+
+  monitor:
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: monitor
+    command: ["proc", "monitor"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms64m -Xmx256m
+      HADOOP_USER_NAME: accumulo
+    ports:
+      - "127.0.0.1:9995:9995"
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+      - ./smoke:/opt/shoal-smoke:ro
+
+volumes:
+  datanode-data:
+  namenode-data:
+  zookeeper-data:
+  zookeeper-log:
+  shoal-tserver-state:
+  shoal-compactor-state:

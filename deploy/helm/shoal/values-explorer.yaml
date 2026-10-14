@@ -1,0 +1,45 @@
+# The authorized plane on its own: no Accumulo-replacement storage roles.
+#
+# This profile does not install as shipped, and that is deliberate. Every value
+# below that is empty is one the chart refuses to render without, because each
+# is a setting whose absence produces a workspace that starts and then denies or
+# answers nothing — a failure that otherwise shows up as a healthy-looking pod.
+#
+# Fill them in, then:
+#
+#   helm install shoal deploy/helm/shoal -f my-explorer-values.yaml
+#
+# `helm template` names the first missing one, so working through the errors in
+# order is a usable checklist.
+mode: single
+objectStorage:
+  # No storage tier in this profile, so no object-storage credentials.
+  createSecret: false
+writeTier:
+  enabled: false
+
+explorer:
+  enabled: true
+  image:
+    repository: ghcr.io/YOUR_ORG/shoal-explore-web
+    tag: TAG
+  # The external authority clients actually send — usually the port-less
+  # ingress name, since TLS terminates there. With none, every request is
+  # refused with 421 Misdirected Request.
+  allowedHosts: []
+  auth:
+    mode: oidc
+    oidc:
+      # Tokens are validated against this exact issuer.
+      issuer: ""
+      # At least one must match a token exactly, or every token is rejected.
+      audiences: []
+      # The claim whose values carry workspace authority.
+      authorizationClaim: ""
+      # At least one mapping is required across the three. A claim mapped to
+      # nothing denies every authenticated caller, which is fail-closed but
+      # indistinguishable from an outage.
+      readerValues: []
+      contributorValues: []
+      fleetValues: []
+  storageSize: 20Gi

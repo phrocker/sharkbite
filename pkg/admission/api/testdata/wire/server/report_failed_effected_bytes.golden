@@ -1,0 +1,9 @@
+POST /api/v1/admission/report
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_report\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"token\":{\"action_id\":\"YQD_\",\"token_id\":\"dAD-\",\"version\":2,\"expires_at\":\"2026-09-06T14:02:00+02:00\"},\"failed\":true,\"error_code\":\"response_truncated\",\"effected\":{\"bytes\":50}}"
+provider calls: 1
+provider input: fleet.AdmissionReport{Token:fleet.AdmissionToken{ActionID:[]uint8{0x61, 0x0, 0xff}, TokenID:[]uint8{0x74, 0x0, 0xfe}, Version:0x2, ExpiresAt:time.Date(2026, time.September, 6, 14, 2, 0, 0, time.Location(""))}, Outcome:json.RawMessage(nil), Failed:true, ErrorCode:"response_truncated", Effected:fleet.EffectedVolume{Bytes:50, Chunks:0}, Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"llm_gateway_report", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}}
+status: 200
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"action_id\":\"YQD_\",\"version\":3,\"state\":\"succeeded\",\"reported_at\":\"2026-09-06T12:00:01+02:00\"}\n"

@@ -1,0 +1,35 @@
+name: HDFS integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/hdfs-integration.yml"
+      - "Makefile"
+      - "internal/rfile/**"
+      - "internal/storage/hdfs/**"
+      - "test/hdfs/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/hdfs-integration.yml"
+      - "Makefile"
+      - "internal/rfile/**"
+      - "internal/storage/hdfs/**"
+      - "test/hdfs/**"
+
+permissions:
+  contents: read
+
+jobs:
+  hdfs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Run live HDFS tests
+        run: make test-hdfs

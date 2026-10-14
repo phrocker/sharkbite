@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "kind": "linear-svm",
+  "task_id": "decision:task:v1:0d9376fa72d014a290a9e4c9405769794badabe6e2b52ee1dc63467a4f2bd6c1",
+  "question_id": "router.match",
+  "feature_schema_id": "router.pair/v1",
+  "dataset_sha256": "8d06b7e562a1b665ffab26d12071cb2a7ed3dc901174a9ed1632f9b6665c5ef1",
+  "recipe_sha256": "f980ade09baeca799f961069942255665dd9fe65f64ce189e3b5db705e4040a6",
+  "training_runtime_sha256": "67f3b3f7f478bc3b26dfa32e7a86567b4d393903a97e9752da6ac15e5166b3d0",
+  "labels": [
+    "no_match",
+    "match"
+  ],
+  "coefficients": [
+    1.8504183006535948,
+    1.1206066151358327,
+    2.857764705882353,
+    2.7986419227110013,
+    1.8680522875816994,
+    -3.3750653594771243,
+    1.6928220460001884,
+    0.2735350279083465,
+    2.6097647058823528
+  ],
+  "intercept": -4.66002614379085,
+  "threshold": 0
+}

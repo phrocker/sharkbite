@@ -1,0 +1,22 @@
+{
+  "cohorts": [
+    {
+      "after_manifest_id": "37e573e25323ec8eae1af77674bb334cd38508d3942f18195a8876f32d09563b",
+      "before_manifest_id": "aa87c0bff365028b2cf804ab0d720beea25a4fdd7420cf2433aaa1c3f7278bb0",
+      "cases_identical": true,
+      "cohort": "pilot"
+    },
+    {
+      "after_manifest_id": "1c328167d21663073f9330f92193b844f5f715d63c31ee37daaab6e54a6bc30a",
+      "before_manifest_id": "cccac6a1759f0cd20ad379feeaeb6fa16bf41180fc106c4539f28a9805bac84a",
+      "cases_identical": true,
+      "cohort": "validation-v2"
+    },
+    {
+      "after_manifest_id": "80423fd8cfef7444303a73bdca25083c2a117963d5d914f76b6bc643ee8ad541",
+      "before_manifest_id": "fcb47102d50b92fd492836984b2879e9491d4510805db0ac05471d64bdf9f352",
+      "cases_identical": true,
+      "cohort": "reserved-v3"
+    }
+  ]
+}

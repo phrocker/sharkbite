@@ -1,0 +1,119 @@
+== disposition=missing
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e decision_request=decision:request:v1:0f4ba509d5526b069cc1402b81e8b9e4425cb84ee0b8fa9fc1ee99d42fd76a47 picture=decision:picture:v1:59c01385fc140f48d483e6c58be63424355f2b95e0cde7f651bdda5b51e905ca predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.evidence_ineligible
+  The abstention was reported, by the predictor or the service, as evidence_ineligible, which, if accurate, means the evidence for at least one requested subject did not meet the task’s evidence policy.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e
+gap decision.gap.disposition.missing
+  1 subject has no evidence: subject2.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e subject=subject2
+  identifiers subject2
+gap decision.gap.subject_reason
+  For subject subject2, the evidence builder recorded: “builder note”.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e subject=subject2
+  quote evidence_builder
+  identifiers subject2
+gap decision.gap.measurement.not_applicable
+  Measurement none has a known total of zero files: it is not applicable, which is not the same as complete.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e measurement=none method=count:3
+  identifiers none files
+gap decision.gap.measurement.unknown
+  Measurement open counted 2 files against an unknown total, so its coverage is unknown.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e measurement=open method=count:4
+  identifiers open files
+gap decision.gap.measurement.partial
+  Measurement part covered 2 of 10 files.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e measurement=part method=count:5
+  identifiers part files
+gap decision.gap.inventory
+  1 of 2 enumerated subjects have supporting evidence, and the enumeration itself does not prove that nothing was missed.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e enumeration=inventory:1
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.evidence_ineligible
+  If the evidence was ineligible, fix the gaps or request only eligible subjects in a new decision request; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:5029977202d7db90163c8edc29930ab2373b4b037846d6419df166bf8bdca36e
+
+== disposition=out_of_scope
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d decision_request=decision:request:v1:7403e51d416655b53c5c269929c7bcf3b13baedb7c375ddc2b371957c187a4b7 picture=decision:picture:v1:79dc398b783dcaa95cd67402870742ec651d3a12af3a5fe07c2b305a0671a195 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.evidence_ineligible
+  The abstention was reported, by the predictor or the service, as evidence_ineligible, which, if accurate, means the evidence for at least one requested subject did not meet the task’s evidence policy.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d
+gap decision.gap.disposition.out_of_scope
+  1 subject is outside the picture’s scope: subject2.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d subject=subject2
+  identifiers subject2
+gap decision.gap.subject_reason
+  For subject subject2, the evidence builder recorded: “builder note”.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d subject=subject2
+  quote evidence_builder
+  identifiers subject2
+gap decision.gap.measurement.not_applicable
+  Measurement none has a known total of zero files: it is not applicable, which is not the same as complete.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d measurement=none method=count:3
+  identifiers none files
+gap decision.gap.measurement.unknown
+  Measurement open counted 2 files against an unknown total, so its coverage is unknown.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d measurement=open method=count:4
+  identifiers open files
+gap decision.gap.measurement.partial
+  Measurement part covered 2 of 10 files.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d measurement=part method=count:5
+  identifiers part files
+gap decision.gap.inventory
+  1 of 2 enumerated subjects have supporting evidence, and the enumeration itself does not prove that nothing was missed.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d enumeration=inventory:1
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.evidence_ineligible
+  If the evidence was ineligible, fix the gaps or request only eligible subjects in a new decision request; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:7465c08bef57bf2cdc88c4595ff6e9de772435ff75380a6d9d1a00d1feb5616d
+
+== disposition=unsupported
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a decision_request=decision:request:v1:20521fd7324cfcbe74c5b346736266c98d3b323e9affaaef0145289d94e72397 picture=decision:picture:v1:608e7b5e2d6e4f039b1ad6bcd421a02b29e3c7721fa9abb3c88f77d5fccf52b6 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.evidence_ineligible
+  The abstention was reported, by the predictor or the service, as evidence_ineligible, which, if accurate, means the evidence for at least one requested subject did not meet the task’s evidence policy.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a
+gap decision.gap.disposition.unsupported
+  1 subject contains constructs the evidence builder does not support: subject2.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a subject=subject2
+  identifiers subject2
+gap decision.gap.subject_reason
+  For subject subject2, the evidence builder recorded: “builder note”.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a subject=subject2
+  quote evidence_builder
+  identifiers subject2
+gap decision.gap.measurement.not_applicable
+  Measurement none has a known total of zero files: it is not applicable, which is not the same as complete.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a measurement=none method=count:3
+  identifiers none files
+gap decision.gap.measurement.unknown
+  Measurement open counted 2 files against an unknown total, so its coverage is unknown.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a measurement=open method=count:4
+  identifiers open files
+gap decision.gap.measurement.partial
+  Measurement part covered 2 of 10 files.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a measurement=part method=count:5
+  identifiers part files
+gap decision.gap.inventory
+  1 of 2 enumerated subjects have supporting evidence, and the enumeration itself does not prove that nothing was missed.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a enumeration=inventory:1
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.evidence_ineligible
+  If the evidence was ineligible, fix the gaps or request only eligible subjects in a new decision request; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:48719b8c21bf3d076b881c109e99a38fb4f6eb3a461878cb097e2bd847f0582a

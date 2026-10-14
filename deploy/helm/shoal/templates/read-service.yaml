@@ -1,0 +1,22 @@
+{{- if eq (include "shoal.readFleetEnabled" .) "true" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "shoal.fullname" . }}-read
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: read-fleet
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: read-fleet
+  ports:
+    - name: thrift
+      port: {{ .Values.readFleet.servicePort }}
+      targetPort: thrift
+    - name: metrics
+      port: {{ .Values.readFleet.metricsPort }}
+      targetPort: metrics
+{{- end }}

@@ -1,0 +1,130 @@
+{{- if eq (include "shoal.writeTierEnabled" .) "true" }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "shoal.fullname" . }}-embed
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: write-tier
+spec:
+  replicas: {{ .Values.writeTier.replicas }}
+  serviceName: {{ include "shoal.fullname" . }}-embed-headless
+  # Explicit rollout contract instead of relying on the apps/v1 default.
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: {{ .Values.writeTier.updateStrategy.partition }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal-embed
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: write-tier
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shoal-embed
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: write-tier
+        app.kubernetes.io/part-of: shoal-platform
+    spec:
+      # 10s readiness-withdrawal quiesce + 30s drain + margin for engine close
+      # before Kubernetes escalates to SIGKILL.
+      terminationGracePeriodSeconds: {{ .Values.writeTier.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: shoal-embed
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/shoal-embed"]
+          args:
+            - serve
+            - --data=$(SHOAL_EMBED_DATA_DIR)
+            - --address=0.0.0.0:$(SHOAL_EMBED_GRPC_PORT)
+            - --metrics-address=0.0.0.0:$(SHOAL_EMBED_METRICS_PORT)
+            - --quiesce-delay={{ .Values.writeTier.quiesceDelay }}
+            {{- if .Values.writeTier.tls.enabled }}
+            - --tls-cert=/var/run/secrets/shoal/tls/tls.crt
+            - --tls-key=/var/run/secrets/shoal/tls/tls.key
+            {{- if .Values.writeTier.tls.requireClientCert }}
+            - --tls-client-ca=/var/run/secrets/shoal/tls/ca.crt
+            {{- end }}
+            {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "shoal.fullname" . }}-config
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.writeTier.grpcPort }}
+            - name: metrics
+              containerPort: {{ .Values.writeTier.metricsPort }}
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.writeTier.dataDir }}
+            - name: object-storage-credentials
+              mountPath: /var/run/secrets/shoal/gcs
+              readOnly: true
+            {{- if .Values.writeTier.tls.enabled }}
+            - name: tls-credentials
+              mountPath: /var/run/secrets/shoal/tls
+              readOnly: true
+            {{- end }}
+          readinessProbe:
+            {{- if and .Values.writeTier.tls.enabled .Values.writeTier.tls.requireClientCert }}
+            tcpSocket:
+              port: metrics
+            {{- else }}
+            httpGet:
+              path: /readyz
+              port: metrics
+              {{- if .Values.writeTier.tls.enabled }}
+              scheme: HTTPS
+              {{- end }}
+            {{- end }}
+            initialDelaySeconds: 5
+            periodSeconds: {{ .Values.writeTier.readinessProbePeriodSeconds }}
+            failureThreshold: {{ .Values.writeTier.readinessProbeFailureThreshold }}
+          livenessProbe:
+            {{- if and .Values.writeTier.tls.enabled .Values.writeTier.tls.requireClientCert }}
+            tcpSocket:
+              port: metrics
+            {{- else }}
+            httpGet:
+              path: /healthz
+              port: metrics
+              {{- if .Values.writeTier.tls.enabled }}
+              scheme: HTTPS
+              {{- end }}
+            {{- end }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.writeTier.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: object-storage-credentials
+          secret:
+            secretName: {{ .Values.objectStorage.credentialsSecretName }}
+            optional: true
+        {{- if .Values.writeTier.tls.enabled }}
+        - name: tls-credentials
+          secret:
+            secretName: {{ required "writeTier.tls.secretName is required when writeTier.tls.enabled is true" .Values.writeTier.tls.secretName }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.writeTier.storageSize }}
+{{- end }}

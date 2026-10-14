@@ -1,0 +1,19 @@
+{
+  "questions": {
+    "risk": {
+      "type": "choice",
+      "instructions": "Classify the source change's security review risk. Choose critical when it can bypass authorization, leak protected data, or create an externally exploitable fault; review when a human security review is required; routine when no security-relevant behavior changes.",
+      "criteria": {
+        "critical": "Likely authorization bypass, protected-data exposure, or externally exploitable fault.",
+        "review": "Security-relevant change needing human review, but impact is not clearly critical.",
+        "routine": "No meaningful security-relevant behavior change."
+      }
+    },
+    "fault": {
+      "type": "score",
+      "instructions": "Score the likelihood that the change introduces a production fault, from none to severe.",
+      "criteria": ["none", "minor", "major", "severe"]
+    }
+  },
+  "state_key": "source_change"
+}

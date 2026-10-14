@@ -1,0 +1,23 @@
+{{- if and (eq (include "shoal.llmGatewayEnabled" .) "true") .Values.llmGateway.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "shoal.llmGatewayName" . }}
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: llm-gateway
+spec:
+  # The opposite posture from the explorer's, and for the opposite reason.
+  #
+  # The explorer sets maxUnavailable: 0 because it is a singleton over one state
+  # root with no handoff path, so refusing eviction is the only way not to take
+  # the authorized plane offline. The gateway is stateless and replaceable: a
+  # replica evicted now is replaced by a scheduler, and the ones still running
+  # serve the calls meanwhile. A 0 budget here would protect nothing and would
+  # instead make `kubectl drain` and autoscaler consolidation block forever on
+  # a pod that could safely have moved — so validate.yaml refuses 0.
+  maxUnavailable: {{ .Values.llmGateway.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      {{- include "shoal.llmGatewaySelectorLabels" . | nindent 6 }}
+{{- end }}

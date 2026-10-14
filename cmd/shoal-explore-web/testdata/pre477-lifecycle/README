@@ -1,0 +1,21 @@
+Golden state directories written by the code before PR #477 (commit
+6f6f78423bf87d2799db59171e7c2647697259be), used by
+TestPre477LifecycleReceiptReconcilesAcrossUpgrade in fleet_reason_test.go.
+
+They hold one hosted registration, made through POST /api/v1/fleet/agents
+by subject "owner" with request ID "pre477-apply-request", registration key
+"pre477-key", agent "pre477-agent", reason code "atpl-apply" and detail
+"atpl:policy:v1:" + "3c"*32, under a fixed clock of 2099-01-01T00:00:00Z. Its
+lifecycle receipt is a v2 receipt with no caller-asserted reason.
+
+To regenerate:
+
+  git archive 6f6f784 | tar -x -C /some/old
+  cp generator_test.go.txt /some/old/cmd/shoal-explore-web/golden_pre477_test.go
+  cd /some/old && mkdir /some/out &&
+    GOLDEN_OUT=/some/out go test ./cmd/shoal-explore-web \
+      -run TestGeneratePre477LifecycleGolden -count=1
+  cp -a /some/out/corpus /some/out/policy <this directory>
+
+Tests copy these directories to a temporary directory and never open them in
+place.

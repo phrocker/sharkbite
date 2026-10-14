@@ -1,0 +1,1757 @@
+{{- /* nameOverride and fullnameOverride become object names and label values
+       on every object this chart renders, and are rendered unquoted. A newline
+       in either ended the scalar and the remainder became YAML of the
+       operator's choosing: fullnameOverride "x<newline>  namespace: other"
+       moved objects into another namespace, and the same shape can add
+       finalizers or annotations to everything the chart owns.
+
+       They are refused unless they are names Kubernetes would accept in those
+       places, which excludes every line break and control character. A full
+       name is a Service name, so it must be an RFC 1035 label (start with a
+       letter). A name override is joined after the release name, so an RFC
+       1123 label suffices. Both stay within 63 characters, the label limit;
+       the components' own name stems already reserve room for their suffixes. */ -}}
+{{- /* With a full name set, the name override no longer names anything and
+       reaches only the app.kubernetes.io/name label, so a label value is
+       enough there: dots, underscores and upper case rendered before and still
+       do. */ -}}
+{{- $namePattern := "^[a-z0-9]([-a-z0-9]*[a-z0-9])?$" -}}
+{{- if .Values.fullnameOverride -}}
+{{- $namePattern = "^[A-Za-z0-9]([-A-Za-z0-9_.]*[A-Za-z0-9])?$" -}}
+{{- end -}}
+{{- range $setting, $pattern := dict "nameOverride" $namePattern "fullnameOverride" "^[a-z]([-a-z0-9]*[a-z0-9])?$" -}}
+{{- $value := index $.Values $setting -}}
+{{- if $value -}}
+{{- if not (kindIs "string" $value) -}}
+{{- fail (printf "%s must be a string (got %v): it becomes object names and label values on every object the chart renders" $setting $value) -}}
+{{- end -}}
+{{- if or (gt (len $value) 63) (not (regexMatch $pattern $value)) -}}
+{{- fail (printf "%s %q is not a valid name: it becomes object names and label values on every object the chart renders, unquoted, so it must match %s and be at most 63 characters. A line break here made the remainder YAML of its own" $setting $value $pattern) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- $validModes := list "single" "distributed" "accumulo" -}}
+{{- if not (has .Values.mode $validModes) -}}
+{{- fail "mode must be one of: single, distributed, accumulo" -}}
+{{- end -}}
+{{- $writeTierEnabled := eq (include "shoal.writeTierEnabled" .) "true" -}}
+{{- $tserverEnabled := eq (include "shoal.tserverEnabled" .) "true" -}}
+{{- if and $writeTierEnabled $tserverEnabled -}}
+{{- fail "invalid write authority configuration: Shoal-only writeTier and Accumulo tserver cannot both be enabled" -}}
+{{- end -}}
+{{- if and (eq .Values.mode "distributed") $writeTierEnabled (gt (int .Values.writeTier.replicas) 1) -}}
+{{- fail "distributed mode supports exactly one writable writeTier replica until the Kubernetes Lease adapter exists" -}}
+{{- end -}}
+{{- if eq (include "shoal.explorerEnabled" .) "true" -}}
+{{- $explorer := .Values.explorer -}}
+{{- $oidc := $explorer.auth.oidc -}}
+
+{{- /* Authentication is a required decision, and OIDC is the only valid one.
+       -dev-auth is refused on any non-loopback listener, and a pod reached
+       through a Service must bind one, so a chart could only render it into a
+       workspace that cannot start. */ -}}
+{{- if ne $explorer.auth.mode "oidc" -}}
+{{- fail (printf "explorer.auth.mode must be set to \"oidc\" (got %q). The Explorer refuses to serve without an authenticator, and -dev-auth is not an option in a cluster: it is refused on any non-loopback listener, which a pod behind a Service must bind. Configure explorer.auth.oidc" $explorer.auth.mode) -}}
+{{- end -}}
+{{- /* Every required value is checked after trimming, and list values are
+       checked item by item.
+
+       A value that is present but blank is not a configured value. The
+       workspace drops empty entries in normalizeRequiredValues and then
+       reports the setting as missing, so a list holding only "" or " " renders
+       a pod that starts and exits during OIDC initialisation — the failure
+       these guards exist to move to render time. Length alone would pass it. */ -}}
+{{- if not (trim $oidc.issuer) -}}
+{{- fail "explorer.auth.oidc.issuer is required: tokens are validated against an exact issuer" -}}
+{{- end -}}
+{{- $audiences := list -}}
+{{- range $oidc.audiences }}{{- if trim . }}{{- $audiences = append $audiences (trim .) }}{{- end }}{{- end -}}
+{{- if not $audiences -}}
+{{- fail "explorer.auth.oidc.audiences needs at least one non-blank value: at least one audience must match a token exactly, or every token is rejected" -}}
+{{- end -}}
+{{- if not (trim $oidc.authorizationClaim) -}}
+{{- fail "explorer.auth.oidc.authorizationClaim is required: without it no token carries workspace authority and every authenticated caller is denied" -}}
+{{- end -}}
+{{- /* A mapped claim with no values is fail-closed but indistinguishable from
+       an outage, and it is the most common way to deploy a workspace that
+       authenticates everyone and authorizes no one. */ -}}
+{{- $roleValues := list -}}
+{{- range (concat $oidc.readerValues $oidc.contributorValues $oidc.fleetValues) }}{{- if trim . }}{{- $roleValues = append $roleValues (trim .) }}{{- end }}{{- end -}}
+{{- if not $roleValues -}}
+{{- fail "explorer.auth.oidc needs at least one non-blank value across readerValues, contributorValues and fleetValues: the authorization claim is mapped to nothing, so every authenticated caller would be denied" -}}
+{{- end -}}
+
+{{- /* An empty allow-list refuses every request with 421, because the resolved
+       listen address of a pod is an authority no real client sends. */ -}}
+{{- $allowedHosts := include "shoal.explorerAllowedHosts" . -}}
+{{- if not $allowedHosts -}}
+{{- fail "explorer.allowedHosts needs at least one non-blank value: the workspace binds a non-loopback address in a pod, and with no allow-list every request is refused with 421 Misdirected Request. List the external authority clients actually send (usually the port-less ingress name)" -}}
+{{- end -}}
+
+{{- /* The bounded graph node adjacency cap (#698): 0 keeps the binary
+       default; anything else must be a whole number the flag accepts. */ -}}
+{{- $maxNodeAdjacency := (($explorer.graph | default dict).maxNodeAdjacency) | default 0 -}}
+{{- if or (not (or (kindIs "int" $maxNodeAdjacency) (kindIs "int64" $maxNodeAdjacency) (kindIs "float64" $maxNodeAdjacency))) (lt (float64 $maxNodeAdjacency) 0.0) (gt (float64 $maxNodeAdjacency) 4294967295.0) (ne (float64 (int64 $maxNodeAdjacency)) (float64 $maxNodeAdjacency)) -}}
+{{- fail (printf "explorer.graph.maxNodeAdjacency must be a whole number from 0 (the binary default) to 4294967295 (got %v): the workspace refuses any other -max-bounded-node-adjacency at startup" $maxNodeAdjacency) -}}
+{{- end -}}
+
+{{- /* The approver mapping and the stable identity claim (#451, #526). The
+       claim is a list of path segments, never a dotted string, and the
+       mapping must restate it as identity_claim exactly when it is set: the
+       workspace refuses to start otherwise, so a values file that disagrees
+       with itself is refused here instead of in a pod log. Control and
+       line-separator characters in either are refused by the line-break walk
+       below, as in every other value. */ -}}
+{{- $identityClaim := default (list) $oidc.identityClaim -}}
+{{- if not (kindIs "slice" $identityClaim) -}}
+{{- fail (printf "explorer.auth.oidc.identityClaim must be a list of path segments, such as [oid] (got %v): a dotted string is one claim whose name contains a dot, never a path" $oidc.identityClaim) -}}
+{{- end -}}
+{{- range $identityClaim -}}
+{{- if not (and (kindIs "string" .) (trim (toString .))) -}}
+{{- fail "explorer.auth.oidc.identityClaim has a blank or non-string segment: each segment names one claim key, and the workspace refuses the flag at startup" -}}
+{{- end -}}
+{{- end -}}
+{{- with $oidc.identitySchemeMigrateFrom -}}
+{{- if not (regexMatch "^[0-9a-f]{64}$" (toString .)) -}}
+{{- fail (printf "explorer.auth.oidc.identitySchemeMigrateFrom must be the 64 lowercase hex digits of the recorded identity scheme this rollout replaces, as the workspace's startup refusal prints it (got %q): the switch is one-shot, and a value that names no scheme would be refused by every replica at startup" (toString .)) -}}
+{{- end -}}
+{{- end -}}
+{{- $approverMapping := default (dict) $oidc.approverMapping -}}
+{{- if not (kindIs "map" $approverMapping) -}}
+{{- fail "explorer.auth.oidc.approverMapping must be the shoal.approvers/v1 document as a map: the chart renders it into the file the workspace reads" -}}
+{{- end -}}
+{{- if $approverMapping -}}
+{{- $restated := default (list) (get $approverMapping "identity_claim") -}}
+{{- if ne (toJson $restated) (toJson $identityClaim) -}}
+{{- fail (printf "explorer.auth.oidc.approverMapping.identity_claim (%s) must restate explorer.auth.oidc.identityClaim (%s) exactly, and be present exactly when it is set: the mapping digest pins the identity scheme approvers are named under, and the workspace refuses to start when the two disagree" (toJson $restated) (toJson $identityClaim)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The label grants (#570). The workspace refuses at startup a file
+       whose version is wrong, whose issuer is not -oidc-issuer byte for
+       byte, or whose grants name a source it does not configure or a label
+       outside the label charset; refusing those here puts the reason in the
+       install instead of a pod log. The workspace configures one source,
+       so that is the only one a grant may name. Control characters are
+       refused by the line-break walk below, as in every other value. */ -}}
+{{- $labelGrants := default (dict) $oidc.labelGrants -}}
+{{- if not (kindIs "map" $labelGrants) -}}
+{{- fail "explorer.auth.oidc.labelGrants must be the shoal.label-grants/v1 document as a map: the chart renders it into the file the workspace reads" -}}
+{{- end -}}
+{{- if $labelGrants -}}
+{{- if ne (toString (get $labelGrants "version")) "shoal.label-grants/v1" -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.version must be shoal.label-grants/v1 (got %q): the workspace refuses any other version at startup" (toString (get $labelGrants "version"))) -}}
+{{- end -}}
+{{- if ne (toString (get $labelGrants "issuer")) (toString $oidc.issuer) -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.issuer (%q) must equal explorer.auth.oidc.issuer (%q) byte for byte: the grant file names claim values of one issuer, and the workspace refuses it at startup otherwise" (toString (get $labelGrants "issuer")) (toString $oidc.issuer)) -}}
+{{- end -}}
+{{- $grants := get $labelGrants "grants" -}}
+{{- if not (and (kindIs "map" $grants) $grants) -}}
+{{- fail "explorer.auth.oidc.labelGrants.grants must map at least one claim value to its list of {source, label} grants" -}}
+{{- end -}}
+{{- range $value, $pairs := $grants -}}
+{{- if not (and (kindIs "slice" $pairs) $pairs) -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.grants[%q] must be a non-empty list of {source, label} grants" $value) -}}
+{{- end -}}
+{{- range $pairs -}}
+{{- if not (kindIs "map" .) -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.grants[%q] holds a grant that is not a {source, label} map" $value) -}}
+{{- end -}}
+{{- if ne (toString (get . "source")) "shoal-explore-web/workspace" -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.grants[%q] names the source %q: the workspace configures one source, shoal-explore-web/workspace, and refuses a grant on any other at startup. A label is granted per source, so a grant written for another source opens nothing here" $value (toString (get . "source"))) -}}
+{{- end -}}
+{{- if not (regexMatch "^[A-Za-z0-9_.:-]{1,256}$" (toString (get . "label"))) -}}
+{{- fail (printf "explorer.auth.oidc.labelGrants.grants[%q] names the label %q, which is not a visibility label: 1 to 256 of A-Z a-z 0-9 _ . : - exactly as documents carry it, never folded or trimmed" $value (toString (get . "label"))) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The executor mapping (#391). The workspace refuses at startup a file
+       whose version is wrong, whose issuer is not an https URL without a
+       query or any '#', whose audience is one the human issuer's tokens are
+       minted on, whose service assertion is not a positive {claim, equals},
+       or whose entries are blank, outside the executor-reference charset, or
+       map a subject or a reference twice; refusing those here puts the
+       reason in the install instead of a pod log. A reference the workspace
+       does not configure would bind nothing, so it is refused too. Control
+       characters are refused by the line-break walk below, as in every other
+       value. Refusals name entries by position, never by value. */ -}}
+{{- $executorMapping := default (dict) $oidc.executorMapping -}}
+{{- if not (kindIs "map" $executorMapping) -}}
+{{- fail "explorer.auth.oidc.executorMapping must be the shoal.executors/v1 document as a map: the chart renders it into the file the workspace reads" -}}
+{{- end -}}
+{{- $executorValues := list -}}
+{{- if $executorMapping -}}
+{{- if ne (toString (get $executorMapping "version")) "shoal.executors/v1" -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.version must be shoal.executors/v1 (got %q): the workspace refuses any other version at startup" (toString (get $executorMapping "version"))) -}}
+{{- end -}}
+{{- $executorIssuer := toString (get $executorMapping "issuer") -}}
+{{- if not (regexMatch `^https://[a-z0-9.-]+(:[0-9]+)?(/[^?#[:space:]]*)?$` $executorIssuer) -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.issuer (%q) must be a canonical https URL with a lower-case host and no query, fragment or '#' anywhere: every executor identity is oidcexec:<issuer>#<subject>, so a '#' in the issuer would let two identities run into each other, and the workspace refuses it at startup" $executorIssuer) -}}
+{{- end -}}
+{{- $executorAudience := toString (get $executorMapping "audience") -}}
+{{- if not (trim $executorAudience) -}}
+{{- fail "explorer.auth.oidc.executorMapping.audience is required: executor tokens are minted on an audience of their own" -}}
+{{- end -}}
+{{- $humanAudiences := concat (default (list) $oidc.audiences) (list (toString (get $approverMapping "audience"))) -}}
+{{- if has $executorAudience $humanAudiences -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.audience (%q) must differ from explorer.auth.oidc.audiences and the approver mapping's audience: a token on both would be readable as a human's and a worker's, and the workspace refuses the overlap at startup" $executorAudience) -}}
+{{- end -}}
+{{- $assertion := get $executorMapping "service_assertion" -}}
+{{- if not (and (kindIs "map" $assertion) $assertion) -}}
+{{- fail "explorer.auth.oidc.executorMapping.service_assertion is required: a {claim, equals} only service tokens carry, such as claim [kubernetes.io, namespace] equal to the gateways' namespace" -}}
+{{- end -}}
+{{- $assertionClaim := get $assertion "claim" -}}
+{{- if not (and (kindIs "slice" $assertionClaim) $assertionClaim) -}}
+{{- fail "explorer.auth.oidc.executorMapping.service_assertion.claim must be a non-empty list of path segments: a dotted string is one claim whose name contains a dot, never a path" -}}
+{{- end -}}
+{{- range $assertionClaim -}}
+{{- if not (and (kindIs "string" .) (trim (toString .))) -}}
+{{- fail "explorer.auth.oidc.executorMapping.service_assertion.claim has a blank or non-string segment" -}}
+{{- end -}}
+{{- end -}}
+{{- if not (and (kindIs "string" (get $assertion "equals")) (trim (toString (get $assertion "equals")))) -}}
+{{- fail "explorer.auth.oidc.executorMapping.service_assertion.equals is required: the assertion is positive, a claim equal to a value. Absence proves nothing about who a token was issued to" -}}
+{{- end -}}
+{{- $executorEntries := get $executorMapping "executors" -}}
+{{- if not (and (kindIs "slice" $executorEntries) $executorEntries) -}}
+{{- fail "explorer.auth.oidc.executorMapping.executors must list at least one {subject, executor_ref}" -}}
+{{- end -}}
+{{- $seenSubjects := dict -}}
+{{- $seenRefs := dict -}}
+{{- range $index, $entry := $executorEntries -}}
+{{- if not (kindIs "map" $entry) -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d] is not a {subject, executor_ref} map" $index) -}}
+{{- end -}}
+{{- $subject := toString (get $entry "subject") -}}
+{{- if or (not (kindIs "string" (get $entry "subject"))) (ne (trim $subject) $subject) (not $subject) -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d].subject must be a non-empty string with no surrounding whitespace: the token's sub is compared byte for byte" $index) -}}
+{{- end -}}
+{{- $ref := toString (get $entry "executor_ref") -}}
+{{- if or (gt (len $ref) 1024) (not (regexMatch `^[A-Za-z0-9][A-Za-z0-9._:/@-]*$` $ref)) -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d].executor_ref is outside the executor-reference charset: a reference is 1 to 1024 characters, starts with an ASCII letter or digit, and continues with ASCII letters, digits and . _ : / @ - only" $index) -}}
+{{- end -}}
+{{- if not (has $ref $explorer.fleet.executorRefs) -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d].executor_ref is not in explorer.fleet.executorRefs: no descriptor can register against a reference the allow-list does not carry, so the credential would be bound to nothing" $index) -}}
+{{- end -}}
+{{- if hasKey $seenSubjects $subject -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d].subject is mapped twice: one credential maps to one executor" $index) -}}
+{{- end -}}
+{{- if hasKey $seenRefs $ref -}}
+{{- fail (printf "explorer.auth.oidc.executorMapping.executors[%d].executor_ref is mapped twice: one executor has one credential" $index) -}}
+{{- end -}}
+{{- $_ := set $seenSubjects $subject true -}}
+{{- $_ := set $seenRefs $ref true -}}
+{{- $executorValues = append $executorValues $subject -}}
+{{- end -}}
+{{- $executorValues = concat $executorValues (list $executorIssuer $executorAudience) -}}
+{{- end -}}
+
+{{- /* Placeholders are not configuration. The shipped profile leaves these
+       empty so the guards above fire, but a values file copied from the docs
+       can still carry the marker text through, and a pod that authenticates
+       nobody because its issuer is literally REPLACE_ME is the failure this
+       whole block exists to prevent.
+
+       The role mappings are scanned too. A placeholder there is not a
+       non-working deployment, it is a working one that authorizes exactly the
+       literal claim value "REPLACE_ME" — so every real caller is denied while
+       the chart reports success. */ -}}
+{{- $labelGrantValues := list -}}
+{{- if kindIs "map" (get $labelGrants "grants") -}}
+{{- $labelGrantValues = keys (get $labelGrants "grants") -}}
+{{- end -}}
+{{- range (concat (list $oidc.issuer $oidc.authorizationClaim) $oidc.audiences $explorer.allowedHosts $oidc.readerValues $oidc.contributorValues $oidc.fleetValues $labelGrantValues $executorValues) -}}
+{{- if contains "REPLACE_ME" (toString .) -}}
+{{- fail (printf "explorer configuration still contains the placeholder %q: replace every REPLACE_ME before installing" (toString .)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* One state root, one engine, no coordination protocol between two
+       processes over it. */ -}}
+{{- if gt (int $explorer.replicas) 1 -}}
+{{- fail "explorer.replicas must be 1: the corpus, workspace settings and durable policy catalog live in one state root on a ReadWriteOnce volume, and there is no coordination protocol between two processes over it. A second replica is not a scale-out, it is two writers to one engine" -}}
+{{- end -}}
+{{- if lt (int $explorer.replicas) 0 -}}
+{{- fail "explorer.replicas must be 0 or 1" -}}
+{{- end -}}
+
+{{- /* The mosaic budget is inert without a window to accumulate over. */ -}}
+{{- if and (gt (int $explorer.disclosure.mosaic.maxDomains) 0) (not $explorer.disclosure.mosaic.window) -}}
+{{- fail "explorer.disclosure.mosaic.window is required when maxDomains is above zero: the distinct-domain count accumulates over that window and never resets without one" -}}
+{{- end -}}
+
+{{- /* A credential that is never projected into the pod becomes a request-time
+       failure in whichever code path first needs the model. */ -}}
+{{- if $explorer.chat.provider -}}
+{{- if not $explorer.chat.model -}}
+{{- fail "explorer.chat.model is required when explorer.chat.provider is set" -}}
+{{- end -}}
+{{- /* Parsed, not prefix-matched (#423): "http://localhost.example" starts
+       with "http://localhost" and is remote, so a prefix test skipped the
+       credential requirement for it. */ -}}
+{{- $chatURL := trim (toString (default "" $explorer.chat.baseURL)) -}}
+{{- include "shoal.explorerProviderURL" (dict "name" "explorer.chat.baseURL" "value" $chatURL) -}}
+{{- if not (include "shoal.urlIsLoopback" $chatURL) -}}
+{{- if not $explorer.chat.credentialSecretName -}}
+{{- fail (printf "explorer.chat.credentialSecretName is required for a remote chat base URL (%q): the workspace reads %s at request time, and nothing projects it into the pod without a Secret" $explorer.chat.baseURL $explorer.chat.apiKeyEnv) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if has $explorer.embedding.provider (list "ollama" "openai" "voyage") -}}
+{{- $embeddingURL := trim (toString (default "" $explorer.embedding.baseURL)) -}}
+{{- /* Voyage supplies its own default URL when the value is empty. */ -}}
+{{- if or $embeddingURL (ne $explorer.embedding.provider "voyage") -}}
+{{- include "shoal.explorerProviderURL" (dict "name" "explorer.embedding.baseURL" "value" $embeddingURL) -}}
+{{- end -}}
+{{- end -}}
+{{- if and $explorer.embedding.provider (has $explorer.embedding.provider (list "openai" "voyage")) -}}
+{{- if not $explorer.embedding.credentialSecretName -}}
+{{- fail (printf "explorer.embedding.credentialSecretName is required for the %s embedding provider: it is unconditionally remote and needs a credential in the pod" $explorer.embedding.provider) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Every fleet executor reference reaches the container as part of a
+       single argument, and three of the four settings are comma-joined into
+       one. So two classes of character cannot appear in a reference without
+       changing what the argument means, and neither is refused anywhere else.
+
+       A newline used to end the YAML scalar and start a new sequence entry,
+       which made the rest of any list element an arbitrary container
+       argument. The container arguments in explorer-statefulset.yaml are
+       quoted now, so a newline stays inside the value; this guard is the
+       other half, because a reference carrying one matches no registered
+       executor and so binds nothing while the pod starts and serves
+       normally. Fail-closed, but silently, and the operator's first evidence
+       is a gateway descriptor refused for declaring an effect its executor is
+       not bound to perform, which reads as a bug in the descriptor.
+
+       A comma is the separator itself. One entry of "a,b" reaches the
+       workspace as two references, so a single list element silently becomes
+       two bindings — and the guards below compare the unsplit string, which
+       is how an entry of "a,b" passes a check against an askExecutorRef of
+       "b". The Go side refuses that collision at startup, so this is defence
+       in depth rather than the only line, but a values file that cannot mean
+       two things should be refused where it is written. */ -}}
+{{- range $setting, $references := dict "executorRefs" $explorer.fleet.executorRefs "askExecutorRef" (list $explorer.fleet.askExecutorRef) "externalExecutorRefs" $explorer.fleet.externalExecutorRefs "externalEgressExecutorRefs" $explorer.fleet.externalEgressExecutorRefs -}}
+{{- range $index, $reference := $references -}}
+{{- $text := toString $reference -}}
+{{- if contains "," $text -}}
+{{- fail (printf "explorer.fleet.%s contains %q, which holds a comma: references are comma-joined into one container argument, so this single entry becomes two bindings and the collision guards below compare the unsplit string. Give each reference its own list entry" $setting $text) -}}
+{{- end -}}
+{{- if regexMatch `[\p{Cc}\p{Zl}\p{Zp}]` $text -}}
+{{- fail (printf "explorer.fleet.%s contains %q, which holds a control or line-separator character: the reference reaches the container inside one quoted argument, so it matches no registered executor and binds nothing while the pod starts and serves normally. Before those arguments were quoted, a line break here made the remainder of the entry an arbitrary argument of the explorer container" $setting $text) -}}
+{{- end -}}
+{{- /* The executor-reference charset (#391, pkg/executorref). The explorer
+       refuses any other reference at startup; refusing it here says so where
+       it is written. Blank entries are left to the guards that name them.
+       The value is not echoed: outside the charset it may be invisible. */ -}}
+{{- $candidate := trim $text -}}
+{{- if and $candidate (or (gt (len $candidate) 1024) (not (regexMatch `^[A-Za-z0-9][A-Za-z0-9._:/@-]*$` $candidate))) -}}
+{{- fail (printf "explorer.fleet.%s entry %d is outside the executor-reference charset: a reference is 1 to 1024 characters, starts with an ASCII letter or digit, and continues with ASCII letters, digits and . _ : / @ - only. The explorer refuses any other reference at startup, because a look-alike would register, bind and attest as a different executor" $setting (add1 $index)) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The ask executor is bound by reference, and the registry only accepts a
+       reference the allow-list names. */ -}}
+{{- if $explorer.fleet.askExecutorRef -}}
+{{- if not (has $explorer.fleet.askExecutorRef $explorer.fleet.executorRefs) -}}
+{{- fail (printf "explorer.fleet.askExecutorRef %q must also appear in explorer.fleet.executorRefs, or registration stays fail-closed against it" $explorer.fleet.askExecutorRef) -}}
+{{- end -}}
+{{- if not $explorer.chat.provider -}}
+{{- fail "explorer.fleet.askExecutorRef requires a configured explorer.chat.provider: the grounded-reasoning executor has no model to run without one" -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The external-effect bindings (#436).
+
+       These two lists are the only configuration in the chart that raises an
+       executor's effect ceiling to admit work whose consequences land outside
+       Shoal — the point at which Shoal stops containing an effect. Everything
+       else here is fail-closed by omission and stays that way: an allowlisted
+       reference nobody names below declares no ceiling, and a declaration of
+       {external} against it is refused at registration and again at
+       resolution.
+
+       So every guard in this block exists to stop a values file that *reads*
+       like that opt-in from quietly not being one, or from being one twice
+       over. None of them can be reached by leaving something unset. */ -}}
+{{- $claimedBy := dict -}}
+{{- range $key := list "externalExecutorRefs" "externalEgressExecutorRefs" -}}
+{{- range $reference := (index $explorer.fleet $key) -}}
+{{- /* Present but blank is not a configured reference. The workspace drops
+       empty entries when it splits the flag, so a list holding only "" or " "
+       binds nothing — and the failure is invisible, because the pod starts
+       and serves. The operator finds out when the gateway descriptor they
+       registered is refused for declaring an effect its executor is not bound
+       to perform, which reads as a bug in the descriptor. */ -}}
+{{- if not (trim (toString $reference)) -}}
+{{- fail (printf "explorer.fleet.%s contains a blank entry: the workspace drops empty entries when it splits the flag, so nothing is bound and the reference keeps permitting nothing. A descriptor declaring external effects against it would be refused at registration while the pod starts and serves normally" $key) -}}
+{{- end -}}
+{{- $trimmed := trim (toString $reference) -}}
+{{- /* Registration is fail-closed on the allow-list first, so a binding for a
+       reference the registry will not accept is unreachable. */ -}}
+{{- if not (has $trimmed $explorer.fleet.executorRefs) -}}
+{{- fail (printf "explorer.fleet.%s names %q, which is not in explorer.fleet.executorRefs: the registry refuses any descriptor naming a reference the allow-list does not carry, so this binding would never be reached and no external action could register at all" $key $trimmed) -}}
+{{- end -}}
+{{- /* One reference cannot carry both bindings, and these two are not narrower
+       and wider — they are incompatible. The grounded-reasoning executor's
+       floor equals its ceiling and deliberately excludes external mutation;
+       this binding has an external ceiling and no floor. Whichever bound last
+       at startup would overwrite the other. */ -}}
+{{- if and $explorer.fleet.askExecutorRef (eq $trimmed $explorer.fleet.askExecutorRef) -}}
+{{- fail (printf "explorer.fleet.%s names %q, which is also explorer.fleet.askExecutorRef: that reference carries the grounded-reasoning executor, whose effect floor equals its ceiling and excludes external mutation, so the two bindings cannot coexist and one would overwrite the other at startup — either ask descriptors stop resolving, or the reasoning executor answers through a reference configured as a dispatch-only gateway. Give the gateway its own reference" $key $trimmed) -}}
+{{- end -}}
+{{- /* Whether the operation transmits corpus content off the host is one
+       declaration per reference. Letting the wider ceiling win would mean
+       egress authority is acquired by listing a reference twice, which is
+       exactly the accidental widening the separate list exists to prevent. */ -}}
+{{- if and (hasKey $claimedBy $trimmed) (ne (get $claimedBy $trimmed) $key) -}}
+{{- fail (printf "explorer.fleet.%s names %q, which explorer.fleet.%s already names: the two lists declare different ceilings for one reference, and resolving that by binding order would hand it the wider one — so egress authority would be acquired by listing a reference twice. Name it in exactly one list" $key $trimmed (get $claimedBy $trimmed)) -}}
+{{- end -}}
+{{- $_ := set $claimedBy $trimmed $key -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Two listeners on one port silently means one of them is not serving. */ -}}
+{{- if eq (int $explorer.containerPort) (int $explorer.healthPort) -}}
+{{- fail "explorer.healthPort must differ from explorer.containerPort: they are two listeners and cannot share a port" -}}
+{{- end -}}
+{{- range $field := list "containerPort" "healthPort" -}}
+{{- $port := int (index $explorer $field) -}}
+{{- if lt $port 1024 -}}
+{{- fail (printf "explorer.%s must be 1024 or above (got %d): the container runs as uid 65532 and drops all capabilities, so it may be unable to bind on runtimes that restrict ports below 1024, and the pod then restarts forever. Use a port of 1024 or above" $field $port) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The LLM gateway was the LLM proxy, under the key llmProxy. A values file
+       still using that key would otherwise render nothing for it and report
+       success: the gateway an operator configured simply absent, or enabled
+       under the new key with half its settings left behind under the old one.
+
+       A null or empty llmProxy is ignored, because null is how Helm deletes a
+       key. So is any llmProxy whose `enabled` is literally false: a full dump
+       of the old chart's values carries the whole block with `enabled: false`
+       for operators who never used it, and nothing in it was ever rendered.
+       An llmProxy that is enabled, is not a map, or carries settings with no
+       `enabled: false` beside an enabled llmGateway is refused. */ -}}
+{{- $legacyGateway := .Values.llmProxy -}}
+{{- if $legacyGateway -}}
+{{- $legacyMessage := "llmProxy has been renamed to llmGateway: move these values under llmGateway (and values-llm-proxy.yaml to values-llm-gateway.yaml) and delete the llmProxy block, rebuild the image (it now runs /usr/local/bin/shoal-llm-gateway), and repoint callers and selectors: resources are now named <fullname>-llm-gateway and labelled shoal-llm-gateway / llm-gateway. See docs/llm-gateway-deploy.md, Upgrading" -}}
+{{- if not (kindIs "map" $legacyGateway) -}}
+{{- fail $legacyMessage -}}
+{{- end -}}
+{{- $explicitlyDisabled := and (hasKey $legacyGateway "enabled") (kindIs "bool" $legacyGateway.enabled) (not $legacyGateway.enabled) -}}
+{{- if not $explicitlyDisabled -}}
+{{- if $legacyGateway.enabled -}}
+{{- fail $legacyMessage -}}
+{{- end -}}
+{{- if and (eq (include "shoal.llmGatewayEnabled" .) "true") (gt (len (omit $legacyGateway "enabled")) 0) -}}
+{{- fail $legacyMessage -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The LLM gateway (#390).
+
+       Every refusal below exists because the alternative is not a crash. The
+       gateway is the one place in Shoal where a denial means the caller's work
+       does not happen at all, and it is required to fail closed — so almost
+       every way of misconfiguring it produces a pod that passes every probe
+       and refuses every request. From outside that is indistinguishable from a
+       total outage of whatever is configured to go through it, and it is what
+       these guards move from a production incident to `helm template`. */ -}}
+{{- if eq (include "shoal.llmGatewayEnabled" .) "true" -}}
+{{- $gateway := .Values.llmGateway -}}
+{{- $admission := $gateway.admission -}}
+{{- $upstream := $gateway.upstream -}}
+{{- $identity := $gateway.identity -}}
+
+{{- /* The listener's transport (#424): the rule the binary applies to every
+       hop it makes, applied to the hop it receives. TLS by default; plaintext
+       only as an explicit choice, because the pod binds 0.0.0.0 and the binary
+       refuses a plaintext non-loopback listener without
+       -allow-plaintext-listener.
+
+       Each acknowledgement is a boolean and nothing else. A quoted "false" is
+       a non-empty string, which a Helm condition reads as true, so accepting
+       one would turn the refusal off with a value that says the opposite. */ -}}
+{{- $tls := default (dict) $gateway.tls -}}
+{{- if not (kindIs "bool" $tls.enabled) -}}
+{{- fail (printf "llmGateway.tls.enabled must be a boolean, true or false (got %q): it decides whether the listener serves TLS or renders -allow-plaintext-listener=true, and a quoted string would read as true in one place and be refused as a flag value in the other" (toString $tls.enabled)) -}}
+{{- end -}}
+{{- if not (kindIs "bool" $gateway.service.allowPlaintext) -}}
+{{- fail "llmGateway.service.allowPlaintext must be a boolean, true or false: only an explicit boolean acknowledgement permits non-ClusterIP exposure of a plaintext listener" -}}
+{{- end -}}
+{{- $tlsSecret := trim (toString (default "" $tls.secretName)) -}}
+{{- if $tls.enabled -}}
+{{- if not $tlsSecret -}}
+{{- fail "llmGateway.tls.secretName is required while llmGateway.tls.enabled is true: the gateway serves TLS by default (#424), so it needs a kubernetes.io/tls Secret holding tls.crt and tls.key — a cert-manager Certificate's Secret is the usual source, and it rotates in place without rolling the pod. Clients then use an https:// base URL. Where an mTLS mesh sidecar encrypts the hop instead, set llmGateway.tls.enabled=false. See docs/llm-gateway-deploy.md, Upgrading" -}}
+{{- end -}}
+{{- if $gateway.service.allowPlaintext -}}
+{{- fail "llmGateway.service.allowPlaintext is true but llmGateway.tls.enabled is true: the listener serves TLS, so the acknowledgement covers nothing. Remove it; left in place it reads as though the listener were plaintext, and it would start mattering silently the day TLS is turned off" -}}
+{{- end -}}
+{{- else -}}
+{{- if $tlsSecret -}}
+{{- fail (printf "llmGateway.tls.secretName names %q but llmGateway.tls.enabled is false: nothing mounts or reads it, so the manifest shows a certificate the listener does not serve. Remove it, or enable TLS" $tlsSecret) -}}
+{{- end -}}
+{{- if and (ne $gateway.service.type "ClusterIP") (not $gateway.service.allowPlaintext) -}}
+{{- fail (printf "llmGateway.service.type %q exposes a plaintext prompt endpoint outside a ClusterIP: llmGateway.tls.enabled is false, so the listener accepts prompts in the clear. Enable TLS, use ClusterIP behind a TLS-terminating ingress or mesh, or set llmGateway.service.allowPlaintext=true to acknowledge a terminating load balancer configured separately. This value does not enable TLS, and llmGateway.admission.allowPlaintext does not cover the listener" $gateway.service.type) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Every string the gateway pod is rendered from reaches it as one quoted
+       YAML scalar: a container argument, an environment variable name, a
+       Secret reference, a mount path, the image. Before they were quoted, a
+       newline in any of them ended the scalar and the remainder became YAML of
+       the operator's choosing — another container argument, which is how a
+       newline in identity.capability could append
+       -allow-plaintext-admission=true and turn off the transport rule the
+       guards below exist to keep. Quoting stops the injection; refusing the
+       character is the other half, because a quoted value that still holds a
+       control character names no descriptor, variable or Secret and the pod
+       starts and refuses every call. "Control character" here includes the
+       C1 controls and the Unicode line and paragraph separators (NEL, U+2028,
+       U+2029): YAML treats them as line breaks too, and [[:cntrl:]] is ASCII
+       only.
+
+       The allow-list and the model list are comma-joined into one argument,
+       so an entry holding a comma silently becomes two. */ -}}
+{{- $gatewayStrings := dict
+      "admission.url" $admission.url
+      "admission.tokenEnv" $admission.tokenEnv
+      "admission.tokenFile" $admission.tokenFile
+      "admission.tokenFileSource" $admission.tokenFileSource
+      "admission.tokenAudience" $admission.tokenAudience
+      "admission.credentialSecretName" $admission.credentialSecretName
+      "admission.credentialSecretKey" $admission.credentialSecretKey
+      "admission.lease" $admission.lease
+      "upstream.baseURL" $upstream.baseURL
+      "upstream.apiKeyEnv" $upstream.apiKeyEnv
+      "upstream.apiKeyFile" $upstream.apiKeyFile
+      "upstream.apiKeyFileSource" $upstream.apiKeyFileSource
+      "upstream.credentialSecretName" $upstream.credentialSecretName
+      "upstream.credentialSecretKey" $upstream.credentialSecretKey
+      "upstream.requestTimeout" $upstream.requestTimeout
+      "identity.agentID" $identity.agentID
+      "identity.capability" $identity.capability
+      "identity.action" $identity.action
+      "identity.sourceID" $identity.sourceID
+      "identity.policyID" $identity.policyID
+      "serviceAccountName" $gateway.serviceAccountName
+      "image.repository" $gateway.image.repository
+      "image.tag" $gateway.image.tag
+      "image.pullPolicy" $gateway.image.pullPolicy
+      "service.type" $gateway.service.type
+      "tls.secretName" $tls.secretName -}}
+{{- range $setting, $value := $gatewayStrings -}}
+{{- /* Values the templates trim are checked trimmed; the image and service
+       fields are rendered as written, so they are checked as written. */ -}}
+{{- $text := toString (default "" $value) -}}
+{{- if not (or (hasPrefix "image." $setting) (hasPrefix "service." $setting)) -}}
+{{- $text = trim $text -}}
+{{- end -}}
+{{- if regexMatch `[\p{Cc}\p{Zl}\p{Zp}]` $text -}}
+{{- fail (printf "llmGateway.%s contains %q, which holds a control character: it reaches the gateway pod as one quoted YAML scalar, so it names nothing the pod can use and every call is refused while the pod reports healthy. Before those values were quoted, a newline here made the remainder an arbitrary container argument" $setting $text) -}}
+{{- end -}}
+{{- end -}}
+{{- range $setting, $entries := dict "allowedHosts" $gateway.allowedHosts "models" $gateway.models -}}
+{{- range $entry := (default (list) $entries) -}}
+{{- $text := trim (toString (default "" $entry)) -}}
+{{- if regexMatch `[\p{Cc}\p{Zl}\p{Zp}]` $text -}}
+{{- fail (printf "llmGateway.%s contains %q, which holds a control character: entries reach the gateway inside one quoted argument, so this one matches nothing. Before that argument was quoted, a newline here made the remainder an arbitrary container argument" $setting $text) -}}
+{{- end -}}
+{{- if contains "," $text -}}
+{{- fail (printf "llmGateway.%s contains %q, which holds a comma: entries are comma-joined into one container argument, so this single entry becomes two. Give each its own list entry" $setting $text) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Every value is normalized once, and `default ""` comes before `trim`
+       rather than after.
+
+       A values file that writes a key and leaves it empty — `url:` with
+       nothing after it — produces nil, not "". Three different things go wrong
+       with that, and all three were observed:
+
+       nil reaches `trim` as a type error, so the render fails with a Go
+       template stack location instead of the sentence saying what breaks;
+       `toString nil` is the string "<nil>", which is non-blank, so a
+       required-value check reads an absent value as configured and the pod
+       renders with an empty flag — the healthy-looking gateway that is refused
+       on every request, which is the exact failure these guards exist for;
+       and `concat` over a nil list panics with a nil pointer dereference,
+       which is a crash rather than a refusal.
+
+       Normalizing first is what makes "absent", "empty" and "whitespace" one
+       case everywhere below. */ -}}
+{{- $admissionURL := trim (default "" $admission.url) -}}
+{{- $admissionTokenEnv := trim (default "" $admission.tokenEnv) -}}
+{{- $admissionSecret := trim (default "" $admission.credentialSecretName) -}}
+{{- $admissionSecretKey := trim (default "" $admission.credentialSecretKey) -}}
+{{- $tokenFile := trim (default "" $admission.tokenFile) -}}
+{{- $tokenSource := trim (default "" $admission.tokenFileSource) -}}
+{{- $tokenAudience := trim (default "" $admission.tokenAudience) -}}
+{{- $serviceAccount := trim (default "" $gateway.serviceAccountName) -}}
+{{- $upstreamURL := trim (default "" $upstream.baseURL) -}}
+{{- $upstreamKeyEnv := trim (default "" $upstream.apiKeyEnv) -}}
+{{- $upstreamSecret := trim (default "" $upstream.credentialSecretName) -}}
+{{- $upstreamSecretKey := trim (default "" $upstream.credentialSecretKey) -}}
+{{- $apiKeyFile := trim (default "" $upstream.apiKeyFile) -}}
+{{- $apiKeySource := trim (default "" $upstream.apiKeyFileSource) -}}
+{{- /* The allow-list comes from the same template the Deployment's
+       -allowed-host argument is built from, so the guard and the argument
+       cannot disagree about what counts as an entry. */ -}}
+{{- $allowedHosts := include "shoal.llmGatewayAllowedHosts" . -}}
+
+{{- /* Each malformed-value guard below is gated on the value being present, so
+       the required-value guard above it is the one that owns the empty case.
+       Two guards that both fire on "" are one guard as far as any test can
+       tell, and the one that stops firing is then invisible. */ -}}
+
+{{- /* The decision plane's address. Without it the gateway has nothing to ask,
+       and a gateway that cannot ask must deny. */ -}}
+{{- if not $admissionURL -}}
+{{- fail "llmGateway.admission.url is required: the gateway asks the explorer for admission before every call, and one that cannot ask must deny. With no URL there is no decision plane, so every request behind this gateway is refused while the pod itself stays healthy" -}}
+{{- end -}}
+{{- if and $admissionURL (not (include "shoal.urlIsAbsolute" $admissionURL)) -}}
+{{- fail (printf "llmGateway.admission.url must be an absolute http:// or https:// URL with a host (got %q): a bare host, a missing host, or another scheme is not a URL the gateway can resolve, so every admission request fails as a transport error and the gateway fails closed on all of them. The binary refuses it at startup, so rendering it produces a pod that never serves" $admissionURL) -}}
+{{- end -}}
+
+{{- /* The acknowledgement is a flag the chart renders verbatim, so its type is
+       the pod's startup. Go's boolean flag parser refuses `yes`, and YAML hands
+       it over as the string it is. Checked before the rule below uses it,
+       because a non-empty string is truthy there and would pass. */ -}}
+{{- if not (kindIs "bool" $admission.allowPlaintext) -}}
+{{- fail (printf "llmGateway.admission.allowPlaintext must be a boolean, true or false (got %q): the value is rendered verbatim into -allow-plaintext-admission, and Go's boolean flag parser refuses anything it cannot read as one — the pod exits at startup with a flag error. YAML words like yes and on are strings here, not booleans" (toString (default "" $admission.allowPlaintext))) -}}
+{{- end -}}
+
+{{- /* Plaintext to a decision plane across a real network is refused, because
+       what travels in the clear is not only the credential.
+
+       Over http:// the bearer token crosses the network unprotected, and so
+       does the verdict. Anything on the path can rewrite a deny into an allow,
+       which removes the enforcement plane without removing any of the evidence
+       that it is running — the one failure here that is not fail-closed.
+       allowPlaintext exists for a mesh that supplies the transport
+       authentication the scheme would, and makes accepting it an explicit act
+       rather than a default. */ -}}
+{{- $admissionLoopback := include "shoal.urlIsLoopback" $admissionURL -}}
+{{- if and (include "shoal.urlIsPlaintext" $admissionURL) (not $admissionLoopback) (not $admission.allowPlaintext) -}}
+{{- fail (printf "llmGateway.admission.url %q is plaintext to a non-loopback decision plane: the bearer token crosses the network in the clear, and so does the verdict — anything on the path can rewrite a deny into an allow, which silently removes the enforcement plane while everything still looks healthy. Use https://, or set llmGateway.admission.allowPlaintext=true to accept it where a mesh already authenticates the hop" $admissionURL) -}}
+{{- end -}}
+
+{{- /* The explorer's API has no unauthenticated mode a pod can reach: this
+       chart refuses to render the workspace without an OIDC authenticator, and
+       -dev-auth cannot be bound on a non-loopback listener at all. So an
+       admission request carrying no bearer token is a 401, every time.
+
+       The credential has two forms and they require different things, so this
+       is two guard sets rather than one relaxed one. The env form needs a
+       variable name and a Secret to project into it. The file form needs none
+       of that and must not have it: the chart renders -admission-token-file
+       alone, so a Secret named alongside a projected token is a credential the
+       operator believes is being presented and that the pod never opens — the
+       invisible-credential failure the binary refuses the two flags over
+       (credentialSource in cmd/shoal-llm-gateway/main.go).
+
+       What stays identical across both is the consequence of getting it wrong.
+       There is no form in which a missing or wrong admission credential is a
+       crash: the gateway starts, binds, passes every probe, and answers 401 to
+       itself on every admission request, which it then fails closed on. */ -}}
+{{- if not $tokenFile -}}
+{{- if not $admissionTokenEnv -}}
+{{- fail "llmGateway.admission.tokenEnv is required: it names the environment variable the gateway reads the explorer bearer token from, and the chart has nothing to project the Secret into without it — so the gateway asks unauthenticated, is answered 401, and denies every call" -}}
+{{- end -}}
+{{- if not $admissionSecret -}}
+{{- fail (printf "llmGateway.admission.credentialSecretName is required: the explorer's API is authenticated in every deployment this chart can render, so with no token in %s every admission request is a 401 and the gateway denies every call — a pod that passes its probes and governs nothing through. Set llmGateway.admission.tokenFile instead if the token is to come from a file, which is the only form a rotating credential has" (default "the admission token variable" $admissionTokenEnv)) -}}
+{{- end -}}
+{{- if not $admissionSecretKey -}}
+{{- fail "llmGateway.admission.credentialSecretKey is required: a secretKeyRef with no key does not resolve, so the pod never starts and sits in CreateContainerConfigError" -}}
+{{- end -}}
+{{- else -}}
+
+{{- /* The file form.
+
+       Mutual exclusion first, and compared against the shipped default rather
+       than against emptiness. tokenEnv has a non-empty default, so its mere
+       presence cannot count as a second choice — the file form would be
+       unreachable without also blanking it. A *changed* value is a deliberate
+       second choice, and the binary refuses that pair at startup rather than
+       ranking the two, so rendering it would be a pod that never serves. The
+       string below is credentialSource's envDefault, which is this key's
+       default here for exactly that reason. */ -}}
+{{- if and $admissionTokenEnv (ne $admissionTokenEnv "SHOAL_ADMISSION_TOKEN") -}}
+{{- fail (printf "llmGateway.admission.tokenEnv (%q) cannot be set alongside llmGateway.admission.tokenFile (%q): the binary refuses an explicitly chosen -admission-token-env together with -admission-token-file rather than ranking them, because picking one silently makes the effective credential invisible — an operator who adds a file while a stale variable is still in the manifest cannot tell from the configuration which token is being presented, and the symptom of the wrong answer is an authentication failure that names neither. Leave tokenEnv at its default to use the file, or clear tokenFile to use the variable" $admissionTokenEnv $tokenFile) -}}
+{{- end -}}
+
+{{- /* The path is two things at once: the flag the binary reads, and the mount
+       the chart derives from it. Both fail silently if it is not an absolute
+       path to a file inside a real directory. */ -}}
+{{- if not (isAbs $tokenFile) -}}
+{{- fail (printf "llmGateway.admission.tokenFile must be an absolute path (got %q): the gateway opens it by name at request time, so a relative path resolves against a working directory nothing in the pod spec guarantees. The read then fails on every request while the pod itself stays healthy — the gateway passes every probe and denies every call. It is also the mount path the chart derives the token volume from, and a relative mount path is not a pod spec the API server accepts" $tokenFile) -}}
+{{- end -}}
+{{- if hasSuffix "/" $tokenFile -}}
+{{- fail (printf "llmGateway.admission.tokenFile must name a file, not a directory (got %q): a trailing slash still passes an absolute-path test, and the chart then derives the mount from its directory and the file name from its base — so the flag points at %q while the credential is written to %q, and every read opens a directory instead of a file. Drop the trailing slash" $tokenFile $tokenFile (printf "%s/%s" (dir $tokenFile) (base $tokenFile))) -}}
+{{- end -}}
+{{- if and (isAbs $tokenFile) (eq (dir $tokenFile) "/") -}}
+{{- fail (printf "llmGateway.admission.tokenFile must name a file inside a directory, not at the filesystem root (got %q): the chart mounts the token volume at the file's directory, and a volume mounted at / replaces the container's root filesystem — the binary at /usr/local/bin/shoal-llm-gateway disappears with it and the pod restarts forever. Use something like /var/run/secrets/shoal/token" $tokenFile) -}}
+{{- end -}}
+
+{{- /* Where the file comes from. A value the chart does not know renders
+       -admission-token-file pointing at a path nothing mounts, which is a
+       token the gateway cannot open on every request. */ -}}
+{{- if not (has $tokenSource (list "projected" "secret" "volume")) -}}
+{{- fail (printf "llmGateway.admission.tokenFileSource must be projected, secret or volume (got %q): anything else renders -admission-token-file=%s with no volume mounted there, so the gateway reads a path that does not exist on every request. That is not a startup failure — the pod comes up, passes every probe, and denies every call on an unreadable credential" $tokenSource $tokenFile) -}}
+{{- end -}}
+
+{{- /* A Secret is read in exactly one of the three sources. Named in either of
+       the others it is a credential nothing in the pod opens. */ -}}
+{{- if eq $tokenSource "secret" -}}
+{{- if not $admissionSecret -}}
+{{- fail "llmGateway.admission.credentialSecretName is required with llmGateway.admission.tokenFileSource: secret — that source mounts this Secret as the token file, so with none named the chart has no volume source to render and the pod spec is rejected. The Secret is also the whole credential: without it every admission request is a 401 and the gateway denies every call" -}}
+{{- end -}}
+{{- if not $admissionSecretKey -}}
+{{- fail "llmGateway.admission.credentialSecretKey is required with llmGateway.admission.tokenFileSource: secret: it is the key the chart projects into the token file, and a secret volume item with no key does not resolve — the kubelet never mounts the volume and the pod sits in ContainerCreating indefinitely rather than failing outright" -}}
+{{- end -}}
+{{- else if $admissionSecret -}}
+{{- fail (printf "llmGateway.admission.credentialSecretName (%q) is set with llmGateway.admission.tokenFileSource: %s, which does not read a Secret: the token comes from %s and this Secret is projected nowhere. The operator believes one credential is being presented and another one is, which is exactly the ambiguity the binary refuses two token flags over — and the symptom is a 401 on every admission request that names neither source. Clear it, or use tokenFileSource: secret to mount it as the token file" $admissionSecret $tokenSource (ternary "the pod's projected ServiceAccount token" "the volume in llmGateway.admission.tokenVolume" (eq $tokenSource "projected"))) -}}
+{{- end -}}
+
+{{- /* An audience is a projected token's verifier. With any other source
+       nothing consults it, so a value there describes a check that is not
+       happening. Refusable because this key's default is empty: a non-blank
+       value can only have been written deliberately, unlike tokenEnv's. */ -}}
+{{- if and $tokenAudience (ne $tokenSource "projected") -}}
+{{- fail (printf "llmGateway.admission.tokenAudience (%q) is set with llmGateway.admission.tokenFileSource: %s, which issues no token and has no audience to bind: the audience names the verifier a projected ServiceAccount token is minted for, and with this source the file holds whatever the Secret or the volume puts there. Leaving it set records an audience binding that does not exist anywhere in the deployment" $tokenAudience $tokenSource) -}}
+{{- end -}}
+
+{{- if eq $tokenSource "projected" -}}
+{{- /* A projected token's subject is the pod's ServiceAccount, so leaving the
+       account implicit means the identity the workspace authorizes is the
+       namespace's `default` — an account every other pod in the namespace can
+       also obtain a token for. Authorizing the gateway would authorize the
+       namespace. Naming `default` explicitly is allowed and is the
+       acknowledgement, in the way allowPlaintext is for the admission URL. */ -}}
+{{- if not $serviceAccount -}}
+{{- fail "llmGateway.serviceAccountName is required with llmGateway.admission.tokenFileSource: projected: a projected token's subject is the pod's ServiceAccount, and with none named that is the namespace's `default` — so the identity the workspace would have to authorize is one every other pod in the namespace can also mint a token for, and authorizing the gateway authorizes the namespace. Name the account the gateway runs as (the chart does not create it, as with the Secrets). Setting it to `default` explicitly is accepted, and is the acknowledgement that the admission identity is shared" -}}
+{{- end -}}
+{{- /* Without an audience the token is issued for the cluster's own API
+       server. The workspace is not that, and will not accept it. */ -}}
+{{- if not $tokenAudience -}}
+{{- fail "llmGateway.admission.tokenAudience is required with llmGateway.admission.tokenFileSource: projected: a ServiceAccount token projected with no audience is issued for the cluster's API server, which the explorer is not — so it is rejected as unauthenticated on every admission request and the gateway denies every call while passing every probe. Set it to an audience the explorer's authenticator accepts (explorer.auth.oidc.audiences), and make sure that authenticator also trusts the cluster as an issuer" -}}
+{{- end -}}
+{{- /* The lifetime, against the floor the API server enforces. Matched as text
+       first for the reason the replica count is: `int` of nil and of a
+       non-numeric string are both 0, which would render a projection the API
+       server rejects while naming no bad value. */ -}}
+{{- if not (regexMatch "^[0-9]+$" (toString (default "" $admission.tokenExpirationSeconds))) -}}
+{{- fail (printf "llmGateway.admission.tokenExpirationSeconds must be a whole number of seconds (got %v): anything else renders a projection the API server refuses as an invalid pod spec, which is the failure that does not look like one — the Deployment is accepted and no pod is ever created from it, so there is no pod log to read" (default "" $admission.tokenExpirationSeconds)) -}}
+{{- end -}}
+{{- if lt (int64 (default 0 $admission.tokenExpirationSeconds)) (int64 600) -}}
+{{- fail (printf "llmGateway.admission.tokenExpirationSeconds must be at least 600 (got %v): 600 seconds is the floor the API server enforces on a ServiceAccount token projection, and below it the pod spec is invalid — the Deployment is accepted and no pod is ever created from it, which produces a rollout that never completes and no pod log at all. The floor is also where the refresh margin stops being comfortable: the kubelet rewrites the file at 80%% of the lifetime, so the margin between the rewrite and the expiry is a fifth of this value, and it has to stay clear of the kubelet's own re-projection cadence of about a minute" (default "" $admission.tokenExpirationSeconds)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- if eq $tokenSource "volume" -}}
+{{- /* The escape hatch, and the chart can check almost nothing about it: a
+       CSI driver's parameters are the driver's business. The two things it can
+       check are the two that make the volume unusable rather than wrong. */ -}}
+{{- if not $admission.tokenVolume -}}
+{{- fail "llmGateway.admission.tokenVolume is required with llmGateway.admission.tokenFileSource: volume: the chart renders this value as the token volume's source, and a volume with a name and no source is not a pod spec the API server accepts — the Deployment is created and no pod ever is. Supply the volume source itself (a csi:, secret: or projected: block), without a name: the chart owns the name so the volume and its mount cannot name different things" -}}
+{{- end -}}
+{{- if and $admission.tokenVolume (hasKey $admission.tokenVolume "name") -}}
+{{- fail (printf "llmGateway.admission.tokenVolume must not carry a name (got %q): the chart emits the name itself, so a second one renders a duplicate key in the volume — the API server rejects the pod spec under strict decoding, and where it does not, the volume is named something the volumeMount does not reference and the kubelet never mounts the token at all. Supply only the volume source" (toString (get $admission.tokenVolume "name"))) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The lease the gateway asks for, against the bound the plane enforces.
+
+       pkg/explorer/fleet caps an admission lease at MaxActionClaimTTL, five
+       minutes, and refuses a request outside the bound with an invalid
+       argument. A larger value here is therefore not a longer lease, it is
+       every call denied — and denied in a way the caller cannot act on and the
+       operator cannot tell apart from a policy denial. */ -}}
+{{- $leaseMillis := int64 (include "shoal.durationMillis" (dict "name" "llmGateway.admission.lease" "value" (default "" $admission.lease))) -}}
+{{- if le $leaseMillis (int64 0) -}}
+{{- fail (printf "llmGateway.admission.lease must be positive (got %q): a non-positive lease is outside the bound the admission surface enforces, so every request is refused as an invalid argument" (trim (toString (default "" $admission.lease)))) -}}
+{{- end -}}
+{{- if gt $leaseMillis (int64 300000) -}}
+{{- fail (printf "llmGateway.admission.lease must not exceed 5m, the MaxActionClaimTTL the admission surface enforces (got %q): a longer lease is not accepted and shortened, it is refused — so every call behind this gateway is denied as an invalid argument, a denial the caller cannot act on and an operator cannot tell apart from policy" (trim (toString (default "" $admission.lease)))) -}}
+{{- end -}}
+
+{{- /* The provider an admitted call actually goes to. */ -}}
+{{- if not $upstreamURL -}}
+{{- fail "llmGateway.upstream.baseURL is required: the gateway forwards admitted calls to a real OpenAI-compatible provider, and with no upstream an admitted request has nowhere to go — the caller sees a failure on exactly the calls policy allowed, and the admission is spent on work that never happened" -}}
+{{- end -}}
+{{- if and $upstreamURL (not (include "shoal.urlIsAbsolute" $upstreamURL)) -}}
+{{- fail (printf "llmGateway.upstream.baseURL must be an absolute http:// or https:// URL with a host (got %q): anything else is not a URL the gateway can forward to, so every admitted call fails in the hop after the decision — and the binary refuses it at startup, so rendering it produces a pod that never serves" $upstreamURL) -}}
+{{- end -}}
+{{- /* And plaintext to a remote provider is refused outright, with no
+       acknowledgement that accepts it.
+
+       admission.allowPlaintext exists because a mesh can supply the transport
+       authentication the scheme would, for a hop that carries the declaration
+       and a bearer token. This hop carries the prompt itself and the
+       operator's provider credential, and a mesh that authenticates the hop to
+       the explorer says nothing about the hop to a third party — so there is
+       deliberately no flag to pass here. The binary refuses it at startup
+       either way, which makes rendering it a pod that never serves. */ -}}
+{{- $upstreamLoopback := include "shoal.urlIsLoopback" $upstreamURL -}}
+{{- if and (include "shoal.urlIsPlaintext" $upstreamURL) (not $upstreamLoopback) -}}
+{{- fail (printf "llmGateway.upstream.baseURL %q is plaintext to a remote provider: this request carries the caller's prompt and the operator's provider credential, both in the clear, and anything on the path can read or alter them. There is no acknowledgement for it, unlike llmGateway.admission.allowPlaintext — a mesh authenticating the hop to the explorer says nothing about the hop to a third party. The binary refuses it at startup too, so rendering it produces a pod that never serves. Use https://, or a loopback provider for a sidecar model server" $upstreamURL) -}}
+{{- end -}}
+{{- /* Exactly the explorer's chat-provider rule, for exactly its reason: a
+       credential nothing projects into the pod becomes a failure at the moment
+       the first real call is forwarded — after the admission has been spent on
+       a call policy allowed. A loopback provider needs none.
+
+       Two things can carry it now. A Secret, projected into the environment or
+       mounted as the file apiKeyFile names; or an operator-supplied volume,
+       which the chart cannot see inside. So the requirement is "some source",
+       and each source's own shape is checked below. */ -}}
+{{- $upstreamFromVolume := and $apiKeyFile (eq $apiKeySource "volume") -}}
+{{- if and $upstreamURL (not $upstreamLoopback) (not $upstreamSecret) (not $upstreamFromVolume) -}}
+{{- fail (printf "llmGateway.upstream.credentialSecretName is required for a remote upstream (%q): the gateway reads the credential at request time and nothing puts one in the pod without a Secret, so every admitted call is rejected by the provider for want of one — after admission has already been spent on it, which means policy allowed work that then did not happen. Name a Secret, or set llmGateway.upstream.apiKeyFile with apiKeyFileSource: volume if a CSI driver delivers the credential instead" $upstreamURL) -}}
+{{- end -}}
+{{- if and $upstreamSecret (not $upstreamSecretKey) -}}
+{{- fail "llmGateway.upstream.credentialSecretKey is required when a credential Secret is named: a secretKeyRef with no key does not resolve, so the pod never starts and sits in CreateContainerConfigError" -}}
+{{- end -}}
+
+{{- /* The upstream credential's own two forms, on the same rules as the
+       admission token's and for the same reason: the binary refuses an
+       explicitly chosen -upstream-api-key-env together with
+       -upstream-api-key-file rather than ranking them.
+
+       Why the file form exists here at all is worth stating, because an
+       earlier comment of ours had it backwards: reading os.Getenv per request
+       does not make an environment variable rotatable. A container's
+       environment is fixed once the process starts, so updating the Secret
+       behind a secretKeyRef leaves every running gateway on the old value until
+       the pod is replaced. A Secret mounted as a volume is updated in place,
+       and the per-request read picks it up — that is the whole difference, and
+       the only form in which rotating a provider key works without a roll. */ -}}
+{{- if not $apiKeyFile -}}
+{{- if not $upstreamKeyEnv -}}
+{{- fail "llmGateway.upstream.apiKeyEnv is required: it names the environment variable carrying the upstream credential, and a pod env entry with no name is not a valid object — the API server rejects the Deployment outright. Set llmGateway.upstream.apiKeyFile instead if the credential is to come from a file, which is the only form that can be rotated under a running pod" -}}
+{{- end -}}
+{{- else -}}
+{{- if and $upstreamKeyEnv (ne $upstreamKeyEnv "SHOAL_UPSTREAM_API_KEY") -}}
+{{- fail (printf "llmGateway.upstream.apiKeyEnv (%q) cannot be set alongside llmGateway.upstream.apiKeyFile (%q): the binary refuses an explicitly chosen -upstream-api-key-env together with -upstream-api-key-file rather than ranking them, because picking one silently makes the effective credential invisible — and the symptom of the wrong answer is a provider rejecting calls that policy allowed, naming neither source. Leave apiKeyEnv at its default to use the file, or clear apiKeyFile to use the variable" $upstreamKeyEnv $apiKeyFile) -}}
+{{- end -}}
+{{- if not (isAbs $apiKeyFile) -}}
+{{- fail (printf "llmGateway.upstream.apiKeyFile must be an absolute path (got %q): the gateway opens it by name at request time, so a relative path resolves against a working directory nothing in the pod spec guarantees — every admitted call then fails on an unreadable credential, after the admission has been spent. It is also the mount path the chart derives the volume from, and a relative mount path is not a pod spec the API server accepts" $apiKeyFile) -}}
+{{- end -}}
+{{- if hasSuffix "/" $apiKeyFile -}}
+{{- fail (printf "llmGateway.upstream.apiKeyFile must name a file, not a directory (got %q): a trailing slash still passes an absolute-path test, and the chart then derives the mount from its directory and the file name from its base — so the flag points at %q while the credential is written to %q, and every read opens a directory instead of a file. Drop the trailing slash" $apiKeyFile $apiKeyFile (printf "%s/%s" (dir $apiKeyFile) (base $apiKeyFile))) -}}
+{{- end -}}
+{{- if and (isAbs $apiKeyFile) (eq (dir $apiKeyFile) "/") -}}
+{{- fail (printf "llmGateway.upstream.apiKeyFile must name a file inside a directory, not at the filesystem root (got %q): the chart mounts the credential volume at the file's directory, and a volume mounted at / replaces the container's root filesystem — the binary at /usr/local/bin/shoal-llm-gateway disappears with it and the pod restarts forever" $apiKeyFile) -}}
+{{- end -}}
+{{- if not (has $apiKeySource (list "secret" "volume")) -}}
+{{- fail (printf "llmGateway.upstream.apiKeyFileSource must be secret or volume (got %q): anything else renders -upstream-api-key-file=%s with no volume mounted there, so every admitted call fails on a path that does not exist in the container. There is deliberately no projected form here, unlike the admission token: a projected ServiceAccount token is a cluster-issued credential for a cluster verifier, and where a provider does accept one the volume source expresses that projection verbatim" $apiKeySource $apiKeyFile) -}}
+{{- end -}}
+{{- if and (eq $apiKeySource "secret") (not $upstreamSecret) -}}
+{{- fail "llmGateway.upstream.credentialSecretName is required with llmGateway.upstream.apiKeyFileSource: secret — that source mounts this Secret as the credential file, so with none named the chart has no volume source to render and the API server rejects the pod spec. A loopback provider that needs no credential should leave apiKeyFile empty rather than name a source with nothing behind it" -}}
+{{- end -}}
+{{- if eq $apiKeySource "volume" -}}
+{{- if not $upstream.apiKeyVolume -}}
+{{- fail "llmGateway.upstream.apiKeyVolume is required with llmGateway.upstream.apiKeyFileSource: volume: the chart renders this value as the credential volume's source, and a volume with a name and no source is not a pod spec the API server accepts — the Deployment is created and no pod ever is. Supply the volume source itself (a csi:, secret: or projected: block) without a name, which the chart owns" -}}
+{{- end -}}
+{{- if and $upstream.apiKeyVolume (hasKey $upstream.apiKeyVolume "name") -}}
+{{- fail (printf "llmGateway.upstream.apiKeyVolume must not carry a name (got %q): the chart emits the name itself, so a second one renders a duplicate key in the volume — the API server rejects the pod spec under strict decoding, and where it does not, the volume is named something the volumeMount does not reference and the kubelet never mounts the credential at all" (toString (get $upstream.apiKeyVolume "name"))) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* And the two files cannot share a directory, because each is mounted at
+       its own file's directory and a mountPath has to be unique. Two volumes
+       on one path is refused by the API server, so the Deployment is created
+       and no pod ever is — a rollout that never completes, with no pod log. */ -}}
+{{- if and $tokenFile $apiKeyFile (eq (dir $tokenFile) (dir $apiKeyFile)) -}}
+{{- fail (printf "llmGateway.admission.tokenFile and llmGateway.upstream.apiKeyFile must not share a directory (both are in %q): each is mounted as its own volume at its own file's directory, and a pod cannot mount two volumes at one path — the API server refuses the pod spec, so the Deployment is created and no pod is ever made from it. Give them separate directories, for example /var/run/secrets/shoal/token and /var/run/secrets/upstream/api-key" (dir $tokenFile)) -}}
+{{- end -}}
+
+{{- /* Neither credential file may land on the listener's TLS mount, under
+       it, or above it. Each is its own volume: one path is two volumes, which
+       the API server refuses, and a nested mount point inside a read-only
+       Secret volume cannot be created. Either way the Deployment is accepted
+       and no pod is ever made from it. */ -}}
+{{- if $tls.enabled -}}
+{{- $tlsDir := include "shoal.llmGatewayTLSDir" . -}}
+{{- range $setting, $file := dict "admission.tokenFile" $tokenFile "upstream.apiKeyFile" $apiKeyFile -}}
+{{- if $file -}}
+{{- $fileDir := dir $file -}}
+{{- if or (eq $fileDir $tlsDir) (hasPrefix (printf "%s/" $tlsDir) $fileDir) (hasPrefix (printf "%s/" $fileDir) $tlsDir) -}}
+{{- fail (printf "llmGateway.%s is in %q, which overlaps %q, where the chart mounts the listener's TLS Secret: two volumes cannot share a mount path or nest inside a read-only one, so the API server refuses the pod and no pod is ever made. Put the file in another directory" $setting $fileDir $tlsDir) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The request timeout against the lease.
+
+       An upstream call that may run longer than the lease is a granted
+       admission that is performed and can then no longer be reported against.
+       pkg/explorer/fleet calls such a record abandoned rather than resolved:
+       whether the effect happened is unknown and stays unknown. That breaks
+       the loop the report exists to close, and leaves the accumulator charging
+       nothing for work that did happen. */ -}}
+{{- $timeoutMillis := int64 (include "shoal.durationMillis" (dict "name" "llmGateway.upstream.requestTimeout" "value" (default "" $upstream.requestTimeout))) -}}
+{{- if le $timeoutMillis (int64 0) -}}
+{{- fail (printf "llmGateway.upstream.requestTimeout must be positive (got %q): an unbounded upstream call outlives its admission lease by construction, so the admission can never be reported and is abandoned rather than resolved" (trim (toString (default "" $upstream.requestTimeout)))) -}}
+{{- end -}}
+{{- /* Compared only when both are positive, so the two guards above own their
+       own cases: a zero lease must not be reported as a timeout problem. */ -}}
+{{- /* The margin is the report's own window. The binary refuses a lease that
+       does not exceed the timeout by it, so "not exceeding the lease" is not
+       enough: equal values render a pod that fails at startup, which is the
+       CrashLoopBackOff these guards exist to turn into a render error. The
+       value matches minimumReportWindow in cmd/shoal-llm-gateway. */ -}}
+{{- $reportWindowMillis := int64 5000 -}}
+{{- if and (gt $leaseMillis (int64 0)) (gt $timeoutMillis (int64 0)) (le $leaseMillis (add $timeoutMillis $reportWindowMillis)) -}}
+{{- fail (printf "llmGateway.admission.lease (%q) must exceed llmGateway.upstream.requestTimeout (%q) by at least 5s: the report happens after the upstream call returns, so a lease that expires first means the call is performed under a token that can no longer be reported against — the effect happened and Shoal never learns that it did. The binary refuses this pair at startup, so rendering it produces a pod that never serves" (trim (toString (default "" $admission.lease))) (trim (toString (default "" $upstream.requestTimeout)))) -}}
+{{- end -}}
+
+{{- /* The termination grace period against the lease.
+
+       The gateway drains for the lease on SIGTERM — drainWindow is *lease in
+       cmd/shoal-llm-gateway/main.go — because the lease is already the bound on
+       an admitted call's whole lifetime including the report that closes it,
+       and that is the right worst case for a call admitted a moment before the
+       signal. terminationGracePeriodSeconds is the kubelet's budget for the
+       same window, so a grace period that does not cover it means SIGKILL
+       arrives mid-drain and kills exactly the calls whose egress has already
+       happened and whose grant has already been spent. Every rolling update
+       then produces unreported grants, on a schedule, while the pod terminates
+       cleanly as far as the kubelet is concerned — there is no restart, no
+       error and nothing in the pod's status to look at. The shipped values did
+       this: 45 seconds against a 60-second lease.
+
+       A margin rather than a strict inequality, for two reasons that are both
+       about the boundary and not about the drain. The grace period is whole
+       seconds and a lease is not, so a 60500ms lease against a 60s grace
+       period is "equal" in the only unit the kubelet has; and the process has
+       to return from the drain and exit *inside* the same budget, so equality
+       leaves the exit itself racing the SIGKILL. Five seconds is the same
+       margin the lease keeps over the request timeout, and it is the chart's
+       one unit of slack for the part that happens after the part being bounded.
+
+       Costing nothing in the common case is what makes the reservation
+       tolerable: Shutdown returns as soon as the last connection closes, so
+       the window is a ceiling and not a delay. A pod with nothing in flight
+       exits immediately. */ -}}
+{{- if not (regexMatch "^[0-9]+$" (toString (default "" $gateway.terminationGracePeriodSeconds))) -}}
+{{- fail (printf "llmGateway.terminationGracePeriodSeconds must be a whole number of seconds (got %v): anything else is not a value the API server accepts on a pod spec, so the object is rejected at install" (default "" $gateway.terminationGracePeriodSeconds)) -}}
+{{- end -}}
+{{- $graceMillis := mul (int64 (default 0 $gateway.terminationGracePeriodSeconds)) (int64 1000) -}}
+{{- if and (gt $leaseMillis (int64 0)) (lt (int64 $graceMillis) (add $leaseMillis $reportWindowMillis)) -}}
+{{- fail (printf "llmGateway.terminationGracePeriodSeconds (%v) must exceed llmGateway.admission.lease (%q) by at least 5s: the gateway drains for the lease on SIGTERM, because the lease is the bound on an admitted call's whole lifetime including the report that closes it. This value is the kubelet's budget for that same window, so a shorter one means SIGKILL arrives mid-drain and kills the calls whose egress has already happened and whose grant has already been spent — an unreported grant produced by every rolling update, on a schedule, while the pod terminates cleanly as far as the kubelet is concerned. The margin is required because the grace period is whole seconds while a lease need not be, and because the process still has to exit after the drain returns. Raise this, or shorten the lease — which also shortens the longest call the gateway will admit" (default "" $gateway.terminationGracePeriodSeconds) (trim (toString (default "" $admission.lease)))) -}}
+{{- end -}}
+
+{{- /* The same host-authority gate the explorer has, with the same
+       consequence: the resolved listen address of a pod is an authority no
+       real client sends, so an empty allow-list refuses everything with 421.
+       Blank entries were dropped before the count, because a list holding only
+       "" is not a configured list — length alone would pass it. */ -}}
+{{- if not $allowedHosts -}}
+{{- fail "llmGateway.allowedHosts needs at least one non-blank value: the gateway binds a non-loopback address in a pod, and with no allow-list every request is refused with 421 Misdirected Request before admission is even asked. List the authority clients send as their OpenAI base URL (usually the port-less Service or ingress name)" -}}
+{{- end -}}
+
+{{- /* The registered descriptor this gateway admits against. The explorer
+       resolves the agent, capability, action and scope together through
+       resolveActionBinding, and a value that is missing is not a startup
+       failure — it is a gateway that comes up healthy and is refused by the
+       plane on every single request, with a denial that carries no reason by
+       design. There is nothing in the pod log to read. */ -}}
+{{- range $field := list "agentID" "capability" "action" "sourceID" "policyID" -}}
+{{- if not (trim (default "" (index $identity $field))) -}}
+{{- fail (printf "llmGateway.identity.%s is required: admission resolves the agent, capability, action and scope together, and an incomplete identity is refused by the plane on every request — the gateway stays healthy and denies every call, with a denial that names no reason by design" $field) -}}
+{{- end -}}
+{{- end -}}
+{{- /* The generation, matched as text rather than converted — because the
+       value is rendered verbatim and the conversion is lossy in exactly the
+       cases worth refusing. `int64` of 1.5 is a positive 1, so a guard that
+       only tested positivity after converting passed it and then rendered
+       -agent-generation=1.5, which Go's integer flag parser rejects: the pod
+       exits at startup. A leading zero is worse than a refusal, because it
+       works — ParseInt reads 010 as octal 8, a generation nothing was
+       registered under, and the plane then denies every call. */ -}}
+{{- $generation := trim (toString (default "" $identity.agentGeneration)) -}}
+{{- if not (regexMatch "^[1-9][0-9]*$" $generation) -}}
+{{- fail (printf "llmGateway.identity.agentGeneration must be a positive whole number written plainly — no sign, no decimal point and no leading zero (got %q). It is rendered verbatim into -agent-generation: a non-integer is a flag parse error that exits the pod at startup, a leading zero is read as octal so 010 becomes 8 and names a generation nothing was registered under, and a non-positive value is refused by the dispatch surface as an invalid argument before any policy is consulted. Each of those denies every call" $generation) -}}
+{{- end -}}
+{{- if or (gt (len $generation) 19) (and (eq (len $generation) 19) (gt $generation "9223372036854775807")) -}}
+{{- fail (printf "llmGateway.identity.agentGeneration must fit in an int64 (got %q): -agent-generation is parsed as a 64-bit integer, so a larger value is a flag parse error at startup and the pod never serves" $generation) -}}
+{{- end -}}
+{{- /* The agent ID carries the same encoding as the scope identities, and the
+       binary now refuses an undecodable one at startup, so this is a render
+       refusal rather than a CrashLoopBackOff.
+
+       Be exact about what it reaches: encoding mistakes, not the class of
+       wrong values. A shoal.ID is opaque and variable-length, so there is no
+       width to validate, and a readable name that happens to decode is
+       indistinguishable here from a registered ID. Of fifteen plausible
+       names, eleven decode cleanly to garbage ("gateway" to five bytes,
+       "my-agent" to six) and four fail only on length. The four are caught;
+       the eleven are refused by the workspace on every request instead, as a
+       descriptor that does not exist. */ -}}
+{{- $agentID := trim (default "" $identity.agentID) -}}
+{{- if and $agentID (not (regexMatch "^[A-Za-z0-9_-]+$" $agentID)) -}}
+{{- fail (printf "llmGateway.identity.agentID must be canonical unpadded base64url (got %q): the workspace decodes this field and the binary refuses a value it cannot decode at startup, so the pod exits rather than serving. This is the encoded ID, not a descriptor's display name — and note that a name which happens to decode cannot be caught here, only by the workspace, which denies every call as a descriptor that does not exist" $agentID) -}}
+{{- end -}}
+{{- if and $agentID (eq (mod (len $agentID) 4) 1) -}}
+{{- fail (printf "llmGateway.identity.agentID is %d characters, which no base64url encoding can be (a length of 4n+1 is impossible): either the value is truncated or it is a display name rather than an encoded ID. The binary refuses it at startup, so the pod never serves" (len $agentID)) -}}
+{{- end -}}
+
+{{- /* Scope identities are canonical unpadded base64url on the wire, as every
+       opaque identity in the API is. A value with padding or a stray character
+       is not decodable, and a length of 4n+1 cannot be the encoding of any
+       byte string — the API refuses both as invalid arguments rather than
+       resolving them to some other scope, so this is a typo detector, not an
+       authorization check. Gated on the value being present: the required
+       guard above owns the empty case. */ -}}
+{{- range $field := list "sourceID" "policyID" -}}
+{{- $value := trim (default "" (index $identity $field)) -}}
+{{- if and $value (not (regexMatch "^[A-Za-z0-9_-]+$" $value)) -}}
+{{- fail (printf "llmGateway.identity.%s must be canonical unpadded base64url (got %q): the admission API refuses anything else as an invalid argument, so every request is denied for a reason that looks nothing like a typo in a values file" $field $value) -}}
+{{- end -}}
+{{- if and $value (eq (mod (len $value) 4) 1) -}}
+{{- fail (printf "llmGateway.identity.%s is %d characters, which no base64url encoding can be (a length of 4n+1 is impossible): the value is truncated, and the admission API refuses it as an invalid argument" $field (len $value)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Placeholders are not configuration. The shipped profile leaves the
+       required values empty so the guards above fire, but a values file copied
+       from the docs can carry the marker text through — and the dangerous case
+       is not the one that fails outright. An identity of literally REPLACE_ME
+       renders a gateway that is refused on every call while the chart reports
+       success, and an allowed host of REPLACE_ME.example.test renders one that
+       answers 421 to everything.
+
+       The allow-list is scanned through the normalized list, not the raw
+       value, because `concat` over a nil list panics — a crash instead of a
+       refusal, and one that only appears if a later edit moves this scan above
+       the allow-list guard. */ -}}
+{{- range (concat (list $admissionURL $upstreamURL $admissionSecret $upstreamSecret $tokenFile $tokenAudience $serviceAccount $apiKeyFile) (values (pick $identity "agentID" "capability" "action" "sourceID" "policyID")) (splitList "," $allowedHosts)) -}}
+{{- if contains "REPLACE_ME" (toString (default "" .)) -}}
+{{- fail (printf "llmGateway configuration still contains the placeholder %q: replace every REPLACE_ME before installing" (toString (default "" .))) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Two listeners on one port silently means one of them is not serving,
+       and which one loses is decided by bind order rather than by the chart.
+       If the health listener wins, the gateway serves no traffic; if the
+       OpenAI-compatible listener wins, every probe answers 421 and the pod
+       never becomes ready. */ -}}
+{{- if eq (int $gateway.containerPort) (int $gateway.healthPort) -}}
+{{- fail "llmGateway.healthPort must differ from llmGateway.containerPort: they are two listeners and cannot share a port. Whichever binds second fails, and the pod is then either serving nothing or failing every probe" -}}
+{{- end -}}
+{{- range $field := list "containerPort" "healthPort" "servicePort" -}}
+{{- /* Matched as text before being compared as a number, for the reason the
+       agent generation is: every one of these is rendered verbatim — into
+       -listen, -health-address, a containerPort and a Service port — and `int`
+       of 8100.5 is a perfectly acceptable 8100, so a range check alone passes
+       a value the API server then rejects. */ -}}
+{{- if not (regexMatch "^[0-9]+$" (toString (default "" (index $gateway $field)))) -}}
+{{- fail (printf "llmGateway.%s must be a whole number (got %v): it is rendered verbatim into a listen address and a port declaration, so anything else is rejected by the API server at install or by the flag parser at startup" $field (default "" (index $gateway $field))) -}}
+{{- end -}}
+{{- $port := int (default 0 (index $gateway $field)) -}}
+{{- if or (lt $port 1) (gt $port 65535) -}}
+{{- fail (printf "llmGateway.%s must be a port between 1 and 65535 (got %v): anything else is not a port the API server will accept, so the object is rejected at install" $field (default 0 (index $gateway $field))) -}}
+{{- end -}}
+{{- end -}}
+{{- /* The pod runs as uid 65532 with every capability dropped, so it may be
+       unable to bind on runtimes that restrict ports below 1024. Some do not
+       (containerd 2.x and Docker 20.10+ allow unprivileged low ports), so the
+       1024 floor is the chart's policy, not a hard kernel limit: a port that
+       binds on one node and fails on the next is the failure it avoids. */ -}}
+{{- range $field := list "containerPort" "healthPort" -}}
+{{- if lt (int (default 0 (index $gateway $field))) 1024 -}}
+{{- fail (printf "llmGateway.%s must be 1024 or above (got %d): the container runs as uid 65532 and drops all capabilities, so it may be unable to bind on runtimes that restrict ports below 1024, and the pod then restarts forever. Use a port of 1024 or above" $field (int (default 0 (index $gateway $field)))) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Replicas. The opposite rule from the explorer's, deliberately: more than
+       one is correct here, and only a negative count is nonsense. */ -}}
+{{- /* Matched as text rather than compared as a number, because `int` is
+       lossy in exactly the cases worth refusing: `int` of nil and of a
+       non-numeric string are both 0, which would render a Deployment with an
+       empty or surprising replica count instead of naming the bad value. */ -}}
+{{- if not (regexMatch "^[0-9]+$" (toString $gateway.replicas)) -}}
+{{- fail (printf "llmGateway.replicas must be a whole number, 0 or more (got %v). Unlike the explorer there is no upper bound: the gateway holds no state root, so replicas are independent askers of one decision plane rather than writers to one engine" $gateway.replicas) -}}
+{{- end -}}
+
+{{- /* A disruption budget that refuses every eviction protects a singleton.
+       This is not one, so it would only wedge drains. */ -}}
+{{- /* The rollout contract and the disruption budget both reach the API server
+       verbatim, so both are validated as written rather than after a cast. */ -}}
+{{- include "shoal.requireIntOrPercent" (dict "name" "llmGateway.strategy.maxUnavailable" "value" $gateway.strategy.maxUnavailable "kind" "Deployment") -}}
+{{- include "shoal.requireIntOrPercent" (dict "name" "llmGateway.strategy.maxSurge" "value" $gateway.strategy.maxSurge "kind" "Deployment") -}}
+{{- /* Both at zero is a rollout that cannot start: nothing may be taken down
+       and nothing may be added, so the Deployment is accepted and then never
+       progresses. The chart's own default pairs 0 with 1 for exactly that
+       reason — surge first, then replace — and a values file that zeroes the
+       surge to "be careful" produces an upgrade that hangs instead. */ -}}
+{{- if and (include "shoal.isZeroIntOrPercent" $gateway.strategy.maxUnavailable) (include "shoal.isZeroIntOrPercent" $gateway.strategy.maxSurge) -}}
+{{- fail "llmGateway.strategy.maxSurge and maxUnavailable cannot both be 0: nothing may be added and nothing may be taken down, so the Deployment is accepted and then never progresses — every upgrade hangs with no event saying why. Keep maxUnavailable at 0 and maxSurge at 1 or more, which surges a new pod before replacing an old one" -}}
+{{- end -}}
+{{- if $gateway.podDisruptionBudget.enabled -}}
+{{- include "shoal.requireIntOrPercent" (dict "name" "llmGateway.podDisruptionBudget.maxUnavailable" "value" $gateway.podDisruptionBudget.maxUnavailable "kind" "PodDisruptionBudget") -}}
+{{- end -}}
+{{- if and $gateway.podDisruptionBudget.enabled (include "shoal.isZeroIntOrPercent" $gateway.podDisruptionBudget.maxUnavailable) -}}
+{{- fail "llmGateway.podDisruptionBudget.maxUnavailable must not be 0: the gateway is stateless and replaceable, so refusing every voluntary eviction protects nothing and instead makes kubectl drain and cluster-autoscaler consolidation block forever on a pod that could safely have moved. The explorer uses 0 because it is a singleton over one state root; this is not" -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The effects gateways (#391).
+
+       Each entry is checked as it renders: merged over effectsGatewayDefaults
+       by the same helper the templates use. The refusals are the binary's
+       startup refusals moved to render time, plus the deployment rules the
+       binary cannot see — one replica, the grace period, the unrecorded
+       log's volume. A gateway the binary refuses is a pod in CrashLoopBackOff;
+       a gateway with the wrong grace period or an emptyDir log is worse, a pod
+       that works until a rollout or a reschedule strands an effect. */ -}}
+{{- $gatewayNames := dict -}}
+{{- $gatewayIdentities := dict -}}
+{{- $enabledGatewayNames := list -}}
+{{- $fleet := .Values.explorer.fleet -}}
+{{- range $gateway := fromJsonArray (include "shoal.effectsGateways" .) -}}
+{{- $key := printf "effectsGateways[%v]" $gateway._index -}}
+{{- $name := toString (default "" $gateway.name) -}}
+{{- if not (kindIs "bool" $gateway.enabled) -}}
+{{- fail (printf "%s.enabled must be a boolean, true or false (got %v)" $key $gateway.enabled) -}}
+{{- end -}}
+{{- /* Names are checked on every entry, enabled or not, so enabling one
+       later cannot collide with a name already in use. */ -}}
+{{- if not (regexMatch "^[a-z]([-a-z0-9]*[a-z0-9])?$" $name) -}}
+{{- fail (printf "%s.name must be a DNS label — lower-case letters, digits and '-', starting with a letter (got %q): it names the gateway's Deployment, ServiceAccount, ConfigMap, claim and NetworkPolicy" $key $name) -}}
+{{- end -}}
+{{- if gt (len $name) 24 -}}
+{{- fail (printf "%s.name %q is %d characters, over the 24 the stem budget allows: objects are named <stem>-gw-<name> and the claim <stem>-gw-<name>-unrecorded, which must fit Kubernetes' 63" $key $name (len $name)) -}}
+{{- end -}}
+{{- if hasKey $gatewayNames $name -}}
+{{- fail (printf "%s.name %q is also the name of effectsGateways[%v]: two entries with one name render one set of objects, and the second overwrites the first's Deployment, credential and unrecorded log" $key $name (index $gatewayNames $name)) -}}
+{{- end -}}
+{{- $_ := set $gatewayNames $name $gateway._index -}}
+{{- if $gateway.enabled -}}
+{{- $enabledGatewayNames = append $enabledGatewayNames $name -}}
+{{- $dispatch := $gateway.dispatch -}}
+{{- $target := $gateway.target -}}
+{{- $timing := $gateway.timing -}}
+{{- $unrecorded := $gateway.unrecorded -}}
+
+{{- /* At most one replica (#391). Two would share one executor principal,
+       so each could re-claim, and evict from the claim history, what the
+       other holds (#514), over one unrecorded log whose lock refuses the
+       second process. Re-registration semantics for more than one worker
+       per surface are unsettled, so the chart allows one, or zero to stop
+       the gateway (to acknowledge its log, or before a rename). Checked as
+       written: int of 1.5 is 1. */ -}}
+{{- if not (has (toString $gateway.replicas) (list "0" "1")) -}}
+{{- fail (printf "%s.replicas must be 0 or 1 (got %v): the effects gateway runs at most one replica per surface. A second replica would share the executor principal and the unrecorded log, whose lock refuses it — and two workers on one surface can evict each other's claims (#514). To stop the gateway, set replicas: 0 and upgrade; a kubectl scale is reverted by the next helm upgrade" $key $gateway.replicas) -}}
+{{- end -}}
+
+{{- /* One principal, one log, one worker. Two enabled entries that share an
+       executor reference, a descriptor, a ServiceAccount (the subject the
+       executor credential is minted for) or an operator-owned claim are two
+       workers on one principal (#514): each can re-claim and evict what the
+       other holds, and with separate claims the log's lock never sees the
+       second. The ServiceAccount compared is the effective one, so a
+       serviceAccountName that names another entry's chart-created account
+       is caught too. So is the claim: the effective one, the chart-created
+       <stem>-gw-<name>-unrecorded or an existingClaim, under one key, so an
+       existingClaim naming another entry's created claim is refused. */ -}}
+{{- $account := default (include "shoal.effectsGatewayName" (dict "root" $ "gateway" $gateway)) $gateway.serviceAccountName -}}
+{{- $identities := dict "executorRef" (toString $gateway.executorRef) "agentID" (toString $gateway.agentID) "ServiceAccount" $account -}}
+{{- if eq (toString $unrecorded.storage) "existingClaim" -}}
+{{- $_ := set $identities "unrecorded claim" (toString $unrecorded.existingClaim) -}}
+{{- else if eq (toString $unrecorded.storage) "persistentVolumeClaim" -}}
+{{- $_ := set $identities "unrecorded claim" (printf "%s-unrecorded" (include "shoal.effectsGatewayName" (dict "root" $ "gateway" $gateway))) -}}
+{{- end -}}
+{{- range $what, $value := $identities -}}
+{{- $seenKey := printf "%s=%s" $what $value -}}
+{{- if hasKey $gatewayIdentities $seenKey -}}
+{{- fail (printf "%s and effectsGateways[%v] share the %s %q: two enabled entries on one identity are two workers on one executor principal, which can evict each other's claims (#514), and with separate unrecorded logs no lock stops the second. Give each surface its own executor reference, descriptor, ServiceAccount and claim" $key (index $gatewayIdentities $seenKey) $what $value) -}}
+{{- end -}}
+{{- $_ := set $gatewayIdentities $seenKey $gateway._index -}}
+{{- end -}}
+
+{{- range $flag := list "dispatch.allowPlaintext" "target.allowPrivate" "timing.renew" "unrecorded.acceptLossOfUnrecordedReports" "networkPolicy.enabled" -}}
+{{- $parts := splitList "." $flag -}}
+{{- $value := index (index $gateway (first $parts)) (last $parts) -}}
+{{- if not (kindIs "bool" $value) -}}
+{{- fail (printf "%s.%s must be a boolean, true or false (got %v): it is rendered into a flag or a template decision verbatim" $key $flag $value) -}}
+{{- end -}}
+{{- end -}}
+
+{{- range $field := list "image.repository" "image.tag" "agentID" "capability" "surfaceName" "executorRef" "dispatch.url" "target.baseURL" "target.authHeader" -}}
+{{- $parts := splitList "." $field -}}
+{{- $value := index $gateway (first $parts) -}}
+{{- if gt (len $parts) 1 -}}
+{{- $value = index $value (last $parts) -}}
+{{- end -}}
+{{- if not (trim (toString (default "" $value))) -}}
+{{- fail (printf "%s.%s is required: see effectsGatewayDefaults in values.yaml and docs/effects-gateway-deploy.md" $key $field) -}}
+{{- end -}}
+{{- if ne (toString $value) (trim (toString $value)) -}}
+{{- fail (printf "%s.%s must not have leading or trailing whitespace (got %q): it is rendered as written, and the binary compares it byte for byte" $key $field (toString $value)) -}}
+{{- end -}}
+{{- end -}}
+{{- include "shoal.requireShape" (dict "name" (printf "%s.image.pullPolicy" $key) "value" $gateway.image.pullPolicy "what" "one of Always, IfNotPresent or Never" "pattern" `^(Always|IfNotPresent|Never)$` "why" "the API server accepts no other value") -}}
+
+{{- /* The descriptor identity, held to the binary's rules. */ -}}
+{{- $agentID := toString $gateway.agentID -}}
+{{- if or (not (regexMatch "^[A-Za-z0-9_-]+$" $agentID)) (eq (mod (len $agentID) 4) 1) -}}
+{{- fail (printf "%s.agentID must be unpadded base64url (got %q): it is the encoded descriptor ID, not a display name, and the binary refuses anything else at startup" $key $agentID) -}}
+{{- end -}}
+{{- range $field := list "capability" "surfaceName" -}}
+{{- if gt (len (toString (index $gateway $field))) 128 -}}
+{{- fail (printf "%s.%s must be at most 128 bytes, the fleet name limit" $key $field) -}}
+{{- end -}}
+{{- end -}}
+{{- /* executorref.ValidExecutorRef. */ -}}
+{{- $executorRef := toString $gateway.executorRef -}}
+{{- if or (gt (len $executorRef) 1024) (not (regexMatch "^[A-Za-z0-9][A-Za-z0-9._:/@-]*$" $executorRef)) -}}
+{{- fail (printf "%s.executorRef must match ^[A-Za-z0-9][A-Za-z0-9._:/@-]*$ and be at most 1024 bytes (got %q): executorref.ValidExecutorRef, which the binary, the fleet and the explorer all apply" $key $executorRef) -}}
+{{- end -}}
+
+{{- /* The dispatch hop. */ -}}
+{{- $dispatchURL := toString $dispatch.url -}}
+{{- if not (include "shoal.urlIsAbsolute" $dispatchURL) -}}
+{{- fail (printf "%s.dispatch.url must be an absolute http:// or https:// URL with a host (got %q)" $key $dispatchURL) -}}
+{{- end -}}
+{{- if and (include "shoal.urlIsPlaintext" $dispatchURL) (not (include "shoal.urlIsLoopback" $dispatchURL)) (not $dispatch.allowPlaintext) -}}
+{{- fail (printf "%s.dispatch.url %q is plaintext to a remote explorer: the executor token, every action's input and every completion cross the network in the clear. Use https://, or set dispatch.allowPlaintext: true where a mesh authenticates the hop" $key $dispatchURL) -}}
+{{- end -}}
+{{- if eq $dispatch.tokenSource "projected" -}}
+{{- if not (trim (toString (default "" $dispatch.tokenAudience))) -}}
+{{- fail (printf "%s.dispatch.tokenAudience is required with tokenSource: projected: a token with no audience is issued for the cluster's API server, and the explorer's executor branch accepts only its mapping's audience, so every pull would be a 401" $key) -}}
+{{- end -}}
+{{- $expiry := include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.dispatch.tokenExpirationSeconds" $key) "value" $dispatch.tokenExpirationSeconds) -}}
+{{- if or (not $expiry) (lt (int64 $expiry) 600) -}}
+{{- fail (printf "%s.dispatch.tokenExpirationSeconds must be at least 600 (got %v), the API server's floor for a token projection: below it the pod spec is invalid and no pod is created" $key $dispatch.tokenExpirationSeconds) -}}
+{{- end -}}
+{{- if $dispatch.credentialSecretName -}}
+{{- fail (printf "%s.dispatch.credentialSecretName (%q) is set with tokenSource: projected, which reads no Secret: the credential presented would be the projected token, not this one. Clear it, or use tokenSource: secret" $key (toString $dispatch.credentialSecretName)) -}}
+{{- end -}}
+{{- else if eq $dispatch.tokenSource "secret" -}}
+{{- if or (not $dispatch.credentialSecretName) (not $dispatch.credentialSecretKey) -}}
+{{- fail (printf "%s.dispatch.credentialSecretName and credentialSecretKey are required with tokenSource: secret: they are the volume the token file is mounted from" $key) -}}
+{{- end -}}
+{{- else -}}
+{{- fail (printf "%s.dispatch.tokenSource must be projected or secret (got %q)" $key (toString $dispatch.tokenSource)) -}}
+{{- end -}}
+
+{{- /* The target hop: no plaintext opt-out, as in the binary. */ -}}
+{{- $targetURL := toString $target.baseURL -}}
+{{- $parsedTarget := urlParse $targetURL -}}
+{{- $loopbackTarget := include "shoal.urlIsLoopback" $targetURL -}}
+{{- if not (include "shoal.urlIsAbsolute" $targetURL) -}}
+{{- fail (printf "%s.target.baseURL must be an absolute https:// URL with a host, or http:// to loopback (got %q)" $key $targetURL) -}}
+{{- end -}}
+{{- if and (include "shoal.urlIsPlaintext" $targetURL) (not $loopbackTarget) -}}
+{{- fail (printf "%s.target.baseURL %q is plaintext to a remote surface: the request carries the target credential. There is no opt-out; use https://, or a loopback sidecar" $key $targetURL) -}}
+{{- end -}}
+{{- if or $parsedTarget.userinfo $parsedTarget.query $parsedTarget.fragment (contains "?" $targetURL) (contains "#" $targetURL) -}}
+{{- fail (printf "%s.target.baseURL must carry no userinfo, query or fragment (got %q): the credential comes from target.credentialSecretName, and the binary refuses the rest" $key $targetURL) -}}
+{{- end -}}
+{{- if and $loopbackTarget (not $target.allowPrivate) -}}
+{{- fail (printf "%s.target.baseURL %q addresses loopback, which the gateway's dialer refuses unless target.allowPrivate is true" $key $targetURL) -}}
+{{- end -}}
+{{- $clientCertificate := default (dict) $target.clientCertificate -}}
+{{- if not (kindIs "map" $clientCertificate) -}}
+{{- fail (printf "%s.target.clientCertificate must be a map holding secretName" $key) -}}
+{{- end -}}
+{{- if and (not $loopbackTarget) (not $target.credentialSecretName) (not $clientCertificate.secretName) -}}
+{{- fail (printf "%s.target.credentialSecretName is required for a remote target (%q): the binary accepts no credential only for loopback, or with a client certificate (target.clientCertificate.secretName)" $key $targetURL) -}}
+{{- end -}}
+{{- /* -target-ca-file and the client certificate are TLS settings: the
+       binary refuses them for a plaintext target (#662). */ -}}
+{{- if and (or $target.caSecretName $clientCertificate.secretName) (ne (toString $parsedTarget.scheme) "https") -}}
+{{- fail (printf "%s.target.caSecretName and target.clientCertificate need an https target.baseURL (got %q): a plaintext target has no TLS handshake, and the binary refuses them" $key $targetURL) -}}
+{{- end -}}
+{{- if and $target.caSecretName (not $target.caSecretKey) -}}
+{{- fail (printf "%s.target.caSecretKey is required when target.caSecretName is set" $key) -}}
+{{- end -}}
+{{- if and $target.credentialSecretName (not $target.credentialSecretKey) -}}
+{{- fail (printf "%s.target.credentialSecretKey is required when a target Secret is named" $key) -}}
+{{- end -}}
+{{- $attestation := $gateway.attestation -}}
+{{- if and $attestation.secretName (or (not $attestation.statementKey) (not $attestation.keyKey)) -}}
+{{- fail (printf "%s.attestation.statementKey and keyKey are required when attestation.secretName is set" $key) -}}
+{{- end -}}
+
+{{- /* The route table: a list, rendered with toJson. The binary decodes it
+       strictly; the chart checks only what decides other flags. */ -}}
+{{- if or (not (kindIs "slice" $gateway.routes)) (not $gateway.routes) -}}
+{{- fail (printf "%s.routes needs at least one route: an action with no route is never performed, and the binary refuses an empty table" $key) -}}
+{{- end -}}
+{{- range $index, $route := $gateway.routes -}}
+{{- if not (kindIs "map" $route) -}}
+{{- fail (printf "%s.routes[%d] must be a route object" $key $index) -}}
+{{- end -}}
+{{- /* Effects are derived from the target (DerivedEffects): {external} for
+       loopback, {external, egresses-content} otherwise, and the binary
+       refuses a route declaring anything else, in either direction. */ -}}
+{{- $derived := ternary (list "external") (list "egresses-content" "external") (eq $loopbackTarget "true") -}}
+{{- $declared := list -}}
+{{- range (ternary (get $route "effects") (list) (kindIs "slice" (get $route "effects"))) -}}
+{{- $declared = append $declared (toString .) -}}
+{{- end -}}
+{{- if ne (toJson (sortAlpha (uniq $declared))) (toJson $derived) -}}
+{{- fail (printf "%s.routes[%d] effects %s do not match the derived %s: a route's effects are a property of where the request goes (%s), and the binary refuses a different set in either direction" $key $index (toJson $declared) (toJson $derived) (ternary "a loopback target" "a remote target" (eq $loopbackTarget "true"))) -}}
+{{- end -}}
+{{- end -}}
+{{- $requiresKey := include "shoal.effectsGatewayRequiresKey" $gateway -}}
+{{- if and $requiresKey (not $target.idempotencyHeader) -}}
+{{- fail (printf "%s.target.idempotencyHeader is required: a route uses idempotency \"key\", which sends the action's ExecutorKey in it" $key) -}}
+{{- end -}}
+{{- if and (not $requiresKey) (or $target.idempotencyHeader $target.idempotencyRetention) -}}
+{{- fail (printf "%s.target.idempotencyHeader and idempotencyRetention are refused when no route uses idempotency \"key\": the binary refuses them at startup" $key) -}}
+{{- end -}}
+{{- if and $target.idempotencyHeader (eq (lower (toString $target.idempotencyHeader)) (lower (toString $target.authHeader))) -}}
+{{- fail (printf "%s.target.idempotencyHeader must differ from target.authHeader" $key) -}}
+{{- end -}}
+
+{{- /* The lease arithmetic (docs/effects-gateway-deploy.md, Lease
+       arithmetic). Each is a startup refusal in the binary. */ -}}
+{{- $lease := int64 (include "shoal.durationMillis" (dict "name" (printf "%s.timing.claimLease" $key) "value" $timing.claimLease)) -}}
+{{- $operation := int64 (include "shoal.durationMillis" (dict "name" (printf "%s.timing.operationTimeout" $key) "value" $timing.operationTimeout)) -}}
+{{- $plane := int64 (include "shoal.durationMillis" (dict "name" (printf "%s.timing.planeTimeout" $key) "value" $timing.planeTimeout)) -}}
+{{- $_ := include "shoal.durationMillis" (dict "name" (printf "%s.pullInterval" $key) "value" $gateway.pullInterval) -}}
+{{- if or (le $lease 0) (gt $lease 300000) -}}
+{{- fail (printf "%s.timing.claimLease must be positive and at most 5m, MaxActionClaimTTL (got %q): the explorer refuses a longer claim rather than shortening it" $key (toString $timing.claimLease)) -}}
+{{- end -}}
+{{- if or (le $operation 0) (le $plane 0) -}}
+{{- fail (printf "%s.timing.operationTimeout and planeTimeout must be positive" $key) -}}
+{{- end -}}
+{{- if gt (mul $plane 4) $lease -}}
+{{- fail (printf "%s.timing.planeTimeout (%q) must be at most a quarter of timing.claimLease (%q), so one failed extension can be retried before L/2 is overdue" $key (toString $timing.planeTimeout) (toString $timing.claimLease)) -}}
+{{- end -}}
+{{- if and (not $timing.renew) (le $lease (add $operation 5000 $plane)) -}}
+{{- fail (printf "%s.timing.claimLease (%q) must exceed operationTimeout + 5s + planeTimeout without timing.renew: the lease bounds the claim, the request and the report together. Shorten the timeout, or set timing.renew: true" $key (toString $timing.claimLease)) -}}
+{{- end -}}
+{{- if $requiresKey -}}
+{{- $retention := int64 (include "shoal.durationMillis" (dict "name" (printf "%s.target.idempotencyRetention" $key) "value" (default "" $target.idempotencyRetention))) -}}
+{{- if le $retention (add $operation 5000) -}}
+{{- fail (printf "%s.target.idempotencyRetention (%q) must exceed timing.operationTimeout + 5s: an action whose deadline outlives the target's deduplication window cannot be performed under the key's guarantee, so nothing would ever be claimable" $key (toString $target.idempotencyRetention)) -}}
+{{- end -}}
+{{- end -}}
+{{- /* healthPort starts at 1024, not 1 (#423): the pod runs as uid 65532 with
+       all capabilities dropped, so it may be unable to bind on runtimes that
+       restrict ports below 1024. The floor is a policy, as for the other
+       pods, not a hard limit. */ -}}
+{{- range $bound := list (list "maxInFlight" 1 64) (list "pullLimit" 1 256) (list "maxResponseBytes" 1 1048576) (list "healthPort" 1024 65535) -}}
+{{- $field := index $bound 0 -}}
+{{- $value := include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.%s" $key $field) "value" (index $gateway $field)) -}}
+{{- if or (not $value) (lt (int64 $value) (int64 (index $bound 1))) (gt (int64 $value) (int64 (index $bound 2))) -}}
+{{- fail (printf "%s.%s must be %v to %v (got %v)" $key $field (index $bound 1) (index $bound 2) (index $gateway $field)) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The grace period is computed (shoal.effectsGatewayGraceSeconds), and an
+       operator's value may only raise it. Below the formula, the kubelet
+       SIGKILLs a draining worker that has performed an effect and not yet
+       reported it. */ -}}
+{{- $graceMinimum := int64 (include "shoal.effectsGatewayGraceSeconds" (dict "name" $key "operationTimeout" $timing.operationTimeout "planeTimeout" $timing.planeTimeout)) -}}
+{{- $graceOverride := include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.terminationGracePeriodSeconds" $key) "value" $gateway.terminationGracePeriodSeconds) -}}
+{{- if and $graceOverride (lt (int64 $graceOverride) $graceMinimum) -}}
+{{- fail (printf "%s.terminationGracePeriodSeconds (%v) is below %d, what `shoal-gateway grace-period -operation-timeout %v -plane-timeout %v` requires: the drain covers the request in flight, its completion and two fallback reports, and a SIGKILL inside that strands an effect that happened. Leave it empty and the chart sets the minimum" $key $graceOverride $graceMinimum $timing.operationTimeout $timing.planeTimeout) -}}
+{{- end -}}
+
+{{- /* The unrecorded log's volume. */ -}}
+{{- if eq $unrecorded.storage "persistentVolumeClaim" -}}
+{{- include "shoal.requireShape" (dict "name" (printf "%s.unrecorded.size" $key) "value" $unrecorded.size "what" "a Kubernetes quantity such as 64Mi" "pattern" `^([0-9]+(\.[0-9]*)?|\.[0-9]+)(Ki|Mi|Gi|Ti|Pi|Ei|[kMGTPE])?$` "why" "it is the claim's storage request") -}}
+{{- if not $unrecorded.size -}}
+{{- fail (printf "%s.unrecorded.size is required with storage: persistentVolumeClaim" $key) -}}
+{{- end -}}
+{{- else if eq $unrecorded.storage "existingClaim" -}}
+{{- if not $unrecorded.existingClaim -}}
+{{- fail (printf "%s.unrecorded.existingClaim is required with storage: existingClaim" $key) -}}
+{{- end -}}
+{{- else if eq $unrecorded.storage "emptyDir" -}}
+{{- if not $unrecorded.acceptLossOfUnrecordedReports -}}
+{{- fail (printf "%s.unrecorded.storage is emptyDir, which deletes the unrecorded log with the pod: the log holds the only record of effects the explorer refused, did not find or could not confirm (#514), so a reschedule loses them silently. Use persistentVolumeClaim (the default) or existingClaim, or set unrecorded.acceptLossOfUnrecordedReports: true to accept the loss" $key) -}}
+{{- end -}}
+{{- else -}}
+{{- fail (printf "%s.unrecorded.storage must be persistentVolumeClaim, existingClaim or emptyDir (got %q)" $key (toString $unrecorded.storage)) -}}
+{{- end -}}
+
+{{- /* The NetworkPolicy matches addresses; a remote target needs its CIDRs,
+       or the policy refuses every request to it. */ -}}
+{{- if and $gateway.networkPolicy.enabled (not $loopbackTarget) (not $gateway.networkPolicy.targetCIDRs) (not (include "shoal.effectsSshForGateway" (dict "root" $ "gateway" $gateway))) -}}
+{{- fail (printf "%s.networkPolicy.targetCIDRs is required with networkPolicy.enabled and a remote target: a NetworkPolicy matches addresses, not names, so with none listed every request to %q is dropped" $key $targetURL) -}}
+{{- end -}}
+
+{{- /* With the explorer in this release, its configuration must admit the
+       gateway: the reference in the external list its derived effects need
+       ({external} for loopback, {external, egresses-content} otherwise).
+       Anywhere else the descriptor cannot register and the gateway refuses
+       its start. */ -}}
+{{- if eq (include "shoal.explorerEnabled" $) "true" -}}
+{{- $list := ternary "externalExecutorRefs" "externalEgressExecutorRefs" (eq $loopbackTarget "true") -}}
+{{- if not (has $executorRef (default (list) (index $fleet $list))) -}}
+{{- fail (printf "%s.executorRef %q is not in explorer.fleet.%s: a %s target's derived effects are %s, and the explorer binds that ceiling only to references in that list, so the gateway's descriptor cannot register" $key $executorRef $list (ternary "loopback" "remote" (eq $loopbackTarget "true")) (ternary "{external}" "{external, egresses-content}" (eq $loopbackTarget "true"))) -}}
+{{- end -}}
+{{- /* And the credential must be one the explorer mints for this reference:
+       a projected token on the mapping's audience, whose subject — the
+       pod's ServiceAccount in this namespace — the mapping binds to this
+       entry's executorRef. Either mismatch is a gateway that passes its
+       probes and gets 401 or not_found on every pull. A Secret-sourced
+       token is opaque to the chart and is not checked. */ -}}
+{{- if eq (toString $dispatch.tokenSource) "projected" -}}
+{{- $mapping := default (dict) $.Values.explorer.auth.oidc.executorMapping -}}
+{{- if not $mapping -}}
+{{- fail (printf "%s needs explorer.auth.oidc.executorMapping: the explorer in this release grants execute only through the executor mapping, so without one the gateway's token is refused on every pull" $key) -}}
+{{- end -}}
+{{- if ne (toString $dispatch.tokenAudience) (toString (get $mapping "audience")) -}}
+{{- fail (printf "%s.dispatch.tokenAudience %q is not the executor mapping's audience %q: the explorer accepts an executor token only on that audience, so every pull would be a 401" $key (toString $dispatch.tokenAudience) (toString (get $mapping "audience"))) -}}
+{{- end -}}
+{{- $subject := printf "system:serviceaccount:%s:%s" $.Release.Namespace $account -}}
+{{- $mappedRef := "" -}}
+{{- range $executor := (default (list) (get $mapping "executors")) -}}
+{{- if and (kindIs "map" $executor) (eq (toString (get $executor "subject")) $subject) -}}
+{{- $mappedRef = toString (get $executor "executor_ref") -}}
+{{- end -}}
+{{- end -}}
+{{- if ne $mappedRef $executorRef -}}
+{{- fail (printf "%s: the executor mapping %s, but this gateway's executorRef is %q: the explorer mints the projected token for the reference its subject maps to, so every pull and claim would answer not_found. Map %q to %q in explorer.auth.oidc.executorMapping.executors" $key (ternary (printf "does not name the gateway's subject %q" $subject) (printf "maps %q to %q" $subject $mappedRef) (eq $mappedRef "")) $executorRef $subject $executorRef) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* No value may carry a line break (#468).
+
+       Most of the storage tier's values are rendered as bare YAML scalars —
+       image.pullPolicy, writeTier.storageSize, writeTier.dataDir, every Secret
+       name, the accumulo group and timeout arguments — and so, before this,
+       were several of the explorer's. A newline in any of them ended the scalar
+       and the remainder became YAML of the operator's choosing:
+       explorer.service.type "ClusterIP<newline>  externalIPs: [6.6.6.6]" gave
+       the Service an external IP, and writeTier.storageSize could name the
+       volume's storage class.
+
+       The templates the storage profiles render are not quoted to fix it,
+       because those profiles must render byte-identically to the release
+       before (validate-chart.sh holds that). Refusing at render closes the
+       injection without changing a byte of a valid manifest, and it is needed
+       even where a value is quoted: a quoted value with a line break in it
+       names no Secret, path or flag value that exists, and the pod starts on
+       it anyway. The explorer's own templates are not in those profiles, so
+       their scalars are quoted as well.
+
+       So the whole of .Values is walked rather than a list of keys, and a key
+       added later is covered without anyone remembering to add it here.
+       Excluded, each for a stated reason:
+
+         global      a parent chart's values, passed to every subchart; this
+                     chart renders none of it.
+         llmProxy    the gateway's old key, refused above when it carries
+                     anything and never rendered.
+
+       Every map key is checked as well as every value. Keys reach the
+       manifests through toYaml (nodeSelector, tolerations, affinity,
+       resources, annotations, the operator volumes), and toYaml does not make
+       a key with a line break safe: nindent indents the block it emits line
+       by line, and a key "k<newline>hostNetwork: true" put that field in the
+       pod spec.
+
+       A few values may span lines, and keep LF, CRLF and tab only:
+
+         objectStorage.gcsKeyJson
+                     a key file, the body of a `|` block through indent 4.
+         *.service.annotations, llmGateway.admission.tokenVolume,
+         llmGateway.upstream.apiKeyVolume
+                     rendered through toYaml, which emits a value holding LF
+                     as a `|-` block, and legitimately multi-line: an
+                     annotation can hold a JSON document, and a CSI volume's
+                     attributes are the driver's.
+
+       For everything toYaml emits, then, the refusal is load-bearing rather
+       than defence in depth: quoting protects a value interpolated into one
+       scalar, but toYaml's output has nothing to quote — the block it emits
+       is the structure — so refusing the characters is the only defence.
+       toYaml does not quote its way out of the rest. It writes U+2028 and
+       U+2029 raw inside that block, YAML reads them as line breaks, and
+       nindent does not indent after them, so annotation
+       "v<LF>w<U+2028>namespace: kube-system" moved the Service into
+       kube-system. A lone CR and NEL are refused for the same reason.
+
+       The gateway's values the templates trim are checked trimmed, as the
+       gateway's own guard above checks them, so a trailing newline from
+       --set-file is not refused there. Everywhere else a value is used as
+       written, and a leading line break is the injection, so nothing is
+       trimmed.
+
+       It runs after the explorer's and the gateway's own guards, so a value
+       those name more precisely is refused in their words. */ -}}
+{{- $lineBreakMultiline := list "objectStorage.gcsKeyJson" "explorer.service.annotations" "llmGateway.service.annotations" "llmGateway.admission.tokenVolume" "llmGateway.upstream.apiKeyVolume" -}}
+{{- $lineBreakTrimmed := list "llmGateway.admission" "llmGateway.upstream" "llmGateway.identity" "llmGateway.serviceAccountName" "llmGateway.allowedHosts" "llmGateway.models" -}}
+{{- range $key, $value := .Values -}}
+{{- if not (has $key (list "global" "llmProxy")) -}}
+{{- include "shoal.refuseLineBreaks" (dict "path" $key "value" $value "multiline" $lineBreakMultiline "trimmed" $lineBreakTrimmed) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Bind ports for the storage-tier pods (#423). Every one of them runs as uid
+       65532 with all capabilities dropped, as the explorer and the gateways
+       do, so it may be unable to bind on runtimes that restrict ports below
+       1024 and would then restart forever. The floor is a policy (see the
+       llmGateway note above), applied the same way here. Only the ports a container binds are checked: a Service port
+       is the cluster's to choose. The read fleet binds readFleet.listen, not
+       readFleet.servicePort (which only names the container port), so its
+       listen address is the one checked. */ -}}
+{{- range $role, $fields := dict "writeTier" (list "grpcPort" "metricsPort") "tserver" (list "thriftPort" "metricsPort") "compactor" (list "thriftPort" "metricsPort") "readFleet" (list "metricsPort") -}}
+{{- if eq (include (printf "shoal.%sEnabled" $role) $) "true" -}}
+{{- range $field := $fields -}}
+{{- $port := int (index (index $.Values $role) $field) -}}
+{{- if lt $port 1024 -}}
+{{- fail (printf "%s.%s must be 1024 or above (got %d): the container runs as uid 65532 and drops all capabilities, so it may be unable to bind on runtimes that restrict ports below 1024, and the pod then restarts forever. Use a port of 1024 or above" $role $field $port) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- if eq (include "shoal.readFleetEnabled" .) "true" -}}
+{{- $readListen := trim (toString (default "" .Values.readFleet.listen)) -}}
+{{- $readListenPort := regexFind "[0-9]+$" (regexFind ":[0-9]+$" $readListen) -}}
+{{- if and $readListenPort (lt (int $readListenPort) 1024) -}}
+{{- fail (printf "readFleet.listen must bind a port of 1024 or above (got %q): the container runs as uid 65532 and drops all capabilities, so it may be unable to bind on runtimes that restrict ports below 1024, and the pod then restarts forever. Use a port of 1024 or above" $readListen) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* Shapes, for the unquoted values that have one.
+
+       Refusing line breaks closes the injection; these close what is left of
+       it in the templates that cannot be quoted. A bare scalar is also cut
+       short by " #", turned into a map by ": ", and — inside the accumulo
+       templates' flow mappings — ended by a comma or a brace, with no line
+       break at all. A quantity, a duration, a Secret name and an enumerated
+       field each have a textual form that contains none of those, and each is
+       a form the API server or the binary already insists on, so holding the
+       value to it refuses nothing that could have worked.
+
+       Checked only for the components that render the value, so a disabled
+       component's leftover settings do not stop an install. */ -}}
+{{- $quantity := dict "what" "a Kubernetes quantity such as 50Gi, 500Mi or 1T" "pattern" `^[+-]?([0-9]+(\.[0-9]*)?|\.[0-9]+)(Ki|Mi|Gi|Ti|Pi|Ei|[numkMGTPE]|[eE][+-]?[0-9]+)?$` "why" "it is a volume claim's storage request, rendered unquoted, and the API server refuses anything else — so it was either rejected at install or, holding YAML syntax, became fields of its own in the claim" -}}
+{{- $duration := dict "what" "a Go duration such as 30s, 1m30s or 500ms" "pattern" `^[-+]?(0|(([0-9]+(\.[0-9]*)?|\.[0-9]+)(ns|us|µs|μs|ms|s|m|h))+)$` "why" "it reaches the process as a duration flag, which refuses anything else at startup, so rendering it produced a pod that exits with a flag error" -}}
+{{- $secretName := dict "what" "a Secret name: lower-case letters, digits, '-' and '.', starting and ending with a letter or digit" "pattern" `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$` "why" "Kubernetes accepts no other Secret name, so nothing can be found under it, and it is rendered unquoted — in the accumulo templates inside a flow mapping, where a comma ends it and the remainder becomes another field of the reference" -}}
+{{- $pullPolicy := dict "what" "one of Always, IfNotPresent or Never" "pattern" `^(Always|IfNotPresent|Never)$` "why" "it is rendered unquoted into imagePullPolicy, and the API server accepts no other value" -}}
+{{- $checks := list -}}
+{{- $writeTierOn := eq (include "shoal.writeTierEnabled" .) "true" -}}
+{{- $readFleetOn := eq (include "shoal.readFleetEnabled" .) "true" -}}
+{{- $tserverOn := eq (include "shoal.tserverEnabled" .) "true" -}}
+{{- $compactorOn := eq (include "shoal.compactorEnabled" .) "true" -}}
+{{- $explorerOn := eq (include "shoal.explorerEnabled" .) "true" -}}
+{{- if or $writeTierOn $readFleetOn $tserverOn -}}
+{{- $checks = append $checks (merge (dict "name" "image.pullPolicy" "value" .Values.image.pullPolicy) $pullPolicy) -}}
+{{- end -}}
+{{- if or .Values.objectStorage.createSecret $writeTierOn $readFleetOn -}}
+{{- $checks = append $checks (merge (dict "name" "objectStorage.credentialsSecretName" "value" .Values.objectStorage.credentialsSecretName) $secretName) -}}
+{{- end -}}
+{{- if $writeTierOn -}}
+{{- $checks = append $checks (merge (dict "name" "writeTier.storageSize" "value" .Values.writeTier.storageSize) $quantity) -}}
+{{- $checks = append $checks (merge (dict "name" "writeTier.quiesceDelay" "value" .Values.writeTier.quiesceDelay) $duration) -}}
+{{- if .Values.writeTier.tls.enabled -}}
+{{- $checks = append $checks (merge (dict "name" "writeTier.tls.secretName" "value" .Values.writeTier.tls.secretName) $secretName) -}}
+{{- end -}}
+{{- end -}}
+{{- if $readFleetOn -}}
+{{- range $field := list "readinessInterval" "quiesceDelay" "drainTimeout" -}}
+{{- $checks = append $checks (merge (dict "name" (printf "readFleet.%s" $field) "value" (index $.Values.readFleet $field)) $duration) -}}
+{{- end -}}
+{{- if .Values.readFleet.tls.enabled -}}
+{{- $checks = append $checks (merge (dict "name" "readFleet.tls.secretName" "value" .Values.readFleet.tls.secretName) $secretName) -}}
+{{- end -}}
+{{- end -}}
+{{- if $tserverOn -}}
+{{- $checks = append $checks (merge (dict "name" "tserver.walStorageSize" "value" .Values.tserver.walStorageSize) $quantity) -}}
+{{- $checks = append $checks (merge (dict "name" "tserver.drainTimeout" "value" .Values.tserver.drainTimeout) $duration) -}}
+{{- $checks = append $checks (merge (dict "name" "tserver.credentialsSecretName" "value" .Values.tserver.credentialsSecretName) $secretName) -}}
+{{- if .Values.tserver.tls.enabled -}}
+{{- $checks = append $checks (merge (dict "name" "tserver.tls.secretName" "value" .Values.tserver.tls.secretName) $secretName) -}}
+{{- end -}}
+{{- end -}}
+{{- if $compactorOn -}}
+{{- $checks = append $checks (merge (dict "name" "compactor.stateStorageSize" "value" .Values.compactor.stateStorageSize) $quantity) -}}
+{{- $checks = append $checks (merge (dict "name" "compactor.shutdownTimeout" "value" .Values.compactor.shutdownTimeout) $duration) -}}
+{{- $checks = append $checks (merge (dict "name" "compactor.credentialsSecretName" "value" .Values.compactor.credentialsSecretName) $secretName) -}}
+{{- if .Values.compactor.tls.enabled -}}
+{{- $checks = append $checks (merge (dict "name" "compactor.tls.secretName" "value" .Values.compactor.tls.secretName) $secretName) -}}
+{{- end -}}
+{{- end -}}
+{{- if $explorerOn -}}
+{{- $explorer := .Values.explorer -}}
+{{- $checks = append $checks (merge (dict "name" "explorer.storageSize" "value" $explorer.storageSize) $quantity) -}}
+{{- $checks = append $checks (merge (dict "name" "explorer.image.pullPolicy" "value" $explorer.image.pullPolicy) $pullPolicy) -}}
+{{- $checks = append $checks (dict "name" "explorer.service.type" "value" $explorer.service.type "what" "one of ClusterIP, NodePort, LoadBalancer or ExternalName" "pattern" `^(ClusterIP|NodePort|LoadBalancer|ExternalName)$` "why" "the API server accepts no other Service type") -}}
+{{- $checks = append $checks (merge (dict "name" "explorer.auth.oidc.clockSkew" "value" $explorer.auth.oidc.clockSkew) $duration) -}}
+{{- if gt (int $explorer.disclosure.mosaic.maxDomains) 0 -}}
+{{- $checks = append $checks (merge (dict "name" "explorer.disclosure.mosaic.window" "value" $explorer.disclosure.mosaic.window) $duration) -}}
+{{- end -}}
+{{- range $setting := list "chat" "embedding" -}}
+{{- $checks = append $checks (merge (dict "name" (printf "explorer.%s.credentialSecretName" $setting) "value" (index $explorer $setting).credentialSecretName) $secretName) -}}
+{{- end -}}
+{{- end -}}
+{{- range $check := $checks -}}
+{{- include "shoal.requireShape" $check -}}
+{{- end -}}
+
+{{- /* A live gateway the values no longer name (#391).
+
+       An entry's name is its identity: it names the Deployment and the
+       unrecorded log's claim. Renaming or deleting a running entry makes
+       Helm delete the old Deployment while it creates the new one, so the
+       old pod drains while the new pod claims on the same executor
+       reference — two workers on one principal (#514) — and the old log is
+       left behind on a claim nothing mounts. So a Deployment of this
+       release's effects gateways (selected by component and instance) that
+       no enabled entry names, and that still has replicas, is refused. Set
+       its replicas to 0 and upgrade first; then rename or remove it.
+
+       lookup asks the API server. Under `helm template`, `helm install
+       --dry-run` (client) and `helm lint` it returns nothing, so this guard
+       is silent there and fires only on a real install or upgrade (or
+       --dry-run=server). */ -}}
+{{- $liveDeployments := lookup "apps/v1" "Deployment" .Release.Namespace "" -}}
+{{- range $live := (default (list) (get (default (dict) $liveDeployments) "items")) -}}
+{{- $labels := default (dict) $live.metadata.labels -}}
+{{- $podLabels := default (dict) (dig "spec" "selector" "matchLabels" (dict) $live) -}}
+{{- if and (eq (toString (get $podLabels "app.kubernetes.io/component")) "effects-gateway") (eq (toString (get $podLabels "app.kubernetes.io/instance")) $.Release.Name) -}}
+{{- $liveName := toString (get $podLabels "shoal.effects-gateway/name") -}}
+{{- $running := or (gt (int64 (default 0 $live.spec.replicas)) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
+{{- if and $running (not (has $liveName $enabledGatewayNames)) -}}
+{{- fail (printf "the effects gateway Deployment %s (entry %q) is running, and no enabled entry in effectsGateways names it any more: an entry's name is its identity, so renaming or removing a running entry overlaps the old pod's drain with the new pod's claims on one executor reference (#514) and orphans its unrecorded log. Set that entry's replicas: 0 and upgrade, acknowledge or migrate its log (docs/effects-gateway-deploy.md, Renaming an entry), and only then rename or remove it" $live.metadata.name $liveName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* effects-ssh (#450, #662). Each enabled entry's plan
+       (shoal.effectsSshPlan) is its per-entry check; here are the rules
+       across entries and against the cluster. */ -}}
+{{- $effectsSsh := default (list) .Values.effectsSsh -}}
+{{- if not (kindIs "slice" $effectsSsh) -}}
+{{- fail "effectsSsh must be a list of entries, one per effects gateway it serves (see docs/effects-ssh.md, In the chart)" -}}
+{{- end -}}
+{{- range $index, $entry := $effectsSsh -}}
+{{- if not (kindIs "map" $entry) -}}
+{{- fail (printf "effectsSsh[%d] must be a map holding one entry's settings (got %v)" $index $entry) -}}
+{{- end -}}
+{{- end -}}
+{{- $sshNames := dict -}}
+{{- $sshGateways := dict -}}
+{{- $sshClaims := dict -}}
+{{- $sshEntries := fromJsonArray (include "shoal.effectsSsh" .) -}}
+{{- $sshServing := list -}}
+{{- range $ssh := $sshEntries -}}
+{{- $key := printf "effectsSsh[%v]" $ssh._index -}}
+{{- $name := toString (default "" $ssh.name) -}}
+{{- if not (kindIs "bool" $ssh.enabled) -}}
+{{- fail (printf "%s.enabled must be a boolean, true or false (got %v)" $key $ssh.enabled) -}}
+{{- end -}}
+{{- if not (regexMatch "^[a-z]([-a-z0-9]*[a-z0-9])?$" $name) -}}
+{{- fail (printf "%s.name must be a DNS label — lower-case letters, digits and '-', starting with a letter (got %q): it names the Deployment, Service, claim and NetworkPolicy" $key $name) -}}
+{{- end -}}
+{{- if gt (len $name) 24 -}}
+{{- fail (printf "%s.name %q is %d characters, over the 24 the stem budget allows" $key $name (len $name)) -}}
+{{- end -}}
+{{- if hasKey $sshNames $name -}}
+{{- fail (printf "%s.name %q is also the name of effectsSsh[%v]: two entries with one name render one set of objects over one journal" $key $name (index $sshNames $name)) -}}
+{{- end -}}
+{{- /* An entry's objects are named <stem>-ssh-<name> plus a suffix, so a
+       name ending in one of those suffixes is another entry's object name:
+       "web-init" would collide with "web"'s init NetworkPolicy and replace
+       one of the two, leaving a pod that holds SSH keys under no policy. */ -}}
+{{- if regexMatch `-(init|journal|commands)$|-init-[0-9a-f]{4,12}$` $name -}}
+{{- fail (printf "%s.name %q ends in a suffix the chart appends to another entry's objects (-init, -init-<digest>, -journal, -commands), so its objects could collide with that entry's" $key $name) -}}
+{{- end -}}
+{{- $_ := set $sshNames $name $ssh._index -}}
+{{- if $ssh.enabled -}}
+{{- $gatewayName := toString $ssh.gateway -}}
+{{- if hasKey $sshGateways $gatewayName -}}
+{{- fail (printf "%s and effectsSsh[%v] both serve effects gateway %q: a gateway has one target, so the second would never be called, or would take over the first one's keys under a journal that has never seen them" $key (index $sshGateways $gatewayName) $gatewayName) -}}
+{{- end -}}
+{{- $_ := set $sshGateways $gatewayName $ssh._index -}}
+{{- $plan := fromJson (include "shoal.effectsSshPlan" (dict "root" $ "ssh" $ssh)) -}}
+{{- if hasKey $sshClaims $plan.claim -}}
+{{- fail (printf "%s and effectsSsh[%v] share the journal claim %q: two processes on one journal, or one journal holding two registries' keys" $key (index $sshClaims $plan.claim) $plan.claim) -}}
+{{- end -}}
+{{- $_ := set $sshClaims $plan.claim $ssh._index -}}
+{{- range $gateway := fromJsonArray (include "shoal.effectsGateways" $) -}}
+{{- $unrecordedClaim := "" -}}
+{{- if eq (toString $gateway.unrecorded.storage) "existingClaim" -}}
+{{- $unrecordedClaim = toString $gateway.unrecorded.existingClaim -}}
+{{- else if eq (toString $gateway.unrecorded.storage) "persistentVolumeClaim" -}}
+{{- $unrecordedClaim = printf "%s-unrecorded" (include "shoal.effectsGatewayName" (dict "root" $ "gateway" $gateway)) -}}
+{{- end -}}
+{{- if and $gateway.enabled (eq $unrecordedClaim $plan.claim) -}}
+{{- fail (printf "%s's journal claim %q is effectsGateways[%v]'s unrecorded log claim: the journal needs a volume of its own (docs/effects-ssh.md)" $key $plan.claim $gateway._index) -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* A running entry never loses its pin (#662). journal.id empty on an
+       entry whose Deployment is running is values that lost the ID (an
+       upgrade without the values file, say): the Deployment would be
+       deleted and the journal-init Job run against the journal it was
+       serving. init only prints an existing journal's identity, but by then the service
+       is gone. So it is refused before anything changes. Set replicas: 0
+       and upgrade first if the entry is really to stop.
+
+       lookup asks the API server; under `helm template`, `helm lint` and a
+       client dry run it returns nothing, so this is silent there, as the
+       gateways' rename guard is. */ -}}
+{{- if $plan.journalID -}}
+{{- $sshServing = append $sshServing $plan.name -}}
+{{- end -}}
+{{- if not $plan.journalID -}}
+{{- $live := lookup "apps/v1" "Deployment" $.Release.Namespace $plan.name -}}
+{{- if $live -}}
+{{- $running := or (gt (int64 (default 0 (dig "spec" "replicas" 0 $live))) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
+{{- if $running -}}
+{{- fail (printf "%s.journal.id is empty, and the effects-ssh Deployment %s is running with a pinned journal: this would delete it and stop the service the gateway sends its keys to. Restore journal.id (kubectl get deployment %s -o jsonpath='{.spec.template.spec.containers[0].args}' shows it), or set replicas: 0 and upgrade first if the entry is really to stop" $key $plan.name $plan.name) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* A running effects-ssh Deployment of this release that no enabled,
+       pinned entry names any more (renamed, removed, or disabled) is
+       refused, as a running gateway is: a renamed entry is a new claim and a
+       fresh journal, and the gateway's keys still within retention would run
+       again. Set its replicas: 0 and upgrade first. Silent without a
+       cluster, like every lookup guard here. */ -}}
+{{- $liveSsh := lookup "apps/v1" "Deployment" .Release.Namespace "" -}}
+{{- range $live := (default (list) (get (default (dict) $liveSsh) "items")) -}}
+{{- $podLabels := default (dict) (dig "spec" "selector" "matchLabels" (dict) $live) -}}
+{{- if and (eq (toString (get $podLabels "app.kubernetes.io/component")) "effects-ssh") (eq (toString (get $podLabels "app.kubernetes.io/instance")) $.Release.Name) -}}
+{{- $liveName := toString (get $podLabels "shoal.effects-ssh/name") -}}
+{{- $running := or (gt (int64 (default 0 $live.spec.replicas)) 0) (gt (int64 (default 0 (dig "status" "replicas" 0 $live))) 0) -}}
+{{- /* By object name, not entry name: a changed fullnameOverride keeps the
+       entry's name and moves it to another claim all the same. */ -}}
+{{- if and $running (not (has (toString $live.metadata.name) $sshServing)) -}}
+{{- fail (printf "the effects-ssh Deployment %s (entry %q) is running, and no enabled effectsSsh entry with a journal.id names it any more: renaming or removing a running entry, or clearing its ID, starts a different journal that has never seen the keys this one ran, and the gateway's resends would run them again. Keep the journal across a rename: set the old entry's replicas: 0 and upgrade, then name the old claim in the new entry (journal.storage: existingClaim) with the same journal.id" $live.metadata.name $liveName) -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
+{{- /* The effects gateways' shape, refused last so a line break in an entry
+       is refused by the walk above, in its words. The helper that merges the
+       entries skips anything that is not a map, so without this a string or
+       a list entry would render nothing and report success. */ -}}
+{{- $effectsGateways := default (list) .Values.effectsGateways -}}
+{{- if not (kindIs "slice" $effectsGateways) -}}
+{{- fail "effectsGateways must be a list of gateway entries, one per operational surface (see docs/effects-gateway-deploy.md, In the chart)" -}}
+{{- end -}}
+{{- range $index, $entry := $effectsGateways -}}
+{{- if not (kindIs "map" $entry) -}}
+{{- fail (printf "effectsGateways[%d] must be a map holding one gateway's settings (got %v)" $index $entry) -}}
+{{- end -}}
+{{- end -}}

@@ -1,0 +1,35 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: shoal-read-fleet
+spec:
+  groups:
+    - name: shoal-read-fleet
+      rules:
+        - alert: ShoalReadFleetNotAcceptingSessions
+          expr: max(shoal_read_accepting_sessions) == 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Shoal read fleet is not accepting scan sessions
+        - alert: ShoalReadFleetScanBackpressure
+          expr: sum(rate(shoal_scan_backpressure_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Shoal read fleet is rejecting scans
+        - alert: ShoalReadFleetScanFailures
+          expr: sum(rate(shoal_scan_failures_total[5m])) > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: Shoal read fleet scan RPCs are failing
+        - alert: ShoalReadFleetExpiredSessions
+          expr: sum(increase(shoal_scan_sessions_expired_total[15m])) > 0
+          labels:
+            severity: info
+          annotations:
+            summary: Shoal read fleet scan sessions expired

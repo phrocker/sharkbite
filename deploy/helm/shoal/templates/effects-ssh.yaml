@@ -1,0 +1,346 @@
+{{- /* effects-ssh (#450, #662): one set of objects per enabled entry of
+       effectsSsh. shoal.effectsSshPlan has refused every entry this renders
+       wrongly and computed what it renders; see docs/effects-ssh.md,
+       "In the chart".
+
+       journal.id decides between the two halves of an install: empty renders
+       the journal-init Job and no Deployment, set renders the Deployment and
+       no Job. So `journal init` never runs in the pod's start script, a fresh
+       install never serves a journal it pinned by itself, and a lost volume
+       is refused by the pinned identity rather than re-initialized.
+
+       Every operator value reaches the manifests quoted or through toJson. */ -}}
+{{- range $ssh := fromJsonArray (include "shoal.effectsSsh" .) }}
+{{- if $ssh.enabled }}
+{{- $root := $ -}}
+{{- $plan := fromJson (include "shoal.effectsSshPlan" (dict "root" $root "ssh" $ssh)) -}}
+{{- $name := $plan.name -}}
+{{- $selector := include "shoal.effectsSshSelectorLabels" (dict "root" $root "ssh" $ssh) -}}
+{{- $port := int64 $plan.port -}}
+{{- $journalMount := "/var/lib/effects-ssh" }}
+---
+# No Kubernetes API credential: the pod speaks HTTPS to the gateway and SSH to
+# the registered hosts.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+automountServiceAccountToken: false
+---
+# The command registry (-config), rendered with toJson. The Deployment carries
+# its checksum, so a changed registry rolls the pod; serve reads it once.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-commands" $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+data:
+  commands.json: {{ $plan.config | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+spec:
+  type: ClusterIP
+  selector:
+    {{- $selector | nindent 4 }}
+  ports:
+    - name: https
+      port: {{ $port }}
+      targetPort: https
+      protocol: TCP
+{{- if eq (toString $ssh.journal.storage) "persistentVolumeClaim" }}
+---
+# The journal (#450): the record of every key whose command was started, and
+# the once-only guarantee itself. Losing it forgets every key, so the claim
+# outlives an uninstall (resource-policy: keep). ReadWriteOnce, one replica,
+# Recreate: never two processes on one journal.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ $plan.claim | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with $ssh.journal.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $ssh.journal.size | quote }}
+{{- end }}
+{{- $podSecurity := fromJson (include "shoal.effectsSshPodSecurity" .) }}
+{{- $containerSecurity := fromJson (include "shoal.effectsSshContainerSecurity" .) }}
+{{- if not $plan.journalID }}
+---
+# Step 1 of an install: initialize the journal once, on the claim, and print
+# its identity. An ordinary resource, not a hook: it is the claim's first
+# consumer, so a WaitForFirstConsumer claim binds for it (`helm install
+# --wait --wait-for-jobs` waits for the identity to be printed). Kubernetes does
+# not rerun a finished Job, and its log (the identity) stays readable until
+# journal.id is set. A changed pod template gets a new name (a digest), and
+# that run finds the journal and prints its identity (-print-existing):
+# nothing ever replaces a journal. It is never rendered beside the
+# Deployment: journal.id set removes it.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "shoal.effectsSshInitJobName" (dict "root" $root "ssh" $ssh "plan" $plan) | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh-journal-init
+spec:
+  # A rerun is safe (-print-existing never replaces a journal), so a pod
+  # lost to a preemption or a slow node is retried. A Job that still failed
+  # is deleted by hand (kubectl delete job) and recreated by the next
+  # upgrade.
+  backoffLimit: 3
+  template:
+    {{- include "shoal.effectsSshInitPod" (dict "root" $root "ssh" $ssh "plan" $plan) | nindent 4 }}
+{{- else }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+spec:
+  # One, or zero to stop it; the plan refuses anything else.
+  replicas: {{ include "shoal.effectsGatewayWhole" (dict "name" "replicas" "value" $ssh.replicas) }}
+  # Recreate, never RollingUpdate: the old pod has drained and released the
+  # journal's lock and volume before the new one starts.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- $selector | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- $selector | nindent 8 }}
+        app.kubernetes.io/part-of: shoal-platform
+      annotations:
+        checksum/commands: {{ sha256sum $plan.config | quote }}
+    spec:
+      serviceAccountName: {{ $name | quote }}
+      automountServiceAccountToken: false
+      # Computed: -shutdown-grace + 10s, so the kubelet never SIGKILLs a
+      # process still letting runs finish.
+      terminationGracePeriodSeconds: {{ int64 $plan.grace }}
+      securityContext: {{ toJson $podSecurity }}
+      {{- with $ssh.nodeSelector }}
+      nodeSelector: {{ toJson . }}
+      {{- end }}
+      {{- with $ssh.tolerations }}
+      tolerations: {{ toJson . }}
+      {{- end }}
+      {{- with $ssh.affinity }}
+      affinity: {{ toJson . }}
+      {{- end }}
+      containers:
+        - name: effects-ssh
+          image: {{ printf "%v:%v" $ssh.image.repository $ssh.image.tag | quote }}
+          imagePullPolicy: {{ $ssh.image.pullPolicy | quote }}
+          command: ["/usr/local/bin/shoal-effects-ssh"]
+          args:
+            - "serve"
+            - "-config=/etc/effects-ssh/config/commands.json"
+            - {{ printf "-listen=0.0.0.0:%d" $port | quote }}
+            - "-tls-cert-file=/etc/effects-ssh/tls/tls.crt"
+            - "-tls-key-file=/etc/effects-ssh/tls/tls.key"
+            {{- if $ssh.callerToken.secretName }}
+            - "-caller-token-file=/var/run/effects-ssh/token/token"
+            {{- end }}
+            {{- if $ssh.clientAuth.caSecretName }}
+            - "-client-ca-file=/etc/effects-ssh/client-ca/ca.crt"
+            {{- range $identity := $ssh.clientAuth.identities }}
+            - {{ printf "-client-identity=%v" $identity | quote }}
+            {{- end }}
+            {{- end }}
+            - {{ printf "-idempotency-header=%s" $plan.idempotencyHeader | quote }}
+            # The claim's root, mounted at -journal-dir itself.
+            - {{ printf "-journal-dir=%s" $journalMount | quote }}
+            - {{ printf "-journal-id=%s" $plan.journalID | quote }}
+            - {{ printf "-journal-retention=%s" $plan.retention | quote }}
+            - {{ printf "-journal-max-entries=%d" (int64 $plan.maxEntries) | quote }}
+            - {{ printf "-max-concurrent=%d" (int64 $plan.maxConcurrent) | quote }}
+            - {{ printf "-attach-wait=%s" $plan.attachWait | quote }}
+            - {{ printf "-shutdown-grace=%s" $plan.shutdownGrace | quote }}
+          ports:
+            - name: https
+              containerPort: {{ $port }}
+          # The service has no health endpoint: an HTTP probe would be a
+          # request it refuses. A TCP probe checks the listener.
+          # serve replays the journal before it listens, which on a slow disk
+          # and a full journal takes a while: up to 10 minutes before the
+          # liveness probe may restart it.
+          startupProbe:
+            tcpSocket:
+              port: https
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: https
+            initialDelaySeconds: 10
+            periodSeconds: 20
+            failureThreshold: 3
+          resources: {{ toJson $ssh.resources }}
+          securityContext: {{ toJson $containerSecurity }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/effects-ssh/config
+              readOnly: true
+            - name: tls
+              mountPath: /etc/effects-ssh/tls
+              readOnly: true
+            {{- if $ssh.clientAuth.caSecretName }}
+            - name: client-ca
+              mountPath: /etc/effects-ssh/client-ca
+              readOnly: true
+            {{- end }}
+            {{- if $ssh.callerToken.secretName }}
+            - name: caller-token
+              mountPath: /var/run/effects-ssh/token
+              readOnly: true
+            {{- end }}
+            - name: ssh-keys
+              mountPath: /etc/effects-ssh/keys
+              readOnly: true
+            - name: journal
+              mountPath: {{ $journalMount | quote }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ printf "%s-commands" $name | quote }}
+        # Secrets are read per handshake or per request, so a rotation takes
+        # effect without a restart. 0440 with fsGroup 65532.
+        - name: tls
+          secret:
+            secretName: {{ $ssh.tls.secretName | quote }}
+            defaultMode: 0440
+            items:
+              - {key: tls.crt, path: tls.crt}
+              - {key: tls.key, path: tls.key}
+        {{- if $ssh.clientAuth.caSecretName }}
+        - name: client-ca
+          secret:
+            secretName: {{ $ssh.clientAuth.caSecretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $ssh.clientAuth.caSecretKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if $ssh.callerToken.secretName }}
+        - name: caller-token
+          secret:
+            secretName: {{ $ssh.callerToken.secretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $ssh.callerToken.secretKey | quote }}
+                path: token
+        {{- end }}
+        - name: ssh-keys
+          secret:
+            secretName: {{ $ssh.sshKeys.secretName | quote }}
+            defaultMode: 0440
+            items:
+              {{- range $keyName := $plan.keys }}
+              - key: {{ $keyName | quote }}
+                path: {{ $keyName | quote }}
+              {{- end }}
+        - name: journal
+          persistentVolumeClaim:
+            claimName: {{ $plan.claim | quote }}
+{{- end }}
+{{- if $ssh.networkPolicy.enabled }}
+---
+# Ingress from the gateway's pods only, on the listener's port. Egress to each
+# registered command's CIDRs on its port, and to DNS only when an address is a
+# host name. Nothing else: no metadata service, no other workload. The
+# journal-init Job's pod matches no rule here and needs none.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh
+spec:
+  podSelector:
+    matchLabels:
+      {{- $selector | nindent 6 }}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              {{- $plan.gatewaySelector | nindent 14 }}
+      ports:
+        - port: https
+          protocol: TCP
+  egress:
+    {{- if $plan.dns }}
+    # The cluster's DNS pods only (networkPolicy.dns), not port 53 anywhere.
+    - to:
+        - namespaceSelector:
+            matchLabels: {{ toJson $ssh.networkPolicy.dns.namespaceLabels }}
+          podSelector:
+            matchLabels: {{ toJson $ssh.networkPolicy.dns.podLabels }}
+      ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    {{- end }}
+    {{- range $rule := $plan.egress }}
+    - to:
+        {{- range $cidr := $rule.cidrs }}
+        - ipBlock:
+            cidr: {{ $cidr | quote }}
+        {{- end }}
+      ports:
+        - port: {{ int64 $rule.port }}
+          protocol: TCP
+    {{- end }}
+{{- if not $plan.journalID }}
+---
+# The journal-init Job's pod needs no network at all.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ printf "%s-init" $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-ssh-journal-init
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: shoal-effects-ssh-journal-init
+      app.kubernetes.io/instance: {{ $root.Release.Name }}
+      app.kubernetes.io/component: effects-ssh-journal-init
+  policyTypes: ["Ingress", "Egress"]
+{{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

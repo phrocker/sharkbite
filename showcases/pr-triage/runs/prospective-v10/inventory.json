@@ -1,0 +1,41 @@
+{
+  "registered_protocol_id": "7602a628b97b3811bcf4af43857661d5fa75ba6dff186ec46e2a380d592ea27e",
+  "observed_at_utc": "2026-10-02T11:02:56.442178+00:00",
+  "raw_inventory_sha256": "e9a4409044a30da09d40b2f6e76e47e4c8631a6bcc010390105630d2e4d72e26",
+  "candidates": [
+    {
+      "pr": 357,
+      "head": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+      "created_at": "2026-09-12T09:29:15Z",
+      "disposition": "excluded_draft"
+    },
+    {
+      "pr": 360,
+      "head": "471935591fb8d78d231ca7b8ee99777d3765846d",
+      "created_at": "2026-09-13T11:25:59Z",
+      "disposition": "excluded_draft"
+    },
+    {
+      "pr": 361,
+      "head": "0a892a5fc228c304681e2ff6102b8921b8fba919",
+      "created_at": "2026-09-13T11:26:43Z",
+      "disposition": "excluded_draft"
+    },
+    {
+      "pr": 415,
+      "head": "8bede7a75c1dce05ab992b3d3675cbcfb01313c2",
+      "created_at": "2026-09-29T19:26:46Z",
+      "disposition": "selected"
+    }
+  ],
+  "selected": [
+    {
+      "pr": 415,
+      "head": "8bede7a75c1dce05ab992b3d3675cbcfb01313c2",
+      "base": "57a2b3db9ab9ec7317868b8cb2a983397d448685",
+      "stratum": "existing_at_registration"
+    }
+  ],
+  "pending_family_slots": 3,
+  "id": "48b5c2bc72caf0f94608d37ed5db80dc035369f954530dffe9c7c8cdc83b1adb"
+}

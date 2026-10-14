@@ -1,0 +1,8 @@
+{
+  "id": "8b8934c84ce69d08924ee4fd36f78fe7f1a5b3e3cd544f8529a693da5a5de92a",
+  "model_id": "0178ed5e2ce1e0ee1182c0dbc891b6c7d8fa41060cde94a248484204f608fc27",
+  "optimization_enabled": false,
+  "parent_prediction_id": "4515db06ab787ad257ac6b1bd16fb973967fe3b35b8d69c75032e939f1c0e9d4",
+  "threshold": 0.1454674086399588,
+  "validation_manifest_id": "1de308dcf93073c4ada1e8e903961931117ce9e9e750261f637874bb967ffd35"
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "incidents",
+    "action": "open_incident"
+  },
+  "cues": [
+    "incident",
+    "declare"
+  ],
+  "patterns": [
+    "open a {severity} incident for {service}",
+    "open an incident for {service} [at {severity}]",
+    "declare a {severity} incident on {service}",
+    "file a {severity} incident for {service}"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "severity",
+      "enum": {
+        "sev1": [
+          "sev1",
+          "sev 1"
+        ],
+        "sev2": [
+          "sev2",
+          "sev 2"
+        ],
+        "sev3": [
+          "sev3",
+          "sev 3"
+        ]
+      }
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "severity": "$severity"
+  }
+}

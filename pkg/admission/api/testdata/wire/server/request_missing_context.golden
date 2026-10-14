@@ -1,0 +1,8 @@
+POST /api/v1/admission/request
+request content-type: application/json
+request body: "{\"id\":\"YWRtaXNzaW9u\",\"idempotency_key\":\"a2V5\",\"token_id\":\"dG9rZW4\",\"agent_id\":\"YWdlbnQ\",\"agent_generation\":3,\"capability\":\"llm.gateway\",\"action\":\"complete\",\"source_id\":\"c291cmNl\",\"policy_id\":\"cG9saWN5\",\"object_id\":\"b2JqZWN0\",\"effects\":[\"egresses-content\",\"reads-corpus\"],\"input\":{\"prompt_digest\":\"abc\",\"n\":1},\"disclosures\":[\"ZG9jLWE\",\"ZG9jLWI\"],\"lease\":60000000000}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: request ID is required\"}\n"

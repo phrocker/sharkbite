@@ -1,0 +1,336 @@
+== abstained reason=evidence_ineligible
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:073a8851a2f3b2554c53959692a543da4cf8d05dfce1be5f0fa5e504e63530c7 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.evidence_ineligible
+  The abstention was reported, by the predictor or the service, as evidence_ineligible, which, if accurate, means the evidence for at least one requested subject did not meet the task’s evidence policy.
+  record=prediction:decision:prediction:v1:073a8851a2f3b2554c53959692a543da4cf8d05dfce1be5f0fa5e504e63530c7
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:073a8851a2f3b2554c53959692a543da4cf8d05dfce1be5f0fa5e504e63530c7 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.evidence_ineligible
+  If the evidence was ineligible, fix the gaps or request only eligible subjects in a new decision request; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:073a8851a2f3b2554c53959692a543da4cf8d05dfce1be5f0fa5e504e63530c7
+
+== abstained reason=predictor text
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:b0bd9ee8194b1c872449cbcc7170152458181e9d4e86bc52ad41571db5d03535 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.unrecognized
+  The abstention was reported, by the predictor or the service, with a reason Shoal does not define: “predictor text”.
+  record=prediction:decision:prediction:v1:b0bd9ee8194b1c872449cbcc7170152458181e9d4e86bc52ad41571db5d03535
+  quote predictor_or_service
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:b0bd9ee8194b1c872449cbcc7170152458181e9d4e86bc52ad41571db5d03535 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.unrecognized
+  Inspect the subjects ordinarily; an abstention is not a finding.
+  record=prediction:decision:prediction:v1:b0bd9ee8194b1c872449cbcc7170152458181e9d4e86bc52ad41571db5d03535
+
+== completed kind=choice distribution=false
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:196798e4c04e6b02a79641f289b504a75d3e8100782a7ac49b1d1d758ec005fd decision_request=decision:request:v1:3e5b4d57444c9b5adc30cba4e8e6e9569db7e08c2191d20a45abd2f900ca3d88 picture=decision:picture:v1:5720c42cd61ad250a8bff2e25066d7ba50058686b528afad99eaf052ab9226c0 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.choice
+  For subject subject1, question q, the predictor chose high.
+  record=prediction:decision:prediction:v1:196798e4c04e6b02a79641f289b504a75d3e8100782a7ac49b1d1d758ec005fd subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q high
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:196798e4c04e6b02a79641f289b504a75d3e8100782a7ac49b1d1d758ec005fd principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:196798e4c04e6b02a79641f289b504a75d3e8100782a7ac49b1d1d758ec005fd
+
+== completed kind=choice distribution=true
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:a020741f4f123c9b2b745c6be7b6ab82112b87d2276bf56f722018e6f8a57d22 decision_request=decision:request:v1:3e5b4d57444c9b5adc30cba4e8e6e9569db7e08c2191d20a45abd2f900ca3d88 picture=decision:picture:v1:5720c42cd61ad250a8bff2e25066d7ba50058686b528afad99eaf052ab9226c0 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.choice
+  For subject subject1, question q, the predictor chose high, with a reported probability of 0.6.
+  record=prediction:decision:prediction:v1:a020741f4f123c9b2b745c6be7b6ab82112b87d2276bf56f722018e6f8a57d22 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q high
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:a020741f4f123c9b2b745c6be7b6ab82112b87d2276bf56f722018e6f8a57d22 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:a020741f4f123c9b2b745c6be7b6ab82112b87d2276bf56f722018e6f8a57d22
+
+== completed kind=choice abstained=model declined
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:7f8dcfb44fd17c8a176f81d1bf3f010d5f264008115575134b84f47f6e259ad2 decision_request=decision:request:v1:3e5b4d57444c9b5adc30cba4e8e6e9569db7e08c2191d20a45abd2f900ca3d88 picture=decision:picture:v1:5720c42cd61ad250a8bff2e25066d7ba50058686b528afad99eaf052ab9226c0 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unrecognized
+  For subject subject1, question q, the predictor abstained, giving its own reason: “model declined”.
+  record=prediction:decision:prediction:v1:7f8dcfb44fd17c8a176f81d1bf3f010d5f264008115575134b84f47f6e259ad2 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  quote predictor
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:7f8dcfb44fd17c8a176f81d1bf3f010d5f264008115575134b84f47f6e259ad2 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:7f8dcfb44fd17c8a176f81d1bf3f010d5f264008115575134b84f47f6e259ad2
+
+== completed kind=choice abstained=unavailable
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:08e2703e97855d078377d50ef34e08f2d5f93f6506df34a5d1fcf32a093fb094 decision_request=decision:request:v1:3e5b4d57444c9b5adc30cba4e8e6e9569db7e08c2191d20a45abd2f900ca3d88 picture=decision:picture:v1:5720c42cd61ad250a8bff2e25066d7ba50058686b528afad99eaf052ab9226c0 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unavailable
+  For subject subject1, question q, the predictor reported that no answer was available.
+  record=prediction:decision:prediction:v1:08e2703e97855d078377d50ef34e08f2d5f93f6506df34a5d1fcf32a093fb094 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:08e2703e97855d078377d50ef34e08f2d5f93f6506df34a5d1fcf32a093fb094 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:08e2703e97855d078377d50ef34e08f2d5f93f6506df34a5d1fcf32a093fb094
+
+== completed kind=ordinal distribution=false
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:3b09a6cfc462968ae06c844537d921cf8dda3b1edb397ff8a7fb0a6c208793ee decision_request=decision:request:v1:ceed3bd9e287b80c619c34c443b7cc94ba9cc9dbcc8390172ef33978e6835ec8 picture=decision:picture:v1:6b401a42826d25ece382835ba98e5174c51ee0015a6acf29efcafb8f6553cce1 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.ordinal
+  For subject subject1, question q, the predictor chose level high, 2 of 2.
+  record=prediction:decision:prediction:v1:3b09a6cfc462968ae06c844537d921cf8dda3b1edb397ff8a7fb0a6c208793ee subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q high
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:3b09a6cfc462968ae06c844537d921cf8dda3b1edb397ff8a7fb0a6c208793ee principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:3b09a6cfc462968ae06c844537d921cf8dda3b1edb397ff8a7fb0a6c208793ee
+
+== completed kind=ordinal distribution=true
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:c43872c942ef6db5d613e097377a627e67ce36224dc26637a89ab9dad76facf0 decision_request=decision:request:v1:ceed3bd9e287b80c619c34c443b7cc94ba9cc9dbcc8390172ef33978e6835ec8 picture=decision:picture:v1:6b401a42826d25ece382835ba98e5174c51ee0015a6acf29efcafb8f6553cce1 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.ordinal
+  For subject subject1, question q, the predictor chose level high, 2 of 2, with a reported probability of 0.6.
+  record=prediction:decision:prediction:v1:c43872c942ef6db5d613e097377a627e67ce36224dc26637a89ab9dad76facf0 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q high
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:c43872c942ef6db5d613e097377a627e67ce36224dc26637a89ab9dad76facf0 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:c43872c942ef6db5d613e097377a627e67ce36224dc26637a89ab9dad76facf0
+
+== completed kind=ordinal abstained=model declined
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:acf47303e9fcf07babe24be6d4e0863a68d5a748d248925a1e15a8b7819d0a35 decision_request=decision:request:v1:ceed3bd9e287b80c619c34c443b7cc94ba9cc9dbcc8390172ef33978e6835ec8 picture=decision:picture:v1:6b401a42826d25ece382835ba98e5174c51ee0015a6acf29efcafb8f6553cce1 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unrecognized
+  For subject subject1, question q, the predictor abstained, giving its own reason: “model declined”.
+  record=prediction:decision:prediction:v1:acf47303e9fcf07babe24be6d4e0863a68d5a748d248925a1e15a8b7819d0a35 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  quote predictor
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:acf47303e9fcf07babe24be6d4e0863a68d5a748d248925a1e15a8b7819d0a35 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:acf47303e9fcf07babe24be6d4e0863a68d5a748d248925a1e15a8b7819d0a35
+
+== completed kind=ordinal abstained=unavailable
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:dc0c499e098dbce8034bf895735bb82379eeec0f0357cd7f2261eb3a879323a6 decision_request=decision:request:v1:ceed3bd9e287b80c619c34c443b7cc94ba9cc9dbcc8390172ef33978e6835ec8 picture=decision:picture:v1:6b401a42826d25ece382835ba98e5174c51ee0015a6acf29efcafb8f6553cce1 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unavailable
+  For subject subject1, question q, the predictor reported that no answer was available.
+  record=prediction:decision:prediction:v1:dc0c499e098dbce8034bf895735bb82379eeec0f0357cd7f2261eb3a879323a6 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:dc0c499e098dbce8034bf895735bb82379eeec0f0357cd7f2261eb3a879323a6 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:dc0c499e098dbce8034bf895735bb82379eeec0f0357cd7f2261eb3a879323a6
+
+== completed kind=probability distribution=false
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 decision_request=decision:request:v1:8c3aedc94a66790d58e54df26f5623fd340f991508da061c99424bb9fcb401f5 picture=decision:picture:v1:fdcce2f3b412ac39b2bc553f4fd40dbb03284e490ea2110a2f3955a559f37d2f predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.probability
+  For subject subject1, question q, the predictor reported a probability of 0.25.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92
+
+== completed kind=probability distribution=true
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 1 answer and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 decision_request=decision:request:v1:8c3aedc94a66790d58e54df26f5623fd340f991508da061c99424bb9fcb401f5 picture=decision:picture:v1:fdcce2f3b412ac39b2bc553f4fd40dbb03284e490ea2110a2f3955a559f37d2f predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.probability
+  For subject subject1, question q, the predictor reported a probability of 0.25.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:f4630688149e9be0bce5f8897e7341e21871b281ef5780fe68d9627147facb92
+
+== completed kind=probability abstained=model declined
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:fae7a1759b02fe53afbf20c7822f8a5a28d8752b407d352a4324d456f5a376a9 decision_request=decision:request:v1:8c3aedc94a66790d58e54df26f5623fd340f991508da061c99424bb9fcb401f5 picture=decision:picture:v1:fdcce2f3b412ac39b2bc553f4fd40dbb03284e490ea2110a2f3955a559f37d2f predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unrecognized
+  For subject subject1, question q, the predictor abstained, giving its own reason: “model declined”.
+  record=prediction:decision:prediction:v1:fae7a1759b02fe53afbf20c7822f8a5a28d8752b407d352a4324d456f5a376a9 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  quote predictor
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:fae7a1759b02fe53afbf20c7822f8a5a28d8752b407d352a4324d456f5a376a9 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:fae7a1759b02fe53afbf20c7822f8a5a28d8752b407d352a4324d456f5a376a9
+
+== completed kind=probability abstained=unavailable
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with no answers and 1 abstention across 1 subject.
+  record=prediction:decision:prediction:v1:14549b52de9faa47eeac895a67afe56571bde5b3dda8301ca8f234aced1b0867 decision_request=decision:request:v1:8c3aedc94a66790d58e54df26f5623fd340f991508da061c99424bb9fcb401f5 picture=decision:picture:v1:fdcce2f3b412ac39b2bc553f4fd40dbb03284e490ea2110a2f3955a559f37d2f predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.abstained.unavailable
+  For subject subject1, question q, the predictor reported that no answer was available.
+  record=prediction:decision:prediction:v1:14549b52de9faa47eeac895a67afe56571bde5b3dda8301ca8f234aced1b0867 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 q
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:14549b52de9faa47eeac895a67afe56571bde5b3dda8301ca8f234aced1b0867 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Inspect the abstained subjects ordinarily; use the answers only to order inspection, never to exclude anything.
+  record=prediction:decision:prediction:v1:14549b52de9faa47eeac895a67afe56571bde5b3dda8301ca8f234aced1b0867
+
+== failed reason=predictor_unavailable
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:58b8ce8593e433806e66350f0bdc1ea26f7ace667bc9e168495c4bf010e7a018 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.predictor_unavailable
+  The failure was reported, by the predictor or the service, as predictor_unavailable, which, if accurate, means the registered predictor could not be resolved for this release.
+  record=prediction:decision:prediction:v1:58b8ce8593e433806e66350f0bdc1ea26f7ace667bc9e168495c4bf010e7a018
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:58b8ce8593e433806e66350f0bdc1ea26f7ace667bc9e168495c4bf010e7a018 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.predictor_unavailable
+  If the predictor was unavailable, request the decision again once the release is available; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:58b8ce8593e433806e66350f0bdc1ea26f7ace667bc9e168495c4bf010e7a018
+
+== failed reason=predictor_identity_mismatch
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:f4ff8a6afdd8f7ca2a4a05a75eb23463dc95ce7e3eb5576aef6ef61c002aea7c decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.predictor_identity_mismatch
+  The failure was reported, by the predictor or the service, as predictor_identity_mismatch, which, if accurate, means the resolved predictor did not match the identity the request pinned.
+  record=prediction:decision:prediction:v1:f4ff8a6afdd8f7ca2a4a05a75eb23463dc95ce7e3eb5576aef6ef61c002aea7c
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:f4ff8a6afdd8f7ca2a4a05a75eb23463dc95ce7e3eb5576aef6ef61c002aea7c principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.predictor_identity_mismatch
+  If the identity did not match, check the predictor registration against the release before requesting again; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:f4ff8a6afdd8f7ca2a4a05a75eb23463dc95ce7e3eb5576aef6ef61c002aea7c
+
+== failed reason=deadline_exceeded
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.deadline_exceeded
+  The failure was reported, by the predictor or the service, as deadline_exceeded, which, if accurate, means no result arrived within the deadline.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.deadline_exceeded
+  If the deadline passed, request the decision again with a later deadline; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865
+
+== failed reason=predictor_failed
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:f6db535db617b05d1671acf71b6e22596708923fd0bec69ad3f49f2d12b04e0a decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.predictor_failed
+  The failure was reported, by the predictor or the service, as predictor_failed, which, if accurate, means the predictor returned an error.
+  record=prediction:decision:prediction:v1:f6db535db617b05d1671acf71b6e22596708923fd0bec69ad3f49f2d12b04e0a
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:f6db535db617b05d1671acf71b6e22596708923fd0bec69ad3f49f2d12b04e0a principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.predictor_failed
+  If the predictor failed, request the decision again or investigate it; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:f6db535db617b05d1671acf71b6e22596708923fd0bec69ad3f49f2d12b04e0a
+
+== failed reason=invalid_predictor_response
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:a89d3d3d9fbff459bda771e43ef9e8b7985b7b8267a8b4961e7af264e6292142 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.invalid_predictor_response
+  The failure was reported, by the predictor or the service, as invalid_predictor_response, which, if accurate, means the predictor’s response did not satisfy the result contract.
+  record=prediction:decision:prediction:v1:a89d3d3d9fbff459bda771e43ef9e8b7985b7b8267a8b4961e7af264e6292142
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:a89d3d3d9fbff459bda771e43ef9e8b7985b7b8267a8b4961e7af264e6292142 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.invalid_predictor_response
+  If the response was invalid, investigate the predictor’s output before requesting again; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:a89d3d3d9fbff459bda771e43ef9e8b7985b7b8267a8b4961e7af264e6292142
+
+== failed reason=predictor text
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:2e7d8dc8aaa36854d5f343aa942c867abffa48abc687ec62cb869e394bcdc4c2 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.unrecognized
+  The failure was reported, by the predictor or the service, with a reason Shoal does not define: “predictor text”.
+  record=prediction:decision:prediction:v1:2e7d8dc8aaa36854d5f343aa942c867abffa48abc687ec62cb869e394bcdc4c2
+  quote predictor_or_service
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:2e7d8dc8aaa36854d5f343aa942c867abffa48abc687ec62cb869e394bcdc4c2 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.unrecognized
+  Inspect ordinarily; a failure is not a finding.
+  record=prediction:decision:prediction:v1:2e7d8dc8aaa36854d5f343aa942c867abffa48abc687ec62cb869e394bcdc4c2

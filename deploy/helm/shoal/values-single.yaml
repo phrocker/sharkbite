@@ -1,0 +1,5 @@
+mode: single
+
+image:
+  repository: ghcr.io/YOUR_ORG/shoal
+  tag: TAG

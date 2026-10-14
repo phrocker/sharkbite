@@ -1,0 +1,25 @@
+outcome approval.outcome.enqueued.enqueued_without_action
+  The request to run action close-ticket on agent agent-7 was approved and committed to become work at 2026-10-08 12:20:00 UTC, but the action has not been written.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+reason approval.reason.enqueued_without_action
+  The write that creates the action was lost after the approval was committed.
+  record=approval:act-1
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+blocked approval.blocked.enqueued_without_action
+  It is waiting for the requester to re-request it so that the action is written.
+  record=approval:act-1
+next approval.next.enqueued_without_action
+  The requester can re-request the same request before 2026-10-08 14:00:00 UTC to write the action, while agent agent-7 stays at generation 3 and the policy generation holds.
+  record=approval:act-1
+  identifiers agent-7

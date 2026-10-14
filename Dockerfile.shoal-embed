@@ -1,0 +1,58 @@
+# syntax=docker/dockerfile:1.7
+
+ARG GO_IMAGE=golang@sha256:ebd54034f076819b3054f155db53660ded951612bb4dfd277f933e62059e5d5a
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
+WORKDIR /src
+
+COPY go.mod go.sum ./
+COPY wal-quorum-sidecar/go.mod wal-quorum-sidecar/go.sum ./wal-quorum-sidecar/
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+COPY cmd/shoal-embed ./cmd/shoal-embed
+COPY internal ./internal
+COPY proto/embed.proto ./proto/embed.proto
+
+ARG TARGETOS=linux
+ARG TARGETARCH
+ARG VERSION=dev
+ARG REVISION=unknown
+ENV CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOWORK=off
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath \
+      -ldflags="-s -w -buildid= -X main.version=${VERSION}" \
+      -o /out/shoal-embed ./cmd/shoal-embed \
+ && mkdir -p /out/data
+
+FROM --platform=linux/amd64 gcr.io/distroless/static-debian12@sha256:b7ebc675e6df3e26840de28a9d119969806b5542902111bfd111964d0930c08a AS runtime-amd64
+FROM --platform=linux/arm64 gcr.io/distroless/static-debian12@sha256:ff3d007f159ebbbdf9130affa1125b10c50a909821c7130419df4e979a197c79 AS runtime-arm64
+
+FROM runtime-${TARGETARCH}
+
+ARG VERSION=dev
+ARG REVISION=unknown
+ARG CREATED
+LABEL org.opencontainers.image.title="shoal-embed" \
+      org.opencontainers.image.description="Standalone Shoal embedded storage engine with a gRPC API" \
+      org.opencontainers.image.source="https://github.com/phrocker/shoal-oss" \
+      org.opencontainers.image.documentation="https://github.com/phrocker/shoal-oss/blob/main/docs/shoal-embed-container.md" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"
+
+COPY --from=build /out/shoal-embed /usr/local/bin/shoal-embed
+COPY --from=build /src/proto/embed.proto /usr/share/shoal/proto/embed.proto
+COPY --from=build --chown=65532:65532 /out/data /var/lib/shoal
+
+WORKDIR /var/lib/shoal
+USER 65532:65532
+VOLUME ["/var/lib/shoal"]
+EXPOSE 9876 9877
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/local/bin/shoal-embed"]
+CMD ["serve", "--data=/var/lib/shoal", "--address=0.0.0.0:9876", "--metrics-address=0.0.0.0:9877"]

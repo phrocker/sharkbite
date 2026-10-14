@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "kind": "frozen-code-provider-conformance",
+  "implementation_commit": "11a42b9",
+  "rows": 188,
+  "lower_priority": 47,
+  "retain": 141,
+  "matches": 188,
+  "mismatches": 0,
+  "export_processes": 2,
+  "byte_identical_export_files": 192,
+  "replay_processes": 2,
+  "byte_identical_replay_reports": true,
+  "all_full_review": true,
+  "optimization_enabled": false,
+  "training_performed": false,
+  "new_quality_evaluation": false,
+  "python_tests_passed": 26,
+  "go_race_packages": [
+    "internal/decisionlinear",
+    "cmd/shoal-frozen-code-replay"
+  ],
+  "go_vet_passed": true,
+  "paid_classifier_calls": 0,
+  "independent_code_review_rounds": 2,
+  "last_review_actionable_findings": 0,
+  "model_sha256": "d490d361397c7c9f6c5635ac329fd77ffc02aa5ab7a4e672801727ed9c60bf0b",
+  "manifest_sha256": "3b0beb1b701c36ea85e39412b0a0a955236d14bea2ca680b42bfe0a2e1733e2b",
+  "replay_sha256": "591e1866c2aeb0654cf951656b8b609f9a776760372141837dcb04e4db7345a1"
+}

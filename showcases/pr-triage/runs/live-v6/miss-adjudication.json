@@ -1,0 +1,485 @@
+{
+  "status": "adjudicated_relevance_proposal",
+  "scope": "Seven parent-selected lowered-reference positives only; original reference file unchanged.",
+  "selection_disclosure": "Parent identified these as model-lowered reference positives after freezing the model. No predictions, scores, reports, selections beyond the supplied seven identities, or other reviewer outputs were read. This targeted post-evaluation audit is selection-conditioned and cannot estimate overall error rates.",
+  "reference_sha256": "47e81ba1c2fe78166c8e1fc43ef049b08b1c21b7cd6676f386be66f9ae9843ba",
+  "rubric": "Label changed Go functions review when their changed behavior affects access/tenant/object authorization, a disclosure boundary, executable capability or effect-ceiling enforcement, identity isolation, or directly asserts one of those invariants in a test (including extracted assertion helpers). Label generic plumbing, fixture setup, test doubles, pure serialization, effect accounting, evidence-integrity checks, and happy-path retry tests routine unless their changed behavior itself implements or asserts such a boundary. Supporting a security test or living in a security package alone is insufficient. Label unknown when the causal link cannot be resolved from pinned source and inspected caller context. Relevance is not a defect finding; routine is only out of scope for this authorization task and does not mean safe to omit from every review.",
+  "limitations": [
+    "Task relevance only, not defect truth.",
+    "Same reviewing agent reconsidered its own reference; independent or human adjudication may disagree.",
+    "Pinned caller inspection, no runtime tests or training.",
+    "A narrow rubric still includes policy-bearing projections and actual host writer capability issuance/revocation, while excluding generic serialization, telemetry and storage integrity."
+  ],
+  "records": [
+    {
+      "unit_id": "3dc45afcac22084c52bdd5405dd7bf89afba2673bbbed5b1eb4a5256da9a55bb",
+      "pr": 399,
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "symbol": "function:*boundAdmission.Outstanding",
+      "label": "review",
+      "rationale": "Replaces caller-supplied request/correlation identity with the resolved trusted decision before admission operations; DispatchService.begin checks these identities.",
+      "witnesses": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "side": "after",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "symbol": "function:*boundAdmission.Outstanding",
+          "start_line": 403,
+          "end_line": 413,
+          "start_byte": 11218,
+          "end_byte": 11560,
+          "span_sha256": "b7668d09bfc61be3f0682b6c6b89cf22c0bd5d7425278ea1c27aa390b53d7ef4",
+          "verified_against_git": true
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "excerpt": "func (s *DispatchService) begin(ctx context.Context, operation auth.Operation, request RequestContext) (auth.Decision, time.Time, error) {\n\tnow := s.clock().UTC()\n\tif err := request.validate(now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif err := shoal.ValidateRequiredID(\"dispatch correlation ID\", request.CorrelationID); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tdecision, err := s.resolver.Resolve(ctx)\n\tif err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif decision.RequestID() != request.RequestID || decision.CorrelationID() != request.CorrelationID {\n\t\treturn auth.Decision{}, time.Time{}, shoal.NewError(shoal.ErrorUnauthorized, \"request identity does not match authentication\")\n\t}\n\tif err := decision.Authorize(operation, auth.ResourceRequest{AuthorizationDomain: decision.AuthorizationDomain()}, now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\treturn decision, now, nil",
+          "excerpt_sha256": "7b115e085b7459b4f66b73843fc10aef275c4f50cd8dd8eb110010743d2d9d1f",
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "start_line": 403,
+          "end_line": 413,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "The wrapper replaces request.Context with the result of a trusted resolver before Outstanding. This is the point that installs the authenticated request/correlation identity on this entry path; DispatchService.begin subsequently compares both fields. Retain review as identity-boundary wiring.",
+      "counterargument_considered": "A generic wrapper forwarding the original context would be routine. Here the new assignment deliberately changes the source of identity; prior adjudication likewise retained installation of trusted HTTP-session correlation."
+    },
+    {
+      "unit_id": "1d478e0b2a7aa950abbc0436b8cf852bdb9d75c7c26f8a6c9d2ba4ab3fd9fe6f",
+      "pr": 399,
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "symbol": "function:*boundAdmission.Report",
+      "label": "review",
+      "rationale": "Replaces caller-supplied request/correlation identity with the resolved trusted decision before admission operations; DispatchService.begin checks these identities.",
+      "witnesses": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "side": "after",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "symbol": "function:*boundAdmission.Report",
+          "start_line": 391,
+          "end_line": 401,
+          "start_byte": 10927,
+          "end_byte": 11216,
+          "span_sha256": "b6aa7a608a50d0ea1532554b28275cfc66e4fa3eef1dcaba42cc14e18c5e990f",
+          "verified_against_git": true
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "excerpt": "func (s *DispatchService) begin(ctx context.Context, operation auth.Operation, request RequestContext) (auth.Decision, time.Time, error) {\n\tnow := s.clock().UTC()\n\tif err := request.validate(now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif err := shoal.ValidateRequiredID(\"dispatch correlation ID\", request.CorrelationID); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tdecision, err := s.resolver.Resolve(ctx)\n\tif err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif decision.RequestID() != request.RequestID || decision.CorrelationID() != request.CorrelationID {\n\t\treturn auth.Decision{}, time.Time{}, shoal.NewError(shoal.ErrorUnauthorized, \"request identity does not match authentication\")\n\t}\n\tif err := decision.Authorize(operation, auth.ResourceRequest{AuthorizationDomain: decision.AuthorizationDomain()}, now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\treturn decision, now, nil",
+          "excerpt_sha256": "7b115e085b7459b4f66b73843fc10aef275c4f50cd8dd8eb110010743d2d9d1f",
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "start_line": 391,
+          "end_line": 401,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "The report entry wrapper overwrites report.Context using trusted requestContext before completion can be authorized. DispatchService.begin rejects mismatches, and Report reads and modifies principal-owned action state. Retain review for installing trusted request identity.",
+      "counterargument_considered": "It does not itself decide object ownership, but it is not pure argument forwarding: it replaces identity fields consumed by the enforcement gate. Surrounding report serialization remains routine."
+    },
+    {
+      "unit_id": "43fed54c1838d84d30192de61776ab095db4de577237df5db29dd8e01ccf89aa",
+      "pr": 399,
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "symbol": "function:*boundAdmission.requestContext",
+      "label": "review",
+      "rationale": "Replaces caller-supplied request/correlation identity with the resolved trusted decision before admission operations; DispatchService.begin checks these identities.",
+      "witnesses": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "side": "after",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "symbol": "function:*boundAdmission.requestContext",
+          "start_line": 366,
+          "end_line": 377,
+          "start_byte": 10282,
+          "end_byte": 10623,
+          "span_sha256": "30ecb252a389617d6489e7e3ad7432a5b329b641f14c0f1a05cc5e927b5e85a3",
+          "verified_against_git": true
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "excerpt": "func (s *DispatchService) begin(ctx context.Context, operation auth.Operation, request RequestContext) (auth.Decision, time.Time, error) {\n\tnow := s.clock().UTC()\n\tif err := request.validate(now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif err := shoal.ValidateRequiredID(\"dispatch correlation ID\", request.CorrelationID); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tdecision, err := s.resolver.Resolve(ctx)\n\tif err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\tif decision.RequestID() != request.RequestID || decision.CorrelationID() != request.CorrelationID {\n\t\treturn auth.Decision{}, time.Time{}, shoal.NewError(shoal.ErrorUnauthorized, \"request identity does not match authentication\")\n\t}\n\tif err := decision.Authorize(operation, auth.ResourceRequest{AuthorizationDomain: decision.AuthorizationDomain()}, now); err != nil {\n\t\treturn auth.Decision{}, time.Time{}, err\n\t}\n\treturn decision, now, nil",
+          "excerpt_sha256": "7b115e085b7459b4f66b73843fc10aef275c4f50cd8dd8eb110010743d2d9d1f",
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "cmd/shoal-explore-web/fleet.go",
+          "start_line": 366,
+          "end_line": 377,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/dispatch_service.go",
+          "start_line": 1032,
+          "end_line": 1050,
+          "relation": "Dispatch rejects request identity differing from trusted resolved decision"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "Resolves the authenticated decision and overwrites untrusted RequestID and CorrelationID with its identities. These exact values are checked by DispatchService.begin; review is directly supported by identity derivation/substitution, not by naming.",
+      "counterargument_considered": "This is not generic credential transport: the function chooses trusted identity over caller-supplied identity. No defect is inferred from the replacement."
+    },
+    {
+      "unit_id": "fdc917811bed1f7c54983212f131d40c0abfaccc2cc1a9e9961276fffc628a84",
+      "pr": 399,
+      "path": "pkg/explorer/webapi/admission.go",
+      "symbol": "function:admissionRequestWire.decode",
+      "label": "review",
+      "rationale": "Preserves declared effect classes and disclosure IDs as policy-bearing inputs, explicitly retaining unknown effects for fail-closed service adjudication.",
+      "witnesses": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "side": "after",
+          "path": "pkg/explorer/webapi/admission.go",
+          "symbol": "function:admissionRequestWire.decode",
+          "start_line": 184,
+          "end_line": 235,
+          "start_byte": 6504,
+          "end_byte": 8471,
+          "span_sha256": "5625416c8283aad4038c41a7445b6184c040d4a2e98e528b673fe2cf45f8d786",
+          "verified_against_git": true
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/admission.go",
+          "start_line": 305,
+          "end_line": 357,
+          "excerpt": "\t// answer.\n\tif len(request.Effects) == 0 {\n\t\treturn AdmissionGrant{}, shoal.NewError(\n\t\t\tshoal.ErrorInvalidArgument, \"admission must declare an effect\")\n\t}\n\tdeclared, err := canonicalEffects(request.Effects)\n\tif err != nil {\n\t\treturn AdmissionGrant{}, err\n\t}\n\tdisclosures, err := canonicalDisclosures(request.Disclosures)\n\tif err != nil {\n\t\treturn AdmissionGrant{}, err\n\t}\n\t// The same record an enqueue of this request would build, validated\n\t// identically and not written. It carries the declaration, so what was\n\t// admitted is part of the record's identity and a retry cannot change it.\n\tbase, action, err := dispatch.queuedRecord(ctx, decision, EnqueueRequest{\n\t\tID: request.ID, IdempotencyKey: request.IdempotencyKey,\n\t\tAgentID: request.AgentID, AgentGeneration: request.AgentGeneration,\n\t\tCapability: request.Capability, Action: request.Action,\n\t\tSourceID: request.SourceID, PolicyID: request.PolicyID,\n\t\tObjectID: request.ObjectID, Input: request.Input,\n\t\tContext: request.Context,\n\t}, auth.OperationInvoke, now)\n\tif err != nil {\n\t\treturn AdmissionGrant{}, err\n\t}\n\tbase.AdmittedEffects = declared\n\tbase.AdmittedDisclosures = disclosureDigest(disclosures)\n\n\tcurrent, readErr := dispatch.store.GetAction(ctx, request.ID)\n\tif readErr != nil && !errors.Is(readErr, ErrActionNotFound) {\n\t\treturn AdmissionGrant{}, readErr\n\t}\n\tif readErr == nil {\n\t\treturn s.replay(ctx, decision, request, disclosures, current, base, now)\n\t}\n\t// The declaration is checked against what the descriptor permits, resolved\n\t// under this decision. The ceiling the executor was bound to is already\n\t// enforced inside resolveActionBinding, so an action can neither declare\n\t// more than its executor may do nor be admitted for more than it declares.\n\tif declared.exceeds(action.Effects) {\n\t\treturn s.deny(ctx, base, decision)\n\t}\n\tobligations, err := s.obligations(ctx, decision, request, disclosures, now)\n\tif err != nil {\n\t\treturn AdmissionGrant{}, err\n\t}\n\tgranted, err := s.commit(ctx, admitted(base, action, request, decision, now))\n\tif err != nil {\n\t\treturn AdmissionGrant{}, err\n\t}\n\treturn grantFor(granted, obligations), nil",
+          "excerpt_sha256": "2bbe3fe668f2ca996d7f3b0bf1a916ef03e364c4a5352c0f65822d6f74fba0da",
+          "relation": "Decoded policy declaration drives effect ceiling, replay identity and withholding obligations",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/webapi/admission.go",
+          "start_line": 184,
+          "end_line": 235,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+          "path": "pkg/explorer/fleet/admission.go",
+          "start_line": 305,
+          "end_line": 357,
+          "relation": "Decoded policy declaration drives effect ceiling, replay identity and withholding obligations"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "The new wire projection explicitly constructs the effect set and disclosure references consumed by admission capability/withholding checks. AdmissionService.Request rejects empty effects, canonicalizes supplied classes, compares declared.exceeds(action.Effects), and computes obligations over these references. Retain review as policy-bearing projection.",
+      "counterargument_considered": "Ordinary token decoding and report JSON plumbing were routine in this assessment. This projection carries the complete declaration that determines admission, including unknown classes; consistent with prior effect-ceiling and policy-role retention adjudications. A broader rule making every serializer relevant is not being applied."
+    },
+    {
+      "unit_id": "1eec0ee5c0b18dfac55b6638fe166e9168bf162fb5e8583130c7457abe6d0cef",
+      "pr": 357,
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.AdvanceEpoch",
+      "label": "review",
+      "rationale": "Advances, releases, renews or invalidates the live writer capability; engine mutation gates rely on lease active state.",
+      "witnesses": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "side": "after",
+          "path": "internal/coordination/embedded.go",
+          "symbol": "function:*embeddedLease.AdvanceEpoch",
+          "start_line": 357,
+          "end_line": 399,
+          "start_byte": 8894,
+          "end_byte": 10294,
+          "span_sha256": "472fe21479aab325cfb8be6dcaf1930167c359eb02a24a2fc91bca67d489ecd3",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "excerpt": "func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n\te.mu.RLock()\n\tdefer e.mu.RUnlock()\n\tif e.closed || e.authoritySource == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\treturn e.authoritySource.Validate(ctx, token)\n}\n\nfunc (e *Engine) requireAuthorityLocked() error {\n\tif e.closed || e.authority == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\tif err := e.authority.Renew(context.Background()); err != nil {\n\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n\t}\n\treturn nil\n}",
+          "excerpt_sha256": "f63ec9c17454796df181d6581fe9ad6509130d7ecbccfb057abcbed3d65770e6",
+          "relation": "Engine mutations validate/renew live authority through coordinator",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 428,
+          "end_line": 443,
+          "excerpt": "func (l *embeddedLease) loseLocked(kind EventKind) error {\n\tif !l.active {\n\t\treturn nil\n\t}\n\tl.active = false\n\tif l.coordinator.current == l {\n\t\tl.coordinator.current = nil\n\t}\n\tl.lostOnce.Do(func() { close(l.lost) })\n\tl.coordinator.publishLocked(Event{\n\t\tKind:   kind,\n\t\tMember: Member{ID: l.token.Owner, Token: l.token},\n\t})\n\tlock := l.lock\n\tl.lock = nil\n\treturn lock.Close()",
+          "excerpt_sha256": "dce61dbbfca9b0a22482074d59cfcaaf8430e5f2771bb9ce1930fed4763cf544",
+          "relation": "Lease loss invalidates current authority and releases exclusive OS lock",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "excerpt": "func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n\te.mu.RLock()\n\tdefer e.mu.RUnlock()\n\tif e.closed || e.authoritySource == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\treturn e.authoritySource.Validate(ctx, token)\n}\n\nfunc (e *Engine) requireAuthorityLocked() error {\n\tif e.closed || e.authority == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\tif err := e.authority.Renew(context.Background()); err != nil {\n\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n\t}\n\treturn nil\n}",
+          "excerpt_sha256": "f63ec9c17454796df181d6581fe9ad6509130d7ecbccfb057abcbed3d65770e6",
+          "relation": "Engine work depends on current authority validation and live lease renewal",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 357,
+          "end_line": 399,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "relation": "Engine mutations validate/renew live authority through coordinator"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 428,
+          "end_line": 443,
+          "relation": "Lease loss invalidates current authority and releases exclusive OS lock"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "relation": "Engine work depends on current authority validation and live lease renewal"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "AdvanceEpoch verifies this is the active current lease and that durable manifest identity matches its token, invalidates authority on mismatch, and replaces token epoch/generation. Engine.ValidateAuthority and mutation renewal consume this capability state. Retain review for writer-authority fencing.",
+      "counterargument_considered": "Pure manifest digest checking or data consistency would be routine. Here mismatch explicitly revokes the active lease and the operation changes the capability accepted for subsequent work."
+    },
+    {
+      "unit_id": "5f6b5caa9b1340145b8ee495d33b61ff84b8aa0b83b2f888dc1110201eed15f0",
+      "pr": 357,
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.Release",
+      "label": "review",
+      "rationale": "Advances, releases, renews or invalidates the live writer capability; engine mutation gates rely on lease active state.",
+      "witnesses": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "side": "after",
+          "path": "internal/coordination/embedded.go",
+          "symbol": "function:*embeddedLease.Release",
+          "start_line": 401,
+          "end_line": 426,
+          "start_byte": 10296,
+          "end_byte": 10965,
+          "span_sha256": "24b573b37b47b392ee02ec2ab71d1f45719da0e198c7450c9e3d337d83e372f9",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "excerpt": "func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n\te.mu.RLock()\n\tdefer e.mu.RUnlock()\n\tif e.closed || e.authoritySource == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\treturn e.authoritySource.Validate(ctx, token)\n}\n\nfunc (e *Engine) requireAuthorityLocked() error {\n\tif e.closed || e.authority == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\tif err := e.authority.Renew(context.Background()); err != nil {\n\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n\t}\n\treturn nil\n}",
+          "excerpt_sha256": "f63ec9c17454796df181d6581fe9ad6509130d7ecbccfb057abcbed3d65770e6",
+          "relation": "Engine mutations validate/renew live authority through coordinator",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 428,
+          "end_line": 443,
+          "excerpt": "func (l *embeddedLease) loseLocked(kind EventKind) error {\n\tif !l.active {\n\t\treturn nil\n\t}\n\tl.active = false\n\tif l.coordinator.current == l {\n\t\tl.coordinator.current = nil\n\t}\n\tl.lostOnce.Do(func() { close(l.lost) })\n\tl.coordinator.publishLocked(Event{\n\t\tKind:   kind,\n\t\tMember: Member{ID: l.token.Owner, Token: l.token},\n\t})\n\tlock := l.lock\n\tl.lock = nil\n\treturn lock.Close()",
+          "excerpt_sha256": "dce61dbbfca9b0a22482074d59cfcaaf8430e5f2771bb9ce1930fed4763cf544",
+          "relation": "Lease loss invalidates current authority and releases exclusive OS lock",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "excerpt": "func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n\te.mu.RLock()\n\tdefer e.mu.RUnlock()\n\tif e.closed || e.authoritySource == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\treturn e.authoritySource.Validate(ctx, token)\n}\n\nfunc (e *Engine) requireAuthorityLocked() error {\n\tif e.closed || e.authority == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\tif err := e.authority.Renew(context.Background()); err != nil {\n\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n\t}\n\treturn nil\n}",
+          "excerpt_sha256": "f63ec9c17454796df181d6581fe9ad6509130d7ecbccfb057abcbed3d65770e6",
+          "relation": "Engine work depends on current authority validation and live lease renewal",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 401,
+          "end_line": 426,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "relation": "Engine mutations validate/renew live authority through coordinator"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 428,
+          "end_line": 443,
+          "relation": "Lease loss invalidates current authority and releases exclusive OS lock"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "relation": "Engine work depends on current authority validation and live lease renewal"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "Release checks durable token ownership, marks the current authority inactive and calls loseLocked, which removes the current lease, closes loss notification and releases the OS authority lock. Engine mutation checks then reject that tenure. Retain review for capability revocation.",
+      "counterargument_considered": "File persistence alone would be routine. This function also performs the live permission-state transition, so it cannot be reduced to evidence integrity or cleanup serialization."
+    },
+    {
+      "unit_id": "46dcc56f30a2cd407bc1b4ad7b56332a2a60e6e2105b5944b68f51a6df9ba418",
+      "pr": 357,
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorFailsClosedOnCorruptManifest",
+      "label": "review",
+      "rationale": "Directly asserts exclusive authority, rejection of corrupt authority state or lease loss/fencing on manifest change.",
+      "witnesses": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "side": "after",
+          "path": "internal/coordination/embedded_test.go",
+          "symbol": "function:TestEmbeddedCoordinatorFailsClosedOnCorruptManifest",
+          "start_line": 247,
+          "end_line": 271,
+          "start_byte": 7339,
+          "end_byte": 8057,
+          "span_sha256": "89d4f81c171211676594236d886530375b32bebe1c9d9bada300506ba776edc4",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 145,
+          "end_line": 191,
+          "excerpt": "\tprevious, found, err := readEmbeddedManifest(c.directory)\n\tif err != nil {\n\t\treturn nil, err\n\t}\n\tepoch := uint64(1)\n\tgeneration := uint64(1)\n\tif found {\n\t\tif previous.Domain != DomainEmbedded || previous.Resource != resource {\n\t\t\treturn nil, fmt.Errorf(\n\t\t\t\t\"coordination: embedded manifest identifies %s/%q, want %s/%q\",\n\t\t\t\tprevious.Domain, previous.Resource, DomainEmbedded, resource,\n\t\t\t)\n\t\t}\n\t\tif previous.Epoch == 0 || previous.Generation == 0 {\n\t\t\treturn nil, errors.New(\"coordination: embedded manifest has a zero fence\")\n\t\t}\n\t\tif previous.Generation == math.MaxUint64 {\n\t\t\treturn nil, errors.New(\"coordination: embedded manifest generation exhausted\")\n\t\t}\n\t\tepoch = previous.Epoch\n\t\tgeneration = previous.Generation + 1\n\t}\n\n\tleaseID := uuid.NewString()\n\ttoken := AuthorityToken{\n\t\tDomain:     DomainEmbedded,\n\t\tResource:   resource,\n\t\tOwner:      c.owner,\n\t\tLeaseID:    leaseID,\n\t\tEpoch:      epoch,\n\t\tGeneration: generation,\n\t\tAttempt:    leaseID,\n\t}\n\tif err := writeEmbeddedManifest(c.directory, manifestForToken(token, true)); err != nil {\n\t\treturn nil, err\n\t}\n\tlease := &embeddedLease{\n\t\tcoordinator: c,\n\t\tlock:        lock,\n\t\ttoken:       token,\n\t\tactive:      true,\n\t\tlost:        make(chan struct{}),\n\t}\n\tc.current = lease\n\treleaseOnError = false\n\tc.publishLocked(Event{Kind: EventAcquired, Member: Member{ID: token.Owner, Token: token}})\n\treturn lease, nil",
+          "excerpt_sha256": "1d7597bb6fd051a975371d025348a771aae30b64be15414ade027cae863d6d48",
+          "relation": "Acquire validates persisted authority before constructing a live writer lease",
+          "verified_against_git": true
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "excerpt": "func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n\te.mu.RLock()\n\tdefer e.mu.RUnlock()\n\tif e.closed || e.authoritySource == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\treturn e.authoritySource.Validate(ctx, token)\n}\n\nfunc (e *Engine) requireAuthorityLocked() error {\n\tif e.closed || e.authority == nil {\n\t\treturn coordination.ErrLeaseLost\n\t}\n\tif err := e.authority.Renew(context.Background()); err != nil {\n\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n\t}\n\treturn nil\n}",
+          "excerpt_sha256": "f63ec9c17454796df181d6581fe9ad6509130d7ecbccfb057abcbed3d65770e6",
+          "relation": "Engine work depends on current authority validation and live lease renewal",
+          "verified_against_git": true
+        }
+      ],
+      "context_checked": [
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded_test.go",
+          "start_line": 247,
+          "end_line": 271,
+          "relation": "Pinned changed source and surrounding function behavior"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/coordination/embedded.go",
+          "start_line": 145,
+          "end_line": 191,
+          "relation": "Acquire validates persisted authority before constructing a live writer lease"
+        },
+        {
+          "revision": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+          "path": "internal/engine/engine.go",
+          "start_line": 741,
+          "end_line": 758,
+          "relation": "Engine work depends on current authority validation and live lease renewal"
+        }
+      ],
+      "context_uncertainty": "Focused pinned source review, not exhaustive call graph or runtime defect validation.",
+      "routine_challenge": null,
+      "original_reference_label": "review",
+      "disposition": "retain",
+      "adjudicated_label": "review",
+      "adjudication_rationale": "The test attempts actual authority acquisition from an invalid manifest and requires refusal, then verifies the failed acquisition released the exclusive authority lock. Acquire would otherwise establish a live process lease and token. Retain review as direct fail-closed writer-capability construction assertion.",
+      "counterargument_considered": "A decoder-only malformed JSON test or generic missing-dependency constructor test would be routine. This invokes the capability-issuing operation and asserts no acquisition; it directly covers the authority boundary rather than merely validating stored bytes."
+    }
+  ]
+}

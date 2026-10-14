@@ -1,0 +1,8 @@
+{
+  "units": 210,
+  "refit_max_score_delta": 0.0,
+  "export_max_score_delta": 0.0,
+  "median_cpu_inference_ms": 0.8642910979688168,
+  "load_ms": 517.8284361027181,
+  "scope": "single-thread sequence of local sklearn CPU calls on frozen sampled manifest; no downstream LLM savings measured"
+}

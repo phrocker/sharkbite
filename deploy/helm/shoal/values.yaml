@@ -1,0 +1,1087 @@
+mode: single
+
+image:
+  repository: ghcr.io/example/shoal
+  tag: dev
+  pullPolicy: IfNotPresent
+
+objectStorage:
+  # Used by cmd/shoal -storage. cmd/shoal-embed does not expose backend/bucket/prefix flags yet.
+  backend: gs
+  bucket: example-shoal-rfiles
+  prefix: shards/shard-0000
+  credentialsSecretName: shoal-object-storage-credentials
+  createSecret: true
+  gcsKeyJson: '{"type":"service_account","project_id":"REPLACE_ME"}'
+
+writeTier:
+  # null selects the safe default for mode; an explicit boolean remains
+  # available for compatibility with existing installations.
+  enabled: null
+  replicas: 1
+  dataDir: /var/lib/shoal
+  grpcPort: 9876
+  metricsPort: 9877
+  quiesceDelay: 10s
+  terminationGracePeriodSeconds: 50
+  readinessProbePeriodSeconds: 5
+  readinessProbeFailureThreshold: 1
+  storageSize: 50Gi
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  # Explicit rollout contract instead of relying on the apps/v1 default
+  # (which happens to already be these values today).
+  updateStrategy:
+    partition: 0
+  podDisruptionBudget:
+    enabled: true
+    # This shard's StatefulSet runs a single replica by default (see
+    # replicas, above), and there is no live tablet-migration/handoff path
+    # yet. maxUnavailable: 0 means the Eviction API (kubectl drain,
+    # cluster-autoscaler consolidation, etc.) refuses to evict this pod
+    # rather than silently taking the shard's only writer offline; it does
+    # NOT block an operator-initiated rolling update, since the
+    # StatefulSet controller replaces pods directly and isn't subject to
+    # PDBs. See deploy/README.md's rolling-upgrade/rollback runbook before
+    # raising writeTier.replicas or draining write-tier nodes.
+    maxUnavailable: 0
+  # TLS is opt-in and off by default: both the gRPC and HTTP listeners
+  # stay plaintext unless enabled=true. When enabled, secretName must name
+  # a Secret containing tls.crt/tls.key (and, when requireClientCert is
+  # true, ca.crt) — see deploy/README.md's TLS section.
+  tls:
+    enabled: false
+    secretName: ""
+    requireClientCert: false
+
+readFleet:
+  enabled: null
+  replicas: 3
+  listen: :9800
+  servicePort: 9800
+  metricsPort: 9801
+  readinessInterval: 10s
+  quiesceDelay: 5s
+  drainTimeout: 30s
+  terminationGracePeriodSeconds: 45
+  zk: zk-0.zk:2181,zk-1.zk:2181,zk-2.zk:2181
+  instance: accumulo
+  accumuloVersion: 4.0.0-SNAPSHOT
+  metadataUser: root
+  accumuloPassword: REPLACE_ME
+  cacheBytes: "268435456"
+  logLevel: info
+  prewarmTables: auto
+  prewarmParallelism: "8"
+  tls:
+    enabled: false
+    secretName: ""
+    requireClientCert: false
+  resources:
+    requests:
+      cpu: 500m
+      memory: 512Mi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  # Explicit rollout contract instead of relying on the apps/v1 default
+  # (25% maxUnavailable/maxSurge, which round down/up to 0/1 for the
+  # default 3 replicas — spelling out maxUnavailable: 0 here pins that
+  # exact behavior explicitly rather than leaving it to rounding at a
+  # different replica count). Keeps all replicas serving throughout a
+  # rollout: an old pod is never removed until the surge pod has proven
+  # readiness, since the controller isn't allowed any unavailable pods in
+  # between.
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+  podDisruptionBudget:
+    enabled: true
+    # Stateless read replicas spread across nodes (see the pod
+    # anti-affinity in read-deployment.yaml): allow one voluntary
+    # disruption at a time.
+    maxUnavailable: 1
+
+tserver:
+  enabled: null
+  replicas: 2
+  thriftPort: 9997
+  metricsPort: 9998
+  group: default
+  drainTimeout: 30s
+  terminationGracePeriodSeconds: 45
+  walStorageSize: 20Gi
+  enableIngest: true
+  # Pre-existing Secret containing accumulo-password,
+  # accumulo-instance-secret, and accumulo-system-token-base64.
+  credentialsSecretName: shoal-accumulo-write-credentials
+  updateStrategy: {partition: 0}
+  podDisruptionBudget: {enabled: true, maxUnavailable: 1}
+  tls: {enabled: false, secretName: "", requireClientCert: false}
+
+compactor:
+  enabled: null
+  replicas: 2
+  # Pre-existing Secret containing accumulo-password,
+  # accumulo-instance-secret, and accumulo-system-token-base64.
+  credentialsSecretName: shoal-accumulo-write-credentials
+  thriftPort: 9810
+  metricsPort: 9811
+  group: shoal_default
+  hdfsNamenode: ""
+  stateStorageSize: 5Gi
+  shutdownTimeout: 30s
+  terminationGracePeriodSeconds: 55
+  updateStrategy: {partition: 0}
+  podDisruptionBudget: {enabled: true, maxUnavailable: 1}
+  tls: {enabled: false, secretName: "", requireClientCert: false}
+
+# The authorized plane: the process that holds a decision, enforces the
+# disclosure controls, and owns the Fleet registry and execution boundary.
+#
+# It is off by default and not derived from `mode`. The modes above describe a
+# storage topology (which write authority, which read fleet); the explorer is
+# orthogonal to all three and composes with any of them, so deriving it from
+# `mode` would make one of those modes silently mean something it does not.
+explorer:
+  enabled: false
+  # A separate image from the storage tier: built by Dockerfile.shoal-explore-web
+  # with its own entrypoint and embedded UI.
+  image:
+    repository: ghcr.io/example/shoal-explore-web
+    tag: dev
+    pullPolicy: IfNotPresent
+  # One replica, and validate.yaml refuses more.
+  #
+  # The workspace keeps its corpus, workspace settings and durable policy
+  # catalog in one state root on a ReadWriteOnce volume, and there is no
+  # coordination protocol between two processes over the same directory. A
+  # second replica is not a scale-out, it is two writers to one engine.
+  replicas: 1
+  servicePort: 8098
+  containerPort: 8098
+  # The orchestrator probe surface (-health-address). It is a second listener
+  # because the workspace listener refuses any request whose Host is not an
+  # exactly configured authority, which a kubelet addressing the pod by its
+  # runtime-assigned IP can never satisfy. See docs/shoal-explore-web-deploy.md.
+  healthPort: 8099
+  # Required. The external authorities this instance answers to, exactly
+  # matched. Empty means every request is refused with 421, so validate.yaml
+  # refuses to render rather than deploy a workspace that answers nothing.
+  # Usually the port-less external name, since TLS terminates at the ingress.
+  allowedHosts: []
+  # The single state root. -state-dir places the corpus at <stateDir>/corpus and
+  # the durable policy catalog at <stateDir>/policy, so this one mount carries
+  # everything a restart needs.
+  stateDir: /var/lib/shoal
+  storageSize: 20Gi
+  storageClassName: ""
+  terminationGracePeriodSeconds: 45
+  service:
+    type: ClusterIP
+    annotations: {}
+  # Authentication is a required decision with exactly one valid value.
+  #
+  # -dev-auth is not offered. It is refused on any non-loopback listener
+  # (cmd/shoal-explore-web/authn.go), and a pod reached through a Service must
+  # bind a non-loopback address, so a chart that rendered it would produce a
+  # workspace that cannot start. Leaving this unset fails at render with that
+  # explanation rather than at runtime in a pod log.
+  auth:
+    mode: ""  # must be set to: oidc
+    oidc:
+      issuer: ""
+      # At least one audience is required; at least one must match exactly.
+      audiences: []
+      discoveryURL: ""
+      jwksURI: ""
+      allowedAlgs: ""      # defaults to RS256; HS* and none are always rejected
+      clockSkew: ""        # defaults to 60s, capped at 5m
+      # A claim other than sub names principals oidc:<iss>#<tag>#<value>
+      # (#546); setting or changing it is an identity scheme switch, which
+      # needs identitySchemeMigrateFrom below.
+      subjectClaim: ""     # defaults to sub
+      actorClaim: ""
+      clientIDClaim: ""
+      delegationClaim: ""
+      # Required: the claim whose values map to workspace authority, and at
+      # least one mapping for it. Without a mapping every authenticated caller
+      # is denied, which is fail-closed but indistinguishable from an outage.
+      authorizationClaim: ""
+      readerValues: []
+      contributorValues: []
+      fleetValues: []
+      # Optional browser Authorization Code + PKCE login.
+      browserClientID: ""
+      browserScope: ""
+      # The approver mapping (#451; docs/approval.md, "The OIDC approver
+      # mapping"): the shoal.approvers/v1 document itself, as a map. Empty
+      # means no approvers — no token may approve. The chart renders it into a
+      # ConfigMap it owns, mounts it read-only, and passes
+      # -oidc-approver-mapping-file; a checksum annotation rolls the pod when
+      # it changes, because the workspace reads it once at startup.
+      approverMapping: {}
+      # The label grants (#570; docs/shoal-explore-web-deploy.md, "Granting
+      # visibility labels"): the shoal.label-grants/v1 document itself, as a
+      # map. A grant gives a claim value one free-form label on one source,
+      # and adds visibility only to a token a role mapping above already
+      # grants. Empty means no token holds any label, so labelled content is
+      # visible to nobody, its ingesters included. Rendered into a ConfigMap
+      # this chart owns, mounted read-only and passed as
+      # -oidc-label-grants-file; a checksum annotation rolls the pod when it
+      # changes. Every grant's source must be shoal-explore-web/workspace,
+      # the one source the workspace configures.
+      labelGrants: {}
+      # The executor mapping (#391; docs/effects-gateway-deploy.md, "Issuing
+      # executor credentials"): the shoal.executors/v1 document itself, as a
+      # map. It is the only source of the execute operation: each entry binds
+      # one service credential's subject (for example a projected
+      # ServiceAccount token's system:serviceaccount:<ns>:<name>) to one
+      # executor reference, on an audience of its own and under an issuer it
+      # names, which may be the cluster's ServiceAccount issuer rather than
+      # explorer.auth.oidc.issuer. Empty means no token may pull, claim or
+      # complete queued work. Rendered into a ConfigMap this chart owns,
+      # mounted read-only and passed as -oidc-executor-mapping-file; a
+      # checksum annotation rolls the pod when it changes. Every executor_ref
+      # must also appear in explorer.fleet.executorRefs.
+      executorMapping: {}
+      # A stable identity claim (#526) as a list of path segments, for example
+      # [oid] for Entra on a tenant issuer. Requesters and approvers are then
+      # named oidcid:<issuer>#<path tag>#<value> on both branches.
+      # approverMapping must restate it as identity_claim. Switching an
+      # existing deployment to it is a scheme change, which the workspace
+      # refuses to start on without identitySchemeMigrateFrom; see
+      # docs/approval.md.
+      identityClaim: []
+      # -oidc-identity-scheme-migrate: the 64-hex-digit digest of the recorded
+      # scheme this rollout replaces, as the startup refusal prints it. A
+      # replica starts only if the recorded scheme is that one or already its
+      # own, so the value cannot move the record twice; unset it once the
+      # rollout is done.
+      identitySchemeMigrateFrom: ""
+  # Disclosure posture. Both settings are deployment choices, not defaults to
+  # inherit silently: see docs/shoal-explore-web-deploy.md and #372.
+  disclosure:
+    # Remove the withheld-document counts from responses. Off by default: the
+    # counts are corpus-wide and identical for every query, so they disclose how
+    # much a caller cannot read, not which terms match. Turn this on for a
+    # compartmented deployment that declines to disclose either. Audit records
+    # both counts either way.
+    concealWithholding: false
+    # The sensitivity-domain co-occurrence budget (the mosaic control).
+    # maxDomains 0 disables it. When enabled, the workspace requires a durable
+    # co-occurrence ledger and fails closed at construction without one.
+    mosaic:
+      maxDomains: 0
+      window: 1h
+  # Declassification audit (#630, #664). Every relabel that removes visibility
+  # labels from a document is audited in the policy catalog whatever this
+  # says; see docs/shoal-explore-web-deploy.md.
+  declassification:
+    # -require-declassification-reason: refuse such a relabel unless the
+    # upload carries a declassification_reason (the upload form field, or the
+    # MCP ingest argument). Off by default.
+    requireReason: false
+  # Bounded graph reads (#698). -max-bounded-node-adjacency: a node whose
+  # total adjacency in the requested direction exceeds this fails every
+  # bounded read that expands it, uniformly for every reader whatever their
+  # fanout or cursor. Whether a node exceeds it is the one bit edges a reader
+  # cannot see can show, so keep it high. 0 keeps the binary default
+  # (1048576); at most 4294967295.
+  graph:
+    maxNodeAdjacency: 0
+  # Grounded chat provider. Required for the built-in reasoning executor.
+  chat:
+    provider: ""   # ollama or openai-compatible
+    model: ""
+    baseURL: ""
+    # Environment variable the workspace reads at request time. The chart
+    # projects it from credentialSecretName/credentialSecretKey when both are
+    # set; validate.yaml requires them for a provider whose base URL is remote.
+    apiKeyEnv: SHOAL_OPENAI_API_KEY
+    credentialSecretName: ""
+    credentialSecretKey: api-key
+    organization: ""
+    project: ""
+  # Embedded vector provider. Empty disables vector retrieval; lexical retrieval
+  # is unaffected.
+  embedding:
+    provider: ""   # fake, lexical, ollama, openai, or voyage
+    model: ""
+    baseURL: ""
+    apiKeyEnv: OPENAI_API_KEY
+    dimensions: 0
+    credentialSecretName: ""
+    credentialSecretKey: api-key
+  # The execution boundary (#381). Registration is fail-closed: a descriptor can
+  # only name an executor reference this list allows.
+  fleet:
+    executorRefs: []
+    # Bound to the built-in grounded-reasoning executor. Must also appear in
+    # executorRefs and requires a configured chat provider.
+    askExecutorRef: ""
+    # References bound with an effect ceiling of {external} and no floor: a
+    # descriptor may register an action whose consequences land outside Shoal
+    # against one of these, and may declare less than the ceiling permits.
+    #
+    # This is where Shoal stops containing an effect, so it is an explicit
+    # opt-in per reference and nothing else produces it. An allowlisted
+    # reference that is not named here resolves to a placeholder declaring no
+    # ceiling, which permits nothing — leaving these empty is the configuration
+    # the explorer has always had, not a weaker version of it.
+    #
+    # Nothing runs in process against them. The binding implements no action
+    # execution, so work is served over the dispatch queue — enqueue, pull,
+    # claim, perform elsewhere, report — and the report is what Shoal records.
+    # Each must also appear in executorRefs, and none may be the askExecutorRef:
+    # that executor's floor equals its ceiling and excludes external mutation,
+    # so one reference cannot be both.
+    externalExecutorRefs: []
+    # The same, widened to {egresses-content, external} for an external
+    # operation that also transmits corpus content off the host. A reference
+    # belongs in exactly one of the two lists: transmission is declared on its
+    # own so it is never acquired by naming a reference for mutation alone.
+    externalEgressExecutorRefs: []
+  ontologyFile: ""
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+  podDisruptionBudget:
+    # Single replica with no handoff path: refuse voluntary eviction rather than
+    # silently taking the only authorized plane offline. Matches writeTier.
+    enabled: true
+    maxUnavailable: 0
+  updateStrategy:
+    partition: 0
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+# The enforcement plane: an OpenAI-compatible endpoint a caller points at
+# instead of the real provider, which asks the explorer for admission before
+# each call and reports the outcome after it (#390).
+#
+# Off by default and not derived from `mode`, for the same reason the explorer
+# is not: `mode` chooses a storage topology, and the gateway composes with any of
+# them. It is a separate process from the explorer by design, not by packaging
+# convenience — it handles untrusted prompt content from arbitrary callers and
+# talks to third-party endpoints, and co-locating that with the policy store
+# would put prompt injection in the decision plane's address space.
+llmGateway:
+  enabled: false
+  # Its own image: a different binary with a different blast radius from both
+  # the storage tier and the explorer.
+  image:
+    repository: ghcr.io/example/shoal-llm-gateway
+    tag: dev
+    pullPolicy: IfNotPresent
+  # More than one, and that is the point rather than a tuning choice.
+  #
+  # The gateway holds no state root. Every request's decision lives in the
+  # explorer, the admission token travels in the request it was granted for,
+  # and nothing is cached across calls — so two replicas are two independent
+  # askers of the same plane, not two writers to one engine. The explorer
+  # refuses replicas above 1 for exactly the reason that does not apply here.
+  #
+  # It also must not be a singleton in practice: a denial here means the
+  # caller's work does not happen at all, so an unavailable gateway is an outage
+  # for everything behind it, not a degraded read path.
+  replicas: 2
+  servicePort: 8100
+  containerPort: 8100
+  # The orchestrator probe surface (-health-address). A second listener for the
+  # same reason as the explorer's: the OpenAI-compatible listener refuses any
+  # request whose Host is not an exactly configured authority, which a kubelet
+  # addressing the pod by its runtime-assigned IP can never satisfy.
+  healthPort: 8101
+  # Required. The external authorities this gateway answers to, exactly matched.
+  # Empty means every request is refused with 421, so validate.yaml refuses to
+  # render rather than deploy a gateway that governs nothing because it answers
+  # nothing. Usually the port-less in-cluster or ingress name clients are
+  # configured with as their OpenAI base URL.
+  allowedHosts: []
+  # The ServiceAccount the pod runs as. Empty means the namespace's `default`,
+  # which is what Kubernetes does and is fine for the environment-variable
+  # token form, where the pod's own identity is never used for anything.
+  #
+  # It stops being fine the moment the admission token is a projected
+  # ServiceAccount token, because that token's subject *is* this account. Left
+  # empty there, the credential the explorer authorizes is
+  # `system:serviceaccount:<namespace>:default` — an identity every other pod
+  # in the namespace can also obtain a token for, so authorizing the gateway
+  # authorizes the namespace. The chart refuses the projected form without an
+  # explicit name for that reason; naming `default` here is allowed, and is the
+  # explicit acceptance of a shared identity. The account is not created for
+  # you, like the Secrets.
+  serviceAccountName: ""
+  # The decision plane. Every one of these is required: a gateway that cannot ask
+  # must deny, and a gateway that denies everything is indistinguishable from a
+  # total outage of whatever is behind it.
+  # Model names this deployment expects (-model). Optional, and empty is a
+  # working configuration: the declaration the gateway sends the workspace reports
+  # a named model as itself and anything else as "other", because the model
+  # field is caller-controlled free text and a prompt fits in it as readily as a
+  # model name. Naming models here buys the plane policy granularity over which
+  # model was used; it does not restrict which models may be called, and an
+  # unlisted model is still forwarded for the plane to decide on.
+  models: []
+  admission:
+    # Base URL of the explorer's authenticated API (-admission-url).
+    url: ""
+    # Env var holding the bearer token the gateway presents to the explorer
+    # (-admission-token-env). The chart projects it from the Secret below.
+    #
+    # This form cannot be rotated: a container's environment is fixed once the
+    # process starts, so updating the Secret behind a secretKeyRef leaves every
+    # running gateway on the old token until the pod is replaced. Use tokenFile
+    # below where the credential rotates.
+    #
+    # Ignored, and required to be left at this value, when tokenFile is set:
+    # the binary refuses an explicitly chosen env var alongside a file rather
+    # than ranking the two, so the chart refuses that pair as well.
+    tokenEnv: SHOAL_ADMISSION_TOKEN
+    # Required whenever the token comes from the environment, and required
+    # again for tokenFileSource: secret, which mounts this same Secret as a
+    # file. The explorer's API has no unauthenticated mode in a cluster, so
+    # without a token every admission request is a 401 and the gateway fails
+    # closed on all of them.
+    #
+    # Refused with tokenFileSource: projected or volume, where nothing reads
+    # it. A Secret named there is a credential the operator believes is being
+    # presented and that the pod never looks at — and the symptom of the
+    # mistake is a 401 that names neither source.
+    credentialSecretName: ""
+    credentialSecretKey: token
+    # The file form: a path the gateway reads the bearer token from at request
+    # time instead of an environment variable (-admission-token-file). Empty
+    # keeps the env form above.
+    #
+    # It exists because a rotating credential is a file. The kubelet rewrites a
+    # projected ServiceAccount token in place when it rotates and never updates
+    # an environment variable, so with only the env form the admission
+    # credential has to be a long-lived static Secret — the thing projected
+    # tokens exist to avoid. Setting this switches the pod over completely: the
+    # chart renders -admission-token-file and no -admission-token-env, and
+    # projects no admission Secret into the environment. Both at once is
+    # refused by the binary at startup rather than resolved by precedence, so
+    # rendering both would be a pod that never serves.
+    #
+    # Must be absolute, and must name a file in a directory other than /. The
+    # directory is where the chart mounts the token volume: a relative path
+    # resolves against a working directory nothing guarantees, so every read
+    # fails while the pod stays healthy and denies every call, and a mount at /
+    # would replace the container's root filesystem and the binary with it.
+    tokenFile: ""
+    # Where that file comes from, when tokenFile is set.
+    #
+    #   projected  a projected ServiceAccount token volume, rendered and
+    #              mounted by the chart. The Kubernetes-native form and the
+    #              only one of the three with no static credential at rest.
+    #   secret     credentialSecretName above, mounted as a file instead of
+    #              projected into the environment. Worth having on its own:
+    #              the kubelet updates a mounted Secret's contents in place and
+    #              the gateway re-reads per request, so rotating the Secret's
+    #              value takes effect without rolling the pod, which the env
+    #              form cannot do at all.
+    #   volume     tokenVolume below, supplied verbatim — the seam for a CSI
+    #              driver the chart does not know about, such as SPIFFE, Vault
+    #              Agent or secrets-store-csi.
+    #
+    # Anything else renders -admission-token-file pointing at a path nothing
+    # mounts, which is an unreadable token on every request: a pod that passes
+    # every probe and denies every call.
+    tokenFileSource: projected
+    # The audience a projected token is issued for. Required with
+    # tokenFileSource: projected, refused with the other two, where nothing
+    # would consult it.
+    #
+    # Empty is not a usable default. A projected token with no audience is
+    # issued for the cluster's own API server, which the explorer is not and
+    # will not accept — so every admission request is a 401 and the gateway
+    # denies every call while looking entirely healthy. Set it to an audience
+    # the explorer's authenticator accepts (explorer.auth.oidc.audiences), and
+    # make sure that authenticator also trusts the cluster as an issuer.
+    tokenAudience: ""
+    # How long each projected token is issued for.
+    #
+    # 600 is the floor the API server enforces on a ServiceAccount token
+    # projection; below it the pod spec is invalid, so the Deployment is
+    # accepted and no pod is ever created from it. It is also where the refresh
+    # margin stops being comfortable. The kubelet rewrites the file at 80% of
+    # the lifetime, so the margin between the rewrite and the expiry is a fifth
+    # of this value and has to stay well clear of the kubelet's own
+    # re-projection cadence, about a minute: at 600 that margin is two minutes,
+    # and much below it the file could briefly hold a token that has expired.
+    #
+    # Longer than a day is accepted and not advised. The kubelet re-projects at
+    # 24h regardless, so extra validity buys no fewer rotations — it only
+    # widens the window in which a leaked token is still accepted.
+    tokenExpirationSeconds: 3600
+    # The volume *source* for tokenFileSource: volume — a csi:, secret: or
+    # projected: block with no name of its own. The chart supplies the name and
+    # the mount so the two cannot disagree about which volume lands where, and
+    # refuses a source that names itself. An empty map renders a volume with no
+    # source at all, which the API server rejects: the Deployment exists and no
+    # pod is created from it.
+    tokenVolume: {}
+    # The admission lease (-lease): how long the granted token stays
+    # reportable. pkg/explorer/fleet caps it at MaxActionClaimTTL, five
+    # minutes, and refuses a request outside that bound — so a larger value
+    # here is not a longer lease, it is every call denied with an
+    # invalid-argument the caller cannot act on. validate.yaml holds the bound.
+    lease: 60s
+    # Plaintext to a non-loopback decision plane is refused at render, and this
+    # is the acknowledgement that accepts it. It reaches the process as
+    # -allow-plaintext-admission, which the binary needs: without the flag it
+    # refuses a remote http:// admission URL at startup, so a chart that took
+    # this value and did not pass it on rendered cleanly and produced a pod in
+    # CrashLoopBackOff.
+    #
+    # Over http:// the bearer token crosses the network in the clear and, worse,
+    # so does the verdict: anything on the path can rewrite a deny into an
+    # allow, which is the whole enforcement plane silently removed. Set this
+    # true only where a mesh provides the transport authentication the scheme
+    # would — an mTLS sidecar pair, where the hop to the explorer is already an
+    # encrypted authenticated one.
+    #
+    # It covers the admission hop and nothing else. There is deliberately no
+    # counterpart for upstream.baseURL: that request carries the prompt itself
+    # and the operator's provider credential, and a mesh that authenticates the
+    # hop to the explorer says nothing about the hop to a third party. A remote
+    # http:// upstream is refused at render with no way to accept it.
+    allowPlaintext: false
+  # The real provider the gateway forwards admitted calls to.
+  upstream:
+    # Must be https:// unless it is loopback. A remote http:// provider is
+    # refused at render and by the binary at startup, with no acknowledgement
+    # that accepts it: this request carries the prompt and the credential.
+    #
+    # Include the version segment the provider documents, as every
+    # OpenAI-compatible base URL does (https://api.openai.com/v1,
+    # http://localhost:11434/v1). The gateway appends chat/completions to it.
+    baseURL: ""
+    # Env var holding the upstream credential (-upstream-api-key-env).
+    #
+    # This form cannot be rotated. A container's environment is fixed once the
+    # process starts, so updating the Secret behind a secretKeyRef leaves every
+    # running gateway on the old value until the pod is replaced — the gateway
+    # re-reads the variable per request, but a variable re-read is the same
+    # string forever. Use apiKeyFile below where the credential rotates.
+    apiKeyEnv: SHOAL_UPSTREAM_API_KEY
+    # Required for any non-loopback provider unless apiKeyFile names a volume
+    # that carries the credential instead. With no credential at all, every
+    # admitted call is rejected by the provider — after the admission has been
+    # spent on it, so policy allowed work that then did not happen.
+    credentialSecretName: ""
+    credentialSecretKey: api-key
+    # The file form, matching admission.tokenFile: a path the gateway reads the
+    # provider credential from at request time (-upstream-api-key-file) instead
+    # of an environment variable. Empty keeps the env form above.
+    #
+    # Use it wherever the provider key rotates. A Secret mounted as a volume is
+    # updated in place by the kubelet and the per-request read picks the new
+    # value up; the same Secret behind a secretKeyRef does not change in a
+    # running container at all. Setting this renders -upstream-api-key-file and
+    # no -upstream-api-key-env, and projects no upstream Secret into the
+    # environment — the binary refuses both forms at once rather than ranking
+    # them, so rendering both would be a pod that never serves.
+    #
+    # Same path rules as admission.tokenFile, plus one more: if both files are
+    # used they must sit in different directories, because each is mounted at
+    # its own file's directory and two volumes cannot share a mount path.
+    apiKeyFile: ""
+    # Where that file comes from. Two sources here rather than the three
+    # admission.tokenFileSource offers:
+    #
+    #   secret  credentialSecretName above, mounted as a file.
+    #   volume  apiKeyVolume below, supplied verbatim — a CSI driver such as
+    #           secrets-store-csi, Vault Agent or External Secrets.
+    #
+    # There is no projected form, because a projected ServiceAccount token is a
+    # cluster-issued credential for a cluster verifier and a third-party
+    # provider is neither. Where a provider does accept one — workload identity
+    # federation — the volume source expresses that projection verbatim,
+    # audience and expiry included, which is strictly more than a second copy
+    # of those two keys here could say.
+    apiKeyFileSource: secret
+    # The volume *source* for apiKeyFileSource: volume, with no name of its
+    # own; the chart owns the name so the volume and its mount cannot name
+    # different things. An empty map renders a volume with no source, which the
+    # API server rejects: the Deployment exists and no pod is created from it.
+    apiKeyVolume: {}
+    # -request-timeout. Must not exceed admission.lease: an upstream call that
+    # can outlive the lease produces an admission that was granted, performed,
+    # and can no longer be reported against — an abandoned record whose outcome
+    # stays unknown. validate.yaml refuses that ordering.
+    requestTimeout: 30s
+  # The registered descriptor this gateway admits against. The explorer resolves
+  # all six together, and a value that is absent or wrong is not a startup
+  # failure — it is a gateway that comes up healthy and is refused by the plane on
+  # every request.
+  identity:
+    # Canonical unpadded base64url, like the scope identities below: the
+    # workspace decodes this field, and the binary refuses an undecodable value
+    # at startup. It is the encoded ID and not a descriptor's display name.
+    #
+    # The check catches encoding mistakes and not the class of wrong values. A
+    # shoal.ID is opaque and variable-length, so there is no width to validate,
+    # and a readable name that happens to decode is indistinguishable here from
+    # a real ID — "gateway" is five valid bytes. Only the workspace can tell
+    # those apart, and it denies every call when it cannot.
+    agentID: ""
+    # A positive int64, written as a whole number. Not merely parseable as one:
+    # the value is rendered verbatim into -agent-generation, so 1.5 or 010 is
+    # either rejected by the flag parser at startup or silently read as some
+    # other number, and validate.yaml refuses both.
+    #
+    # Note that this pins a descriptor *generation*: a re-registration bumps
+    # it, and this value has to be bumped with it.
+    agentGeneration: 1
+    capability: ""
+    action: ""
+    # Scope source and policy, canonical unpadded base64url as the API encodes
+    # every opaque identity.
+    sourceID: ""
+    policyID: ""
+  # The listener's transport (#424). The gateway refuses to send a prompt to
+  # a remote provider over plaintext, so it does not accept one that way
+  # either: TLS by default, from a kubernetes.io/tls Secret.
+  tls:
+    # Serve TLS with -tls-cert-file and -tls-key-file. The pod binds
+    # 0.0.0.0, which is not loopback, so with this false the chart renders
+    # -allow-plaintext-listener=true: that is the explicit acknowledgement
+    # that something else (an mTLS mesh sidecar) encrypts the hop. Nothing in
+    # the chart can see whether one does.
+    enabled: true
+    # Required while enabled: a kubernetes.io/tls Secret with tls.crt and
+    # tls.key, such as a cert-manager Certificate's. It is mounted as a
+    # volume, which the kubelet updates in place on renewal, and the gateway
+    # re-reads the pair on each handshake, so a reissued certificate is served
+    # without rolling the pod. Refused when TLS is off, where nothing reads it.
+    secretName: ""
+  service:
+    type: ClusterIP
+    # Only with tls.enabled: false. A plaintext listener behind a
+    # non-ClusterIP Service puts a prompt endpoint outside the cluster, so
+    # that is refused unless this acknowledges a TLS-terminating load
+    # balancer or ingress in front of it. It configures no TLS, and with
+    # tls.enabled it covers nothing and is refused.
+    allowPlaintext: false
+    annotations: {}
+  # Must exceed admission.lease, and validate.yaml refuses the pair when it
+  # does not.
+  #
+  # The gateway drains for the lease on SIGTERM, because the lease is the bound
+  # on an admitted call's whole lifetime including the report that closes it.
+  # This is the kubelet's budget for that same window: too small and SIGKILL
+  # arrives mid-drain, killing exactly the calls whose egress has already
+  # happened and whose grant has already been spent. That is an unreported
+  # grant produced by every rolling update, on a schedule and invisibly, while
+  # the pod terminates cleanly as far as the kubelet is concerned.
+  #
+  # 75 is the 60s default lease, plus the 5s margin the guard requires, plus
+  # ten seconds of headroom so a modest lease increase does not immediately
+  # have to be paired with a change here. Raise the lease past 70s and this
+  # has to move with it.
+  terminationGracePeriodSeconds: 75
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+  # Explicit rollout contract instead of relying on the apps/v1 default (25%
+  # each way, which rounds to 0/1 at the default two replicas — spelling it out
+  # pins that behavior at any replica count rather than leaving it to
+  # rounding). maxUnavailable: 0 keeps every replica serving through a rollout:
+  # no old pod is removed until a surge pod has passed readiness. For a plane
+  # whose unavailability stops the caller's work outright, that is the only
+  # defensible default.
+  strategy:
+    maxUnavailable: 0
+    maxSurge: 1
+  podDisruptionBudget:
+    enabled: true
+    # One voluntary disruption at a time, like the read fleet and unlike the
+    # explorer. maxUnavailable: 0 is refused at render here: the gateway is
+    # stateless and replaceable, so a budget that refuses every eviction buys
+    # no safety and instead wedges `kubectl drain` and autoscaler
+    # consolidation forever.
+    maxUnavailable: 1
+  nodeSelector: {}
+  tolerations: []
+  # Empty keeps the chart's default soft anti-affinity, which spreads replicas
+  # across nodes so a single node loss is not the whole plane. Setting this
+  # replaces that default outright rather than merging with it — see
+  # llm-gateway-deployment.yaml.
+  affinity: {}
+
+# Effects gateways (#391): HTTP Path A workers. Each one pulls actions for one
+# registered descriptor off the explorer's fleet dispatch queue, claims each
+# under a fence, performs one HTTP request against one operational surface, and
+# completes the action. See docs/effects-gateway-deploy.md, "In the chart".
+#
+# A list, one entry per surface, and empty by default: nothing renders unless an
+# entry is present and `enabled`. Each entry is deep-merged over
+# effectsGatewayDefaults below, so an entry names only what differs. A value an
+# entry sets, empty or zero included, replaces the default; a list replaces the
+# default list whole.
+#
+# Each enabled entry renders a Deployment (one replica, Recreate), a
+# ServiceAccount with no token automount, a ConfigMap holding the route table,
+# a PersistentVolumeClaim for the unrecorded log, and optionally a
+# NetworkPolicy. No Service: the gateway serves nothing but its probes.
+#
+#   effectsGateways:
+#     - name: stripe
+#       enabled: true
+#       image: {repository: ghcr.io/YOUR_ORG/shoal-gateway, tag: TAG}
+#       agentID: c3RyaXBlLWdhdGV3YXk
+#       surfaceName: stripe
+#       executorRef: stripe
+#       dispatch: {url: https://shoal-explorer.shoal.svc:8098, tokenAudience: shoal-executors}
+#       target:
+#         baseURL: https://api.stripe.com
+#         credentialSecretName: stripe-api-key
+#         idempotencyHeader: Idempotency-Key
+#         idempotencyRetention: 24h
+#       routes:
+#         - {action: charge, method: POST, path: /v1/charges, effects: [external, egresses-content], idempotency: key}
+effectsGateways: []
+
+effectsGatewayDefaults:
+  # Set true on an entry to render it.
+  enabled: false
+  # Required: the entry's name, a DNS label of at most 24 characters, unique
+  # among the entries. Objects are named <release stem>-gw-<name>. It is the
+  # entry's identity: never change it on a running entry (see "Renaming an
+  # entry" in docs/effects-gateway-deploy.md).
+  name: ""
+  # The image built by Dockerfile.shoal-gateway.
+  image:
+    repository: ghcr.io/example/shoal-gateway
+    tag: dev
+    pullPolicy: IfNotPresent
+  # One, or 0 to stop the gateway (to acknowledge its log, or before a
+  # rename); validate.yaml refuses anything else. A second replica would share
+  # one executor principal and one unrecorded log; the log's lock refuses the
+  # second process anyway, and re-registration semantics for more than one
+  # worker per surface are unsettled (#391). Prefer this to kubectl scale,
+  # which the next helm upgrade reverts.
+  replicas: 1
+  # The descriptor this gateway performs work for (-agent-id), as unpadded
+  # base64url: the encoded descriptor ID, not a display name.
+  agentID: ""
+  capability: effects.http
+  # The operator's name for the surface, recorded as an ambiguity report's
+  # target (-surface-name).
+  surfaceName: ""
+  # The executor reference the dispatch credential is minted for and the
+  # descriptor registers (-executor-ref). It must appear in the explorer's
+  # executor mapping with this gateway's ServiceAccount as its subject.
+  executorRef: ""
+  # The ServiceAccount the pod runs as. Empty: the chart creates one named
+  # after the gateway's objects, so the projected token's subject is
+  # system:serviceaccount:<namespace>:<release stem>-gw-<name>. Set it to use an
+  # account that already exists; the chart then creates none.
+  serviceAccountName: ""
+  dispatch:
+    # Required: the explorer's base URL (-dispatch-url). https, or http to
+    # loopback.
+    url: ""
+    # Accept a remote http:// url, for a mesh that authenticates the hop
+    # (-allow-plaintext-dispatch).
+    allowPlaintext: false
+    # Where the executor credential comes from. It is always a file
+    # (-dispatch-token-file), read per call, so a rotated token takes effect
+    # without a restart; the chart never renders the environment form.
+    #
+    #   projected  a projected ServiceAccount token on tokenAudience, the
+    #              intended credential (docs/effects-gateway-deploy.md,
+    #              "Issuing executor credentials").
+    #   secret     credentialSecretName / credentialSecretKey, mounted as the
+    #              file.
+    tokenSource: projected
+    # Required with projected: the executor audience the explorer's mapping
+    # names (explorer.auth.oidc.executorMapping.audience).
+    tokenAudience: ""
+    # At least 600, the API server's floor for a token projection.
+    tokenExpirationSeconds: 3600
+    # Required with secret, refused with projected.
+    credentialSecretName: ""
+    credentialSecretKey: token
+  target:
+    # Required: the operational surface (-target-base-url). https, or http to
+    # loopback; there is no plaintext opt-out. No userinfo, query or fragment.
+    baseURL: ""
+    # Admit private and loopback resolution (-target-allow-private). Required
+    # for a loopback target.
+    allowPrivate: false
+    # The header carrying the credential (-target-auth-header). The Secret's
+    # value is the whole header value, so a bearer token is stored as
+    # "Bearer <token>".
+    authHeader: Authorization
+    # Required unless the target is loopback or clientCertificate is set: the
+    # Secret holding the target credential, mounted as -target-credential-file.
+    credentialSecretName: ""
+    credentialSecretKey: credential
+    # Optional, https targets only (#662). A Secret holding the CA bundle the
+    # target's certificate is verified against instead of the system roots,
+    # for the target only (-target-ca-file). Required for an effects-ssh
+    # target, whose certificate an in-cluster CA issues.
+    caSecretName: ""
+    caSecretKey: ca.crt
+    # Optional, https targets only (#662). A kubernetes.io/tls Secret (tls.crt,
+    # tls.key) presented to the target as a client certificate
+    # (-target-client-cert-file, -target-client-key-file), re-read at each
+    # handshake. A cert-manager Certificate's Secret rotates in place.
+    clientCertificate:
+      secretName: ""
+    # Both required when any route uses idempotency "key", and refused when
+    # none does. The retention must exceed timing.operationTimeout + 5s.
+    idempotencyHeader: ""
+    idempotencyRetention: ""
+  # Required: the route table (-routes), as a list of route objects in the
+  # shape docs/effects-gateway-deploy.md, "Routes", documents. It is rendered
+  # with toJson into a ConfigMap and reaches the binary as -routes; the binary
+  # decodes it strictly and refuses the start on any error. A changed table
+  # rolls the pod.
+  routes: []
+  timing:
+    # L, at most 5m (-claim-lease).
+    claimLease: 4m
+    # T, the bound on one request to the target (-operation-timeout).
+    operationTimeout: 3m
+    # The bound on one call to the explorer, at most L/4 (-plane-timeout).
+    planeTimeout: 10s
+    # Extend the claim every L/2 (-renew). Without it, L must exceed
+    # T + 5s + planeTimeout.
+    renew: false
+  # terminationGracePeriodSeconds is computed from timing.operationTimeout and
+  # timing.planeTimeout with the formula `shoal-gateway grace-period` prints:
+  #   T + max(5s, 3 × planeTimeout) + 2 × 5s + 5s, rounded up to whole seconds
+  # (225 for the defaults). Set this only to give more, never less: a value
+  # below the formula is refused, because SIGKILL mid-drain strands an effect
+  # that happened and was never reported.
+  terminationGracePeriodSeconds: ""
+  maxInFlight: 4
+  pullLimit: 32
+  pullInterval: 2s
+  maxResponseBytes: 65536
+  # Optional. A Secret holding the attestation statement and its
+  # presentation's idempotency key (-attestation-statement-file and
+  # -attestation-key-file). Required by the binary when an action requires
+  # attestation, refused by it when none does.
+  attestation:
+    secretName: ""
+    statementKey: statement
+    keyKey: key
+  # The unrecorded-report log (#514) and the single-replica lock
+  # (-unrecorded-dir). Losing it loses the only record of effects the explorer
+  # refused to record, so it is a PersistentVolumeClaim by default.
+  unrecorded:
+    #   persistentVolumeClaim  a ReadWriteOnce claim the chart renders and
+    #                          annotates helm.sh/resource-policy: keep, so an
+    #                          uninstall leaves the log behind.
+    #   existingClaim          a claim the operator owns (existingClaim).
+    #   emptyDir               UNSAFE: the log dies with the pod. Requires
+    #                          acceptLossOfUnrecordedReports: true.
+    storage: persistentVolumeClaim
+    # The log is bounded at 1 MiB; the claim only needs to hold it.
+    size: 64Mi
+    storageClassName: ""
+    existingClaim: ""
+    acceptLossOfUnrecordedReports: false
+  # The probe and metrics listener (-health-address): /healthz, /readyz and
+  # /metrics.
+  healthPort: 8102
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Optional. Ingress is limited to the health port; egress to DNS, the
+  # explorer and the target CIDRs. NetworkPolicy matches addresses, not names:
+  # an FQDN target is enforced only through the CIDRs given here.
+  networkPolicy:
+    enabled: false
+    explorer:
+      # Empty: this release's explorer pods.
+      podLabels: {}
+      # Empty: this namespace.
+      namespaceLabels: {}
+      # Empty: explorer.containerPort.
+      port: ""
+    # Required with a non-loopback target, unless the target is an effectsSsh
+    # entry of this release, which the policy reaches by pod selector.
+    targetCIDRs: []
+    # Empty: the target URL's port (443 for https).
+    targetPorts: []
+
+# effects-ssh (#450, #662): runs operator-registered SSH commands at most once
+# per action, as the HTTP target of one effects gateway entry. See
+# docs/effects-ssh.md, "In the chart".
+#
+# A list, one entry per gateway, empty by default. Each entry is deep-merged
+# over effectsSshDefaults. Each enabled entry renders a Service, a
+# ServiceAccount with no token automount, a ConfigMap holding the command
+# registry, a PersistentVolumeClaim for the journal (unless journal.storage is
+# existingClaim), a NetworkPolicy, and
+# either the journal-init Job (journal.id empty) or the Deployment (journal.id
+# set), never both.
+#
+# Installing is two steps, so a fresh install can never pin a journal by
+# itself:
+#   1. Install with journal.id empty. The chart renders the claim and a
+#      one-off Job that runs `journal init` on it, and no Deployment. Read the
+#      identity the Job printed:
+#        kubectl logs job/<the Job NOTES names>   (<stem>-ssh-<name>-init-<digest>)
+#   2. Set journal.id to it and upgrade. The Job is no longer rendered; the
+#      Deployment serves with -journal-id pinned. A volume that is lost, empty
+#      or replaced is then refused at startup, and nothing re-initializes it.
+#
+#   effectsSsh:
+#     - name: web
+#       enabled: true
+#       gateway: web-fleet          # the effectsGateways entry that calls it
+#       image: {repository: ghcr.io/YOUR_ORG/shoal-effects-ssh, tag: TAG}
+#       tls: {secretName: effects-ssh-web-tls}
+#       callerToken: {secretName: effects-ssh-web-token}
+#       sshKeys: {secretName: effects-ssh-web-keys}
+#       journal: {id: 0123456789abcdef0123456789abcdef}
+#       commands:
+#         restart-web:
+#           address: 10.0.4.17:22
+#           hostKeys: ["ssh-ed25519 AAAAC3Nza... root@web-1"]
+#           user: deploy
+#           privateKeyKey: deploy
+#           command: sudo systemctl restart web
+#           runTimeout: 2m
+effectsSsh: []
+
+effectsSshDefaults:
+  # Set true on an entry to render it.
+  enabled: false
+  # Required: a DNS label of at most 24 characters, unique among the entries.
+  # Objects are named <release stem>-ssh-<name>. It names the journal's claim:
+  # never change it on a running entry.
+  name: ""
+  # Required: the name of the effectsGateways entry whose target this is. Its
+  # target.baseURL must be https://<release stem>-ssh-<name>.<namespace>.svc:<port>,
+  # its routes each POST /v1/commands/<a command below> with idempotency key,
+  # and its target.caSecretName must name the CA of tls.secretName.
+  gateway: ""
+  # The image built by Dockerfile.shoal-effects-ssh.
+  image:
+    repository: ghcr.io/example/shoal-effects-ssh
+    tag: dev
+    pullPolicy: IfNotPresent
+  # One, or 0 to stop it. The journal is the once-only guarantee, and it is a
+  # single file on a ReadWriteOnce volume: two replicas would be two journals
+  # or one journal two processes contend for. validate.yaml refuses anything
+  # else.
+  replicas: 1
+  # The TLS listener's port (-listen 0.0.0.0:<port>) and the Service's.
+  port: 8443
+  # Required: a kubernetes.io/tls Secret (tls.crt, tls.key) whose certificate
+  # names <release stem>-ssh-<name>.<namespace>.svc. Re-read at each
+  # handshake.
+  tls:
+    secretName: ""
+  # The bearer token the gateway presents (-caller-token-file). The gateway's
+  # target.credentialSecretName holds "Bearer <token>"; this Secret holds
+  # <token>. At least one of callerToken and clientAuth is required; with both,
+  # a request needs both, which is the recommended configuration.
+  callerToken:
+    secretName: ""
+    secretKey: token
+  # Pinned client certificate identity (#662): the gateway's
+  # target.clientCertificate must chain to caSecretName's bundle and carry one
+  # of identities (uri:<URI SAN>, dns:<DNS SAN> or spki-sha256:<digest>).
+  clientAuth:
+    caSecretName: ""
+    caSecretKey: ca.crt
+    identities: []
+  # Required: the Secret holding every command's private key, one key per
+  # entry, named by each command's privateKeyKey.
+  sshKeys:
+    secretName: ""
+  # Required: the command registry, by name ([A-Za-z0-9][A-Za-z0-9._-]{0,63}).
+  # Each command:
+  #   address         host:port of the SSH server (required)
+  #   hostKeys        1 to 8 pinned authorized_keys lines (required)
+  #   user            (required)
+  #   privateKeyKey   the key in sshKeys.secretName (required)
+  #   command         one line, run as written (required)
+  #   connectTimeout  default 10s, at most 60s
+  #   runTimeout      required, at most 1h
+  #   maxOutputBytes  per stream, default 16384, at most 262144
+  #   cidrs           the NetworkPolicy's egress CIDRs for address; defaults
+  #                   to address's own /32 or /128 when it is an IP literal
+  commands: {}
+  journal:
+    # The identity `journal init` printed (-journal-id), 32 hex digits. Empty
+    # renders the journal-init Job and no Deployment (step 1 above).
+    id: ""
+    #   persistentVolumeClaim  a ReadWriteOnce claim the chart renders and
+    #                          keeps on uninstall (helm.sh/resource-policy).
+    #   existingClaim          a claim the operator owns.
+    # There is no emptyDir: a journal that dies with the pod forgets every
+    # key, and a command whose outcome was unknown would run again.
+    storage: persistentVolumeClaim
+    # At least (3 × maxEntries + 1024) × the per-key record bound: the
+    # journal at its declared bound plus a compaction's copy (about 1.4 GB at
+    # the defaults). The chart refuses less.
+    size: 2Gi
+    storageClassName: ""
+    existingClaim: ""
+    # -journal-retention. Empty: the gateway's target.idempotencyRetention +
+    # clockSkew. Set only to give more: below that, a key the gateway may
+    # still send is forgotten, and its command runs again.
+    retention: ""
+    # The clock skew allowed between the explorer and this pod. Positive.
+    clockSkew: 5m
+    maxEntries: 10000
+  maxConcurrent: 4
+  # -attach-wait; below the gateway's timing.operationTimeout.
+  attachWait: 30s
+  # -shutdown-grace. Empty: the longest 2 × connectTimeout + runTimeout + 10s
+  # among the commands. Set only to give more.
+  shutdownGrace: ""
+  # Computed as shutdownGrace + 10s, rounded up. Set only to give more.
+  terminationGracePeriodSeconds: ""
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  # Ingress from the gateway's pods only, on the port; egress to each
+  # command's CIDRs on its port, and to DNS only when an address is a host
+  # name. On by default: this pod holds SSH keys.
+  networkPolicy:
+    enabled: true
+    # The cluster's DNS pods, reached only when a command's address is a host
+    # name; both selectors are required then.
+    dns:
+      namespaceLabels: {kubernetes.io/metadata.name: kube-system}
+      podLabels: {k8s-app: kube-dns}

@@ -1,0 +1,2 @@
+# Entry without a pinned status
+SB-FIXTURE-101

@@ -1,0 +1,427 @@
+{{- if eq (include "shoal.llmGatewayEnabled" .) "true" }}
+{{- $gateway := .Values.llmGateway -}}
+{{- /* Each credential's two forms, normalized once here so the argument, the
+       env entry, the volume and the mount cannot disagree about which one is
+       in use.
+
+       Exactly one form of each renders. The binary refuses an explicitly
+       chosen -admission-token-env alongside -admission-token-file, and the
+       same pair for the upstream key, rather than ranking them
+       (credentialSource in cmd/shoal-llm-gateway/main.go) — so a template that
+       emitted both would produce a pod that exits at startup. And emitting the
+       env flag with a Secret the file form does not read would leave the
+       effective credential invisible, which is the reason the binary refuses
+       the pair in the first place.
+
+       The mount is derived from the path rather than configured beside it: the
+       directory is where the volume lands and the base name is the file inside
+       it, so there is no second value to keep in step with the flag. */ -}}
+{{- $tokenFile := trim (default "" $gateway.admission.tokenFile) -}}
+{{- $tokenSource := trim (default "" $gateway.admission.tokenFileSource) -}}
+{{- $upstreamSecret := trim (default "" $gateway.upstream.credentialSecretName) -}}
+{{- $apiKeyFile := trim (default "" $gateway.upstream.apiKeyFile) -}}
+{{- $apiKeySource := trim (default "" $gateway.upstream.apiKeyFileSource) -}}
+{{- /* Whether anything at all goes into the environment. Each credential
+       leaves it independently, and `env:` with no entries under it is YAML
+       null rather than an empty list — which the API server rejects. */ -}}
+{{- $envAdmission := not $tokenFile -}}
+{{- /* The listener's TLS Secret (#424). Mounted whole at one directory the
+       flags and the guard in validate.yaml also take from the helper. */ -}}
+{{- $tls := eq (include "shoal.llmGatewayTLS" .) "true" -}}
+{{- $tlsDir := include "shoal.llmGatewayTLSDir" . -}}
+{{- $mounts := or $tokenFile $apiKeyFile $tls -}}
+{{- $envUpstream := and (not $apiKeyFile) $upstreamSecret -}}
+apiVersion: apps/v1
+# A Deployment, where the explorer is a StatefulSet, and that single difference
+# is the whole difference between the two planes.
+#
+# The explorer needs its rolling update to stop the old pod before starting the
+# new one, because two processes over one ReadWriteOnce state root is a
+# split-brain it has no protocol for. The gateway has no state root at all: the
+# decision lives in the explorer, the admission token travels in the request it
+# was granted for, and nothing is retained between calls. So surging is correct
+# here, replicas are independent, and there is no volumeClaimTemplate, no
+# ordinal identity and no governing headless Service to need a StatefulSet for.
+kind: Deployment
+metadata:
+  name: {{ include "shoal.llmGatewayName" . }}
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: llm-gateway
+spec:
+  replicas: {{ $gateway.replicas }}
+  # Explicit rollout contract instead of the apps/v1 default. maxUnavailable: 0
+  # keeps every replica serving through a rollout: an old pod is never removed
+  # until a surge pod has passed readiness. A denial here means the caller's
+  # work does not happen at all, so a gap in capacity during an upgrade is an
+  # outage for everything behind the gateway, not a slow read.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ $gateway.strategy.maxUnavailable }}
+      maxSurge: {{ $gateway.strategy.maxSurge }}
+  selector:
+    matchLabels:
+      {{- include "shoal.llmGatewaySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "shoal.llmGatewaySelectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: shoal-platform
+      # /metrics is served on the health port (#425), as on the effects
+      # gateway: a scraper reaches the pod directly, as the kubelet does, so
+      # the Service still publishes the traffic port only. The health port is
+      # plaintext whether or not llmGateway.tls is on (#424 moved only the
+      # traffic listener to TLS), so no scrape scheme is set and a scrape is
+      # plain HTTP, like the probes. The counters there
+      # are the gateway's own refusals and failures by closed reason, and
+      # nothing that meters tenant workload, because that port is
+      # unauthenticated.
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ $gateway.healthPort | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      # Every setting is an argument on this pod spec rather than a ConfigMap,
+      # as on the explorer. A changed argument changes the pod template and
+      # rolls the pod on its own; a ConfigMap would need a checksum annotation
+      # to get the same effect, and without one an edited admission URL would
+      # leave the running gateway asking the old decision plane while the chart
+      # claimed the new one.
+
+      # The kubelet's budget from SIGTERM to SIGKILL, and it has to exceed
+      # -lease, which is the window the gateway drains for. validate.yaml refuses
+      # the pair when it does not: a SIGKILL mid-drain kills the calls whose
+      # egress has already happened and whose grant has already been spent,
+      # which is an unreported grant produced by every rolling update while the
+      # pod terminates cleanly from the kubelet's point of view.
+      terminationGracePeriodSeconds: {{ $gateway.terminationGracePeriodSeconds }}
+      {{- with trim (default "" $gateway.serviceAccountName) }}
+      # Named explicitly because a projected admission token's subject is this
+      # account. Left to the namespace's `default`, the identity the workspace
+      # authorizes would be one every pod in the namespace can also obtain a
+      # token for.
+      serviceAccountName: {{ . | quote }}
+      {{- end }}
+      # No Kubernetes API credential in the process that handles untrusted
+      # prompt text.
+      #
+      # This pod needs no API access at all: it speaks HTTP to the workspace
+      # with a bearer token and HTTP to the provider with another, and nothing
+      # it does touches the API server. The automatic mount put a token for its
+      # ServiceAccount in the filesystem anyway, so a compromise of the one
+      # process in this chart that parses arbitrary caller input inherited
+      # whatever RBAC the account carries — which is the opposite of the reason
+      # #390 makes the gateway a separate process from the workspace in the first
+      # place.
+      #
+      # It is unconditional rather than a values key, because a key could only
+      # ever be used to put back a credential nothing here consumes. This
+      # suppresses only the *automatic* mount: an explicit serviceAccountToken
+      # projection is a volume this template declares and the kubelet still
+      # mints it, which is what keeps llmGateway.admission.tokenFileSource
+      # "projected" working — asserted in validate-chart.sh rather than assumed,
+      # since the two settings look like they should conflict and do not.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        {{- if $mounts }}
+        # fsGroup exists for the credential and TLS mounts, and it is not optional there.
+        #
+        # The kubelet writes a projected or Secret volume's files owned by root,
+        # and this container runs as uid 65532 with every capability dropped. At
+        # 0440 with no fsGroup the token is unreadable by the only process that
+        # needs it, and the failure is not a crash: the gateway starts, passes
+        # every probe, and fails each admission request on an unreadable file —
+        # the healthy pod that governs nothing. fsGroup makes the mount
+        # group-owned by 65532, which with 0440 is exactly readable and not
+        # writable by anyone.
+        fsGroup: 65532
+        {{- end }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with $gateway.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $gateway.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- if $gateway.affinity }}
+      # An operator-supplied affinity replaces the default spread below rather
+      # than merging with it. Merging two affinity trees would produce a
+      # scheduling constraint neither the chart nor the operator wrote, and the
+      # failure would be a pod that never schedules.
+      affinity:
+        {{- toYaml $gateway.affinity | nindent 8 }}
+      {{- else }}
+      affinity:
+        # Soft, not required: spreading replicas across nodes is what keeps a
+        # single node loss from taking the whole enforcement plane with it, but
+        # a cluster with fewer nodes than replicas must still schedule. A
+        # required rule there would leave pods Pending, which for this
+        # component is the same as denying every call.
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    {{- include "shoal.llmGatewaySelectorLabels" . | nindent 20 }}
+                topologyKey: kubernetes.io/hostname
+      {{- end }}
+      containers:
+        - name: shoal-llm-gateway
+          image: {{ printf "%v:%v" $gateway.image.repository $gateway.image.tag | quote }}
+          imagePullPolicy: {{ $gateway.image.pullPolicy | quote }}
+          command: ["/usr/local/bin/shoal-llm-gateway"]
+          # Every value is trimmed on the way into the argument, and the
+          # allow-list comes from the same template validate.yaml counts.
+          #
+          # The gate matches an authority exactly, so " llm.example.test"
+          # matches nothing — a 421 to every request, from a values file that
+          # only has a space in a YAML list. Trimming in the guard and not here
+          # would let the chart pass its own check and still render that.
+          args:
+            - {{ printf "-listen=0.0.0.0:%v" ($gateway.containerPort) | quote }}
+            - {{ printf "-health-address=0.0.0.0:%v" ($gateway.healthPort) | quote }}
+            # The listener's transport, rendered explicitly either way. The
+            # binary refuses a plaintext listener on 0.0.0.0 without the
+            # acknowledgement, and refuses the acknowledgement beside TLS, so
+            # tls.enabled decides both and they cannot disagree. The pair is
+            # re-read on each handshake: a renewed Secret is served without
+            # rolling the pod.
+            {{- if $tls }}
+            - {{ printf "-tls-cert-file=%s/tls.crt" $tlsDir | quote }}
+            - {{ printf "-tls-key-file=%s/tls.key" $tlsDir | quote }}
+            {{- end }}
+            - {{ printf "-allow-plaintext-listener=%v" (not $tls) | quote }}
+            - {{ printf "-allowed-host=%v" (include "shoal.llmGatewayAllowedHosts" .) | quote }}
+            - {{ printf "-admission-url=%v" (trim (default "" $gateway.admission.url)) | quote }}
+            # Rendered always and explicitly, including =false.
+            #
+            # The acknowledgement has to reach the process or it acknowledges
+            # nothing: the binary refuses a remote http:// admission URL
+            # unconditionally without it, so a chart that accepted the value
+            # and dropped it rendered a documented mesh deployment cleanly and
+            # produced a pod in CrashLoopBackOff. It covers the admission hop
+            # only. There is no counterpart for -upstream-base-url, because
+            # that request carries the prompt and the operator's provider
+            # credential, and a mesh authenticating the hop to the explorer
+            # says nothing about the hop to a third party.
+            - {{ printf "-allow-plaintext-admission=%v" ($gateway.admission.allowPlaintext) | quote }}
+            {{- if $tokenFile }}
+            - {{ printf "-admission-token-file=%v" ($tokenFile) | quote }}
+            {{- else }}
+            - {{ printf "-admission-token-env=%v" (trim (default "" $gateway.admission.tokenEnv)) | quote }}
+            {{- end }}
+            - {{ printf "-upstream-base-url=%v" (trim (default "" $gateway.upstream.baseURL)) | quote }}
+            # Model names the declaration may report. Caller-controlled text
+            # never travels: an unnamed model is reported as "other", which is
+            # what makes an empty list safe rather than merely permissive.
+            - {{ printf "-model=%v" (include "shoal.llmGatewayModels" .) | quote }}
+            {{- if $apiKeyFile }}
+            - {{ printf "-upstream-api-key-file=%v" ($apiKeyFile) | quote }}
+            {{- else }}
+            - {{ printf "-upstream-api-key-env=%v" (trim (default "" $gateway.upstream.apiKeyEnv)) | quote }}
+            {{- end }}
+            - {{ printf "-agent-id=%v" (trim (default "" $gateway.identity.agentID)) | quote }}
+            - {{ printf "-agent-generation=%v" ($gateway.identity.agentGeneration) | quote }}
+            - {{ printf "-capability=%v" (trim (default "" $gateway.identity.capability)) | quote }}
+            - {{ printf "-action=%v" (trim (default "" $gateway.identity.action)) | quote }}
+            - {{ printf "-source-id=%v" (trim (default "" $gateway.identity.sourceID)) | quote }}
+            - {{ printf "-policy-id=%v" (trim (default "" $gateway.identity.policyID)) | quote }}
+            - {{ printf "-lease=%v" (trim (default "" $gateway.admission.lease)) | quote }}
+            - {{ printf "-request-timeout=%v" (trim (default "" $gateway.upstream.requestTimeout)) | quote }}
+          {{- if or $envAdmission $envUpstream }}
+          # Emitted only when there is something to put in it. A loopback
+          # upstream needs no credential and either credential may come from a
+          # file instead, so an `env:` key with nothing under it is reachable —
+          # and that is YAML null, which the API server rejects as not a list.
+          env:
+            {{- if $envAdmission }}
+            # In the environment form the admission credential is
+            # unconditional, not conditional on a Secret being named:
+            # validate.yaml requires one. The explorer's API has no
+            # unauthenticated mode a pod can reach, so a gateway without this
+            # token gets a 401 to every admission request and fails closed on
+            # all of them — a pod that passes every probe and denies every
+            # call.
+            #
+            # In the file form there is no entry here at all. Projecting one
+            # would put a second credential in the pod that nothing reads,
+            # which is the ambiguity the binary refuses the two flags over.
+            - name: {{ trim (default "" $gateway.admission.tokenEnv) | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ trim (default "" $gateway.admission.credentialSecretName) | quote }}
+                  key: {{ trim (default "" $gateway.admission.credentialSecretKey) | quote }}
+            {{- end }}
+            {{- if $envUpstream }}
+            - name: {{ trim (default "" $gateway.upstream.apiKeyEnv) | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $upstreamSecret | quote }}
+                  key: {{ trim (default "" $gateway.upstream.credentialSecretKey) | quote }}
+            {{- end }}
+          {{- end }}
+          {{- if $mounts }}
+          volumeMounts:
+            # Each mountPath is the directory of the path in the flag and
+            # nothing else, so a flag and its mount are one value. readOnly
+            # because the process only ever reads them, and the kubelet
+            # rewrites the file from outside the container when it rotates —
+            # which is the entire reason these forms exist.
+            {{- if $tokenFile }}
+            - name: admission-token
+              mountPath: {{ dir $tokenFile | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if $apiKeyFile }}
+            - name: upstream-api-key
+              mountPath: {{ dir $apiKeyFile | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if $tls }}
+            - name: listener-tls
+              mountPath: {{ $tlsDir | quote }}
+              readOnly: true
+            {{- end }}
+          {{- end }}
+          ports:
+            # Named for what it speaks: a mesh infers the protocol from the
+            # port name, and calling a TLS port http makes it parse the
+            # handshake as a request.
+            - name: {{ ternary "https" "http" $tls }}
+              containerPort: {{ $gateway.containerPort }}
+            - name: health
+              containerPort: {{ $gateway.healthPort }}
+          # Both probes address the health port, never the OpenAI-compatible
+          # port. That listener refuses any request whose Host is not an exactly
+          # configured authority, and a kubelet addresses the pod by its
+          # runtime-assigned IP, which allowedHosts cannot name. A probe there
+          # answers 421 and the pod never becomes ready.
+          #
+          # The split between the two routes is what makes a rollout safe:
+          # /readyz goes 503 before the listener stops accepting, so the
+          # endpoints controller removes this pod from the Service while it is
+          # still finishing in-flight requests, and /healthz stays 200 through
+          # the drain, because a pod shedding traffic on purpose has not failed
+          # and restarting it would discard the graceful close.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            # Short period and a single failure: a failing readiness probe is
+            # the only thing that takes this pod out of the Service, so the
+            # window between the drain starting and traffic stopping is this
+            # interval. A slower probe spends that window answering requests
+            # the gateway has already decided to stop serving.
+            initialDelaySeconds: 2
+            periodSeconds: 3
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # No startup probe, unlike the explorer. The explorer needs one
+          # because opening a large corpus and policy catalog takes time; the
+          # gateway opens nothing, so a startup probe would only postpone the
+          # first readiness check.
+          resources:
+            {{- toYaml $gateway.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            # No writable path anywhere in the pod, and no emptyDir to give one
+            # back. The gateway holds no state root and must not spool payloads:
+            # prompt and completion content is exactly what it is governing the
+            # egress of, and a scratch directory is where that content would
+            # end up on a node's disk.
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      {{- if $mounts }}
+      volumes:
+        {{- if $tokenFile }}
+        {{- /* The admission token.
+
+               A projected ServiceAccount token is the reason this form exists:
+               the kubelet requests it on the pod's behalf, rewrites the file
+               when it rotates, and never updates an environment variable. What
+               makes the gateway's per-request read correct rather than racy is
+               how that rewrite happens — the kubelet projects these volumes
+               through an atomic writer, writing the new content into a fresh
+               timestamped directory and then swapping a `..data` symlink, so a
+               reader opening the path gets either the whole old token or the
+               whole new one and never a half-written file. A gateway that read
+               the file once at startup would keep presenting the token that
+               has since expired; one that reads per request picks the rotated
+               token up on the next call, with no restart and no coordination.
+
+               The kubelet rewrites at 80% of expirationSeconds, so the margin
+               between the rewrite and the expiry is a fifth of that value.
+               That is why the floor matters twice over: the API server rejects
+               a projection below 600 seconds outright, and 600 is also where
+               the margin (two minutes) stays comfortably clear of the
+               kubelet's own re-projection cadence of about a minute. A larger
+               value only widens the margin, so no accepted value above the
+               floor can make this gateway read a stale token. The one way it can
+               is the kubelet failing to refresh at all, which leaves an
+               expired token in the file and denies every call — fail-closed,
+               and the only direction this component is allowed to fail.
+
+               The secret source is not a worse version of the environment
+               variable it replaces. A container's environment is fixed after
+               start, so updating the Secret behind a secretKeyRef leaves every
+               running gateway on the old value until the pod is replaced; the
+               same Secret mounted as a volume is updated in place, and the
+               per-request read picks it up. */ -}}
+        {{- include "shoal.llmGatewayCredentialVolume" (dict
+              "name" "admission-token"
+              "path" $tokenFile
+              "source" $tokenSource
+              "audience" (trim (default "" $gateway.admission.tokenAudience))
+              "expirationSeconds" $gateway.admission.tokenExpirationSeconds
+              "secretName" (trim (default "" $gateway.admission.credentialSecretName))
+              "secretKey" (trim (default "" $gateway.admission.credentialSecretKey))
+              "volume" $gateway.admission.tokenVolume) | nindent 8 }}
+        {{- end }}
+        {{- if $apiKeyFile }}
+        {{- /* The upstream credential, for the same reason and with a smaller
+               set of sources: a provider key is either a Secret this chart can
+               mount or something a CSI driver delivers, and the chart offers no
+               projected form here because a cluster-issued token is a
+               credential for a cluster verifier. Where a provider does accept
+               one — workload identity federation — the volume source expresses
+               it verbatim, audience and all. */ -}}
+        {{- include "shoal.llmGatewayCredentialVolume" (dict
+              "name" "upstream-api-key"
+              "path" $apiKeyFile
+              "source" $apiKeySource
+              "secretName" $upstreamSecret
+              "secretKey" (trim (default "" $gateway.upstream.credentialSecretKey))
+              "volume" $gateway.upstream.apiKeyVolume) | nindent 8 }}
+        {{- end }}
+        {{- if $tls }}
+        {{- /* The listener's key pair, from a kubernetes.io/tls Secret. 0440
+               for the reason the credential volumes are: root-owned files and
+               a non-root process, readable through fsGroup. The kubelet updates
+               a mounted Secret in place, which is what lets the per-handshake
+               re-read serve a renewed certificate. */}}
+        - name: listener-tls
+          secret:
+            secretName: {{ trim (toString $gateway.tls.secretName) | quote }}
+            defaultMode: 0440
+            items:
+              - key: "tls.crt"
+                path: "tls.crt"
+              - key: "tls.key"
+                path: "tls.key"
+        {{- end }}
+      {{- end }}
+{{- end }}

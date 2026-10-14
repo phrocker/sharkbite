@@ -1,0 +1,42 @@
+services:
+  namenode:
+    image: apache/hadoop:3.3.6
+    hostname: namenode
+    command:
+      - /bin/bash
+      - -c
+      - |
+        if [ ! -d /tmp/shoal-hdfs/name/current ]; then
+          hdfs namenode -format -force -nonInteractive
+        fi
+        exec hdfs namenode
+    ports:
+      - "127.0.0.1:8020:8020"
+      - "127.0.0.1:9870:9870"
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -fs hdfs://namenode:8020 -safemode get"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./server-conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./server-conf/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
+  datanode:
+    image: apache/hadoop:3.3.6
+    hostname: datanode
+    command: ["hdfs", "datanode"]
+    depends_on:
+      namenode:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:9864:9864"
+      - "127.0.0.1:9866:9866"
+    healthcheck:
+      test: ["CMD-SHELL", "hdfs dfsadmin -report | grep -q 'Live datanodes (1)'"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - ./server-conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./server-conf/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro

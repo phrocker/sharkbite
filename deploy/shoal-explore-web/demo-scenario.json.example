@@ -1,0 +1,62 @@
+{
+  "base_url": "https://shoal.example.test",
+  "oidc_issuer": "https://identity.example.test",
+  "scenario_start": "2026-08-25T00:00:00Z",
+  "team": {
+    "id": "demo-team",
+    "name": "Example Delivery Team"
+  },
+  "graph": {
+    "namespace": "example-delivery-team-demo",
+    "authorization_domain": "replace-with-configured-domain",
+    "source_id": "shoal-explore-web",
+    "policy_id": "workspace-grant"
+  },
+  "workspace": {
+    "retrieval_top_k": 20,
+    "graph_depth": 3,
+    "graph_fanout": 20,
+    "graph_nodes": 100,
+    "output_bytes": 1048576
+  },
+  "users": [
+    {
+      "person_id": "person-alex",
+      "display_name": "Alex Morgan",
+      "team_role": "maintainer",
+      "oidc_subject_id": "replace-with-first-subject",
+      "workspace_id": "demo-workspace-alex",
+      "token_env": "SHOAL_DEMO_TOKEN_ALEX",
+      "agent": {
+        "id": "agent-planning",
+        "name": "Planning Agent",
+        "capability": "planning",
+        "executor_ref": "simulated-planning",
+        "registration_key_env": "SHOAL_DEMO_AGENT_KEY_ALEX",
+        "skills": [
+          "triage",
+          "dependency-analysis"
+        ]
+      }
+    },
+    {
+      "person_id": "person-sam",
+      "display_name": "Sam Rivera",
+      "team_role": "developer",
+      "oidc_subject_id": "replace-with-second-subject",
+      "workspace_id": "demo-workspace-sam",
+      "token_env": "SHOAL_DEMO_TOKEN_SAM",
+      "agent": {
+        "id": "agent-delivery",
+        "name": "Delivery Agent",
+        "capability": "delivery",
+        "executor_ref": "simulated-delivery",
+        "registration_key_env": "SHOAL_DEMO_AGENT_KEY_SAM",
+        "skills": [
+          "validation",
+          "release-readiness"
+        ]
+      }
+    }
+  ]
+}

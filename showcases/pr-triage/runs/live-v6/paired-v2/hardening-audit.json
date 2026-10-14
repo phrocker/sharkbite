@@ -1,0 +1,16 @@
+{
+  "prompt_count": 8,
+  "all_prompt_bytes_unchanged_after_hardening": true,
+  "fixes": [
+    "raw-byte prompt hashes",
+    "reject malformed proposals and mismatched frozen selection",
+    "fail closed on non-UTF-8 paths",
+    "preserve pure rename fallback",
+    "literal Git pathspecs",
+    "explicit 1000000-byte packet bound"
+  ],
+  "original_packet_manifest": "247e7f6302418917b69c1a4ed7184904925af2465a6cb99bd477d0aebe1b778c",
+  "hardened_packet_manifest": "0593616905621765256ff270372f177e8e17273beaf880e0b57c116f481ee04c",
+  "timing": "Post-evaluation hardening; original prompts and receipts unchanged.",
+  "id": "0a402a0d3b2196c83e1c214d53bb7c2d8c7fdce7c43717419d0460e1b7605dae"
+}

@@ -1,0 +1,8 @@
+POST /api/v1/admission/report
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_report\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"token\":{\"token_id\":\"dAD-\",\"version\":2,\"expires_at\":\"2026-09-06T14:02:00+02:00\"},\"outcome\":{\"tokens\":12}}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: admission action ID is invalid\"}\n"

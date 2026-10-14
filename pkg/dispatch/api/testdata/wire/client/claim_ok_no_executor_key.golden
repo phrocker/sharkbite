@@ -1,0 +1,9 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+id=6100ff version=2 state=claimed agent="agent" generation=3 capability="effects.gateway" action="charge"
+input={"account":"a1"} output= error_code=""
+deadline=2026-09-06T12:30:00Z created=2026-09-06T12:00:00Z updated=2026-09-06T12:00:01Z
+executor_key=ExecutorKey(none) header=
+claim_id="gw1|pod|claim" fence=1 lease_until=2026-09-06T12:05:00Z effect_possible=true
+effected=0/0 correlation="trace-527"
+error: <nil>

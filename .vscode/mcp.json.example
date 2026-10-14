@@ -1,0 +1,12 @@
+{
+  "servers": {
+    "shoal": {
+      "type": "http",
+      "url": "${env:SHOAL_MCP_URL}",
+      "headers": {
+        "Authorization": "Bearer ${env:SHOAL_MCP_BEARER_TOKEN}",
+        "Shoal-Workspace-ID": "${env:SHOAL_MCP_WORKSPACE_ID}"
+      }
+    }
+  }
+}

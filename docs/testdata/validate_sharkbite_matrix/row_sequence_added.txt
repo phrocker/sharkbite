@@ -1,0 +1,6 @@
+# Added unexpected row id
+SB-FIXTURE-101 Missing C ABI
+SB-FIXTURE-102 Missing Go
+SB-FIXTURE-103 Behavior mismatch
+SB-FIXTURE-104 Intentional divergence (approval required)
+SB-FIXTURE-999 Missing Go

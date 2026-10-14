@@ -1,0 +1,361 @@
+== action canceled effect_possible=true
+outcome dispatch.outcome.canceled
+  Action close-ticket on agent agent-7 was canceled at 2026-10-08 12:10:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+reason dispatch.reason.canceled_after_lapse
+  It was canceled after its last claim lapsed without a report.
+  record=action:act-1
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.canceled
+  Nothing further happens to this action; because it was claimed before it was canceled, reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== action canceled effect_possible=false
+outcome dispatch.outcome.canceled
+  Action close-ticket on agent agent-7 was canceled at 2026-10-08 12:10:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+reason dispatch.reason.canceled_after_lapse
+  It was canceled after its last claim lapsed without a report.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.canceled
+  Nothing further happens to this action; because it was claimed before it was canceled, reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== admission canceled effect_possible=true
+outcome dispatch.outcome.canceled
+  Admission of action close-ticket on agent agent-7 was refused at 2026-10-08 12:00:00 UTC; nothing was permitted.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.canceled
+  Nothing further happens to this action.
+  record=action:act-1
+
+== admission canceled effect_possible=false
+outcome dispatch.outcome.canceled
+  Admission of action close-ticket on agent agent-7 was refused at 2026-10-08 12:00:00 UTC; nothing was permitted.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.canceled
+  Nothing further happens to this action.
+  record=action:act-1
+
+== action claimed effect_possible=true
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 is claimed and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+gap dispatch.gap.effect_possible
+  The action declares an external or egress effect and is claimed, so an effect may already have happened.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was taken by worker-1, with a lease of 5 minutes ending 2026-10-08 12:06:00 UTC.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.options
+  What can happen next: the claimant reports success before the lease ends at 2026-10-08 12:06:00 UTC; the claimant reports failure before the lease ends at 2026-10-08 12:06:00 UTC; once the lease ends at 2026-10-08 12:06:00 UTC, another worker claims it before the deadline at 2026-10-08 14:00:00 UTC; or once the lease ends at 2026-10-08 12:06:00 UTC, it is canceled.
+  record=action:act-1
+
+== action claimed effect_possible=false
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 is claimed and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was taken by worker-1, with a lease of 5 minutes ending 2026-10-08 12:06:00 UTC.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.options
+  What can happen next: the claimant reports success before the lease ends at 2026-10-08 12:06:00 UTC; the claimant reports failure before the lease ends at 2026-10-08 12:06:00 UTC; once the lease ends at 2026-10-08 12:06:00 UTC, another worker claims it before the deadline at 2026-10-08 14:00:00 UTC; or once the lease ends at 2026-10-08 12:06:00 UTC, it is canceled.
+  record=action:act-1
+
+== admission claimed effect_possible=true
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 was admitted for egresses-content and external and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7 egresses-content external
+gap dispatch.gap.effect_possible
+  The action declares an external or egress effect and is claimed, so an effect may already have happened.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.options
+  What can happen next: the caller reports success before the lease ends at 2026-10-08 12:06:00 UTC, or the caller reports failure before the lease ends at 2026-10-08 12:06:00 UTC.
+  record=action:act-1
+
+== admission claimed effect_possible=false
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 was admitted for egresses-content and external and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7 egresses-content external
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.options
+  What can happen next: the caller reports success before the lease ends at 2026-10-08 12:06:00 UTC, or the caller reports failure before the lease ends at 2026-10-08 12:06:00 UTC.
+  record=action:act-1
+
+== action failed effect_possible=true
+outcome dispatch.outcome.failed
+  Action close-ticket on agent agent-7 was recorded as failed at 2026-10-08 12:03:00 UTC, after worker-1 reported its outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=worker-1 claim=claim-1
+  identifiers close-ticket agent-7 worker-1
+reason dispatch.error.outcome_unknown.either
+  The failure was recorded as outcome_unknown, which either the executor reported or Shoal assigned; the record does not say which. If accurate, it means the request may have been written and nothing establishes whether the effect happened.
+  record=action:act-1 principal=worker-1 claim=claim-1
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.error.outcome_unknown.next
+  Reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== action failed effect_possible=false
+outcome dispatch.outcome.failed
+  Action close-ticket on agent agent-7 was recorded as failed at 2026-10-08 12:03:00 UTC, after worker-1 reported its outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=worker-1 claim=claim-1
+  identifiers close-ticket agent-7 worker-1
+reason dispatch.error.outcome_unknown.either
+  The failure was recorded as outcome_unknown, which either the executor reported or Shoal assigned; the record does not say which. If accurate, it means the request may have been written and nothing establishes whether the effect happened.
+  record=action:act-1 principal=worker-1 claim=claim-1
+gap dispatch.gap.effect_contradicted
+  The failure’s code implies an external target was involved, although the action declares no external or egress effect; the declaration may be wrong, and an external effect may have occurred.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.error.outcome_unknown.next
+  Reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== admission failed effect_possible=true
+outcome dispatch.outcome.failed
+  Action close-ticket on agent agent-7 was recorded as failed at 2026-10-08 12:03:00 UTC, after alice reported its outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=alice request=req-1
+  identifiers close-ticket agent-7 alice
+reason dispatch.error.outcome_unknown.either
+  The failure was recorded as outcome_unknown, which either the executor reported or Shoal assigned; the record does not say which. If accurate, it means the request may have been written and nothing establishes whether the effect happened.
+  record=action:act-1 principal=alice request=req-1
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.error.outcome_unknown.next
+  Reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== admission failed effect_possible=false
+outcome dispatch.outcome.failed
+  Action close-ticket on agent agent-7 was recorded as failed at 2026-10-08 12:03:00 UTC, after alice reported its outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=alice request=req-1
+  identifiers close-ticket agent-7 alice
+reason dispatch.error.outcome_unknown.either
+  The failure was recorded as outcome_unknown, which either the executor reported or Shoal assigned; the record does not say which. If accurate, it means the request may have been written and nothing establishes whether the effect happened.
+  record=action:act-1 principal=alice request=req-1
+gap dispatch.gap.effect_contradicted
+  The failure’s code implies an external target was involved, although the action declares no external or egress effect; the declaration may be wrong, and an external effect may have occurred.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.error.outcome_unknown.next
+  Reconcile with the target before requesting the work again.
+  record=action:act-1
+
+== action queued effect_possible=true
+outcome dispatch.outcome.queued
+  Action close-ticket on agent agent-7 is queued and has not been claimed.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+blocked dispatch.blocked.unclaimed
+  No worker has claimed it yet.
+  record=action:act-1
+next dispatch.next.options
+  What can happen next: a worker claims it before the deadline at 2026-10-08 14:00:00 UTC, or it is canceled.
+  record=action:act-1
+
+== action queued effect_possible=false
+outcome dispatch.outcome.queued
+  Action close-ticket on agent agent-7 is queued and has not been claimed.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+blocked dispatch.blocked.unclaimed
+  No worker has claimed it yet.
+  record=action:act-1
+next dispatch.next.options
+  What can happen next: a worker claims it before the deadline at 2026-10-08 14:00:00 UTC, or it is canceled.
+  record=action:act-1
+
+== action succeeded effect_possible=true
+outcome dispatch.outcome.succeeded
+  Action close-ticket on agent agent-7 was reported as succeeded by worker-1 at 2026-10-08 12:03:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=worker-1 claim=claim-1
+  identifiers close-ticket agent-7 worker-1
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+gap dispatch.gap.no_evidence
+  The result carries no evidence references.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.succeeded
+  Nothing further happens to this action; its output is recorded.
+  record=action:act-1
+
+== action succeeded effect_possible=false
+outcome dispatch.outcome.succeeded
+  Action close-ticket on agent agent-7 was reported as succeeded by worker-1 at 2026-10-08 12:03:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=worker-1 claim=claim-1
+  identifiers close-ticket agent-7 worker-1
+reason dispatch.effect.declared_none
+  This action declares no external or egress effect, so if that declaration is accurate its whole outcome is in this record.
+  record=action:act-1
+gap dispatch.gap.no_evidence
+  The result carries no evidence references.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.succeeded
+  Nothing further happens to this action; its output is recorded.
+  record=action:act-1
+
+== admission succeeded effect_possible=true
+outcome dispatch.outcome.succeeded
+  Action close-ticket on agent agent-7 was reported as succeeded by alice at 2026-10-08 12:03:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=alice request=req-1
+  identifiers close-ticket agent-7 alice
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+gap dispatch.gap.no_evidence
+  The result carries no evidence references.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.succeeded
+  Nothing further happens to this action; its output is recorded.
+  record=action:act-1
+
+== admission succeeded effect_possible=false
+outcome dispatch.outcome.succeeded
+  Action close-ticket on agent agent-7 was reported as succeeded by alice at 2026-10-08 12:03:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=alice request=req-1
+  identifiers close-ticket agent-7 alice
+reason dispatch.effect.declared_none
+  This action declares no external or egress effect, so if that declaration is accurate its whole outcome is in this record.
+  record=action:act-1
+gap dispatch.gap.no_evidence
+  The result carries no evidence references.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.succeeded
+  Nothing further happens to this action; its output is recorded.
+  record=action:act-1

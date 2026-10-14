@@ -1,0 +1,84 @@
+{
+  "schema": {
+    "key": "agent-skills",
+    "name": "Agent Skills",
+    "description": "Ontology for uploaded agent skill documents."
+  },
+  "version": {
+    "version": "v1",
+    "created_at": "2026-01-01T00:00:00Z"
+  },
+  "properties": [
+    {
+      "key": "name",
+      "name": "Name",
+      "description": "Human-readable display name.",
+      "value_type": "string",
+      "constraints": [{"kind": "required"}]
+    },
+    {
+      "key": "description",
+      "name": "Description",
+      "description": "Short explanation copied or summarized from the skill document.",
+      "value_type": "string"
+    },
+    {
+      "key": "command",
+      "name": "Command",
+      "description": "Tool command or executable name.",
+      "value_type": "string"
+    },
+    {
+      "key": "category",
+      "name": "Category",
+      "description": "Capability or feature category.",
+      "value_type": "string"
+    }
+  ],
+  "concepts": [
+    {
+      "key": "skill",
+      "name": "Skill",
+      "description": "A reusable agent skill described by a SKILL.md file.",
+      "properties": ["name", "description"]
+    },
+    {
+      "key": "tool",
+      "name": "Tool",
+      "description": "A command, API, or local tool the skill exposes or uses.",
+      "properties": ["name", "description", "command"]
+    },
+    {
+      "key": "capability",
+      "name": "Capability",
+      "description": "A feature or behavior the skill enables.",
+      "properties": ["name", "description", "category"]
+    }
+  ],
+  "relationships": [
+    {
+      "key": "provides_tool",
+      "name": "Provides tool",
+      "description": "The skill provides or instructs use of a tool.",
+      "from_concepts": ["skill"],
+      "to_concepts": ["tool"],
+      "directed": true
+    },
+    {
+      "key": "provides_capability",
+      "name": "Provides capability",
+      "description": "The skill enables a capability or feature.",
+      "from_concepts": ["skill"],
+      "to_concepts": ["capability"],
+      "directed": true
+    },
+    {
+      "key": "depends_on",
+      "name": "Depends on",
+      "description": "The skill depends on another skill.",
+      "from_concepts": ["skill"],
+      "to_concepts": ["skill"],
+      "directed": true
+    }
+  ]
+}

@@ -1,0 +1,5 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+id="agent" generation=7 ref="gateway"
+capability="effects.gateway" action="charge" effects=[invented] input={} output={}
+error: <nil>

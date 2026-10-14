@@ -1,0 +1,39 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "ops",
+    "action": "scale_service"
+  },
+  "cues": [
+    "scale"
+  ],
+  "patterns": [
+    "[please] scale [the] {service} [service] {direction}",
+    "[please] scale {direction} [the] {service} [service]",
+    "[please] scale {service}"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "direction",
+      "enum": {
+        "up": [
+          "up"
+        ],
+        "down": [
+          "down"
+        ]
+      }
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "direction": "$direction"
+  }
+}

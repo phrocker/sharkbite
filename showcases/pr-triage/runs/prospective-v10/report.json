@@ -1,0 +1,198 @@
+{
+  "aggregate_metrics_scope": "Descriptive totals only; quality gates applied separately per temporal stratum.",
+  "assessment_ids": {
+    "a": "19e665ced42cd727d95ea4875855fc3fda75c9aa09dd1ed70b9ed0b590890ebd",
+    "b": "b17d5edd40df00595be225e4b400915fa11122d9ebdf1b842fb526c9c7fdfb62"
+  },
+  "assessments": {
+    "a": {
+      "all": {
+        "lower_priority_ids": [],
+        "missed_ids": [],
+        "positive": 15,
+        "proposed_lower_priority_source_bytes": 0,
+        "proposed_source_byte_reduction": 0.0,
+        "recall": 1.0,
+        "retained_positive": 15,
+        "source_bytes": 96463,
+        "units": 24,
+        "unknown_lowered_ids": []
+      },
+      "without_exact_development_overlap": {
+        "lower_priority_ids": [],
+        "missed_ids": [],
+        "positive": 10,
+        "proposed_lower_priority_source_bytes": 0,
+        "proposed_source_byte_reduction": 0.0,
+        "recall": 1.0,
+        "retained_positive": 10,
+        "source_bytes": 54541,
+        "units": 14,
+        "unknown_lowered_ids": []
+      }
+    },
+    "b": {
+      "all": {
+        "lower_priority_ids": [],
+        "missed_ids": [],
+        "positive": 15,
+        "proposed_lower_priority_source_bytes": 0,
+        "proposed_source_byte_reduction": 0.0,
+        "recall": 1.0,
+        "retained_positive": 15,
+        "source_bytes": 96463,
+        "units": 24,
+        "unknown_lowered_ids": []
+      },
+      "without_exact_development_overlap": {
+        "lower_priority_ids": [],
+        "missed_ids": [],
+        "positive": 10,
+        "proposed_lower_priority_source_bytes": 0,
+        "proposed_source_byte_reduction": 0.0,
+        "recall": 1.0,
+        "retained_positive": 10,
+        "source_bytes": 54541,
+        "units": 14,
+        "unknown_lowered_ids": []
+      }
+    }
+  },
+  "budget": {
+    "calls": [
+      {
+        "charged_microusd": 417087,
+        "id": "pr415-a-b0",
+        "prompt_sha256": "4b5eadaac06f71e37434328d4e91c60c93898613968536b505cc7be71c389cd5",
+        "reserved_microusd": 3000000,
+        "status": "settled"
+      },
+      {
+        "charged_microusd": 115593,
+        "id": "pr415-a-b1",
+        "prompt_sha256": "411a457a54b9f564663fd3d91ed6248af169f2d62aff4c550fde518455e26baf",
+        "reserved_microusd": 3000000,
+        "status": "settled"
+      },
+      {
+        "charged_microusd": 410541,
+        "id": "pr415-b-b0",
+        "prompt_sha256": "4b5eadaac06f71e37434328d4e91c60c93898613968536b505cc7be71c389cd5",
+        "reserved_microusd": 3000000,
+        "status": "settled"
+      },
+      {
+        "charged_microusd": 103677,
+        "id": "pr415-b-b1",
+        "prompt_sha256": "411a457a54b9f564663fd3d91ed6248af169f2d62aff4c550fde518455e26baf",
+        "reserved_microusd": 3000000,
+        "status": "settled"
+      }
+    ],
+    "charged_or_reserved_usd": 1.046898,
+    "limit_usd": 25,
+    "limitation": "Provider-reported cost, not billing attestation. Unpriced/interrupted calls retain full reservation.",
+    "protocol_id": "7602a628b97b3811bcf4af43857661d5fa75ba6dff186ec46e2a380d592ea27e",
+    "reported_paid_usd": 1.046898
+  },
+  "disagreement_ids": [
+    "8c5e44e6a6a05fa5a70c1d4c93e4aec1f30c5772827688e766b7815ed3fd3b20",
+    "eb9034d3237345c9e835dc56c8f3c36da1832b6076b299dba0f85ff39a9fd5f9"
+  ],
+  "exact_development_overlap_ids": [
+    "0242782ca5ea93011f3e6457a31e45334e4db6f4fb0c8d0811e69ebb80dbc72e",
+    "1f91df8a5017a898fd58b6eb20a22465b4757cd59fa79a0ba378b7f26e50d2a5",
+    "29f9060c5d00fc0bfbfdd51a16f902282066a8af35f244c8e9c796aca7edf11c",
+    "3c456d81b55d68673127eb57c27e1441e9da04ca81a5b0a247d9976bbe7eb45a",
+    "4931fd3bed97a398f0830ef3ed4b6f2a8783705df245e0d7b12113074c6ef1da",
+    "4fbd8e2dd26f298c47a98fa1103664961b3b91d17fb6bb416c03a26c8818ad78",
+    "8c5e44e6a6a05fa5a70c1d4c93e4aec1f30c5772827688e766b7815ed3fd3b20",
+    "ac86455c4a227233d5602c5b5f6e670ee689805a7a40bb47da5c0832e259a090",
+    "eb9034d3237345c9e835dc56c8f3c36da1832b6076b299dba0f85ff39a9fd5f9",
+    "fe52e6f4fa35f28b02753bca3acee8d81ffd38cff943ee4ae2d706117a493846"
+  ],
+  "family_count": 1,
+  "id": "55ec989c9e5cdd42da3ed26a8366a703dcb972770f79b51e9249f0cca6c5fd97",
+  "limitations": [
+    "Same-provider repeated assessments are correlated, not two independent model families.",
+    "Temporal strata present: existing_at_registration. Existing snapshots do not establish future-created-PR generalization.",
+    "Only sampled functions assessed; no full-PR defect recall or downstream token savings measured.",
+    "Exact hashes do not detect near-duplicates or policy-family dependence."
+  ],
+  "manifest_id": "17578843bf26e74ae2524f38088201fb881ef9e5f1c5bde78f0e907a308a45f0",
+  "model_id": "60030e721c92a9124906913c739a115574a33b7b0f3e1de71d165595c334dd94",
+  "optimization_enabled": false,
+  "picture_id": "fd83046e20d2ac9bf3887fc6ee040dd84757d5b173aebcf4ce020ab7083d8da2",
+  "prediction_id": "157436498e15670ddd1fbe1c46e2bc77b3629dcae5e0150c6dbdaadd4d27ca07",
+  "protocol_id": "7602a628b97b3811bcf4af43857661d5fa75ba6dff186ec46e2a380d592ea27e",
+  "real_action": "full_review",
+  "reasons": [
+    "existing_at_registration: insufficient family count",
+    "existing_at_registration/a: insufficient novel positives",
+    "existing_at_registration/b: insufficient novel positives"
+  ],
+  "scores_recomputed": true,
+  "selection_rebuilt": true,
+  "status": "hold",
+  "temporal_strata": {
+    "existing_at_registration": {
+      "assessments": {
+        "a": {
+          "all": {
+            "lower_priority_ids": [],
+            "missed_ids": [],
+            "positive": 15,
+            "proposed_lower_priority_source_bytes": 0,
+            "proposed_source_byte_reduction": 0.0,
+            "recall": 1.0,
+            "retained_positive": 15,
+            "source_bytes": 96463,
+            "units": 24,
+            "unknown_lowered_ids": []
+          },
+          "without_exact_development_overlap": {
+            "lower_priority_ids": [],
+            "missed_ids": [],
+            "positive": 10,
+            "proposed_lower_priority_source_bytes": 0,
+            "proposed_source_byte_reduction": 0.0,
+            "recall": 1.0,
+            "retained_positive": 10,
+            "source_bytes": 54541,
+            "units": 14,
+            "unknown_lowered_ids": []
+          }
+        },
+        "b": {
+          "all": {
+            "lower_priority_ids": [],
+            "missed_ids": [],
+            "positive": 15,
+            "proposed_lower_priority_source_bytes": 0,
+            "proposed_source_byte_reduction": 0.0,
+            "recall": 1.0,
+            "retained_positive": 15,
+            "source_bytes": 96463,
+            "units": 24,
+            "unknown_lowered_ids": []
+          },
+          "without_exact_development_overlap": {
+            "lower_priority_ids": [],
+            "missed_ids": [],
+            "positive": 10,
+            "proposed_lower_priority_source_bytes": 0,
+            "proposed_source_byte_reduction": 0.0,
+            "recall": 1.0,
+            "retained_positive": 10,
+            "source_bytes": 54541,
+            "units": 14,
+            "unknown_lowered_ids": []
+          }
+        }
+      },
+      "families": [
+        415
+      ]
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "development_report_id": "43038adaf0f7a1abf39b4035cc241b8fee60d88a45a8af9a515b65b085c42df9",
+  "model": "Laya-English-low-rank-encoder-plus-head",
+  "optimization_enabled": false,
+  "representation_sha256": "cc7cb6f21848c44e842844377f0d9023e3b4a4a5204a56ed262e9097cbbe6fbf",
+  "runner_sha256": "f592e83faa24adcaa7c5d9845fb7f409f81781c919b6f6fa2287944d2176737f",
+  "threshold": 0.025347175076603893,
+  "training_recipe_sha256": "846ecc9aec7d8bfedd02f537387c147b768d4ba53e5bd5273fef8e3b316c1d88",
+  "validation_labels_inspected": false,
+  "validation_manifest_id": "9d871c8264c84b53b1cec83fd8f358145cd9654c186f263179ef516a645991cd",
+  "weights_sha256": "07c543438d9406f52a17e21eafaa1115561748127109d9b1abe9f2abf19cebb6",
+  "parent_selection_id": "a1c28d479eb439c98aef1f389128b7d2670137c90fd3052dc214392a004af030",
+  "purpose": "Frozen candidate on existing open PRs; no refitting",
+  "id": "0e07a69fe9c999e87f118c06b1fc3ab0704f83b02aed29bfc2a47ae6f1d5324c"
+}

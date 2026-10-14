@@ -1,0 +1,8 @@
+{
+  "name": "stale",
+  "source_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "command_exit": 0,
+  "want_evidence_state": "fail",
+  "want_state": "fail",
+  "want_exit": 1
+}

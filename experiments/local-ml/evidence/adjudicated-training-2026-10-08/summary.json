@@ -1,0 +1,118 @@
+{
+  "kind": "adjudicated-training-conformance",
+  "paid_inference_calls": 0,
+  "population_quality_claim": false,
+  "promotion_enabled": false,
+  "schema": 1,
+  "synthetic": true,
+  "tasks": [
+    {
+      "cohort_sha256": "6439bf4b67c73dba5ec70085df830b12d41d3c307b9229e461820502bf8fa2e6",
+      "dataset_sha256": "9b82258ff7a47721e9dcb68bdaf1467c1c54b3ac730345cbd08435f867c80421",
+      "eligible_train_rows": 8,
+      "fit_seconds": [
+        0.5164797087199986,
+        0.5549278319813311
+      ],
+      "inquiries": [
+        {
+          "label": "positive",
+          "model_sha256": "3546c9b26cf6a9d48f5206a7e608874406e5dfa20c771e109cde85fbf7577e2d",
+          "prediction_id": "decision:prediction:v1:6bb45be50fc6110b6f0917c42686c99fca726412ccf8c180f724cd57bb3b28e9",
+          "provider_calls_this_process": 1,
+          "receipt_id": "receipt:7725aab18b90ad0fd7260ae7f92a23f824a1eb2dfe8e6738f71560461dfd0c8e",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:27892d5bb5f59a478bea2ad1f2fafed9e5c7e0cbfdadf7121d4ef3dad7199d56",
+          "synthetic": true,
+          "task": "source",
+          "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e"
+        },
+        {
+          "label": "positive",
+          "model_sha256": "3546c9b26cf6a9d48f5206a7e608874406e5dfa20c771e109cde85fbf7577e2d",
+          "prediction_id": "decision:prediction:v1:6bb45be50fc6110b6f0917c42686c99fca726412ccf8c180f724cd57bb3b28e9",
+          "provider_calls_this_process": 0,
+          "receipt_id": "receipt:7725aab18b90ad0fd7260ae7f92a23f824a1eb2dfe8e6738f71560461dfd0c8e",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:27892d5bb5f59a478bea2ad1f2fafed9e5c7e0cbfdadf7121d4ef3dad7199d56",
+          "synthetic": true,
+          "task": "source",
+          "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e"
+        }
+      ],
+      "label_counts": {
+        "disputed": 1,
+        "unknown": 1,
+        "verified": 14
+      },
+      "manifest_sha256": "6bc83512ee8f1ef560e0bb025ad54d8e502d54d2f95560f68ffff997954eb4fe",
+      "model_sha256": "3546c9b26cf6a9d48f5206a7e608874406e5dfa20c771e109cde85fbf7577e2d",
+      "prepare_seconds": 0.765504171140492,
+      "repeat_model_identical": true,
+      "rows": 16,
+      "split_counts": {
+        "calibration": 2,
+        "test": 4,
+        "train": 8,
+        "validation": 2
+      },
+      "task": "source",
+      "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e",
+      "training_receipt_sha256": "4c9e7df2336e1fb1f94fcf2cc5dd0c767ade39077bfdde128341513629b77419"
+    },
+    {
+      "cohort_sha256": "9ad915a1da061e548661f4f3d42e5bf2f0cac5a9059e768267a4a041ab1510d0",
+      "dataset_sha256": "7613727ea715af436f9c61c1e2a10613d953370dbb6fd75a0546cce350887e6e",
+      "eligible_train_rows": 8,
+      "fit_seconds": [
+        0.5632824813947082,
+        0.5412917979992926
+      ],
+      "inquiries": [
+        {
+          "label": "positive",
+          "model_sha256": "305f15eb0f8cecb9478e903d0f3b4c395ad0029b7f84bf62b0d99cd252225c4a",
+          "prediction_id": "decision:prediction:v1:c120fbaa89e9ea4d69ae368463baf444b8105c7bf51ab65a565de2a869e30be2",
+          "provider_calls_this_process": 1,
+          "receipt_id": "receipt:102233c9c7fb0fe9d6716afe64a08bdd7f70705da21d82a2b301f72dce55ed32",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:540d5610d8d3c955214328f3b5c43499115facdf8083ca01f0da11533fbfc2c8",
+          "synthetic": true,
+          "task": "review",
+          "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce"
+        },
+        {
+          "label": "positive",
+          "model_sha256": "305f15eb0f8cecb9478e903d0f3b4c395ad0029b7f84bf62b0d99cd252225c4a",
+          "prediction_id": "decision:prediction:v1:c120fbaa89e9ea4d69ae368463baf444b8105c7bf51ab65a565de2a869e30be2",
+          "provider_calls_this_process": 0,
+          "receipt_id": "receipt:102233c9c7fb0fe9d6716afe64a08bdd7f70705da21d82a2b301f72dce55ed32",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:540d5610d8d3c955214328f3b5c43499115facdf8083ca01f0da11533fbfc2c8",
+          "synthetic": true,
+          "task": "review",
+          "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce"
+        }
+      ],
+      "label_counts": {
+        "disputed": 1,
+        "unknown": 1,
+        "verified": 14
+      },
+      "manifest_sha256": "6fcc3818f1bb1fcc28b233faeb51864118a44742856813547be4e0401a0bec59",
+      "model_sha256": "305f15eb0f8cecb9478e903d0f3b4c395ad0029b7f84bf62b0d99cd252225c4a",
+      "prepare_seconds": 0.7280950411222875,
+      "repeat_model_identical": true,
+      "rows": 16,
+      "split_counts": {
+        "calibration": 2,
+        "test": 4,
+        "train": 8,
+        "validation": 2
+      },
+      "task": "review",
+      "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce",
+      "training_receipt_sha256": "844d43d3cebb4e5556445f30a6cb4850b5cae51376b571b463842c5c9f00a12f"
+    }
+  ]
+}

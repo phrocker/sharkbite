@@ -1,0 +1,3409 @@
+{
+  "id": "8edb0fb0df0bcd273723b36043b1f326248d8e9f72e1e555b3fd8530b0fffd05",
+  "manifest_id": "a96eb18eece8cea6d5945ec2ec375351c24edd7f28dbb4526249d6052bd5121f",
+  "optimization_enabled": false,
+  "predictions": [
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 324.7703299857676,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 446,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 336
+      },
+      "proposal": "retain",
+      "review_score": 0.850074291229248,
+      "state_sha256": "a97907115c5bab7bcbf704fa1fa2780f3686a97d86c9ece0022f2c548e28549b",
+      "unit_id": "d4dd0b9706efc716d9d82e3ac97574d5e0108badd673e16585a376c2290cf4ef"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 36.85528412461281,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1260,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1150
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.008097209967672825,
+      "state_sha256": "184e8f25191561a0b33de51c4fc1afa6790bfa03697323a32a11862f91f7faa3",
+      "unit_id": "da9b78784347365e0fa826467655395356feb4c23a456f1d351ef762c62ce7b7"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.820573903620243,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 488,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 378
+      },
+      "proposal": "retain",
+      "review_score": 0.07658014446496964,
+      "state_sha256": "31d778758277b96a808457ca2980afc355868a3058ab58ecad30455a0805c425",
+      "unit_id": "955687eec07ea1973eed3132ac8419ef03db27adcad6f776d3d3a4cec7ea79f5"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.8688760176301,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 451,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 341
+      },
+      "proposal": "retain",
+      "review_score": 0.588874340057373,
+      "state_sha256": "9875c09f63edd43da437381cf6ef1986ff8ef93fefe29e8d3b296f277ba41fca",
+      "unit_id": "d8a38cf7fec49b0ef0d0ac49f84362f9af8c22a864455425522f759d6c949a99"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.72597188130021,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 603,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 493
+      },
+      "proposal": "retain",
+      "review_score": 0.3302551805973053,
+      "state_sha256": "4f760313319de560a14cce4e786dc5e907794cb9bfe2155463e3ccc2520ca90c",
+      "unit_id": "2b240746459bb5d4f57a01cb744ca74e1199a2fa191432aaed9704b509034bb3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.62380374222994,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 397,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 287
+      },
+      "proposal": "retain",
+      "review_score": 0.46660253405570984,
+      "state_sha256": "e32ac77b9c0ac57bcfd8cc4e4c9e92fb86e7e2c42ca20dac3af717b644cd950e",
+      "unit_id": "687c38082d9ddbfdd2a774fba66b4a176220c5648caa71c3f93b0b5c109072a9"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 46.95855313912034,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1497,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1387
+      },
+      "proposal": "retain",
+      "review_score": 0.03330929949879646,
+      "state_sha256": "f5ff426b9979ccdfafc33b33b5162c4dd4b23a7891c10ddba111af6cf2f9ea93",
+      "unit_id": "f2b9a6aaaa6fecc7c88011c54513e0c6972244723783db4f56a30da269a5cf6c"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.156457226723433,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 438,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 328
+      },
+      "proposal": "retain",
+      "review_score": 0.029628200456500053,
+      "state_sha256": "2b84f7ab363270abaf96775a3b57f18104a0b279abc9aa104110166c4a3fe024",
+      "unit_id": "37fab24596096f5c5dfebb4731dc3bcb816dc3ec5b02dae5a023395a09a27b90"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 42.72128874436021,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1432,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1322
+      },
+      "proposal": "retain",
+      "review_score": 0.3517563045024872,
+      "state_sha256": "24b9a94d03d786649d0a4e57a22adef899582a4bda35104e339e64454cf8b141",
+      "unit_id": "ef32166f95573c540ccea3d1880b9d41a0c621a5f23b9ba0275e668a5fa3b6c1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 27.770617976784706,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 882,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 772
+      },
+      "proposal": "retain",
+      "review_score": 0.42369645833969116,
+      "state_sha256": "b5860d3d7c5bec0bc2a6d0f51fb9b97e7d4bde1a780deb0feea6247214b658ca",
+      "unit_id": "27e96c8a3a95662d556f7c6c670bd1389fb8ea03462a02dbf5a4edb1ac2943fa"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.75846504420042,
+      "optimization_eligible": false,
+      "pr": 333,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 304,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 194
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0036006029695272446,
+      "state_sha256": "c3aeff4f2e6dff08dc21b6f7bcecb5efa3a9f801e44756448c0fe2c03bca3a77",
+      "unit_id": "b8d17cc5c54c818d223471f740b93856c2cca286c988d3540c59657faa3b66be"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.17452285811305,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 383,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 273
+      },
+      "proposal": "retain",
+      "review_score": 0.6317079067230225,
+      "state_sha256": "9cdb00e558f0d00d5c22bac4f81c87e0b7561097b7a1d75e04cc6ff78fd951b0",
+      "unit_id": "8ef579ae534f5ca82f5c4f328fb576e061ac6c69e91bd13d5d7471a658a377ac"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.819617874920368,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 418,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 308
+      },
+      "proposal": "retain",
+      "review_score": 0.9199846982955933,
+      "state_sha256": "d5f78a719a08b38a6d3e67545ddec9ac1b6bdbf893e4c8dab6438556ec3591c3",
+      "unit_id": "c2f68cab502975f4abea5e7760df40e3fb11fe4c86be1d6f3e7b0f4736caf727"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.556059062480927,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 573,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 463
+      },
+      "proposal": "retain",
+      "review_score": 0.4916999638080597,
+      "state_sha256": "58459dc337845b723a3861d595ee4b459cf8cbc60612e1027ce0a6e0dc47688b",
+      "unit_id": "7fd052d4fd45229ea2ce84eab71410346943bfc2e2f3e69803b15c7f41209eb4"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.95589691027999,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 439,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 329
+      },
+      "proposal": "retain",
+      "review_score": 0.09509705752134323,
+      "state_sha256": "9832ec9aacdcef15317f7bd8e1db737c64123fdcd885219f7f3d0c05e625dabd",
+      "unit_id": "dc618dca38f2fbe40d1b1502fb9b8ac2d44c22cb8a37805099fe442d36c03bb1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.38516041263938,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 474,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 364
+      },
+      "proposal": "retain",
+      "review_score": 0.7136312127113342,
+      "state_sha256": "75a0a2b04518b9304ce201b002b3181f6a2d7eb31f54fd7b2cf89dcc39ca44cd",
+      "unit_id": "f333456dc885b81444ea3a1ceda1a7bf7baae8af7361758f1278951856817d4a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.16951420530677,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 408,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 298
+      },
+      "proposal": "retain",
+      "review_score": 0.9628831148147583,
+      "state_sha256": "0f71df9e57001640ae77b34d4222d232a84b120ab5a470608ad306f4e6b371cd",
+      "unit_id": "9ca3520fd7c22c46066efbf17cb61163832e2454a6efb72fe4ef52e1b5e011ce"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.80713179707527,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 442,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 332
+      },
+      "proposal": "retain",
+      "review_score": 0.8847880363464355,
+      "state_sha256": "3d9f11397448167ebac0898737ec57bc9be834907b2ba2ebda18a30c3c7ceb66",
+      "unit_id": "601c67a433bb905027e3495f86f50398113694097e754328d19c154a41e73814"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.83592812716961,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 438,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 328
+      },
+      "proposal": "retain",
+      "review_score": 0.6977118849754333,
+      "state_sha256": "b1f01fa3072b033b18609d2af445a27991484f4302f7fafe368386d0b43ba019",
+      "unit_id": "463bf975eb0226bb75e53987ec823a9a0af630d6e32d27315d05ba370af5fe6b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.79339911788702,
+      "optimization_eligible": false,
+      "pr": 338,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 382,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 272
+      },
+      "proposal": "retain",
+      "review_score": 0.32477056980133057,
+      "state_sha256": "c9e618f467d84dd0423eb92dc5ccee9b8fe3472915946a35baf00eb0f9d109ac",
+      "unit_id": "5c83561acccb6c7287ee29f3bb47ef68d51afe5d791dab05203b55fb454fecf9"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 51.99270881712437,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1713,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1603
+      },
+      "proposal": "retain",
+      "review_score": 0.03101150318980217,
+      "state_sha256": "4e8405435c4092634d084a20871f82a9bc56f9a42a69995459c904f492c70979",
+      "unit_id": "615b74bdf09848b8736db436bc7e9e6fbcef52b45d29a9f07252f7349197b4cc"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.705495961010456,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 503,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 393
+      },
+      "proposal": "retain",
+      "review_score": 0.41869691014289856,
+      "state_sha256": "01fd86f304b8488dc78bb7996c85885dec6bd333d5e0ff5eb5fa3767414799aa",
+      "unit_id": "e9daebf49dfe4ee36b659c72f3c14599d74777443898d6c917b051621069e336"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.314653869718313,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 536,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 426
+      },
+      "proposal": "retain",
+      "review_score": 0.9797840118408203,
+      "state_sha256": "e7fccdce0dbfd0e3b5404e898f2d77048c8ad9aefeeb00339e6069de56730fba",
+      "unit_id": "d28d1e86e9fcd5d3db57ab142d5c61ad4016ccbe33bb483ff997efdcd25f10d8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.285775747150183,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 642,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 532
+      },
+      "proposal": "retain",
+      "review_score": 0.23528404533863068,
+      "state_sha256": "edc8b87d7cf6407d5aa74c3b171259b8c1f33c1b4e3158829caa31835b2a6507",
+      "unit_id": "405cd4bded2ba62822f2d130033b21a0b90a71c9bf0cbcb698ee2394ac5bbd0e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 32.02857123687863,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1064,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 954
+      },
+      "proposal": "retain",
+      "review_score": 0.5794004201889038,
+      "state_sha256": "8e1b17acb905305c5044ddb6bec73197b60cb98d5f770786ed43a83defd5a94c",
+      "unit_id": "85acb70df00da6cbc81fd54a6e4a89ecac6823eebbe0bb5488934507cb908145"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.858863178640604,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 381,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 271
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0032794431317597628,
+      "state_sha256": "bf41704d71358cdfe39699e626723201dcfdd0ebf8e795d25d86449d112a513d",
+      "unit_id": "a20a00903434a6bb605b2361e9ac26373d8b0634a1e0986d638adfc984c08709"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.889243688434362,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 365,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 255
+      },
+      "proposal": "retain",
+      "review_score": 0.21520639955997467,
+      "state_sha256": "9026ac0a6695be9f61c49f2ee3df0f77bfbff4a308b553e7ea0466a6d9ad50ba",
+      "unit_id": "ef88e004e7153f40d232e9dfcf749ad15fa74c3cf09fccd4589bcf50719b9aed"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.68351173773408,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 355,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 245
+      },
+      "proposal": "retain",
+      "review_score": 0.8183197379112244,
+      "state_sha256": "6364a91309c8eb0710994a44f5fa2b4388bd21214b965778d5e00a31ce7595db",
+      "unit_id": "4d7b12afae15d1b71b437b415cbbcf86d48814f69dc56679665e51f6208a4a6e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 27.0069376565516,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 857,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 747
+      },
+      "proposal": "retain",
+      "review_score": 0.5117166042327881,
+      "state_sha256": "99c1831044afb5bc759040cd9ee4bd89784c7bca625512b61f49a5736e0d9835",
+      "unit_id": "02b626b205a65a13325b509261a875bfd7fc278f9c3187c9b308e365144f26dc"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 28.276699129492044,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 917,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 807
+      },
+      "proposal": "retain",
+      "review_score": 0.44046926498413086,
+      "state_sha256": "bb19e3ed3d4fd881d09556d3c442c3ca7972df156bd464674f595c9a1c722cb0",
+      "unit_id": "4101c6c180bf76a7ef2a351ce24ad55eb7f8dd309cc4a84f6703fe2dd038becd"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.88764463365078,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 481,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 371
+      },
+      "proposal": "retain",
+      "review_score": 0.06390459090471268,
+      "state_sha256": "7d578a9652d4c259f85f211498f32effbfe6063143929cf2f0f7300b16f07acb",
+      "unit_id": "f2cf1b08092c1f1d7af5f70bd221bc21f5c94f2d1193ecd9820ce320f9d2b8e6"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.154323153197765,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 669,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 559
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.007614047732204199,
+      "state_sha256": "216b647dc337c84e609899a149eda0c70748ddb69392fbbfe81232120ec8536b",
+      "unit_id": "d9254d30a6d63a27d919b754b53a77e73f15847c257eb55f45886bf6c53e7f95"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.75462706387043,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 238,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 128
+      },
+      "proposal": "retain",
+      "review_score": 0.05455021560192108,
+      "state_sha256": "fc3865d736d91215d0f1fd38913ac42f79f2411eaa24aaa51c46fedc81d40c68",
+      "unit_id": "dd0c699743a0939e7539a6ed4e21c162cac269b6a34d72caf76ac8bde8c1eb49"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.199694316834211,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 244,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 134
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.024053553119301796,
+      "state_sha256": "ebe2c468ebd9753e768618403a5a332c7d623ad532c73ab0872b01c82d3b9e1b",
+      "unit_id": "b86110bc0bad85643668b3d0eec8c62742569256cb8d82b5d47649a1693f028c"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.395045280456543,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 293,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 183
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.005530701484531164,
+      "state_sha256": "78c467b4fcde28b95641b446dc286d717c6e4d00f35b4b35a5078b5b54c0e483",
+      "unit_id": "930362001cd0d19d0033f4180bd6530ed84af24b5ea5418866fa0a8e9665275a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.93048593774438,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 436,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 326
+      },
+      "proposal": "retain",
+      "review_score": 0.9846936464309692,
+      "state_sha256": "a442e8c5ed570aedf7932435f3e5f6a3efc1c9d6d83f982ac2800781c227a67c",
+      "unit_id": "6a9ab67f44a1762fd401c726246f3716b71ad3cf3086d69d6b2833ec76580724"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.500865876674652,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 249,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 139
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.019142363220453262,
+      "state_sha256": "47855bf3bfcaf3b829c0d7d4dc6613b75e31296a1c86e3e71929f1bcba84f099",
+      "unit_id": "d20c738dd70e4aa80f7f52f8785ee5da4654002964e3c3b67002a3b3bebb4ac1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.101745888590813,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 287,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 177
+      },
+      "proposal": "retain",
+      "review_score": 0.17490297555923462,
+      "state_sha256": "8f18b9db1a314ec36c3502ee41720408155dd17ba15dae836be3fa1e04f9555e",
+      "unit_id": "d72558c09c6ea2031dee5a632b4e852653d4a27c2d0bc916263d087a87865e65"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.81532872095704,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 678,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 568
+      },
+      "proposal": "retain",
+      "review_score": 0.04974602907896042,
+      "state_sha256": "6e112a9f3c27c769458a727a8b15c957197cd5253006b6811ad5afc04aa7d9d4",
+      "unit_id": "62cc49e6f759b3299bfb43d547fd46bcac7dc2fae39e9626920259934d91da83"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.54614294320345,
+      "optimization_eligible": false,
+      "pr": 320,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 624,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 514
+      },
+      "proposal": "retain",
+      "review_score": 0.11876784265041351,
+      "state_sha256": "2030dfa53d8ab21f2e089dde9b0f5a4f3f02a52d87fa6813dfea67c788433ca9",
+      "unit_id": "1b8c06a4ab35549ff0d49c3b2cb59b57d922d88eb537110849245b102f1ffd43"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.981168020516634,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 306,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 196
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0034834244288504124,
+      "state_sha256": "4491dc7234dad5e282cedaf0301549a5524c86607599f6ebe68d3d23fe70ebc1",
+      "unit_id": "b61e83b5f3cf144aa20391cc313c86e31b0f348b7d6cbf0713107e14babc06bd"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.791636891663074,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 268,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 158
+      },
+      "proposal": "retain",
+      "review_score": 0.03194934129714966,
+      "state_sha256": "eed554934c1aae21e6f8a619acbac382248290d262d72725988d7ccfc22a9713",
+      "unit_id": "054c79d1f053173cb4ff438c62e38313e87ad9b847338f63085c002ee4be3b46"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.096136067062616,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 302,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 192
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.018378445878624916,
+      "state_sha256": "8fc68b524f4eb7c2d54eaab7d3a99be6c9068181de99e4b139fb7f4cc723136d",
+      "unit_id": "d0540031e5e69389655649f76ea1bce187abe8724e2e25d846a1a06fd823c31d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.957929987460375,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 400,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 290
+      },
+      "proposal": "retain",
+      "review_score": 0.3446640074253082,
+      "state_sha256": "ac0c9f49c5f5ebbd33c5dbd7e602945b412dc764f5065f86c9417007c5752711",
+      "unit_id": "7a957d40f41c8b74d46f61dd4a0c1bacc9aa4ea224ebb6b6f45dd056d35b9691"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.188437964767218,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 696,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 586
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.008482507430016994,
+      "state_sha256": "13ec9f681426e3de9a0e3f501d09bdff7a894d908717ee3514f08579b7f5671b",
+      "unit_id": "708af34faf4231d275a9a0470c41c6ff20d5ec078edb81df931018cf1ea573e1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "token_limit",
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": false,
+        "full_tokens": 2869,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 2759
+      },
+      "proposal": "retain",
+      "review_score": null,
+      "state_sha256": "23153a0ad7f7babeb3520c8ed1e1e3d70dbcbf5ec82176f81715d4508ca75152",
+      "unit_id": "a417e70bf44333cad1c503a2f829746e8abadd58ce58cbbdd0a807a8bd7cf2c8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.698730997741222,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 575,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 465
+      },
+      "proposal": "retain",
+      "review_score": 0.04646466672420502,
+      "state_sha256": "b4cf7cc16e361fc86369eb7c414611eb23b1e4cfdd947caa0dc9cfd63dad56b2",
+      "unit_id": "d5cbdc225dcf9262e219a30e6fe90c064fe3e8b7b6f2f63f8630dc9536228d9d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.002067364752293,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 351,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 241
+      },
+      "proposal": "retain",
+      "review_score": 0.21190565824508667,
+      "state_sha256": "37b9be0c94e5c263604c6a7fc08081ea372907990419b3caba1f7c2999abb6a7",
+      "unit_id": "f0ca50105ebde33d260336bfccd236152dc170707ba359b0892e84c828b42a6e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.390036161988974,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 287,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 177
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0028504556976258755,
+      "state_sha256": "9ab52a2911765e598000a496ff8726a1eda58b9ba435cacf2763e0da8d9863ac",
+      "unit_id": "efe16fd13a66754546023666e3e968ce5308011cb9c451c2ce409b1ba33dec2f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 33.2736037671566,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1174,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1064
+      },
+      "proposal": "retain",
+      "review_score": 0.05208601802587509,
+      "state_sha256": "821ba7443c7cc52d9ff8534d00a075c6f0dc54fd4110fb10eb3964cc9eec5f7c",
+      "unit_id": "5a76697ac0149ffc8d02558f1459ef464e1697e7025faa1311e3808a595200c0"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.195118971168995,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 710,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 600
+      },
+      "proposal": "retain",
+      "review_score": 0.055005282163619995,
+      "state_sha256": "d71040a4d4042a27ee1f740651bb9bd1bf6b71f027965e1669c21a86d9e385ee",
+      "unit_id": "0326d4e77d3f676573cfca747a62e33f4191f99bcfb3617a5bf42e5634c497e2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.45953580737114,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 383,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 273
+      },
+      "proposal": "retain",
+      "review_score": 0.07736067473888397,
+      "state_sha256": "caa230dd522a05bd3b69bcd3f78236bf1229a79a22731654c602de75a521156e",
+      "unit_id": "531b2589d663622b923bb463f6b13990d8815df9844fd0bcc8668cbb7f925af8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.8881640098989,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 457,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 347
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.021793855354189873,
+      "state_sha256": "ea9598dccb57439420c25f9fca4e2f1d079801b9046d42f9bfd2940f59e4f292",
+      "unit_id": "4bd456435d033568ed155caeb7b94a2b0bae08a0a66e087d1f2bdda88d384af3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.450796138495207,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 368,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 258
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.003555342787876725,
+      "state_sha256": "d82dc68abfe8a6f6a7c0e27d0e578b1458e496a814c59e3678d685e211e75bc6",
+      "unit_id": "3ccf034fc3dc3fbaa36155988b9292f31e1ecf6836c8ba590e84da12450b6c9b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.009063702076674,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 814,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 704
+      },
+      "proposal": "retain",
+      "review_score": 0.051319949328899384,
+      "state_sha256": "16c628966e95e2b234950ab330a067673b62d68f9d955d02c65b86f51ac5bccb",
+      "unit_id": "517e7199f0299f05f1ccdf1c807409657aa7ffa6517cc148769cfda259911f37"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.748721159994602,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 731,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 621
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.006654009222984314,
+      "state_sha256": "1c7ad48fe5ae2f3e54abdc74db87362d7577d7a979b1d98b6bb3455b6fc02bbc",
+      "unit_id": "298b40aa5e780415955b9efb56a92e8dc5591a1f7c732c89766d6070ec9dbfdc"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.19351178407669,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 585,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 475
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.014456546865403652,
+      "state_sha256": "aeea92db86ed31bde6d87cbf758bd5c78194e8ceec1ea7d86cae4cee8adde696",
+      "unit_id": "374c1e0e5dc0abf1cb6c639115424028569ab7220f373a7d6b44c3ef2221c088"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.055799141526222,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 592,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 482
+      },
+      "proposal": "retain",
+      "review_score": 0.026638740673661232,
+      "state_sha256": "77430dc4e7c3c74b65e51b55cdb4071f4ba5a2832fd73e1e02166d80194858e4",
+      "unit_id": "d9d25c7440fe055979db35ea929b68e03f9bc72fed57ad9a1d5ce586d0480823"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 34.5343267545104,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1135,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1025
+      },
+      "proposal": "retain",
+      "review_score": 0.06740652024745941,
+      "state_sha256": "fc3cb88a4fff45d824b1b8ebcc9734ec70597670b54bc968ce5eca7166ac0efb",
+      "unit_id": "1f4053a96a69e125fae356562acf73ce36d2db27459712aad1acf0a90b067d84"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 28.951820451766253,
+      "optimization_eligible": false,
+      "pr": 324,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 899,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 789
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.00278189848177135,
+      "state_sha256": "e0dc3c91c487c89774ae64ae9121215ff3ab2d408585466b08aff92ba65afc59",
+      "unit_id": "16a6d55dcdcddb93f6b8494285158d9b4417de7ff1b9ad7469437278f8f97124"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.718920975923538,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 542,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 432
+      },
+      "proposal": "retain",
+      "review_score": 0.15140382945537567,
+      "state_sha256": "18d20f9d7089fe4a6b64717e96b7d4b3bf94997492d50dd2461badeacd7d7b83",
+      "unit_id": "19af38d40fad7fc182846f9316669d1d1a1303e2e4e12f607ab1456af7119623"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.772131323814392,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 592,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 482
+      },
+      "proposal": "retain",
+      "review_score": 0.07599521428346634,
+      "state_sha256": "b13518090a34ed9429d27c94785fa1bf9443632e7957a331af6d686a18addb85",
+      "unit_id": "73d09a9bb1690f21e82308b8f129f64aee36e5e764ca3c4a48bf0dfae5986bba"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.27700797468424,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 663,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 553
+      },
+      "proposal": "retain",
+      "review_score": 0.24041776359081268,
+      "state_sha256": "d75a190e4f7565ba4926775ee963acd889f0869301acc941e769a2beb0ddee56",
+      "unit_id": "905a629ff3527b68a35ba8f163bb10f6cb236975386541179d59d6ca6ea2328d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.23099795728922,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 403,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 293
+      },
+      "proposal": "retain",
+      "review_score": 0.0721612274646759,
+      "state_sha256": "2a896c4b847394a040a96c9e392d144748da9d5b8913914f6277f9d64f4453bf",
+      "unit_id": "5e4f0c31dec7278718aabecff6e8fca88582f61cbb73bdedb21e2b8b45c13bc4"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.766227833926678,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 601,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 491
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.014072093181312084,
+      "state_sha256": "ff95d85eb7c4ad03f9f7ae128f02b638cadf8f60ccce82a144eaeed0ac71addd",
+      "unit_id": "c3e1f7142c84891e61fe7cf01f3599a84e49c57575a44e9c64e494d12b401e37"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 34.06045772135258,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1152,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1042
+      },
+      "proposal": "retain",
+      "review_score": 0.029267115518450737,
+      "state_sha256": "3f325f9cc5cfd53a20ab64251608af9e541bf5a81a436775e8e99fc2120bd15d",
+      "unit_id": "077a7a307fecd254ea5238961f6f65960ef34079cf422155cbcea8bf7bcdb985"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.879340797662735,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 368,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 258
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.022564494982361794,
+      "state_sha256": "5844de24444cdf6545508830979f217986040dc6219c1205653097bd7f20154b",
+      "unit_id": "9bcb5f4c9f25b2e91e564140ef309bd014b5d821e747920337b1116b68e9e492"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.299986004829407,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 493,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 383
+      },
+      "proposal": "retain",
+      "review_score": 0.03448852524161339,
+      "state_sha256": "0e81fe908d05d49530c214976a39c663a179fe85d84e84d0173840152754b47a",
+      "unit_id": "e033be1418a9d710a18972576f3319c798b8abb96d8599233bb9e5aa414fd23f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.93430682644248,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 345,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 235
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.005685906391590834,
+      "state_sha256": "366bf65ed34caafedc8dbad352ec04ad749cb1474f0cda1d1a1fd4c27b18823a",
+      "unit_id": "a23ca632e1493e9c2fbc48d9c8daa0f15a8390d57b9a755c705ba827905fd90f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.983388155698776,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 421,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 311
+      },
+      "proposal": "retain",
+      "review_score": 0.8945133090019226,
+      "state_sha256": "585e0dff17f7e747829dae445e79617969f86c76d6b397b214b7234cd89879cc",
+      "unit_id": "fc8997e87b2eca9fde4df63a1cbf213d957783f19360e15b2a52c850b7f55a27"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.81791541725397,
+      "optimization_eligible": false,
+      "pr": 331,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 435,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 325
+      },
+      "proposal": "retain",
+      "review_score": 0.207857146859169,
+      "state_sha256": "b9bb877ee3417eb24fbef2097959307dc1805b2c757ffb54eb335b8e89ec72a4",
+      "unit_id": "01398f3dca4ce3ea8359f0831346b3da9b76faa29214fb618cce875fb8afc3e3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 31.51037683710456,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1067,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 957
+      },
+      "proposal": "retain",
+      "review_score": 0.036313921213150024,
+      "state_sha256": "20bb92a1c3aa9d5897f97e617c616815667ed68bef3d7cc265155922bac4009a",
+      "unit_id": "53ff347a215b1bf6defb674b28cf8793a1a3a58268ae11ec463ebd086e14943f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.080506198108196,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 612,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 502
+      },
+      "proposal": "retain",
+      "review_score": 0.08725224435329437,
+      "state_sha256": "259677ac4b43d966e6310cec320d0bf6bd42c6c25ded68df575f9753a25d2255",
+      "unit_id": "0ac4914bf58b45937d2d10212a92e2220a7140900d802243fb77fae5b5c3bfce"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 49.6164676733315,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1635,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1525
+      },
+      "proposal": "retain",
+      "review_score": 0.2022067755460739,
+      "state_sha256": "dee02dbdf02125b681be5af4f7455b4529cfbfe7703a22b2150370e997cea0e8",
+      "unit_id": "3b958aea476ee9b98a995bcf8226d37ab9f441e791c5adeb1536817065e8626e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.61582501605153,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 843,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 733
+      },
+      "proposal": "retain",
+      "review_score": 0.2249906212091446,
+      "state_sha256": "030616dd18405fba33ce309b619563e83c57f0293e5ab85e872ccc3781bea15b",
+      "unit_id": "c4d25d47ff4d7fd83a8c4c82f8578a6d915a50678f1eb801260180b4a5a107ec"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.09357511997223,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 462,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 352
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.00912563782185316,
+      "state_sha256": "8c0b3664b7d0df4e5bb7c029e561ca742f45e991d59bc7c31ce4e16ea6dcc449",
+      "unit_id": "4ff6c815d0253ae1ff31ab49a9a4eb952c776b0e373839429cbdba0d5d4f9593"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.462509218603373,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 402,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 292
+      },
+      "proposal": "retain",
+      "review_score": 0.33415475487709045,
+      "state_sha256": "e8b65ac4ca67f55dbc530e63459b745de1bd3bf8f916260bf31abf3c89b0b527",
+      "unit_id": "906f46c5bcc4f802739bd2ceac22ba8c08ad025137347c2868fcea254ebc449c"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.53621282801032,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 328,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 218
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.010701509192585945,
+      "state_sha256": "f5479e2d1e2f76b63f14ffbc53a0f75aa12ad98c21a1868d939e5238c5869f3d",
+      "unit_id": "e1d1e87bb96e190bdd11f4d2fe17993bc7c92b7e80ebca17e7baab5f2167884f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.34052023291588,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 359,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 249
+      },
+      "proposal": "retain",
+      "review_score": 0.02601451799273491,
+      "state_sha256": "3902c8a34029d988a3c1fa2aafd1ff0831e325763e30eae13dd1c4bfeccef531",
+      "unit_id": "feb6aefa0fccbca65df3362c8fad4adf30c7f68ce862f66ed2eda22239785256"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.1432830914855,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 657,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 547
+      },
+      "proposal": "retain",
+      "review_score": 0.17272931337356567,
+      "state_sha256": "d04cbca2d95796aa7edd13aef86d9722d4415b2d93a1eb7f318ebb8a43e0ce1f",
+      "unit_id": "f2fdcb906bd1248e5bc66a7b02f341e7167ceda958b0391fe20bf5ef8e4e61c2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.628717072308064,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 323,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 213
+      },
+      "proposal": "retain",
+      "review_score": 0.17002512514591217,
+      "state_sha256": "8a11bd44387af2df5f9deccc9890dfc4629a20f0339cb59ea4acc4c4b329c829",
+      "unit_id": "3f737f58cf98b6b8e481e4a7b05f8fa5817ac9cc69cc39104f08184213c35784"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.255989972501993,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 287,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 177
+      },
+      "proposal": "retain",
+      "review_score": 0.1866874396800995,
+      "state_sha256": "9a52767e28a51a9ee644ec5fcd203e683c2cb71bbd3a1320e70b946b0e9a7e37",
+      "unit_id": "226f4ff6380f2fc72d777804487bf1290b671b636c512fe4cf42a842680e78e7"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.5342257656157,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 671,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 561
+      },
+      "proposal": "retain",
+      "review_score": 0.19072401523590088,
+      "state_sha256": "9611b7b2926fb95bf0900e828fe683a806b10d96487d667d0719174df3f5680f",
+      "unit_id": "53e5af0d8ca09426c3718f4427dc50eb535c27881256c8d1e11564f51d4cfd7b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 34.66793103143573,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1162,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1052
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0121159004047513,
+      "state_sha256": "86e460f2e66a998463efb497a86f57dcba250f8fee4d700bd5c4779a5d890f1b",
+      "unit_id": "81959fbcbdf640790c5c5ca8de44d2af9ed7c27a9c390f8d66e69d381f5dfbf2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.367395021021366,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 743,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 633
+      },
+      "proposal": "retain",
+      "review_score": 0.9811848998069763,
+      "state_sha256": "efae5c2e53a2edee7d9e3b714aee656def4b7647b17fc1c66762052fcfc50fca",
+      "unit_id": "f44056c3386afe3ea03ed687090f9919f949b1980107bb71c1e3a95d9ecaa9b6"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.567598778754473,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 757,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 647
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.024093348532915115,
+      "state_sha256": "b13d79613d6f8b267461c460bc40aac28c2ff52cab84c0d13b8a462486707e44",
+      "unit_id": "75291da49a9dd3f4ea56f150ec8f300e75287fbc411c47d9bd0dc090bf2b3b92"
+    },
+    {
+      "action": "full_review",
+      "disposition": "token_limit",
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": false,
+        "full_tokens": 2794,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 2684
+      },
+      "proposal": "retain",
+      "review_score": null,
+      "state_sha256": "6ed6df7023606f5a01346abf8c4eccda4482c7ede05d18dfecdf27366a6caf51",
+      "unit_id": "474d883bbda5c634d3e2516030d72e3bbd6fb5b12ec0dc767d9c823e3429a95a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.428875900804996,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 376,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 266
+      },
+      "proposal": "retain",
+      "review_score": 0.687829852104187,
+      "state_sha256": "e93226d5d57c154ffc69195f828ca76c5439195b1b8e7e826b9a0a38ec7546e2",
+      "unit_id": "dde54b51c8d628cb87f7bd33e93e3707e64bad53e29ed6b9c810d95b211e1486"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 46.61007225513458,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1553,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1443
+      },
+      "proposal": "retain",
+      "review_score": 0.07171299308538437,
+      "state_sha256": "95d4c82e4662b8aa886611c12863318399b7116e11b9371948617cced533a624",
+      "unit_id": "81166eaeb2bc72b29802e9a794db6a67f7cb7ca77af0fb6a28c6cc7d7e2932f3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.511905007064342,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 281,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 171
+      },
+      "proposal": "retain",
+      "review_score": 0.04084990173578262,
+      "state_sha256": "cb3963d1fc4d01bf1e4b1debf08e061d3c070b19f2901bfc27beec982fbac770",
+      "unit_id": "7e6c0108d4a85885d88ec674f0003ae61715a770aee70fad5b6f81d3650ada68"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.93679329380393,
+      "optimization_eligible": false,
+      "pr": 323,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 297,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 187
+      },
+      "proposal": "retain",
+      "review_score": 0.07237402349710464,
+      "state_sha256": "b443c4bb494b47fc7ab7b1982359376d464e34188d2a7e2d95dc74da3e745fbb",
+      "unit_id": "c2cd59803e617b5b9243dec7c86da5dbf8cc41b719e47674c3553937d328d9a3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.590426046401262,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 289,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 179
+      },
+      "proposal": "retain",
+      "review_score": 0.046899259090423584,
+      "state_sha256": "eb329190a3a8a81810afa7d59a3f9f3efb6a925e7a2878b1fdeb111a85b81e7d",
+      "unit_id": "d07dcac794c99287ff5883c260376d01f3daecdfe4e1c47a51dae2d5614679bd"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.336616318672895,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 528,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 418
+      },
+      "proposal": "retain",
+      "review_score": 0.8220463395118713,
+      "state_sha256": "fbdd598f547a520bb0593b98d6813a9b56e6855d00bd44f838f85f46264857a2",
+      "unit_id": "dbe09dbbc34928c65998f8ab15ae8201363df17480714d1520e4430179488c17"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.276438254863024,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 302,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 192
+      },
+      "proposal": "retain",
+      "review_score": 0.34092390537261963,
+      "state_sha256": "09bd5cba52cb6984f5c7a2df60a428486d244b9728c8ca8df4fc81d13211da5b",
+      "unit_id": "87a77e4ade11b31b40201ec07ebc644d5cadb1e3e181ef4b033de06e5b3165fa"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.616195276379585,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 292,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 182
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.009159918874502182,
+      "state_sha256": "aa8c0e7695b21d893097ab2aa2db5e5fdf82c3a6c35fe9b9154ccf7c0375d7ad",
+      "unit_id": "5a4703e8942f5dedc90a23f4e41b15ac0c4cd0c418f3bee3d2a9421edae77ccf"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.239526845514774,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 321,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 211
+      },
+      "proposal": "retain",
+      "review_score": 0.05271640419960022,
+      "state_sha256": "1beba631542968b6fe089ff9c70fcc84dbf75a7ba24869aab91a9a6b950e44b2",
+      "unit_id": "8fc6964d98449296459f239c154fdc92fb14e5cbd0b4a8b322cb3bd535a55e67"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.751699313521385,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 428,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 318
+      },
+      "proposal": "retain",
+      "review_score": 0.9216402173042297,
+      "state_sha256": "164c9d359b9ede528e0bda7de1703b46c3aa87054024df44bf99a6d8e2d5c925",
+      "unit_id": "d76b366f31b086cbf7a7d671878240507d6badc2a414bdeaa581665fde5d535e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.23758791014552,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 834,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 724
+      },
+      "proposal": "retain",
+      "review_score": 0.9557754397392273,
+      "state_sha256": "9437ac0c5709c3e1f47f2c93589cabebf0d6aaf81a20e6a3652957a40c6a0055",
+      "unit_id": "badcf2bc7caab133f29c4ec8ce7060d2186ae1f9972fe8af1554ea06905c999b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.07347871363163,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 446,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 336
+      },
+      "proposal": "retain",
+      "review_score": 0.8593541383743286,
+      "state_sha256": "a8b42fbad604f7b33bee189a09d6cb8994397584f146f6983a1d922942158f3b",
+      "unit_id": "3f4dd2a8100e1e911b7eeb8db4020b670c9eb0a6f4729fba567b15090e6e6f0d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.881569996476173,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 781,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 671
+      },
+      "proposal": "retain",
+      "review_score": 0.5855752229690552,
+      "state_sha256": "17f102795f2f7791faf32f4fef285bbaceb86c841b4fa6a903bd817a259deebc",
+      "unit_id": "e7dcdd9f278684a7a4bac403b403c39228bb2ca5f343791b472e2b2c1142771d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.986820925027132,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 813,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 703
+      },
+      "proposal": "retain",
+      "review_score": 0.28587010502815247,
+      "state_sha256": "1999a5d60a93eb7c5db3b96144a3153e88211c79fb25474dc22a6a9a01e735ed",
+      "unit_id": "85928bc6f752d0de83a6581e016e47eda074b9d3e6a813c5cbff4df97b18f090"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.152020294219255,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 693,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 583
+      },
+      "proposal": "retain",
+      "review_score": 0.9307105541229248,
+      "state_sha256": "f33d2cf2b7ca43d9a73244f33858b385bbe7c690d4b50deba6d24ea15621abde",
+      "unit_id": "3a8974c0c49368318aa671c05802c79411ec256ad7d5f8852f6d22e7348e5ee5"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.896577794104815,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 891,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 781
+      },
+      "proposal": "retain",
+      "review_score": 0.4373127818107605,
+      "state_sha256": "81e65c752f919cec5b0bba6783f189e921b41813eb52f5c1251900b105431b3f",
+      "unit_id": "dadfe6fb26b905517f4155d81fc3121cc7d7d7b1febce9a18fb9deb8f59ae91b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.404640145599842,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 659,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 549
+      },
+      "proposal": "retain",
+      "review_score": 0.2818007469177246,
+      "state_sha256": "117a0bdf1a9084d6bee00ef01044e8605e0ceb2d17734f6842902bf9884512ed",
+      "unit_id": "92a72c8934439ec8279acd864a5cdb6cee607d3597fb0d6ca3f13482cdb6e2b1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.667358327656984,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 680,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 570
+      },
+      "proposal": "retain",
+      "review_score": 0.22988080978393555,
+      "state_sha256": "def10bf738a760d28e569cb42f94d385465259bde92abd7aabb742641ccc3fb6",
+      "unit_id": "c5838608cfa766924dd5bc7b3ec735d205b44295e5375df03bf016f985fbac85"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 31.653678975999355,
+      "optimization_eligible": false,
+      "pr": 321,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1041,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 931
+      },
+      "proposal": "retain",
+      "review_score": 0.03360535949468613,
+      "state_sha256": "9dffdf5a3ab3e88fd8f581ef80f649754ce2863da1ecc2e4692114eae0e1ff8c",
+      "unit_id": "c0a93378e3ab15f524c23b1747a5b6419dd3782d37b33075bc140c7f360ac9c6"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.021858979016542,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 768,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 658
+      },
+      "proposal": "retain",
+      "review_score": 0.7847832441329956,
+      "state_sha256": "e2c5d335ad6fa84caa765966ed426966dcb310b8a87c0effdb515aa495033876",
+      "unit_id": "ac757cdb7244115fa88ca9b8589c4e0542528e11124ce121b8f5131029f429a7"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.719067219644785,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 666,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 556
+      },
+      "proposal": "retain",
+      "review_score": 0.9871664643287659,
+      "state_sha256": "08a00bf4ab0ee3c61814add087b212fcb779e38381f7f64e8a72def3dda16b43",
+      "unit_id": "8c13bb524474c3569484f36b6aefc2d34539e52ccfde96db6c08219e09406646"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 31.07588179409504,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1021,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 911
+      },
+      "proposal": "retain",
+      "review_score": 0.6009497046470642,
+      "state_sha256": "461ce8a5bac09a6e93efed02302f4d6d3540f867b125412dd1caf21e82e5bbf3",
+      "unit_id": "1f33bf3b7fa4371542e337a750dbaf27d00110142f90b27111698e0d8a7fc8bc"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.962597992271185,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 768,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 658
+      },
+      "proposal": "retain",
+      "review_score": 0.04288724809885025,
+      "state_sha256": "e1ebce7a61dc82c9e7e232d8d1d6d59fb0399aaaacf9ffd5922d29877bbaac1a",
+      "unit_id": "fe7cd2d04afffeec1a0c08684a6def0804629ebac9672a85a8f5a3961f74b1ee"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.31509567052126,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 778,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 668
+      },
+      "proposal": "retain",
+      "review_score": 0.9461008310317993,
+      "state_sha256": "f5ad14ea2f64be5a65c89af3a089effebe5af00f05284e0ce2b3637f146ea47d",
+      "unit_id": "8ee413243aad9f10f436239002568c2074525be2ac356c2f485b9b49799c40b5"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.170581880956888,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 766,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 656
+      },
+      "proposal": "retain",
+      "review_score": 0.051869481801986694,
+      "state_sha256": "bdf7b1d6074613f3654df15cfac81d23dde5331452a1abaa8bbb973f25b3a5a8",
+      "unit_id": "0dfa6178615218687976bd7a0720b734dbc7a6d86e712c3af3d716af04ad73ba"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.619892213493586,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 610,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 500
+      },
+      "proposal": "retain",
+      "review_score": 0.7217432260513306,
+      "state_sha256": "02d34f7b836257e6cd62bb1dd4387444b31d5585fcd4d9bee6985325be5daabe",
+      "unit_id": "f25932c070c82a912e6536d76d04f64cba865961727051f710b41895de66efdc"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.452217034995556,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 467,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 357
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.008719821460545063,
+      "state_sha256": "710def56d6b642cf349054754f37efe00ad9b7858ad33a7c4d168ab6e632b7b9",
+      "unit_id": "2ce236d396fafbf71fa047359391056c36e78c4ca23eaf0e3c542bc1ff8a355c"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 30.401993077248335,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 974,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 864
+      },
+      "proposal": "retain",
+      "review_score": 0.22135069966316223,
+      "state_sha256": "3a7f51f8814b382f3de4c7fc9ad8f9b03eec4975c43ec9ea417daeaa8196f083",
+      "unit_id": "7001d66ada64cf0ac00936498ae810fe2d5e577bcda54b91b489e33ec4f547c0"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.13688287883997,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 603,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 493
+      },
+      "proposal": "retain",
+      "review_score": 0.4902355968952179,
+      "state_sha256": "79b3c06a41ab7764498706aa719bedc9683f27807865ad5f12f450828a2f40d6",
+      "unit_id": "e6df335abdc110326e89505e0734c18a249cd6a076e88fa6aab1fa44e85fe461"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.175491347908974,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 776,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 666
+      },
+      "proposal": "retain",
+      "review_score": 0.08605427294969559,
+      "state_sha256": "a30caaf514e4eb585dfdad12ad64f9dfac7567848cfd88b0d13dab2f2e41c2e7",
+      "unit_id": "9dbdf80ab76283270d1eba1d8111d6dfbb3310174ef71b7cd61de6572c1f1abe"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.59426561370492,
+      "optimization_eligible": false,
+      "pr": 319,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 485,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 375
+      },
+      "proposal": "retain",
+      "review_score": 0.916894257068634,
+      "state_sha256": "154124c90d94e1fe01c92c61a3d50036e37428208f770223ddec77b50d49fcf7",
+      "unit_id": "595df4413f2a8b446f1b2da802f9d27479b31ecabe293b0da43782eb97cc66bf"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.26812932267785,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 414,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 304
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.006850480102002621,
+      "state_sha256": "5a8fb39b2c52e4cbacd553a9c6c9430d414e1e29f7634a2e9bb7b6340d5aae2b",
+      "unit_id": "5d62d88ffeedcdd11981be7536365b7c8bfa067a387f90fd8b3d5c864eb0dfe0"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.92846978828311,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 510,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 400
+      },
+      "proposal": "retain",
+      "review_score": 0.2703959345817566,
+      "state_sha256": "3cb1a5c84290694cf2c46687e39dee1208c6b26f7a10854d3bd3b3fe9fa87804",
+      "unit_id": "951324b1814d23dcb156ed64c7ea63fba44bf40a8bc6f09a9597835fa64e74ed"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.211894039064646,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 383,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 273
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.009831293486058712,
+      "state_sha256": "cea55b7da7d9a1775d486f06969f5c807040da44829dc06ca739a60842b30be8",
+      "unit_id": "513505e9b8f3d303089efc798a20238b72fe0e4806d7fb4bc9b5169d669eeca1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.855798196047544,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 332,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 222
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.01572021283209324,
+      "state_sha256": "764d51e04ad12d19d202df1698a7837680f6d49ad28f158ae5c6e65077eb3764",
+      "unit_id": "c75687683b344863099c1cfb66e1906c778e8c4ca1be496c079f4c534c3e4ce1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.741737119853497,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 457,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 347
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.013402405194938183,
+      "state_sha256": "f7089c8ed1bb3eb82c5916e8f20c6b99ca00747669e0e0626621809cade70312",
+      "unit_id": "d4c57692f511c501e4d81fbea902b77d6cbb877ced634d57aa25093d3c5f4d14"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 53.464301861822605,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1830,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1720
+      },
+      "proposal": "retain",
+      "review_score": 0.23196201026439667,
+      "state_sha256": "5f664a12f5b7216d80952e664223d04e09c6418027eb4eea8d4dc5aae398f108",
+      "unit_id": "50e9b40ebf959a0c3be218b875368e6ebccf20e2a0e64f3b0ca55216730feff3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 55.46061275526881,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1837,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1727
+      },
+      "proposal": "retain",
+      "review_score": 0.0700012668967247,
+      "state_sha256": "3f3d67c268569a9f9daed007fcb997f8568be448dd9e624702f44fdfe870d8c1",
+      "unit_id": "13e8118768a466557e4c4ace728ab489fa4e8ec2346545bf4af76dbed68a990d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.68498169258237,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 332,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 222
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.004339932929724455,
+      "state_sha256": "09f176228ed94463cddbd5c6dd5ce293b24835d888c1575c08e6865b709c09a6",
+      "unit_id": "903bc265be3d08916351a652059ff0c0808440c0cf7e6b3fa7a03d4cc12c87ca"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.799540422856808,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 417,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 307
+      },
+      "proposal": "retain",
+      "review_score": 0.5790433287620544,
+      "state_sha256": "4ec731b41ced88a279be36a5642cce3a7e60b80872b3f4f8785eebcd0acbd0c6",
+      "unit_id": "0bec11435fdf9b7a7cf208da82abdca214fe048bbab2dbeeaa9d609a1ab8f253"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.06767040863633,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 701,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 591
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.024802589789032936,
+      "state_sha256": "cb4a167b1731c0d214a0b059ef16635d84a5eaef0b5172893e0598320e8650b7",
+      "unit_id": "bb49680e570a44c91097b914dbb6ca491d053c10beb027617b38c43fdcd16d07"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.692538280040026,
+      "optimization_eligible": false,
+      "pr": 318,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 318,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 208
+      },
+      "proposal": "retain",
+      "review_score": 0.44375860691070557,
+      "state_sha256": "a822a711d1be3ae3c81a2cc0acce197e71258b62a1b665fb54bc0fee9f9fda66",
+      "unit_id": "f69d8fb6cb1f62b092383961e4e54144d96ec489fd63e685f73d472c727ea3be"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.339968889951706,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 286,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 176
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.006984649691730738,
+      "state_sha256": "7c69c06dc7fe75179b8eaa85c5f3b45758a892085feeae122a932ef8a01df276",
+      "unit_id": "799fc02620af6b0c02c04fbf7f0f7bbf5e011c8f2c30bb8611b5b49fc18f9775"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.36503379046917,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 673,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 563
+      },
+      "proposal": "retain",
+      "review_score": 0.1478625237941742,
+      "state_sha256": "c9e20d7079a6d09bdb8cf2e9298cd05bba947dd8dbd631bc76b9244ba73f1d17",
+      "unit_id": "f28e54463ded9379e6cde31de1e6c94b47a14f6476fad8bd8434d7d23e518875"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.42581168562174,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 323,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 213
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0036928525660187006,
+      "state_sha256": "c748d9c54e54f5a22b851047d33a5acb47229184e3cfd614bd541a9a08434944",
+      "unit_id": "69c37f1c3ca18110cd5c9c43d0859e29724bcd710bd3f011afc797280d7345ef"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.816471867263317,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 268,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 158
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0036928525660187006,
+      "state_sha256": "0b7b8af1b501c5ccfcf182deb2a8fd4abc46202d4c94705bdab0632816ed14f3",
+      "unit_id": "29a9633bd57c5994cc0e9e9fdc799115901156be002ee7c3aa299b7d1cdc4fd3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.371306661516428,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 349,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 239
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0063021220266819,
+      "state_sha256": "b74ca96fc7cec61240cec44770ad8c16755bf24794d714ef02a8be8fdacd38df",
+      "unit_id": "38a8c8cb24475029da0102ad9a9029f60ee64eabda359a428ac056cf2694d938"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 39.139149244874716,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1318,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1208
+      },
+      "proposal": "retain",
+      "review_score": 0.07720398902893066,
+      "state_sha256": "38f8f2988280a0c7d693118dd646ca4b4d1596ac3531926c274287849ed29b2f",
+      "unit_id": "9de12ed31816dee1e9504e53d1d13d35bbd3dd26e7ecf58f230f72d8eb23d00e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 33.526134211570024,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1139,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1029
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.005784750450402498,
+      "state_sha256": "eb04e0f4ba732a420cf28345f43f0aab639547b62db41fabc44cef5a6772389e",
+      "unit_id": "af12220e4c5693460e86dc7da38029eea884b2483b59f260aeb2f8c477b9fe16"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.355844240635633,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 391,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 281
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0065261488780379295,
+      "state_sha256": "eed8b8bef8c7d37cde11664bfcf3ac5d5640a50c31f429996445a4698335400b",
+      "unit_id": "bc84311636f5ae51599353d59a1ea740a1d20f940f8cca27276cb06e5d46b07b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.656703040003777,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 517,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 407
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.01001841202378273,
+      "state_sha256": "3e5e739f9214654e4ff3607a9899896b8ac1321c4ef2c26cfb1e6298d195123a",
+      "unit_id": "2fcade583bd04d4bda201656209558506d3010895550696ac6b4f8804f8100d9"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.093562245368958,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 565,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 455
+      },
+      "proposal": "retain",
+      "review_score": 0.19019703567028046,
+      "state_sha256": "94cefd222f8349b548fb503221cb720d839c87ab2a9f339f0f39521c9eac7fdf",
+      "unit_id": "5492867761b9365142b2377e8e77f99b78eb628a0b0e3e406564c74be0757a5a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.577119007706642,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 272,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 162
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.00454726442694664,
+      "state_sha256": "fbe6ce19f89d0583a9128c629770cbe815176031950f0d3e039111fed2c4b2ce",
+      "unit_id": "436f7bb96c6afd86a5bec503d2a2e4632ba2caeb629f070fc745760b5befa2cd"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.420290037989616,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 339,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 229
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.006056273356080055,
+      "state_sha256": "9527bf1786893ed25d094c45d947c0fd707d1cd7eea5e42afa9bf29639208587",
+      "unit_id": "f7544702d70fae3fec243b3a9146d6ba96f4c8031a6770a19755d66cd57e1eec"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.311374958604574,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 299,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 189
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.002212696708738804,
+      "state_sha256": "43d07fd3f7b424c779cbb5d1cc3aad4061434f748af05d5fee33e8a9703001ed",
+      "unit_id": "c49b87a534a5f9be482252eb9e174a576e490b5539aca525457ff3664ec2f067"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.948618184775114,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 610,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 500
+      },
+      "proposal": "retain",
+      "review_score": 0.06557491421699524,
+      "state_sha256": "3d1e9956930a15c186c9fc206d764de0edaa2c6b61a22385958b590711143ccc",
+      "unit_id": "57cf1e742fd2c35af623dc7f091018a781051d1072bb9c02a7a7512b615e2774"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.216909289360046,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 778,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 668
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.020616333931684494,
+      "state_sha256": "19948c97e5b92debf634612a3fbebe38c528dbd7ddd03b7bf9f76589adb047c7",
+      "unit_id": "a1835404b8edc89a7579a44873025ef4e73dd812361ba680dc5b09d070765f71"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.747036043554544,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 475,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 365
+      },
+      "proposal": "retain",
+      "review_score": 0.03819620609283447,
+      "state_sha256": "d189eb50763a31438ac9c7a40c562317a0e8ce1ba3d16582b602cba29965f4d1",
+      "unit_id": "adc15ebfd196e62de52d192099235c642ce709dc833ef8029873bef1413cf8ab"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.23412687331438,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 335,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 225
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0019006215734407306,
+      "state_sha256": "93ba259252a5e60fbbd0ff57e7755c28eb6078a8832cda8f847fc6f6365cc901",
+      "unit_id": "27dd0453314ca0fd9c9b3840aab1a35c3b31a203a14883242f6f06b9b580ee6a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 34.091976936906576,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1100,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 990
+      },
+      "proposal": "retain",
+      "review_score": 0.2429232895374298,
+      "state_sha256": "6e04c2fbca9d0cb2c3e5a6137cbe44e30ed297aafdc9451dcc516d089c9ebabb",
+      "unit_id": "c12250bfa208dd0cbfa753723c9a561f74a12db5f8655c3cfd485ae7b22d5d40"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 35.37554480135441,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1173,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1063
+      },
+      "proposal": "retain",
+      "review_score": 0.05842636898159981,
+      "state_sha256": "2dda06a254722b0f3f93af64b581019ec68cfb4ef993407bd7a06bd54c05ed24",
+      "unit_id": "17de2c850a08ecc00ab1d1cda0ca84022e186d31488d745e2248be27544fcb37"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.8334748595953,
+      "optimization_eligible": false,
+      "pr": 317,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 316,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 206
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0013885233784094453,
+      "state_sha256": "b91b890d32bff382cf40bbf1edee66e4e6272f96d8bb0fbf2f5bc701ca18be8c",
+      "unit_id": "274f0b6e276c519c038901f100a73f571064bfc3ce801087b5f8dece4081dc16"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.523391965776682,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 495,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 385
+      },
+      "proposal": "retain",
+      "review_score": 0.6938879489898682,
+      "state_sha256": "d05a73c5b47026dd98638c7f02718aaabb17b17bc541e3e30ba0c7fa3f36c3aa",
+      "unit_id": "5cd6a383a6ce9c981493c6ab5c13c764db6bbec5cd46ea4000759db23c79dcc4"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.254052381962538,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 472,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 362
+      },
+      "proposal": "retain",
+      "review_score": 0.9597809314727783,
+      "state_sha256": "8b69bd70fbd6d4325c0e535c2144fe39f29d530488618e6abc112306e860d5c0",
+      "unit_id": "68f69cef3f793198cb9aff68cd3ecd4a7ed1c22a2a31c360afe34594f8c0784b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.724925868213177,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 710,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 600
+      },
+      "proposal": "retain",
+      "review_score": 0.44384148716926575,
+      "state_sha256": "e45c33a8f08770a3bb53671f5456dff150d03b0700eb30b74290f51425301faf",
+      "unit_id": "4eb59eefcda105811a3b3abf0ae6645e12fe864a57ed0e1e073c3bdc27b2fa0e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.407478023320436,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 603,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 493
+      },
+      "proposal": "retain",
+      "review_score": 0.3967691659927368,
+      "state_sha256": "ac7cbc3ea6c4b38f127cace8cb532ca6025a3e0079aae3d0520641ae69538f27",
+      "unit_id": "0f9672c609ad0ff1afd1bb49850175fd7cc63ded9c7bc31629b236d6d2d8b282"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.537879154086113,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 501,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 391
+      },
+      "proposal": "retain",
+      "review_score": 0.7483522891998291,
+      "state_sha256": "cab58c3ab1ce137efdb580817839145739352a81344ccca9a198547c2bdd9629",
+      "unit_id": "18e4286de308fd726c348b6f6fa3c9184485e1993d37dfb16f06a3755f4c340b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.82467805221677,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 287,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 177
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.015029196627438068,
+      "state_sha256": "617d4b1dda8be4103f6a2b75425f5805ecdde64c66b53841499e7bdfa6fd8ef2",
+      "unit_id": "57607b9318baea316b4f16a0e85aed9d04a6b6ac786f26182322100975fdcdbf"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.192607279866934,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 361,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 251
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.0080385971814394,
+      "state_sha256": "209bc92fdde073512049c79459e826674ef1775145ebc0885f7a5d81b6666f6e",
+      "unit_id": "175535ff75f0f5c037760843f94f10f52f434484109cb9aa94ca0c2345890358"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 15.931362751871347,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 303,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 193
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.00393391028046608,
+      "state_sha256": "554739335034fce3f1a3d04b291955a9f55cc4aa30f20031fa8423de596f8d9d",
+      "unit_id": "a3ff89445cb3a90b8466b929236d674ea3e539dcc29ba561685a342a96efd958"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.206887904554605,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 577,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 467
+      },
+      "proposal": "retain",
+      "review_score": 0.26029545068740845,
+      "state_sha256": "58a5b182c8dd9b0c7f22f47b2cd3926e8c2a02a14848524d94d700b9b5f8c341",
+      "unit_id": "18fc5cd8fab311e51fa2db45b94419a5aa1e82395e2d5718cbfb225861367a27"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.71907899901271,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 603,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 493
+      },
+      "proposal": "retain",
+      "review_score": 0.10136684030294418,
+      "state_sha256": "e47e8bc34910124b60a9c6a440327e2a98f6bbb436d90aa591305cdc331c17ce",
+      "unit_id": "3c5ef450638f3149ff618f4ed1d17927fb6a640707f97294e6d1097c002a707c"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 22.516462951898575,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 670,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 560
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.01350610051304102,
+      "state_sha256": "8a9a02cd0400d189cfef7f1900da3327f293b392806d6eaace3cc15bff225c8a",
+      "unit_id": "ab101a1fc7b284bbf5450b46996d91bcda0960afb236d55ba63777489d381a72"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 29.436188749969006,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 953,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 843
+      },
+      "proposal": "retain",
+      "review_score": 0.037599798291921616,
+      "state_sha256": "9ee322c4d49d083e166d144ac6030175b529478b1d1e965bfaeff7d90676bdf2",
+      "unit_id": "2fca5909ef080740d6762c18363c7e650825c44c2d7a41deabaa52e590d733ff"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 35.97558289766312,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1234,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1124
+      },
+      "proposal": "retain",
+      "review_score": 0.9644723534584045,
+      "state_sha256": "5bd66eeba8ef4d065cbe36ac7ca7016f42d4d175c61fc6fe06b8360d42a7135a",
+      "unit_id": "24ba4ba68a4f29c8f7591fc87ac3ef2ec571cfe0d293ac189bb2473961cea0fa"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 24.4377707131207,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 703,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 593
+      },
+      "proposal": "retain",
+      "review_score": 0.30316415429115295,
+      "state_sha256": "b58bb00c6b6b614828e57f9dff828f3c48ef8c64b1065309d008c206aa75cece",
+      "unit_id": "2ad95a846272a04f81da47fa7f769da7c679cc8f68146b0056ea60a02c2a8c34"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.108525313436985,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 411,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 301
+      },
+      "proposal": "retain",
+      "review_score": 0.8628724813461304,
+      "state_sha256": "9431fb7e242976e1eb6b69dc749bf34c2a14214395d0096ad1a0e5c27400a41a",
+      "unit_id": "ae0e55337c3eb37b3041ecb7e85ccb007f09a9fa5e3f1c37c4369a813be324b1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.11692726612091,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 610,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 500
+      },
+      "proposal": "retain",
+      "review_score": 0.6274948120117188,
+      "state_sha256": "d40f90565730f6f9816c50e1b11917716e0ca979bc375b17b095725dad8a5e58",
+      "unit_id": "c5852d24f114eaa73e8dd8769b237ff28e0aa363f0b6b281fd20d8cf9342fa15"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.174331169575453,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 414,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 304
+      },
+      "proposal": "retain",
+      "review_score": 0.0861118957400322,
+      "state_sha256": "bc5d87769da1a1b4cad65117df96d31138b28c58ae572f9441880d777fcf5e9a",
+      "unit_id": "55d85dcb6948f3dd62de25c2bd30623af449fd7495b92e051adeb66cf1a5b38a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.546743646264076,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 638,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 528
+      },
+      "proposal": "retain",
+      "review_score": 0.21239535510540009,
+      "state_sha256": "95afe9207a7869503ab9bc87839b063e563a5679192349672bdd2b591b292058",
+      "unit_id": "fcbf2b9f81787e9086771b0a92c0feac0b86593f8bf4d0743021941890719f7d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 25.856404099613428,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 785,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 675
+      },
+      "proposal": "retain",
+      "review_score": 0.13660839200019836,
+      "state_sha256": "17651c4e0ebe0c259ab34d5887e5153d3c77c7f1f04888f1948cb82163c0ba09",
+      "unit_id": "3d45e996ab390ed40e3ff1b2686a01366d1141d7917f6a6b6b1bc330f89a404b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 16.800392884761095,
+      "optimization_eligible": false,
+      "pr": 316,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 323,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 213
+      },
+      "proposal": "retain",
+      "review_score": 0.05026066675782204,
+      "state_sha256": "47d52cf08c2bac5b3b7baf18de2473507cd05ccdbe433a4b34180dd327e21492",
+      "unit_id": "734403f7a6666e04914b174d050a2126ba29b444481d448a7ae628f71411a59a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.98508006706834,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 462,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 352
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.020626194775104523,
+      "state_sha256": "238180056d13877e5230888c5c6c421a039e765570ff65bc6e4fc562b0faf2a6",
+      "unit_id": "52ccd74d99391321875c34cb072058904390f1d284249ba4376fcfeec6460471"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 31.996590085327625,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 962,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 852
+      },
+      "proposal": "retain",
+      "review_score": 0.0274350568652153,
+      "state_sha256": "e2421ab7849adc77226ef7fa31eab97d891134079ebf55788d3fa46872e848da",
+      "unit_id": "81abca65b898c1a5502992f8d3de19186503ba7d6ca8955a36bafd6b202825da"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 46.62738414481282,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1576,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1466
+      },
+      "proposal": "retain",
+      "review_score": 0.06779313832521439,
+      "state_sha256": "0af0c6f96dcf84f7d63916174b4bb77b2c3eb8620c333719b875e59d17cdb0f4",
+      "unit_id": "9139280929a3612b462390dfbda40e5dd0790884fb7ffabcf9f77220a4834787"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 40.85426405072212,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1387,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1277
+      },
+      "proposal": "retain",
+      "review_score": 0.3791484832763672,
+      "state_sha256": "664bcc8d51c893f64c4122e29d0577d399399dedbd7403983e71ee03442a6273",
+      "unit_id": "952cf47868fdc98ff9227ba86367e3510f99387ab2490af80e5d9041abdf90c3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 32.55852684378624,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1030,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 920
+      },
+      "proposal": "retain",
+      "review_score": 0.9488462209701538,
+      "state_sha256": "aaa3f0845f55985737628cd8fc35b84fe737c8ce23b2cc919b6b0d90e557ab04",
+      "unit_id": "d9747711fcdcb1a7be80c12f9dc0078ff980351adc5e2e93b6e0a8d1d1055361"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 44.9883621186018,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1428,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1318
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.007953389547765255,
+      "state_sha256": "324b68e177c4073258518bb1999e37a427241b6164f137e1cc976d2c62740c7c",
+      "unit_id": "0129e3b022455cff2b5f7bc27074d9efb815c63eb51683d801aa53d7c3788124"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.703274127095938,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 470,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 360
+      },
+      "proposal": "retain",
+      "review_score": 0.6300876140594482,
+      "state_sha256": "0c5a28501f21ebb5fdbc720f55e5840e9d08b89683150ace18f3d229580984f2",
+      "unit_id": "06fd4aee4db4fb187585e79285b37de2925b02451ca4aac8538ade5f4d7e364a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.605465095490217,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 619,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 509
+      },
+      "proposal": "retain",
+      "review_score": 0.035636577755212784,
+      "state_sha256": "cda88827bfca90885f17f90609b93bbf4e78bb0ecb12fcec43b1b6143f36fafe",
+      "unit_id": "081b76b13bad46bc721ae807c5359abcdef480e8b92c8ad57e153b69891da3df"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.723292741924524,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 465,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 355
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.024307018145918846,
+      "state_sha256": "7a023001ccd02e72f039a2d3db4c5337ccf651b73abd0d2ac542ef858ec9c19a",
+      "unit_id": "a0469fc8dfd08852ad376fd5ca863221e7728cd2e0bacc0d2daa25787276da0e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 28.78539403900504,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 926,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 816
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.005511933472007513,
+      "state_sha256": "a6ee4ce075ad11662f8205a9945df5260bb54833c5d27ffbbb4627fcda54c617",
+      "unit_id": "e3a624ead916e90b0d50e3aed39586d5b4ba738ca2105093272d2e2f58f41bd3"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 23.4461291693151,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 686,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 576
+      },
+      "proposal": "retain",
+      "review_score": 0.16184942424297333,
+      "state_sha256": "572e6eb58cbcb00c6f1891a4ed3f7be0c59d32bddaaf361674a05862bbcb5b46",
+      "unit_id": "52723a59d6c7c3f65765d676dc6ea6262cb81567cc549cee4a60bc274884b8ba"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 20.25301707908511,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 537,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 427
+      },
+      "proposal": "retain",
+      "review_score": 0.03907463699579239,
+      "state_sha256": "99f5b40b015048cd952502b8f7777282ad8278f184a89ede7b6e0762a6895336",
+      "unit_id": "d6840179fa9bec6a9673c7eb7776e1ea54cd7fe82466d10ca6612d9cf300851f"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.647441010922194,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 395,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 285
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.004097942262887955,
+      "state_sha256": "627209eb21f7bb64314629fab9135230eec7350def91485a3ca7da36562ba497",
+      "unit_id": "0705d20ac1920bec8c22d206fa84fe188771021ca260d63817cbcaccb2b5eb36"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 18.806822132319212,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 432,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 322
+      },
+      "proposal": "retain",
+      "review_score": 0.05725561082363129,
+      "state_sha256": "c3556a9618191d95acc82860c597d81f0f9d46b8290033965d3f6ebcfcf5e134",
+      "unit_id": "27cebf46a4d8c9f1dd557d71cbca7910fa766d4669f2be1be4c0d9004f91ce22"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 17.134396824985743,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 376,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 266
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.009403488598763943,
+      "state_sha256": "a42bb94439abe491ce4db2f153be402c1c1a660adcf2efd54f10c9aebfdaec31",
+      "unit_id": "0db9d4d1f9ade97917983c2016d22b882f34eb690d5c1d0bafbca39947cdbf32"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 19.31957481428981,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 496,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 386
+      },
+      "proposal": "retain",
+      "review_score": 0.22901752591133118,
+      "state_sha256": "4269c25223e1f2f4a15e614ea3f2d2d88cc921f9a6e6f61b120ef5bfb5e460ca",
+      "unit_id": "dcbbefe970864f0595e34f36802beedd4fed20846ba66d9e0847327dc1d0a006"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 26.279617100954056,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 833,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 723
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.009068417362868786,
+      "state_sha256": "047cd4362042c35e48e99076a53e1f59ee582d4b16fc6ad6c6dee3cf172b3610",
+      "unit_id": "7042cf588136f65d5acf5fae3006b55f0ea06c1e37cb03ab4f983040ee3213fd"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 41.05257103219628,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1394,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1284
+      },
+      "proposal": "retain",
+      "review_score": 0.04956601560115814,
+      "state_sha256": "d0bb97f3d4ead72aacd9372021579d1b348e970b66d7f7a982c188e7b3cc913c",
+      "unit_id": "c64b9aa8cb162388676f7bcb55193d5124d9db9312558c0259e3ae965b8abde9"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 21.431364119052887,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 610,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 500
+      },
+      "proposal": "lower_priority",
+      "review_score": 0.012637128122150898,
+      "state_sha256": "b81a6a8ba6bcdb0b7a973cd85c4a9a1a52c96c6cf976feee32859e96a7f5b4be",
+      "unit_id": "71e6d5a706edfe1b6bda7b5812f4a10b08f4eaa0cff3a2f8c868c52fcc933784"
+    },
+    {
+      "action": "full_review",
+      "disposition": "predicted",
+      "elapsed_ms": 33.72005233541131,
+      "optimization_eligible": false,
+      "pr": 313,
+      "preflight": {
+        "fits": true,
+        "full_tokens": 1052,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 942
+      },
+      "proposal": "retain",
+      "review_score": 0.14175599813461304,
+      "state_sha256": "dd646389871e888f17fc4b0d397bbd9f88063ea795ae8a6a678f285b8a23ae65",
+      "unit_id": "9f890633b44b2a0a92564a4f90552f2318ea97d435aefa659571738697116886"
+    }
+  ],
+  "runner_sha256": "f592e83faa24adcaa7c5d9845fb7f409f81781c919b6f6fa2287944d2176737f",
+  "selection_id": "a1c28d479eb439c98aef1f389128b7d2670137c90fd3052dc214392a004af030"
+}

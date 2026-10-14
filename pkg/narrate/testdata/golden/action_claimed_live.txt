@@ -1,0 +1,24 @@
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 is claimed and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+gap dispatch.gap.effect_possible
+  The action declares an external or egress effect and is claimed, so an effect may already have happened.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The claim is held by worker-1, with a lease of 5 minutes ending 2026-10-08 12:06:00 UTC.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+blocked dispatch.blocked.lease_live
+  It cannot be claimed again or canceled until the lease ends at 2026-10-08 12:06:00 UTC, 4 minutes from now.
+  record=action:act-1 principal=worker-1 claim=claim-1
+next dispatch.next.options
+  What can happen next: the claimant reports success before the lease ends at 2026-10-08 12:06:00 UTC, or the claimant reports failure before the lease ends at 2026-10-08 12:06:00 UTC.
+  record=action:act-1

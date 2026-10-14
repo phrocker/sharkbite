@@ -1,0 +1,453 @@
+{
+  "base": "3d50e5c0b61f6bd7fd8b877d3c32e80eff0efa62",
+  "diff": "diff --git a/cmd/shoal-explore-web/disclosure_wiring_test.go b/cmd/shoal-explore-web/disclosure_wiring_test.go\nnew file mode 100644\nindex 0000000..3502c7a\n--- /dev/null\n+++ b/cmd/shoal-explore-web/disclosure_wiring_test.go\n@@ -0,0 +1,202 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package main\n+\n+import (\n+\t\"context\"\n+\t\"path/filepath\"\n+\t\"strings\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/webapi\"\n+)\n+\n+// withholdingDeployment starts the real composition with the concealment\n+// option set as a deployment would set it, ingests one document, and returns a\n+// principal that is authorized to act but holds no grant for that document.\n+// Its reads are therefore withheld, which is the only state in which the\n+// counts are observable at all.\n+func withholdingDeployment(\n+\tt *testing.T, conceal bool,\n+) (webapi.Service, context.Context, func()) {\n+\tt.Helper()\n+\troot := t.TempDir()\n+\tnow := time.Now().UTC().Add(time.Minute)\n+\tauthority := auth.NewAuthority()\n+\topened, err := openService(context.Background(), serviceConfig{\n+\t\tbackend: \"embedded\", data: filepath.Join(root, \"corpus\"),\n+\t\tpolicyDir: filepath.Join(root, \"policy\"),\n+\t\tresolver:  authority.Resolver(), clock: func() time.Time { return now },\n+\t\tconcealWithholding: conceal,\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif opened.client == nil {\n+\t\topened.close()\n+\t\tt.Skip(\"embedded service exposes no authorized client\")\n+\t}\n+\tingestCtx, err := authority.Binder().Bind(context.Background(), askDecision(\n+\t\tt, now, \"wiring-ingest\",\n+\t\tauth.OperationIngest, auth.OperationRead, auth.OperationList))\n+\tif err != nil {\n+\t\topened.close()\n+\t\tt.Fatal(err)\n+\t}\n+\tif _, err := opened.client.Ingest(ingestCtx, explorer.Source{\n+\t\tURI: \"shoal://test/withheld.md\", Title: \"Withheld\",\n+\t\tMediaType: \"text/markdown\", Content: \"# Withheld\\n\\nrestricted body\\n\",\n+\t}); err != nil {\n+\t\topened.close()\n+\t\tt.Fatalf(\"ingest: %v\", err)\n+\t}\n+\t// Same domain and operations, but a grant for a source that owns nothing.\n+\t// The ingested document is then withheld from this principal by\n+\t// authorization rather than by absence.\n+\tdecision, err := auth.NewDecision(auth.DecisionConfig{\n+\t\tSubject: \"outsider\", Actor: \"outsider\",\n+\t\tAuthorizationDomain: workspaceAuthorizationDomain,\n+\t\tAllowedOperations: []auth.Operation{\n+\t\t\tauth.OperationList, auth.OperationRead, auth.OperationRetrieve,\n+\t\t},\n+\t\tPermittedSourceIDs:    [][]byte{[]byte(\"shoal-explore-web/other\")},\n+\t\tPermittedPolicyIDs:    [][]byte{[]byte(\"shoal-explore-web/other-grant\")},\n+\t\tPolicyGeneration:      workspacePolicyGeneration,\n+\t\tAuthenticationExpires: now.Add(time.Hour),\n+\t\tRequestID:             \"outsider-request\",\n+\t\tCorrelationID:         \"outsider-correlation\",\n+\t})\n+\tif err != nil {\n+\t\topened.close()\n+\t\tt.Fatal(err)\n+\t}\n+\tctx, err := authority.Binder().Bind(context.Background(), decision)\n+\tif err != nil {\n+\t\topened.close()\n+\t\tt.Fatal(err)\n+\t}\n+\treturn opened.service, ctx, opened.close\n+}\n+\n+// TestConcealWithholdingReachesTheDeployedService proves the option survives\n+// composition. Every other test for it calls ConcealWithholding directly, so a\n+// regression in openService could leave the advertised deployment option\n+// ineffective while those stay green.\n+//\n+// The default case is asserted in the same test rather than separately,\n+// because the option is only meaningful as a difference: a concealed response\n+// that happens to match an unconfigured one proves nothing.\n+func TestConcealWithholdingReachesTheDeployedService(t *testing.T) {\n+\tdisclosing, disclosingCtx, closeDisclosing := withholdingDeployment(t, false)\n+\tdefer closeDisclosing()\n+\tdisclosed, err := disclosing.Documents(\n+\t\tdisclosingCtx, webapi.DocumentsRequest{})\n+\tif err != nil {\n+\t\tt.Fatalf(\"documents with disclosure: %v\", err)\n+\t}\n+\tif disclosed.Suppressed == 0 {\n+\t\tt.Fatal(\"the fixture must actually withhold something, \" +\n+\t\t\t\"or concealment cannot be observed\")\n+\t}\n+\tif len(disclosed.Documents) != 0 {\n+\t\tt.Fatalf(\"the outsider must read nothing: %#v\", disclosed.Documents)\n+\t}\n+\n+\tconcealing, concealingCtx, closeConcealing := withholdingDeployment(t, true)\n+\tdefer closeConcealing()\n+\tconcealed, err := concealing.Documents(\n+\t\tconcealingCtx, webapi.DocumentsRequest{})\n+\tif err != nil {\n+\t\tt.Fatalf(\"documents with concealment: %v\", err)\n+\t}\n+\tif concealed.Suppressed != 0 || concealed.Restricted != 0 {\n+\t\tt.Fatalf(\"-conceal-withholding did not reach the deployed service: %#v\",\n+\t\t\tconcealed)\n+\t}\n+\tif len(concealed.Documents) != 0 {\n+\t\tt.Fatalf(\"concealment changed what the outsider reads: %#v\",\n+\t\t\tconcealed.Documents)\n+\t}\n+}\n+\n+// TestConcealWithholdingEnvironmentDefault covers the environment half of the\n+// wiring. Only the documented value enables the option, so a typo cannot\n+// silently switch a security control on or off.\n+func TestConcealWithholdingEnvironmentDefault(t *testing.T) {\n+\tfor value, want := range map[string]bool{\n+\t\t\"\":      false,\n+\t\t\"1\":     true,\n+\t\t\"0\":     false,\n+\t\t\"true\":  false,\n+\t\t\"yes\":   false,\n+\t\t\" 1\":    false,\n+\t\t\"1 \":    false,\n+\t\t\"TRUE\":  false,\n+\t\t\"enabl\": false,\n+\t} {\n+\t\tt.Run(\"env=\"+value, func(t *testing.T) {\n+\t\t\tt.Setenv(\"SHOAL_CONCEAL_WITHHOLDING\", value)\n+\t\t\tif got := concealWithholdingDefault(); got != want {\n+\t\t\t\tt.Fatalf(\"SHOAL_CONCEAL_WITHHOLDING=%q resolved to %v, want %v\",\n+\t\t\t\t\tvalue, got, want)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+// TestConcealWithholdingFlagIsRegistered proves the flag reaches the real\n+// parser. A flag that is documented but never defined fails here rather than\n+// at a deployment that quietly ignores it.\n+func TestConcealWithholdingFlagIsRegistered(t *testing.T) {\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tcancel()\n+\t// The context is already cancelled, so the command shuts down as soon as\n+\t// it has parsed. An undefined flag fails before that with a parse error.\n+\terr := run(ctx, []string{\n+\t\t\"-data\", t.TempDir(), \"-listen\", \"127.0.0.1:0\", \"-dev-auth\",\n+\t\t\"-conceal-withholding\",\n+\t}, &lockedBuffer{})\n+\tif err != nil && strings.Contains(err.Error(), \"not defined\") {\n+\t\tt.Fatalf(\"-conceal-withholding is not registered: %v\", err)\n+\t}\n+}\n+\n+// A fully end-to-end HTTP test of this flag is not achievable under -dev-auth,\n+// and the attempt is recorded here rather than shipped as a test that passes\n+// without exercising anything.\n+//\n+// The counts are only observable when something is withheld, and under\n+// -dev-auth nothing ever is: developmentBackfill exists specifically to grant\n+// the documents already on disk to the development principal, so a corpus\n+// served under an empty policy catalog is repaired at startup rather than\n+// withheld. The mosaic route is closed too, because the command uses a single\n+// static policy selector and therefore has one sensitivity domain, which no\n+// co-occurrence budget can restrict. Producing a withheld response over HTTP\n+// would require real OIDC authentication with a narrowed principal.\n+//\n+// What remains uncovered is one assignment, from the parsed flag into\n+// serviceConfig. TestConcealWithholdingFlagIsRegistered covers the parse,\n+// TestConcealWithholdingReachesTheDeployedService covers everything after the\n+// config field, and neither sees that line. Closing it honestly needs either\n+// non-development authentication in the test, or extracting the flag-to-config\n+// mapping so both halves meet; it is not closed by a test that cannot fail.\ndiff --git a/cmd/shoal-explore-web/main.go b/cmd/shoal-explore-web/main.go\nindex 809ce3c..52a00d9 100644\n--- a/cmd/shoal-explore-web/main.go\n+++ b/cmd/shoal-explore-web/main.go\n@@ -160,10 +160,22 @@ func run(ctx context.Context, args []string, output io.Writer) error {\n \t\t\t\"executor; must also appear in -fleet-executor-refs and requires \"+\n \t\t\t\"a configured chat provider. An agent principal invoking this \"+\n \t\t\t\"executor needs the retrieve grant in addition to invoke, because \"+\n \t\t\t\"the reasoning path authorizes retrieval on its own terms\",\n \t)\n+\tconcealWithholding := flags.Bool(\n+\t\t\"conceal-withholding\",\n+\t\tconcealWithholdingDefault(),\n+\t\t\"Remove the withheld-document counts from responses. Off by default: \"+\n+\t\t\t\"the counts are emitted deliberately so a short answer is never \"+\n+\t\t\t\"silently mistaken for an empty corpus. The counts are \"+\n+\t\t\t\"corpus-wide and identical for every query, so they disclose how \"+\n+\t\t\t\"much a caller cannot read and signal when that changes, not \"+\n+\t\t\t\"which terms match. Turn this on for a compartmented deployment \"+\n+\t\t\t\"that declines to disclose either. Audit records both counts \"+\n+\t\t\t\"either way\",\n+\t)\n \tdevelopmentAuth := flags.Bool(\n \t\t\"dev-auth\", false,\n \t\t\"Authenticate every request as a fixed development principal; \"+\n \t\t\t\"refused unless the resolved listen address is loopback-only\",\n \t)\n@@ -461,10 +473,12 @@ func run(ctx context.Context, args []string, output io.Writer) error {\n \t\tresolver:  authority.Resolver(),\n \t\tclock:     time.Now,\n \t\tbackfill:  backfill,\n \t\tontology:  activeOntology,\n \t\texecutors: executors,\n+\n+\t\tconcealWithholding: *concealWithholding,\n \t\tmosaic: authorized.MosaicBudget{\n \t\t\tMaxDomains: uint32(*mosaicBudget),\n \t\t\tWindow:     *mosaicWindow,\n \t\t},\n \t})\n@@ -816,10 +830,13 @@ type serviceConfig struct {\n \t// listener. See developmentBackfill and issue #284.\n \tbackfill *developmentBackfill\n \t// ontology is an optional immutable snapshot configured at startup for the\n \t// read-only ontology description endpoint.\n \tontology *ontology.OntologyVersion\n+\t// concealWithholding removes the withholding counts from responses. See\n+\t// the -conceal-withholding flag.\n+\tconcealWithholding bool\n \t// executors is the host-owned allowlist of opaque fleet executor\n \t// references. A non-nil empty registry keeps agent registration disabled.\n \texecutors fleet.ExecutorRegistry\n \t// generationReader is the shared current-policy authority used by\n \t// authorized reads, settings, dispatch, and event delivery. Tests and\n@@ -848,10 +865,23 @@ type openedService struct {\n var (\n \tworkspacePublicationDomain = coordination.DomainID(\"shoal-explore-web/publication\")\n \tworkspaceRuntimeOwner      = coordination.OwnerID(\"shoal-explore-web/runtime\")\n )\n \n+// concealWithholdingDefault resolves the environment default for\n+// -conceal-withholding. Only the documented value enables it, so a stray value\n+// cannot switch concealment on.\n+//\n+// The converse does not hold and is worth stating plainly: an unrecognized\n+// value such as \"true\" or \"1 \" leaves concealment off. Exact matching cannot\n+// prevent accidental disablement, so an operator who depends on concealment\n+// should set the flag, where a typo is rejected by the parser, rather than the\n+// environment variable, where it is silently ignored.\n+func concealWithholdingDefault() bool {\n+\treturn os.Getenv(\"SHOAL_CONCEAL_WITHHOLDING\") == \"1\"\n+}\n+\n func openService(\n \tctx context.Context,\n \tconfig serviceConfig,\n ) (openedService, error) {\n \tclosed := openedService{close: func() {}}\n@@ -1039,10 +1069,11 @@ func openService(\n \t\tif err != nil {\n \t\t\tstore.Close()\n \t\t\tembedded.Close()\n \t\t\treturn closed, err\n \t\t}\n+\t\tservice.ConcealWithholding(config.concealWithholding)\n \t\tif config.ontology != nil {\n \t\t\t// This call is load-bearing; TestOntologyProposalLifecycleUsesStartedEmbeddedWorkspace\n \t\t\t// pins that startup wires -ontology-file into the real EmbeddedService\n \t\t\t// path used by proposal creation, not only into an injected test double.\n \t\t\tif err := service.SetOntologyVersion(*config.ontology); err != nil {\ndiff --git a/internal/disclosureconformance/conformance.go b/internal/disclosureconformance/conformance.go\nnew file mode 100644\nindex 0000000..986ac6c\n--- /dev/null\n+++ b/internal/disclosureconformance/conformance.go\n@@ -0,0 +1,167 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+// Package disclosureconformance asserts that a response surface does not vary\n+// with whether content was withheld from the caller.\n+//\n+// The property it checks is indistinguishability, not absence of a field. A\n+// caller who can separate \"nothing matched\" from \"something matched and was\n+// withheld\" can enumerate the existence of content it cannot read, by probing\n+// terms and watching the difference. That holds whether the difference is a\n+// count, a boolean, an error code, or a field that is present in one response\n+// and omitted in the other. Comparing the encoded forms catches all of them,\n+// including a field added later that nobody thought about.\n+//\n+// The suite is deliberately usable in both directions. A surface that\n+// deliberately discloses withholding declares itself Distinguishable, which\n+// pins the accepted trade so that changing it silently fails the suite rather\n+// than passing unnoticed.\n+package disclosureconformance\n+\n+import (\n+\t\"bytes\"\n+\t\"encoding/json\"\n+\t\"fmt\"\n+\t\"sort\"\n+\t\"testing\"\n+)\n+\n+// Probe is one comparison. Withheld is the response produced when content was\n+// withheld from the caller; Control is the response for an otherwise identical\n+// request where nothing was withheld, because nothing matched.\n+//\n+// The two must be produced under the same principal and the same request. A\n+// probe that varies anything else proves nothing.\n+type Probe struct {\n+\t// Name identifies the surface and request, for example\n+\t// \"retrieve/restricted-term\".\n+\tName string\n+\t// Withheld is the response for a request whose matches were withheld.\n+\tWithheld any\n+\t// Control is the response for a request that simply had no matches.\n+\tControl any\n+\t// Distinguishable declares that this surface discloses withholding on\n+\t// purpose. The suite then requires the two responses to differ, so that\n+\t// removing a deliberate disclosure is caught as surely as adding an\n+\t// accidental one.\n+\tDistinguishable bool\n+\t// Reason records why a Distinguishable surface is allowed to disclose.\n+\t// Required when Distinguishable is set, so an accepted trade always\n+\t// carries its justification next to the assertion.\n+\tReason string\n+}\n+\n+// Run executes every probe. Each runs as a subtest so one failing surface\n+// reports alone rather than hiding the rest.\n+func Run(t *testing.T, probes ...Probe) {\n+\tt.Helper()\n+\tif len(probes) == 0 {\n+\t\tt.Fatal(\"disclosure conformance requires at least one probe\")\n+\t}\n+\tseen := make(map[string]struct{}, len(probes))\n+\tfor _, probe := range probes {\n+\t\tif probe.Name == \"\" {\n+\t\t\tt.Fatal(\"every disclosure probe requires a name\")\n+\t\t}\n+\t\tif _, duplicate := seen[probe.Name]; duplicate {\n+\t\t\tt.Fatalf(\"duplicate disclosure probe %q\", probe.Name)\n+\t\t}\n+\t\tseen[probe.Name] = struct{}{}\n+\t\tt.Run(probe.Name, func(t *testing.T) {\n+\t\t\trunProbe(t, probe)\n+\t\t})\n+\t}\n+}\n+\n+func runProbe(t *testing.T, probe Probe) {\n+\tt.Helper()\n+\tif probe.Distinguishable && probe.Reason == \"\" {\n+\t\tt.Fatal(\"a deliberately distinguishable surface must record why\")\n+\t}\n+\twithheld, err := encode(probe.Withheld)\n+\tif err != nil {\n+\t\tt.Fatalf(\"encode withheld response: %v\", err)\n+\t}\n+\tcontrol, err := encode(probe.Control)\n+\tif err != nil {\n+\t\tt.Fatalf(\"encode control response: %v\", err)\n+\t}\n+\tidentical := bytes.Equal(withheld, control)\n+\tswitch {\n+\tcase probe.Distinguishable && identical:\n+\t\tt.Fatalf(\n+\t\t\t\"surface no longer discloses withholding, but is declared to on \"+\n+\t\t\t\t\"purpose (%s)\\n  response: %s\",\n+\t\t\tprobe.Reason, withheld)\n+\tcase !probe.Distinguishable && !identical:\n+\t\tt.Fatalf(\n+\t\t\t\"withheld and control responses differ, so a caller can detect \"+\n+\t\t\t\t\"that content exists and was withheld\\n  fields: %v\\n\"+\n+\t\t\t\t\"  withheld: %s\\n  control:  %s\",\n+\t\t\tdifferingFields(withheld, control), withheld, control)\n+\t}\n+}\n+\n+// encode renders a response the way a caller receives it, so the comparison\n+// covers custom marshaling and omitempty rather than only exported fields.\n+func encode(value any) ([]byte, error) {\n+\tif value == nil {\n+\t\treturn []byte(\"null\"), nil\n+\t}\n+\treturn json.Marshal(value)\n+}\n+\n+// differingFields names the top-level keys that differ, so a failure says what\n+// leaked rather than only that something did. It is diagnostic output; the\n+// assertion itself is always the full byte comparison.\n+func differingFields(withheld, control []byte) []string {\n+\tleft, right := decodeObject(withheld), decodeObject(control)\n+\tif left == nil || right == nil {\n+\t\treturn []string{\"(responses are not JSON objects)\"}\n+\t}\n+\tnames := make(map[string]struct{})\n+\tfor key := range left {\n+\t\tnames[key] = struct{}{}\n+\t}\n+\tfor key := range right {\n+\t\tnames[key] = struct{}{}\n+\t}\n+\tvar differing []string\n+\tfor key := range names {\n+\t\tleftValue, leftOK := left[key]\n+\t\trightValue, rightOK := right[key]\n+\t\tswitch {\n+\t\tcase leftOK != rightOK:\n+\t\t\tdiffering = append(differing, fmt.Sprintf(\"%s (present in one)\", key))\n+\t\tcase !bytes.Equal(leftValue, rightValue):\n+\t\t\tdiffering = append(differing,\n+\t\t\t\tfmt.Sprintf(\"%s (%s vs %s)\", key, leftValue, rightValue))\n+\t\t}\n+\t}\n+\tsort.Strings(differing)\n+\treturn differing\n+}\n+\n+func decodeObject(raw []byte) map[string]json.RawMessage {\n+\tvar object map[string]json.RawMessage\n+\tif err := json.Unmarshal(raw, &object); err != nil {\n+\t\treturn nil\n+\t}\n+\treturn object\n+}\ndiff --git a/internal/disclosureconformance/fixture.go b/internal/disclosureconformance/fixture.go\nnew file mode 100644\nindex 0000000..d7305a3\n--- /dev/null\n+++ b/internal/disclosureconformance/fixture.go\n@@ -0,0 +1,213 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package disclosureconformance\n+\n+import (\n+\t\"context\"\n+\t\"sync\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// Terms a probe can ask about. They are chosen so each appears in exactly one\n+// place, which is what makes a comparison meaningful.\n+const (\n+\t// OpenTerm appears only in the document every principal may read.\n+\tOpenTerm = \"seagrass\"\n+\t// RestrictedTerm appears only in the document the uncleared principal may\n+\t// not read. Its matches exist and are withheld.\n+\tRestrictedTerm = \"thunderbolt\"\n+\t// AbsentTerm appears nowhere in the corpus. Its matches do not exist.\n+\t//\n+\t// The whole question this package exists to answer is whether an uncleared\n+\t// principal can tell RestrictedTerm from AbsentTerm.\n+\tAbsentTerm = \"zzzzqqqq\"\n+)\n+\n+var fixtureDomain = []byte(\"disclosure-conformance\")\n+\n+// Corpus is a two-compartment corpus with two principals of different\n+// clearance, built from exported APIs only.\n+type Corpus struct {\n+\t// Client reads the whole corpus. What a caller sees is decided by the\n+\t// decision bound into the context, not by which client is used.\n+\tClient *authorized.Client\n+\n+\tauthority *auth.Authority\n+\tclock     func() time.Time\n+\tsourceA   []byte\n+\tpolicyA   []byte\n+\tsourceB   []byte\n+\tpolicyB   []byte\n+}\n+\n+type fixtureGenerations struct {\n+\tmu          sync.RWMutex\n+\tgenerations map[string]int64\n+}\n+\n+func (r *fixtureGenerations) CurrentPolicyGeneration(\n+\tctx context.Context, domain []byte,\n+) (int64, error) {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn 0, err\n+\t}\n+\tr.mu.RLock()\n+\tdefer r.mu.RUnlock()\n+\treturn r.generations[string(domain)], nil\n+}\n+\n+// NewCorpus builds the fixture: one document in an open compartment and one in\n+// a restricted compartment, each containing a term that appears nowhere else.\n+func NewCorpus(t *testing.T) *Corpus {\n+\tt.Helper()\n+\t// The engine stamps snapshots from the wall clock, and a recording whose\n+\t// snapshot postdates it is rejected before any probe runs. A frozen date\n+\t// captured before ingest is therefore always in the past by the time a\n+\t// question is asked. Determinism comes from comparing two calls in one\n+\t// run, not from pinning the clock.\n+\tclock := func() time.Time { return time.Now().UTC() }\n+\tauthority, err := auth.NewAuthorityWithClock(clock)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tbase, err := explorer.Open(t.TempDir())\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tt.Cleanup(func() { _ = base.Close() })\n+\n+\tcorpus := &Corpus{\n+\t\tauthority: authority, clock: clock,\n+\t\tsourceA: []byte(\"source-open\"), policyA: []byte(\"policy-open\"),\n+\t\tsourceB: []byte(\"source-restricted\"), policyB: []byte(\"policy-restricted\"),\n+\t}\n+\tgenerations := &fixtureGenerations{\n+\t\tgenerations: map[string]int64{string(fixtureDomain): 1},\n+\t}\n+\tstore := authorized.NewMemoryPolicyStore()\n+\n+\topen := corpus.newClient(t, base, store, generations, corpus.sourceA, corpus.policyA)\n+\trestricted := corpus.newClient(t, base, store, generations, corpus.sourceB, corpus.policyB)\n+\tcorpus.Client = open\n+\n+\tadmin := corpus.Cleared(t)\n+\tif _, err := open.Ingest(admin, explorer.Source{\n+\t\tURI: \"file:///open.txt\", Title: \"Open\", MediaType: explorer.MediaTypeText,\n+\t\tContent: \"the \" + OpenTerm + \" bed is shallow\",\n+\t}); err != nil {\n+\t\tt.Fatalf(\"ingest open document: %v\", err)\n+\t}\n+\tif _, err := restricted.Ingest(admin, explorer.Source{\n+\t\tURI: \"file:///restricted.txt\", Title: \"Restricted\",\n+\t\tMediaType: explorer.MediaTypeText,\n+\t\tContent:   \"project \" + RestrictedTerm + \" ships in spring\",\n+\t}); err != nil {\n+\t\tt.Fatalf(\"ingest restricted document: %v\", err)\n+\t}\n+\treturn corpus\n+}\n+\n+func (c *Corpus) newClient(\n+\tt *testing.T,\n+\tbase explorer.Client,\n+\tstore authorized.PolicyStore,\n+\tgenerations auth.GenerationReader,\n+\tsource, policy []byte,\n+) *authorized.Client {\n+\tt.Helper()\n+\tselector, err := authorized.NewStaticPolicySelector(source, policy)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tscorer, _ := base.(authorized.VectorScorer)\n+\tinteractionWriter, _ := base.(explorer.InteractionWriter)\n+\tinteractionReader, _ := base.(explorer.InteractionReader)\n+\tvalidator, _ := base.(authorized.SnapshotValidator)\n+\tassertions, _ := base.(authorized.DerivedAssertionReader)\n+\tfolds, _ := base.(authorized.FoldStore)\n+\tclient, err := authorized.NewClient(authorized.Config{\n+\t\tBase: base, VectorScorer: scorer,\n+\t\tInteractionWriter: interactionWriter, InteractionReader: interactionReader,\n+\t\tSnapshotValidator: validator, DerivedAssertionReader: assertions,\n+\t\tFoldStore: folds, Resolver: c.authority.Resolver(),\n+\t\tPolicySelector: selector, PolicyStore: store,\n+\t\tGenerationReader: generations,\n+\t\tClock:            c.clock,\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn client\n+}\n+\n+// Clock is the fixture's clock, for a service that must agree with it.\n+func (c *Corpus) Clock() func() time.Time { return c.clock }\n+\n+// Resolver returns the fixture's trusted decision resolver, for a service that\n+// binds its own authorization rather than taking a context alone.\n+func (c *Corpus) Resolver() auth.Resolver { return c.authority.Resolver() }\n+\n+// Cleared returns a context for a principal granted both compartments.\n+func (c *Corpus) Cleared(t *testing.T) context.Context {\n+\tt.Helper()\n+\treturn c.bind(t, \"cleared\",\n+\t\t[][]byte{c.sourceA, c.sourceB}, [][]byte{c.policyA, c.policyB})\n+}\n+\n+// Uncleared returns a context for a principal granted only the open\n+// compartment. Every probe that matters is run as this principal.\n+func (c *Corpus) Uncleared(t *testing.T) context.Context {\n+\tt.Helper()\n+\treturn c.bind(t, \"uncleared\", [][]byte{c.sourceA}, [][]byte{c.policyA})\n+}\n+\n+func (c *Corpus) bind(\n+\tt *testing.T, subject string, sources, policies [][]byte,\n+) context.Context {\n+\tt.Helper()\n+\tdecision, err := auth.NewDecision(auth.DecisionConfig{\n+\t\tSubject: shoal.ID(subject), Actor: shoal.ID(subject),\n+\t\tAuthorizationDomain: fixtureDomain,\n+\t\tAllowedOperations: []auth.Operation{\n+\t\t\tauth.OperationIngest, auth.OperationRead, auth.OperationList,\n+\t\t\tauth.OperationRetrieve, auth.OperationNeighborhood,\n+\t\t\tauth.OperationValidate, auth.OperationConnect,\n+\t\t},\n+\t\tPermittedSourceIDs:    sources,\n+\t\tPermittedPolicyIDs:    policies,\n+\t\tPolicyGeneration:      1,\n+\t\tAuthenticationExpires: c.clock().Add(24 * time.Hour),\n+\t\tRequestID:             shoal.ID(subject + \"-request\"),\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tctx, err := c.authority.Binder().Bind(context.Background(), decision)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn ctx\n+}\ndiff --git a/internal/disclosureconformance/fixture_test.go b/internal/disclosureconformance/fixture_test.go\nnew file mode 100644\nindex 0000000..ccc79ea\n--- /dev/null\n+++ b/internal/disclosureconformance/fixture_test.go\n@@ -0,0 +1,110 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package disclosureconformance\n+\n+import (\n+\t\"context\"\n+\t\"testing\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\"\n+\t\"github.com/phrocker/shoal-oss/pkg/retrieval\"\n+)\n+\n+type retrievalProbeResult struct {\n+\tResponse   retrieval.Response\n+\tDisclosure authorized.Disclosure\n+}\n+\n+func retrieveTerm(\n+\tt *testing.T, corpus *Corpus, ctx context.Context, term string,\n+) retrievalProbeResult {\n+\tt.Helper()\n+\tresponse, disclosure, err := corpus.Client.RetrieveWithDisclosure(\n+\t\tctx, retrieval.Request{\n+\t\t\tText: term, TopK: 8,\n+\t\t\tModes: []retrieval.Mode{retrieval.ModeLexical}, Explain: true,\n+\t\t})\n+\tif err != nil {\n+\t\tt.Fatalf(\"retrieve %q: %v\", term, err)\n+\t}\n+\treturn retrievalProbeResult{Response: response, Disclosure: disclosure}\n+}\n+\n+// TestRetrievalIsUniformForWithheldAndAbsent is the measurement that should\n+// have come first. It proves directly, against a real two-compartment corpus,\n+// that an uncleared principal cannot tell a term whose matches exist and were\n+// withheld from a term that matches nothing.\n+//\n+// The property holds by construction rather than by care: the authorized layer\n+// removes documents the identity may not read from the search projection\n+// before scoring, so retrieval never sees them and cannot report on them. The\n+// disclosure counts are computed over the whole corpus and are therefore\n+// identical for every query by this identity, including one that returns a\n+// result. This test exists so that a future change which makes suppression\n+// query-dependent, and turns a volume signal into a per-term oracle, fails\n+// here.\n+func TestRetrievalIsUniformForWithheldAndAbsent(t *testing.T) {\n+\tcorpus := NewCorpus(t)\n+\tctx := corpus.Uncleared(t)\n+\tRun(t, Probe{\n+\t\tName:     \"retrieve/withheld-vs-absent\",\n+\t\tWithheld: retrieveTerm(t, corpus, ctx, RestrictedTerm),\n+\t\tControl:  retrieveTerm(t, corpus, ctx, AbsentTerm),\n+\t})\n+}\n+\n+// TestDisclosureCountIsQueryIndependent pins the mechanism the uniformity\n+// rests on. The count reports how much of the corpus this identity may not\n+// read, not what matched, so a term that returns a result reports the same\n+// count as one that returns nothing.\n+func TestDisclosureCountIsQueryIndependent(t *testing.T) {\n+\tcorpus := NewCorpus(t)\n+\tctx := corpus.Uncleared(t)\n+\tmatched := retrieveTerm(t, corpus, ctx, OpenTerm)\n+\tif len(matched.Response.Results) == 0 {\n+\t\tt.Fatal(\"the open term must match, or the fixture proves nothing\")\n+\t}\n+\tfor _, term := range []string{RestrictedTerm, AbsentTerm} {\n+\t\tother := retrieveTerm(t, corpus, ctx, term)\n+\t\tif other.Disclosure != matched.Disclosure {\n+\t\t\tt.Fatalf(\"disclosure varies by query: %q reports %#v, %q reports %#v\",\n+\t\t\t\tOpenTerm, matched.Disclosure, term, other.Disclosure)\n+\t\t}\n+\t}\n+}\n+\n+// TestClearedPrincipalSeesRestrictedContent guards the fixture itself. If the\n+// restricted document were unreadable by everyone, or missing, the uniformity\n+// tests above would pass trivially.\n+func TestClearedPrincipalSeesRestrictedContent(t *testing.T) {\n+\tcorpus := NewCorpus(t)\n+\tcleared := retrieveTerm(t, corpus, corpus.Cleared(t), RestrictedTerm)\n+\tif len(cleared.Response.Results) == 0 {\n+\t\tt.Fatal(\"the cleared principal must see the restricted term\")\n+\t}\n+\tif cleared.Disclosure.Suppressed != 0 {\n+\t\tt.Fatalf(\"nothing should be withheld from the cleared principal: %#v\",\n+\t\t\tcleared.Disclosure)\n+\t}\n+\tuncleared := retrieveTerm(t, corpus, corpus.Uncleared(t), RestrictedTerm)\n+\tif len(uncleared.Response.Results) != 0 {\n+\t\tt.Fatal(\"the uncleared principal must not see the restricted term\")\n+\t}\n+}\ndiff --git a/pkg/explorer/webapi/disclosure_ask_test.go b/pkg/explorer/webapi/disclosure_ask_test.go\nnew file mode 100644\nindex 0000000..b6cf8d2\n--- /dev/null\n+++ b/pkg/explorer/webapi/disclosure_ask_test.go\n@@ -0,0 +1,99 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package webapi\n+\n+import (\n+\t\"context\"\n+\t\"testing\"\n+\n+\t\"github.com/phrocker/shoal-oss/internal/disclosureconformance\"\n+\t\"github.com/phrocker/shoal-oss/pkg/inference\"\n+\t\"github.com/phrocker/shoal-oss/pkg/model\"\n+\t\"github.com/phrocker/shoal-oss/pkg/retrieval\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// askOutcome is what a caller can observe from one grounded question: the\n+// envelope if it succeeded, and the error class and message if it did not.\n+// Both halves matter. An error that names why a question could not be answered\n+// is as much a response as a body is.\n+type askOutcome struct {\n+\tEnvelope  *CitationEnvelope `json:\"envelope,omitempty\"`\n+\tErrorCode shoal.ErrorCode   `json:\"error_code,omitempty\"`\n+\tErrorText string            `json:\"error_text,omitempty\"`\n+}\n+\n+func askTerm(\n+\tt *testing.T, service *ChatService, ctx context.Context, term string,\n+) askOutcome {\n+\tt.Helper()\n+\tenvelope, err := service.Ask(ctx, AskRequest{Question: term, TopK: 8})\n+\tif err != nil {\n+\t\treturn askOutcome{\n+\t\t\tErrorCode: primaryErrorCode(err), ErrorText: err.Error(),\n+\t\t}\n+\t}\n+\treturn askOutcome{Envelope: &envelope}\n+}\n+\n+// TestGroundedAskIsUniformForWithheldAndAbsent answers the question the\n+// disclosure-count analysis left open. The counts are corpus-wide, so they\n+// cannot be a per-term oracle. The grounded-ask path runs per request, so if a\n+// \"matches exist but were withheld\" outcome were distinguishable from \"nothing\n+// matched\" anywhere, this is where it would be.\n+//\n+// Nothing here is a test double except the model, which is the deterministic\n+// offline generator: a real two-compartment corpus, the real authorized\n+// client, and the real reasoning path.\n+func TestGroundedAskIsUniformForWithheldAndAbsent(t *testing.T) {\n+\tcorpus := disclosureconformance.NewCorpus(t)\n+\tprovenance, err := inference.NewModelProvenance(\"fake\", \"fake\", \"\", nil, nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tservice, err := NewChatService(context.Background(), ChatConfig{\n+\t\tClient: corpus.Client, Resolver: corpus.Resolver(),\n+\t\tGenerator: model.FakeGenerator{Model: \"fake\"}, Model: provenance,\n+\t\tRetrievalModes: []retrieval.Mode{retrieval.ModeLexical},\n+\t\tClock:          corpus.Clock(),\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\t// Guard the probe. If both sides failed for an unrelated reason the\n+\t// comparison would pass while proving nothing, so first prove the path\n+\t// works: the cleared principal must actually get an answer grounded in the\n+\t// restricted document.\n+\tcleared := askTerm(\n+\t\tt, service, corpus.Cleared(t), disclosureconformance.RestrictedTerm)\n+\tif cleared.Envelope == nil {\n+\t\tt.Fatalf(\"the cleared principal must be answerable, got %q: %s\",\n+\t\t\tcleared.ErrorCode, cleared.ErrorText)\n+\t}\n+\n+\tctx := corpus.Uncleared(t)\n+\twithheld := askTerm(t, service, ctx, disclosureconformance.RestrictedTerm)\n+\tabsent := askTerm(t, service, ctx, disclosureconformance.AbsentTerm)\n+\tt.Logf(\"withheld outcome: code=%q text=%q\", withheld.ErrorCode, withheld.ErrorText)\n+\tt.Logf(\"absent   outcome: code=%q text=%q\", absent.ErrorCode, absent.ErrorText)\n+\tdisclosureconformance.Run(t, disclosureconformance.Probe{\n+\t\tName: \"ask/withheld-vs-absent\", Withheld: withheld, Control: absent,\n+\t})\n+}\ndiff --git a/pkg/explorer/webapi/disclosure_conformance_test.go b/pkg/explorer/webapi/disclosure_conformance_test.go\nnew file mode 100644\nindex 0000000..b03e4e5\n--- /dev/null\n+++ b/pkg/explorer/webapi/disclosure_conformance_test.go\n@@ -0,0 +1,263 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package webapi\n+\n+import (\n+\t\"context\"\n+\t\"encoding/json\"\n+\t\"errors\"\n+\t\"net/http/httptest\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/internal/disclosureconformance\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer\"\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\"\n+\t\"github.com/phrocker/shoal-oss/pkg/retrieval\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// withholdingClientStub serves one snapshot and reports whatever withholding\n+// the probe asks for. The two responses a probe compares must differ in\n+// nothing except whether content was withheld, so the stub returns identical\n+// documents and results either way: an empty corpus view, which is exactly\n+// what a caller sees when matches are withheld.\n+type withholdingClientStub struct {\n+\texplorer.BoundedClient\n+\tsnapshot   explorer.Snapshot\n+\tdisclosure authorized.Disclosure\n+\tembedding  *authorized.EmbeddingQueryReport\n+\t// retrieveErr makes the stub fail the way a provider outage does, so the\n+\t// error branch that carries an embedding report is exercised too.\n+\tretrieveErr error\n+}\n+\n+func (c *withholdingClientStub) Snapshot(\n+\tcontext.Context,\n+) (explorer.Snapshot, error) {\n+\treturn c.snapshot, nil\n+}\n+\n+func (c *withholdingClientStub) DocumentsWithDisclosure(\n+\tcontext.Context,\n+) ([]explorer.DocumentSummary, authorized.Disclosure, error) {\n+\treturn nil, c.disclosure, nil\n+}\n+\n+func (c *withholdingClientStub) RetrieveWithReport(\n+\tcontext.Context, retrieval.Request,\n+) (retrieval.Response, authorized.RetrievalReport, error) {\n+\treturn retrieval.Response{}, authorized.RetrievalReport{\n+\t\tDisclosure: c.disclosure, Embedding: c.embedding,\n+\t}, c.retrieveErr\n+}\n+\n+func withholdingService(\n+\tt *testing.T, conceal bool, disclosure authorized.Disclosure,\n+\tembedding *authorized.EmbeddingQueryReport,\n+) *EmbeddedService {\n+\tt.Helper()\n+\treturn withholdingServiceFailing(t, conceal, disclosure, embedding, nil)\n+}\n+\n+func withholdingServiceFailing(\n+\tt *testing.T, conceal bool, disclosure authorized.Disclosure,\n+\tembedding *authorized.EmbeddingQueryReport, retrieveErr error,\n+) *EmbeddedService {\n+\tt.Helper()\n+\tservice, err := NewEmbeddedService(&withholdingClientStub{\n+\t\tretrieveErr: retrieveErr,\n+\t\tsnapshot: explorer.Snapshot{\n+\t\t\tID: \"snapshot\", AsOf: time.Unix(0, 0).UTC(), Frontier: 1,\n+\t\t},\n+\t\tdisclosure: disclosure,\n+\t\tembedding:  embedding,\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tservice.ConcealWithholding(conceal)\n+\treturn service\n+}\n+\n+func documentsProbeResponse(\n+\tt *testing.T, conceal bool, disclosure authorized.Disclosure,\n+) DocumentsResponse {\n+\tt.Helper()\n+\tservice := withholdingService(t, conceal, disclosure, nil)\n+\tresponse, err := service.Documents(context.Background(), DocumentsRequest{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn response\n+}\n+\n+func retrievalProbeResponse(\n+\tt *testing.T, conceal bool, disclosure authorized.Disclosure,\n+\tembedding *authorized.EmbeddingQueryReport,\n+) RetrievalResponse {\n+\tt.Helper()\n+\tservice := withholdingService(t, conceal, disclosure, embedding)\n+\tresponse, err := service.Retrieve(context.Background(), RetrievalRequest{\n+\t\tQuery: retrieval.Request{Text: \"probe\", TopK: 4},\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn response\n+}\n+\n+var (\n+\t// Content exists and was withheld from this caller.\n+\tprobeWithheld = authorized.Disclosure{Suppressed: 3, Restricted: 2}\n+\t// Nothing matched. The caller must not be able to tell these apart.\n+\tprobeControl = authorized.Disclosure{}\n+)\n+\n+// TestDisclosureIsConcealedUniformly is the regression gate. With concealment\n+// on, no response surface may vary with whether content was withheld. It\n+// compares encoded responses rather than named fields, so a field added later\n+// that happens to carry the signal fails here without anyone remembering to\n+// extend the test.\n+func TestDisclosureIsConcealedUniformly(t *testing.T) {\n+\twithheldEmbedding := &authorized.EmbeddingQueryReport{\n+\t\tObserved: true, FanoutLimit: 4, Suppressed: true, Restricted: true,\n+\t}\n+\tcontrolEmbedding := &authorized.EmbeddingQueryReport{\n+\t\tObserved: true, FanoutLimit: 4,\n+\t}\n+\tdisclosureconformance.Run(t,\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:     \"documents\",\n+\t\t\tWithheld: documentsProbeResponse(t, true, probeWithheld),\n+\t\t\tControl:  documentsProbeResponse(t, true, probeControl),\n+\t\t},\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:     \"retrieve\",\n+\t\t\tWithheld: retrievalProbeResponse(t, true, probeWithheld, nil),\n+\t\t\tControl:  retrievalProbeResponse(t, true, probeControl, nil),\n+\t\t},\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName: \"retrieve/embedding-report\",\n+\t\t\tWithheld: retrievalProbeResponse(\n+\t\t\t\tt, true, probeWithheld, withheldEmbedding),\n+\t\t\tControl: retrievalProbeResponse(\n+\t\t\t\tt, true, probeControl, controlEmbedding),\n+\t\t},\n+\t)\n+}\n+\n+// TestDefaultDisclosureRemainsDeliberate pins the accepted trade rather than\n+// assuming it. The default emits the withholding counts on purpose, so that a\n+// short answer is never silently mistaken for an empty corpus; the reasoning\n+// is recorded on EmbeddedService.retrieveReporting. If that default ever\n+// changes silently, this fails and the change has to be argued for.\n+func TestDefaultDisclosureRemainsDeliberate(t *testing.T) {\n+\tconst reason = \"the default discloses withholding so a short answer is \" +\n+\t\t\"never silently mistaken for an empty corpus; see retrieveReporting\"\n+\tdisclosureconformance.Run(t,\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:            \"documents\",\n+\t\t\tWithheld:        documentsProbeResponse(t, false, probeWithheld),\n+\t\t\tControl:         documentsProbeResponse(t, false, probeControl),\n+\t\t\tDistinguishable: true,\n+\t\t\tReason:          reason,\n+\t\t},\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:            \"retrieve\",\n+\t\t\tWithheld:        retrievalProbeResponse(t, false, probeWithheld, nil),\n+\t\t\tControl:         retrievalProbeResponse(t, false, probeControl, nil),\n+\t\t\tDistinguishable: true,\n+\t\t\tReason:          reason,\n+\t\t},\n+\t)\n+}\n+\n+// failedRetrievalOutcome is what a caller observes when retrieval fails while\n+// an embedding report is in flight. The report rides out on the error, so the\n+// error is as much a disclosure surface as a successful body is.\n+type failedRetrievalOutcome struct {\n+\tErrorText string                    `json:\"error_text\"`\n+\tEmbedding *wireEmbeddingQueryReport `json:\"embedding,omitempty\"`\n+\tStatus    int                       `json:\"status\"`\n+\tBody      json.RawMessage           `json:\"body\"`\n+}\n+\n+func failedRetrievalProbe(\n+\tt *testing.T, conceal bool, disclosure authorized.Disclosure,\n+\tembedding *authorized.EmbeddingQueryReport,\n+) failedRetrievalOutcome {\n+\tt.Helper()\n+\tservice := withholdingServiceFailing(t, conceal, disclosure, embedding,\n+\t\tshoal.NewError(shoal.ErrorUnavailable, \"embedding provider is down\"))\n+\t_, err := service.Retrieve(context.Background(), RetrievalRequest{\n+\t\tQuery: retrieval.Request{\n+\t\t\tText: \"probe\", TopK: 4, Modes: []retrieval.Mode{retrieval.ModeVector},\n+\t\t},\n+\t})\n+\tif err == nil {\n+\t\tt.Fatal(\"the probe requires a failing retrieval\")\n+\t}\n+\toutcome := failedRetrievalOutcome{ErrorText: err.Error()}\n+\tvar embeddingErr *EmbeddingQueryError\n+\tif errors.As(err, &embeddingErr) {\n+\t\treport := embeddingErr.EmbeddingQueryReport()\n+\t\toutcome.Embedding = wireEmbeddingQueryReportValue(&report)\n+\t}\n+\t// The HTTP encoding is the surface a caller actually reads, so compare\n+\t// that too rather than only the value the service returned.\n+\trecorder := httptest.NewRecorder()\n+\twriteError(recorder, err)\n+\toutcome.Status = recorder.Code\n+\toutcome.Body = json.RawMessage(recorder.Body.Bytes())\n+\treturn outcome\n+}\n+\n+// TestConcealedFailedRetrievalDoesNotDiscloseWithholding covers the error\n+// branch. A failing retrieval still carries the embedding report, and that\n+// report's derived withholding booleans must be concealed exactly as they are\n+// on the success path, including in the encoded HTTP error a caller reads.\n+func TestConcealedFailedRetrievalDoesNotDiscloseWithholding(t *testing.T) {\n+\twithheld := &authorized.EmbeddingQueryReport{\n+\t\tObserved: true, FanoutLimit: 4, Degraded: true,\n+\t\tSuppressed: true, Restricted: true,\n+\t}\n+\tcontrol := &authorized.EmbeddingQueryReport{\n+\t\tObserved: true, FanoutLimit: 4, Degraded: true,\n+\t}\n+\tdisclosureconformance.Run(t, disclosureconformance.Probe{\n+\t\tName:     \"retrieve/failed-with-embedding-report\",\n+\t\tWithheld: failedRetrievalProbe(t, true, probeWithheld, withheld),\n+\t\tControl:  failedRetrievalProbe(t, true, probeControl, control),\n+\t})\n+}\n+\n+// TestFailedRetrievalDoesNotMutateTheAuditReport proves concealment copies the\n+// report on the error path as it does on the success path. The original is\n+// still the value the audit trail keeps.\n+func TestFailedRetrievalDoesNotMutateTheAuditReport(t *testing.T) {\n+\treport := &authorized.EmbeddingQueryReport{\n+\t\tObserved: true, Suppressed: true, Restricted: true,\n+\t}\n+\tfailedRetrievalProbe(t, true, probeWithheld, report)\n+\tif !report.Suppressed || !report.Restricted {\n+\t\tt.Fatalf(\"concealment mutated the audit report: %#v\", report)\n+\t}\n+}\ndiff --git a/pkg/explorer/webapi/disclosure_test.go b/pkg/explorer/webapi/disclosure_test.go\nnew file mode 100644\nindex 0000000..e7a3010\n--- /dev/null\n+++ b/pkg/explorer/webapi/disclosure_test.go\n@@ -0,0 +1,105 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package webapi\n+\n+import (\n+\t\"reflect\"\n+\t\"testing\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\"\n+)\n+\n+// TestConcealWithholdingClearsBothReasonClasses proves the two counts are\n+// concealed together. Omitting one while emitting the other would separate the\n+// reason classes in exactly the way concealment exists to prevent.\n+func TestConcealWithholdingClearsBothReasonClasses(t *testing.T) {\n+\tdisclosure := authorized.Disclosure{Suppressed: 3, Restricted: 2}\n+\topen := &EmbeddedService{}\n+\tif got := open.disclose(disclosure); got != disclosure {\n+\t\tt.Fatalf(\"default must preserve the documented disclosure: %#v\", got)\n+\t}\n+\tconcealed := &EmbeddedService{}\n+\tconcealed.ConcealWithholding(true)\n+\tif got := concealed.disclose(disclosure); got != (authorized.Disclosure{}) {\n+\t\tt.Fatalf(\"concealed disclosure = %#v\", got)\n+\t}\n+}\n+\n+// TestConcealWithholdingClearsEmbeddingSignal proves the embedding report's\n+// booleans are concealed with the counts they derive from. Leaving them set\n+// would keep the same signal in a narrower form rather than removing it.\n+func TestConcealWithholdingClearsEmbeddingSignal(t *testing.T) {\n+\treport := &authorized.EmbeddingQueryReport{\n+\t\tSpaces: []authorized.EmbeddingSpaceReport{{ID: \"space\"}},\n+\t\t// Request-local observability, unrelated to withholding: it must\n+\t\t// survive concealment.\n+\t\tFanoutLimit: 4, CacheHits: 2, ProviderCalls: 1, Observed: true,\n+\t\tDegraded: true, FanoutExceeded: true,\n+\t\tSuppressed: true, Restricted: true,\n+\t}\n+\topen := &EmbeddedService{}\n+\tif got := open.discloseEmbedding(report); got != report {\n+\t\tt.Fatal(\"default must pass the report through untouched\")\n+\t}\n+\n+\tconcealed := &EmbeddedService{}\n+\tconcealed.ConcealWithholding(true)\n+\tgot := concealed.discloseEmbedding(report)\n+\tif got == nil {\n+\t\tt.Fatal(\"concealment must not drop the report\")\n+\t}\n+\tif got.Suppressed || got.Restricted {\n+\t\tt.Fatalf(\"withholding signal survived concealment: %#v\", got)\n+\t}\n+\tif !got.Observed || !got.Degraded || !got.FanoutExceeded ||\n+\t\tgot.FanoutLimit != 4 || got.CacheHits != 2 || got.ProviderCalls != 1 ||\n+\t\tlen(got.Spaces) != 1 {\n+\t\tt.Fatalf(\"concealment altered unrelated observability: %#v\", got)\n+\t}\n+\t// The caller's report must not be mutated: it is still the audit value.\n+\tif !report.Suppressed || !report.Restricted {\n+\t\tt.Fatalf(\"concealment mutated the audit report: %#v\", report)\n+\t}\n+\tif concealed.discloseEmbedding(nil) != nil {\n+\t\tt.Fatal(\"a nil report must stay nil\")\n+\t}\n+}\n+\n+// TestConcealedResponsesDoNotVaryWithWithholding is the property that matters:\n+// with concealment on, a response where content was withheld must be\n+// indistinguishable from one where nothing was.\n+func TestConcealedResponsesDoNotVaryWithWithholding(t *testing.T) {\n+\tservice := &EmbeddedService{}\n+\tservice.ConcealWithholding(true)\n+\twithheld := service.disclose(\n+\t\tauthorized.Disclosure{Suppressed: 7, Restricted: 4})\n+\tnothing := service.disclose(authorized.Disclosure{})\n+\tif withheld != nothing {\n+\t\tt.Fatalf(\"withheld %#v is distinguishable from %#v\", withheld, nothing)\n+\t}\n+\twithheldEmbedding := service.discloseEmbedding(\n+\t\t&authorized.EmbeddingQueryReport{Suppressed: true, Restricted: true})\n+\tnothingEmbedding := service.discloseEmbedding(\n+\t\t&authorized.EmbeddingQueryReport{})\n+\tif !reflect.DeepEqual(withheldEmbedding, nothingEmbedding) {\n+\t\tt.Fatalf(\"embedding reports differ: %#v vs %#v\",\n+\t\t\twithheldEmbedding, nothingEmbedding)\n+\t}\n+}\ndiff --git a/pkg/explorer/webapi/service.go b/pkg/explorer/webapi/service.go\nindex c12b446..837d632 100644\n--- a/pkg/explorer/webapi/service.go\n+++ b/pkg/explorer/webapi/service.go\n@@ -171,10 +171,60 @@ type EmbeddedService struct {\n \tanalytics         *exploreranalytics.Service\n \tontologyMu        sync.RWMutex\n \tontologyPublishMu sync.Mutex\n \tontologyVersion   *ontology.OntologyVersion\n \tclock             func() time.Time\n+\t// concealWithholding suppresses the withholding counts in responses. The\n+\t// default is false, preserving the deliberate disclosure documented on\n+\t// retrieveReporting: a caller should not silently mistake a short answer\n+\t// for \"nothing exists\".\n+\t//\n+\t// What the counts disclose is volume, not content and not per-query\n+\t// existence. Both are computed over the whole corpus before retrieval, so\n+\t// the same identity sees the same numbers for every query; they move when\n+\t// the corpus or the identity's grants change. A compartmented deployment\n+\t// may still decline to tell a caller how much it cannot see, or to hand it\n+\t// a change signal for content it has no grant for. Neither mode changes\n+\t// what is recorded for audit.\n+\tconcealWithholding bool\n+}\n+\n+// ConcealWithholding suppresses the withholding counts in every response that\n+// carries them. Both counts are concealed together: a response that omits one\n+// and emits the other would itself distinguish the two reason classes.\n+//\n+// It must be set during composition, before the service serves a request.\n+func (s *EmbeddedService) ConcealWithholding(conceal bool) {\n+\ts.concealWithholding = conceal\n+}\n+\n+// disclose returns the counts a response may carry for this service.\n+func (s *EmbeddedService) disclose(\n+\tdisclosure authorized.Disclosure,\n+) authorized.Disclosure {\n+\tif s.concealWithholding {\n+\t\treturn authorized.Disclosure{}\n+\t}\n+\treturn disclosure\n+}\n+\n+// discloseEmbedding clears the withholding booleans an embedding report\n+// derives from the same counts. Concealing the counts while leaving these set\n+// would keep the signal in a narrower form rather than removing it. Every\n+// other field of the report is request-local observability and is preserved.\n+func (s *EmbeddedService) discloseEmbedding(\n+\treport *authorized.EmbeddingQueryReport,\n+) *authorized.EmbeddingQueryReport {\n+\tif report == nil || !s.concealWithholding {\n+\t\treturn report\n+\t}\n+\tconcealed := *report\n+\tconcealed.Spaces = append(\n+\t\t[]authorized.EmbeddingSpaceReport(nil), report.Spaces...)\n+\tconcealed.Suppressed = false\n+\tconcealed.Restricted = false\n+\treturn &concealed\n }\n \n // NewEmbeddedService creates a local service without exposing the embedded\n // engine through the service contract.\n func NewEmbeddedService(client explorer.BoundedClient) (*EmbeddedService, error) {\n@@ -509,15 +559,16 @@ func (s *EmbeddedService) Documents(\n \t}\n \tend := offset + int(limit)\n \tif end > len(documents) {\n \t\tend = len(documents)\n \t}\n+\tdisclosed := s.disclose(disclosure)\n \tresponse := DocumentsResponse{\n \t\tSnapshot:   snapshot,\n \t\tDocuments:  append([]explorer.DocumentSummary(nil), documents[offset:end]...),\n-\t\tSuppressed: disclosure.Suppressed,\n-\t\tRestricted: disclosure.Restricted,\n+\t\tSuppressed: disclosed.Suppressed,\n+\t\tRestricted: disclosed.Restricted,\n \t}\n \tif end < len(documents) {\n \t\tresponse.NextCursor = encodeCursor(snapshot.ID, end)\n \t}\n \treturn response, nil\n@@ -630,27 +681,28 @@ func (s *EmbeddedService) Retrieve(\n \t// The embedded backend is already pinned by the snapshot identity and does\n \t// not implement historical publication-frontier reads.\n \tquery.AsOf = time.Time{}\n \tresponse, report, err := s.retrieveReporting(ctx, query)\n \tif err != nil {\n-\t\tif report.Embedding != nil {\n-\t\t\treturn RetrievalResponse{}, newEmbeddingQueryError(err, *report.Embedding)\n+\t\tif concealed := s.discloseEmbedding(report.Embedding); concealed != nil {\n+\t\t\treturn RetrievalResponse{}, newEmbeddingQueryError(err, *concealed)\n \t\t}\n \t\treturn RetrievalResponse{}, err\n \t}\n \tif err := validateRetrievalResponse(response, query); err != nil {\n \t\treturn RetrievalResponse{}, shoal.WrapError(\n \t\t\tshoal.ErrorInternal, \"invalid retrieval response\", err)\n \t}\n \tif err := s.confirmSnapshot(ctx, snapshot); err != nil {\n \t\treturn RetrievalResponse{}, err\n \t}\n+\tdisclosed := s.disclose(report.Disclosure)\n \treturn RetrievalResponse{\n \t\tSnapshot: snapshot, Retrieval: response,\n-\t\tSuppressed: report.Disclosure.Suppressed,\n-\t\tRestricted: report.Disclosure.Restricted,\n-\t\tEmbedding:  report.Embedding,\n+\t\tSuppressed: disclosed.Suppressed,\n+\t\tRestricted: disclosed.Restricted,\n+\t\tEmbedding:  s.discloseEmbedding(report.Embedding),\n \t}, nil\n }\n \n // retrieveReporting runs the authorized retrieval and, when the backing client\n // can report it, preserves both document withholding counts and request-local\n",
+  "head": "672f99c2e131e3b3f08b70f05283e77f9adaa5a9",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 377,
+  "units": [
+    {
+      "id": "071532945ea4c2c79104fa747f0d4bd4a7793c4a011060761813d4dbeb8173d6",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "function:TestConcealWithholdingEnvironmentDefault"
+    },
+    {
+      "id": "2afbe6a2d852ef0d99ae3973a697ae049f6a45beee33534c4f5c6bcea99c0899",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "function:TestConcealWithholdingFlagIsRegistered"
+    },
+    {
+      "id": "d3c8ab5379f0d16587567e5a573c7468336ebcd4a220068a6b377be31208189f",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "function:TestConcealWithholdingReachesTheDeployedService"
+    },
+    {
+      "id": "2741e66cd30806a7bc704414bf8e69e37b8f7a7cdeae958c794ee1c629e5bef2",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "function:withholdingDeployment"
+    },
+    {
+      "id": "9c3625a037b68b3f7bcbc5289dfafe4ef2c0745c1e536ef85bc2a99172dfe3ef",
+      "kind": "import",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "import:\"context\",\"path/filepath\",\"strings\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/explorer/webapi\""
+    },
+    {
+      "id": "0dad1d15fc8ca9bc6155c76b2c2ae930764b0fbf2cc47f8eb220f3831093f474",
+      "kind": "file_context",
+      "path": "cmd/shoal-explore-web/disclosure_wiring_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "7832a7b179837baded51a66a3ab514ca0d79f13289c4f223a6a2c70219967f58",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "function:concealWithholdingDefault"
+    },
+    {
+      "id": "9fcfdfb4aee34ca8f3c2eae28a6f989f580085dc2fb5ea72066b5814a8e12038",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "function:openService"
+    },
+    {
+      "id": "76d7af1c6c385d3b10de5ebb0da8257047edd3afc8a875175d9574e05eb87bcb",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "function:run"
+    },
+    {
+      "id": "542b42f1b37b2bee19e26671c7fea5c61e1d9fb873b11d0c88ce0b22aaf6d8c4",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "type:serviceConfig"
+    },
+    {
+      "id": "747173390b01de5be0b18e7bc8f4a789fc8fd55b9f375b4e283297db7d938a90",
+      "kind": "file_context",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "479ffce6a4697e1a719ed6fec429c3c699decc4d623396ffec3d61d4e2172acc",
+      "kind": "function",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "function:Run"
+    },
+    {
+      "id": "bc5d2cc0deb301d41416baf7f0368efda3ab77dc97814289034aa431302319c5",
+      "kind": "function",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "function:decodeObject"
+    },
+    {
+      "id": "b950cc58cfbdbffa12424d4d1a8ef8f32364da7f24046e119237126cb3a1672b",
+      "kind": "function",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "function:differingFields"
+    },
+    {
+      "id": "b7f378a8a3237adefd5c189350ef917a251c176d7c6e5f5fe4a9aefa7da65db4",
+      "kind": "function",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "function:encode"
+    },
+    {
+      "id": "2bde6a5017619c4806106ba0a926ca74d335b202e84b9be89f80f5e2b7681059",
+      "kind": "function",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "function:runProbe"
+    },
+    {
+      "id": "70646d24aa9f3a7064415ef3236b8b096fa0eabd0b6834f4839857fdad16dac3",
+      "kind": "import",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "import:\"bytes\",\"encoding/json\",\"fmt\",\"sort\",\"testing\""
+    },
+    {
+      "id": "66659aa187d9e1c991906c12466db4c4b300c464d29132493277cde663e969ac",
+      "kind": "type",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "type:Probe"
+    },
+    {
+      "id": "ea85349d0f35ce453276a14db1b558987c305d2ebc20699dfe6868974e7f4d2a",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "ef7f0f0e43b97e081a061bf2101654a7c1a8bd40e2e8e13b749f493f9794c5e5",
+      "kind": "const",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "const:OpenTerm,RestrictedTerm,AbsentTerm"
+    },
+    {
+      "id": "6c9a6776ce531d44ccffddfeda8b144e009eeb91e595c5cc8170a41933b64000",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.Cleared"
+    },
+    {
+      "id": "d85f91b05f78ec65519738b506aa138356ea06e88697e9300e4c2278b28d1a50",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.Clock"
+    },
+    {
+      "id": "2357ebb662ee77a327ec08fd4c2079768fa1cfd92ff50242c109778cb9ad38d9",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.Resolver"
+    },
+    {
+      "id": "9f2dc04317623c92e93e678e874f7a6b627d5f146ddcf53b90c4dcb09a0c3334",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.Uncleared"
+    },
+    {
+      "id": "00e889d6e5ab236e28ed70b45097cd9f5f986f01b05e12f3dab5508e8784f972",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.bind"
+    },
+    {
+      "id": "acea74d14ea5cf8eb0f36625968de9df1a9d51966d1454dfd68e81d0538e0d19",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.newClient"
+    },
+    {
+      "id": "ee7140382417cbde6a277edbdda599327abea6ec2da215b4f8eed90d69fbc831",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*fixtureGenerations.CurrentPolicyGeneration"
+    },
+    {
+      "id": "b581b7ad7ce70e515fec8967fb5188e812f638023adc873f3869c5fc66277bb7",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:NewCorpus"
+    },
+    {
+      "id": "98758d540654eb588c6055c00c8427309c97b9198e5fab4d087560fbb8aa7b80",
+      "kind": "import",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "import:\"context\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "6d72a3722401293179b09a6b7878eaa108064e4dc0714c9ef7004f6e218f352a",
+      "kind": "type",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "type:Corpus"
+    },
+    {
+      "id": "9e8a49804e4e6482e7ec6b68e23681c47c27cd079c0ba271dce4510063b33216",
+      "kind": "type",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "type:fixtureGenerations"
+    },
+    {
+      "id": "3c9d46a905cb5474188795511ab1ccd1cc1b60d05ecd064aeefc180aff70b25e",
+      "kind": "var",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "var:fixtureDomain"
+    },
+    {
+      "id": "9b744f53d39086eee3f1a061a27cc4ce1eaa3eabc3b6a828fb4ce05a15e85362",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "1acb62a192c6ab65163a13eb10e8234f720ec8629401c3b203068a91544c8ba2",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "function:TestClearedPrincipalSeesRestrictedContent"
+    },
+    {
+      "id": "5265719d5c7cbc7a879cfe2e44b491c4af738ff4714cf6f84cbb76ca88271751",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "function:TestDisclosureCountIsQueryIndependent"
+    },
+    {
+      "id": "02af14b2d90f1f6a09c305d914bd77e2f0f5cea47e59424975bcedce3ad1241e",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "function:TestRetrievalIsUniformForWithheldAndAbsent"
+    },
+    {
+      "id": "a8a2772ce4dcb80898adf7a21dddc4574deaac4caa5f6c5236b3371d97ce6b40",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "function:retrieveTerm"
+    },
+    {
+      "id": "fac00d1f179be66b6367a70e8c6d3408c3498b2b78b6780e1c78cf3b9c7d660f",
+      "kind": "import",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "import:\"context\",\"testing\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\",\"github.com/phrocker/shoal-oss/pkg/retrieval\""
+    },
+    {
+      "id": "78623fc005d3710e1b506a923ed9ca6f85d4dc4a8b792638569f2734332b12cc",
+      "kind": "type",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "type:retrievalProbeResult"
+    },
+    {
+      "id": "2ce3a4f8997ee5408eae6f9c56f7142e317ab00a9899a472c7ac373ba6f5710d",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/fixture_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "cbbcadf9eb007d68a466d8bc59f9c808d3896e0d3c49adaa110c5b1b0d3b12b3",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_ask_test.go",
+      "symbol": "function:TestGroundedAskIsUniformForWithheldAndAbsent"
+    },
+    {
+      "id": "c2722a2e4a62ad757927209ff5a6c4284a0dba5611a5f17ecf77527edae9e322",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_ask_test.go",
+      "symbol": "function:askTerm"
+    },
+    {
+      "id": "c7e38fc2076e0ff8666433d350fe6ac9f9771be91611ab2eb9894708822f1f86",
+      "kind": "import",
+      "path": "pkg/explorer/webapi/disclosure_ask_test.go",
+      "symbol": "import:\"context\",\"testing\",\"github.com/phrocker/shoal-oss/internal/disclosureconformance\",\"github.com/phrocker/shoal-oss/pkg/inference\",\"github.com/phrocker/shoal-oss/pkg/model\",\"github.com/phrocker/shoal-oss/pkg/retrieval\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "bd668eeb611e9449297621af8761c27a47eeb9ddf3e8c4b8439d65dec62c2600",
+      "kind": "type",
+      "path": "pkg/explorer/webapi/disclosure_ask_test.go",
+      "symbol": "type:askOutcome"
+    },
+    {
+      "id": "6be37f1ded7c8f860dd1bdd4def3681ae7b9a95e9a21a3336484d7d10a531bb3",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/disclosure_ask_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "b0c960b717242c3469e9803b401ceab43d906fa87b0502068e51d012e4c6f1e4",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:*withholdingClientStub.DocumentsWithDisclosure"
+    },
+    {
+      "id": "080cf34dd085713a8a5f8e5f00ee3225ace73ea39f2803824362b9df0175a4c0",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:*withholdingClientStub.RetrieveWithReport"
+    },
+    {
+      "id": "7b3cfa786843d8d6fe1c7d0f05b3bd7a2427b079cafa6ac1474a49a23e79002d",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:*withholdingClientStub.Snapshot"
+    },
+    {
+      "id": "2d855255d4a6ef96b1d94038537a464f2cc9d8bb390b427584110b0d796b29bd",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:TestConcealedFailedRetrievalDoesNotDiscloseWithholding"
+    },
+    {
+      "id": "bb12d3a66108b8134fa0971f90f867583c402ac6579b9637db0f1fb4227bd259",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:TestDefaultDisclosureRemainsDeliberate"
+    },
+    {
+      "id": "4fc5353218fe8b0e141b7cefd3bb91a5539657c4283dcccc2004a1f2cb2c0abf",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:TestDisclosureIsConcealedUniformly"
+    },
+    {
+      "id": "d862f8adc8feaac309467028c7fa137e50f31ba5a5e0ad753d36930887a10c4b",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:TestFailedRetrievalDoesNotMutateTheAuditReport"
+    },
+    {
+      "id": "7e4e01f721b5b5d15522f9517bf4fb99ff1f5b20e71d519cb65e64e7c9c0e378",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:documentsProbeResponse"
+    },
+    {
+      "id": "89811db2c96d3cb24bbff6c538a495fba492ad58a4ea21982e6f2affaecbd66a",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:failedRetrievalProbe"
+    },
+    {
+      "id": "58cfca2a7611af4eee0ba461a0cc162b932843e3e620c1953e39ee292922aac4",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:retrievalProbeResponse"
+    },
+    {
+      "id": "3a2331c738d7467ad13705dd2ad026da6242da1d628ffcc30b409971b32e1937",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:withholdingService"
+    },
+    {
+      "id": "e14e57cf8b9b854146682792d72cd64b2a1a667f2b48a6d689da60234ccfe20a",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "function:withholdingServiceFailing"
+    },
+    {
+      "id": "3316c45fc325f7015fb43afc0b2ee2b7e7eb7703f8d9084024caded0e2fa7c97",
+      "kind": "import",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "import:\"context\",\"encoding/json\",\"errors\",\"net/http/httptest\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/internal/disclosureconformance\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\",\"github.com/phrocker/shoal-oss/pkg/retrieval\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "6933d9f631b88546a42bfccc293d044519614d892ea542cdaeb3835c6d928965",
+      "kind": "type",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "type:failedRetrievalOutcome"
+    },
+    {
+      "id": "78e7911c47b676f84264430b0cca0bf0d7c5bf1d8db26d3b70aa7eebbc59a0bc",
+      "kind": "type",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "type:withholdingClientStub"
+    },
+    {
+      "id": "d7bfc0b7f18780793cb0e2dd6bf1898d002cd094b38335d14a5e35fc44b8e7fb",
+      "kind": "var",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "var:probeWithheld,probeControl"
+    },
+    {
+      "id": "d12f774a8fca3ed7738f486cf7f9e51002e9c1386e1113162c62192c73e8d45f",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/disclosure_conformance_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "81dbd3f96c81c7827411e0071b76af7f524a99712c839610b21113bccffadebd",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_test.go",
+      "symbol": "function:TestConcealWithholdingClearsBothReasonClasses"
+    },
+    {
+      "id": "00cf3d32d1fb2cad3f7be39fd9811c824eefdbd7b92df1dbf2a5c2cee0f9879e",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_test.go",
+      "symbol": "function:TestConcealWithholdingClearsEmbeddingSignal"
+    },
+    {
+      "id": "5a4bd9121ef9620abe832abfbbd805917da21aa27b264afb6823ae48af679232",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_test.go",
+      "symbol": "function:TestConcealedResponsesDoNotVaryWithWithholding"
+    },
+    {
+      "id": "96da55bb2f39e8ce7f8c2092e4fe2b8bf192eba46787ddb0735a718d9101e640",
+      "kind": "import",
+      "path": "pkg/explorer/webapi/disclosure_test.go",
+      "symbol": "import:\"reflect\",\"testing\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\""
+    },
+    {
+      "id": "9a18d4551191bb8044fe2ebb20d5c80eb514084ac8b0fb02e9da5f9243cdc572",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/disclosure_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "fcb63080b6bfd2fe824731cb9f31dd8b1521aefc36d3932ebc794a4e2c38cef6",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "function:*EmbeddedService.ConcealWithholding"
+    },
+    {
+      "id": "6f978f8bf622dfc53f883a6e2db39e6a19058bf2d4d21fd39d551a778e8f7f83",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "function:*EmbeddedService.Documents"
+    },
+    {
+      "id": "ef82ee4377267f819e961ff7127df6f478fb8c08862ef0526159ea6c1db13929",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "function:*EmbeddedService.Retrieve"
+    },
+    {
+      "id": "0e7e1c940fa4ad11c56aa254a63d11c40eb681b6309e182a06ab1948cfd37105",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "function:*EmbeddedService.disclose"
+    },
+    {
+      "id": "09a7fb015544b0534baa4371fd88ad7a12ed0b3781a9064ff58af5d67f4fa2ec",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "function:*EmbeddedService.discloseEmbedding"
+    },
+    {
+      "id": "72170f84af469f35ffbe3cf970becfebe888775a10f3e54da6553738d3d37362",
+      "kind": "type",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "type:EmbeddedService"
+    },
+    {
+      "id": "c5ef06820f546ef7ffef1ac3e85e1885aeca0575fc711d61af56756c9fa510a4",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/service.go",
+      "symbol": "file_context"
+    }
+  ]
+}

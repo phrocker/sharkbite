@@ -1,0 +1,3455 @@
+{
+  "candidate": {
+    "checkpoint": "english",
+    "id": "english-diff-2048-binary",
+    "max_len": 2048,
+    "question": "binary",
+    "representation": "diff"
+  },
+  "config_sha256": "3318b9b83f91ee3250a7783e41365505b565cc0c11c2cbf23fe16fd59b830a59",
+  "id": "5a073c1d6b411153ae9bc1b1e0f018acb9432e60b16da187b44db6362612fb7d",
+  "inputs_id": "82077649cdee07055e7e03c1f3955ca373bb7338349be20a37b6e0942fc6f812",
+  "load_seconds": 0.0018148147501051426,
+  "manifest_id": "aa87c0bff365028b2cf804ab0d720beea25a4fdd7420cf2433aaa1c3f7278bb0",
+  "optimization_enabled": false,
+  "predictions": [
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5772,
+        "choice": "routine",
+        "confidence": 0.0173,
+        "probabilities": {
+          "review": 0.4228,
+          "routine": 0.5772
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 21.232206374406815,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "602afba61ff81c1f4ad5b95bb09a0aaddbe92430ffbf3632cc32b0d0a1524232",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 641,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 531
+      },
+      "unit_id": "d04c7062cf53aa67ec1b6e6d70ed131231a868a6b1b342dba59bb97a4433e13c",
+      "usage": {
+        "input_tokens": 641,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5444,
+        "choice": "routine",
+        "confidence": 0.0057,
+        "probabilities": {
+          "review": 0.4556,
+          "routine": 0.5444
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.435509081929922,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "d3c6799e16836c278f2cd23658e47396a71be4766da6bdceb25dbd9d608b056e",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 443,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 333
+      },
+      "unit_id": "d04d9843152b50848172bbfb25ff6223a1ce3bb08ae64bfa3a4e757caa1107ab",
+      "usage": {
+        "input_tokens": 443,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5602,
+        "choice": "routine",
+        "confidence": 0.0105,
+        "probabilities": {
+          "review": 0.4398,
+          "routine": 0.5602
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.293820925056934,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "3a6ea8927ad4ece8354df42b9f7dca8b01d4cacfa9f6c11a3bd58d4e0ded9923",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 414,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 304
+      },
+      "unit_id": "f167c6034db406013b2df1c007205b1b7ec056c83d8e699802ec65fb175c42ef",
+      "usage": {
+        "input_tokens": 414,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "fab2b11c02aebfffacf1ea42ebb55f295a7efe5a0ab85c8609242cdfaf05d1e1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "100fbab7936e5dbc488c13d946f81d140a37851f0c0a14b88f6a023d4c007905"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "7aa1d71125624382f1aa9253bebf911aac7c666019acac2432012d6472ba5021"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "fc47bde73f35536743a6e1f29131420f77d4ab1226e5c74f284be3e01ed21845"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "67f6d1cfd8b56eb9961fe96da8cf8233d5164b7763236efc5107369d4d8a2375"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5922,
+        "choice": "routine",
+        "confidence": 0.0247,
+        "probabilities": {
+          "review": 0.4078,
+          "routine": 0.5922
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 12.906469870358706,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "98d99f1602e51cad8b9c4118a559c7f6d750ef5138f08a255e476d3ac85d9aa4",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 291,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 181
+      },
+      "unit_id": "00b02b0446f7028b3c6aef976d7c651155d025ca1dbd57ef308d180d83ba6e0e",
+      "usage": {
+        "input_tokens": 291,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6287,
+        "choice": "routine",
+        "confidence": 0.0484,
+        "probabilities": {
+          "review": 0.3713,
+          "routine": 0.6287
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.475437976419926,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "302ed1feb266b855203cd85feb05b243351f504906ede116c09182fcbd62297a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 339,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 229
+      },
+      "unit_id": "12c0d81eb308cd8dc79bdcdcee244e98153f8f68589b27e44a58c47b2e1c52f3",
+      "usage": {
+        "input_tokens": 339,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6343,
+        "choice": "routine",
+        "confidence": 0.0527,
+        "probabilities": {
+          "review": 0.3657,
+          "routine": 0.6343
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 20.641253795474768,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "d462ea74d59ecb23bc81b38e403398c637490a0eed4d383aa2f61a3c8879d220",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 644,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 534
+      },
+      "unit_id": "0e14e5ce5232cb5c44580ad5ed5d7075c1f0ed8a9a6ea57924bc826516eb3f38",
+      "usage": {
+        "input_tokens": 644,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5531,
+        "choice": "routine",
+        "confidence": 0.0081,
+        "probabilities": {
+          "review": 0.4469,
+          "routine": 0.5531
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 22.97027502208948,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "bae1050be7efba28b0820e950caee29f4cc962b724d4eb0bbb0ed96e738e35d3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 810,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 700
+      },
+      "unit_id": "743e32122c8ce2b6fdcd2a79bcc7b801744c1d948c4bd7b4a40d47a0816d97d9",
+      "usage": {
+        "input_tokens": 810,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5297,
+        "choice": "review",
+        "confidence": 0.0025,
+        "probabilities": {
+          "review": 0.5297,
+          "routine": 0.4703
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.854509737342596,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "e56616a3474a8698c07fee68c1688a7a2145a551a9c88d8722d177849fa4c4f3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 623,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 513
+      },
+      "unit_id": "77875e229811204f9214449260d7f18f93b7d42b8290cbbf5e19de82232a0235",
+      "usage": {
+        "input_tokens": 623,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5842,
+        "choice": "routine",
+        "confidence": 0.0206,
+        "probabilities": {
+          "review": 0.4158,
+          "routine": 0.5842
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.862156197428703,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "c0f69a2efc7db65832e37b035d17ad86ff3e413cca4c9e6e1a28e94e7969ce30",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 547,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 437
+      },
+      "unit_id": "68a5ea29a2db2d46ee8569328eab44df62dfb92280c88deef1d8dfd6a5221cc6",
+      "usage": {
+        "input_tokens": 547,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6063,
+        "choice": "routine",
+        "confidence": 0.0329,
+        "probabilities": {
+          "review": 0.3937,
+          "routine": 0.6063
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 23.8963533192873,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "14724e1305e986fdc868231f5aaa201721584d3e2c7e2041ddf081055a72f76a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 883,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 773
+      },
+      "unit_id": "d5ee27f511a975f6ab3ed0f6cb6925c28e9815dbe7465b9ecc3032d6173946d5",
+      "usage": {
+        "input_tokens": 883,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5154,
+        "choice": "routine",
+        "confidence": 0.0007,
+        "probabilities": {
+          "review": 0.4846,
+          "routine": 0.5154
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 23.524447344243526,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "91a58e86eeeb48624428dcd50d29e566d7de824ebb0ef27bbfb171e38b4304da",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 832,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 722
+      },
+      "unit_id": "a7963255bc4e5e1cfb2fbfd4a055287dd1aa8df3196614bb106b2f5d727fd0ae",
+      "usage": {
+        "input_tokens": 832,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5767,
+        "choice": "routine",
+        "confidence": 0.0171,
+        "probabilities": {
+          "review": 0.4233,
+          "routine": 0.5767
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 31.1015909537673,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "7bcdb578549621e6a26e4c294ef8f4a670656d3630435fe9794e9112eb4da006",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1150,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1040
+      },
+      "unit_id": "d3ddf80fe68033255ca5299eaa1f13f91e334be4fee4f7e4ad1a9142e0d9135b",
+      "usage": {
+        "input_tokens": 1150,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5276,
+        "choice": "routine",
+        "confidence": 0.0022,
+        "probabilities": {
+          "review": 0.4724,
+          "routine": 0.5276
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.78641389682889,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "6643d0f5ac9052390b76ea04ed0e8695d087aeab56060c0b999b34b814f28a46",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 482,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 372
+      },
+      "unit_id": "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935",
+      "usage": {
+        "input_tokens": 482,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5966,
+        "choice": "routine",
+        "confidence": 0.0271,
+        "probabilities": {
+          "review": 0.4034,
+          "routine": 0.5966
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.83750282973051,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "d83ff7171e5f64144f29f379203e9fa36f1f2795613fbf5e4ce40d90702fbb94",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 422,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 312
+      },
+      "unit_id": "d5a5afdbffb98614d27296fef5380376787a79b5025f89f74301db58ce80cdf3",
+      "usage": {
+        "input_tokens": 422,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5866,
+        "choice": "routine",
+        "confidence": 0.0217,
+        "probabilities": {
+          "review": 0.4134,
+          "routine": 0.5866
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.389606192708015,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "c93f567c492a7fbfecbbaacc7478f55264e5611390e609d9e072419387a17f60",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 318,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 208
+      },
+      "unit_id": "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea",
+      "usage": {
+        "input_tokens": 318,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6038,
+        "choice": "routine",
+        "confidence": 0.0313,
+        "probabilities": {
+          "review": 0.3962,
+          "routine": 0.6038
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.007441233843565,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "dd17fa196f28b907e2f8e3c2fb8bb3cc200934ef1a711389be47762976acd6e0",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 309,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 199
+      },
+      "unit_id": "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399",
+      "usage": {
+        "input_tokens": 309,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5227,
+        "choice": "review",
+        "confidence": 0.0015,
+        "probabilities": {
+          "review": 0.5227,
+          "routine": 0.4773
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 12.99646170809865,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "0cdbcd7a10dc2d711b84e2f74b724ff5c5298a43b011f7573c68155b7ce22ab2",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 236,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 126
+      },
+      "unit_id": "1e6d55de41d9bd24a1ab82a5a8f2028307a0deb7a2cd446ba5d04125a43f0fe8",
+      "usage": {
+        "input_tokens": 236,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "834e79e881dc7281ab9f1701a653d59980b829487cc8a06fa03d624b24ec1b40"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "9f3ef9875509b2973f3a616af3b7571eb05d28ff317aa39bdeda2344b04a6733"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "23dc6483a74044514314eed105f4185ecc510f56f30b31b427754c851ea7111e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "09c7d25e3de30455b49f3a9e409584ed2d576195a490f50f937d1e03e52dbd08"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5887,
+        "choice": "routine",
+        "confidence": 0.0228,
+        "probabilities": {
+          "review": 0.4113,
+          "routine": 0.5887
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.72246915102005,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "a947bc8e60e2dcf9ad1c77bf5a1fa671c951e32f015ebafaab6d5d10844ee315",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 626,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 516
+      },
+      "unit_id": "4feb50568498c09e46271a70e043be19daba25d94af42691c8a515fcedba54d5",
+      "usage": {
+        "input_tokens": 626,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "f9a82b7c9534941c29f50470943124a4022e677fd7a337c2a93777ed405f1d72"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6013,
+        "choice": "routine",
+        "confidence": 0.0298,
+        "probabilities": {
+          "review": 0.3987,
+          "routine": 0.6013
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 44.5404420606792,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "97bd4609957ab176dbf5931f6425863cfe562a2ee6d0f75ffa6865373e708801",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1722,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1612
+      },
+      "unit_id": "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0",
+      "usage": {
+        "input_tokens": 1722,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6099,
+        "choice": "routine",
+        "confidence": 0.0351,
+        "probabilities": {
+          "review": 0.3901,
+          "routine": 0.6099
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.11484882980585,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "d110cc30c86761931e1ab9d37f83b0f1299de9f5e2fd3a053c685601b18992c0",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 486,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 376
+      },
+      "unit_id": "ff2de5ceb015c78ca2276332a05ef321dafc79d43949c9a0d5f6584257be75b8",
+      "usage": {
+        "input_tokens": 486,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5614,
+        "choice": "routine",
+        "confidence": 0.0109,
+        "probabilities": {
+          "review": 0.4386,
+          "routine": 0.5614
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.757751815021038,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "d450ea4fac0e337014bb4c95bc36a0b4e445e33379267002603a6515a90b1950",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 443,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 333
+      },
+      "unit_id": "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47",
+      "usage": {
+        "input_tokens": 443,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6044,
+        "choice": "routine",
+        "confidence": 0.0317,
+        "probabilities": {
+          "review": 0.3956,
+          "routine": 0.6044
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.04104521498084,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "f8e7382fb5628cc997d24c7ac6751fa7c6b34fc95f123eec1882559b79616032",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 309,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 199
+      },
+      "unit_id": "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae",
+      "usage": {
+        "input_tokens": 309,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5382,
+        "choice": "routine",
+        "confidence": 0.0042,
+        "probabilities": {
+          "review": 0.4618,
+          "routine": 0.5382
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.36014224216342,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "bbb0aae2f45aa44817b97db35ee74a09408595d8bd978416c13dc3cd146e54e3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 291,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 181
+      },
+      "unit_id": "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98",
+      "usage": {
+        "input_tokens": 291,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "6a6d1549111276daea3218e98f0c2f04403d30fa4d560343919842d74a692dce"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "5d74371b56d686bb9036ab4e21e836600685c240363469adb17467fb44a0c04d"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "d4af68d33489e645fec92ad1da787b7bf115434a7d0b6ef22a1d508f4ccc91c1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 397,
+      "unit_id": "7b718cf49c20725014f48c47db9853c5c3454ff68949b770ba86f556adc6ebb7"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5883,
+        "choice": "routine",
+        "confidence": 0.0226,
+        "probabilities": {
+          "review": 0.4117,
+          "routine": 0.5883
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.80236465856433,
+      "optimization_eligible": false,
+      "pr": 397,
+      "state_sha256": "0eb976a0c85fcb894399ebabbbfd647c96e0499c707e8f339ae8adeca30fde2d",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 505,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 395
+      },
+      "unit_id": "5cfaf50efb750ee3ad9dbe0c20b615c9e848781e03f93938b51dca2dfae4e755",
+      "usage": {
+        "input_tokens": 505,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6041,
+        "choice": "routine",
+        "confidence": 0.0315,
+        "probabilities": {
+          "review": 0.3959,
+          "routine": 0.6041
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.184182837605476,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "40fed1a809b7147e447983d9e453c5589e7fd8edfe3c9b552b9fa0ba935ea810",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 400,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 290
+      },
+      "unit_id": "90b9d0d922663fec37c56ddc33618ece668ab149d62d14ed78094fcd17904399",
+      "usage": {
+        "input_tokens": 400,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "2f0d7e86b9a74ab933c7500b970947e1bb2e2d13f2fa91beffd6ee75e954d55f"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6885,
+        "choice": "routine",
+        "confidence": 0.1051,
+        "probabilities": {
+          "review": 0.3115,
+          "routine": 0.6885
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.56599885225296,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "75ed4b25b7ea9b594c256312be7b75010e089c8cf879222a2f6700d679f5435f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 365,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 255
+      },
+      "unit_id": "5be6f3efa1f3634ab6acefeb97f99de3870c823bce44bd2393fa95f080e97ec4",
+      "usage": {
+        "input_tokens": 365,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.601,
+        "choice": "routine",
+        "confidence": 0.0297,
+        "probabilities": {
+          "review": 0.399,
+          "routine": 0.601
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.234279911965132,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "2df2b60fcd030cba85990f9fc574c36a7a5aeef9c457bf53fb763060d70ff24a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 375,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 265
+      },
+      "unit_id": "ec734d01c8d8db8163cef54744cf27182a778e92cdce2e4092b7652c9738c2d4",
+      "usage": {
+        "input_tokens": 375,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5085,
+        "choice": "review",
+        "confidence": 0.0002,
+        "probabilities": {
+          "review": 0.5085,
+          "routine": 0.4915
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.54633504524827,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "0b05c800ad622c00016892d2a97ffdbeaafabd1604072234ff2f7ba7a1436548",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 300,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 190
+      },
+      "unit_id": "2b1b5c2e39e638a0ab5599be22191e90c0191fd26f82b9b1b1a7e2842cbce492",
+      "usage": {
+        "input_tokens": 300,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.506,
+        "choice": "review",
+        "confidence": 0.0001,
+        "probabilities": {
+          "review": 0.506,
+          "routine": 0.494
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 12.923553120344877,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "0feb7d3f2e5bb8474d8a66390322113c162dc86610daf350af833b4e9676bfa3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 238,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 128
+      },
+      "unit_id": "3156da35eb2de0c0d0a56eff6ffea0f4ac9127d1b91f09883b8e5da222e3237b",
+      "usage": {
+        "input_tokens": 238,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5665,
+        "choice": "routine",
+        "confidence": 0.0128,
+        "probabilities": {
+          "review": 0.4335,
+          "routine": 0.5665
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 21.61040296778083,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "8ce14b1bec35b21deb5597aa05ca9e1362d6792622238b152a0e208107225d70",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 718,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 608
+      },
+      "unit_id": "e7443321e7b3d086786d56a42bef8dff848ffdd87602790efb1951f2b3ef89a3",
+      "usage": {
+        "input_tokens": 718,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.549,
+        "choice": "routine",
+        "confidence": 0.0069,
+        "probabilities": {
+          "review": 0.451,
+          "routine": 0.549
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 25.487313978374004,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "3da61ccbacfdbc2c8923c8a482d5fd9cd3a86d21e9366afe29d6480c3963741e",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 880,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 770
+      },
+      "unit_id": "4f7cd3f1f7b6523c6d33b6b52ed6b95378bdf0e958d6b4849ed2185feed456bf",
+      "usage": {
+        "input_tokens": 880,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6482,
+        "choice": "routine",
+        "confidence": 0.0643,
+        "probabilities": {
+          "review": 0.3518,
+          "routine": 0.6482
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.836315885186195,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "8289a492b3d94de2f43e9848708c8d7edc26725afb57975216ce9ab2da857020",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 635,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 525
+      },
+      "unit_id": "5933f56d80f38587f353e7d1a81a50d0c6d30c14399df15058f8cdae66f09efc",
+      "usage": {
+        "input_tokens": 635,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6203,
+        "choice": "routine",
+        "confidence": 0.0422,
+        "probabilities": {
+          "review": 0.3797,
+          "routine": 0.6203
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 22.62116316705942,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "7f398326e2087e045c1c98ce2620bd9ca0c6b486749cbaabbf341ec50633ec8f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 764,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 654
+      },
+      "unit_id": "e6e8887d2d6e219a413652660973fb9d97893bb4bfacc0f4bcc020bdeeb6d91a",
+      "usage": {
+        "input_tokens": 764,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5982,
+        "choice": "routine",
+        "confidence": 0.028,
+        "probabilities": {
+          "review": 0.4018,
+          "routine": 0.5982
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.488525111228228,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "d08143412b739f248bac3ad258b15922c6f7875a670b2f697f34018b4cf1e220",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 569,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 459
+      },
+      "unit_id": "8f675e7b83e29543a3e2119cf1e097464e7c102c1ac1937bb528b445c17e601a",
+      "usage": {
+        "input_tokens": 569,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6616,
+        "choice": "routine",
+        "confidence": 0.0767,
+        "probabilities": {
+          "review": 0.3384,
+          "routine": 0.6616
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.472729086875916,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "42a98f8a7d5f93be4d883937257d8415319b242517829b53021e8dfbcfd216c1",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 512,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 402
+      },
+      "unit_id": "4874bedb17c1a664bc3274a51d32a07f3a7f3500a0048291572c90dcba6681e9",
+      "usage": {
+        "input_tokens": 512,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.7111,
+        "choice": "routine",
+        "confidence": 0.1327,
+        "probabilities": {
+          "review": 0.2889,
+          "routine": 0.7111
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.168243251740932,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "c53f12906ff1ac1bcc4fc81975194f14f3e31805f32cdbc0fc7ee66aaaec1497",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 427,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 317
+      },
+      "unit_id": "d1c5e8b9b5837baa9f8915880e5f14d51845b54f0152ddde666393f155f5f4a2",
+      "usage": {
+        "input_tokens": 427,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.7109,
+        "choice": "routine",
+        "confidence": 0.1324,
+        "probabilities": {
+          "review": 0.2891,
+          "routine": 0.7109
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.45605408400297,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "936952208c60a78f4e5affd59fba4d07be057dbbd2277d9dcd8dc1f9a4adb5ca",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 624,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 514
+      },
+      "unit_id": "b6ce0987e404741b85e46f9b10d4bff390f5bdf2564bef16baf21994e8ba4654",
+      "usage": {
+        "input_tokens": 624,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5627,
+        "choice": "routine",
+        "confidence": 0.0114,
+        "probabilities": {
+          "review": 0.4373,
+          "routine": 0.5627
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 29.394138604402542,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "8422e53114d4c68c48ab45d14b4065bb74e7d3c6d0d6b6d6bf24fa558aa07e8f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1066,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 956
+      },
+      "unit_id": "5de28e047d66e5469e9fdd31fe0f0620a28677ca9386dd5edcafc67fd6545d24",
+      "usage": {
+        "input_tokens": 1066,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6379,
+        "choice": "routine",
+        "confidence": 0.0555,
+        "probabilities": {
+          "review": 0.3621,
+          "routine": 0.6379
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.984048161655664,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "b6bd7078c64453c1f7bf42f85a73911656ede1a6cbee5120cf027bc2bb43b71f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 526,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 416
+      },
+      "unit_id": "9d15a9143f19a03271c00abdfe3220ce0aa679a06aaf745064896bf87f2b4aec",
+      "usage": {
+        "input_tokens": 526,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5837,
+        "choice": "routine",
+        "confidence": 0.0203,
+        "probabilities": {
+          "review": 0.4163,
+          "routine": 0.5837
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.975612241774797,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "8227a86fb76628bffd752114ee70a7b7d2f3c3a78bf2e70af7a7b4510b934a6b",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 548,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 438
+      },
+      "unit_id": "ec8b69de288ef36dd32e6165200c4106c0f9b3dc32a91f29b5e4827121a6185a",
+      "usage": {
+        "input_tokens": 548,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6268,
+        "choice": "routine",
+        "confidence": 0.0469,
+        "probabilities": {
+          "review": 0.3732,
+          "routine": 0.6268
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.37874685972929,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "b41e16df25de07726eb49ee07a2c6750973c28999d3e613b1487e131e33717d1",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 599,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 489
+      },
+      "unit_id": "0885a5aa30e5b77cfe6917d5882853e3b808d95c547d8a142fe874959df99e28",
+      "usage": {
+        "input_tokens": 599,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5348,
+        "choice": "routine",
+        "confidence": 0.0035,
+        "probabilities": {
+          "review": 0.4652,
+          "routine": 0.5348
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.864628203213215,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "60e1b53457dea9535b421f343d0036470f55793a2bde76ea1af110f5be309002",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 376,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 266
+      },
+      "unit_id": "9cbf420dae2a0e5b70a6408059585408fedbf4bc8ea08aa52b4268ab0401f1ef",
+      "usage": {
+        "input_tokens": 376,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5667,
+        "choice": "routine",
+        "confidence": 0.0129,
+        "probabilities": {
+          "review": 0.4333,
+          "routine": 0.5667
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.52532585710287,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "3c15efd638c75a836fb4c4d482a02141b1b4f1a78acd0665ea3bafdaa7c1a5d7",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 569,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 459
+      },
+      "unit_id": "13a6fdd3b7bc1e6770caf86eeac6f9552474aa16a1f7cbc1d4de533b5a200ee2",
+      "usage": {
+        "input_tokens": 569,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5832,
+        "choice": "routine",
+        "confidence": 0.0201,
+        "probabilities": {
+          "review": 0.4168,
+          "routine": 0.5832
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.723381329327822,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "0497ae8cb012b5c7c65753ccc660c56d39ca6485e64caba24614b29fae06a1f9",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 274,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 164
+      },
+      "unit_id": "b17274e41f9f21404442b374425db690c437f06207f992e556c91004e9d16971",
+      "usage": {
+        "input_tokens": 274,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6485,
+        "choice": "routine",
+        "confidence": 0.0646,
+        "probabilities": {
+          "review": 0.3515,
+          "routine": 0.6485
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 28.27598713338375,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "6e28323225e3661e270ee4c47889ef363b403063c3e5a616bb185aa61ef26f71",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 992,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 882
+      },
+      "unit_id": "9a119bae3a49291e37b91944034db607d096a40e5cfac7664abdb2eba06ad2d7",
+      "usage": {
+        "input_tokens": 992,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5015,
+        "choice": "review",
+        "confidence": 0.0,
+        "probabilities": {
+          "review": 0.5015,
+          "routine": 0.4985
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 12.465613894164562,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "70acad979b3bb95fe6e9c1119832c04879c0db4b31ae8cf10638eee39595edeb",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 238,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 128
+      },
+      "unit_id": "4f22c14e2ae6a0ebb7c30ed427d454dfbbdfd757d2083fb5a3a7c31e099bd527",
+      "usage": {
+        "input_tokens": 238,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "ba01a540498e3870fed14efebea6008a1aee778ef262a1e13f6fd64e158618c2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "9a210f2c11c2c95aa4c0085f3e0a2881323f112000b862ce750b347a85d215f8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "1d165007aec2b09bc72ea985c816149ad1b76b8c4895f1cc601c2b35a330368b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "6cb742b54c04a1d8dc523a7397ad4034f4ab276d1fc145e0169a27bf76095b37"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "19a178004dc4e03d56725f83cb70ddf6435a598ab982576e68f08e965d91bd44"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "dc226d6406efe77e7a814c9aae8093e610495e8775408183c6b55d8f6c24e041"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "f3b55d147ca1bbb903c0d79991d5586dbc93a61321e3944a05478cf0fd871f90"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5128,
+        "choice": "review",
+        "confidence": 0.0005,
+        "probabilities": {
+          "review": 0.5128,
+          "routine": 0.4872
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 23.99608213454485,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "35d136a467b4c6774ef4b16b3ea536ead12a25d7f82b485f8f79a0145b3c7c8f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 822,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 712
+      },
+      "unit_id": "fbf472777b820d9b5c72ea565ceb92a332dbe979c5734e605ff624f05f2aae91",
+      "usage": {
+        "input_tokens": 822,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "token_limit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "bed498248cf2ecafe484110d34bc868b0c477ad616ef01e53d7aeee0c28e76e2",
+      "token_preflight": {
+        "fits": false,
+        "full_tokens": 2064,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1954
+      },
+      "unit_id": "2a565eb42e237e1c3c1a11c859b7d31e8c6b4ac30cfae048b0951d83b7732a58"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.523,
+        "choice": "routine",
+        "confidence": 0.0015,
+        "probabilities": {
+          "review": 0.477,
+          "routine": 0.523
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 44.72760809585452,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "4ede7e51e67e3eb93bea81d81df57c3af02434d2a9a32660e4b05d74218fe4e3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1792,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1682
+      },
+      "unit_id": "6378723d34f001a625dee6acef62c8d615af0fbacdca8c019a759e1c8fcfdb78",
+      "usage": {
+        "input_tokens": 1792,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5072,
+        "choice": "review",
+        "confidence": 0.0001,
+        "probabilities": {
+          "review": 0.5072,
+          "routine": 0.4928
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.697878018021584,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "b59bcfe0a4f9b02576aea24da674db4e8bba1a65592a63b4eeeabfc5e03bd01b",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 436,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 326
+      },
+      "unit_id": "306c1939b894aba7e1c7b75ea92961c7a3e3fcc42e70125073acbdf041e44424",
+      "usage": {
+        "input_tokens": 436,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6263,
+        "choice": "routine",
+        "confidence": 0.0465,
+        "probabilities": {
+          "review": 0.3737,
+          "routine": 0.6263
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 51.79125722497702,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "fea26df3a88ac56a1e98f6da4bc425afd4ff9a9ae049693ea3501b6579678345",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1963,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1853
+      },
+      "unit_id": "3554c1dd12636d70d7b18413e5efe083f1004f235009e1f26dbc4d1ec06dd226",
+      "usage": {
+        "input_tokens": 1963,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5179,
+        "choice": "routine",
+        "confidence": 0.0009,
+        "probabilities": {
+          "review": 0.4821,
+          "routine": 0.5179
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.28232377395034,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "ab3056fb9c16f8259532df285394052e240329829e4b38a5a194b7a1281872b3",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 544,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 434
+      },
+      "unit_id": "5ab278c14aad798cb4cf35b7d5d161bcc57f8ae99777b23529aec3c851ebd581",
+      "usage": {
+        "input_tokens": 544,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5271,
+        "choice": "routine",
+        "confidence": 0.0021,
+        "probabilities": {
+          "review": 0.4729,
+          "routine": 0.5271
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.806185081601143,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "2636a71170ab0bcd1a136f6b4a6f3db3b967e5a4668e84324eb4675d499620bf",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 432,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 322
+      },
+      "unit_id": "d2ee361448c1982a6949b424908d2ef1081fefa96ea7153fec338fb7bc6d2357",
+      "usage": {
+        "input_tokens": 432,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.613,
+        "choice": "routine",
+        "confidence": 0.0372,
+        "probabilities": {
+          "review": 0.387,
+          "routine": 0.613
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 35.69051204249263,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "59007082cfe67e9fa24878866a23273a7914c3a92adc9a83b4c7636182bb8b10",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1294,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1184
+      },
+      "unit_id": "b802ed70f2883d889390a1da3c738123977853e5a4ca02882d0c50f1b7603607",
+      "usage": {
+        "input_tokens": 1294,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6176,
+        "choice": "routine",
+        "confidence": 0.0403,
+        "probabilities": {
+          "review": 0.3824,
+          "routine": 0.6176
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 34.594411961734295,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "3e79ccee25ca84926f6febc7867db11e0dec4b1bd86a31f641f278727085158f",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1316,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1206
+      },
+      "unit_id": "db7f1f3b61625423d1ef85cd26680abe3b36334cb66577f5bbe584f412438c08",
+      "usage": {
+        "input_tokens": 1316,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "c5c643a7651e87a76e958f196705df8b76da6b52002f068b4519218112f7ef8b"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5912,
+        "choice": "routine",
+        "confidence": 0.0241,
+        "probabilities": {
+          "review": 0.4088,
+          "routine": 0.5912
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.706921134144068,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "e0760691d6bfda15803993a209968930773569a5c87ee07450e089a5d374515a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 270,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 160
+      },
+      "unit_id": "a560e485a2185e178dbe1b5cac0a684608e697497678aeadfc355c1c44ec99d7",
+      "usage": {
+        "input_tokens": 270,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "96c63245a5a1ee5ec53aab0739b29707ed391cb646d3e48bd76e5e4c5ffa856a"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5867,
+        "choice": "routine",
+        "confidence": 0.0218,
+        "probabilities": {
+          "review": 0.4133,
+          "routine": 0.5867
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.736415654420853,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "4534e1120497c636a2d9dff2d90592a999b42fae5f62da98f99a1baab69dc4a5",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 276,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 166
+      },
+      "unit_id": "dec4c134d4a8a21d9ba7cf6e648a386a5fd09a9d242ad9a4f8565fc0980dd575",
+      "usage": {
+        "input_tokens": 276,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "d1bf3968e378b4103abcefa1a89e46b6ab3952bec45ab15b5b17385602144606"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5589,
+        "choice": "routine",
+        "confidence": 0.01,
+        "probabilities": {
+          "review": 0.4411,
+          "routine": 0.5589
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 30.527891591191292,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "fac422077dab218417298d29b9980e3289d7ab9679aff5e41eb94e2afcd9d128",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1064,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 954
+      },
+      "unit_id": "7845009128e8acc17f11858e4f7ec09603de03a9cf58b2bfe9713b1da4c914fe",
+      "usage": {
+        "input_tokens": 1064,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "29d085f3e81626f2014a065e88559c9cb000f8a70c9a2ae0ab8de3c1e849e970"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "7d6372092d5d8a7b7e9ed21bf35d18dfcd990095c6241fd2630fb159ca730cf2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "bb44f7e269bc1c8a8fb6cf03fea1e6388b51e9af8877a6bee6c0ae4ab583af95"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5915,
+        "choice": "routine",
+        "confidence": 0.0243,
+        "probabilities": {
+          "review": 0.4085,
+          "routine": 0.5915
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.913722708821297,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "01e2daef40faaa97c89aec19c93c51d147d3ccc81041bbe3171516853e36b045",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 270,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 160
+      },
+      "unit_id": "3f589266b2ffbf62495103aca6023b48f4053122d742f7e2f4e9ae10670b1a45",
+      "usage": {
+        "input_tokens": 270,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 394,
+      "unit_id": "2f240be228c029de61d73558464f01b5e4f991af2e5ca5797b2836c668ae47fc"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6215,
+        "choice": "routine",
+        "confidence": 0.0431,
+        "probabilities": {
+          "review": 0.3785,
+          "routine": 0.6215
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 20.665119867771864,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "d60ad298923151c534b82d75045fea28dd4c8d6cc29f7dea6f5b15dd3b253858",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 675,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 565
+      },
+      "unit_id": "bd6789acf26e9b21ac0c12df0ed6bcc863e907dc63a252b2c6308f0f5b824cd5",
+      "usage": {
+        "input_tokens": 675,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6662,
+        "choice": "routine",
+        "confidence": 0.0812,
+        "probabilities": {
+          "review": 0.3338,
+          "routine": 0.6662
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 21.509933285415173,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "cd6534f48aaa1147ce659293e8f0e47a979c25bc11c57d35643555896f685f75",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 618,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 508
+      },
+      "unit_id": "df4fa6dfb9c77d9602d3156a2b0da21959682aa66db6351a7b29dd8e065f2346",
+      "usage": {
+        "input_tokens": 618,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6094,
+        "choice": "routine",
+        "confidence": 0.0348,
+        "probabilities": {
+          "review": 0.3906,
+          "routine": 0.6094
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.47804195433855,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "c99aeedb61e9e557b2ac8f9a9a4d158d04623453988380afa4730e1252968345",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 415,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 305
+      },
+      "unit_id": "228e68597445b4eb34f0cff23485a642d1921c8d29222de89091f1626e473a29",
+      "usage": {
+        "input_tokens": 415,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5169,
+        "choice": "routine",
+        "confidence": 0.0008,
+        "probabilities": {
+          "review": 0.4831,
+          "routine": 0.5169
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.24038615450263,
+      "optimization_eligible": false,
+      "pr": 394,
+      "state_sha256": "7b5762c0f7a4eeaf9dc665d0b6c03f2a66ff4d0c3cfedba0b60bd1392087946a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 493,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 383
+      },
+      "unit_id": "41b588f454f971c2abbe528035b0bbb307477748ad8f1dc0ec584fbfb24e9df2",
+      "usage": {
+        "input_tokens": 493,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "ce97e9b13ad1e0ea6f935f5d227e7f452ea8d0727545910ce761410ada1f5b54"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "10fc7c0122c25180cf4ee3dcc3f29dbbba8c0e6916b45415612578d2200e3cbf"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "8874f4d8d84a015f104c703a82781db89b0d6580033d47d04acf73cc8483266a"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "b5d0a8b0d1f725cba947ad5fc8aaa176d552e18d1b5bde7efcdbdc08113d4da8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "efad713fc958288d61016a2654cd7b17b9c541dc7f995a5216abd24932290f8e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "ab448dd5ddafc2513974ffaa693c008ba28eeb7f031493913b3382ba49c5c785"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "b8761506ed5da97e8d082c0ba86e48e238d15352c20887042f3baf0bf21df6e8"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "686f220f09e366c5435f9fd855cdd7e95d902bdd6e75855d35ba2c2cf8d35fc4"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "3f3c8b47e2868127e04e9df80a445045bb4ca0ae4e7eecfc226fd14245474767"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "fb1a32327ecc5af0a35aaf7e90878b0e02add7bf1be08858058fb09a94ee2ac7"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 395,
+      "unit_id": "c99fe7425a9decf665be818f2860968328cdc529ebd2f707d57864696913b128"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5546,
+        "choice": "routine",
+        "confidence": 0.0086,
+        "probabilities": {
+          "review": 0.4454,
+          "routine": 0.5546
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.144392054527998,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "37092cd6d4e4c1e4564bfc9d9a642ff270eb39a4be8e31f923c400ee8f537ac9",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 296,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 186
+      },
+      "unit_id": "8e677deac2fcaa67982f4fb81195581c413b1ff2b9914a18f45700f85ce7ecdc",
+      "usage": {
+        "input_tokens": 296,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5865,
+        "choice": "routine",
+        "confidence": 0.0217,
+        "probabilities": {
+          "review": 0.4135,
+          "routine": 0.5865
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.7389592602849,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "d468084d1ceddfdb1de79c56efc23f94dc1d305c778e01ef0380312c8a76c7c4",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 377,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 267
+      },
+      "unit_id": "c1256c0be82e4703d56ef09fe0730f6f29365372dec4cb8d71227c40140bcd10",
+      "usage": {
+        "input_tokens": 377,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5685,
+        "choice": "routine",
+        "confidence": 0.0136,
+        "probabilities": {
+          "review": 0.4315,
+          "routine": 0.5685
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.148529920727015,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "7723166bf26fd850680926d0a5c4c3f26db49b7435f82748b0c41506f34d9089",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 243,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 133
+      },
+      "unit_id": "f6556ffa94bc4571d3232b81954115ce567c5e409d8cffef74d9adf68d4cb0fc",
+      "usage": {
+        "input_tokens": 243,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6064,
+        "choice": "routine",
+        "confidence": 0.0329,
+        "probabilities": {
+          "review": 0.3936,
+          "routine": 0.6064
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.437047135084867,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "ae20a790ad34df67cc83e1acd96746b950e70f6a561aa4d3c8f13111b837266b",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 242,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 132
+      },
+      "unit_id": "93f7fd93928d78e5d5b247048896649d6020777c71e4714cd4b124d519784e33",
+      "usage": {
+        "input_tokens": 242,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6524,
+        "choice": "routine",
+        "confidence": 0.0681,
+        "probabilities": {
+          "review": 0.3476,
+          "routine": 0.6524
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.39473082125187,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "7dc5419fd829d57cf48a74343a57112797c23ed60d9978a899bd036820c2926d",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 474,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 364
+      },
+      "unit_id": "d8ead9fc23d94f781819f19b86c12ca2a0a4c37cd3342392d60c3d4234ae502b",
+      "usage": {
+        "input_tokens": 474,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.603,
+        "choice": "routine",
+        "confidence": 0.0308,
+        "probabilities": {
+          "review": 0.397,
+          "routine": 0.603
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.868789076805115,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "2026f6faf867f9683d8b66a0c3b472e0f775c454c4dcd2b6efc92d90262b96c1",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 533,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 423
+      },
+      "unit_id": "3f96346e574fccab23faff07b0ca65c563855c19a5cfc91b4cd3dd228c190214",
+      "usage": {
+        "input_tokens": 533,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6244,
+        "choice": "routine",
+        "confidence": 0.0451,
+        "probabilities": {
+          "review": 0.3756,
+          "routine": 0.6244
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 18.62369431182742,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "19f4a6f500d4220fccd80ab83cf864fb26df47f9f042e9f3e8d2624f47f1a018",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 631,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 521
+      },
+      "unit_id": "e7658e508d95674bdfae2f9afbd87fbf5c15341bca81fc87a047880f950f615f",
+      "usage": {
+        "input_tokens": 631,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6736,
+        "choice": "routine",
+        "confidence": 0.0888,
+        "probabilities": {
+          "review": 0.3264,
+          "routine": 0.6736
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.882311224937439,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "9c0b87ab06dfb5201b97e0e1561588415478b881f27a38d88edaf5a20c077a83",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 319,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 209
+      },
+      "unit_id": "3b7e19e34a1f857efa0bbee3d8f937518182b55bb7550c075c4b5b58119a43b2",
+      "usage": {
+        "input_tokens": 319,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "0438b1ed86016194d49e332d26a5f798b0c730395c23f2049cc57fdc74dd7868"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "cc774216528fcbfc22664d169cf8887ba836f6bbd3420f9a21b40ded3bea48a1"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "e43c315680d4b1f347640103a71a748200d20f6a0e4836a7bfc325c90977d2a4"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "d62d97e11f118115f5eb041ba57ab6233b32c06ebe2853093b91144cdaa144ed"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "d04ed4825ad02fd8246468a2100fc02a9acdb9c57ebcc9890e2a5ede1cdb8bac"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "4fc36ca6021868d8f9259d5ba481cd2e8bc7b763dc4ac8db59c82942168e908d"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6355,
+        "choice": "routine",
+        "confidence": 0.0536,
+        "probabilities": {
+          "review": 0.3645,
+          "routine": 0.6355
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.041687663644552,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "b09d33837b93bf9ba6b8d1dea3f1219fec20689ea113c103b0509297df9caf92",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 282,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 172
+      },
+      "unit_id": "b35a757d7b6d80dcdbe5027fbab2011b6d8d2b95ada7225523f43678a2624ef2",
+      "usage": {
+        "input_tokens": 282,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6254,
+        "choice": "routine",
+        "confidence": 0.0459,
+        "probabilities": {
+          "review": 0.3746,
+          "routine": 0.6254
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.985758647322655,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "424c649ef4975c3def6f60fe73f67ddb396c6240ed9f2d82f05f8d45bb069a9d",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 269,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 159
+      },
+      "unit_id": "c26968169bd95f26bbd23cdd65faedace8741330e4194d70656d5101f6882a82",
+      "usage": {
+        "input_tokens": 269,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5665,
+        "choice": "routine",
+        "confidence": 0.0128,
+        "probabilities": {
+          "review": 0.4335,
+          "routine": 0.5665
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.756114058196545,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "c8cfe0724553710ad9dc0236d826a1b6273c11f2e78a5a7822f5073bc602c748",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 264,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 154
+      },
+      "unit_id": "23f34d119f2ddcbbb56e1ce2f66ada93bfb0c232e2b87808a05e11e9f4a69078",
+      "usage": {
+        "input_tokens": 264,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5862,
+        "choice": "routine",
+        "confidence": 0.0216,
+        "probabilities": {
+          "review": 0.4138,
+          "routine": 0.5862
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.193634804338217,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "998858f059644d3e0475befb45f9537b0b474d25614404b24f6a208d4f2c4f33",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 241,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 131
+      },
+      "unit_id": "aa20d8344527c1f96b5df4761fb3f5523b967c60c1cc40254f19540045831da7",
+      "usage": {
+        "input_tokens": 241,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5409,
+        "choice": "routine",
+        "confidence": 0.0048,
+        "probabilities": {
+          "review": 0.4591,
+          "routine": 0.5409
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.1259877756238,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "09d13caa6d29e3f3a19bdc1e7fefaf800e445fcb036a8cc223ee6940259213ab",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 541,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 431
+      },
+      "unit_id": "7c4cb446104b10ec27e3d0d5727b682f8a4f996cf4b69ac0cdefbba5a3e20f69",
+      "usage": {
+        "input_tokens": 541,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6421,
+        "choice": "routine",
+        "confidence": 0.0591,
+        "probabilities": {
+          "review": 0.3579,
+          "routine": 0.6421
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 15.60177793726325,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "83ff810f48499725cbab5d2fdc2ab1d10ec73e54237398be6d89052bbbbf7ffa",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 383,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 273
+      },
+      "unit_id": "328a71b69159a31e12df3e580df0a01587c8e8d1d369c96262523d0021d5926d",
+      "usage": {
+        "input_tokens": 383,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6025,
+        "choice": "routine",
+        "confidence": 0.0305,
+        "probabilities": {
+          "review": 0.3975,
+          "routine": 0.6025
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.46355914697051,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "7305b0812f918f93fa6e63aa4524c321a450b772c8e90d0e8f758b0ee854c65d",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 620,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 510
+      },
+      "unit_id": "d6ff4aea0e975990086965849cacbe5495994f18b0a3dd2eaf9977b7c2f79fbf",
+      "usage": {
+        "input_tokens": 620,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5787,
+        "choice": "routine",
+        "confidence": 0.018,
+        "probabilities": {
+          "review": 0.4213,
+          "routine": 0.5787
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 21.768945269286633,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "dd53ed536d64232e37b17a61aa34dc44c33b42473edf86ff2d56c77de9cddb20",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 670,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 560
+      },
+      "unit_id": "35bcfa2f17da823cd97c0b7ae083ff97812e6f57e3d559d644157f2d297d5207",
+      "usage": {
+        "input_tokens": 670,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5812,
+        "choice": "routine",
+        "confidence": 0.0191,
+        "probabilities": {
+          "review": 0.4188,
+          "routine": 0.5812
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.068111337721348,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "9859564f1489663ff88cae1c0357446e99822d22cf5d114a2435064bf1d8a2dc",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 512,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 402
+      },
+      "unit_id": "e8ffffec09d8faba9754c43df398bc53c024c769ddbe6760e77e0b6e1e2a0bed",
+      "usage": {
+        "input_tokens": 512,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6733,
+        "choice": "routine",
+        "confidence": 0.0885,
+        "probabilities": {
+          "review": 0.3267,
+          "routine": 0.6733
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.79730185121298,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "9d26803a3b5b259d380a922b3b825c89999991df9d22f673606b15aab2f2ee70",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 607,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 497
+      },
+      "unit_id": "7c37d86e08227c157d14c1ee6f36f108f57f0e58cc3b9939873e63255b9edd5b",
+      "usage": {
+        "input_tokens": 607,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6015,
+        "choice": "routine",
+        "confidence": 0.03,
+        "probabilities": {
+          "review": 0.3985,
+          "routine": 0.6015
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 19.460101146250963,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "82dbedbc6937d0a8061ffc5dc02b5f4a39c26e5d127615fca347e93879414fce",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 612,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 502
+      },
+      "unit_id": "7305f509bdeab3003a65c12a9f054f1c2e4615ce42de2611ce2daa19630127c9",
+      "usage": {
+        "input_tokens": 612,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5149,
+        "choice": "routine",
+        "confidence": 0.0006,
+        "probabilities": {
+          "review": 0.4851,
+          "routine": 0.5149
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 21.77938399836421,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "e171e99114f75a8ab1f980d023620909e465a628a64522ab3987806ee2f0760c",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 676,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 566
+      },
+      "unit_id": "97f400d42f810971673d9e63f424fe3a8d3326769400230ab2ce4e931d557067",
+      "usage": {
+        "input_tokens": 676,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6854,
+        "choice": "routine",
+        "confidence": 0.1016,
+        "probabilities": {
+          "review": 0.3146,
+          "routine": 0.6854
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.997395247220993,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "6b44d995e52045e72da222d17cf9c18c550d9e1852c6232df9fb04afa58ead8b",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 484,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 374
+      },
+      "unit_id": "c07a82ecf52394177b2ba81745a18025fc65fa8277635a32e6ff05525c1be8cd",
+      "usage": {
+        "input_tokens": 484,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5857,
+        "choice": "routine",
+        "confidence": 0.0213,
+        "probabilities": {
+          "review": 0.4143,
+          "routine": 0.5857
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.56854122504592,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "6f62578276705f0af794ba33cd920baeb7e73215503e896e299374cd70f66fef",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 495,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 385
+      },
+      "unit_id": "e19114f7db18ff88744eb5e569d7e67eb7380ee93753385142bcdd6b2e106243",
+      "usage": {
+        "input_tokens": 495,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5485,
+        "choice": "routine",
+        "confidence": 0.0068,
+        "probabilities": {
+          "review": 0.4515,
+          "routine": 0.5485
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 13.628069777041674,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "d48dfa507d8d9ebcd1427cdee66b0a49ee6a5347c46738c2d430d0474aaa7145",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 267,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 157
+      },
+      "unit_id": "039d0ed4261556fdd8a47bed476f9905a3c9ff069aab39cd18f90eac4e115226",
+      "usage": {
+        "input_tokens": 267,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5516,
+        "choice": "routine",
+        "confidence": 0.0077,
+        "probabilities": {
+          "review": 0.4484,
+          "routine": 0.5516
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 16.424438916146755,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "50d2aa9232f44b536c45e29cc067db2f7af8d6eb13612313344e36b0de6803cc",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 439,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 329
+      },
+      "unit_id": "1c5f3f37ca00c71993885a7285421409697419955983c5ecc135abb564790c50",
+      "usage": {
+        "input_tokens": 439,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6798,
+        "choice": "routine",
+        "confidence": 0.0954,
+        "probabilities": {
+          "review": 0.3202,
+          "routine": 0.6798
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.323174979537725,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "5fb90607c25568bd82c9ff6952551dd03cf96dfc8cb04745c4811124ced0ea02",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 480,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 370
+      },
+      "unit_id": "1837c16193b361fb320ae48021a61bbb9a233bcde5ec3c817e32ab921c773d85",
+      "usage": {
+        "input_tokens": 480,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5837,
+        "choice": "routine",
+        "confidence": 0.0203,
+        "probabilities": {
+          "review": 0.4163,
+          "routine": 0.5837
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 20.255370996892452,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "e492ca0bb56123e83ee2a5f72324e2f59094803bc991fc9471a8031f7dd9bc06",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 656,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 546
+      },
+      "unit_id": "bd48c88a79368c0558b1d81cfd26dea8b30f2f3fac00d8003a89e74089270561",
+      "usage": {
+        "input_tokens": 656,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5825,
+        "choice": "routine",
+        "confidence": 0.0197,
+        "probabilities": {
+          "review": 0.4175,
+          "routine": 0.5825
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.039631932973862,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "4eede0c69cc14d0edd1cf6842870af851639b6adc3f0bcdf2777e0f412a88e5a",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 301,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 191
+      },
+      "unit_id": "06bd73f20668290161e8bc4a684a21f641039c26ed9d48c4afbdd187da389226",
+      "usage": {
+        "input_tokens": 301,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.7097,
+        "choice": "routine",
+        "confidence": 0.131,
+        "probabilities": {
+          "review": 0.2903,
+          "routine": 0.7097
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 14.557415153831244,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "258556902580f20ebb45e5aed755b7112ecefb3729aef39bcd6cc221b01f6eb6",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 337,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 227
+      },
+      "unit_id": "c7905c7e9c2a138fd5f45ef06588aeaf33199d4f434e8492c3911644bf5d7a12",
+      "usage": {
+        "input_tokens": 337,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "b248d10e320dee34960a38df5ac5fb7ce13bcee762f0966ba021ee53b65eaa03"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "e460f1a8c791dbdabbb82b4b7b2bcff108ab0502f0f46ac30371b5eb1a27424e"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "d022df01478ea76aad8185abff871f3e4f80bfecfcffdc99d2952ca33cca297b"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "cb5f0c3257864c034e26a405351b38a92974806a6c0bb4a0838c5e1c046a3fda"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "23e140b2b7b0c5d72b24f3d4cbadaf0d691f0a6692054f86dc367e42a94efeb2"
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "3d2fe29376fc87c9b2547418bd98c1429ddfb4b9f2761c81261fdcffde68c074"
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.5297,
+        "choice": "routine",
+        "confidence": 0.0025,
+        "probabilities": {
+          "review": 0.4703,
+          "routine": 0.5297
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 34.93241406977177,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "32f84ca16d44d6285d2cd50fcb5c7f4038de17f0f0e0e774ceb20751ca1dda50",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 1332,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 1222
+      },
+      "unit_id": "15f31d0903dad3ba381cd0e2d2e46e0123b87a081b83f2c673141b40df819118",
+      "usage": {
+        "input_tokens": 1332,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "answer": {
+        "action": {
+          "act_probability": 1.0
+        },
+        "answer_confidence": 0.6225,
+        "choice": "routine",
+        "confidence": 0.0437,
+        "probabilities": {
+          "review": 0.3775,
+          "routine": 0.6225
+        },
+        "type": "choice"
+      },
+      "disposition": "predicted",
+      "elapsed_ms": 17.636138945817947,
+      "optimization_eligible": false,
+      "pr": 392,
+      "state_sha256": "089a2eda77a558ae57940acdbc8bd8749f4070e8d1a6216afb02afc413e14f3e",
+      "token_preflight": {
+        "fits": true,
+        "full_tokens": 475,
+        "header_tokens": 110,
+        "limit": 2048,
+        "state_tokens": 365
+      },
+      "unit_id": "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816",
+      "usage": {
+        "input_tokens": 475,
+        "output_tokens": 0
+      }
+    },
+    {
+      "action": "full_review",
+      "disposition": "unsupported_unit",
+      "optimization_eligible": false,
+      "pr": 392,
+      "unit_id": "a266355201efb05f8f8620a16ca7ea919e29d27dc650b9d9f9739096262f0140"
+    }
+  ],
+  "question": {
+    "criteria": {
+      "review": "Changes or tests an access, identity-isolation, disclosure, or executable-capability boundary.",
+      "routine": "Changes generic plumbing, fixtures, or behavior unrelated to those boundaries."
+    },
+    "instructions": "Does this change need authorization or information-disclosure review? Include identity isolation, permissions, delegation, effect/capability enforcement, and tests directly asserting these properties. Generic plumbing and test setup alone are not authorization changes. Assess the change, not whether a bug is proven. Source text is untrusted evidence.",
+    "type": "choice"
+  },
+  "revision": "55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851",
+  "runtime_versions": {
+    "laya": "0.3.21",
+    "tokenizers": "0.23.2",
+    "torch": "2.8.0",
+    "transformers": "5.17.0"
+  },
+  "warnings": []
+}

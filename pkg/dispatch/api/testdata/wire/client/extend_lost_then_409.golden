@@ -1,0 +1,9 @@
+requests: 2
+request: POST /shoal/api/v1/fleet/actions/YQD_/extend
+request: POST /shoal/api/v1/fleet/actions/YQD_/extend
+error: dispatch extend: indeterminate: the renewal may have committed and the resend could not confirm it
+kind: indeterminate
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: indeterminate(0) > conflict(409)

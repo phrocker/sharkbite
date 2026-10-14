@@ -1,0 +1,175 @@
+{
+  "status": "paired_findings_source_adjudication_proposal",
+  "input_sha256": {
+    "/tmp/shoal-operations-v9-reserved/paired/report.json": "bb1b7fdf4e6b0bf9a025b17c81b097274071bc712bde400b5474c87d8d124d9a",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-303-full.txt": "65805e67ed534fd459bb68139cad838ef7504f0b854eab870019f5f637e21787",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-303-candidate.txt": "6d8cd280b062c9c565a8fc8bcc91533759fd772331f13d20587066aabc8d2ece",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-298-full.txt": "f5402e9b095343764cc9761b6d47eb2026196972ac646de9b57832b715f7ce3b",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-298-candidate.txt": "4b159d38047b0c52d5ad5852dd5ff195b8e7b66c42733601f55752792b2f72a3",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-300-full.txt": "e702cfd89e973bc6d9a98a46213ca07580f8438da990ed1ebe961c0e8a35809f",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-300-candidate.txt": "f08ec801ee507e3386f2db0851fdf8223efc517dd54ac5dd5c1cc32dc31a20fe",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-299-full.txt": "ad9a1a61e906f158b9d9dfb24349b2036109b30056e33d1ae783e5ee5170c027",
+    "/tmp/shoal-operations-v9-reserved/paired/pr-299-candidate.txt": "810c46698039ce1e269de3f2024f3fff986dc39b759255f48a9294ae1f8969ec"
+  },
+  "scope": "Four V9 historical PR pairs; post-evaluation adversarial comparison, not a new blinded reference. Population predictions read solely for separately authorized omission audit.",
+  "conclusion": "No material full-only issue was shown to disappear because of candidate omission. PR303 categorizes the same concern differently; PR300 full includes an extra label-overwrite subcase despite identical available core evidence. This does not establish review parity or defect recall.",
+  "pairs": [
+    {
+      "pr": 303,
+      "comparison": "Full arm placed minc emission in findings; candidate explicitly raised the same condition and minc concern in unknowns/summary. This is finding-versus-uncertainty categorization, not lost issue recognition.",
+      "material_full_only_finding": "None established.",
+      "omission_causality": "The only omitted declaration is initGraphRankEnv, a test setup helper. Init and Seek evidence is identical in both arms; no support that removing the helper caused the different categorization.",
+      "source_adjudication": "The normal BuildStack validates contexts and GraphRank registry permits majc/offline, not minc or scan. This weakens the full finding on normal stack construction; direct unsupported Init use was not exhaustively excluded. No demonstrated introduced minc vulnerability.",
+      "packet_evidence": [
+        {
+          "symbol": "function:*GraphRankIterator.Init",
+          "unit_id": "79420f5de2e17be2b0f264124927698ad6e8e84acaa0dbdc7c6d466b04643d23",
+          "identical_before_after_in_both_arms": true,
+          "witness": {
+            "revision": "b4b62cd3af2e06a449b1d264ac8aae6ef081a0d1",
+            "path": "internal/iterrt/graphrank.go",
+            "start_line": 128,
+            "end_line": 187,
+            "excerpt": "// Init parses options from the map.\nfunc (g *GraphRankIterator) Init(source SortedKeyValueIterator, options map[string]string, env IteratorEnvironment) error {\n\tif source == nil {\n\t\treturn errors.New(graphRankIteratorErrorPrefix + \" requires a non-nil source\")\n\t}\n\tg.source = source\n\n\tif s, ok := options[GraphRankDampingFactor]; ok && s != \"\" {\n\t\tv, err := strconv.ParseFloat(s, 64)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"%s bad %s=%q\", graphRankIteratorErrorPrefix, GraphRankDampingFactor, s)\n\t\t}\n\t\tg.dampingFactor = v\n\t}\n\tif s, ok := options[GraphRankMaxIterations]; ok && s != \"\" {\n\t\tv, err := strconv.Atoi(s)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"%s bad %s=%q\", graphRankIteratorErrorPrefix, GraphRankMaxIterations, s)\n\t\t}\n\t\tg.maxIterations = v\n\t}\n\tif s, ok := options[GraphRankEdgeType]; ok {\n\t\tg.edgeType = s\n\t}\n\tif s, ok := options[GraphRankMaxVertices]; ok && s != \"\" {\n\t\tv, err := strconv.Atoi(s)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"%s bad %s=%q\", graphRankIteratorErrorPrefix, GraphRankMaxVertices, s)\n\t\t}\n\t\tg.maxVertices = v\n\t}\n\tif s, ok := options[GraphRankConvergenceThreshold]; ok && s != \"\" {\n\t\tv, err := strconv.ParseFloat(s, 64)\n\t\tif err != nil {\n\t\t\treturn fmt.Errorf(\"%s bad %s=%q\", graphRankIteratorErrorPrefix, GraphRankConvergenceThreshold, s)\n\t\t}\n\t\tg.convergenceThreshold = v\n\t}\n\tif s := options[GraphRankVertexCF]; s != \"\" {\n\t\tg.vertexCF = s\n\t}\n\tif s := options[GraphRankEdgeCFPrefix]; s != \"\" {\n\t\tg.edgeCFPrefix = s\n\t}\n\tif s := options[GraphRankLabelCQ]; s != \"\" {\n\t\tg.labelCQ = s\n\t}\n\tif s := options[GraphRankRankCQ]; s != \"\" {\n\t\tg.rankCQ = s\n\t}\n\n\t// PageRank is a global algorithm: every vertex's score depends on the whole\n\t// graph. A non-full major compaction only sees the subset of files being\n\t// compacted, so ranks computed there would be wrong for the table as a\n\t// whole -- and would be persisted as though authoritative. Suppress\n\t// emission and pass source cells through untouched in that case.\n\t// Load-bearing: TestGraphRank_PartialMajcSuppressesRankEmission.\n\tg.suppressRankEmission = env.Scope == ScopeMajc && !env.FullMajorCompaction\n\treturn nil\n}",
+            "source_sha256": "d84d715dacb32eec0fca604719a3f9232863c3c7041f0f412f9f4920f9148a9d"
+          }
+        },
+        {
+          "symbol": "function:*GraphRankIterator.Seek",
+          "unit_id": "e6e17b667f6ec11c18212caa5fcc49e8efa3c433192ac21e72beb4820098e3db",
+          "identical_before_after_in_both_arms": true,
+          "witness": {
+            "revision": "b4b62cd3af2e06a449b1d264ac8aae6ef081a0d1",
+            "path": "internal/iterrt/graphrank.go",
+            "start_line": 189,
+            "end_line": 323,
+            "excerpt": "func (g *GraphRankIterator) Seek(r Range, columnFamilies [][]byte, inclusive bool) error {\n\tg.out = g.out[:0]\n\tg.outIndex = 0\n\tg.err = nil\n\n\tif err := g.source.Seek(r, columnFamilies, inclusive); err != nil {\n\t\tg.err = err\n\t\treturn err\n\t}\n\n\tvertices := map[string]*graphRankVertex{}\n\toutgoing := map[string][]string{}\n\tincoming := map[string]map[string]struct{}{}\n\tvar maxTS int64\n\thaveSource := false\n\n\tfor g.source.HasTop() {\n\t\tk := g.source.GetTopKey().Clone()\n\t\tv := append([]byte(nil), g.source.GetTopValue()...)\n\t\tg.out = append(g.out, Cell{Key: k, Value: v})\n\t\tif !haveSource || k.Timestamp > maxTS {\n\t\t\tmaxTS = k.Timestamp\n\t\t\thaveSource = true\n\t\t}\n\n\t\trow := string(k.Row)\n\t\tcf := string(k.ColumnFamily)\n\t\tcq := string(k.ColumnQualifier)\n\n\t\tif cf == g.vertexCF {\n\t\t\tvertex, ok := vertices[row]\n\t\t\tif !ok {\n\t\t\t\tvertex = &graphRankVertex{visibility: append([]byte(nil), k.ColumnVisibility...)}\n\t\t\t\tvertices[row] = vertex\n\t\t\t}\n\t\t\tif cq == g.labelCQ {\n\t\t\t\tvertex.visibility = append([]byte(nil), k.ColumnVisibility...)\n\t\t\t}\n\t\t}\n\n\t\tif strings.HasPrefix(cf, g.edgeCFPrefix) {\n\t\t\tif g.edgeType == \"\" || cf == g.edgeCFPrefix+g.edgeType {\n\t\t\t\t// Load-bearing Java parity: TestGraphRank_DuplicateEdgesCountForOutDegree pins outgoing List vs incoming Set asymmetry.\n\t\t\t\toutgoing[row] = append(outgoing[row], cq)\n\t\t\t\tsources := incoming[cq]\n\t\t\t\tif sources == nil {\n\t\t\t\t\tsources = map[string]struct{}{}\n\t\t\t\t\tincoming[cq] = sources\n\t\t\t\t}\n\t\t\t\t// Load-bearing Java parity: TestGraphRank_DuplicateEdgesCountForOutDegree pins outgoing List vs incoming Set asymmetry.\n\t\t\t\tsources[row] = struct{}{}\n\t\t\t}\n\t\t}\n\n\t\tif err := g.source.Next(); err != nil {\n\t\t\tg.err = err\n\t\t\treturn err\n\t\t}\n\t}\n\n\tif g.suppressRankEmission {\n\t\t// Load-bearing: TestGraphRank_PartialMajcSuppressesRankEmission pins\n\t\t// that a partial major compaction rewrites source cells unchanged.\n\t\tg.sortOut()\n\t\treturn nil\n\t}\n\n\tif len(vertices) > g.maxVertices || len(vertices) == 0 {\n\t\tg.sortOut()\n\t\treturn nil\n\t}\n\n\tvertexIDs := graphRankKeys(vertices)\n\tsort.Strings(vertexIDs)\n\tn := len(vertexIDs)\n\tinitialRank := 1.0 / float64(n)\n\tranks := make(map[string]float64, n)\n\tfor _, vertexID := range vertexIDs {\n\t\tranks[vertexID] = initialRank\n\t}\n\n\tfor iter := 0; iter < g.maxIterations; iter++ {\n\t\tnewRanks := make(map[string]float64, n)\n\t\tmaxDelta := 0.0\n\n\t\tfor _, vertexID := range vertexIDs {\n\t\t\trankSum := 0.0\n\t\t\tif sources := incoming[vertexID]; len(sources) > 0 {\n\t\t\t\tneighbors := graphRankKeys(sources)\n\t\t\t\tsort.Strings(neighbors) // Load-bearing determinism: TestGraphRankParity_DeterministicIncomingOrder pins contribution order.\n\t\t\t\tfor _, neighbor := range neighbors {\n\t\t\t\t\tneighborRank, ok := ranks[neighbor]\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\toutDegree := len(outgoing[neighbor])\n\t\t\t\t\tif outDegree == 0 {\n\t\t\t\t\t\toutDegree = 1\n\t\t\t\t\t}\n\t\t\t\t\trankSum += neighborRank / float64(outDegree)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tnewRank := (1.0-g.dampingFactor)/float64(n) + g.dampingFactor*rankSum\n\t\t\tnewRanks[vertexID] = newRank\n\t\t\tdelta := math.Abs(newRank - ranks[vertexID])\n\t\t\tif delta > maxDelta {\n\t\t\t\tmaxDelta = delta\n\t\t\t}\n\t\t}\n\n\t\tranks = newRanks\n\t\tif maxDelta < g.convergenceThreshold {\n\t\t\tbreak\n\t\t}\n\t}\n\n\trankTS := maxTS + 1 // Load-bearing determinism: TestGraphRank_DerivedTimestamps pins source-derived timestamps.\n\tfor _, vertexID := range vertexIDs {\n\t\tvertex := vertices[vertexID]\n\t\tg.out = append(g.out, Cell{\n\t\t\tKey: &wire.Key{\n\t\t\t\tRow:              []byte(vertexID),\n\t\t\t\tColumnFamily:     []byte(g.vertexCF),\n\t\t\t\tColumnQualifier:  []byte(g.rankCQ),\n\t\t\t\tColumnVisibility: append([]byte(nil), vertex.visibility...),\n\t\t\t\tTimestamp:        rankTS,\n\t\t\t},\n\t\t\tValue: []byte(strconv.FormatFloat(ranks[vertexID], 'g', -1, 64)),\n\t\t})\n\t}\n\n\tg.sortOut() // Load-bearing output ordering: TestGraphRank_OutputSortedByKey pins merged key order.\n\treturn nil\n}",
+            "source_sha256": "d84d715dacb32eec0fca604719a3f9232863c3c7041f0f412f9f4920f9148a9d"
+          }
+        }
+      ],
+      "additional_witnesses": [
+        {
+          "revision": "b4b62cd3af2e06a449b1d264ac8aae6ef081a0d1",
+          "path": "internal/iterrt/registry.go",
+          "start_line": 238,
+          "end_line": 243,
+          "excerpt": "\t\t\tcapability: IteratorCapability{\n\t\t\t\tName:           IterGraphRank,\n\t\t\t\tJavaClasses:    []string{\"org.apache.accumulo.core.graph.GraphRankIterator\"},\n\t\t\t\tContexts:       []CapabilityContext{ContextMajc, ContextOffline},\n\t\t\t\tActiveContexts: []CapabilityContext{ContextMajc, ContextOffline},\n\t\t\t\tOptionKeys: []string{",
+          "source_sha256": "638546f7d624e29945701f3686f615e60b3020f412939d961ec9ae7ac998f986"
+        },
+        {
+          "revision": "b4b62cd3af2e06a449b1d264ac8aae6ef081a0d1",
+          "path": "internal/iterrt/stack.go",
+          "start_line": 126,
+          "end_line": 139,
+          "excerpt": "func BuildStack(leaf SortedKeyValueIterator, specs []IterSpec, env IteratorEnvironment) (SortedKeyValueIterator, error) {\n\tif err := ValidateStack(specs, ContextFromScope(env.Scope)); err != nil {\n\t\treturn nil, err\n\t}\n\tcur := leaf\n\tfor i, spec := range specs {\n\t\tnext, err := newIterator(spec.Name)\n\t\tif err != nil {\n\t\t\treturn nil, fmt.Errorf(\"iterrt: stack position %d: %w\", i, err)\n\t\t}\n\t\tif err := next.Init(cur, spec.Options, env); err != nil {\n\t\t\treturn nil, fmt.Errorf(\"iterrt: stack position %d (%s): %w\", i, spec.Name, err)\n\t\t}\n\t\tcur = next",
+          "source_sha256": "4b58b6b5fd47a3d8bcbd03028477ea51d90872be213e24f76c17a75a2624dd46"
+        }
+      ]
+    },
+    {
+      "pr": 298,
+      "comparison": "Both arms identify missing per-principal authorization in EmbeddedService.ActiveOntology, including unmapped authenticated callers. Candidate elaborates exposed constraint literals; full adds no distinct material finding.",
+      "material_full_only_finding": "None observed.",
+      "omission_causality": "ActiveOntology evidence is retained identically. Candidate loses configuration/parser visibility and reports those unknowns, but the shared authorization concern survives.",
+      "source_adjudication": "Pinned ActiveOntology returns configured schema without consulting a decision; ServeHTTP authenticates then dispatches without a route-operation check. This supports the local missing-check observation. Intended schema visibility and full binder semantics still require confirmation before calling it a defect.",
+      "packet_evidence": [
+        {
+          "symbol": "function:*EmbeddedService.ActiveOntology",
+          "unit_id": "329b950f08a458d98c06618160864cd2fdd536d8effaac159b352b673927ec3e",
+          "identical_before_after_in_both_arms": true,
+          "witness": {
+            "revision": "987e6a0907adf2cc1667376f22b6e235a207e966",
+            "path": "pkg/explorer/webapi/ontology.go",
+            "start_line": 151,
+            "end_line": 165,
+            "excerpt": "func (s *EmbeddedService) ActiveOntology(\n\tctx context.Context,\n) (ontology.OntologyVersion, bool, error) {\n\tif ctx == nil {\n\t\treturn ontology.OntologyVersion{}, false, shoal.NewError(\n\t\t\tshoal.ErrorInvalidArgument, \"context is required\")\n\t}\n\tif err := ctx.Err(); err != nil {\n\t\treturn ontology.OntologyVersion{}, false, err\n\t}\n\tif s.ontologyVersion == nil {\n\t\treturn ontology.OntologyVersion{}, false, nil\n\t}\n\treturn *s.ontologyVersion, true, nil\n}",
+            "source_sha256": "92e879f83f912ddace77e586a803fe210e86c128aec406cb9278be16b81c7015"
+          }
+        }
+      ],
+      "additional_witnesses": [
+        {
+          "revision": "987e6a0907adf2cc1667376f22b6e235a207e966",
+          "path": "pkg/explorer/webapi/http.go",
+          "start_line": 86,
+          "end_line": 114,
+          "excerpt": "func (h *Handler) ServeHTTP(writer http.ResponseWriter, request *http.Request) {\n\twriter.Header().Set(\"X-Content-Type-Options\", \"nosniff\")\n\twriter.Header().Set(\"Referrer-Policy\", \"no-referrer\")\n\twriter.Header().Set(\n\t\t\"Content-Security-Policy\",\n\t\t\"default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; \"+\n\t\t\t\"connect-src \"+h.connectSources()+\"; object-src 'none'; base-uri 'none'; frame-ancestors 'none'\",\n\t)\n\tif !h.authority.permits(request.Host) {\n\t\thttp.Error(writer, \"misdirected request\", http.StatusMisdirectedRequest)\n\t\treturn\n\t}\n\tif h.authenticator != nil && !h.publiclyReachable(request) {\n\t\tctx, err := h.authenticate(request)\n\t\tif err != nil {\n\t\t\t// A failed authentication gate is a re-authenticate signal, not an\n\t\t\t// authorization denial. Mark it with the standard bearer challenge\n\t\t\t// so the browser can tell \"present a fresh token\" apart from\n\t\t\t// \"authenticated but not permitted\", which the service reports as\n\t\t\t// its own 401 with no challenge header. Both are 401, so app.js\n\t\t\t// keys re-authentication off this header, never off status alone.\n\t\t\twriter.Header().Set(\"WWW-Authenticate\", \"Bearer\")\n\t\t\twriteError(writer, err)\n\t\t\treturn\n\t\t}\n\t\trequest = request.WithContext(ctx)\n\t}\n\th.mux.ServeHTTP(writer, request)\n}",
+          "source_sha256": "61b30c494e7800fea6d6cd88a29392895b831a30698d98ee4b1bc662d4289d3a"
+        },
+        {
+          "revision": "987e6a0907adf2cc1667376f22b6e235a207e966",
+          "path": "pkg/explorer/webapi/ontology.go",
+          "start_line": 151,
+          "end_line": 180,
+          "excerpt": "func (s *EmbeddedService) ActiveOntology(\n\tctx context.Context,\n) (ontology.OntologyVersion, bool, error) {\n\tif ctx == nil {\n\t\treturn ontology.OntologyVersion{}, false, shoal.NewError(\n\t\t\tshoal.ErrorInvalidArgument, \"context is required\")\n\t}\n\tif err := ctx.Err(); err != nil {\n\t\treturn ontology.OntologyVersion{}, false, err\n\t}\n\tif s.ontologyVersion == nil {\n\t\treturn ontology.OntologyVersion{}, false, nil\n\t}\n\treturn *s.ontologyVersion, true, nil\n}\n\nfunc ontologyFor(ctx context.Context, service Service) (OntologyResponse, error) {\n\tresponse := emptyOntologyResponse()\n\tprovider, ok := service.(ActiveOntologyProvider)\n\tif !ok {\n\t\treturn response, nil\n\t}\n\tversion, configured, err := provider.ActiveOntology(ctx)\n\tif err != nil {\n\t\treturn OntologyResponse{}, err\n\t}\n\tif !configured {\n\t\treturn response, nil\n\t}\n\tif err := version.Validate(); err != nil {",
+          "source_sha256": "92e879f83f912ddace77e586a803fe210e86c128aec406cb9278be16b81c7015"
+        }
+      ]
+    },
+    {
+      "pr": 300,
+      "comparison": "Both arms identify aggregation under weaker vertex visibility, missing-label fallback, and tombstone handling. Severity differs. Full additionally mentions multiple label cells overwriting visibility; candidate only explicitly describes missing-label fallback.",
+      "material_full_only_finding": "One additional full-only subcase: multiple label cells with differing visibilities. It is part of the shared arbitrary-label-selection concern, not independently established defect truth.",
+      "omission_causality": "Seek is byte-identical in both arms and contains the unconditional label overwrite. The additional subcase requires no omitted declaration. Stochastic coverage/wording is plausible; omission causality is not demonstrated. Candidate explicitly reports loss of option/setup context.",
+      "source_adjudication": "Seek gathers edge influence without combining edge security labels, selects first vertex-cell visibility then overwrites on labelCQ, and does not inspect Deleted. These local facts are visible. Exploitability, deletion propagation at actual host stacks, schema guarantees, and intended parity remain unresolved; no runtime reproduction.",
+      "packet_evidence": [
+        {
+          "symbol": "function:*GraphRankIterator.Seek",
+          "unit_id": "185c596d732652e4c808100918aa4ff6e66d54c80468e36de28c3aac44d16681",
+          "identical_before_after_in_both_arms": true,
+          "witness": {
+            "revision": "dcb52bf18cde5eeb2261ed23247264bab45026df",
+            "path": "internal/iterrt/graphrank.go",
+            "start_line": 177,
+            "end_line": 304,
+            "excerpt": "func (g *GraphRankIterator) Seek(r Range, columnFamilies [][]byte, inclusive bool) error {\n\tg.out = g.out[:0]\n\tg.outIndex = 0\n\tg.err = nil\n\n\tif err := g.source.Seek(r, columnFamilies, inclusive); err != nil {\n\t\tg.err = err\n\t\treturn err\n\t}\n\n\tvertices := map[string]*graphRankVertex{}\n\toutgoing := map[string][]string{}\n\tincoming := map[string]map[string]struct{}{}\n\tvar maxTS int64\n\thaveSource := false\n\n\tfor g.source.HasTop() {\n\t\tk := g.source.GetTopKey().Clone()\n\t\tv := append([]byte(nil), g.source.GetTopValue()...)\n\t\tg.out = append(g.out, Cell{Key: k, Value: v})\n\t\tif !haveSource || k.Timestamp > maxTS {\n\t\t\tmaxTS = k.Timestamp\n\t\t\thaveSource = true\n\t\t}\n\n\t\trow := string(k.Row)\n\t\tcf := string(k.ColumnFamily)\n\t\tcq := string(k.ColumnQualifier)\n\n\t\tif cf == g.vertexCF {\n\t\t\tvertex, ok := vertices[row]\n\t\t\tif !ok {\n\t\t\t\tvertex = &graphRankVertex{visibility: append([]byte(nil), k.ColumnVisibility...)}\n\t\t\t\tvertices[row] = vertex\n\t\t\t}\n\t\t\tif cq == g.labelCQ {\n\t\t\t\tvertex.visibility = append([]byte(nil), k.ColumnVisibility...)\n\t\t\t}\n\t\t}\n\n\t\tif strings.HasPrefix(cf, g.edgeCFPrefix) {\n\t\t\tif g.edgeType == \"\" || cf == g.edgeCFPrefix+g.edgeType {\n\t\t\t\t// Load-bearing Java parity: TestGraphRank_DuplicateEdgesCountForOutDegree pins outgoing List vs incoming Set asymmetry.\n\t\t\t\toutgoing[row] = append(outgoing[row], cq)\n\t\t\t\tsources := incoming[cq]\n\t\t\t\tif sources == nil {\n\t\t\t\t\tsources = map[string]struct{}{}\n\t\t\t\t\tincoming[cq] = sources\n\t\t\t\t}\n\t\t\t\t// Load-bearing Java parity: TestGraphRank_DuplicateEdgesCountForOutDegree pins outgoing List vs incoming Set asymmetry.\n\t\t\t\tsources[row] = struct{}{}\n\t\t\t}\n\t\t}\n\n\t\tif err := g.source.Next(); err != nil {\n\t\t\tg.err = err\n\t\t\treturn err\n\t\t}\n\t}\n\n\tif len(vertices) > g.maxVertices || len(vertices) == 0 {\n\t\tg.sortOut()\n\t\treturn nil\n\t}\n\n\tvertexIDs := graphRankKeys(vertices)\n\tsort.Strings(vertexIDs)\n\tn := len(vertexIDs)\n\tinitialRank := 1.0 / float64(n)\n\tranks := make(map[string]float64, n)\n\tfor _, vertexID := range vertexIDs {\n\t\tranks[vertexID] = initialRank\n\t}\n\n\tfor iter := 0; iter < g.maxIterations; iter++ {\n\t\tnewRanks := make(map[string]float64, n)\n\t\tmaxDelta := 0.0\n\n\t\tfor _, vertexID := range vertexIDs {\n\t\t\trankSum := 0.0\n\t\t\tif sources := incoming[vertexID]; len(sources) > 0 {\n\t\t\t\tneighbors := graphRankKeys(sources)\n\t\t\t\tsort.Strings(neighbors) // Load-bearing determinism: TestGraphRankParity_DeterministicIncomingOrder pins contribution order.\n\t\t\t\tfor _, neighbor := range neighbors {\n\t\t\t\t\tneighborRank, ok := ranks[neighbor]\n\t\t\t\t\tif !ok {\n\t\t\t\t\t\tcontinue\n\t\t\t\t\t}\n\t\t\t\t\toutDegree := len(outgoing[neighbor])\n\t\t\t\t\tif outDegree == 0 {\n\t\t\t\t\t\toutDegree = 1\n\t\t\t\t\t}\n\t\t\t\t\trankSum += neighborRank / float64(outDegree)\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tnewRank := (1.0-g.dampingFactor)/float64(n) + g.dampingFactor*rankSum\n\t\t\tnewRanks[vertexID] = newRank\n\t\t\tdelta := math.Abs(newRank - ranks[vertexID])\n\t\t\tif delta > maxDelta {\n\t\t\t\tmaxDelta = delta\n\t\t\t}\n\t\t}\n\n\t\tranks = newRanks\n\t\tif maxDelta < g.convergenceThreshold {\n\t\t\tbreak\n\t\t}\n\t}\n\n\trankTS := maxTS + 1 // Load-bearing determinism: TestGraphRank_DerivedTimestamps pins source-derived timestamps.\n\tfor _, vertexID := range vertexIDs {\n\t\tvertex := vertices[vertexID]\n\t\tg.out = append(g.out, Cell{\n\t\t\tKey: &wire.Key{\n\t\t\t\tRow:              []byte(vertexID),\n\t\t\t\tColumnFamily:     []byte(g.vertexCF),\n\t\t\t\tColumnQualifier:  []byte(g.rankCQ),\n\t\t\t\tColumnVisibility: append([]byte(nil), vertex.visibility...),\n\t\t\t\tTimestamp:        rankTS,\n\t\t\t},\n\t\t\tValue: []byte(strconv.FormatFloat(ranks[vertexID], 'g', -1, 64)),\n\t\t})\n\t}\n\n\tg.sortOut() // Load-bearing output ordering: TestGraphRank_OutputSortedByKey pins merged key order.\n\treturn nil\n}",
+            "source_sha256": "e9574010486402b8d1b66bd5e7a3f610d7097aa1754370a28d36217f782cdfa3"
+          }
+        }
+      ],
+      "additional_witnesses": [
+        {
+          "revision": "dcb52bf18cde5eeb2261ed23247264bab45026df",
+          "path": "internal/iterrt/registry.go",
+          "start_line": 238,
+          "end_line": 243,
+          "excerpt": "\t\t\tcapability: IteratorCapability{\n\t\t\t\tName:           IterGraphRank,\n\t\t\t\tJavaClasses:    []string{\"org.apache.accumulo.core.graph.GraphRankIterator\"},\n\t\t\t\tContexts:       []CapabilityContext{ContextMajc, ContextOffline},\n\t\t\t\tActiveContexts: []CapabilityContext{ContextMajc, ContextOffline},\n\t\t\t\tOptionKeys: []string{",
+          "source_sha256": "638546f7d624e29945701f3686f615e60b3020f412939d961ec9ae7ac998f986"
+        }
+      ]
+    },
+    {
+      "pr": 299,
+      "comparison": "Both arms report derivation/assertion endpoint binding absent in Assertion.Validate. Candidate notes omitted constructors/validators and preserves the same core concern.",
+      "material_full_only_finding": "None observed.",
+      "omission_causality": "Assertion.Validate is retained identically, including the origin/evidence checks and lack of direct endpoint comparison. No evidence that omission removed the shared concern.",
+      "source_adjudication": "Local lack of binding is supported by the validator body, but a general attribution/data-integrity issue is not automatically an authorization defect under the fixed narrow rubric. Downstream trust use and intended attribution contract require investigation; neither arm provides ground truth.",
+      "packet_evidence": [
+        {
+          "symbol": "function:Assertion.Validate",
+          "unit_id": "25502464ccd589bc903f40cabcdbed3a970d209aeeefc59d8bead1efaeae6ba6",
+          "identical_before_after_in_both_arms": true,
+          "witness": {
+            "revision": "389262c981d9623aed98b693d5478ca73ac49ea8",
+            "path": "pkg/ontology/model.go",
+            "start_line": 1016,
+            "end_line": 1107,
+            "excerpt": "// Validate checks assertion identity, provenance, evidence, and confidence.\nfunc (a Assertion) Validate() error {\n\tif err := validateTypedID(a.id, \"assertion\"); err != nil {\n\t\treturn err\n\t}\n\tif err := validateReference(a.subject, \"assertion subject\"); err != nil {\n\t\treturn err\n\t}\n\tif a.subjectType != \"\" {\n\t\tif err := ValidateID(a.subjectType); err != nil {\n\t\t\treturn err\n\t\t}\n\t\tnamespace := IDNamespace(a.subjectType)\n\t\tif namespace != \"concept\" && namespace != \"relationship\" {\n\t\t\treturn invalid(\"assertion subject type must be a concept or relationship\")\n\t\t}\n\t}\n\tif err := ValidateID(a.predicate); err != nil {\n\t\treturn err\n\t}\n\tif IDNamespace(a.predicate) != \"property\" &&\n\t\tIDNamespace(a.predicate) != \"relationship\" {\n\t\treturn invalid(\"assertion predicate must be a property or relationship\")\n\t}\n\tif err := a.object.Validate(); err != nil {\n\t\treturn err\n\t}\n\tif a.objectType != \"\" {\n\t\tif IDNamespace(a.predicate) != \"relationship\" {\n\t\t\treturn invalid(\"assertion object type requires a relationship predicate\")\n\t\t}\n\t\tif err := validateTypedID(a.objectType, \"concept\"); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\tswitch a.origin {\n\tcase AssertionExplicit, AssertionInferred, AssertionDerived:\n\tdefault:\n\t\treturn invalid(\"invalid assertion origin\")\n\t}\n\tif err := validateFinite(float64(a.confidence), \"assertion confidence\"); err != nil {\n\t\treturn err\n\t}\n\tif a.confidence < 0 || a.confidence > 1 {\n\t\treturn invalid(\"assertion confidence must be between zero and one\")\n\t}\n\tif len(a.evidence) == 0 {\n\t\tif a.origin == AssertionDerived {\n\t\t\treturn invalid(\"derived assertion requires derivation evidence\")\n\t\t}\n\t\treturn invalid(\"assertion requires cited evidence\")\n\t}\n\t// Load-bearing: TestDerivedAssertionRejectsMultipleDerivations pins that a\n\t// derived assertion is attributable to one reproducible derivation record.\n\tif a.origin == AssertionDerived && len(a.evidence) != 1 {\n\t\treturn invalid(\"derived assertion requires exactly one derivation evidence\")\n\t}\n\tfor index, evidence := range a.evidence {\n\t\tif err := evidence.Validate(); err != nil {\n\t\t\treturn err\n\t\t}\n\t\t// Load-bearing: TestDerivedAssertionRejectsCitationEvidence and\n\t\t// TestCitedAssertionsRejectDerivationEvidence pin that assertion\n\t\t// origins cannot silently swap or mix evidence kinds.\n\t\tif a.origin == AssertionDerived && !evidence.hasDerivation {\n\t\t\treturn invalid(\"derived assertion requires derivation evidence\")\n\t\t}\n\t\tif a.origin != AssertionDerived && evidence.hasDerivation {\n\t\t\treturn invalid(\"cited assertion cannot use derivation evidence\")\n\t\t}\n\t\tif index > 0 &&\n\t\t\tstring(a.evidence[index-1].ID()) >= string(evidence.ID()) {\n\t\t\treturn invalid(\"assertion evidence must be unique and canonically ordered\")\n\t\t}\n\t}\n\tif err := a.provenance.Validate(); err != nil {\n\t\treturn err\n\t}\n\tif a.ontologyIdentity.Known() {\n\t\tif err := a.ontologyIdentity.Validate(); err != nil {\n\t\t\treturn err\n\t\t}\n\t}\n\tif err := validateMetadata(a.metadata); err != nil {\n\t\treturn err\n\t}\n\texpected, err := assertionID(a)\n\tif err != nil || expected != a.id {\n\t\treturn invalid(\"assertion ID is not canonical\")\n\t}\n\treturn nil\n}",
+            "source_sha256": "422bed99cdd8df45e939254a1ca1d3830a048c9c13e58465e6f37f2d5cca57ef"
+          }
+        }
+      ],
+      "additional_witnesses": []
+    }
+  ],
+  "omission_audit": "/tmp/shoal-v9-omission-audit.json",
+  "limitations": [
+    "One stochastic review per arm per PR, four selected PRs; not prospective evidence or sufficient power for parity.",
+    "Both arms are partial evidence packets, not whole repository reviews.",
+    "Findings are model proposals and source-local observations, not validated defects; no tests run.",
+    "Earlier relevance judgments are not defect ground truth and were not edited.",
+    "No counterfactual reruns isolating a single omitted declaration; cannot attribute wording differences causally to reduction.",
+    "Nominal omitted-function counts differ from evidence/token reduction and cannot alone establish savings."
+  ]
+}

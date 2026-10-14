@@ -1,0 +1,14 @@
+outcome decision.outcome.failed
+  Decision task source-priority v1 failed at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.failed.deadline_exceeded
+  The failure was reported, by the predictor or the service, as deadline_exceeded, which, if accurate, means no result arrived within the deadline.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.failed.deadline_exceeded
+  If the deadline passed, request the decision again with a later deadline; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:c5265de704855a13b685586af326396ee090a0fee366b0d9496ff00c1fa64865

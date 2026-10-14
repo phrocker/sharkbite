@@ -1,0 +1,645 @@
+{
+  "id": "7eaae6c7e301baf98cdded51210e2c3069b5d0420a26d34778bd124f2bb3dd6e",
+  "input_token_reduction": 0.05877872693527242,
+  "limitations": [
+    "One stochastic call per arm per PR; findings are not defect ground truth.",
+    "Shared provider caching and variable output confound billed cost; total input includes cache reads and writes.",
+    "Elapsed sum is call duration, not parallel wall time; concurrency and service load confound speed.",
+    "Both arms contain partial source context; consult omission audit and pinned-source adjudication."
+  ],
+  "optimization_enabled": false,
+  "packet_byte_reduction": 0.05743642691801698,
+  "packet_manifest_id": "247e7f6302418917b69c1a4ed7184904925af2465a6cb99bd477d0aebe1b778c",
+  "rows": [
+    {
+      "arm": "full",
+      "cost_usd": 1.4482356,
+      "elapsed_seconds": 63.80785900680348,
+      "findings": {
+        "findings": [
+          {
+            "claim": "Outstanding returns the store's raw scan cursor to any invoke-authorized caller, even though every record on the page is filtered by principal. If ScanActions' cursor encodes the last scanned key (the action ID), a caller paging with Limit=1 can enumerate other principals' action/admission identities one at a time. Report deliberately collapses absent and foreign admissions to keep those identities secret, and this cursor would reopen that oracle.",
+            "missing_context": "The encoding of ScanActions' Next cursor (raw action ID vs opaque/sealed token), and whether the store has other principal-scoped scan APIs.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "medium",
+            "symbol": "function:*AdmissionService.Outstanding",
+            "witness": "page, err := dispatch.store.ScanActions(ctx, request.After, request.Limit) ... result := OutstandingAdmissionsPage{Next: append([]byte(nil), page.Next...)} (then base64-encoded verbatim in mountAdmission's \"next\" field)"
+          },
+          {
+            "claim": "The one-shot guarantee is enforced only by a read-then-act check. Two concurrent reports with different outcomes can both read the record as non-terminal and both call CompleteClaim. The loser then hits CompleteClaim's own terminal-replay-under-same-claim path, which the doc comment says returns the committed record as a successful replay. Report returns it with nil error. So a differing second report is told it was recorded, which is exactly the behaviour the admission path claims to prevent.",
+            "missing_context": "Whether CompleteClaim's terminal replay compares outcome/error code or only version+claim, and whether ApplyAction CAS makes the loser error instead of replay.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "medium",
+            "symbol": "function:*AdmissionService.Report",
+            "witness": "if current.State.terminal() { ... ErrAdmissionSpent ... } record, err := dispatch.CompleteClaim(ctx, CompletionRequest{...}) if err == nil { return record, nil }"
+          },
+          {
+            "claim": "An admission grant is an ordinary claimed dispatch action whose claim ID is the caller-chosen TokenID. The generic dispatch routes (/api/v1/fleet/actions/{id}/complete, /claim) are separately mounted under the same invoke operation, so the admission holder can operate on it through them. That path skips the admission-only protections: the byte-identical one-shot replay check, the failure-vs-outcome shape checks, and the 'denial carries no token' rule for dispatch-cancelled flows. After lease expiry, dispatch Claim may also re-issue a fresh claim for the action's full declared effects, not the narrower AdmittedEffects. The code comment itself notes nothing constrains which effect set the holder acts on.",
+            "missing_context": "Whether DispatchService.Claim/CompleteClaim/Pull or the fleet HTTP handler exclude records with non-empty AdmittedEffects, and whether Claim re-claims expired-lease claimed records.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "medium",
+            "symbol": "function:admitted",
+            "witness": "record.State = DispatchClaimed; record.ClaimID = append([]byte(nil), request.TokenID...); record.ClaimFence = 1 ... // an admission that declared less has still been handed a claim on an action that declares more"
+          },
+          {
+            "claim": "Outstanding and Report select on State==DispatchClaimed plus principal match and never check that the record is an admission (non-empty AdmittedEffects). Ordinary dispatch worker claims of the same principal are therefore listed with their ClaimID (a fencing credential) exposed as TokenID, and can be completed through /admission/report. This widens the surface a leaked or delegated credential can use to observe or complete worker claims.",
+            "missing_context": "Whether worker claims are ever held under the same subject/actor as admission callers in practice, and whether ClaimID is treated as secret elsewhere.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "low",
+            "symbol": "function:*AdmissionService.Outstanding",
+            "witness": "if record.State != DispatchClaimed { continue } if !sameActionPrincipal(decision, record) { continue } ... TokenID: append([]byte(nil), record.ClaimID...)"
+          }
+        ],
+        "summary": "The admission seam is carefully designed. Single-write grant and deny, the declaration pinned in retry identity, restrictor intersection and principal-bound request IDs all look sound on the evidence given. The most concrete concern is Outstanding returning a raw store cursor across principals, which may leak other callers' action identities. The next two are the one-shot report guarantee depending on a read-then-act check that races with CompleteClaim's own replay semantics, and admission grants being ordinary claimed actions reachable through the generic dispatch routes, which bypass the admission-specific checks and the narrower admitted effect set. All three need source adjudication of the dispatch store and service internals, which the packet does not include.",
+        "unknowns": [
+          "Whether resolveActionBinding enforces the executor effect ceiling as the comments assert; Request relies on it for the admitted-effects bound.",
+          "Whether dispatch.begin rejects a request-context deadline already in the past before admitted() clamps the lease to it.",
+          "Whether CompleteClaim sets EffectPossible for egress-only admissions (Validate requires it for DispatchSucceeded).",
+          "restrictCoOccurrence charges the mosaic budget before commit; if ApplyAction then fails, budget is charged for a grant that never existed (idempotency comment suggests this is benign, but it is not shown).",
+          "The ScanActions cursor format and whether auth.ObjectNotFound() and ErrActionNotFound mapping cover all error shapes from authorizedCurrent."
+        ]
+      },
+      "input_tokens_including_cache": 168157,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 165997,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.4482356,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 5991,
+          "provider": "firstParty",
+          "thinkingTokens": 4020,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 5991,
+      "pr": 399,
+      "prompt_bytes": 337322,
+      "response_sha256": "ce416184b877538a8ef808bdb7f1cc48faf9f7965a85dffef27964a468b6b2c4",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 165997,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 165997,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 165997,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 165997,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 5991,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 5991,
+        "output_tokens_details": {
+          "thinking_tokens": 4020
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 1.3750116,
+      "elapsed_seconds": 53.52860505413264,
+      "findings": {
+        "findings": [
+          {
+            "claim": "Admission's one-shot report rule is enforced only on /api/v1/admission/report. A granted admission is an ordinary DispatchClaimed ActionRecord, and its claim ID is the caller-chosen TokenID. The same principal can therefore likely reach the generic /api/v1/fleet/actions/{id}/complete route, which is also mapped to OperationInvoke. That route uses the dispatch completion path, whose replay behavior Report's own comment says is wrong for admissions: report one outcome, then a different one against the same claim, and be told the second was recorded. Nothing in the change stops the dispatch surface from completing an admission record.",
+            "missing_context": "DispatchService.CompleteClaim and the fleet HTTP complete handler: whether they refuse records with non-empty AdmittedEffects, and exactly how their terminal-replay comparison works.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "medium",
+            "symbol": "function:*AdmissionService.Report",
+            "witness": "admitted(): record.State = DispatchClaimed; record.ClaimID = append([]byte(nil), request.TokenID...). Report comment: 'The dispatch completion path treats a terminal action at the reported version under the same claim as the reporter's own lost response and replays it ... wrong for an admission'. workspaceOperationForRequest still maps '/api/v1/fleet/actions/*/complete' to OperationInvoke."
+          },
+          {
+            "claim": "Cross-principal existence oracle over action/admission IDs. Request calls store.GetAction(request.ID) before checking whether the stored record belongs to the caller. If the ID is used by another principal, equivalentEnqueue fails on Subject, Actor or AuthorizationFingerprint and the caller gets ErrAdmissionConflict, surfaced as 409. An unused ID proceeds to a grant or denial instead. A caller can tell which action IDs exist, which is the disclosure Report goes out of its way to prevent by collapsing absent and foreign into ObjectNotFound.",
+            "missing_context": "Whether action IDs are considered secret. Dispatch Enqueue already has the same ErrActionConflict behavior, so this may be accepted pre-existing posture.",
+            "path": "pkg/explorer/fleet/admission.go",
+            "severity": "low",
+            "symbol": "function:*AdmissionService.Request",
+            "witness": "current, readErr := dispatch.store.GetAction(ctx, request.ID) ... if readErr == nil { return s.replay(...) } -> replay: if !equivalentEnqueue(current, base) { return AdmissionGrant{}, ErrAdmissionConflict }"
+          }
+        ],
+        "summary": "The admission seam fails closed on the main paths: it writes a single record, denials issue no token, replay is pinned to the declaration digest, and restrictor output is intersected so it can only narrow. The main concrete concern is that admission records are ordinary claimed dispatch actions, so the generic fleet /complete route may bypass the admission-specific one-shot report rule. A minor ID-existence oracle exists via ErrAdmissionConflict. Several omitted bodies (boundAdmission Report/Outstanding, CompleteClaim, Claim re-lease semantics) limit adjudication.",
+        "unknowns": [
+          "The bodies of boundAdmission.Report, boundAdmission.Outstanding and requestContext are omitted. It is unknown whether report and outstanding requests are bound to the resolved decision the way Request is.",
+          "Unknown whether dispatch Claim can re-claim a DispatchClaimed admission whose lease has expired. If it can, another worker under the same principal could take over an abandoned admission, and the in-process Invoke path could execute it with the bound executor.",
+          "MaxAdmissionDisclosures = MaxActionEvidence; the value of MaxActionEvidence is not supplied. If it exceeds MaxRestrictedReferences (256), large declarations fail with InvalidArgument. That fails closed, but the bounds are inconsistent.",
+          "Without a wired restrictor, obligations stage 1 authorizes arbitrary ObjectIDs against the request's own SourceID/PolicyID, so documents from other sources pass. The hosted openService wires client as the restrictor; other embedders are unverified.",
+          "The workspace route table gates all admission routes on OperationInvoke only. It is unknown whether workspace settings that restrict retrieve are expected to constrain admission egress.",
+          "In the grant path the co-occurrence budget is charged in obligations() before commit. If commit fails, the budget stays charged with no grant. Impact depends on ledger semantics."
+        ]
+      },
+      "input_tokens_including_cache": 160954,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 158794,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.3750116,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 5211,
+          "provider": "firstParty",
+          "thinkingTokens": 3660,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 5211,
+      "pr": 399,
+      "prompt_bytes": 323644,
+      "response_sha256": "fc90abb69acd64862b15a5d14b5b72a212e2d88337dec767dc85fb123dede0e0",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 158794,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 158794,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 158794,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 158794,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 5211,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 5211,
+        "output_tokens_details": {
+          "thinking_tokens": 3660
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.0666596,
+      "elapsed_seconds": 14.628326840233058,
+      "findings": {
+        "findings": [],
+        "summary": "The change adds dict and zstd options to the Parquet struct tags on Cell, and adds a compression-ratio round-trip test plus an fmt import. The supplied evidence shows no concrete authorization, identity-isolation, tenant/object-access, capability or fail-closed defect. The key-component encoding stays binary, and the existing round-trip test still covers a non-empty CV and the Deleted flag. Two possible disclosure paths are listed as unknowns rather than findings because the evidence can't confirm them: dictionary pages holding values from cells of mixed visibility, and compression-size side channels. Both depend on missing context about how Parquet files are consumed, who can see them, and where visibility filtering is enforced.",
+        "unknowns": [
+          "Whether Parquet files produced by Encode ever hold cells with different column visibilities, and whether visibility filtering happens only after full Decode. With dictionary encoding on the value, row, cf and cq columns, each row group's dictionary page stores the distinct byte values of every cell in that group. Any consumer that reads dictionary pages, statistics or page indexes without applying the per-cell CV check could see restricted values. No such consumer is in the supplied evidence.",
+          "Whether encoded or compressed Parquet sizes can be seen by a principal who also controls some cell contents in the same file. If so, ZSTD and dictionary compression could open a CRIME-style size side channel on co-located restricted values. Neither the observability nor attacker influence is shown in the packet.",
+          "Whether Decode ever handles untrusted or externally supplied Parquet bytes. If it does, ZSTD pages and large dictionary pages raise decompression-bomb and memory-exhaustion questions, which depend on the Parquet library's limits. Neither those limits nor Decode's callers are supplied.",
+          "The Encode and Decode implementations, the Parquet library version, and how the parquet tag options (dict, zstd) are read are not included, so the effect on round-trip fidelity of Key fields, including CV and Deleted, can't be checked beyond the tests.",
+          "The new compression test uses only an empty ColumnVisibility. Round-tripping of non-empty CV values under dictionary encoding is covered only by the single-cell test (CV \"private\"), not by any case mixing several visibilities in one file."
+        ]
+      },
+      "input_tokens_including_cache": 7500,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 5340,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.0666596,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1175,
+          "provider": "firstParty",
+          "thinkingTokens": 375,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1175,
+      "pr": 361,
+      "prompt_bytes": 8361,
+      "response_sha256": "22f05482a554d0d9c778a4f2f254edfc5885717c23308fb92ff84cc374080d8b",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 5340,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 5340,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 5340,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 5340,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1175,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1175,
+        "output_tokens_details": {
+          "thinking_tokens": 375
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.0534356,
+      "elapsed_seconds": 11.987752431072295,
+      "findings": {
+        "findings": [],
+        "summary": "The change only adds dictionary-encoding and ZSTD-compression tags to the Parquet Cell struct fields, and adds or adjusts tests. The supplied code touches no authorization, identity, tenant or object access, capability checks, or fail-closed logic. Column visibility (cv) is still stored verbatim and round-trips, as the existing test checks. The change removes no visibility enforcement, and none is visible in the evidence. Possible disclosure through dictionary pages or compression-size side channels would depend on deployment context that is not supplied, so it is listed as unknown rather than reported as a finding.",
+        "unknowns": [
+          "Where Encode output is used: whether Parquet files built from Cell are handed to principals who should see only some visibilities. With dict encoding, the per-column-chunk dictionary pages for cv and value hold every distinct value in the chunk, independent of any later per-row filtering. Nothing supplied shows such partial exposure, so this is not reported.",
+          "Whether an attacker can control some cells and observe the compressed file or page sizes while those cells share a column chunk with secret cells. ZSTD plus dictionary encoding adds a compression-ratio side channel only in that setting, and nothing supplied shows it.",
+          "Whether any consumer enforces Accumulo ColumnVisibility on decoded Parquet cells. Decode and its callers are not shown, and the Decode shown in the test returns all cells without authorization filtering.",
+          "The content of the omitted TestEncodeCompressesRepeatedCells, and whether the new fmt import is used only there.",
+          "Whether the parquet library version supports the dict and zstd tags, and whether it rejects unknown tags or silently ignores them. This affects correctness and round-trip fidelity, not authorization.",
+          "Compatibility with Parquet files written before this change. Old files lack dictionary pages. Whether readers accept both encodings is not shown."
+        ]
+      },
+      "input_tokens_including_cache": 6397,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 4237,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.0534356,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 955,
+          "provider": "firstParty",
+          "thinkingTokens": 317,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 955,
+      "pr": 361,
+      "prompt_bytes": 6473,
+      "response_sha256": "853258d08d0b8720e6f3825d5db4445a9d902163df927cf89bc63dc47ab2c7af",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 4237,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 4237,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 4237,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 4237,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 955,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 955,
+        "output_tokens_details": {
+          "thinking_tokens": 317
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.0335316,
+      "elapsed_seconds": 7.082776887807995,
+      "findings": {
+        "findings": [],
+        "summary": "This change touches only README.md. It renames the example row prefixes (event:/entity:/knowledge: → evt:/ent:) and adds a paragraph documenting that ShoalQL's default graph catalog exposes only evt:- and ent:-prefixed rows from the physical table chosen by shoal-sql -table. No executable code, authorization logic, identity handling, tenant/object access checks, or capability grants change, so no concrete authorization, isolation, disclosure, or fail-closed defect can be attributed to this diff. The new text describes prefix filtering as a data-model/visibility convention, not a security boundary. Whether code treats it as a boundary is unknown from the supplied evidence.",
+        "unknowns": [
+          "Whether ShoalQL's prefix-based mapping of logical tables (evt: → events, ent: → entities) is used anywhere as an access-control or isolation boundary. If it is, rows written under other prefixes via shoal-embed write could bypass or escape logical-table policies. The patch contains no code for this mapping, catalog, or policy enforcement, so it cannot be assessed.",
+          "Whether the old documented prefixes (entity:, event:, knowledge:) are still honored anywhere in code. If some other component still relies on them, the docs may diverge from runtime behavior. The code is not supplied.",
+          "Whether shoal-embed serve (gRPC on --port 9876) enforces any authentication or authorization for writes with arbitrary row keys. This is unchanged context, not introduced by this patch."
+        ]
+      },
+      "input_tokens_including_cache": 5009,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 2849,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.0335316,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 515,
+          "provider": "firstParty",
+          "thinkingTokens": 0,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 515,
+      "pr": 360,
+      "prompt_bytes": 4610,
+      "response_sha256": "8562125faa324c685229f6894fccac7244752f4ef9c1ec4d77d13e4ec469db97",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 2849,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 2849,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 2849,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 2849,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 515,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 515,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.0085094,
+      "elapsed_seconds": 5.781349405646324,
+      "findings": {
+        "findings": [],
+        "summary": "This change touches only README.md. It updates example row prefixes from `event:`/`entity:`/`knowledge:` to `evt:`/`ent:` and adds prose describing how ShoalQL maps prefixes to its logical tables. No executable code changes, so the diff introduces no concrete authorization, isolation, disclosure, capability, or fail-closed defect. The documented behavior could not be checked against the implementation.",
+        "unknowns": [
+          "Whether ShoalQL's default graph catalog actually filters strictly to the `evt:`/`ent:` prefixes. The README asserts this, but no catalog or query code is included in the packet.",
+          "The README says both logical tables use the same physical table selected by `-table`. Whether access controls (visibility labels, authorizations) are applied per logical table or per physical table is not shown. Rows written under other prefixes stay reachable by embedded scans; whether any authorization boundary relies on prefix separation is unknown.",
+          "Whether the `shoal-embed serve` gRPC API authenticates or authorizes external consumers is unknown. This change does not modify it."
+        ]
+      },
+      "input_tokens_including_cache": 5009,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 0,
+          "cacheReadInputTokens": 5007,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.0085094,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 375,
+          "provider": "firstParty",
+          "thinkingTokens": 0,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 375,
+      "pr": 360,
+      "prompt_bytes": 4610,
+      "response_sha256": "2ca4c9a85e2bb05da83587039ce43e5dda459e1453a21f27232cf66d8f276523",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 0,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 0,
+        "cache_read_input_tokens": 5007,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 0,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 0,
+            "cache_read_input_tokens": 5007,
+            "input_tokens": 2,
+            "output_tokens": 375,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 375,
+        "output_tokens_details": {
+          "thinking_tokens": 0
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.6379395999999999,
+      "elapsed_seconds": 55.23409041110426,
+      "findings": {
+        "findings": [],
+        "summary": "The change adds an embedded OS-lock plus durable-manifest authority, with monotonic generation fencing, and gates the shown engine mutation paths on the in-process lease. I found no concrete authorization, isolation, disclosure or fail-closed defect in the supplied code:\n- Mutating engine methods check authority under `e.mu`, and ImportRFileManifest rechecks after its unlocked verification phase.\n- Validate requires full token equality with the active lease.\n- Acquire, Release and AdvanceEpoch fail closed on manifest mismatch or corruption and release the OS lock on the error paths.\n- Watch events are scoped by resource.\n- Close releases authority only after the tables are closed.\nRemaining risk depends on unseen code: ungated mutation paths, dirlock semantics, manifest write atomicity, and path layout on a shared backend. These are listed as unknowns, not findings.",
+        "unknowns": [
+          "Whether `internal/engine` has other mutating entry points not in this packet (for example DeleteTable, bulk import, split/merge, background auto-flush or compaction goroutines, WAL replay after Open) that bypass `requireAuthorityLocked`. Only Write, ConditionalWrite, CreateTable, Flush, Compact, Migrate/SetTable*, Export* and Import are shown to be gated.",
+          "How `dirlock.Acquire` is implemented. With flock, exclusion across two in-process coordinators on the same directory is correct. With fcntl/POSIX record locks, a second in-process acquire could succeed, and closing any descriptor to the lock file would silently drop the live lease. `TestEngineEmbeddedAuthorityFencesConcurrentAndStaleProcesses` implies in-process exclusion works, but the implementation is not supplied.",
+          "Whether `storage.WriteAll` with `local.New()` replaces the manifest atomically (temp file, fsync, rename). If it does not, a crash mid-write leaves a torn manifest. Acquire then fails closed (`readEmbeddedManifest` rejects it), which is safe but blocks engine open until an operator repairs it.",
+          "`embeddedLease.Renew` checks only in-memory `active`, and `Lost()` closes only on Release or on an AdvanceEpoch that detects manifest divergence. Out-of-band lock-file unlink plus reacquire by another process would go undetected by the first writer. `docs/coordination-authority.md` §5.1 explicitly scopes this out as storage corruption, so it is not reported as a defect.",
+          "When `opts.Backend` is a shared remote backend, the embedded authority fences only the local `dir` (lock and manifest are written with `local.New()`). Whether the table or RFile paths on a shared backend can be reached by an engine rooted at a different local dir depends on path construction (`tableDir`, `exportRelPath`, `publishRFile`), which is not shown.",
+          "`validateImportedTableName` and CreateTable name validation are not shown. It is unknown whether table names colliding with `.shoal-authority.lock` or `.shoal-authority.json` are rejected. From the shown code a collision would only cause MkdirAll or createTable to fail, not overwrite authority state.",
+          "`tbl.compact`, `tbl.write`, `tbl.flush` and `publishRFile` now run while `e.mu.RLock` is held. Whether any of them re-enters `e.mu` (which would deadlock) is not visible."
+        ]
+      },
+      "input_tokens_including_cache": 68795,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 66635,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.6379395999999999,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 5221,
+          "provider": "firstParty",
+          "thinkingTokens": 4050,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 5221,
+      "pr": 357,
+      "prompt_bytes": 130099,
+      "response_sha256": "58ef35777aa919502cfcdb108d9edc8924767e21d86f3d0d07bab5af755296fa",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 66635,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 66635,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 66635,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 66635,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 5221,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 5221,
+        "output_tokens_details": {
+          "thinking_tokens": 4050
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.5565036,
+      "elapsed_seconds": 40.43382157571614,
+      "findings": {
+        "findings": [],
+        "summary": "The change adds an embedded OS-lock plus manifest-generation authority, and gates engine mutation, import, and export paths on the lease. The supplied code fails closed: acquisition rejects a mismatched domain or resource, zero fences, and exhausted generations. Validate uses exact token equality against the active in-process lease. Close marks the engine closed and releases authority, so later mutations return ErrLeaseLost. Import rechecks authority under the exclusive lock before any side effects. No concrete authorization, isolation, disclosure, or fail-closed defect is demonstrable from the supplied evidence. The remaining risks depend on omitted implementations (dirlock, manifest I/O, Release, AdvanceEpoch, Watch) and on the documented choice not to re-validate the manifest on each mutation.",
+        "unknowns": [
+          "dirlock.Acquire semantics are not supplied. If it uses POSIX fcntl locks rather than flock/OFD locks, two coordinators in the same process would not conflict, and the in-process exclusion that TestEngineEmbeddedAuthorityFencesConcurrentAndStaleProcesses relies on would depend on that detail. Behavior on NFS or PVC filesystems is also unknown.",
+          "embeddedLease.Release, AdvanceEpoch, and Lost are omitted. loseLocked mutates coordinator.current and calls publishLocked, so it needs the coordinator mutex held. Whether Release and AdvanceEpoch acquire c.mu and l.mu in a consistent order cannot be verified.",
+          "readEmbeddedManifest and writeEmbeddedManifest are omitted. It is unknown whether the manifest write is atomic and fsynced (temp file, rename, directory sync), what file permissions are used, and whether symlinks at the manifest or lock path are rejected. Generation monotonicity across crashes depends on these.",
+          "embeddedLease.Renew and Engine.requireAuthorityLocked check only in-memory state and never re-read the manifest. Out-of-band manifest supersession or lock-file removal is therefore not detected on mutations. docs/coordination-authority.md section 5.1 states this is intended and treats it as storage corruption; whether that assumption holds in deployment is unknown.",
+          "EmbeddedCoordinator.Watch is omitted, so watcher registration, resource scoping at subscribe time, and cleanup cannot be checked beyond publishLocked's resource filter.",
+          "Scan and read paths are not in the packet. It is unknown whether they are gated after Close or authority loss. The changed code gates only mutation, flush, compaction, import, export, and configuration paths.",
+          "Several paths now hold e.mu.RLock across long table operations: Write, Compact, Flush, MigrateTableStorageFormat, ConditionalWrite, and ExportRFiles via Flush. If any callee (for example publishRFile or auto-flush) re-acquires e.mu.RLock while a writer is queued, Go's RWMutex would deadlock. The callees are not supplied.",
+          "table.close is omitted. Engine.Close releases authority even when table close fails. Whether a failed close can leave WAL or file handles live while a second process acquires authority is unknown.",
+          "CreateTable does not validate the table name in the supplied code, which is pre-existing behavior. Whether a name can target coordinator-owned paths (.shoal-authority.*) or escape e.dir depends on context not provided."
+        ]
+      },
+      "input_tokens_including_cache": 62438,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 60278,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.5565036,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3692,
+          "provider": "firstParty",
+          "thinkingTokens": 2534,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 3692,
+      "pr": 357,
+      "prompt_bytes": 118073,
+      "response_sha256": "3f7a55cacbc5edad2271f42dfc98f3c6045da887e8a463071a303b0f53f3dde0",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 60278,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 60278,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 60278,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 60278,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 3692,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 3692,
+        "output_tokens_details": {
+          "thinking_tokens": 2534
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    }
+  ],
+  "totals": {
+    "candidate": {
+      "cost_usd": 1.9934602,
+      "elapsed_seconds": 111.7315284665674,
+      "input_tokens_including_cache": 234798,
+      "output_tokens": 10233,
+      "prompt_bytes": 452800
+    },
+    "full": {
+      "cost_usd": 2.1863664,
+      "elapsed_seconds": 140.7530531459488,
+      "input_tokens_including_cache": 249461,
+      "output_tokens": 12902,
+      "prompt_bytes": 480392
+    }
+  }
+}

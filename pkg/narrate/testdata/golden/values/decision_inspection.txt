@@ -1,0 +1,263 @@
+== decision.eligibility reason=coverage_unsatisfied
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.coverage_unsatisfied
+  1 subject is held because a required coverage measurement is missing, unknown or insufficient: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=coverage_unsatisfied
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.coverage_unsatisfied
+  1 subject is held because a required coverage measurement is missing, unknown or insufficient: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=evidence_truncated
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.evidence_truncated
+  1 subject is held because the evidence was truncated: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=evidence_truncated
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.evidence_truncated
+  1 subject is held because the evidence was truncated: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=prediction_abstained
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.prediction_abstained
+  1 subject is held because the predictor abstained: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=prediction_abstained
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.prediction_abstained
+  1 subject is held because the predictor abstained: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=prediction_failed
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.prediction_failed
+  1 subject is held because the prediction failed: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=prediction_failed
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.prediction_failed
+  1 subject is held because the prediction failed: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=source_attestation_missing
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.source_attestation_missing
+  1 subject is held because a source lacks the attestation reference the evidence policy requires: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=source_attestation_missing
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.source_attestation_missing
+  1 subject is held because a source lacks the attestation reference the evidence policy requires: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=source_authority_rejected
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.source_authority_rejected
+  1 subject is held because a source’s authority policy is not one the evidence policy allows: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=source_authority_rejected
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.source_authority_rejected
+  1 subject is held because a source’s authority policy is not one the evidence policy allows: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=source_control_rejected
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.source_control_rejected
+  1 subject is held because a source is controlled in a way the evidence policy does not allow: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=source_control_rejected
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.source_control_rejected
+  1 subject is held because a source is controlled in a way the evidence policy does not allow: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=source_role_rejected
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.source_role_rejected
+  1 subject is held because a source has a role the evidence policy does not allow: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=source_role_rejected
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.source_role_rejected
+  1 subject is held because a source has a role the evidence policy does not allow: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=source_stale
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.source_stale
+  1 subject is held because a source observation is older than the evidence policy allows: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=source_stale
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.source_stale
+  1 subject is held because a source observation is older than the evidence policy allows: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=subject_not_evaluated
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.subject_not_evaluated
+  1 subject is held because the prediction did not evaluate the subject: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=subject_not_evaluated
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.subject_not_evaluated
+  1 subject is held because the prediction did not evaluate the subject: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1
+
+== decision.eligibility reason=subject_unsupported
+outcome decision.eligibility.outcome
+  1 of 2 subjects may be scored under the task’s evidence policy.
+  record=inspection:i-1
+reason decision.inspection.subject_unsupported
+  1 subject is held because the subject has no supported evidence: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=inspection:i-1
+
+== decision.ranking reason=subject_unsupported
+outcome decision.ranking.outcome
+  1 of 2 subjects were scored; 1 is held for ordinary inspection and listed first.
+  record=inspection:i-1
+reason decision.inspection.subject_unsupported
+  1 subject is held because the subject has no supported evidence: subject2.
+  record=inspection:i-1 subject=subject2
+  identifiers subject2
+next decision.ranking.next
+  Priority orders inspection only; no score, threshold or position permits excluding a subject.
+  record=inspection:i-1

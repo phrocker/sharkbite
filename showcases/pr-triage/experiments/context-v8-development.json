@@ -1,0 +1,26 @@
+{
+  "status": "development_only_all_previous_evaluation_retired",
+  "purpose": "Compare supervised classifiers on code alone versus partial same-package caller/callee context;98% OOF selection target adds research margin, not approved exclusion budget.",
+  "datasets": [
+    {
+      "manifest": "showcases/pr-triage/runs/pilot-v1/manifest.json",
+      "assessment": "showcases/pr-triage/runs/candidates-v2/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/validation-v2/manifest.json",
+      "assessment": "showcases/pr-triage/runs/validation-v2/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/reserved-v3/sampled-manifest.json",
+      "assessment": "showcases/pr-triage/runs/reserved-v3/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/reserved-v5/sampled-manifest.json",
+      "assessment": "showcases/pr-triage/runs/reserved-v5/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/live-v6/manifest.json",
+      "assessment": "showcases/pr-triage/runs/live-v6/frontier.json"
+    }
+  ]
+}

@@ -1,0 +1,153 @@
+{
+  "base": "13e05c74d5984abc6d7e5993cbf3edbe1bc06da9",
+  "diff": "diff --git a/internal/disclosureconformance/conformance.go b/internal/disclosureconformance/conformance.go\nindex 986ac6c..b6a4063 100644\n--- a/internal/disclosureconformance/conformance.go\n+++ b/internal/disclosureconformance/conformance.go\n@@ -30,10 +30,36 @@\n //\n // The suite is deliberately usable in both directions. A surface that\n // deliberately discloses withholding declares itself Distinguishable, which\n // pins the accepted trade so that changing it silently fails the suite rather\n // than passing unnoticed.\n+//\n+// # Timing\n+//\n+// There is no latency assertion here, and that is a conclusion rather than an\n+// omission. Measured over 200 runs per probe against the fixture corpus, a\n+// term whose matches are withheld and a term that matches nothing take\n+// indistinguishable time: roughly 110µs and 118µs, with the absent term\n+// marginally slower, which is noise. A term that returns a result takes about\n+// 60% longer, and that discloses nothing, because the caller receives the\n+// result anyway.\n+//\n+// The reason is the same one that makes the responses identical. Documents an\n+// identity may not read leave the candidate set before scoring, so the\n+// withheld path does not do more work than a plain miss. It does the same\n+// work. A timing gate here would assert the absence of a mechanism that does\n+// not exist, and would buy that with the flakiest kind of test.\n+//\n+// This stops being true if withholding ever moves later in the pipeline, to\n+// scoring hidden candidates and filtering them afterward rather than excluding\n+// them up front. That change would not be caught here: filtering after scoring\n+// can produce byte-identical responses while doing strictly more work on the\n+// withheld path, which is a timing distinction with no response distinction.\n+//\n+// So the condition is explicit rather than delegated. Anyone moving where\n+// candidates are filtered has to re-measure timing, because no test in this\n+// package will notice.\n package disclosureconformance\n \n import (\n \t\"bytes\"\n \t\"encoding/json\"\ndiff --git a/internal/disclosureconformance/fixture.go b/internal/disclosureconformance/fixture.go\nindex d7305a3..8896430 100644\n--- a/internal/disclosureconformance/fixture.go\n+++ b/internal/disclosureconformance/fixture.go\n@@ -26,10 +26,11 @@ import (\n \t\"time\"\n \n \t\"github.com/phrocker/shoal-oss/pkg/explorer\"\n \t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n \t\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\"\n+\t\"github.com/phrocker/shoal-oss/pkg/graph\"\n \t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n )\n \n // Terms a probe can ask about. They are chosen so each appears in exactly one\n // place, which is what makes a comparison meaningful.\n@@ -55,14 +56,24 @@ type Corpus struct {\n \t// decision bound into the context, not by which client is used.\n \tClient *authorized.Client\n \n \tauthority *auth.Authority\n \tclock     func() time.Time\n-\tsourceA   []byte\n-\tpolicyA   []byte\n-\tsourceB   []byte\n-\tpolicyB   []byte\n+\t// restricted names a real node in the compartment the uncleared principal\n+\t// cannot read. Probing it is the point: the interesting question is\n+\t// whether asking about something real-but-forbidden looks different from\n+\t// asking about something that was never there.\n+\trestricted shoal.ID\n+\t// open names a node every principal may read. A path probe needs it as the\n+\t// source, because a request whose source is forbidden is rejected at seed\n+\t// authorization before target resolution runs, and would only re-test the\n+\t// neighborhood negative path.\n+\topen    shoal.ID\n+\tsourceA []byte\n+\tpolicyA []byte\n+\tsourceB []byte\n+\tpolicyB []byte\n }\n \n type fixtureGenerations struct {\n \tmu          sync.RWMutex\n \tgenerations map[string]int64\n@@ -112,23 +123,37 @@ func NewCorpus(t *testing.T) *Corpus {\n \topen := corpus.newClient(t, base, store, generations, corpus.sourceA, corpus.policyA)\n \trestricted := corpus.newClient(t, base, store, generations, corpus.sourceB, corpus.policyB)\n \tcorpus.Client = open\n \n \tadmin := corpus.Cleared(t)\n-\tif _, err := open.Ingest(admin, explorer.Source{\n+\tvisible, err := open.Ingest(admin, explorer.Source{\n \t\tURI: \"file:///open.txt\", Title: \"Open\", MediaType: explorer.MediaTypeText,\n \t\tContent: \"the \" + OpenTerm + \" bed is shallow\",\n-\t}); err != nil {\n+\t})\n+\tif err != nil {\n \t\tt.Fatalf(\"ingest open document: %v\", err)\n \t}\n-\tif _, err := restricted.Ingest(admin, explorer.Source{\n+\tcorpus.open = visible.Document.ID\n+\thidden, err := restricted.Ingest(admin, explorer.Source{\n \t\tURI: \"file:///restricted.txt\", Title: \"Restricted\",\n \t\tMediaType: explorer.MediaTypeText,\n \t\tContent:   \"project \" + RestrictedTerm + \" ships in spring\",\n-\t}); err != nil {\n+\t})\n+\tif err != nil {\n \t\tt.Fatalf(\"ingest restricted document: %v\", err)\n \t}\n+\tcorpus.restricted = hidden.Document.ID\n+\t// A directed edge from the readable document to the restricted one, so a\n+\t// path probe can hold the source constant and vary only the target. The\n+\t// cleared principal can resolve this path; the uncleared one must not be\n+\t// able to distinguish it from a path to a node that does not exist.\n+\tif err := open.Connect(admin, graph.Edge{\n+\t\tID: \"edge_disclosure_probe\", From: corpus.open, To: corpus.restricted,\n+\t\tType: \"references\", Weight: 1,\n+\t}); err != nil {\n+\t\tt.Fatalf(\"connect the probe edge: %v\", err)\n+\t}\n \treturn corpus\n }\n \n func (c *Corpus) newClient(\n \tt *testing.T,\n@@ -161,10 +186,24 @@ func (c *Corpus) newClient(\n \t\tt.Fatal(err)\n \t}\n \treturn client\n }\n \n+// OpenNodeID is a node every principal may read. Path probes use it as the\n+// source so that only the target varies.\n+func (c *Corpus) OpenNodeID() shoal.ID { return c.open }\n+\n+// RestrictedNodeID is a node that exists in the corpus and that the uncleared\n+// principal holds no grant for.\n+func (c *Corpus) RestrictedNodeID() shoal.ID { return c.restricted }\n+\n+// AbsentNodeID is well-formed and names nothing. It is the control for every\n+// probe about the restricted node.\n+func (c *Corpus) AbsentNodeID() shoal.ID {\n+\treturn shoal.ID(\"doc_00000000000000000000000000000000\")\n+}\n+\n // Clock is the fixture's clock, for a service that must agree with it.\n func (c *Corpus) Clock() func() time.Time { return c.clock }\n \n // Resolver returns the fixture's trusted decision resolver, for a service that\n // binds its own authorization rather than taking a context alone.\ndiff --git a/internal/disclosureconformance/graph_test.go b/internal/disclosureconformance/graph_test.go\nnew file mode 100644\nindex 0000000..d4657c9\n--- /dev/null\n+++ b/internal/disclosureconformance/graph_test.go\n@@ -0,0 +1,101 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package disclosureconformance\n+\n+import (\n+\t\"context\"\n+\t\"testing\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// graphOutcome is everything a caller observes from one traversal: the result\n+// if it succeeded, and the error class and message if it did not. An error\n+// that names why a node could not be expanded is as much a response as a\n+// neighborhood is.\n+type graphOutcome struct {\n+\tNeighborhood explorer.Neighborhood `json:\"neighborhood\"`\n+\tErrorCode    shoal.ErrorCode       `json:\"error_code,omitempty\"`\n+\tErrorText    string                `json:\"error_text,omitempty\"`\n+}\n+\n+func neighborhoodOf(\n+\tt *testing.T, corpus *Corpus, ctx context.Context, node shoal.ID,\n+) graphOutcome {\n+\tt.Helper()\n+\tresult, err := corpus.Client.Neighborhood(ctx, explorer.NeighborhoodRequest{\n+\t\tNodeIDs: []shoal.ID{node}, Depth: 2,\n+\t})\n+\tif err != nil {\n+\t\tcode := shoal.ErrorCode(\"\")\n+\t\tfor _, candidate := range []shoal.ErrorCode{\n+\t\t\tshoal.ErrorNotFound, shoal.ErrorUnauthorized,\n+\t\t\tshoal.ErrorInvalidArgument, shoal.ErrorInternal,\n+\t\t} {\n+\t\t\tif shoal.IsErrorCode(err, candidate) {\n+\t\t\t\tcode = candidate\n+\t\t\t\tbreak\n+\t\t\t}\n+\t\t}\n+\t\treturn graphOutcome{ErrorCode: code, ErrorText: err.Error()}\n+\t}\n+\treturn graphOutcome{Neighborhood: result}\n+}\n+\n+// TestNeighborhoodIsUniformForWithheldAndAbsent closes the graph half of the\n+// disclosure question. Unlike the withholding counts, which are computed over\n+// the whole corpus and are therefore identical for every request by\n+// construction, traversal runs per request against a caller-supplied node. If\n+// a per-request oracle existed anywhere it would be here: expanding a node\n+// that exists and is forbidden could plausibly differ from expanding one that\n+// was never there.\n+//\n+// It does not. Both are refused identically.\n+func TestNeighborhoodIsUniformForWithheldAndAbsent(t *testing.T) {\n+\tcorpus := NewCorpus(t)\n+\tctx := corpus.Uncleared(t)\n+\tRun(t, Probe{\n+\t\tName:     \"neighborhood/withheld-vs-absent\",\n+\t\tWithheld: neighborhoodOf(t, corpus, ctx, corpus.RestrictedNodeID()),\n+\t\tControl:  neighborhoodOf(t, corpus, ctx, corpus.AbsentNodeID()),\n+\t})\n+}\n+\n+// TestClearedPrincipalCanExpandTheRestrictedNode guards the probe above. If\n+// the restricted node were unreachable for everyone, or the fixture's node ID\n+// were wrong, the uniformity test would pass while comparing two failures that\n+// have nothing to do with authorization.\n+func TestClearedPrincipalCanExpandTheRestrictedNode(t *testing.T) {\n+\tcorpus := NewCorpus(t)\n+\tcleared := neighborhoodOf(\n+\t\tt, corpus, corpus.Cleared(t), corpus.RestrictedNodeID())\n+\tif cleared.ErrorText != \"\" {\n+\t\tt.Fatalf(\"the cleared principal must expand it: %s\", cleared.ErrorText)\n+\t}\n+\tif len(cleared.Neighborhood.Nodes) == 0 {\n+\t\tt.Fatal(\"the restricted node must have a neighborhood to withhold\")\n+\t}\n+\tuncleared := neighborhoodOf(\n+\t\tt, corpus, corpus.Uncleared(t), corpus.RestrictedNodeID())\n+\tif uncleared.ErrorText == \"\" {\n+\t\tt.Fatal(\"the uncleared principal must not expand it\")\n+\t}\n+}\ndiff --git a/pkg/explorer/webapi/disclosure_graph_test.go b/pkg/explorer/webapi/disclosure_graph_test.go\nnew file mode 100644\nindex 0000000..aed732c\n--- /dev/null\n+++ b/pkg/explorer/webapi/disclosure_graph_test.go\n@@ -0,0 +1,162 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package webapi\n+\n+import (\n+\t\"context\"\n+\t\"testing\"\n+\n+\t\"github.com/phrocker/shoal-oss/internal/disclosureconformance\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// graphOutcome is what a caller observes from one traversal on the deployed\n+// surface: the response if it succeeded, the error class and text if not.\n+type graphOutcome struct {\n+\tNeighborhood *NeighborhoodResponse `json:\"neighborhood,omitempty\"`\n+\tPath         *PathResponse         `json:\"path,omitempty\"`\n+\tErrorCode    shoal.ErrorCode       `json:\"error_code,omitempty\"`\n+\tErrorText    string                `json:\"error_text,omitempty\"`\n+}\n+\n+func graphError(err error) graphOutcome {\n+\tcode := shoal.ErrorCode(\"\")\n+\tfor _, candidate := range []shoal.ErrorCode{\n+\t\tshoal.ErrorNotFound, shoal.ErrorUnauthorized,\n+\t\tshoal.ErrorInvalidArgument, shoal.ErrorInternal,\n+\t} {\n+\t\tif shoal.IsErrorCode(err, candidate) {\n+\t\t\tcode = candidate\n+\t\t\tbreak\n+\t\t}\n+\t}\n+\treturn graphOutcome{ErrorCode: code, ErrorText: err.Error()}\n+}\n+\n+func servedNeighborhood(\n+\tt *testing.T, service *EmbeddedService, ctx context.Context, node shoal.ID,\n+) graphOutcome {\n+\tt.Helper()\n+\tresponse, err := service.Neighborhood(ctx, NeighborhoodRequest{\n+\t\tNodeIDs: []shoal.ID{node}, Depth: 2,\n+\t})\n+\tif err != nil {\n+\t\treturn graphError(err)\n+\t}\n+\treturn graphOutcome{Neighborhood: &response}\n+}\n+\n+func servedPath(\n+\tt *testing.T, service *EmbeddedService, ctx context.Context,\n+\tfrom, to shoal.ID,\n+) graphOutcome {\n+\tt.Helper()\n+\tresponse, err := service.Path(ctx, PathRequest{\n+\t\tFrom: from, To: to, MaxDepth: 3,\n+\t})\n+\tif err != nil {\n+\t\treturn graphError(err)\n+\t}\n+\treturn graphOutcome{Path: &response}\n+}\n+\n+// TestServedGraphSurfacesAreUniform probes the surfaces a deployment actually\n+// exposes. The conformance package tests authorized.Client.Neighborhood, but\n+// EmbeddedService.Neighborhood uses BoundedNeighborhood and Path adds its own\n+// target and path resolution on top, so neither was covered by that probe.\n+//\n+// Path matters most here: it takes a target node, so a restricted target is a\n+// second place a caller could learn that something exists.\n+func TestServedGraphSurfacesAreUniform(t *testing.T) {\n+\tcorpus := disclosureconformance.NewCorpus(t)\n+\tservice, err := NewEmbeddedService(corpus.Client)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tctx := corpus.Uncleared(t)\n+\trestricted := corpus.RestrictedNodeID()\n+\tabsent := corpus.AbsentNodeID()\n+\n+\tdisclosureconformance.Run(t,\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:     \"served-neighborhood/withheld-vs-absent\",\n+\t\t\tWithheld: servedNeighborhood(t, service, ctx, restricted),\n+\t\t\tControl:  servedNeighborhood(t, service, ctx, absent),\n+\t\t},\n+\t\t// Only the target varies. Changing the source as well would be\n+\t\t// rejected at seed authorization inside BoundedNeighborhood before\n+\t\t// target resolution runs, which merely repeats the neighborhood\n+\t\t// negative path and cannot catch a target-resolution oracle.\n+\t\tdisclosureconformance.Probe{\n+\t\t\tName:     \"served-path/withheld-target-vs-absent-target\",\n+\t\t\tWithheld: servedPath(t, service, ctx, corpus.OpenNodeID(), restricted),\n+\t\t\tControl:  servedPath(t, service, ctx, corpus.OpenNodeID(), absent),\n+\t\t},\n+\t)\n+}\n+\n+// TestClearedPrincipalReachesTheServedGraph guards the probes above. If the\n+// restricted node were unreachable for everyone, the uniformity assertions\n+// would compare two failures unrelated to authorization and pass for the wrong\n+// reason.\n+func TestClearedPrincipalReachesTheServedGraph(t *testing.T) {\n+\tcorpus := disclosureconformance.NewCorpus(t)\n+\tservice, err := NewEmbeddedService(corpus.Client)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tcleared := servedNeighborhood(\n+\t\tt, service, corpus.Cleared(t), corpus.RestrictedNodeID())\n+\tif cleared.ErrorText != \"\" {\n+\t\tt.Fatalf(\"the cleared principal must expand it: %s\", cleared.ErrorText)\n+\t}\n+\tif cleared.Neighborhood == nil ||\n+\t\tlen(cleared.Neighborhood.Neighborhood.Nodes) == 0 {\n+\t\tt.Fatal(\"the restricted node must have a neighborhood to withhold\")\n+\t}\n+\tuncleared := servedNeighborhood(\n+\t\tt, service, corpus.Uncleared(t), corpus.RestrictedNodeID())\n+\tif uncleared.ErrorText == \"\" {\n+\t\tt.Fatal(\"the uncleared principal must not expand it\")\n+\t}\n+}\n+\n+// TestClearedPrincipalResolvesThePathToTheRestrictedTarget guards the path\n+// probe specifically. Without it, comparing two unresolvable paths would pass\n+// while proving nothing about target resolution: the cleared principal must be\n+// able to resolve the very path the uncleared principal is refused.\n+func TestClearedPrincipalResolvesThePathToTheRestrictedTarget(t *testing.T) {\n+\tcorpus := disclosureconformance.NewCorpus(t)\n+\tservice, err := NewEmbeddedService(corpus.Client)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tcleared := servedPath(t, service, corpus.Cleared(t),\n+\t\tcorpus.OpenNodeID(), corpus.RestrictedNodeID())\n+\tif cleared.ErrorText != \"\" {\n+\t\tt.Fatalf(\"the cleared principal must resolve the path: %s\",\n+\t\t\tcleared.ErrorText)\n+\t}\n+\tif cleared.Path == nil || len(cleared.Path.Path.Nodes) == 0 {\n+\t\tt.Fatalf(\"the fixture must connect the open node to the restricted \"+\n+\t\t\t\"one, or the path probe varies a target that is unreachable \"+\n+\t\t\t\"either way: %#v\", cleared.Path)\n+\t}\n+}\n",
+  "head": "2f73fedcd85a44dcd6349e2a820d52c1c33d9ed4",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 383,
+  "units": [
+    {
+      "id": "e12baf22366cad32ef144d638c27030ee1d31962ac5f3fd34df94716a99c42eb",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/conformance.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "415e86574e7d5c763bb10c92ee6b23c5690e8d4d06a3fccfbd11099cff357cfc",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.AbsentNodeID"
+    },
+    {
+      "id": "8b0b98eecbb1bdf9968b81b2c18803d0e7cb737128d74a370958b660ac7a103b",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.OpenNodeID"
+    },
+    {
+      "id": "c22f7d393a3f3e409be065a4ae1f264b940ff89d6460437546806f5fda8bab38",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:*Corpus.RestrictedNodeID"
+    },
+    {
+      "id": "3b1e1511585b5add2c4beee0e4c270d4b3af007b1d635f495bebdfc5c675c9c7",
+      "kind": "function",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "function:NewCorpus"
+    },
+    {
+      "id": "3cbc4428c2ccb68a79e4f3965bf3351e25a48fe74c767eb85fdf82044bf508d3",
+      "kind": "import",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "import:\"context\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\",\"github.com/phrocker/shoal-oss/pkg/graph\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "4fb02a8e24846bb5d848c0c597b93641ecf769b91e1017ab24c2bc112234213e",
+      "kind": "import",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "import:\"context\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/explorer/authorized\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "5e1f535455091e03d2e0d45105285f8726e2002d6c985fe4dca43ca91874a7da",
+      "kind": "type",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "type:Corpus"
+    },
+    {
+      "id": "fa857fe27147a1cc7d167108d0f2676a7c49bc26fb93c0f9eee569a6ed423e91",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/fixture.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "324c1cf08d2fedd4d91cd26f439e07e8ac61df0e4c4a2e0ba3f00f850648f6ef",
+      "kind": "function",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "function:TestClearedPrincipalCanExpandTheRestrictedNode"
+    },
+    {
+      "id": "521877114618dce0b0009d055a0183970502db47dbe7ebb74ae4ea20d4c37b37",
+      "kind": "function",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "function:TestNeighborhoodIsUniformForWithheldAndAbsent"
+    },
+    {
+      "id": "43ac6cdd055ae1ed6f244cd40bf73e0e93a403fa0ae80fa94dd72f1a4bd072c7",
+      "kind": "function",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "function:neighborhoodOf"
+    },
+    {
+      "id": "f3f4ffb419b8db795ec5eb14e357b31ef849ea738cc866b49bb9cae93f5005e9",
+      "kind": "import",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "import:\"context\",\"testing\",\"github.com/phrocker/shoal-oss/pkg/explorer\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "4675c67f0091441b7db8b782d3d609b9692cb73c76c40e820a1f2d408d736762",
+      "kind": "type",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "type:graphOutcome"
+    },
+    {
+      "id": "b62aeb97301345c2b58c0e679788e2e9c0f5ceff71f1d20c20d9d6ff344decd0",
+      "kind": "file_context",
+      "path": "internal/disclosureconformance/graph_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "01a809474d0a8bf9fd3eef3dae278bf9a41fbc1aba186f302762bc7ccd57da55",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:TestClearedPrincipalReachesTheServedGraph"
+    },
+    {
+      "id": "7482ba1a943392848863860bf52ede97f852e28782a4986d4a561638d2cca2d4",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:TestClearedPrincipalResolvesThePathToTheRestrictedTarget"
+    },
+    {
+      "id": "718e3db3e4ce92545103c74caae3458a3fe8696ced0b7ab4e3f522aec85d2129",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:TestServedGraphSurfacesAreUniform"
+    },
+    {
+      "id": "106855ba2e397d90316038ad5d459a185ebc583c1963af70ece8012c87e87e99",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:graphError"
+    },
+    {
+      "id": "bd7b0cfc68f37c198ce9a3f2d9eee9a61f1263f10f5e4ad02127a1f393968993",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:servedNeighborhood"
+    },
+    {
+      "id": "b6ce398bb0c957eec693477a9b7d5bcfa4e480cb7019627c6674cfb5c0e6f56e",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "function:servedPath"
+    },
+    {
+      "id": "0b915510710accc58819fe661ff28f9f9709c8ea18cbcbf2c8e18ffa9ac738fe",
+      "kind": "import",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "import:\"context\",\"testing\",\"github.com/phrocker/shoal-oss/internal/disclosureconformance\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "1b79607c9beb19302294bd13b8bf025c940b6bfbf20eda62db8a8058959f81d5",
+      "kind": "type",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "type:graphOutcome"
+    },
+    {
+      "id": "6f41477f357cdf5499260d948e2b8ccd801f46dcd7f6a74ba8d0c0e0cf55e672",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/disclosure_graph_test.go",
+      "symbol": "file_context"
+    }
+  ]
+}

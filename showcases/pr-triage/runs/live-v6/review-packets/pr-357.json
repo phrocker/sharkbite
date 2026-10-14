@@ -1,0 +1,573 @@
+{
+  "base": "c7bcaeabb6eb2d4cd06978df09f44a4a844e8311",
+  "diff": "diff --git a/docs/coordination-authority.md b/docs/coordination-authority.md\nindex 7582b73..a8f5bb4 100644\n--- a/docs/coordination-authority.md\n+++ b/docs/coordination-authority.md\n@@ -20,13 +20,12 @@\n -->\n # Coordination authority and quorum model\n \n Status: **accepted architecture direction**, 2026-08-19. Implementation is\n tracked by [#128](https://github.com/phrocker/shoal-oss/issues/128).\n-This document is the release-gated target contract; it does not claim that the\n-current binaries already implement the coordinator adapters, durable fencing,\n-or cutover state machine.\n+This document is the release-gated target contract. The implementation status\n+and remaining release gates are recorded in [section 7](#7-implementation-order).\n \n ## 1. Decision\n \n Shoal uses **one coordination authority for each logical table at any point in\n time**. It does not mirror ownership into two quorum systems and it does not\n@@ -167,11 +166,15 @@ Shoal must not make a coordination service carry data-plane load.\n ### 5.1 Embedded process\n \n The process acquires exclusive OS/PVC ownership before opening a writable\n engine. Every durable manifest replacement increments a generation with atomic\n replacement or backend compare-and-swap. A second process cannot open the same\n-writer domain merely because it can read the files.\n+writer domain merely because it can read the files. The held OS lock is the\n+live lease; the manifest is durable fencing state validated while acquiring or\n+advancing authority, not a second lease polled on every mutation. The lock and\n+manifest paths are coordinator-owned, and out-of-band removal or replacement is\n+storage corruption rather than a handoff mechanism.\n \n ### 5.2 Shoal-only Kubernetes\n \n Use the standard Kubernetes leader-election/Lease protocol. A pod that cannot\n renew before the configured deadline:\n@@ -312,10 +315,45 @@ The dependency order is maintained in issue #128:\n \n Each phase must ship as independently tested slices. A coordinator abstraction\n alone does not satisfy a phase; the loss, restart, partition, and stale-token\n tests are part of the deliverable.\n \n+### Current implementation status\n+\n+- [x] **Phase 0 — architecture contract.** This document is linked from the\n+  architecture, hosting, promotion, and deployment contracts.\n+- [x] **Phase 1 — common vocabulary and embedded fencing.**\n+  `internal/coordination` defines authority, membership, lease, watch, and\n+  validation interfaces; the embedded engine holds an OS/PVC lock and persists\n+  a monotonic manifest generation. The shared conformance suite covers\n+  acquisition, renewal, stale tokens, duplicate release, restart, and epoch\n+  advancement; embedded fault tests additionally cover authority loss.\n+- [x] **Phase 2 — Accumulo authority.** The tserver ServiceLock lifecycle,\n+  compatible descriptors, generation-bound assignment attempts, session-loss\n+  shutdown, and stale-generation rejection are implemented and tested under\n+  `internal/tserver`. Durable work remains in Accumulo metadata, FATE, WALs, and\n+  RFiles rather than ZooKeeper.\n+- [ ] **Phase 3 — Shoal-only Kubernetes coordination.** The Lease adapter,\n+  backend manifest CAS, RBAC, readiness fencing, and restart/partition/skew\n+  tests remain to be implemented. The chart therefore continues to reject\n+  multiple writable write-tier replicas.\n+- [ ] **Phase 4 — fenced authority handoff.** `internal/promotion` persists the\n+  source/destination authority tokens, immutable checkpoint, FATE identity, and\n+  terminal cutover state and reconciles retries. Concrete embedded and Accumulo\n+  authority controllers plus dual-authority and write-loss crash tests remain\n+  release blockers.\n+- [ ] **Phase 5 — operations and release gates.** Accumulo ServiceLock health,\n+  readiness, and safe-drain operations are documented in\n+  `write-tier-operations.md`. Kubernetes Lease diagnostics and the complete\n+  partition, session-loss, rolling-upgrade, and handoff crash matrix remain\n+  release blockers.\n+\n+Issues #69 and #72 are implemented, but Shoal-only multi-writer deployment\n+remains blocked on Phase 3 and promotion remains blocked on Phases 3–5. An\n+unchecked phase above is not an assertion that no code exists; it means at\n+least one required release gate remains open.\n+\n ## 8. Rejected alternatives\n \n ### Mirror every Accumulo lock into Kubernetes\n \n Rejected because two independently available control planes can disagree.\ndiff --git a/internal/coordination/coordination.go b/internal/coordination/coordination.go\nnew file mode 100644\nindex 0000000..8ae8bd6\n--- /dev/null\n+++ b/internal/coordination/coordination.go\n@@ -0,0 +1,114 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+// Package coordination defines the common authority vocabulary used by Shoal\n+// coordination adapters.\n+package coordination\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"fmt\"\n+)\n+\n+type Domain string\n+\n+const (\n+\tDomainEmbedded   Domain = \"embedded\"\n+\tDomainKubernetes Domain = \"kubernetes\"\n+\tDomainAccumulo   Domain = \"accumulo\"\n+)\n+\n+var (\n+\tErrInvalidToken = errors.New(\"coordination: invalid authority token\")\n+\tErrLeaseHeld    = errors.New(\"coordination: lease already held\")\n+\tErrLeaseLost    = errors.New(\"coordination: lease lost\")\n+\tErrStaleToken   = errors.New(\"coordination: stale authority token\")\n+)\n+\n+// AuthorityToken is immutable proof of one authority tenure. Backend-native\n+// proof belongs in LeaseID while Epoch and Generation provide durable fencing.\n+type AuthorityToken struct {\n+\tDomain     Domain `json:\"domain\"`\n+\tResource   string `json:\"resource\"`\n+\tOwner      string `json:\"owner\"`\n+\tLeaseID    string `json:\"lease_id\"`\n+\tEpoch      uint64 `json:\"epoch\"`\n+\tGeneration uint64 `json:\"generation\"`\n+\tAttempt    string `json:\"attempt\"`\n+}\n+\n+func (t AuthorityToken) Validate() error {\n+\tif t.Domain == \"\" || t.Resource == \"\" || t.Owner == \"\" || t.LeaseID == \"\" ||\n+\t\tt.Epoch == 0 || t.Generation == 0 || t.Attempt == \"\" {\n+\t\treturn fmt.Errorf(\"%w: all fields are required\", ErrInvalidToken)\n+\t}\n+\treturn nil\n+}\n+\n+type Member struct {\n+\tID    string\n+\tToken AuthorityToken\n+}\n+\n+type EventKind string\n+\n+const (\n+\tEventAcquired EventKind = \"acquired\"\n+\tEventRenewed  EventKind = \"renewed\"\n+\tEventFenced   EventKind = \"fenced\"\n+\tEventReleased EventKind = \"released\"\n+\tEventLost     EventKind = \"lost\"\n+\t// EventResync indicates that intermediate events were coalesced. Observers\n+\t// must call Members to obtain the current authoritative state.\n+\tEventResync EventKind = \"resync\"\n+)\n+\n+type Event struct {\n+\tKind   EventKind\n+\tMember Member\n+}\n+\n+// Coordinator is the backend-neutral membership, election, and watch surface.\n+type Coordinator interface {\n+\tAcquire(context.Context, string) (Lease, error)\n+\tWatch(context.Context, string) (<-chan Event, error)\n+\tMembers(context.Context, string) ([]Member, error)\n+}\n+\n+// Lease represents one authority tenure. Token returns a value copy; a token\n+// already returned never changes when the lease advances its durable fence.\n+type Lease interface {\n+\tToken() AuthorityToken\n+\tRenew(context.Context) error\n+\tRelease(context.Context) error\n+\tLost() <-chan struct{}\n+}\n+\n+// Validator rejects work stamped by a tenure that is no longer current.\n+type Validator interface {\n+\tValidate(context.Context, AuthorityToken) error\n+}\n+\n+// EpochLease is implemented by coordinators that can durably advance a\n+// logical-table authority epoch without releasing their backend lease.\n+type EpochLease interface {\n+\tLease\n+\tAdvanceEpoch(context.Context, uint64) (AuthorityToken, error)\n+}\ndiff --git a/internal/coordination/coordtest/conformance.go b/internal/coordination/coordtest/conformance.go\nnew file mode 100644\nindex 0000000..a46f921\n--- /dev/null\n+++ b/internal/coordination/coordtest/conformance.go\n@@ -0,0 +1,207 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+// Package coordtest provides the coordinator contract shared by backend\n+// implementations.\n+package coordtest\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/internal/coordination\"\n+)\n+\n+// Factory must return a fresh coordinator connected to the same durable state\n+// on every call.\n+type Factory func(owner string) (coordination.Coordinator, error)\n+\n+// FaultInjector must make lease lose authority without calling Release.\n+type FaultInjector func(\n+\tcontext.Context,\n+\tcoordination.Coordinator,\n+\tcoordination.Lease,\n+) error\n+\n+func Run(t *testing.T, factory Factory, injectFault FaultInjector) {\n+\tt.Helper()\n+\tconst resource = \"table/graph\"\n+\n+\tfirstCoordinator, err := factory(\"owner-a\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\twatchContext, cancelWatch := context.WithCancel(context.Background())\n+\twatch, err := firstCoordinator.Watch(watchContext, resource)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tfirst, err := firstCoordinator.Acquire(context.Background(), resource)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tfirstToken := first.Token()\n+\tif err := firstToken.Validate(); err != nil {\n+\t\tt.Fatalf(\"first token: %v\", err)\n+\t}\n+\tassertEvent(t, watch, coordination.EventAcquired, firstToken)\n+\tif err := first.Renew(context.Background()); err != nil {\n+\t\tt.Fatalf(\"renew: %v\", err)\n+\t}\n+\tmembers, err := firstCoordinator.Members(context.Background(), resource)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif len(members) != 1 || members[0].Token != firstToken {\n+\t\tt.Fatalf(\"members = %+v, want first tenure\", members)\n+\t}\n+\tif _, err := firstCoordinator.Acquire(context.Background(), resource); !errors.Is(err, coordination.ErrLeaseHeld) {\n+\t\tt.Fatalf(\"duplicate acquire = %v, want ErrLeaseHeld\", err)\n+\t}\n+\tif err := first.Release(context.Background()); err != nil {\n+\t\tt.Fatalf(\"release: %v\", err)\n+\t}\n+\tif err := first.Release(context.Background()); err != nil {\n+\t\tt.Fatalf(\"duplicate release: %v\", err)\n+\t}\n+\tselect {\n+\tcase <-first.Lost():\n+\tdefault:\n+\t\tt.Fatal(\"loss signal remained open after release\")\n+\t}\n+\tassertEvent(t, watch, coordination.EventReleased, firstToken)\n+\tcancelWatch()\n+\n+\tsecondCoordinator, err := factory(\"owner-b\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tsecond, err := secondCoordinator.Acquire(context.Background(), resource)\n+\tif err != nil {\n+\t\tt.Fatalf(\"restart acquire: %v\", err)\n+\t}\n+\tsecondToken := second.Token()\n+\tif secondToken.Epoch != firstToken.Epoch {\n+\t\tt.Fatalf(\"restart epoch = %d, want same-domain epoch %d\", secondToken.Epoch, firstToken.Epoch)\n+\t}\n+\tif secondToken.Generation <= firstToken.Generation {\n+\t\tt.Fatalf(\"restart generation = %d, want > %d\", secondToken.Generation, firstToken.Generation)\n+\t}\n+\tvalidator, ok := secondCoordinator.(coordination.Validator)\n+\tif !ok {\n+\t\tt.Fatal(\"coordinator does not implement token validation\")\n+\t}\n+\tif err := validator.Validate(context.Background(), firstToken); !errors.Is(err, coordination.ErrStaleToken) {\n+\t\tt.Fatalf(\"stale token validation = %v, want ErrStaleToken\", err)\n+\t}\n+\tif err := validator.Validate(context.Background(), secondToken); err != nil {\n+\t\tt.Fatalf(\"current token validation: %v\", err)\n+\t}\n+\tepochLease, ok := second.(coordination.EpochLease)\n+\tif !ok {\n+\t\tt.Fatal(\"lease does not implement durable epoch advancement\")\n+\t}\n+\tadvanced, err := epochLease.AdvanceEpoch(context.Background(), secondToken.Epoch+1)\n+\tif err != nil {\n+\t\tt.Fatalf(\"advance epoch: %v\", err)\n+\t}\n+\tif advanced.Epoch <= secondToken.Epoch || advanced.Generation <= secondToken.Generation {\n+\t\tt.Fatalf(\"advanced token = %+v, previous %+v\", advanced, secondToken)\n+\t}\n+\tif _, err := epochLease.AdvanceEpoch(context.Background(), advanced.Epoch); err == nil {\n+\t\tt.Fatal(\"duplicate epoch advancement succeeded\")\n+\t}\n+\tif err := validator.Validate(context.Background(), secondToken); !errors.Is(err, coordination.ErrStaleToken) {\n+\t\tt.Fatalf(\"pre-advance token validation = %v, want ErrStaleToken\", err)\n+\t}\n+\tif err := validator.Validate(context.Background(), advanced); err != nil {\n+\t\tt.Fatalf(\"advanced token validation: %v\", err)\n+\t}\n+\tif err := second.Release(context.Background()); err != nil {\n+\t\tt.Fatalf(\"release restarted lease: %v\", err)\n+\t}\n+\n+\tfaultCoordinator, err := factory(\"owner-c\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tfaultContext, cancelFaultWatch := context.WithCancel(context.Background())\n+\tdefer cancelFaultWatch()\n+\tfaultWatch, err := faultCoordinator.Watch(faultContext, resource)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tfaultLease, err := faultCoordinator.Acquire(context.Background(), resource)\n+\tif err != nil {\n+\t\tt.Fatalf(\"fault tenure acquire: %v\", err)\n+\t}\n+\tfaultToken := faultLease.Token()\n+\tassertEvent(t, faultWatch, coordination.EventAcquired, faultToken)\n+\tdelayedCallback := func(validator coordination.Validator) error {\n+\t\treturn validator.Validate(context.Background(), faultToken)\n+\t}\n+\tif err := injectFault(context.Background(), faultCoordinator, faultLease); err != nil {\n+\t\tt.Fatalf(\"inject lease loss: %v\", err)\n+\t}\n+\tselect {\n+\tcase <-faultLease.Lost():\n+\tcase <-time.After(time.Second):\n+\t\tt.Fatal(\"timed out waiting for involuntary loss signal\")\n+\t}\n+\tif err := faultLease.Renew(context.Background()); !errors.Is(err, coordination.ErrLeaseLost) {\n+\t\tt.Fatalf(\"renew after involuntary loss = %v, want ErrLeaseLost\", err)\n+\t}\n+\tassertEvent(t, faultWatch, coordination.EventLost, faultToken)\n+\n+\treplacementCoordinator, err := factory(\"owner-d\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treplacement, err := replacementCoordinator.Acquire(context.Background(), resource)\n+\tif err != nil {\n+\t\tt.Fatalf(\"post-loss acquire: %v\", err)\n+\t}\n+\tdefer replacement.Release(context.Background())\n+\treplacementValidator, ok := replacementCoordinator.(coordination.Validator)\n+\tif !ok {\n+\t\tt.Fatal(\"replacement coordinator does not implement token validation\")\n+\t}\n+\tif err := delayedCallback(replacementValidator); !errors.Is(err, coordination.ErrStaleToken) {\n+\t\tt.Fatalf(\"delayed stale callback = %v, want ErrStaleToken\", err)\n+\t}\n+}\n+\n+func assertEvent(\n+\tt *testing.T,\n+\tevents <-chan coordination.Event,\n+\tkind coordination.EventKind,\n+\ttoken coordination.AuthorityToken,\n+) {\n+\tt.Helper()\n+\tselect {\n+\tcase event := <-events:\n+\t\tif event.Kind != kind || event.Member.Token != token {\n+\t\t\tt.Fatalf(\"event = %+v, want %s for %+v\", event, kind, token)\n+\t\t}\n+\tcase <-time.After(time.Second):\n+\t\tt.Fatalf(\"timed out waiting for %s event\", kind)\n+\t}\n+}\ndiff --git a/internal/coordination/embedded.go b/internal/coordination/embedded.go\nnew file mode 100644\nindex 0000000..bdbcf89\n--- /dev/null\n+++ b/internal/coordination/embedded.go\n@@ -0,0 +1,520 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package coordination\n+\n+import (\n+\t\"context\"\n+\t\"encoding/json\"\n+\t\"errors\"\n+\t\"fmt\"\n+\t\"io\"\n+\t\"math\"\n+\t\"os\"\n+\t\"path/filepath\"\n+\t\"sync\"\n+\n+\t\"github.com/google/uuid\"\n+\t\"github.com/phrocker/shoal-oss/internal/dirlock\"\n+\t\"github.com/phrocker/shoal-oss/internal/storage\"\n+\t\"github.com/phrocker/shoal-oss/internal/storage/local\"\n+)\n+\n+const (\n+\tembeddedLockFile     = \".shoal-authority.lock\"\n+\tembeddedManifestFile = \".shoal-authority.json\"\n+\tembeddedManifestSize = 64 << 10\n+\tembeddedVersion      = 1\n+\t// Bound per-watcher memory while allowing routine bursts without resync.\n+\tembeddedWatchQueue = 64\n+)\n+\n+type embeddedManifest struct {\n+\tVersion    int    `json:\"version\"`\n+\tDomain     Domain `json:\"domain\"`\n+\tResource   string `json:\"resource\"`\n+\tOwner      string `json:\"owner\"`\n+\tLeaseID    string `json:\"lease_id\"`\n+\tEpoch      uint64 `json:\"epoch\"`\n+\tGeneration uint64 `json:\"generation\"`\n+\tAttempt    string `json:\"attempt\"`\n+\tActive     bool   `json:\"active\"`\n+}\n+\n+func (m embeddedManifest) token() AuthorityToken {\n+\treturn AuthorityToken{\n+\t\tDomain:     m.Domain,\n+\t\tResource:   m.Resource,\n+\t\tOwner:      m.Owner,\n+\t\tLeaseID:    m.LeaseID,\n+\t\tEpoch:      m.Epoch,\n+\t\tGeneration: m.Generation,\n+\t\tAttempt:    m.Attempt,\n+\t}\n+}\n+\n+// EmbeddedCoordinator provides one-process authority for a data directory.\n+// The OS lock is the live exclusion primitive; the manifest generation is the\n+// durable fence that makes tokens from earlier process incarnations stale.\n+type EmbeddedCoordinator struct {\n+\tdirectory string\n+\towner     string\n+\n+\tmu          sync.Mutex\n+\tcurrent     *embeddedLease\n+\twatchers    map[uint64]*embeddedWatcher\n+\tnextWatcher uint64\n+}\n+\n+type embeddedWatcher struct {\n+\tresource string\n+\tevents   chan Event\n+\twake     chan struct{}\n+\n+\tmu      sync.Mutex\n+\tpending [embeddedWatchQueue]Event\n+\thead    int\n+\tsize    int\n+}\n+\n+func NewEmbeddedCoordinator(directory, owner string) (*EmbeddedCoordinator, error) {\n+\tif directory == \"\" {\n+\t\treturn nil, errors.New(\"coordination: embedded directory is required\")\n+\t}\n+\tif owner == \"\" {\n+\t\towner = uuid.NewString()\n+\t}\n+\tif err := os.MkdirAll(directory, 0o755); err != nil {\n+\t\treturn nil, fmt.Errorf(\"coordination: create embedded directory: %w\", err)\n+\t}\n+\tcanonical, err := filepath.Abs(directory)\n+\tif err != nil {\n+\t\treturn nil, fmt.Errorf(\"coordination: resolve embedded directory: %w\", err)\n+\t}\n+\treturn &EmbeddedCoordinator{\n+\t\tdirectory: filepath.Clean(canonical),\n+\t\towner:     owner,\n+\t\twatchers:  make(map[uint64]*embeddedWatcher),\n+\t}, nil\n+}\n+\n+func (c *EmbeddedCoordinator) Acquire(ctx context.Context, resource string) (Lease, error) {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn nil, err\n+\t}\n+\tif resource == \"\" {\n+\t\treturn nil, errors.New(\"coordination: resource is required\")\n+\t}\n+\n+\tc.mu.Lock()\n+\tdefer c.mu.Unlock()\n+\tif c.current != nil && c.current.active {\n+\t\treturn nil, ErrLeaseHeld\n+\t}\n+\n+\tlock, err := dirlock.Acquire(c.directory, embeddedLockFile)\n+\tif err != nil {\n+\t\tif errors.Is(err, dirlock.ErrLocked) {\n+\t\t\treturn nil, errors.Join(ErrLeaseHeld, err)\n+\t\t}\n+\t\treturn nil, fmt.Errorf(\"coordination: acquire embedded authority: %w\", err)\n+\t}\n+\treleaseOnError := true\n+\tdefer func() {\n+\t\tif releaseOnError {\n+\t\t\t_ = lock.Close()\n+\t\t}\n+\t}()\n+\n+\tprevious, found, err := readEmbeddedManifest(c.directory)\n+\tif err != nil {\n+\t\treturn nil, err\n+\t}\n+\tepoch := uint64(1)\n+\tgeneration := uint64(1)\n+\tif found {\n+\t\tif previous.Domain != DomainEmbedded || previous.Resource != resource {\n+\t\t\treturn nil, fmt.Errorf(\n+\t\t\t\t\"coordination: embedded manifest identifies %s/%q, want %s/%q\",\n+\t\t\t\tprevious.Domain, previous.Resource, DomainEmbedded, resource,\n+\t\t\t)\n+\t\t}\n+\t\tif previous.Epoch == 0 || previous.Generation == 0 {\n+\t\t\treturn nil, errors.New(\"coordination: embedded manifest has a zero fence\")\n+\t\t}\n+\t\tif previous.Generation == math.MaxUint64 {\n+\t\t\treturn nil, errors.New(\"coordination: embedded manifest generation exhausted\")\n+\t\t}\n+\t\tepoch = previous.Epoch\n+\t\tgeneration = previous.Generation + 1\n+\t}\n+\n+\tleaseID := uuid.NewString()\n+\ttoken := AuthorityToken{\n+\t\tDomain:     DomainEmbedded,\n+\t\tResource:   resource,\n+\t\tOwner:      c.owner,\n+\t\tLeaseID:    leaseID,\n+\t\tEpoch:      epoch,\n+\t\tGeneration: generation,\n+\t\tAttempt:    leaseID,\n+\t}\n+\tif err := writeEmbeddedManifest(c.directory, manifestForToken(token, true)); err != nil {\n+\t\treturn nil, err\n+\t}\n+\tlease := &embeddedLease{\n+\t\tcoordinator: c,\n+\t\tlock:        lock,\n+\t\ttoken:       token,\n+\t\tactive:      true,\n+\t\tlost:        make(chan struct{}),\n+\t}\n+\tc.current = lease\n+\treleaseOnError = false\n+\tc.publishLocked(Event{Kind: EventAcquired, Member: Member{ID: token.Owner, Token: token}})\n+\treturn lease, nil\n+}\n+\n+func (c *EmbeddedCoordinator) Watch(ctx context.Context, resource string) (<-chan Event, error) {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn nil, err\n+\t}\n+\tif resource == \"\" {\n+\t\treturn nil, errors.New(\"coordination: resource is required\")\n+\t}\n+\twatcher := &embeddedWatcher{\n+\t\tresource: resource,\n+\t\tevents:   make(chan Event, 4),\n+\t\twake:     make(chan struct{}, 1),\n+\t}\n+\tc.mu.Lock()\n+\tid := c.nextWatcher\n+\tc.nextWatcher++\n+\tc.watchers[id] = watcher\n+\tif c.current != nil && c.current.active && c.current.token.Resource == resource {\n+\t\twatcher.enqueue(Event{\n+\t\t\tKind:   EventAcquired,\n+\t\t\tMember: Member{ID: c.current.token.Owner, Token: c.current.token},\n+\t\t})\n+\t}\n+\tc.mu.Unlock()\n+\tgo c.deliverWatcher(ctx, id, watcher)\n+\treturn watcher.events, nil\n+}\n+\n+func (c *EmbeddedCoordinator) Members(ctx context.Context, resource string) ([]Member, error) {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn nil, err\n+\t}\n+\tc.mu.Lock()\n+\tdefer c.mu.Unlock()\n+\tif c.current == nil || !c.current.active || c.current.token.Resource != resource {\n+\t\treturn nil, nil\n+\t}\n+\treturn []Member{{ID: c.current.token.Owner, Token: c.current.token}}, nil\n+}\n+\n+func (c *EmbeddedCoordinator) Validate(ctx context.Context, token AuthorityToken) error {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn err\n+\t}\n+\tif err := token.Validate(); err != nil {\n+\t\treturn err\n+\t}\n+\tc.mu.Lock()\n+\tdefer c.mu.Unlock()\n+\tif c.current == nil || !c.current.active || c.current.token != token {\n+\t\treturn ErrStaleToken\n+\t}\n+\treturn nil\n+}\n+\n+func (c *EmbeddedCoordinator) publishLocked(event Event) {\n+\tfor _, watcher := range c.watchers {\n+\t\tif watcher.resource != event.Member.Token.Resource {\n+\t\t\tcontinue\n+\t\t}\n+\t\twatcher.enqueue(event)\n+\t}\n+}\n+\n+func (w *embeddedWatcher) enqueue(event Event) {\n+\tw.mu.Lock()\n+\tif w.size == len(w.pending) {\n+\t\tclear(w.pending[:])\n+\t\tw.head = 0\n+\t\tw.size = 1\n+\t\t// Resync membership is informational; observers must call Members.\n+\t\tw.pending[0] = Event{Kind: EventResync, Member: event.Member}\n+\t} else {\n+\t\ttail := (w.head + w.size) % len(w.pending)\n+\t\tw.pending[tail] = event\n+\t\tw.size++\n+\t}\n+\tw.mu.Unlock()\n+\tselect {\n+\tcase w.wake <- struct{}{}:\n+\tdefault:\n+\t}\n+}\n+\n+func (w *embeddedWatcher) dequeue() (Event, bool) {\n+\tw.mu.Lock()\n+\tdefer w.mu.Unlock()\n+\tif w.size == 0 {\n+\t\treturn Event{}, false\n+\t}\n+\tevent := w.pending[w.head]\n+\tw.pending[w.head] = Event{}\n+\tw.head = (w.head + 1) % len(w.pending)\n+\tw.size--\n+\tif w.size == 0 {\n+\t\tw.head = 0\n+\t}\n+\treturn event, true\n+}\n+\n+func (c *EmbeddedCoordinator) deliverWatcher(\n+\tctx context.Context,\n+\tid uint64,\n+\twatcher *embeddedWatcher,\n+) {\n+\tdefer close(watcher.events)\n+\tfor {\n+\t\tevent, ok := watcher.dequeue()\n+\t\tif !ok {\n+\t\t\tselect {\n+\t\t\tcase <-ctx.Done():\n+\t\t\t\tc.mu.Lock()\n+\t\t\t\tdelete(c.watchers, id)\n+\t\t\t\tc.mu.Unlock()\n+\t\t\t\treturn\n+\t\t\tcase <-watcher.wake:\n+\t\t\t}\n+\t\t\tcontinue\n+\t\t}\n+\n+\t\tselect {\n+\t\tcase watcher.events <- event:\n+\t\tcase <-ctx.Done():\n+\t\t\tc.mu.Lock()\n+\t\t\tdelete(c.watchers, id)\n+\t\t\tc.mu.Unlock()\n+\t\t\treturn\n+\t\t}\n+\t}\n+}\n+\n+type embeddedLease struct {\n+\tcoordinator *EmbeddedCoordinator\n+\tlock        *dirlock.Lock\n+\n+\tmu       sync.Mutex\n+\ttoken    AuthorityToken\n+\tactive   bool\n+\tlost     chan struct{}\n+\tlostOnce sync.Once\n+}\n+\n+func (l *embeddedLease) Token() AuthorityToken {\n+\tl.mu.Lock()\n+\tdefer l.mu.Unlock()\n+\treturn l.token\n+}\n+\n+func (l *embeddedLease) Lost() <-chan struct{} { return l.lost }\n+\n+func (l *embeddedLease) Renew(ctx context.Context) error {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn err\n+\t}\n+\t// The held OS lock is the live lease. The manifest is durable fencing state\n+\t// and is revalidated only while acquiring or advancing that fence.\n+\tl.mu.Lock()\n+\tdefer l.mu.Unlock()\n+\tif !l.active {\n+\t\treturn ErrLeaseLost\n+\t}\n+\treturn nil\n+}\n+\n+func (l *embeddedLease) AdvanceEpoch(ctx context.Context, next uint64) (AuthorityToken, error) {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn AuthorityToken{}, err\n+\t}\n+\tl.coordinator.mu.Lock()\n+\tdefer l.coordinator.mu.Unlock()\n+\tl.mu.Lock()\n+\tdefer l.mu.Unlock()\n+\tif !l.active || l.coordinator.current != l {\n+\t\treturn AuthorityToken{}, ErrLeaseLost\n+\t}\n+\tif next <= l.token.Epoch {\n+\t\treturn AuthorityToken{}, fmt.Errorf(\n+\t\t\t\"coordination: epoch %d does not advance current epoch %d\",\n+\t\t\tnext, l.token.Epoch,\n+\t\t)\n+\t}\n+\tif l.token.Generation == math.MaxUint64 {\n+\t\treturn AuthorityToken{}, errors.New(\"coordination: embedded manifest generation exhausted\")\n+\t}\n+\tcurrent, found, err := readEmbeddedManifest(l.coordinator.directory)\n+\tif err != nil {\n+\t\treturn AuthorityToken{}, errors.Join(ErrLeaseLost, err, l.loseLocked(EventLost))\n+\t}\n+\tif !found || !current.Active || current.token() != l.token {\n+\t\treturn AuthorityToken{}, errors.Join(ErrLeaseLost, l.loseLocked(EventLost))\n+\t}\n+\tnextToken := l.token\n+\tnextToken.Epoch = next\n+\tnextToken.Generation++\n+\tif err := writeEmbeddedManifest(\n+\t\tl.coordinator.directory,\n+\t\tmanifestForToken(nextToken, true),\n+\t); err != nil {\n+\t\treturn AuthorityToken{}, errors.Join(ErrLeaseLost, err, l.loseLocked(EventLost))\n+\t}\n+\tl.token = nextToken\n+\tl.coordinator.publishLocked(Event{\n+\t\tKind:   EventFenced,\n+\t\tMember: Member{ID: nextToken.Owner, Token: nextToken},\n+\t})\n+\treturn nextToken, nil\n+}\n+\n+func (l *embeddedLease) Release(ctx context.Context) error {\n+\tif err := ctx.Err(); err != nil {\n+\t\treturn err\n+\t}\n+\tl.coordinator.mu.Lock()\n+\tdefer l.coordinator.mu.Unlock()\n+\tl.mu.Lock()\n+\tdefer l.mu.Unlock()\n+\tif !l.active {\n+\t\treturn nil\n+\t}\n+\n+\ttoken := l.token\n+\tvar persistErr error\n+\tcurrent, found, err := readEmbeddedManifest(l.coordinator.directory)\n+\tif err != nil {\n+\t\tpersistErr = err\n+\t} else if !found || !current.Active || current.token() != token {\n+\t\tpersistErr = ErrLeaseLost\n+\t} else {\n+\t\tcurrent.Active = false\n+\t\tpersistErr = writeEmbeddedManifest(l.coordinator.directory, current)\n+\t}\n+\tlockErr := l.loseLocked(EventReleased)\n+\treturn errors.Join(persistErr, lockErr)\n+}\n+\n+func (l *embeddedLease) loseLocked(kind EventKind) error {\n+\tif !l.active {\n+\t\treturn nil\n+\t}\n+\tl.active = false\n+\tif l.coordinator.current == l {\n+\t\tl.coordinator.current = nil\n+\t}\n+\tl.lostOnce.Do(func() { close(l.lost) })\n+\tl.coordinator.publishLocked(Event{\n+\t\tKind:   kind,\n+\t\tMember: Member{ID: l.token.Owner, Token: l.token},\n+\t})\n+\tlock := l.lock\n+\tl.lock = nil\n+\treturn lock.Close()\n+}\n+\n+func manifestForToken(token AuthorityToken, active bool) embeddedManifest {\n+\treturn embeddedManifest{\n+\t\tVersion:    embeddedVersion,\n+\t\tDomain:     token.Domain,\n+\t\tResource:   token.Resource,\n+\t\tOwner:      token.Owner,\n+\t\tLeaseID:    token.LeaseID,\n+\t\tEpoch:      token.Epoch,\n+\t\tGeneration: token.Generation,\n+\t\tAttempt:    token.Attempt,\n+\t\tActive:     active,\n+\t}\n+}\n+\n+func readEmbeddedManifest(directory string) (embeddedManifest, bool, error) {\n+\tpath := filepath.Join(directory, embeddedManifestFile)\n+\tfile, err := os.Open(path)\n+\tif errors.Is(err, os.ErrNotExist) {\n+\t\treturn embeddedManifest{}, false, nil\n+\t}\n+\tif err != nil {\n+\t\treturn embeddedManifest{}, false, fmt.Errorf(\"coordination: open embedded manifest: %w\", err)\n+\t}\n+\tdefer file.Close()\n+\tinfo, err := file.Stat()\n+\tif err != nil {\n+\t\treturn embeddedManifest{}, false, fmt.Errorf(\"coordination: stat embedded manifest: %w\", err)\n+\t}\n+\tif info.Size() > embeddedManifestSize {\n+\t\treturn embeddedManifest{}, false, errors.New(\"coordination: embedded manifest is too large\")\n+\t}\n+\tdecoder := json.NewDecoder(io.LimitReader(file, embeddedManifestSize))\n+\tdecoder.DisallowUnknownFields()\n+\tvar manifest embeddedManifest\n+\tif err := decoder.Decode(&manifest); err != nil {\n+\t\treturn embeddedManifest{}, false, fmt.Errorf(\"coordination: decode embedded manifest: %w\", err)\n+\t}\n+\tif err := ensureJSONEOF(decoder); err != nil {\n+\t\treturn embeddedManifest{}, false, err\n+\t}\n+\tif manifest.Version != embeddedVersion {\n+\t\treturn embeddedManifest{}, false, fmt.Errorf(\n+\t\t\t\"coordination: unsupported embedded manifest version %d\",\n+\t\t\tmanifest.Version,\n+\t\t)\n+\t}\n+\tif err := manifest.token().Validate(); err != nil {\n+\t\treturn embeddedManifest{}, false, fmt.Errorf(\"coordination: invalid embedded manifest: %w\", err)\n+\t}\n+\treturn manifest, true, nil\n+}\n+\n+func ensureJSONEOF(decoder *json.Decoder) error {\n+\tvar extra any\n+\tif err := decoder.Decode(&extra); !errors.Is(err, io.EOF) {\n+\t\tif err == nil {\n+\t\t\treturn errors.New(\"coordination: embedded manifest has trailing JSON\")\n+\t\t}\n+\t\treturn fmt.Errorf(\"coordination: decode embedded manifest trailer: %w\", err)\n+\t}\n+\treturn nil\n+}\n+\n+func writeEmbeddedManifest(directory string, manifest embeddedManifest) error {\n+\tdata, err := json.MarshalIndent(manifest, \"\", \"  \")\n+\tif err != nil {\n+\t\treturn fmt.Errorf(\"coordination: encode embedded manifest: %w\", err)\n+\t}\n+\tdata = append(data, '\\n')\n+\tpath := filepath.Join(directory, embeddedManifestFile)\n+\tif err := storage.WriteAll(context.Background(), local.New(), path, data); err != nil {\n+\t\treturn fmt.Errorf(\"coordination: persist embedded manifest: %w\", err)\n+\t}\n+\treturn nil\n+}\ndiff --git a/internal/coordination/embedded_test.go b/internal/coordination/embedded_test.go\nnew file mode 100644\nindex 0000000..ed24509\n--- /dev/null\n+++ b/internal/coordination/embedded_test.go\n@@ -0,0 +1,271 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package coordination_test\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"os\"\n+\t\"path/filepath\"\n+\t\"strings\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/internal/coordination\"\n+\t\"github.com/phrocker/shoal-oss/internal/coordination/coordtest\"\n+\t\"github.com/phrocker/shoal-oss/internal/dirlock\"\n+)\n+\n+func TestEmbeddedCoordinatorConformance(t *testing.T) {\n+\tdirectory := t.TempDir()\n+\tcoordtest.Run(t, func(owner string) (coordination.Coordinator, error) {\n+\t\treturn coordination.NewEmbeddedCoordinator(directory, owner)\n+\t}, func(_ context.Context, _ coordination.Coordinator, lease coordination.Lease) error {\n+\t\tmanifestPath := filepath.Join(directory, \".shoal-authority.json\")\n+\t\tdata, err := os.ReadFile(manifestPath)\n+\t\tif err != nil {\n+\t\t\treturn err\n+\t\t}\n+\t\tdata = []byte(strings.Replace(string(data), `\"active\": true`, `\"active\": false`, 1))\n+\t\tif err := os.WriteFile(manifestPath, data, 0o600); err != nil {\n+\t\t\treturn err\n+\t\t}\n+\t\ttoken := lease.Token()\n+\t\t_, err = lease.(coordination.EpochLease).AdvanceEpoch(context.Background(), token.Epoch+1)\n+\t\tif err == nil {\n+\t\t\treturn errors.New(\"fault injection did not lose lease\")\n+\t\t}\n+\t\tif !errors.Is(err, coordination.ErrLeaseLost) {\n+\t\t\treturn err\n+\t\t}\n+\t\treturn nil\n+\t})\n+}\n+\n+func TestEmbeddedCoordinatorRejectsConcurrentProcessAuthority(t *testing.T) {\n+\tdirectory := t.TempDir()\n+\tfirst, err := coordination.NewEmbeddedCoordinator(directory, \"owner-a\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tlease, err := first.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tt.Cleanup(func() { _ = lease.Release(context.Background()) })\n+\n+\tsecond, err := coordination.NewEmbeddedCoordinator(directory, \"owner-b\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif _, err := second.Acquire(context.Background(), \"table/graph\"); !errors.Is(err, coordination.ErrLeaseHeld) ||\n+\t\t!errors.Is(err, dirlock.ErrLocked) {\n+\t\tt.Fatalf(\"second authority = %v, want lease and directory lock conflict\", err)\n+\t}\n+}\n+\n+func TestEmbeddedCoordinatorEpochAdvanceFailsClosedWhenManifestChanges(t *testing.T) {\n+\tdirectory := t.TempDir()\n+\tfirst, err := coordination.NewEmbeddedCoordinator(directory, \"owner-a\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tlease, err := first.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\ttoken := lease.Token()\n+\tmanifestPath := filepath.Join(directory, \".shoal-authority.json\")\n+\tdata, err := os.ReadFile(manifestPath)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdata = []byte(strings.Replace(string(data), `\"active\": true`, `\"active\": false`, 1))\n+\tif err := os.WriteFile(manifestPath, data, 0o600); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\tepochLease := lease.(coordination.EpochLease)\n+\tif _, err := epochLease.AdvanceEpoch(context.Background(), token.Epoch+1); !errors.Is(err, coordination.ErrLeaseLost) {\n+\t\tt.Fatalf(\"advance after manifest change = %v, want ErrLeaseLost\", err)\n+\t}\n+\tselect {\n+\tcase <-lease.Lost():\n+\tdefault:\n+\t\tt.Fatal(\"manifest change did not signal lease loss\")\n+\t}\n+\n+\tsecond, err := coordination.NewEmbeddedCoordinator(directory, \"owner-b\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treplacement, err := second.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"replacement acquire: %v\", err)\n+\t}\n+\tdefer replacement.Release(context.Background())\n+\tif replacement.Token().Generation <= token.Generation {\n+\t\tt.Fatalf(\"replacement generation = %d, want > %d\", replacement.Token().Generation, token.Generation)\n+\t}\n+}\n+\n+func TestEmbeddedCoordinatorWatchIsResourceScoped(t *testing.T) {\n+\tdirectory := t.TempDir()\n+\tcoordinator, err := coordination.NewEmbeddedCoordinator(directory, \"owner\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tdefer cancel()\n+\tevents, err := coordinator.Watch(ctx, \"table/other\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tlease, err := coordinator.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer lease.Release(context.Background())\n+\n+\tselect {\n+\tcase event := <-events:\n+\t\tt.Fatalf(\"unrelated event delivered: %+v\", event)\n+\tcase <-time.After(50 * time.Millisecond):\n+\t}\n+}\n+\n+func TestEmbeddedCoordinatorWatchRetainsTerminalEventForSlowConsumer(t *testing.T) {\n+\tcoordinator, err := coordination.NewEmbeddedCoordinator(t.TempDir(), \"owner\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tdefer cancel()\n+\tevents, err := coordinator.Watch(ctx, \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tlease, err := coordinator.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tepochLease := lease.(coordination.EpochLease)\n+\ttoken := lease.Token()\n+\tconst advances = 8\n+\tfor i := uint64(1); i <= advances; i++ {\n+\t\ttoken, err = epochLease.AdvanceEpoch(context.Background(), token.Epoch+1)\n+\t\tif err != nil {\n+\t\t\tt.Fatal(err)\n+\t\t}\n+\t}\n+\tif err := lease.Release(context.Background()); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\tassertWatchKind(t, events, coordination.EventAcquired)\n+\tfor range advances {\n+\t\tassertWatchKind(t, events, coordination.EventFenced)\n+\t}\n+\tassertWatchKind(t, events, coordination.EventReleased)\n+}\n+\n+func TestEmbeddedCoordinatorWatchSignalsResyncOnOverflow(t *testing.T) {\n+\tcoordinator, err := coordination.NewEmbeddedCoordinator(t.TempDir(), \"owner\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tdefer cancel()\n+\tevents, err := coordinator.Watch(ctx, \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tlease, err := coordinator.Acquire(context.Background(), \"table/graph\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer lease.Release(context.Background())\n+\tepochLease := lease.(coordination.EpochLease)\n+\ttoken := lease.Token()\n+\tfor range 80 {\n+\t\ttoken, err = epochLease.AdvanceEpoch(context.Background(), token.Epoch+1)\n+\t\tif err != nil {\n+\t\t\tt.Fatal(err)\n+\t\t}\n+\t}\n+\n+\tfor {\n+\t\tselect {\n+\t\tcase event := <-events:\n+\t\t\tif event.Kind != coordination.EventResync {\n+\t\t\t\tcontinue\n+\t\t\t}\n+\t\t\tmembers, err := coordinator.Members(context.Background(), \"table/graph\")\n+\t\t\tif err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\tif len(members) != 1 || members[0].Token != token {\n+\t\t\t\tt.Fatalf(\"members after resync = %+v, want current token %+v\", members, token)\n+\t\t\t}\n+\t\t\treturn\n+\t\tcase <-time.After(time.Second):\n+\t\t\tt.Fatal(\"timed out waiting for resync event\")\n+\t\t}\n+\t}\n+}\n+\n+func assertWatchKind(t *testing.T, events <-chan coordination.Event, want coordination.EventKind) {\n+\tt.Helper()\n+\tselect {\n+\tcase event := <-events:\n+\t\tif event.Kind != want {\n+\t\t\tt.Fatalf(\"event kind = %s, want %s\", event.Kind, want)\n+\t\t}\n+\tcase <-time.After(time.Second):\n+\t\tt.Fatalf(\"timed out waiting for %s event\", want)\n+\t}\n+}\n+\n+func TestEmbeddedCoordinatorFailsClosedOnCorruptManifest(t *testing.T) {\n+\tdirectory := t.TempDir()\n+\tif err := os.WriteFile(\n+\t\tfilepath.Join(directory, \".shoal-authority.json\"),\n+\t\t[]byte(`{\"version\":1,\"epoch\":0}`),\n+\t\t0o600,\n+\t); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tcoordinator, err := coordination.NewEmbeddedCoordinator(directory, \"owner\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif _, err := coordinator.Acquire(context.Background(), \"table/graph\"); err == nil {\n+\t\tt.Fatal(\"acquire accepted corrupt authority manifest\")\n+\t}\n+\n+\tlock, err := dirlock.Acquire(directory, \".shoal-authority.lock\")\n+\tif err != nil {\n+\t\tt.Fatalf(\"failed acquisition retained OS lock: %v\", err)\n+\t}\n+\tif err := lock.Close(); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+}\ndiff --git a/internal/engine/engine.go b/internal/engine/engine.go\nindex cbcded1..c0bb875 100644\n--- a/internal/engine/engine.go\n+++ b/internal/engine/engine.go\n@@ -48,10 +48,11 @@ import (\n \t\"sync\"\n \t\"sync/atomic\"\n \t\"time\"\n \n \t\"github.com/phrocker/shoal-oss/internal/cclient\"\n+\t\"github.com/phrocker/shoal-oss/internal/coordination\"\n \t\"github.com/phrocker/shoal-oss/internal/embeddingspace\"\n \t\"github.com/phrocker/shoal-oss/internal/iterrt\"\n \t\"github.com/phrocker/shoal-oss/internal/localwal\"\n \t\"github.com/phrocker/shoal-oss/internal/rfile/wire\"\n \t\"github.com/phrocker/shoal-oss/internal/storage\"\n@@ -68,10 +69,13 @@ type Engine struct {\n \tcache  *tablet.Cache\n \n \twalSyncMode     localwal.SyncMode\n \twalSyncInterval time.Duration\n \tbackend         storage.Backend\n+\tauthority       coordination.Lease\n+\tauthoritySource coordination.Validator\n+\tclosed          bool\n \n \tmetrics engineCounters\n \n \t// RFile event bus: subscribers receive an RFileEvent each time a tablet\n \t// flushes or compacts a new immutable RFile (including auto-flushes). Used\n@@ -131,10 +135,24 @@ func Open(dir string, opts Options) (*Engine, error) {\n \t\topts.Logger = slog.Default()\n \t}\n \tif err := os.MkdirAll(dir, 0o755); err != nil {\n \t\treturn nil, fmt.Errorf(\"engine: mkdir %s: %w\", dir, err)\n \t}\n+\tauthoritySource, err := coordination.NewEmbeddedCoordinator(dir, \"\")\n+\tif err != nil {\n+\t\treturn nil, fmt.Errorf(\"engine: configure authority: %w\", err)\n+\t}\n+\tauthority, err := authoritySource.Acquire(context.Background(), \"engine\")\n+\tif err != nil {\n+\t\treturn nil, fmt.Errorf(\"engine: acquire authority: %w\", err)\n+\t}\n+\treleaseAuthority := true\n+\tdefer func() {\n+\t\tif releaseAuthority {\n+\t\t\t_ = authority.Release(context.Background())\n+\t\t}\n+\t}()\n \tbackend := opts.Backend\n \tif backend == nil {\n \t\tbackend = local.New()\n \t}\n \tvar rfCache *tablet.Cache\n@@ -147,10 +165,12 @@ func Open(dir string, opts Options) (*Engine, error) {\n \t\tlogger:          opts.Logger,\n \t\tcache:           rfCache,\n \t\twalSyncMode:     opts.WALSyncMode,\n \t\twalSyncInterval: opts.WALSyncInterval,\n \t\tbackend:         backend,\n+\t\tauthority:       authority,\n+\t\tauthoritySource: authoritySource,\n \t}\n \n \t// Discover existing tables (each subdirectory is a table)\n \tentries, err := os.ReadDir(dir)\n \tif err != nil {\n@@ -164,18 +184,22 @@ func Open(dir string, opts Options) (*Engine, error) {\n \t\t\t\treturn nil, fmt.Errorf(\"engine: open table %s: %w\", e.Name(), err)\n \t\t\t}\n \t\t\teng.tables[e.Name()] = tbl\n \t\t}\n \t}\n+\treleaseAuthority = false\n \treturn eng, nil\n }\n \n // CreateTable creates a new table with the given split policy. If splits\n // is nil, the table has a single tablet covering the entire key space.\n func (e *Engine) CreateTable(name string, opts TableOptions) error {\n \te.mu.Lock()\n \tdefer e.mu.Unlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \n \tif _, exists := e.tables[name]; exists {\n \t\treturn fmt.Errorf(\"engine: table %q already exists\", name)\n \t}\n \n@@ -201,12 +225,15 @@ func (e *Engine) CreateTable(name string, opts TableOptions) error {\n \n // Write applies mutations to the named table. Mutations are routed to\n // the correct tablet based on the table's SplitPolicy.\n func (e *Engine) Write(table string, mutations []*cclient.Mutation) error {\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[table]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", table)\n \t}\n \tif err := tbl.write(mutations); err != nil {\n \t\treturn err\n@@ -247,12 +274,15 @@ func (e *Engine) ConditionalWrite(table string, mutations []ConditionalMutation)\n \t\t\t\treturn nil, fmt.Errorf(\"engine: conditional mutation %d condition %d has unsupported kind %d\", mutationIndex, conditionIndex, condition.Kind)\n \t\t\t}\n \t\t}\n \t}\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn nil, err\n+\t}\n \ttbl, ok := e.tables[table]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn nil, fmt.Errorf(\"engine: table %q not found\", table)\n \t}\n \tresults, err := tbl.conditionalWrite(mutations)\n \tif err != nil {\n@@ -317,21 +347,27 @@ func (e *Engine) SetTableStorageFormat(tableName string, format StorageFormat) e\n \tif err != nil {\n \t\treturn err\n \t}\n \te.mu.Lock()\n \tdefer e.mu.Unlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[tableName]\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n \treturn tbl.setFileFormat(tablet.FileFormat(parsed))\n }\n \n func (e *Engine) SetTableTargetEmbeddingSpace(tableName, identity string) error {\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[tableName]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n \treturn tbl.setTargetEmbedding(identity)\n }\n@@ -350,12 +386,15 @@ func (e *Engine) TableTargetEmbeddingSpace(tableName string) (string, error) {\n // future immutable files. It does not relabel existing files.\n func (e *Engine) SetTableDefaultEmbedding(\n \ttableName string, state embeddingspace.FileState,\n ) error {\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[tableName]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n \treturn tbl.setDefaultEmbedding(state)\n }\n@@ -428,12 +467,15 @@ func (e *Engine) MigrateTableStorageFormat(tableName string, format StorageForma\n \tparsed, err := ParseStorageFormat(string(format))\n \tif err != nil {\n \t\treturn err\n \t}\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[tableName]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n \tif err := tbl.migrate(tablet.FileFormat(parsed), stack); err != nil {\n \t\treturn err\n@@ -569,12 +611,15 @@ func (e *Engine) Neighbors(tableName string, rows [][]byte, edgeCF []byte, opts\n }\n \n // Flush forces all memtables in the named table to disk.\n func (e *Engine) Flush(table string) error {\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[table]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", table)\n \t}\n \tif err := tbl.flush(); err != nil {\n \t\treturn err\n@@ -586,12 +631,15 @@ func (e *Engine) Flush(table string) error {\n // Compact runs compaction on all tablets in the named table with the\n // given iterator stack. This is where application-level iterators\n // (decay, prune, dedup) run.\n func (e *Engine) Compact(table string, stack []iterrt.IterSpec) error {\n \te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttbl, ok := e.tables[table]\n-\te.mu.RUnlock()\n \tif !ok {\n \t\treturn fmt.Errorf(\"engine: table %q not found\", table)\n \t}\n \tif err := tbl.compact(stack); err != nil {\n \t\treturn err\n@@ -662,17 +710,53 @@ func (e *Engine) Metrics() Metrics {\n \n // Close flushes and closes all tables.\n func (e *Engine) Close() error {\n \te.mu.Lock()\n \tdefer e.mu.Unlock()\n+\tif e.closed {\n+\t\treturn nil\n+\t}\n+\te.closed = true\n \tvar firstErr error\n \tfor name, tbl := range e.tables {\n \t\tif err := tbl.close(); err != nil && firstErr == nil {\n \t\t\tfirstErr = fmt.Errorf(\"engine: close table %s: %w\", name, err)\n \t\t}\n \t}\n-\treturn firstErr\n+\treturn errors.Join(firstErr, e.authority.Release(context.Background()))\n+}\n+\n+// AuthorityToken returns immutable proof of this engine process's current\n+// embedded authority tenure.\n+func (e *Engine) AuthorityToken() coordination.AuthorityToken {\n+\te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif e.closed || e.authority == nil {\n+\t\treturn coordination.AuthorityToken{}\n+\t}\n+\treturn e.authority.Token()\n+}\n+\n+// ValidateAuthority rejects work stamped by an earlier engine process or\n+// authority generation.\n+func (e *Engine) ValidateAuthority(ctx context.Context, token coordination.AuthorityToken) error {\n+\te.mu.RLock()\n+\tdefer e.mu.RUnlock()\n+\tif e.closed || e.authoritySource == nil {\n+\t\treturn coordination.ErrLeaseLost\n+\t}\n+\treturn e.authoritySource.Validate(ctx, token)\n+}\n+\n+func (e *Engine) requireAuthorityLocked() error {\n+\tif e.closed || e.authority == nil {\n+\t\treturn coordination.ErrLeaseLost\n+\t}\n+\tif err := e.authority.Renew(context.Background()); err != nil {\n+\t\treturn fmt.Errorf(\"engine: authority: %w\", err)\n+\t}\n+\treturn nil\n }\n \n // Scanner is a pull-based iterator over scan results from one or more\n // tablets. When multiple tablets contribute, their results are merged\n // in key order.\ndiff --git a/internal/engine/engine_test.go b/internal/engine/engine_test.go\nindex 3c35f76..db67acf 100644\n--- a/internal/engine/engine_test.go\n+++ b/internal/engine/engine_test.go\n@@ -24,17 +24,58 @@ import (\n \t\"os\"\n \t\"path/filepath\"\n \t\"testing\"\n \n \t\"github.com/phrocker/shoal-oss/internal/cclient\"\n+\t\"github.com/phrocker/shoal-oss/internal/coordination\"\n \t\"github.com/phrocker/shoal-oss/internal/engine\"\n \t\"github.com/phrocker/shoal-oss/internal/iterrt\"\n \t\"github.com/phrocker/shoal-oss/internal/storage\"\n \t\"github.com/phrocker/shoal-oss/internal/storage/memory\"\n \t\"github.com/phrocker/shoal-oss/internal/tablet\"\n )\n \n+func TestEngineEmbeddedAuthorityFencesConcurrentAndStaleProcesses(t *testing.T) {\n+\tdir := t.TempDir()\n+\tfirst, err := engine.Open(dir, engine.Options{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tfirstToken := first.AuthorityToken()\n+\tif err := firstToken.Validate(); err != nil {\n+\t\tt.Fatalf(\"authority token: %v\", err)\n+\t}\n+\tif _, err := engine.Open(dir, engine.Options{}); err == nil {\n+\t\tt.Fatal(\"concurrent engine open succeeded\")\n+\t}\n+\tif err := first.Close(); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif token := first.AuthorityToken(); token != (coordination.AuthorityToken{}) {\n+\t\tt.Fatalf(\"authority token after close = %+v, want zero token\", token)\n+\t}\n+\tif err := first.Write(\"graph\", nil); !errors.Is(err, coordination.ErrLeaseLost) {\n+\t\tt.Fatalf(\"write after authority release = %v, want ErrLeaseLost\", err)\n+\t}\n+\n+\tsecond, err := engine.Open(dir, engine.Options{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer second.Close()\n+\tsecondToken := second.AuthorityToken()\n+\tif secondToken.Generation <= firstToken.Generation {\n+\t\tt.Fatalf(\"restart generation = %d, want > %d\", secondToken.Generation, firstToken.Generation)\n+\t}\n+\tif err := second.ValidateAuthority(context.Background(), firstToken); !errors.Is(err, coordination.ErrStaleToken) {\n+\t\tt.Fatalf(\"old token validation = %v, want ErrStaleToken\", err)\n+\t}\n+\tif err := second.ValidateAuthority(context.Background(), secondToken); err != nil {\n+\t\tt.Fatalf(\"current token validation: %v\", err)\n+\t}\n+}\n+\n type removeFailBackend struct {\n \t*memory.Backend\n }\n \n type committedManifestBackend struct {\ndiff --git a/internal/engine/rfile_export.go b/internal/engine/rfile_export.go\nindex 558a9b3..9cc2768 100644\n--- a/internal/engine/rfile_export.go\n+++ b/internal/engine/rfile_export.go\n@@ -291,19 +291,23 @@ func (e *Engine) ExportRFiles(ctx context.Context, tableName string, dst storage\n \tif err := e.Flush(tableName); err != nil {\n \t\treturn nil, err\n \t}\n \n \te.mu.RLock()\n-\ttbl, ok := e.tables[tableName]\n-\tvar configuredFormat tablet.FileFormat\n-\tif ok {\n-\t\tconfiguredFormat = tbl.fileFormat()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\te.mu.RUnlock()\n+\t\treturn nil, err\n \t}\n-\te.mu.RUnlock()\n+\ttbl, ok := e.tables[tableName]\n \tif !ok {\n+\t\te.mu.RUnlock()\n \t\treturn nil, fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n+\ttbl.formatMu.RLock()\n+\te.mu.RUnlock()\n+\tdefer tbl.formatMu.RUnlock()\n+\tconfiguredFormat := tbl.format\n \n \tfiles := tbl.rfiles()\n \tcompatibility := exportCompatibility(files)\n \tmanifest := &RFileExportManifest{\n \t\tVersion:             RFileExportManifestVersion,\n@@ -957,10 +961,16 @@ func (r *verificationReaderAt) firstError() error {\n // RFiles makes them visible without a reopen. This is what lets many local\n // agents export the same logical table into one cluster engine safely (with\n // per-cell tenant visibility stamps providing isolation; see\n // RFileExportOptions.StampVisibilityLabel).\n func (e *Engine) ImportRFileManifest(ctx context.Context, manifest *RFileExportManifest) (err error) {\n+\te.mu.RLock()\n+\tif authorityErr := e.requireAuthorityLocked(); authorityErr != nil {\n+\t\te.mu.RUnlock()\n+\t\treturn authorityErr\n+\t}\n+\te.mu.RUnlock()\n \tif manifest == nil {\n \t\treturn errors.New(\"engine: nil RFile import manifest\")\n \t}\n \tif err := validateImportedTableName(manifest.SourceTable); err != nil {\n \t\treturn err\n@@ -984,10 +994,20 @@ func (e *Engine) ImportRFileManifest(ctx context.Context, manifest *RFileExportM\n \tdefer func() {\n \t\tif err != nil {\n \t\t\terr = rollback.cleanup(err)\n \t\t}\n \t}()\n+\tfilesByTablet := make(map[int][]string)\n+\tfor _, file := range stagedFiles {\n+\t\tfilesByTablet[file.TabletIndex] = append(filesByTablet[file.TabletIndex], file.DestinationPath)\n+\t}\n+\n+\te.mu.Lock()\n+\tdefer e.mu.Unlock()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\treturn err\n+\t}\n \ttableDir := filepath.Join(e.dir, manifest.SourceTable)\n \tfor _, tb := range manifest.Tablets {\n \t\tif err := os.MkdirAll(filepath.Join(tableDir, fmt.Sprintf(\"t-%04d\", tb.Index)), 0o755); err != nil {\n \t\t\treturn fmt.Errorf(\"engine: mkdir imported tablet: %w\", err)\n \t\t}\n@@ -995,17 +1015,10 @@ func (e *Engine) ImportRFileManifest(ctx context.Context, manifest *RFileExportM\n \tif len(manifest.Tablets) == 0 {\n \t\tif err := os.MkdirAll(filepath.Join(tableDir, \"t-0000\"), 0o755); err != nil {\n \t\t\treturn fmt.Errorf(\"engine: mkdir imported tablet: %w\", err)\n \t\t}\n \t}\n-\tfilesByTablet := make(map[int][]string)\n-\tfor _, file := range stagedFiles {\n-\t\tfilesByTablet[file.TabletIndex] = append(filesByTablet[file.TabletIndex], file.DestinationPath)\n-\t}\n-\n-\te.mu.Lock()\n-\tdefer e.mu.Unlock()\n \tif existing, exists := e.tables[manifest.SourceTable]; exists {\n \t\tif len(splits) != len(existing.splits) {\n \t\t\treturn fmt.Errorf(\"engine: cannot merge import for table %q: manifest has %d tablet(s), open table has %d (divergent splits unsupported)\",\n \t\t\t\tmanifest.SourceTable, len(splits)+1, len(existing.tablets))\n \t\t}\ndiff --git a/internal/engine/rfile_export_test.go b/internal/engine/rfile_export_test.go\nindex 5cd6fdf..4452205 100644\n--- a/internal/engine/rfile_export_test.go\n+++ b/internal/engine/rfile_export_test.go\n@@ -13,10 +13,11 @@ import (\n \t\"path/filepath\"\n \t\"sort\"\n \t\"strings\"\n \t\"sync\"\n \t\"testing\"\n+\t\"time\"\n \n \t\"github.com/phrocker/shoal-oss/internal/cclient\"\n \t\"github.com/phrocker/shoal-oss/internal/iterrt\"\n \t\"github.com/phrocker/shoal-oss/internal/rfile\"\n \t\"github.com/phrocker/shoal-oss/internal/rfile/bcfile\"\n@@ -30,10 +31,34 @@ type exportSourceBackend struct{}\n \n func (exportSourceBackend) Open(context.Context, string) (storage.File, error) {\n \treturn exportFailingFile{}, nil\n }\n \n+type blockingExportBackend struct {\n+\t*memory.Backend\n+\tstarted     chan struct{}\n+\trelease     chan struct{}\n+\tstartOnce   sync.Once\n+\treleaseOnce sync.Once\n+}\n+\n+func (b *blockingExportBackend) Open(ctx context.Context, path string) (storage.File, error) {\n+\tif strings.HasSuffix(path, \".rf\") {\n+\t\tb.startOnce.Do(func() { close(b.started) })\n+\t\tselect {\n+\t\tcase <-b.release:\n+\t\tcase <-ctx.Done():\n+\t\t\treturn nil, ctx.Err()\n+\t\t}\n+\t}\n+\treturn b.Backend.Open(ctx, path)\n+}\n+\n+func (b *blockingExportBackend) unblock() {\n+\tb.releaseOnce.Do(func() { close(b.release) })\n+}\n+\n type committedImportBackend struct {\n \t*memory.Backend\n \tfailManifest bool\n }\n \n@@ -111,10 +136,76 @@ func TestCopyWithSHA256AbortsDestinationOnReadFailure(t *testing.T) {\n \tif writer.closed {\n \t\tt.Fatal(\"failed export closed and could have committed destination\")\n \t}\n }\n \n+func TestExportSerializesWithCompaction(t *testing.T) {\n+\tbackend := &blockingExportBackend{\n+\t\tBackend: memory.New(),\n+\t\tstarted: make(chan struct{}),\n+\t\trelease: make(chan struct{}),\n+\t}\n+\tt.Cleanup(backend.unblock)\n+\teng, err := Open(t.TempDir(), Options{Backend: backend})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer eng.Close()\n+\tif err := eng.CreateTable(\"graph\", TableOptions{}); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tmutation, err := cclient.NewMutation([]byte(\"row\"))\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tmutation.PutLatest([]byte(\"cf\"), []byte(\"cq\"), nil, []byte(\"value\"))\n+\tif err := eng.Write(\"graph\", []*cclient.Mutation{mutation}); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\n+\texportDone := make(chan error, 1)\n+\tgo func() {\n+\t\t_, err := eng.ExportRFiles(context.Background(), \"graph\", memory.New(), RFileExportOptions{\n+\t\t\tDestinationRoot: \"export\",\n+\t\t})\n+\t\texportDone <- err\n+\t}()\n+\tselect {\n+\tcase <-backend.started:\n+\tcase <-time.After(time.Second):\n+\t\tt.Fatal(\"export did not begin reading its immutable snapshot\")\n+\t}\n+\tif err := eng.CreateTable(\"other\", TableOptions{}); err != nil {\n+\t\tt.Fatalf(\"create unrelated table during export: %v\", err)\n+\t}\n+\n+\tcompactDone := make(chan error, 1)\n+\tgo func() { compactDone <- eng.Compact(\"graph\", nil) }()\n+\tselect {\n+\tcase err := <-compactDone:\n+\t\tt.Fatalf(\"compaction completed during export: %v\", err)\n+\tcase <-time.After(50 * time.Millisecond):\n+\t}\n+\n+\totherMutation, err := cclient.NewMutation([]byte(\"other-row\"))\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\totherMutation.PutLatest([]byte(\"cf\"), []byte(\"cq\"), nil, []byte(\"value\"))\n+\tif err := eng.Write(\"other\", []*cclient.Mutation{otherMutation}); err != nil {\n+\t\tt.Fatalf(\"write to unrelated table while compaction waited: %v\", err)\n+\t}\n+\n+\tbackend.unblock()\n+\tif err := <-exportDone; err != nil {\n+\t\tt.Fatalf(\"export: %v\", err)\n+\t}\n+\tif err := <-compactDone; err != nil {\n+\t\tt.Fatalf(\"compact: %v\", err)\n+\t}\n+}\n+\n func TestImportRFileManifestRejectsUnsafeSourceTableBeforeSideEffects(t *testing.T) {\n \tfor _, name := range []string{\"\", \".\", \"..\", \"../outside\", `..\\outside`, \"/absolute\", `C:\\absolute`} {\n \t\tt.Run(fmt.Sprintf(\"%q\", name), func(t *testing.T) {\n \t\t\troot := t.TempDir()\n \t\t\tdst, err := Open(filepath.Join(root, \"engine\"), Options{Backend: memory.New()})\ndiff --git a/internal/engine/rfile_sync.go b/internal/engine/rfile_sync.go\nindex d6a88e4..1dccfb2 100644\n--- a/internal/engine/rfile_sync.go\n+++ b/internal/engine/rfile_sync.go\n@@ -9,11 +9,10 @@ import (\n \t\"path/filepath\"\n \t\"sort\"\n \t\"time\"\n \n \t\"github.com/phrocker/shoal-oss/internal/storage\"\n-\t\"github.com/phrocker/shoal-oss/internal/tablet\"\n )\n \n // SyncStateVersion is the on-disk schema version of a SyncState file.\n const SyncStateVersion = 1\n \n@@ -84,19 +83,23 @@ func (e *Engine) ExportRFilesIncremental(ctx context.Context, tableName string,\n \tif err := e.Flush(tableName); err != nil {\n \t\treturn nil, err\n \t}\n \n \te.mu.RLock()\n-\ttbl, ok := e.tables[tableName]\n-\tvar configuredFormat tablet.FileFormat\n-\tif ok {\n-\t\tconfiguredFormat = tbl.fileFormat()\n+\tif err := e.requireAuthorityLocked(); err != nil {\n+\t\te.mu.RUnlock()\n+\t\treturn nil, err\n \t}\n-\te.mu.RUnlock()\n+\ttbl, ok := e.tables[tableName]\n \tif !ok {\n+\t\te.mu.RUnlock()\n \t\treturn nil, fmt.Errorf(\"engine: table %q not found\", tableName)\n \t}\n+\ttbl.formatMu.RLock()\n+\te.mu.RUnlock()\n+\tdefer tbl.formatMu.RUnlock()\n+\tconfiguredFormat := tbl.format\n \n \tpriorShipped := map[string]RFileExportFile{}\n \tvar priorSeq int64\n \tif prior != nil {\n \t\tpriorSeq = prior.Sequence\ndiff --git a/internal/engine/table.go b/internal/engine/table.go\nindex 2255308..1b6ddf8 100644\n--- a/internal/engine/table.go\n+++ b/internal/engine/table.go\n@@ -1047,10 +1047,12 @@ func (t *table) migrate(format tablet.FileFormat, stack []iterrt.IterSpec) error\n \t}\n \treturn t.compactLocked(stack)\n }\n \n func (t *table) close() error {\n+\tt.formatMu.Lock()\n+\tdefer t.formatMu.Unlock()\n \tvar firstErr error\n \tfor i, tab := range t.tablets {\n \t\tif err := tab.Close(); err != nil && firstErr == nil {\n \t\t\tfirstErr = fmt.Errorf(\"tablet %d: %w\", i, err)\n \t\t}\n",
+  "head": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 357,
+  "units": [
+    {
+      "id": "132c56d601d70ab032f4734cc0da9f27f7d9c310861888ca1c758450ca6c6693",
+      "kind": "non_go",
+      "path": "docs/coordination-authority.md",
+      "symbol": "file"
+    },
+    {
+      "id": "1ed65c934522c7c2150ef6aa6093cce7a9c58dceafa9bda7e3c1be68e1784c88",
+      "kind": "const",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "const:DomainEmbedded,DomainKubernetes,DomainAccumulo"
+    },
+    {
+      "id": "8642ca8f168a56657379fd2e425639572ce0e58a441b3961699de0d04480fb3f",
+      "kind": "const",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "const:EventAcquired,EventRenewed,EventFenced,EventReleased,EventLost,EventResync"
+    },
+    {
+      "id": "053762dec73c2eca36d6a0901472de0a657046ac2a8f6823668ba30ee95ea6aa",
+      "kind": "function",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "function:AuthorityToken.Validate"
+    },
+    {
+      "id": "a45f819d598686b3544f64fe9b87ce168ccb517a62559fa3a02dba981894f71a",
+      "kind": "import",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "import:\"context\",\"errors\",\"fmt\""
+    },
+    {
+      "id": "ec3a6cdf4ed14a8065fd9a3f0ddfa85c6d416e6f1d25efca92d01ba05afde493",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:AuthorityToken"
+    },
+    {
+      "id": "8eb2c11bc7cb83495379f1e03e56f7168773980afa6f9cea9af79e9858c5c5b7",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Coordinator"
+    },
+    {
+      "id": "5fc8858464b9625100024d06bf897266595894de2a5f403fc3b16359d78e5c20",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Domain"
+    },
+    {
+      "id": "5c28ac3be791abb45d2e127bcaa54499cb84a14f35e1bd073a5c7eb9f6e44be0",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:EpochLease"
+    },
+    {
+      "id": "9feb3c3c51a3e0eb9e651fb78da043538db0edf11b0cae930f3ae77fcf3f7df8",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Event"
+    },
+    {
+      "id": "2cf4192915ea9e2bb1dcd62f6f06bd60720593d794fe58b6af8fb623c1e14fc2",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:EventKind"
+    },
+    {
+      "id": "d23279c237d14ab7f5e9b44d0f06d82922bd273939ef6ebf07cae4acb3b37073",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Lease"
+    },
+    {
+      "id": "e5b06a640793c4ffc28539ee401240b538de28de253b8c52e105c6bce1390f99",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Member"
+    },
+    {
+      "id": "5816471d5c13ab59df5b6a7875273bb3b7530a60b1e390eb8b8f346c3f24355f",
+      "kind": "type",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "type:Validator"
+    },
+    {
+      "id": "71a244be946e25b172bce6bcdd37b42accbc3bce9edce0113551166f9f583beb",
+      "kind": "var",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "var:ErrInvalidToken,ErrLeaseHeld,ErrLeaseLost,ErrStaleToken"
+    },
+    {
+      "id": "2c7d6989f60f54e3992975c6683fe59da2e01ff015ede1b2bf6cb2de74f39cbe",
+      "kind": "file_context",
+      "path": "internal/coordination/coordination.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "11da9922cd6e7de18d7bc3b7ae842742f69db123e91731ac01e839a5b6fd06c5",
+      "kind": "function",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "function:Run"
+    },
+    {
+      "id": "839539c0d709bcaaa973a17dc87e4276810b7fac336f12987831a1110dab455d",
+      "kind": "function",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "function:assertEvent"
+    },
+    {
+      "id": "ab044bfca976d0bc2dba2c68dd8d94d9e4558b10283a810839975355ef5bcab3",
+      "kind": "import",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "import:\"context\",\"errors\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/internal/coordination\""
+    },
+    {
+      "id": "affa7f79bcc985ccd429a25affe09c8aa8f91f0c4341e4458a22e23f36f5edef",
+      "kind": "type",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "type:Factory"
+    },
+    {
+      "id": "296c618be6e46e69de25b9db863f48c78ed75e420391aedbb6545a749a26b6e3",
+      "kind": "type",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "type:FaultInjector"
+    },
+    {
+      "id": "cfc938b5cd647e209ddf121530fb9feb35d1bbede95d212807defa5064307a09",
+      "kind": "file_context",
+      "path": "internal/coordination/coordtest/conformance.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "05e2a411f98b6222a464edef60f3923b7bfef877fb625e310d47e7e009c0b3c4",
+      "kind": "const",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "const:embeddedLockFile,embeddedManifestFile,embeddedManifestSize,embeddedVersion,embeddedWatchQueue"
+    },
+    {
+      "id": "011e4ac0b4edb57b29ceffa35e254976614c71a77a5616f0c9ed9eaa95e18433",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.Acquire"
+    },
+    {
+      "id": "bd1d70adc7cbfb52fadafbf8fd378319ba9fc60e79a3e8d699644e0f751aca90",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.Members"
+    },
+    {
+      "id": "a164c89c1c4291fc80943b35c86abd54ec1a198ae34ac7ae05bd5878bb104f99",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.Validate"
+    },
+    {
+      "id": "4743457a63f60a3503c0299fd9617a64e0eec8e5d0c796cffb23ec5d428ebdbb",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.Watch"
+    },
+    {
+      "id": "151ae48c6b29654d84f36a614722cc18037360d754262bc01755f14304ece2b4",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.deliverWatcher"
+    },
+    {
+      "id": "5a12abd5d6aa214cacf0da3c04a28770c925965650d4e0d283c4cc3b1638a537",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*EmbeddedCoordinator.publishLocked"
+    },
+    {
+      "id": "1eec0ee5c0b18dfac55b6638fe166e9168bf162fb5e8583130c7457abe6d0cef",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.AdvanceEpoch"
+    },
+    {
+      "id": "4743503e69ece7ad9412111e671802925134392c1fffe50e5035aa6aa68fbb67",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.Lost"
+    },
+    {
+      "id": "5f6b5caa9b1340145b8ee495d33b61ff84b8aa0b83b2f888dc1110201eed15f0",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.Release"
+    },
+    {
+      "id": "5b6067eaaa39ca3683f05d07f80ea7b5fa3c0f596d479fd1672a50d53a0a850b",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.Renew"
+    },
+    {
+      "id": "1c94ccbfd9ce5afd1a098b81c5af7babaee35038796fe5e5b3989c205f3e3a9b",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.Token"
+    },
+    {
+      "id": "d88b9445d073f03587ec0fc4b22456a55d78e2c7e0ebe93c39d4d2473fca8fe8",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedLease.loseLocked"
+    },
+    {
+      "id": "b963a6209eba035bc9495eb0100966e13bf7db3f6772add0c2bcb71a20a782e9",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedWatcher.dequeue"
+    },
+    {
+      "id": "9485188093044644d052fbb26fdf7f0a94067402033c4fa7a7bd6b4798b8bbef",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:*embeddedWatcher.enqueue"
+    },
+    {
+      "id": "960c843e86b908e415988333aabf651fa3b5ddc3f3f65085ee29399cd9c35ba0",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:NewEmbeddedCoordinator"
+    },
+    {
+      "id": "cc7c04fbbeb8356631d33b89479370f716e7a02794f6333e0ad3fab16eaa08a2",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:embeddedManifest.token"
+    },
+    {
+      "id": "ad24283c41ccc0879f59ee1a57d54c4ceef2b66f416505d7a7f5e7d3857b477e",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:ensureJSONEOF"
+    },
+    {
+      "id": "3457b99ecddadde5345ef6a22b11c11f2d783b2be663584359a0d35e25bfef23",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:manifestForToken"
+    },
+    {
+      "id": "dd834b4802a6c7641e2581be5d7b6d2dff39a47126b908b6d7e63cb675c8ee7a",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:readEmbeddedManifest"
+    },
+    {
+      "id": "51b4352708f2cb57573488055bdd7af26037ce92fd00982c18c27cee17ffd87a",
+      "kind": "function",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "function:writeEmbeddedManifest"
+    },
+    {
+      "id": "161193a8f0d6e52e9185e011574b257a153d106e0f46a9988bde5f54546c1a09",
+      "kind": "import",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "import:\"context\",\"encoding/json\",\"errors\",\"fmt\",\"io\",\"math\",\"os\",\"path/filepath\",\"sync\",\"github.com/google/uuid\",\"github.com/phrocker/shoal-oss/internal/dirlock\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/local\""
+    },
+    {
+      "id": "093f2fd9158e2a9102406707155dff790c02c2f879ed7438f905d83dda87bddf",
+      "kind": "type",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "type:EmbeddedCoordinator"
+    },
+    {
+      "id": "0862bb6ccbd28090ebba30c0378a8e86491eacc96cc77236456346617057254b",
+      "kind": "type",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "type:embeddedLease"
+    },
+    {
+      "id": "88ccb4d773f44f857a8afe77c781d5e5b8cce4a7e3356dea1e2803cc5d04fd18",
+      "kind": "type",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "type:embeddedManifest"
+    },
+    {
+      "id": "646d8c2319e48ec68de565046d41a5a2eb3df6c26da976810e4fefd56053acbd",
+      "kind": "type",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "type:embeddedWatcher"
+    },
+    {
+      "id": "6622adbae902aab7f2da551f70e04291e209af34f4d1890f3e2168057874f188",
+      "kind": "file_context",
+      "path": "internal/coordination/embedded.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "070d045a6dfc0bea83a56f54ae3d51f374b43f4f26ef2b8682ff882338f3b2be",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorConformance"
+    },
+    {
+      "id": "08b2c08b9ff9f6192fa64e43a7a298743fa096f1381b91e0869fd432acd0441d",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorEpochAdvanceFailsClosedWhenManifestChanges"
+    },
+    {
+      "id": "46dcc56f30a2cd407bc1b4ad7b56332a2a60e6e2105b5944b68f51a6df9ba418",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorFailsClosedOnCorruptManifest"
+    },
+    {
+      "id": "4aee49263f87c0fc7a18e739d51d6342554395016ca68a816186b171c69c4528",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorRejectsConcurrentProcessAuthority"
+    },
+    {
+      "id": "f563b5aa7cd535f73ef3e7faef6053a22d91938d40bbee004d59d30521dcf2b7",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorWatchIsResourceScoped"
+    },
+    {
+      "id": "11ac6ce4cc5f8465b0fecf894bb7f2077c283f2e35d7141a7541dbdbf16aeb8a",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorWatchRetainsTerminalEventForSlowConsumer"
+    },
+    {
+      "id": "ae2dc50b827350fa6a71f6ebea890ea6d3f75abf61f35bfb0851f0be69e338d0",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:TestEmbeddedCoordinatorWatchSignalsResyncOnOverflow"
+    },
+    {
+      "id": "48f69c81fa37014ad0b8f17d8ebf2f3380e21e89f50804065b529ae160911012",
+      "kind": "function",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "function:assertWatchKind"
+    },
+    {
+      "id": "b42ebc655a9d8efcd0e201767b32a4bdadc09a98d01cfafe6bce290df8bd6872",
+      "kind": "import",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "import:\"context\",\"errors\",\"os\",\"path/filepath\",\"strings\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/internal/coordination\",\"github.com/phrocker/shoal-oss/internal/coordination/coordtest\",\"github.com/phrocker/shoal-oss/internal/dirlock\""
+    },
+    {
+      "id": "ab7fc510a3aeb46f0a48864dd6290c2a42090a17df7ee3ba4ff015df23931717",
+      "kind": "file_context",
+      "path": "internal/coordination/embedded_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "1f5a8e8c04ac2a5d66f1fd56768b3b30700e78709399488e75dfd3a55bea94bd",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.AuthorityToken"
+    },
+    {
+      "id": "5667c5e410766d2f500b37a844d1b3e64c3088b43e3227c3f13877c786524bdb",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.Close"
+    },
+    {
+      "id": "db526cabfe1f1e983b7d758b48a7937864ae3bb143cdf3a0a59b193b61f6d9af",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.Compact"
+    },
+    {
+      "id": "e7e34222872eb555e15cc0b4a7718ed35a3c4b43de68f5718363fe6c64d059ea",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.ConditionalWrite"
+    },
+    {
+      "id": "ce1203beabf28d4d66634d63f80adf2fca4888ccfb24d026395532e7e8bd46e8",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.CreateTable"
+    },
+    {
+      "id": "720c684bed18083601c941d5b8cedb568ca10738e27b5f063b1ff899b881be5f",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.Flush"
+    },
+    {
+      "id": "18476f36aa8b6204d2154dfca285192553edf29e4ea15bba3d4619dd82fa8123",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.MigrateTableStorageFormat"
+    },
+    {
+      "id": "5cb6ce2540cbedbc8cc84b8ae3b26871ee1f6612b2c2c560f8d6dd0562507322",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.SetTableDefaultEmbedding"
+    },
+    {
+      "id": "9e43bb8aa7d84260379028febe2cd57656c5ea343f3a1440402911d0fbeb1a57",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.SetTableStorageFormat"
+    },
+    {
+      "id": "78e537e609f3124fb8b60c21482bd88803706ebe53ac2ad870ae39a54e181673",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.SetTableTargetEmbeddingSpace"
+    },
+    {
+      "id": "0069b06877ed683b3bacc7fba97253cef0b9567781bfab009e32bbaa71b35ec8",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.ValidateAuthority"
+    },
+    {
+      "id": "639ac00f7d0262699269fc69c7e69b6a704264145569bf3bcb740831f7fa966d",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.Write"
+    },
+    {
+      "id": "d0d50e0a45afa2a9f90c1407fc2260c26597b3fc51da8ccb5062a137ed911549",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:*Engine.requireAuthorityLocked"
+    },
+    {
+      "id": "4e5abd3419a4ae279b9169762bb7642d2a146ed23850ee0adc84086295099c53",
+      "kind": "function",
+      "path": "internal/engine/engine.go",
+      "symbol": "function:Open"
+    },
+    {
+      "id": "06436f2deebe431b925e013ad607ca5870af3246e7f1046d4824a2212a4228ca",
+      "kind": "import",
+      "path": "internal/engine/engine.go",
+      "symbol": "import:\"bytes\",\"context\",\"errors\",\"fmt\",\"log/slog\",\"os\",\"path/filepath\",\"sort\",\"sync\",\"sync/atomic\",\"time\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/coordination\",\"github.com/phrocker/shoal-oss/internal/embeddingspace\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/localwal\",\"github.com/phrocker/shoal-oss/internal/rfile/wire\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/local\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "d0c931b8d2338a176ccc0815f19491e19403abefccb70be78704483c3656426c",
+      "kind": "import",
+      "path": "internal/engine/engine.go",
+      "symbol": "import:\"bytes\",\"context\",\"errors\",\"fmt\",\"log/slog\",\"os\",\"path/filepath\",\"sort\",\"sync\",\"sync/atomic\",\"time\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/embeddingspace\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/localwal\",\"github.com/phrocker/shoal-oss/internal/rfile/wire\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/local\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "9211efe0781d66521b410f42b358539821d754b8d0acd1595719993b6def43f4",
+      "kind": "type",
+      "path": "internal/engine/engine.go",
+      "symbol": "type:Engine"
+    },
+    {
+      "id": "0d2cd112ba69e3edb422dfe21ca02ebd5366fee70258e24ec7578053e324aee2",
+      "kind": "file_context",
+      "path": "internal/engine/engine.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "a43bb18760816a0b8dd1300a42bbbf0ec6f28c99a64e63052057009e1c041320",
+      "kind": "function",
+      "path": "internal/engine/engine_test.go",
+      "symbol": "function:TestEngineEmbeddedAuthorityFencesConcurrentAndStaleProcesses"
+    },
+    {
+      "id": "4332db3d8a2eb3c517969ca4f2d51a2924392c59d4e055bb25d71f61eec64009",
+      "kind": "import",
+      "path": "internal/engine/engine_test.go",
+      "symbol": "import:\"context\",\"errors\",\"fmt\",\"os\",\"path/filepath\",\"testing\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/coordination\",\"github.com/phrocker/shoal-oss/internal/engine\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/memory\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "c2b5b9e38dd445bc3d6145c3f26061780f0a59c1cf5d42ad6a5beffe3a444eff",
+      "kind": "import",
+      "path": "internal/engine/engine_test.go",
+      "symbol": "import:\"context\",\"errors\",\"fmt\",\"os\",\"path/filepath\",\"testing\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/engine\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/memory\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "ae8c083649d2ba5539c43f859b9e18529db1e7bb97cfa79693eea877ad69a520",
+      "kind": "file_context",
+      "path": "internal/engine/engine_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "9b8cfe0d2a710145f5294a39385721143baa5eac028dfef1b4d7e73d8ff75150",
+      "kind": "function",
+      "path": "internal/engine/rfile_export.go",
+      "symbol": "function:*Engine.ExportRFiles"
+    },
+    {
+      "id": "9e5975763feb0dab1cb84c5a22dbdab038829bd461ce55094af53a6ec360525d",
+      "kind": "function",
+      "path": "internal/engine/rfile_export.go",
+      "symbol": "function:*Engine.ImportRFileManifest"
+    },
+    {
+      "id": "c4cc88f36a9ab3f1f06cf93d147c6fd1ac09db791b742f2c48759c6c78b19e39",
+      "kind": "function",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "function:*blockingExportBackend.Open"
+    },
+    {
+      "id": "7e3b42b5abe80cf647f4a4336b85032c704ec76c7c7df1fc19f147758e0ef444",
+      "kind": "function",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "function:*blockingExportBackend.unblock"
+    },
+    {
+      "id": "5e67db9a2fe4334ca126eeb6a346e100f87c7134a87f98da8e469d3d5aad1224",
+      "kind": "function",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "function:TestExportSerializesWithCompaction"
+    },
+    {
+      "id": "1fe1ac407e70c4e43b55b95abf4e8e8e048da6b46811fd0b8a8a997513e51437",
+      "kind": "import",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "import:\"bytes\",\"context\",\"crypto/sha256\",\"encoding/base64\",\"encoding/json\",\"errors\",\"fmt\",\"io\",\"os\",\"path/filepath\",\"sort\",\"strings\",\"sync\",\"testing\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/rfile\",\"github.com/phrocker/shoal-oss/internal/rfile/bcfile\",\"github.com/phrocker/shoal-oss/internal/rfile/wire\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/memory\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "ce1a67787a3b86755ef5fb06981437bcfc539faa4d1fa084d0fb7d5aa4104eaf",
+      "kind": "import",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "import:\"bytes\",\"context\",\"crypto/sha256\",\"encoding/base64\",\"encoding/json\",\"errors\",\"fmt\",\"io\",\"os\",\"path/filepath\",\"sort\",\"strings\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/internal/cclient\",\"github.com/phrocker/shoal-oss/internal/iterrt\",\"github.com/phrocker/shoal-oss/internal/rfile\",\"github.com/phrocker/shoal-oss/internal/rfile/bcfile\",\"github.com/phrocker/shoal-oss/internal/rfile/wire\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/storage/memory\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "0cb161ece5bcd993003fb27d97076f8fb8836976cf8647ca607a27058d02806e",
+      "kind": "type",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "type:blockingExportBackend"
+    },
+    {
+      "id": "a89c210e6185f84d9cf82029e7998a4046b6acc5ab04e68f971d2c6c99f3aeac",
+      "kind": "file_context",
+      "path": "internal/engine/rfile_export_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "9a6f7568a16eee59e5ac7cb6e219d40b766af9ee1c8e258891030ce022a8b709",
+      "kind": "function",
+      "path": "internal/engine/rfile_sync.go",
+      "symbol": "function:*Engine.ExportRFilesIncremental"
+    },
+    {
+      "id": "b234b057bdc3098624efd4f2efd33e356f735871d68d51909cc9cb853507066d",
+      "kind": "import",
+      "path": "internal/engine/rfile_sync.go",
+      "symbol": "import:\"context\",\"encoding/json\",\"fmt\",\"os\",\"path\",\"path/filepath\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/internal/storage\""
+    },
+    {
+      "id": "97639329838a0ec6709771d372e21e982e35ecc3c27fa4e31c5157d709aecf4a",
+      "kind": "import",
+      "path": "internal/engine/rfile_sync.go",
+      "symbol": "import:\"context\",\"encoding/json\",\"fmt\",\"os\",\"path\",\"path/filepath\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/internal/storage\",\"github.com/phrocker/shoal-oss/internal/tablet\""
+    },
+    {
+      "id": "8c4d180be2acff0157618e849d086290807f03b7ffb762ffe0f386a1c7c3652a",
+      "kind": "function",
+      "path": "internal/engine/table.go",
+      "symbol": "function:*table.close"
+    }
+  ]
+}

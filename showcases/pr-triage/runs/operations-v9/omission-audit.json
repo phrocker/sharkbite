@@ -1,0 +1,1266 @@
+{
+  "status": "packet_omission_audit",
+  "method": "Use population prediction proposal only; compare each omitted declaration with full packet. Search complete declaration and body ignoring whitespace within each candidate declaration/shared diff normalized by removing diff line prefixes; also count source lines found anywhere. Before/after diff reconstruction is not semantic parsing.",
+  "limitations": [
+    "Short/common lines can match unrelated functions; line overlap is not proof of useful restored context.",
+    "Exact complete-body matching is a lower bound; reordered/edited/partial context can still preserve important evidence.",
+    "Population predictions nominal omissions apply to changed declarations only; shared unchanged context still contributes packet bytes.",
+    "No model, labels, packets or repository changed."
+  ],
+  "input_sha256": {
+    "/tmp/shoal-operations-v9-reserved/population-predictions.json": "52ecfa7e84819d841c90c36c7dc4d7525a24f8203e3f85a6a775464c95c541bc"
+  },
+  "summary": [
+    {
+      "pr": 303,
+      "nominal_omitted": 1,
+      "complete_body_reappears": 0,
+      "any_substantive_lines_reappear": 0,
+      "prediction_matches_lower_priority": 1
+    },
+    {
+      "pr": 298,
+      "nominal_omitted": 29,
+      "complete_body_reappears": 0,
+      "any_substantive_lines_reappear": 12,
+      "prediction_matches_lower_priority": 29
+    },
+    {
+      "pr": 300,
+      "nominal_omitted": 26,
+      "complete_body_reappears": 0,
+      "any_substantive_lines_reappear": 10,
+      "prediction_matches_lower_priority": 26
+    },
+    {
+      "pr": 299,
+      "nominal_omitted": 25,
+      "complete_body_reappears": 0,
+      "any_substantive_lines_reappear": 2,
+      "prediction_matches_lower_priority": 25
+    }
+  ],
+  "records": [
+    {
+      "pr": 303,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:initGraphRankEnv",
+      "unit_id": "d694e40437cee3c9eb758cc88c62f58b3c734f61777c3f91645ffcc7f04ad38c",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 3,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:loadOntologyVersionFile",
+      "unit_id": "fcb7b2c1b1d3c04dfd8a750f8da24841eeb7004c4e5f9ee0ae7a416e98d23703",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 11,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyConceptsFromConfig",
+      "unit_id": "bf4638938b247dd263f6b06cf7eb203adb58f1a8510fc70476787fad290a24fd",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 13,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyConstraintsFromConfig",
+      "unit_id": "cf472c46b6e2c7a92d6174764ceaf9d8c1033e9982c535bd26f2e9e4cea50dd8",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 5,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyPropertiesFromConfig",
+      "unit_id": "eb80966e3054b165cfb7e9f712fb71553264c1347da7e88f15d0a5b9128d2685",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 14,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyRelationshipsFromConfig",
+      "unit_id": "94ac4cffbb926dce226d8de19fd0ebdd55a32f83ccd44aed64fe7212a0d55744",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 18,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyValueFromConfig",
+      "unit_id": "350b0d5810a07c6e3fa113c5f3e741c7741f161de637ab943e845159dee17edf",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 37,
+          "lines_found_anywhere": 6
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology.go",
+      "symbol": "function:ontologyVersionFromConfig",
+      "unit_id": "de83ba9927f440e3189212745e1df6fab2e453a519323ddb85e557887ada8230",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 16,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology_test.go",
+      "symbol": "function:TestOntologyFileConfiguresWebWorkspaceEndpoint",
+      "unit_id": "eb4d55ea8ec090c2b323ca3ef6a23ff4c6ccb119b26a9b2fba67f8d44670f939",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 38,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "cmd/shoal-explore-web/ontology_test.go",
+      "symbol": "function:getOntologyJSON",
+      "unit_id": "b4a977e49464c4eef3dc9e2d33f20307eda801f013d03de69475a6ac7bf28157",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 6,
+          "lines_found_anywhere": 1
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology.go",
+      "symbol": "function:emptyOntologyResponse",
+      "unit_id": "624c9ff07e2a26f3134d5d4adce29373de172ac7e8aaae8936a9a442200d71ac",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 8,
+          "lines_found_anywhere": 6
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology.go",
+      "symbol": "function:encodeOntologyIDs",
+      "unit_id": "025830f467ccbd1ee939d38aab1e0c3a32b308ca6f83dda9a059203532fcdc15",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 3,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology.go",
+      "symbol": "function:ontologyBoundError",
+      "unit_id": "c2964d82e7e358e35b083273b1c6ea9d665850d74b026cf55d3273d944688184",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 1
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology.go",
+      "symbol": "function:ontologyLimits",
+      "unit_id": "5e353842a2473eb466e9144213442af667edc13e52e62a1124f92c90ddc1cde5",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 7,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:TestOntologyEndpointRejectsOversizedOntology",
+      "unit_id": "b24cd44c4e674cbb0007cd6b8b28e4faf5b8976877955356c4e86c98eb34d68c",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 13,
+          "lines_found_anywhere": 7
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:constraintsByKind",
+      "unit_id": "fcb2b6042ed9e423ee38a963734d8abc5183b24120efe2c37ed03db6352b290a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 1
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:emptyOntologyVersion",
+      "unit_id": "ae635c471eef8cfd05c0ed733742874c58a1c66fcbe023736069aab944d026b5",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:equalStrings",
+      "unit_id": "848ac7b7a2dffeeb98184a23e07a62d59d771f0bb629f5f65b557725d0ef575d",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 3,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:getOntologyJSON",
+      "unit_id": "4902c2dc32241813f34f1d660b247ea40c3fcc53f39fe6d448ed268096686a2a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 8,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:getOntologyResponse",
+      "unit_id": "0663d06de1e200b174a24295c473ced6fd0d6e793349a3c4af1d3b59993854da",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:ontologyFixtureService.ActiveOntology",
+      "unit_id": "cd0e67e4ac73da183d9eaf6fd5d93a417f6231ff0976efa61496e7f5497e7d5a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:ontologyServer",
+      "unit_id": "70fbf5220447e67c9e7e59fe179ba3faf116d48a224414daadaf152cb9de7afc",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:oversizedOntologyVersion",
+      "unit_id": "2e5f461aea8101a7f941a9e2c4c141790fc6fa802f4f60208f1c4686345f7958",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 9,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:sortedKeys",
+      "unit_id": "ad3c08e0861c6141d504e872e4643196d1c3921b61172a08b9b91a8346f90f33",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_endpoint_test.go",
+      "symbol": "function:strconvUint",
+      "unit_id": "59dc14918c4c31643cca5cf47ad01161f6d69b71a9207656c647828140eca082",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_internal_test.go",
+      "symbol": "function:allowlistStubService.Path",
+      "unit_id": "057956da94fce4488d5c97b70aa61ee529f2fcab4323e9f31cbc10188c8e0a04",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_internal_test.go",
+      "symbol": "function:allowlistStubService.Retrieve",
+      "unit_id": "e02d97b8f4073059a2387767c8e50b6c0e912e769b914199184be410d722973b",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_static_test.go",
+      "symbol": "function:TestStaticWorkspaceOntologyRendersDeclaredJoins",
+      "unit_id": "0c8d0bd0e6c26b7eaefd5747da4571bf07cd231708662be2e163e2e55e867dc7",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 27,
+          "lines_found_anywhere": 1
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_static_test.go",
+      "symbol": "function:ontologyHarnessScript",
+      "unit_id": "fe30a64b7acb44c6b129f46591ac60c7dc8ab4da5d9bced781c8c644fedaebd8",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 149,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 298,
+      "path": "pkg/explorer/webapi/ontology_static_test.go",
+      "symbol": "function:runOntologyUITest",
+      "unit_id": "bf2050890f0d8c11781a7b276b945ac09cb936bc3d00345061e42838e1052d2a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 7,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.DeepCopy",
+      "unit_id": "b021838c5f368349cb94da34801d9ebc220d2112a6f4946942394c655d27cded",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 11,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.GetTopKey",
+      "unit_id": "1246f2c935786cbefae6a2f2e2afcbdf24e28e18cd9b2bb4219b80d51ce9b510",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.GetTopValue",
+      "unit_id": "c9b21378c6f6553679521d47c8390f713d04c77489b604427e2b411c8b183658",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.HasTop",
+      "unit_id": "d42aaeed8984d8a9dd45ed02926169a3216cf676f539f5a2d1b54a13a02e5219",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.Init",
+      "unit_id": "c638173944a4a1b5dd483aa22d9108a6f80fd5407629e91266e1d47bb2323c73",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 23,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.Next",
+      "unit_id": "59b846ccc4c9686b0071fb0c442acf86741ec8a845beed2f277e00828e0d420e",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:*GraphRankIterator.sortOut",
+      "unit_id": "b44b2f2463f88edd372d9e27856613e159d6fde2b4e4ae0598e4bfd457a3ffe1",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:NewGraphRankIterator",
+      "unit_id": "5a023f5b8c51b26bcd4ab36f27ca04a0be6604c7a4f149b866e8ed14dce5093a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 9,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank.go",
+      "symbol": "function:graphRankKeys",
+      "unit_id": "0abf5e423ce3ff98c274914134d8312f8f37e425ce4e0e0ae602c3a977f91a72",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 3,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_parity_test.go",
+      "symbol": "function:TestGraphRankParity_DeterministicIncomingOrder",
+      "unit_id": "05cd00614be1016a3a5a81f000e542acbd481f962c3425aec4b04389f7ed2827",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 36,
+          "lines_found_anywhere": 4
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_BadOptionsRejected",
+      "unit_id": "b13b71baec191fb73fe2100fd86a7bbb93dce05fe3301aafecd1822884c4758f",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 11,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_BuildStackRegistered",
+      "unit_id": "fa96edf596ef67ee415197c0a0f5479238bd2465a1443ff7257e4aa5c172649c",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 14,
+          "lines_found_anywhere": 4
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_ConvergenceThresholdStopsIterations",
+      "unit_id": "bbb1ecb933bb7db285611243cc5d6de07478fc4ffb4835499f82dc1ba6a1a3bc",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 22,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_DeepCopy",
+      "unit_id": "b5d2fe32c967a2e0680e99349479a6a6881519663611281929086f54adc8d3a3",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 18,
+          "lines_found_anywhere": 3
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_DerivedTimestamps",
+      "unit_id": "d8570690d8d9ca801de8f1ca3b74febae218c34ef858e95e629e1be041f7a1d7",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 10,
+          "lines_found_anywhere": 4
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_EdgeTypeFilter",
+      "unit_id": "9fc6a437f465a34c2933cf68d11b0954146a05572cb507f45b4f9b26c825309a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 13,
+          "lines_found_anywhere": 6
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_EmptyInput",
+      "unit_id": "d93f264a1c3a369dcb21c7254fe672bd483440e766c243169064759e5d89db40",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 5,
+          "lines_found_anywhere": 2
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_MaxVerticesSkipsComputation",
+      "unit_id": "5a04e89bb2c74ade119b8b322bc8fac073ad5c662c9e512e85b6b4eb265999dc",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 11,
+          "lines_found_anywhere": 5
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_OutputSortedByKey",
+      "unit_id": "21fda0a07c3663c88acda9014a2d876a879312b4d5b99f73b2d7381bb8e9f65c",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 10,
+          "lines_found_anywhere": 5
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:TestGraphRank_SingleDanglingVertex",
+      "unit_id": "e819478b0177ce5dc4907dee1ad6936e00abc6d3bbb33bbcce37dc6f957b8c75",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 8,
+          "lines_found_anywhere": 4
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:assertClose",
+      "unit_id": "0537ec289220ec1df70ea48866cc2ece77b7cdfcaa14a69f57a5faf7c6609d49",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:graphRankFloat",
+      "unit_id": "39d8269bdaa13deabade325b21892c396391a6a8acc94ac84d49b33be71e9aa4",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 4,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:graphRankRankCells",
+      "unit_id": "acc27872c6a86829754656a9a22672a0128b7f54ee0d5e34c5ca0c2779654b1a",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 8,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:initGraphRank",
+      "unit_id": "bea3d555a999d68aae9089d0d9160373b63d9bc9ca29e558aa01b17bc385b582",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 5,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:serializedGraphRankCells",
+      "unit_id": "2e109f821a69c6b8bc006b1712aa65f9251b402a0a275cd85d38cc8690303569",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 6,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 300,
+      "path": "internal/iterrt/graphrank_test.go",
+      "symbol": "function:sortGraphRankInput",
+      "unit_id": "0a021a706e30b9c1a37b218f11a85fd7fdba7f963cdf6c87e087da1abeb4622b",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/derived_assertion_test.go",
+      "symbol": "function:TestAssertionDerivationIDIsCanonicalAndContentDerived",
+      "unit_id": "604c91f705238985680cf1abc5153423719fc1488faa8cf9dace7f47a4359f03",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 18,
+          "lines_found_anywhere": 1
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/derived_assertion_test.go",
+      "symbol": "function:mustDerivation",
+      "unit_id": "d42a52312fab7824131c22e638dd36b9d762ded488027c4a93d6e55e4c086805",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/derived_assertion_test.go",
+      "symbol": "function:mustDerivationEvidence",
+      "unit_id": "e21ec630e07bbbb066302e8907af67a9f1ecf7dd159e57e851121317ea2807a6",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/derived_assertion_test.go",
+      "symbol": "function:newDerivation",
+      "unit_id": "ddffe5c7fb9a2129dbded766cc17bb0517c4b558f2a2e0e73b6322320bbc903b",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 30,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/derived_assertion_test.go",
+      "symbol": "function:newDerivationVariant",
+      "unit_id": "ca32f0ccdca798e386c5cc0af2a496ab4e51048bc89236a2d921029d27196452",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 22,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/extractor.go",
+      "symbol": "function:*payloadCounter.addDerivation",
+      "unit_id": "7295bcac0fb1a24a787f402cafbfa72709416e9a85c76a4a311aba75c5c30981",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 10,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.EmbeddingModel",
+      "unit_id": "7d5cdd77029e41aa32cb9d31bb32b030355714a3c915606e6a671de2a235a1eb",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.EmbeddingModelVersion",
+      "unit_id": "d8ae6806e6d9ca4a0cf2554dbf43ce8c0f9920395697425c483965d226642a23",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.ID",
+      "unit_id": "601b796ec750ab1578a8407978112b0f6ccfbde92d4eafec047465ef101fdbf3",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 0,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.IteratorName",
+      "unit_id": "1d3e6433fe498aeb7b3e4356c354a7bfa0d9e9cffe9bdbd5d13324f7b474fe18",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.IteratorOptions",
+      "unit_id": "b5a458dd2de00cf776106efa48cbcb2697e7f58628ec0557514f1da54a80f6aa",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.Score",
+      "unit_id": "0b132e96089ba18ab827b7c107048fd9bab84fa9f63919c3a83d148d35441090",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 0,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.SimilarityMetric",
+      "unit_id": "e28675d796fd28cbae183636ef33158f7289001219b6bf1d3d7980dcdcd191f6",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.SourceEndpoint",
+      "unit_id": "7c47f093b3141ba732ecbe3a4c224472ae87ca22710662247174d9dbe231517b",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.TargetEndpoint",
+      "unit_id": "cd63e6cc6b2d4d560928b85d3bbb961760bc354378d0380d34b9bb7aff4f73f1",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.TessellationCell",
+      "unit_id": "9a3dd6500b925046cb279171c14d94b1ed4c01eee3cd74eb82c35b8a85f1c4f5",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.Threshold",
+      "unit_id": "6ffba4128dd5ecfc772a2c295fdbf6f6d6908aa95942ec446334e1300c348046",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:AssertionDerivation.canonical",
+      "unit_id": "cf8ab32fa090d6fce25f2ed524b88fc035368f8a2f783a7f69ede00148f170a8",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 9,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:EvidenceRef.Derivation",
+      "unit_id": "52bc95ecf0f683bf793c04527014ad59d25fdd095c0db446de75b17a7db0e1dc",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 1,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:EvidenceRef.clone",
+      "unit_id": "388c1c30e0222c45bd05dd5d4ed9259ab479dd4be94b40f76fba6c24220a830f",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "before": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        },
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 3,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:NewAssertionDerivation",
+      "unit_id": "90fb8794822503ece084b797eca255fc33ab9f61bd8763915b325259bbc3acb1",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 17,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:NewDerivationEvidenceRef",
+      "unit_id": "71d723f952c64820d84688780c6ea7a43dd0a024e723e7b3b0f466e9806a026d",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 9,
+          "lines_found_anywhere": 5
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:derivationID",
+      "unit_id": "459ae8987cfbe0ff1c6fabb48df44f050205c2efcae37f3f713a6a0e397d2133",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:derivedEvidenceID",
+      "unit_id": "f73b1b210d714d0ff88e02082f9a27b79f2198988c64d3b711f4d53e18814136",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 2,
+          "lines_found_anywhere": 0
+        }
+      }
+    },
+    {
+      "pr": 299,
+      "path": "pkg/ontology/model.go",
+      "symbol": "function:validateDerivationFields",
+      "unit_id": "0249d99816120887df54e54c7784daf5f0b7e04393e9412d6fec89be450e0869",
+      "prediction_proposal": "lower_priority",
+      "sides": {
+        "after": {
+          "complete_declaration_reappears_normalized": false,
+          "complete_body_reappears_normalized": false,
+          "substantive_lines": 17,
+          "lines_found_anywhere": 0
+        }
+      }
+    }
+  ]
+}

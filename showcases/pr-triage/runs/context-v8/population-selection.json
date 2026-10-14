@@ -1,0 +1,8 @@
+{
+  "model_id": "0178ed5e2ce1e0ee1182c0dbc891b6c7d8fa41060cde94a248484204f608fc27",
+  "inputs_id": "8313673c7f5931230037f9becdd0b93f455e2eb37bc9020b96ddb7c3d801dbf7",
+  "labels_inspected": false,
+  "threshold": 0.1454674086399588,
+  "purpose": "Frozen classifier expanded to complete preselected PRs for paired shadow evidence.",
+  "id": "b86d272fe9b8191fa5b5ade87d7eeacb74c8e1731a72a693ff0b5309fe9df628"
+}

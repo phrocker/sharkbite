@@ -1,0 +1,399 @@
+{
+  "rows": [
+    {
+      "pr": 399,
+      "arm": "full",
+      "prompt_bytes": 351345,
+      "input_tokens_including_cache": 173648,
+      "output_tokens": 4944,
+      "cost_usd": 1.4712236,
+      "elapsed_seconds": 53.54037100635469,
+      "findings": {
+        "findings": [
+          {
+            "path": "pkg/explorer/fleet/admission.go",
+            "symbol": "function:*AdmissionService.Outstanding",
+            "severity": "medium",
+            "claim": "Outstanding pages over the global action store and returns the store's raw continuation cursor to the caller after filtering by principal. If the cursor encodes the last scanned key, which is typically an action ID, a caller can learn action identities belonging to other principals. It can also learn store density from empty-but-continuing pages. This is the existence disclosure the Report path explicitly works to prevent.",
+            "witness": "page, err := dispatch.store.ScanActions(ctx, request.After, request.Limit) ... result := OutstandingAdmissionsPage{Next: append([]byte(nil), page.Next...)} ... if !sameActionPrincipal(decision, record) { continue }; webapi: Next: base64.RawURLEncoding.EncodeToString(page.Next)",
+            "missing_context": "Encoding of ScanActions' Next cursor (raw last action ID vs opaque/sealed), and whether action IDs are a global or per-principal namespace."
+          },
+          {
+            "path": "pkg/explorer/fleet/admission.go",
+            "symbol": "function:*AdmissionService.Outstanding",
+            "severity": "medium",
+            "claim": "Outstanding and Report do not restrict themselves to admission records. Outstanding filters only on State == DispatchClaimed and principal, so it also lists ordinary dispatch actions claimed by remote workers and returns their ClaimID as a TokenID. Report passes TokenID as ClaimID to CompleteClaim without checking that the record was admitted (for example, non-empty AdmittedEffects). Any client sharing the principal can therefore read a worker's live claim credential and use the admission report endpoint to complete or fail that worker's action, fencing the real worker out.",
+            "witness": "if record.State != DispatchClaimed { continue } ... TokenID: append([]byte(nil), record.ClaimID...) ; Report: dispatch.CompleteClaim(ctx, CompletionRequest{ID: report.Token.ActionID, ExpectedVersion: report.Token.Version, ClaimID: report.Token.TokenID, ...})",
+            "missing_context": "Whether sameActionPrincipal/authorizedCurrent bind to the specific actor/client that claimed (vs subject only), and whether dispatch ClaimIDs are otherwise exposed to the same principal through Status/Pull."
+          }
+        ],
+        "unknowns": [
+          "equivalentEnqueue body is truncated: unknown whether it compares Subject/Actor/ClientID/AuthorizationFingerprint. If it does not, replay() lets a different principal who knows (ID, idempotency key, token ID) retrieve another principal's live grant token, because replay performs no principal check of its own.",
+          "If equivalentEnqueue does compare RequestID/fingerprint, the identical-replay recovery path may conflict across requests. That is a functional concern rather than a security one, but it affects whether the tests reflect production behavior.",
+          "main.go wires Restrictor: client (*authorized.Client). If client can be nil there, the typed-nil interface makes s.restrictor != nil true and RestrictDisclosure is invoked on a nil receiver.",
+          "Whether authorized.Client resolves the same decision from ctx as the dispatch resolver (config.resolver). If they differ, the budget is charged to a different identity than the one admitted.",
+          "Whether CompleteClaim enforces ClaimLeaseUntil server-side for admission records. The token's ExpiresAt is caller-supplied and ignored.",
+          "replay() does not re-check declared.exceeds(action.Effects), so a grant stays replayable after the descriptor narrows. Whether that matters depends on whether descriptor updates are expected to revoke live claims.",
+          "Without a restrictor, stage-one obligations authorize every reference against the request's single SourceID/PolicyID rather than each document's own scope. This is documented as a deployment invariant; hosted wiring covers it, but other deployments are unknown.",
+          "Budget is charged in obligations() before commit. A commit or audit failure leaves the co-occurrence budget charged for a disclosure that was never admitted. This fails toward restriction, but availability impact is unknown."
+        ],
+        "summary": "The admission seam is carefully fail-closed: it writes a single record (no queued window), pins the declaration in the retry identity, intersects restrictor output with authorization, and treats restrictor errors as request failures. Two concrete concerns remain in the unchanged-principal-scoped surfaces. Outstanding returns the global scan cursor, which may disclose other principals' action IDs. Outstanding and Report also operate on any claimed dispatch action, not just admissions, which exposes worker claim IDs and lets them be completed through the admission endpoint. Principal binding in replay() depends on the truncated equivalentEnqueue and should be verified."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 4944,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 171488,
+          "webSearchRequests": 0,
+          "costUSD": 1.4712236,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 3306,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "14312ceff18fd5d712dc50ae784cac7d1afbaf42d4d3f1ecc9e04cfac2988708"
+    },
+    {
+      "pr": 399,
+      "arm": "candidate",
+      "prompt_bytes": 336870,
+      "input_tokens_including_cache": 165675,
+      "output_tokens": 6237,
+      "cost_usd": 1.4332996,
+      "elapsed_seconds": 64.88502379180863,
+      "findings": {
+        "findings": [
+          {
+            "path": "pkg/explorer/fleet/admission.go",
+            "symbol": "function:*AdmissionService.Outstanding",
+            "severity": "medium",
+            "claim": "Outstanding and Report are not limited to admission records. Outstanding lists every DispatchClaimed record owned by the same principal, including ordinary dispatch claims held by remote workers, and returns each record's ClaimID as TokenID. Report accepts any claimed record that passes authorizedCurrent and passes the ClaimID to CompleteClaim. Any session of the principal holding invoke can therefore learn a worker's live claim fence and use it to complete that worker's action, including an EffectMutatesExternal action, through the admission report path.",
+            "witness": "for _, record := range page.Actions { if record.State != DispatchClaimed { continue } if !sameActionPrincipal(decision, record) { continue } ... TokenID: append([]byte(nil), record.ClaimID...)  \u2014 no check that record.AdmittedEffects is non-empty; Report likewise calls dispatch.CompleteClaim without checking the record is an admission",
+            "missing_context": "Whether a dispatch ClaimID is meant to be secret from other sessions of the same principal, and whether the existing /fleet/actions/{id}/complete route already lets the same principal complete without knowing the claim ID. If the ID is not secret, severity drops to low (the admission surface still gains authority over non-admission records)."
+          },
+          {
+            "path": "pkg/explorer/fleet/admission.go",
+            "symbol": "function:*AdmissionService.Request",
+            "severity": "low",
+            "claim": "Request reads the caller-chosen action ID from the global store before any principal or object authorization. It then answers ErrAdmissionConflict (HTTP 409) for an ID already used by anyone, and 200 for a fresh one. That gives any invoke-holding caller an existence oracle over other principals' action and admission IDs, which the Report path explicitly works to prevent. If equivalentEnqueue does not compare Subject/Actor/fingerprint, it is worse: a second principal replaying an identical request with the same TokenID is handed the first principal's live grant.",
+            "witness": "current, readErr := dispatch.store.GetAction(ctx, request.ID) ... if readErr == nil { return s.replay(...) } \u2192 replay: if !equivalentEnqueue(current, base) { return AdmissionGrant{}, ErrAdmissionConflict }; the admissionError mapping sends this to ErrorConflict",
+            "missing_context": "The remaining fields compared by equivalentEnqueue (the diff is truncated after Action), and whether the pre-existing dispatch enqueue already exposes the same oracle through ErrActionConflict."
+          },
+          {
+            "path": "pkg/explorer/fleet/admission.go",
+            "symbol": "function:*AdmissionService.obligations",
+            "severity": "low",
+            "claim": "Without a restrictor, per-reference obligations fail open. Each declared reference is authorized against the request's own SourceID/PolicyID, not against the referenced document's registration. A caller with retrieve on the action's scope can therefore declare documents from other sources or compartments and have them admitted unwithheld. NewAdmissionService accepts a nil Restrictor, so any deployment that omits the wiring gets this behaviour silently instead of failing closed.",
+            "witness": "decision.AuthorizeObject(auth.OperationRetrieve, auth.ResourceRequest{... SourceID: request.SourceID, PolicyID: request.PolicyID, ObjectID: reference}, now) ... admitted := permitted; if s.restrictor != nil { ... }; and NewAdmissionService only rejects a nil Dispatch",
+            "missing_context": "Hosted startup (main.go) wires Restrictor: client, which mitigates this there. It is unknown whether other constructions of AdmissionService, or a nil *authorized.Client, can reach production."
+          }
+        ],
+        "unknowns": [
+          "Whether DispatchService.Claim can reclaim a claimed record once its lease has expired. If it can, an expired admission (whose egress may already have happened) becomes claimable and executable dispatch work, which is the 'refusal/permission through a different door' the design says it prevents. TestAdmissionNeverLeavesClaimableWork only checks Pull.",
+          "Whether the existing dispatch complete/cancel routes can operate on admission records. That would bypass Report's one-shot token semantics, since dispatch completion replays a differing terminal report as recorded.",
+          "The full body of equivalentEnqueue beyond the shown fields, specifically whether it compares principal and authorization fingerprint.",
+          "How ApplyAction handles a duplicate transitionToken for concurrent first-writes with the same ID. The token covers ID, idempotency key and version, but not TokenID or declaration; the codec comment suggests a DeepEqual check.",
+          "Implementations of boundAdmission.requestContext's resolver, dispatch.begin, authorizedCurrent, sameActionPrincipal, resolveCurrentRevisions and restrictCoOccurrence, which were not supplied.",
+          "Whether client in openService can be a nil *authorized.Client. Stored in a non-nil interface, it would pass the s.restrictor != nil check."
+        ],
+        "summary": "The admission seam is carefully fail-closed in most paths: single-write grant/deny, declaration pinned into retry identity, restrictor intersection, and uniform not-found on Report. The main concrete gap is that Outstanding and Report operate on any claimed dispatch record of the principal, not only admissions. This exposes worker claim IDs and lets the admission report path complete ordinary dispatch actions. Secondary issues are an action-ID existence oracle via the global pre-authorization GetAction in Request, and fail-open per-reference obligations when no restrictor is wired. All findings are proposals that need adjudication against the full source."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 6237,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 163515,
+          "webSearchRequests": 0,
+          "costUSD": 1.4332996,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 4284,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "946bcc6013decc99b6898136deb8269f9d46ec152d05d6aa2d2ce2978df9c00a"
+    },
+    {
+      "pr": 361,
+      "arm": "full",
+      "prompt_bytes": 9062,
+      "input_tokens_including_cache": 7993,
+      "output_tokens": 742,
+      "cost_usd": 0.0619436,
+      "elapsed_seconds": 10.49646843969822,
+      "findings": {
+        "findings": [],
+        "unknowns": [
+          "Whether Decode is reachable with untrusted or attacker-supplied Parquet bytes. Enabling ZSTD and dictionary pages widens the decompression surface. Whether size and allocation limits on decompressed pages exist in Decode or the parquet library configuration is not shown.",
+          "Whether encoded Parquet output crosses a trust boundary, for example export to a shared store. The change does not alter which cells are emitted, and visibility (CV) filtering is not visible in the supplied evidence.",
+          "The parquet library version and whether its struct-tag parser supports the 'dict' and 'zstd' options on these field types. If an option were silently ignored or misparsed, schema or round-trip behavior could differ. The added round-trip test covers only the happy path with empty ColumnVisibility.",
+          "Whether previously written Parquet files (uncompressed, non-dictionary) are still decoded correctly. Codec is normally per column chunk, but reader-side compatibility is not demonstrated."
+        ],
+        "summary": "The change adds dictionary-encoding and ZSTD options to the Cell Parquet struct tags and adds a compression and round-trip test. It changes storage encoding only. It does not change which fields are serialized: Row, CF, CQ, CV, Timestamp, Deleted and Value are all still present, so ColumnVisibility is retained. No authorization, identity, tenant or object-access, capability, or fail-closed logic is modified in the supplied evidence. No concrete security defects were identified. Remaining risk depends on unshown context: how Decode handles untrusted input under the new compressed and dictionary pages, and where the encoded data is sent."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 742,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 5833,
+          "webSearchRequests": 0,
+          "costUSD": 0.0619436,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 183,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "99630f120ffccd0aec5b7a464250169d425749b44e1c27476e2a3544b5c24066"
+    },
+    {
+      "pr": 361,
+      "arm": "candidate",
+      "prompt_bytes": 7089,
+      "input_tokens_including_cache": 6807,
+      "output_tokens": 703,
+      "cost_usd": 0.0516756,
+      "elapsed_seconds": 9.71024092566222,
+      "findings": {
+        "findings": [],
+        "unknowns": [
+          "Encode/Decode implementations are not shown, so it is unknown whether Decode fails closed on malformed or oversized ZSTD/dictionary pages (for example decompression-bomb limits or allocation bounds) when reading untrusted Parquet input.",
+          "Where the encoded Parquet bytes are stored or transmitted is unknown. It is also unknown whether an attacker can observe encoded sizes while influencing co-located cell contents (compression-length side channel). There is no evidence either way.",
+          "It is unknown whether any consumer enforces column visibility (CV) on decoded cells. This change only alters storage encoding of CV and does not touch visibility evaluation.",
+          "Backward compatibility of previously written files with the new tags is unknown, as is whether the reader derives encoding from file metadata. This is a correctness concern, not an evident access-control one.",
+          "The omitted declaration TestEncodeCompressesRepeatedCells appears in the shared file context. It is test-only and asserts round-trip fidelity including CV."
+        ],
+        "summary": "PR 361 changes Parquet struct tags on Cell to add dictionary encoding and ZSTD compression, and adds a compression/round-trip test. The supplied evidence contains no authorization, identity, tenant or object access, capability, or fail-closed logic changes. Column visibility bytes are still persisted and round-trip-tested unchanged. No concrete security defect is supported by the evidence. Residual risk sits in unshown decode-path hardening and in how encoded output is exposed."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 703,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 4647,
+          "webSearchRequests": 0,
+          "costUSD": 0.0516756,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 185,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "a43f2a8002a25cbd17b592228706f41aa65df496f71a5f62391e649842150ded"
+    },
+    {
+      "pr": 360,
+      "arm": "full",
+      "prompt_bytes": 4555,
+      "input_tokens_including_cache": 4945,
+      "output_tokens": 619,
+      "cost_usd": 0.0350996,
+      "elapsed_seconds": 7.77441299892962,
+      "findings": {
+        "findings": [],
+        "unknowns": [
+          "The diff only touches README.md; no code changes were supplied, so it is unknown whether ShoalQL's default graph catalog actually filters on the `evt:`/`ent:` prefixes as the new text describes, or whether the old `event:`/`entity:`/`knowledge:` prefixes were ever honored.",
+          "It is unknown whether the row-prefix filtering in the ShoalQL catalog is meant to be an access or visibility boundary. The docs say rows outside those prefixes \"remain available to embedded scans.\" If any deployment treated the prefix split as an isolation mechanism, this would be relevant, but no code or policy evidence shows that.",
+          "It is unknown whether `shoal-embed serve` (gRPC on --port 9876) enforces any authentication or authorization. The README mentions it but the diff does not change it, and no code was provided.",
+          "It is unknown whether both logical tables (`events`, `entities`) sharing one physical table, selected by `shoal-sql -table`, has any tenant or object isolation implications. No catalog, query-planning, or visibility-label code was supplied."
+        ],
+        "summary": "This is a documentation-only change to README.md. It renames example row prefixes (`event:` to `evt:`, `entity:` to `ent:`, and drops `knowledge:`) and adds a paragraph explaining that ShoalQL's default graph catalog only exposes rows with these prefixes. No executable code, authorization logic, identity handling, capability checks, or fail-closed paths were changed in the supplied evidence, so no concrete security defects can be identified. Whether the documented behavior matches the implementation, and whether prefix scoping is relied on for any access control, cannot be determined from this packet."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 619,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 2785,
+          "webSearchRequests": 0,
+          "costUSD": 0.0350996,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 44,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "7cdfacf6afea1f9dc4e4449b83f96e2e71aa6498fb568e58dd12f6a5cfb86f62"
+    },
+    {
+      "pr": 360,
+      "arm": "candidate",
+      "prompt_bytes": 4555,
+      "input_tokens_including_cache": 4945,
+      "output_tokens": 633,
+      "cost_usd": 0.013656599999999998,
+      "elapsed_seconds": 8.266378737054765,
+      "findings": {
+        "findings": [],
+        "unknowns": [
+          "Whether ShoalQL's default graph catalog actually restricts the logical `events` and `entities` tables to `evt:` and `ent:` row ranges. The new README text says so, but no catalog or scan-range code is in the packet.",
+          "Whether readers should treat row-prefix separation between logical tables as an access-control boundary. The README says both logical tables share the physical table chosen by `shoal-sql -table`, so prefix scoping alone would not isolate tenants or authorizations. Column-visibility and authorization enforcement code is not included.",
+          "Whether any code, tests, or tooling still use the old `entity:`, `event:` or `knowledge:` prefixes. Data written with those prefixes would silently fall outside ShoalQL tables. That is a correctness concern, not a security one, and cannot be checked from the supplied evidence.",
+          "Whether the `shoal-embed serve` gRPC API authenticates callers or isolates tenants. That section is unchanged context with no supporting code."
+        ],
+        "summary": "The pinned change in PR 360 touches only README.md. It renames example row prefixes (`entity:`/`event:`/`knowledge:` to `ent:`/`evt:`) and adds a paragraph saying ShoalQL's default catalog exposes only `evt:` and `ent:` rows from the physical table selected by `-table`. No executable code changed, so no authorization, identity isolation, tenant/object access, disclosure, capability, or fail-closed defect can be shown from this evidence. The new documentation describes prefix-based logical scoping, not an access boundary. Whether the implementation matches the documented prefix filtering is unknown."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 633,
+          "cacheReadInputTokens": 4943,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.013656599999999998,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 75,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "c51b08b3c10d1e1a0a52d1d72919ec4f9129a13f6980d97771fc9dbd2cfd9fd7"
+    },
+    {
+      "pr": 357,
+      "arm": "full",
+      "prompt_bytes": 137046,
+      "input_tokens_including_cache": 75663,
+      "output_tokens": 5065,
+      "cost_usd": 0.6897636,
+      "elapsed_seconds": 54.296397315803915,
+      "findings": {
+        "findings": [
+          {
+            "path": "internal/engine/rfile_export.go",
+            "symbol": "function:*Engine.ImportRFileManifest",
+            "severity": "medium",
+            "claim": "The authority check at function entry is released before the staging phase runs. Staging (and, on failure, rollback cleanup) then touches the engine data directory without holding authority. If a concurrent Close releases the embedded lease and another process opens the same directory in that window, this process stages or deletes files in a writer domain it no longer owns. The second requireAuthorityLocked check under e.mu.Lock happens only after those side effects. This breaks the fencing contract that a second process has exclusive ownership of the writer domain.",
+            "witness": "e.mu.RLock(); if authorityErr := e.requireAuthorityLocked(); ... ; e.mu.RUnlock()  // then staging + deferred rollback.cleanup run unlocked; e.mu.Lock(); if err := e.requireAuthorityLocked(); ...",
+            "missing_context": "Where stagedFiles' DestinationPath lives (inside e.dir vs. an external scratch area), what rollback.cleanup deletes, and whether staged names can collide with or be observed by a successor engine."
+          },
+          {
+            "path": "internal/engine/engine.go",
+            "symbol": "function:Open",
+            "severity": "low",
+            "claim": "On a table-open failure, the new deferred authority.Release runs, but tables already opened into eng.tables are never closed. Any background activity on those leaked tables (WAL sync interval, auto-flush) continues after the lease and OS lock are released. That permits unfenced writes concurrent with a successor process that acquires authority for the same directory.",
+            "witness": "releaseAuthority := true; defer func() { if releaseAuthority { _ = authority.Release(context.Background()) } }() ... return nil, fmt.Errorf(\"engine: open table %s: %w\", e.Name(), err)  // eng.tables entries not closed",
+            "missing_context": "Whether openTable/tablets start background writers (WAL sync goroutines, auto-flush timers) before Open returns, and whether they write to the data directory without further authority checks."
+          }
+        ],
+        "unknowns": [
+          "Whether other mutating Engine entry points not in this packet (e.g. DeleteTable, split/merge, RFile event handlers, background tablet flush/compaction) call requireAuthorityLocked; ungated paths would bypass the fence.",
+          "Write/Flush/Compact/ConditionalWrite/Migrate now hold e.mu.RLock for the full operation. Compact can hold it while blocked on tbl.formatMu held by an export. SetTableStorageFormat holds e.mu.Lock while (presumably) taking formatMu.Lock. If any code under these locks re-enters an engine method needing e.mu (e.g. RFile event subscribers) while a writer is pending, Go RWMutex semantics could deadlock. Lock acquisition in tbl.compact/setFileFormat/write and in subscriber callbacks is not shown.",
+          "Whether storage.WriteAll with local.New() performs an atomic replace (temp+rename+fsync). A torn manifest write fails closed on the next Acquire but could permanently wedge the directory.",
+          "Embedded Renew never re-checks the manifest or lock file. Out-of-band deletion of .shoal-authority.lock would allow a second process to acquire while the first keeps writing. The docs declare this storage corruption, so it is not reported as a defect.",
+          "dirlock semantics (flock vs. O_EXCL, behavior across NFS/PVC mounts) are not in evidence, and neither is whether the lock file path follows symlinks.",
+          "Read paths (Scan, Neighbors, TableTargetEmbeddingSpace) are not gated by authority or the closed flag. Whether reading after Close is intended is unknown."
+        ],
+        "summary": "The embedded authority fence is mostly sound. The OS lock is acquired before the manifest is read. Generation increments on each acquire. Validate compares full tokens under the coordinator mutex. AdvanceEpoch and Release re-verify the manifest and fail closed. Engine mutators hold e.mu.RLock across the operation, so Close (e.mu.Lock) cannot release authority mid-write. Two concrete gaps remain. ImportRFileManifest performs staging and rollback side effects between two separate authority checks, without holding authority. Open's failure path releases authority while leaking already-opened tables. Both allow directory writes outside a held tenure."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 5065,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 73503,
+          "webSearchRequests": 0,
+          "costUSD": 0.6897636,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 3570,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "e37275d23dc0d68c5218a802a81f4cae1ef5320b090953121cfe012311da944b"
+    },
+    {
+      "pr": 357,
+      "arm": "candidate",
+      "prompt_bytes": 124532,
+      "input_tokens_including_cache": 68736,
+      "output_tokens": 4508,
+      "cost_usd": 0.6232076,
+      "elapsed_seconds": 47.81156796775758,
+      "findings": {
+        "findings": [
+          {
+            "path": "internal/engine/rfile_export.go",
+            "symbol": "function:*Engine.ImportRFileManifest",
+            "severity": "medium",
+            "claim": "Import checks authority under e.mu.RLock and then drops the lock before staging files. Staging and rollback therefore run with no authority held. If Close runs concurrently, it sets closed, releases the OS lock, and lets another process open the same directory. The first engine's import can then still write staged files, and later run rollback deletions, into a writer domain it no longer owns. The second requireAuthorityLocked under e.mu.Lock only blocks the final table registration, not those filesystem side effects. Other mutating paths (Write, Compact, Flush) now hold e.mu.RLock for the whole operation, which keeps Close from completing until they finish; Import is the exception.",
+            "witness": "e.mu.RLock()\nif authorityErr := e.requireAuthorityLocked(); authorityErr != nil { e.mu.RUnlock(); return authorityErr }\ne.mu.RUnlock()\n... (staging / rollback setup outside lock) ...\ne.mu.Lock()\ndefer e.mu.Unlock()\nif err := e.requireAuthorityLocked(); err != nil { return err }",
+            "missing_context": "The staging code between the two checks is omitted. Unknown: whether stagedFiles' DestinationPath lives under e.dir; what rollback.cleanup deletes; whether destination names are unique enough to avoid colliding with a successor engine's files."
+          }
+        ],
+        "unknowns": [
+          "dirlock.Acquire semantics (flock vs fcntl/POSIX, behavior on NFS/PVC). POSIX fcntl locks are per-process and dropped when any fd on the file closes. Renew only checks in-memory l.active, so a silently lost OS lock would never be noticed and the lease would stay valid.",
+          "Whether storage.WriteAll on the local backend does an atomic rename plus fsync. A torn manifest write fails closed on the next Acquire, but could also make the durable generation fence non-monotonic after a crash.",
+          "EmbeddedCoordinator.Validate compares only against in-memory c.current and never re-reads the durable manifest. Out-of-band manifest changes are invisible to Validate and Renew until AdvanceEpoch or Release; the docs declare this corruption, but no caller tells it apart.",
+          "The engine authority covers only the local dir. When opts.Backend is non-local, it is unknown whether two engines with different local dirs but the same backend root could both hold authority over the same data.",
+          "Read paths (Scan, Neighbors, TableTargetEmbeddingSpace, etc.) are not guarded by closed/authority. Behavior after Close depends on the omitted table.close.",
+          "Whether table.close stops all background flush/compaction goroutines before authority is released in Close.",
+          "Whether any caller treats AuthorityToken as a bearer credential. Members and Watch events expose the full token (LeaseID, Attempt), which passes Validate. That is fine for fencing but not for authorization.",
+          "The table-name validation in CreateTable and validateImportedTableName for names that collide with .shoal-authority.lock and .shoal-authority.json."
+        ],
+        "summary": "Adds an embedded OS-lock-plus-manifest-generation authority, gates engine mutations on it, and exposes token validation. Acquisition, stale-token rejection, duplicate-acquire, corrupt-manifest, and close/restart paths fail closed based on the supplied code. One concrete fencing gap: ImportRFileManifest performs staging and rollback outside any held authority, so a closing engine's import can touch a directory already handed to a successor process. Liveness depends on unverified dirlock semantics, because Renew never re-verifies the OS lock or the manifest."
+      },
+      "model_usage": {
+        "claude-opus-5-5": {
+          "inputTokens": 2,
+          "outputTokens": 4508,
+          "cacheReadInputTokens": 2158,
+          "cacheCreationInputTokens": 66576,
+          "webSearchRequests": 0,
+          "costUSD": 0.6232076,
+          "contextWindow": 1000000,
+          "maxOutputTokens": 128000,
+          "thinkingTokens": 3236,
+          "canonicalModel": "claude-opus-5-5",
+          "provider": "firstParty",
+          "costBasis": "list"
+        }
+      },
+      "response_sha256": "9f6c9b32560b105783d840181cb60c1c96ba15a41f24ef7f6d21379dda084d59"
+    }
+  ],
+  "totals": {
+    "full": {
+      "prompt_bytes": 502008,
+      "input_tokens_including_cache": 262249,
+      "output_tokens": 11370,
+      "cost_usd": 2.2580304,
+      "elapsed_seconds": 126.10764976078644
+    },
+    "candidate": {
+      "prompt_bytes": 473046,
+      "input_tokens_including_cache": 246163,
+      "output_tokens": 12081,
+      "cost_usd": 2.1218394,
+      "elapsed_seconds": 130.6732114222832
+    }
+  },
+  "input_token_reduction": 0.06133865143432382,
+  "packet_byte_reduction": 0.05769230769230771,
+  "limitations": [
+    "One stochastic call per arm per PR; not statistical defect recall.",
+    "Shared provider caching affects billed cost; token totals include all cache reads and writes.",
+    "Both arms are partial syntactic snapshots; candidate lower-priority bodies can remain duplicated in shared file context.",
+    "Findings require pinned-source adjudication; generic ownership fencing may be outside authorization task."
+  ],
+  "optimization_enabled": false,
+  "id": "b0e4a117219fd79fddcc5524b98ace6cbb23b358aef45cfc340799c80047b994"
+}

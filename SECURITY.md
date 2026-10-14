@@ -1,14 +1,18 @@
-# Security Policy
+# Security policy
 
-## Supported Versions
+Sharkbite v2 is the supported code line. It includes the Shoal decision,
+evidence, provenance, storage, and Accumulo-compatible packages in this
+repository.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.5.x   | :white_check_mark: |
-| 0.6.x   | :white_check_mark: |
-| 0.7.x   | :white_check_mark: |
-| < 0.5   | :x:                |
+The legacy native Accumulo client preserved in earlier repository history is
+unsupported and should not be used for new deployments.
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Please email phrocker@apache.org if you have any vulnerabilities you would like to report.
+Please report suspected vulnerabilities privately through the repository's
+GitHub Security Advisories page. Include the affected component, the commit or
+release, reproduction steps, and the impact you observed. Do not open a public
+issue for an unpatched vulnerability.
+
+We will acknowledge reports, investigate them against the supported v2 line,
+and publish remediation guidance when a fix is available.

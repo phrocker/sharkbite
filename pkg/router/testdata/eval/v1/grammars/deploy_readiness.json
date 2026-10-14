@@ -1,0 +1,36 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "decision",
+    "profile": "deploy-readiness"
+  },
+  "cues": [
+    "ready",
+    "readiness",
+    "ship",
+    "deploy"
+  ],
+  "patterns": [
+    "is {service} ready to deploy to {environment}",
+    "is {service} ready for {environment}",
+    "can {service} ship to {environment}"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "environment": "$environment"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "artifacts": [
+    {
+      "path": "development-inputs.json.gz",
+      "gzip_sha256": "864cf33ce10dc73d143925e83a77a23ea592e57c8b154ae0d1d7e6882d820de5",
+      "uncompressed_sha256": "aa28866ec5be81cde5eb2598efe2363371250136ddcc630a1c5c3df9f79e5c74",
+      "uncompressed_bytes": 14979527
+    },
+    {
+      "path": "reserved-inputs.json.gz",
+      "gzip_sha256": "f30465672b14f9fd586339711a3ab661b371337f00ffe471e099da9c9865594c",
+      "uncompressed_sha256": "341c51f933bbd1c9f1ac83261c264b8cc68b6f486e7efcc15719355051295eef",
+      "uncompressed_bytes": 3313196
+    },
+    {
+      "path": "population-inputs.json.gz",
+      "gzip_sha256": "4f2bb5f8e24b061ac312356814362ca13918e259a1d78ebe253d27d02b03de9f",
+      "uncompressed_sha256": "e3eb17069b1219a9c5b7fb40b544c371c1e659b48ec76fa506d8ae68bf238097",
+      "uncompressed_bytes": 8249049
+    },
+    {
+      "path": "population-manifest.json.gz",
+      "gzip_sha256": "f9ce5db8c3c367a0a92acb245fa5ca1299166249f57f1338da1b68376fc3e0f3",
+      "uncompressed_sha256": "4e20b68cf0f919c474f35df8a3c282caddd2148c4ad0bbd9323e5e195637e4f4",
+      "uncompressed_bytes": 2115826
+    }
+  ]
+}

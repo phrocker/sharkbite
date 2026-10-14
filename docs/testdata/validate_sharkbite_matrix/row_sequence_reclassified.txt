@@ -1,0 +1,5 @@
+# Same ids and order, one status swapped with a sibling in the same section
+SB-FIXTURE-101 Missing Go
+SB-FIXTURE-102 Missing C ABI
+SB-FIXTURE-103 Behavior mismatch
+SB-FIXTURE-104 Intentional divergence (approval required)

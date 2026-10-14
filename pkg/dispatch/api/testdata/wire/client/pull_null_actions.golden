@@ -1,0 +1,4 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/pull
+next="" date="" received=2026-09-06T14:00:00.123456789+02:00
+error: <nil>

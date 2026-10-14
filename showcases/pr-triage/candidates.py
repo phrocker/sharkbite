@@ -1,0 +1,171 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
+"""Bounded development comparison; all source-review actions remain unchanged."""
+import argparse
+from collections import Counter
+import difflib
+import importlib.metadata
+import json
+import os
+from pathlib import Path
+import time
+import warnings
+
+from shadow import canonical, digest, exact_fit, parsed, source, validate_answer, write_new
+
+
+def checked(path):
+    value = json.loads(path.read_text())
+    if "id" not in value or value["id"] != digest({k: v for k, v in value.items() if k != "id"}):
+        raise ValueError(f"content identity mismatch: {path}")
+    return value
+
+
+def change_text(unit):
+    before = (unit["before"] or {}).get("text", "")
+    after = (unit["after"] or {}).get("text", "")
+    return "".join(difflib.unified_diff([line + "\n" for line in before.splitlines()], [line + "\n" for line in after.splitlines()],
+                                        fromfile="before", tofile="after", n=5))
+
+
+def original_state(unit):
+    return {"path": unit["path"], "declaration": unit["symbol"],
+            "before": (unit["before"] or {}).get("text", ""),
+            "after": (unit["after"] or {}).get("text", ""),
+            "context": "Dependency bodies and caller context are not supplied."}
+
+
+def dependency_context(unit, repo, extractor, limits, cache):
+    """Syntactic candidates only. Never claim selector resolution or completeness."""
+    result = {"method": "same-file syntactic candidate names; not type resolution", "sides": {}}
+    for side, revkey, pathkey in (("before", "base", "before_path"), ("after", "head", "after_path")):
+        decl = unit.get(side)
+        if not decl:
+            result["sides"][side] = {"disposition": "absent", "candidates": [], "unresolved_calls": []}
+            continue
+        key = (unit[revkey], unit[pathkey])
+        if key not in cache:
+            src = source(repo, key[0], key[1], limits["source_bytes"])
+            cache[key] = parsed(extractor, key[1], src) if src["disposition"] == "available" else {"error": src["disposition"]}
+        document = cache[key]
+        if document.get("error"):
+            result["sides"][side] = {"disposition": "unavailable", "candidates": [], "unresolved_calls": decl["syntactic_calls"]}
+            continue
+        calls = decl.get("syntactic_calls", [])
+        records, unresolved, omitted = [], [], []
+        for call in calls:
+            matches = [d for d in document["declarations"] if d["kind"] == "function"
+                       and d["key"] != unit["symbol"] and d["name"].split(".")[-1] == call.split(".")[-1]]
+            if len(matches) != 1:
+                unresolved.append(call)
+                continue
+            target = matches[0]
+            if any(item["symbol"] == target["key"] for item in records):
+                continue
+            if len(records) >= limits["dependency_count"] or len(target["text"].encode()) > limits["dependency_bytes"]:
+                omitted.append({"call": call, "symbol": target["key"], "reason": "context_bound"})
+                continue
+            records.append({"call": call, "symbol": target["key"], "source_sha256": digest(target["text"].encode()),
+                            "lines": [target["start_line"], target["end_line"]], "text": target["text"],
+                            "resolution": "syntactic_candidate_only"})
+        result["sides"][side] = {"disposition": "partial", "candidates": records, "unresolved_calls": unresolved,
+                                "omitted_candidates": omitted}
+    return result
+
+
+def render(unit, representation, context=None):
+    if representation == "original":
+        return original_state(unit)
+    if representation not in ("diff", "diff_context"):
+        raise ValueError("unknown representation")
+    state = {"path": unit["path"], "declaration": unit["symbol"], "change": change_text(unit),
+             "source_role": "test" if unit["path"].endswith("_test.go") else "production",
+             "view": "5-context-line unified diff; line endings normalized; unchanged body omitted and reconstructable from pinned sources",
+             "context_complete": False}
+    if representation == "diff_context":
+        if context is None:
+            raise ValueError("missing dependency context")
+        state["dependency_candidates"] = context
+    else:
+        state["context"] = "Caller and dependency bodies unavailable."
+    return state
+
+
+def run(args):
+    config = json.loads(args.config.read_text())
+    manifest = checked(args.run / "manifest.json")
+    protocol = json.loads((args.run / "protocol.json").read_text())
+    if manifest["protocol_sha256"] != digest(protocol):
+        raise ValueError("mismatched protocol")
+    os.environ.update(HF_HOME=str(args.cache), HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1",
+                      HF_HUB_DISABLE_TELEMETRY="1", TOKENIZERS_PARALLELISM="false", USE_TF="0")
+    import torch
+    from laya import Router
+    if importlib.metadata.version("laya") != config["runtime"] or not torch.cuda.is_available():
+        raise ValueError("pinned Laya runtime and GPU required")
+    args.output.mkdir(parents=True, exist_ok=False)
+    write_new(args.output / "config.json", config)
+    context_cache = {}
+    inputs = {}
+    units = [u for c in manifest["cases"] for u in c["units"]]
+    for unit in units:
+        if unit["kind"] == "function":
+            ctx = dependency_context(unit, args.repo, args.extractor, config["context_limits"], context_cache)
+            inputs[unit["id"]] = {r: render(unit, r, ctx) for r in ("original", "diff", "diff_context")}
+    inputs_record = {"manifest_id": manifest["id"], "representations": inputs,
+                     "renderer_sha256": digest(Path(__file__).read_bytes()), "extractor_sha256": digest(args.extractor.read_bytes())}
+    inputs_record["id"] = digest(inputs_record)
+    write_new(args.output / "inputs.json", inputs_record)
+    router = Router(device="cuda", revision=config["revision"], max_loaded=1)
+    for candidate in config["candidates"]:
+        started = time.perf_counter()
+        with warnings.catch_warnings(record=True) as captured:
+            warnings.simplefilter("always", RuntimeWarning)
+            agent = router.load(candidate["checkpoint"])
+        if agent.revision != config["revision"] or str(agent.device) != "cuda":
+            raise ValueError("predictor identity mismatch")
+        question = protocol["question"] if candidate["question"] == "original" else config["binary_question"]
+        report = {"candidate": candidate, "config_sha256": digest(config), "manifest_id": manifest["id"],
+                  "inputs_id": inputs_record["id"], "question": question, "revision": agent.revision,
+                  "runtime_versions": {p: importlib.metadata.version(p) for p in ("laya", "torch", "transformers", "tokenizers")},
+                  "load_seconds": time.perf_counter()-started, "warnings": [str(w.message) for w in captured],
+                  "optimization_enabled": False, "predictions": []}
+        for unit in units:
+            item = {"unit_id": unit["id"], "pr": unit["pr"], "action": "full_review", "optimization_eligible": False}
+            if unit["kind"] != "function":
+                item["disposition"] = "unsupported_unit"
+            else:
+                state = inputs[unit["id"]][candidate["representation"]]
+                item["state_sha256"] = digest(state)
+                item["token_preflight"] = exact_fit(agent, state, question, candidate["max_len"], config["head_max_len"])
+                if not item["token_preflight"]["fits"]:
+                    item["disposition"] = "token_limit"
+                else:
+                    started = time.perf_counter()
+                    result = agent.predict(state, {"boundary": question}, max_len=candidate["max_len"], head_max_len=config["head_max_len"])
+                    item["elapsed_ms"] = (time.perf_counter()-started)*1000
+                    if str(agent.device) != "cuda" or getattr(agent, "cpu_fallback_count", 0):
+                        raise ValueError("CPU fallback")
+                    item["answer"] = validate_answer(result, question["criteria"])
+                    item["usage"] = result.get("usage")
+                    item["disposition"] = "predicted"
+            report["predictions"].append(item)
+        report["id"] = digest(report)
+        write_new(args.output / (candidate["id"] + ".json"), report)
+        print(json.dumps({"candidate": candidate["id"], "dispositions": dict(Counter(p["disposition"] for p in report["predictions"]))}), flush=True)
+    router.unload()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--config", type=Path, required=True)
+    parser.add_argument("--run", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--repo", type=Path, required=True)
+    parser.add_argument("--extractor", type=Path, required=True)
+    parser.add_argument("--cache", type=Path, required=True)
+    run(parser.parse_args())
+
+
+if __name__ == "__main__":
+    main()

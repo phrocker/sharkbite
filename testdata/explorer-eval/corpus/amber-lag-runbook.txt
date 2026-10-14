@@ -1,0 +1,26 @@
+RUNBOOK: AMBER LAG
+
+Document ID: amber-lag-runbook
+Revision ID: r1
+Valid from: 2026-03-15T00:00:00Z
+Valid to: open
+Owner: Finch Team
+Applies to: Aster Relay
+
+TRIGGER
+
+The amber-lag alert fires when the oldest unacknowledged Aster Relay batch is older than 140 seconds for three consecutive samples.
+
+TRIAGE
+
+1. Confirm that svc-aster-relay is accepting batches.
+2. Check whether queue-quartz-ring depth is increasing.
+3. Compare the oldest batch age with the current acknowledgement window.
+
+MITIGATION
+
+Pause intake from the Juniper Agent. Leave the Quartz Ring online. Restart only Lumen Processor workers that hold stale leases. Resume intake after the oldest batch age remains below 70 seconds for two samples.
+
+ESCALATION
+
+Escalate to the Finch Team if queue depth keeps increasing for 10 minutes after mitigation or if any `μ7` batch fails checksum validation.

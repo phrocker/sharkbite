@@ -1,0 +1,8 @@
+POST /api/v1/fleet/actions/YQD_/claim
+request content-type: application/json
+request body: "{\"expected_version\":3,\"claim_id\":\"Z3cxfHBvZHxjbGFpbQ\",\"lease\":60000000000}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: request ID is required\"}\n"

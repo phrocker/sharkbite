@@ -1,9 +1,41 @@
-.kdev4/
-build/
-build*
-dist/
-*.egg-info/
-*.pyc
-workspace.xml
-native-iterators-jni/.idea/*
-native-iterators-jni/target
+/bin/
+/tools/
+
+# Go workspace sum (regenerated locally)
+/go.work.sum
+
+shoal-embed.exe
+shoal-embed.exe~
+
+# Go test binaries + profiling artifacts (from `go test -c` / -cpuprofile etc.)
+*.test
+*.test.exe
+*.prof
+*.pprof
+*.out
+# Stray profile output files written by ad-hoc benchmark runs
+cpu
+cpw
+mp
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# build artifacts
+/build/
+*.exe
+shoal-offline-compact.exe
+python/.venv/
+python/build/
+python/dist/
+python/preview-dist/
+python/*.egg-info/
+python/src/*.egg-info/
+__pycache__/
+python/src/sharkbite/.libs/
+.review-worktrees/
+test/accumulo/.live/
+
+# Local experimental model checkpoints; receipts and source stay versioned.
+showcases/pr-triage/local-artifacts/

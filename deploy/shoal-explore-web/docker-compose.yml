@@ -1,0 +1,42 @@
+# Single-instance Shoal Explorer workspace — local one-command run.
+#
+#   docker compose -f deploy/shoal-explore-web/docker-compose.yml up --build
+#
+# This runs the SAME image that a shared instance would run; only the flags in
+# `command:` differ between deployments (see docs/shoal-explore-web-deploy.md).
+#
+# The local profile uses the loopback-gated development authenticator (-dev-auth),
+# which the command refuses to serve on anything but a loopback listener. Docker
+# port publishing forwards to the container's external interface, which a
+# loopback listener does not answer, so this profile uses host networking: the
+# app binds 127.0.0.1 in the host network namespace and is reached at
+# http://127.0.0.1:8098 on Linux. On Docker Desktop, "host" is the Docker VM;
+# see the docs for how to reach it there.
+
+services:
+  explorer:
+    image: shoal-explore-web:local
+    build:
+      context: ../..
+      dockerfile: Dockerfile.shoal-explore-web
+      args:
+        VERSION: local
+    # Required for the loopback-gated -dev-auth path. Published ports cannot
+    # reach a loopback-only listener, so we share the host network namespace.
+    network_mode: host
+    command:
+      - "-state-dir=/var/lib/shoal"
+      - "-listen=${SHOAL_EXPLORE_LISTEN:-127.0.0.1:8098}"
+      - "-dev-auth"
+    volumes:
+      # Mount the SINGLE state root. -state-dir places the corpus at
+      # /var/lib/shoal/corpus and the durable authorization catalog at the
+      # sibling /var/lib/shoal/policy; both are under this one mount, so
+      # `docker compose down` + `up` and any restart preserve all persistent
+      # state. Remove it explicitly with `docker compose down -v`.
+      - explorer-state:/var/lib/shoal
+    restart: unless-stopped
+    stop_signal: SIGTERM
+
+volumes:
+  explorer-state:

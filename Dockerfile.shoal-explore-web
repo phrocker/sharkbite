@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1.7
+
+# Build and runtime image for the single-instance Shoal Explorer workspace.
+#
+# The same artifact is intended to run on a laptop (loopback + -dev-auth) and,
+# once a non-development authenticator is wired, in a shared instance. The two
+# deployments differ only in the flags/environment passed at run time, never in
+# code or image. See docs/shoal-explore-web-deploy.md.
+
+ARG GO_IMAGE=golang:1.25-bookworm
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
+WORKDIR /src
+
+COPY go.mod go.sum ./
+# The sidecar is a local `replace` target, so its go.mod must exist before the
+# dependency download resolves.
+COPY wal-quorum-sidecar/go.mod wal-quorum-sidecar/go.sum ./wal-quorum-sidecar/
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+COPY . .
+
+ARG TARGETOS=linux
+ARG TARGETARCH=amd64
+ARG VERSION=dev
+ARG REVISION=unknown
+# go.work pins a newer toolchain than this base image; the command itself
+# builds on 1.25, so the image builds outside the workspace.
+ENV GOWORK=off \
+    CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH}
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath \
+      -ldflags="-s -w -buildid= -X main.version=${VERSION}" \
+      -o /out/shoal-explore-web ./cmd/shoal-explore-web \
+ && mkdir -p /out/state
+
+FROM gcr.io/distroless/static-debian12:nonroot AS runtime
+
+ARG VERSION=dev
+ARG REVISION=unknown
+ARG CREATED
+LABEL org.opencontainers.image.title="shoal-explore-web" \
+      org.opencontainers.image.description="Single-instance Shoal Explorer workspace (embedded backend, embedded UI)" \
+      org.opencontainers.image.source="https://github.com/phrocker/shoal-oss" \
+      org.opencontainers.image.documentation="https://github.com/phrocker/shoal-oss/blob/main/docs/shoal-explore-web-deploy.md" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"
+
+COPY --from=build /out/shoal-explore-web /usr/local/bin/shoal-explore-web
+# A SINGLE state root holds ALL persistent state and is the declared volume, so
+# one mount survives a restart. With -state-dir the command places both
+# directories inside it:
+#   /var/lib/shoal/corpus   document corpus
+#   /var/lib/shoal/policy   durable authorization catalog (#284/#288)
+# The policy catalog must be a sibling of the corpus, never inside it: the
+# corpus engine treats every corpus subdirectory as a table. Mounting the corpus
+# directory alone would drop the authorization catalog on restart and the
+# command's split-brain guard would refuse to serve; mounting the state root
+# keeps both. See docs/shoal-explore-web-deploy.md.
+COPY --from=build --chown=65532:65532 /out/state /var/lib/shoal
+
+WORKDIR /var/lib/shoal
+# distroless:nonroot is uid/gid 65532. Running as a fixed non-root account keeps
+# the image from ever executing as root.
+USER 65532:65532
+VOLUME ["/var/lib/shoal"]
+EXPOSE 8098
+STOPSIGNAL SIGTERM
+ENTRYPOINT ["/usr/local/bin/shoal-explore-web"]
+# Safe default: loopback bind with the loopback-gated development authenticator,
+# and the recommended single state root. A public bind (-listen 0.0.0.0:...) with
+# -dev-auth is refused at startup by the command itself; see selectAuthenticator
+# in cmd/shoal-explore-web/authn.go.
+CMD ["-state-dir", "/var/lib/shoal", "-listen", "127.0.0.1:8098", "-dev-auth"]

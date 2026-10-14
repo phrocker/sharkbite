@@ -1,0 +1,761 @@
+{
+  "id": "b49986b51cff215d444b45f6f0a49786f44118d8a4bf0a3f5cbb262f9aadd45a",
+  "input_token_reduction": 0.027601060579669268,
+  "limitations": [
+    "One stochastic call per arm per PR; findings are not defect ground truth.",
+    "Shared provider caching and variable output confound billed cost; total input includes cache reads and writes.",
+    "Elapsed sum is call duration, not parallel wall time; concurrency and service load confound speed.",
+    "Both arms contain partial source context; consult omission audit and pinned-source adjudication."
+  ],
+  "optimization_enabled": false,
+  "packet_byte_reduction": 0.02749886903254628,
+  "packet_manifest_id": "53625c695971e14be5db17d58ee1f4ce27bc9ad236ca65bbc068f0d2e3bb36c8",
+  "rows": [
+    {
+      "arm": "full",
+      "cost_usd": 1.0548435999999999,
+      "elapsed_seconds": 48.64712941693142,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The mosaic co-occurrence budget is enforced only on the Documents listing and Retrieve paths. No changed code applies restrictCoOccurrence to the direct Document read, Neighborhood, Path, Changes feed, or other graph reads. An identity whose cross-domain documents are 'Restricted' in the listing can still read them by ID, or through graph and change-feed endpoints, and observe more distinct sensitivity domains than MaxDomains. The config comment says an enabled control 'fails closed', and the UI tells users the documents were 'withheld'. Enforcement is actually partial.",
+            "missing_context": "Bodies of Client.Document, Neighborhood, Path, Changes, hydrateRetrievalCorpus/validateRetrievedResponse (graph-mode expansion into nodes of restricted documents), and whether the budget is intended to cover direct reads.",
+            "path": "pkg/explorer/authorized/documents.go",
+            "severity": "medium",
+            "symbol": "function:*Client.documents / function:*Client.retrieve (restrictCoOccurrence call sites)",
+            "witness": "restrictCoOccurrence is called only in documents() ('restricted, err := c.restrictCoOccurrence(ctx, decision, now, order, ...)') and retrieve(). The shared context for documents.go shows 'Document returns an authorized exact revision' unchanged, and service.go Neighborhood/Changes are unchanged."
+          },
+          {
+            "claim": "-mosaic-budget is parsed as uint and narrowed to uint32 without a range check. A value of 2^32 (or any multiple) truncates to 0, which MosaicBudget.enabled() treats as disabled. The control silently fails open instead of rejecting the invalid configuration.",
+            "missing_context": "Whether any other validation of the flag value exists before use.",
+            "path": "cmd/shoal-explore-web/main.go",
+            "severity": "low",
+            "symbol": "function:run",
+            "witness": "MaxDomains: uint32(*mosaicBudget), with enabled() returning b.MaxDomains > 0"
+          },
+          {
+            "claim": "A persisted WindowStart that is later than 'now' opens a fresh window with no observed domains. The window start is persisted as wall-clock UnixNano, so the monotonic reading is lost. A backward wall-clock step (NTP correction, restart on a host with skewed time) therefore resets every identity's budget early and allows fresh cross-domain observation.",
+            "missing_context": "Deployment clock guarantees; whether resetting on a backward clock step is an accepted design trade-off.",
+            "path": "pkg/explorer/authorized/mosaic.go",
+            "severity": "low",
+            "symbol": "function:*Client.applyMosaicBudget",
+            "witness": "if found && !now.Before(record.WindowStart) && now.Sub(record.WindowStart) < c.mosaic.Window { ... } else windowStart = now with empty observed set; persisted as WindowStartUnixNano / time.Unix(0, ...).UTC()"
+          },
+          {
+            "claim": "The in-memory ledger is updated before the durable write. If writeRow fails, the process keeps the new state in memory, but the engine does not have it. After a restart the identity's observed domains revert to the last persisted record, so the budget is less restrictive than what was enforced. The current read does return an error.",
+            "missing_context": "Whether other durable writes roll back memory on persistence failure, and the failure semantics of writeRow.",
+            "path": "pkg/explorer/authorized/durable.go",
+            "severity": "low",
+            "symbol": "function:*DurablePolicyStore.StoreCoOccurrence",
+            "witness": "if err := s.memory.StoreCoOccurrence(ctx, key, record); err != nil { return err }; return s.persistCoOccurrence(key)"
+          }
+        ],
+        "summary": "The change adds an opt-in per-identity sensitivity-domain co-occurrence budget with a durable ledger and a separate 'Restricted' disclosure count. The Restricted count covers only documents the caller is individually authorized to read, so it adds no new unauthorized-content oracle. The main concrete gap is scope: the budget is enforced only on Documents and Retrieve, so direct document, graph, and change-feed reads appear to bypass it. Smaller fail-open edges are uint32 truncation of the flag, window reset on a backward clock step, and memory state ahead of durable state on write failure. No regression to existing authorization gates was found. The suppression logic is unchanged apart from moving into the Disclosure struct.",
+        "unknowns": [
+          "Whether Document, Neighborhood, Path, Changes, or graph traversal consult the co-occurrence ledger anywhere outside the supplied declarations.",
+          "Whether graph-mode retrieval validation can surface nodes or edges belonging to documents removed from the projection by the budget.",
+          "Every Documents/Retrieve call writes a new versioned ledger row, and load() decodes every shadowed cell. Write amplification and startup cost under many reads are unassessed.",
+          "Whether production ever runs multiple authorized.Client instances (or processes) over one ledger. budgetMu is per-Client, so Load/Store across clients is not atomic and could lose updates.",
+          "Determinism and collision properties of logicalRuleBytes, which sensitivityDomain relies on.",
+          "Interaction of the development backfill (config.backfill.run) with a mosaic-enabled client."
+        ]
+      },
+      "input_tokens_including_cache": 122438,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 120278,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.0548435999999999,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 4609,
+          "provider": "firstParty",
+          "thinkingTokens": 2825,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 4609,
+      "pr": 314,
+      "prompt_bytes": 245688,
+      "response_sha256": "589137cbb4e1b1acd5b7fc3e69514901e518f47d36f3f3ccfc6ca4e1a7880be6",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 120278,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 120278,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 120278,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 120278,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 4609,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 4609,
+        "output_tokens_details": {
+          "thinking_tokens": 2825
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 1.0386876,
+      "elapsed_seconds": 47.1944738146849,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The mosaic budget only covers the listing and retrieval paths, so an identity can bypass it through other read paths. restrictCoOccurrence is wired into Client.documents and Client.retrieve only. The direct Document read, Neighborhood/path, graph expansion and the Changes feed are not in the changed code and gain no co-occurrence charge or check. An identity whose budget has withheld domain B from listing and retrieval can still read a B document directly by ID. It may know that ID from an earlier window, the change feed, or graph traversal, and it can then aggregate the domains the control is meant to keep apart.",
+            "missing_context": "Bodies of Client.Document, Neighborhood, Path, Changes and the extract/ontology read paths, to confirm none of them consult the ledger. Also whether document IDs are guessable or obtainable outside listing (for example deterministic from source URI or exposed in the change feed).",
+            "path": "pkg/explorer/authorized/mosaic.go",
+            "severity": "medium",
+            "symbol": "function:*Client.restrictCoOccurrence",
+            "witness": "documents(): `restricted, err := c.restrictCoOccurrence(ctx, decision, now, order, ...)`; retrieve(): `restricted, err := c.restrictCoOccurrence(ctx, decision, now, visibleOrder, ...)`; shared context shows `// Document returns an authorized exact revision.` unchanged and service.go Changes/Neighborhood unchanged"
+          },
+          {
+            "claim": "The load-modify-store of the per-identity ledger record is serialized only by the per-Client budgetMu, not by the shared ledger. If several authorized.Client instances share one PolicyStore, as the new webapi fixture does, concurrent reads by the same identity can each load the same prior domain set. Each can then admit a different new domain and overwrite the other's stored record (last write wins). The identity observes more distinct domains than MaxDomains, and the persisted record under-reports what was disclosed.",
+            "missing_context": "Whether any production deployment constructs more than one mosaic-enabled Client over the same store (main.go builds one), or whether several processes can open the same policy directory.",
+            "path": "pkg/explorer/authorized/mosaic.go",
+            "severity": "low",
+            "symbol": "function:*Client.applyMosaicBudget",
+            "witness": "`c.budgetMu.Lock()` ... `record, found, err := c.ledger.LoadCoOccurrence(ctx, key)` ... `c.ledger.StoreCoOccurrence(ctx, key, CoOccurrenceRecord{...})`; DurablePolicyStore.StoreCoOccurrence overwrites under its own s.mu with no compare-and-swap"
+          },
+          {
+            "claim": "The -mosaic-budget value is a uint that is silently truncated to uint32. An operator value of 4294967296 (or any multiple of 2^32) becomes MaxDomains 0, which disables the control with no error or startup notice. Nothing validates the range or reports that the control ended up disabled.",
+            "missing_context": "Whether flag parsing or deployment tooling bounds this value elsewhere.",
+            "path": "cmd/shoal-explore-web/main.go",
+            "severity": "low",
+            "symbol": "function:run",
+            "witness": "`MaxDomains: uint32(*mosaicBudget),` with `mosaicBudget := flags.Uint(\"mosaic-budget\", 0, ...)` and `func (b MosaicBudget) enabled() bool { return b.MaxDomains > 0 }`"
+          }
+        ],
+        "summary": "The change adds a per-identity sensitivity-domain co-occurrence budget to authorized Documents and Retrieve, persisted durably, and fails closed at construction when enabled without a ledger or window. The Restricted count only covers authorized documents, so it does not become an existence oracle for unauthorized content. The main concrete gap is scope: the budget is enforced only on listing and retrieval, so direct document, graph and change-feed reads appear to bypass it. Secondary issues are a cross-client ledger race and silent uint32 truncation of the budget flag that can disable the control.",
+        "unknowns": [
+          "Whether validateRetrievedResponse / hydrateRetrievalCorpus can accept graph-mode paths or evidence that traverse nodes or edges registered to restricted-domain documents; node and edge authorization reads PolicyStore directly and may not respect the mosaic-filtered `selected` set.",
+          "Whether errors from LoadCoOccurrence/StoreCoOccurrence (engine writeRow failures) are sanitized before reaching the HTTP layer. Other catalog reads go through policyCatalogReadError, but ledger errors are returned raw.",
+          "The budget is charged and persisted before guard.Check and before base.Document hydration succeeds, so a failed request still consumes budget. This errs toward restriction; whether that is the intended behavior is unknown.",
+          "Whether the mosaic identity key (authorization domain + subject, excluding actor) matches the intended isolation boundary for delegated or actor-distinct sessions.",
+          "Ledger rows (`mosaic/<digest>`) are never pruned; it is unknown whether retention of per-identity co-occurrence history is acceptable.",
+          "RetrievalResponse.MarshalJSON was omitted from the packet, so it is not confirmed that Restricted is serialized, beyond the tests asserting it."
+        ]
+      },
+      "input_tokens_including_cache": 120871,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 118711,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.0386876,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 4428,
+          "provider": "firstParty",
+          "thinkingTokens": 2633,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 4428,
+      "pr": 314,
+      "prompt_bytes": 242734,
+      "response_sha256": "10e7971e19c1a59906dff68b2c4a798077eb57855ffe6a213ebbf7af380837dd",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 118711,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 118711,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 118711,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 118711,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 4428,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 4428,
+        "output_tokens_details": {
+          "thinking_tokens": 2633
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.1040356,
+      "elapsed_seconds": 11.474615721963346,
+      "findings": {
+        "findings": [],
+        "summary": "This change adds base64url wire encoding and decoding for ExtractRequest and ExtractResponse IDs, matching the other endpoints. It also adds a round-trip HTTP test covering ingest, extract, and neighborhood. The decoders propagate errors on bad document, revision, extraction, node, and edge IDs, and they parse through strictUnmarshal. No concrete authorization, isolation, disclosure, or fail-open defect is visible in the supplied code. Access control, Instructions handling, and snapshot validity all depend on handler and service code that is not in the packet.",
+        "unknowns": [
+          "Whether the /api/v1/extract handler performs any authorization or ownership check that binds the decoded document_id and revision_id to the caller or to the supplied snapshot. The handler and service code are not in the packet.",
+          "Whether decodeID rejects empty or malformed document_id values, and whether decodeOptionalID treats an empty revision_id as 'latest revision'. If the latter, an omitted revision could silently widen the target. The implementations are not supplied.",
+          "Whether the free-form Instructions field is length-bounded, sanitized, or restricted before it reaches the extraction backend, which may be an LLM. It is passed through verbatim in *ExtractRequest.UnmarshalJSON, but its consumer is not shown.",
+          "Whether strictUnmarshal rejects unknown fields and trailing data, which would make it fail closed. Its implementation is not supplied.",
+          "Whether the Snapshot type is validated or integrity-protected against client tampering when it is echoed back from the client into extract and neighborhood requests.",
+          "Whether ExtractRequest previously had custom JSON methods that accepted raw, un-encoded IDs. If so, some clients may now resolve IDs differently. The prior code path is not shown.",
+          "Whether the returned entity_node_ids and relationship_edge_ids can refer to nodes shared across documents or tenants. Extraction reports reused_entities, and neighborhood expansion seeded from those IDs could reach data outside the caller's scope. No tenant model is visible."
+        ]
+      },
+      "input_tokens_including_cache": 12757,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 10597,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.1040356,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 941,
+          "provider": "firstParty",
+          "thinkingTokens": 239,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 941,
+      "pr": 312,
+      "prompt_bytes": 18314,
+      "response_sha256": "953c9dd01611c7a8be6e76acd34cf30948ba0e7eedd823e8d0e19237bbb279ca",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 10597,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 10597,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 10597,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 10597,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 941,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 941,
+        "output_tokens_details": {
+          "thinking_tokens": 239
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.0997676,
+      "elapsed_seconds": 11.646942168939859,
+      "findings": {
+        "findings": [],
+        "summary": "The visible change adds symmetric base64url wire encoding and decoding for ExtractResponse identifiers (document, revision, extraction, entity node and relationship edge IDs). It also adds a round-trip HTTP test covering ingest → extract → neighborhood. The supplied response-side code decodes every ID field with an error return and uses strictUnmarshal, so no concrete authorization, isolation, disclosure, or fail-open defect appears in it. The security-relevant request-side parsing (ExtractRequest) and the handler's access checks are omitted, so object and tenant access on extract and neighborhood remains unassessed rather than safe.",
+        "unknowns": [
+          "ExtractRequest.UnmarshalJSON and ExtractRequest.MarshalJSON are omitted. Unknown: whether request-side decoding of document_id/revision_id fails closed on malformed, empty, or unpadded base64url, or on mixed raw and encoded input. Unknown: whether it uses strictUnmarshal to reject unknown fields like the response side does.",
+          "decodeID, decodeOptionalID, decodeIDs, encodeID, encodeOptionalID and strictUnmarshal bodies are not supplied. Unknown: whether decodeID rejects empty strings, padded or standard-alphabet base64, or non-canonical encodings that decode to the same ID. A non-canonical encoding could make two wire IDs map to one internal ID.",
+          "The /api/v1/extract handler is not supplied. Unknown: whether it checks that document_id/revision_id belong to the supplied snapshot or corpus and to the caller before extraction. Unknown: whether an attacker-supplied snapshot can reference another corpus's objects.",
+          "The /api/v1/neighborhood handler is not supplied. Unknown: whether the node_ids seeds returned by extract are checked against the requesting snapshot or scope before expanding the neighborhood.",
+          "NewHandler's authentication and origin/host checks are unknown. The test binds it to the listener address, which suggests a host allowlist, but authentication of extract and neighborhood callers is not shown.",
+          "Unknown: whether ExtractResponse.UnmarshalJSON is used anywhere to trust server-supplied IDs in a remote client. The embedded vs. remote service parity is not shown for extract."
+        ]
+      },
+      "input_tokens_including_cache": 12036,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 9876,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.0997676,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1016,
+          "provider": "firstParty",
+          "thinkingTokens": 234,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1016,
+      "pr": 312,
+      "prompt_bytes": 16964,
+      "response_sha256": "484be30bfce6698e692d13514ae7c92ccf539233c20c0f08134a9a3f540a2518",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 9876,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 9876,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 9876,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 9876,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1016,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1016,
+        "output_tokens_details": {
+          "thinking_tokens": 234
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 1.5737476,
+      "elapsed_seconds": 79.89095318736508,
+      "findings": {
+        "findings": [
+          {
+            "claim": "The new state-mutating POST /api/v1/extract endpoint does no workspace-mutation or anti-CSRF header check before it publishes graph content. The existing mutation path (ingest) is exercised with the x-shoal-workspace-request header, and the changesEndpoint comment says that header is required for mutations but not for reads. If the header is enforced per endpoint rather than in shared middleware, a cross-site request carrying ambient credentials could trigger extraction and graph publication.",
+            "missing_context": "Bodies of ingestEndpoint, decodeRequest and Handler.ServeHTTP / publiclyReachable, and whether the x-shoal-workspace-request check or an Origin check is applied globally to POST routes.",
+            "path": "pkg/explorer/webapi/http.go",
+            "severity": "medium",
+            "symbol": "function:extractEndpoint",
+            "witness": "extractEndpoint: provider, ok := service.(ExtractionProvider) ... decodeRequest(writer, request, &input) ... provider.Extract(request.Context(), input) — no header or mutation guard, unlike the ingest path."
+          },
+          {
+            "claim": "Neighborhood responses now carry the citation, quote and path of non-derivation evidence. Extracted relationship assertions use the whole source document as their evidence anchor (Range 0..len(Content)), so the full document text reaches any caller who can see the extracted edge. That caller is authorized under OperationNeighborhood, not OperationRead. filterNeighborhood now attaches these assertions to admitted edges. If a rule grants neighborhood but not read, document content leaks through graph traversal.",
+            "missing_context": "Whether AccessRule / ruleAllows can grant OperationNeighborhood without OperationRead; how resolveEvidence and ontology.NewEvidenceRef populate Quote from the document anchor.",
+            "path": "pkg/explorer/webapi/wire.go",
+            "severity": "medium",
+            "symbol": "function:wireEvidenceRefValue",
+            "witness": "wire.go: `if derivation == nil { wire := wireCitationValue(value.Citation()); citation = &wire ...}` and Quote: value.Quote(); bounded.go filterNeighborhood: `if hasAssertion { admittedAssertions[edge.ID] = assertion }` after edgeAllowsResolved(..., auth.OperationNeighborhood, ...); extraction.go extractionContextLocked: NewDocumentAnchor(citation, record.Source.Content) over the full range."
+          },
+          {
+            "claim": "The staleness check is a no-op. documentRecordLocked is called with an explicit revisionID and returns that exact revision, so current.Revision.ID always equals published.RevisionID. A superseded revision's extraction can therefore be published into the current graph. computeCurrentGraph includes extractions based only on document-ID presence, not on the current revision. Authorized callers rely on mutationMu and the earlier current-revision check, but base mutations outside that lock, and the unauthorized web path with a caller-chosen revision_id, are not protected.",
+            "missing_context": "Whether any base mutation path can change a document's current revision outside Client.mutationMu, and whether replaceCurrent removes node registrations or rules for extracted nodes on re-ingest.",
+            "path": "pkg/explorer/extraction.go",
+            "severity": "low",
+            "symbol": "function:*Explorer.CommitExtraction",
+            "witness": "current, err := e.documentRecordLocked(published.DocumentID, published.RevisionID); if current.Revision.ID != published.RevisionID { ...conflict }; computeCurrentGraph: `if _, ok := nodes[record.DocumentID]; !ok { continue }` with no revision comparison."
+          },
+          {
+            "claim": "When a rule has no keys, the namespace is empty. extractionContextLocked then skips namespace filtering and feeds every entity node from all authorization scopes into the extraction context. The heuristic extractor then reuses a foreign node's ID through ExistingNodeID. PutNode rejects the mismatched rule with a conflict, and the conflict is mapped to not-found. The extraction outcome still depends on whether another scope holds an entity with the same type and key, which is a cross-scope existence oracle and cross-tenant context aggregation.",
+            "missing_context": "Whether NewAccessRule can produce a keyless rule (for example public or unrestricted documents) that is reachable by ExtractDocument callers.",
+            "path": "pkg/explorer/authorized/rule.go",
+            "severity": "low",
+            "symbol": "function:AccessRule.extractionEntityNamespace",
+            "witness": "extractionEntityNamespace: `if len(r.keys) == 0 { return \"\" }`; extractionContextLocked: `if entityNamespace != \"\" && node.Properties[...EntityNamespace] != entityNamespace { continue }`; newSkillCandidate: `if match, ok := existing[string(typeID)+\"\\x00\"+key]; ok { candidate.existingToken = graphNodeToken(match.id) }`."
+          },
+          {
+            "claim": "Persisted extracted-node registrations have no tombstone and are applied after the current-revision projection, overwriting memory.nodes for the same IDs. At runtime, memory.PutNode refuses to overwrite an existing registration, and replaceCurrent may later change or remove node registrations. After a restart, the durable node records win unconditionally, so the catalog can diverge from runtime state and resurrect registrations carrying the old rule.",
+            "missing_context": "replaceCurrent / PutRevision behaviour for memory.nodes entries not listed in a revision's NodeIDs, and whether any path deletes extracted-node registrations.",
+            "path": "pkg/explorer/authorized/durable.go",
+            "severity": "low",
+            "symbol": "function:*DurablePolicyStore.reconstruct",
+            "witness": "reconstruct: `for _, record := range nodes { ... memory.nodes[shoal.ID(record.NodeID)] = registration }` placed after the currents loop; persistedNode has no Tombstone field; PutNode persists with no delete path."
+          },
+          {
+            "claim": "Extracted edges are registered with a rule only; DocumentID and RevisionID are left empty. Unlike node registrations, they are not bound to a source revision. After the source is re-ingested with a narrower rule, these edge registrations keep the old rule indefinitely. Authorization for them then depends entirely on endpoint checks in edgeAllowsResolved.",
+            "missing_context": "normalizeApplicationEdgeRegistration requirements, and whether edgeAllowsResolved also requires both endpoint node registrations to allow the operation.",
+            "path": "pkg/explorer/authorized/extraction.go",
+            "severity": "low",
+            "symbol": "function:*Client.ExtractDocument",
+            "witness": "c.policyStore.PutEdge(ctx, EdgeRegistration{ Edge: edge, Rule: edgeRule })"
+          }
+        ],
+        "summary": "The extraction feature authorizes the source with a read check and a tenant-scoped entity namespace, and cross-tenant collisions fail closed as non-disclosing not-found errors. The main concerns are: (1) a possible missing CSRF/mutation-header guard on the new POST /api/v1/extract; (2) the new citation/quote evidence serialization, which exposes full source-document text through Neighborhood assertions authorized only for the neighborhood operation; (3) a no-op revision staleness check in CommitExtraction; and (4) edge cases around keyless-rule namespaces and durable node registrations that are never tombstoned. All findings need source adjudication.",
+        "unknowns": [
+          "Whether c.begin(ctx, auth.OperationIngest) plus a read check on the source is the intended capability for publishing derived graph content visible to all source readers.",
+          "The bodies of edgeAllowsResolved, ruleAllows, policyCatalogWriteError, authorizedNode and replaceCurrent were not supplied.",
+          "Whether graph node properties such as shoal.ontology.entity_namespace can be set by callers through ingest or Connect, which would allow namespace spoofing in extractionContextLocked.",
+          "Whether webapi's api('extract') client call sends the workspace-mutation header, and where that header is validated on the server.",
+          "The effect of a partial PutNode/PutEdge failure mid-loop: orphan registrations remain even though CommitExtraction is not run."
+        ]
+      },
+      "input_tokens_including_cache": 178756,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 176596,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.5737476,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 8027,
+          "provider": "firstParty",
+          "thinkingTokens": 5230,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 8027,
+      "pr": 311,
+      "prompt_bytes": 341005,
+      "response_sha256": "8726bb07548a6f18d800586a6aef848e56bcbdf70baeb899d39f9af3d8316d82",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 176596,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 176596,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 176596,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 176596,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 8027,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 8027,
+        "output_tokens_details": {
+          "thinking_tokens": 5230
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 1.5289476,
+      "elapsed_seconds": 82.81347869196907,
+      "findings": {
+        "findings": [
+          {
+            "claim": "Non-derived (inferred) extraction assertions are now attached to any admitted edge that is visible under OperationNeighborhood. Their evidence carries the full source document text as a quote, and wire.go now serializes Citation, Quote and Path. A principal allowed Neighborhood on a document's rule, but not Read, can therefore obtain the document body through graph assertions. This bypasses operation-level separation between neighborhood and read.",
+            "missing_context": "Whether any deployed policy grants Neighborhood without Read on the same rule; the edgeAllowsResolved semantics; whether assertion evidence is stripped elsewhere before the web response.",
+            "path": "pkg/explorer/authorized/bounded.go",
+            "severity": "medium",
+            "symbol": "function:*Client.filterNeighborhood / function:derivedAssertionsByEdge",
+            "witness": "derivedAssertionsByEdge: `edgeID := shoal.ID(assertion.Metadata()[graphAssertionEdgeIDMetadata]) ... byEdge[edgeID] = assertion`; filterNeighborhood: `assertion, hasAssertion := derivedAssertions[edge.ID]; if hasAssertion { admittedAssertions[edge.ID] = assertion }` after `edgeAllowsResolved(..., auth.OperationNeighborhood, now)`; extractionContextLocked: `inference.NewDocumentAnchor(citation, record.Source.Content)` over the whole document range; wireEvidenceRefValue: `Quote: value.Quote()`"
+          },
+          {
+            "claim": "When the source rule has no keys, extractionEntityNamespace returns an empty namespace, and the namespace filter is skipped. The extraction context then includes entity nodes from every namespace, including other tenants' hidden entities. The heuristic resolves matching type/key to the lowest foreign node ID (ActionReference). PutNode then conflicts and returns ObjectNotFound, while otherwise extraction succeeds. A caller can therefore probe whether hidden entities with chosen names exist. With a Generator, foreign node content is also placed in the model prompt.",
+            "missing_context": "Whether an AccessRule with zero keys can exist or be attached to a readable document; whether Generator can be supplied through any authorized entry point.",
+            "path": "pkg/explorer/extraction.go",
+            "severity": "medium",
+            "symbol": "function:*Explorer.extractionContextLocked / function:existingOntologyNodes",
+            "witness": "rule.go: `if len(r.keys) == 0 { return \"\" }`; extraction.go: `if entityNamespace != \"\" && node.Properties[...EntityNamespace] != entityNamespace { continue }`; existingOntologyNodes keys only on `typeID + \"\\x00\" + key`; extractionCatalogWriteError maps ErrorConflict to `auth.ObjectNotFound()` for a readable source"
+          },
+          {
+            "claim": "Extracted node registrations are pinned to the source DocumentID/RevisionID and are never refreshed. The base graph keeps publishing old extraction records while the document node exists, even after the document is revised. canonicalRegisteredNodes then returns ObjectNotFound for the whole Neighborhood whenever a stale extracted node is a candidate. Re-extraction cannot repair this: the same-rule merge returns nil and keeps the stale RevisionID. Shared same-tenant entities inherit the first document's revision, so revising one document breaks graph reads for every document sharing that entity. This is fail-closed, but it is a persistent authorized-read denial.",
+            "missing_context": "Whether revision replacement removes or tombstones node registrations or extraction records elsewhere (reconstruct only adds persisted nodes; there are no node tombstones).",
+            "path": "pkg/explorer/authorized/store.go",
+            "severity": "medium",
+            "symbol": "function:*MemoryPolicyStore.PutNode / function:*Client.canonicalRegisteredNodes",
+            "witness": "PutNode: `if existing.Rule.equal(normalized.Rule) && derivedEntityNodesEqual(existing.Node, normalized.Node) { return nil }`; canonicalRegisteredNodes: `if currentBase[documentID] != revisionID { return nil, auth.ObjectNotFound() }`; computeCurrentGraph: `if _, ok := nodes[record.DocumentID]; !ok { continue }` with no revision-currency check on extractions"
+          },
+          {
+            "claim": "The staleness guard is tautological. documentRecordLocked is called with the planned RevisionID, so it returns that exact revision and the comparison always passes. An extraction planned against a revision that has since been superseded is still published, and computeCurrentGraph includes it because it checks only that the document node exists.",
+            "missing_context": "Whether all base mutations are serialized by the authorized client's mutationMu/lease, which would make the race unreachable through the authorized path.",
+            "path": "pkg/explorer/extraction.go",
+            "severity": "low",
+            "symbol": "function:*Explorer.CommitExtraction",
+            "witness": "`current, err := e.documentRecordLocked(published.DocumentID, published.RevisionID)` followed by `if current.Revision.ID != published.RevisionID { ... \"document changed before extraction publication\") }`"
+          },
+          {
+            "claim": "POST /api/v1/extract is a state-mutating action that writes graph and policy state. The handler shows no workspace-mutation header (x-shoal-workspace-request) check. The code comments imply ingest-style mutations require that header as CSRF protection, so extraction may be triggerable cross-site with an authenticated user's session.",
+            "missing_context": "Whether decodeRequest, the handler middleware, or ingestEndpoint enforce the mutation header or a JSON content-type preflight for all POST routes; how app.js api() sets headers.",
+            "path": "pkg/explorer/webapi/http.go",
+            "severity": "medium",
+            "symbol": "function:extractEndpoint",
+            "witness": "`func extractEndpoint(service Service) http.HandlerFunc { ... provider.Extract(request.Context(), input) }` with no header check; the new UI test asserts only document_id/revision_id, not the header"
+          }
+        ],
+        "summary": "The authorized extraction path authorizes Read on the source, namespaces entity IDs by rule, and pre-registers nodes and edges before commit with non-disclosing conflict errors. Main concerns: (1) inferred assertions now expose full-document evidence quotes under Neighborhood-only authorization; (2) empty-namespace rules draw other tenants' entities into the extraction context, creating an existence oracle; (3) extracted node registrations are pinned to stale revisions and cannot be re-registered, causing persistent fail-closed denial of graph reads; (4) a tautological revision check in CommitExtraction; (5) possible missing CSRF header enforcement on the new mutating extract endpoint. All require source adjudication.",
+        "unknowns": [
+          "Semantics of edgeAllowsResolved for EdgeRegistration without DocumentID/RevisionID (extraction PutEdge passes only Edge and Rule).",
+          "Whether AccessRule with empty keys is constructible, which affects the empty-namespace cross-tenant context finding.",
+          "decodeRequest / middleware CSRF enforcement for POST routes.",
+          "Whether PutEdge conflicts for identical relation edges shared across same-tenant documents (idempotency).",
+          "graphNodeFromPersisted and policyNodeRow were omitted, so round-trip fidelity of persisted extracted nodes is unverified.",
+          "Whether remote wire decoding of citation-bearing evidence (evidenceRefValue) accepts untrusted assertions into authorization decisions."
+        ]
+      },
+      "input_tokens_including_cache": 172626,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 170466,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.5289476,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 8239,
+          "provider": "firstParty",
+          "thinkingTokens": 5659,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 8239,
+      "pr": 311,
+      "prompt_bytes": 329202,
+      "response_sha256": "98876f6ac3f816abc18faafa16450b997b994b4443eb856cf6247803064a5204",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 170466,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 170466,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 170466,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 170466,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 8239,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 8239,
+        "output_tokens_details": {
+          "thinking_tokens": 5659
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "full",
+      "cost_usd": 0.3996836,
+      "elapsed_seconds": 20.22014157800004,
+      "findings": {
+        "findings": [],
+        "summary": "No concrete authorization, identity, tenant, disclosure, capability or fail-closed defect is evidenced in the supplied changes.\n\n- **Skill-file inspection:** `inspectUploadSkillFile` and `parseSkillFrontmatter` run on content already bounded by the unchanged per-file and total size limits in `prepareUploads`. The result only echoes the uploader's own frontmatter back in their own ingest response.\n- **Rendering:** `renderUploadResults` renders the skill metadata and error messages via `textContent`, so there is no injection path in the shown code.\n- **Client limits:** batching fails closed when `/api/v1/meta` omits bounds (`uploadBounds` throws). The server still independently enforces `MaxUploadFiles`, `MaxUploadFileBytes`, `MaxUploadTotalBytes` and unique names, so client-side limits are not a trust boundary.\n- **Capability gating:** the new directory input gets the same ingest-capability gating (`disabled = !canIngest || uploadLoading`) as the existing file input.\n\nThe remaining concerns are listed as unknowns because they depend on code not in the packet: the reauth handling, per-request server authorization, and persistence of relative directory names.",
+        "unknowns": [
+          "Whether `showActionError` previously triggered a re-authentication flow for 401 responses carrying `WWW-Authenticate: Bearer`. The new `uploadFiles` catches per-batch errors into `failedUploadResult` instead of calling `showActionError`, so a mid-sequence token expiry may no longer prompt reauth. Each batch still goes through server-side authorization, so this looks like UX degradation rather than a bypass.",
+          "Whether each `/api/v1/ingest` request is independently authorized server-side. The new client-side batching issues several sequential POSTs from one user action. The handler and authorization middleware are not in the packet.",
+          "Whether persisting directory-derived upload names is acceptable. Names like `dir__sub__file.md` come from `webkitRelativePath`, and `prepareUploads` stores them as the URI, title and metadata label. Previously only the basename was persisted. Anyone with list/read on the corpus would see the uploader's chosen local directory names. `sanitizeUploadFilename` is not shown, so it is unknown whether it normalizes these names further.",
+          "Whether `sanitizeUploadFilename` accepts the client-generated collision-renamed names (`2__name`), and whether server-side duplicate rejection makes a renamed name that collides with an existing sibling fail the whole batch. This is a correctness question, not a security one.",
+          "Whether other consumers of `IngestResponse` rely on strict unmarshal rejecting unknown fields. The new optional `skill_file` field is added symmetrically to MarshalJSON and UnmarshalJSON, so an older client or server would reject the other's payloads."
+        ]
+      },
+      "input_tokens_including_cache": 47738,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 45578,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.3996836,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1731,
+          "provider": "firstParty",
+          "thinkingTokens": 747,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 1731,
+      "pr": 310,
+      "prompt_bytes": 97931,
+      "response_sha256": "0e4ed1077c0869fd1cce58d57571e8f4493f62203d2be118b4b979a1a4ca4f39",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 45578,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 45578,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 45578,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 45578,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 1731,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 1731,
+        "output_tokens_details": {
+          "thinking_tokens": 747
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    },
+    {
+      "arm": "candidate",
+      "cost_usd": 0.4091836,
+      "elapsed_seconds": 31.808606406208128,
+      "findings": {
+        "findings": [
+          {
+            "claim": "Authentication and authorization failures on a batch no longer go through the action-error path, so re-authentication handling may be skipped. Each batch error is caught, turned into a per-file 'failed' row, and the loop keeps sending the remaining batches with the same auth headers. Previously an ingest error went straight to showActionError. That function sits next to needsReauthentication and challengedForBearer in this file, so it likely drives the bearer challenge / re-login flow. Now a 401 with WWW-Authenticate: Bearer, or a 403 from a revoked ingest permission, is shown only as text. It does not trigger re-authentication or disable the upload capability, and further requests are sent after the server has already refused the principal. The server still enforces access, so this is a fail-closed regression in the client, not a bypass.",
+            "missing_context": "The body of showActionError and whether it calls needsReauthentication, challengedForBearer, or clears the token. Whether apiError keeps the status and challenge header so a caller could still act on them.",
+            "path": "pkg/explorer/webapi/static/app.js",
+            "severity": "low",
+            "symbol": "uploadFiles",
+            "witness": "} catch (error) {\n        failed += batch.length;\n        failureMessages.push(error.message || String(error));\n        results.push(...batch.map((entry) => failedUploadResult(entry, error)));\n      }"
+          },
+          {
+            "claim": "The new directory picker uploads every file under the chosen directory, with no filtering. That includes dotfiles and VCS or secret material such as .env, .git/config, and private keys stored as text. Each file's full relative path is also embedded in the server-visible name, which becomes the Title, the URI, and the uploadMetadataLabel. The server accepts any valid UTF-8 text file. If the workspace corpus can be read by other principals, choosing a project directory can put credentials and local path structure into it without an explicit per-file choice.",
+            "missing_context": "Whether ingested workspace documents are scoped to the uploading principal or tenant, or are shared. Whether server-side ingest or sanitizeUploadFilename rejects dotfiles or sensitive paths.",
+            "path": "pkg/explorer/webapi/static/app.js",
+            "severity": "low",
+            "symbol": "selectedUploadFiles / uploadEntries",
+            "witness": "return [\n    ...($(\"upload-files\").files || []),\n    ...($(\"upload-directory\").files || []),\n  ];  …  uploadName: safeUploadName(sourcePath, index),"
+          }
+        ],
+        "summary": "The server-side change adds skill-file frontmatter inspection. It echoes back metadata taken only from the uploader's own content, and the client renders it with textContent, so no disclosure or injection path is visible. The client moves to bounded batch uploads and a directory picker. There are two low-severity concerns. First, per-batch auth failures are swallowed instead of going through the action-error and re-authentication path. Second, directory selection uploads every file, including likely secrets, with full relative paths. Both depend on context that was not supplied. Server-side bounds and filename sanitization appear to be unchanged.",
+        "unknowns": [
+          "Server-side semantics when an upload name matches an existing document at upload://workspace/<name>. The client's collision rename (`${count}__${name}`) can itself collide with a real file named, for example, '2__SKILL.md'. Flattening paths with '__' also makes different paths such as 'a/b__c' and 'a__b/c' map to the same name. Whether this replaces another principal's or another tenant's document depends on ingest identity and tenant scoping, which were not supplied.",
+          "The bodies of expectedSkillUploadName and trimYAMLScalar were omitted. parseSkillFrontmatter is bounded only by MaxUploadFileBytes, which appears acceptable.",
+          "The authorization check on /api/v1/ingest and the CSRF enforcement for the x-shoal-workspace-request header are not in this packet. Batching multiplies requests, but each request is presumed to be checked the same way.",
+          "The body of IngestResponse.MarshalJSON was omitted, so it is not shown whether skill_file is serialized consistently with the new strict UnmarshalJSON."
+        ]
+      },
+      "input_tokens_including_cache": 46173,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 44013,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.4091836,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2832,
+          "provider": "firstParty",
+          "thinkingTokens": 1369,
+          "webSearchRequests": 0
+        }
+      },
+      "output_tokens": 2832,
+      "pr": 310,
+      "prompt_bytes": 94708,
+      "response_sha256": "6f98f600d2864ac1f99ad34a8c3fa636019e1357931b507c631dde4e7017f8aa",
+      "usage": {
+        "cache_creation": {
+          "ephemeral_1h_input_tokens": 44013,
+          "ephemeral_5m_input_tokens": 0
+        },
+        "cache_creation_input_tokens": 44013,
+        "cache_read_input_tokens": 2158,
+        "inference_geo": "not_available",
+        "input_tokens": 2,
+        "iterations": [
+          {
+            "cache_creation": {
+              "ephemeral_1h_input_tokens": 44013,
+              "ephemeral_5m_input_tokens": 0
+            },
+            "cache_creation_input_tokens": 44013,
+            "cache_read_input_tokens": 2158,
+            "input_tokens": 2,
+            "output_tokens": 2832,
+            "type": "message"
+          }
+        ],
+        "output_tokens": 2832,
+        "output_tokens_details": {
+          "thinking_tokens": 1369
+        },
+        "server_tool_use": {
+          "web_fetch_requests": 0,
+          "web_search_requests": 0
+        },
+        "service_tier": "standard",
+        "speed": "standard"
+      }
+    }
+  ],
+  "totals": {
+    "candidate": {
+      "cost_usd": 3.0765864,
+      "elapsed_seconds": 173.46350108180195,
+      "input_tokens_including_cache": 351706,
+      "output_tokens": 16515,
+      "prompt_bytes": 683608
+    },
+    "full": {
+      "cost_usd": 3.1323103999999997,
+      "elapsed_seconds": 160.2328399042599,
+      "input_tokens_including_cache": 361689,
+      "output_tokens": 15308,
+      "prompt_bytes": 702938
+    }
+  }
+}

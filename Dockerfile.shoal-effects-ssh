@@ -1,0 +1,74 @@
+# syntax=docker/dockerfile:1.7
+
+# effects-ssh (#450, #662), extensions/effects-ssh: one static binary on
+# distroless, run as a fixed non-root account. It is built from the extension
+# module alone, on its own go.mod with the workspace off, so golang.org/x/crypto
+# /ssh is linked here and never into the root module (CI's "Core links no SSH"
+# step). The base images are the digest-pinned references
+# Dockerfile.shoal-gateway builds from, so a CI job that builds both pulls each
+# once. See docs/effects-ssh.md.
+
+ARG GO_IMAGE=golang@sha256:ebd54034f076819b3054f155db53660ded951612bb4dfd277f933e62059e5d5a
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
+WORKDIR /src
+
+# The extension's go.mod replaces the root module with ../.., so the root's
+# go.mod and the root packages the command imports must be present at that
+# path (`GOWORK=off go list -deps ./cmd/shoal-effects-ssh` in the module:
+# pkg/dispatch/api and pkg/shoal). Nothing else of the root is copied, so
+# nothing else can be linked.
+COPY go.mod go.sum ./
+COPY pkg/dispatch/api ./pkg/dispatch/api
+COPY pkg/shoal ./pkg/shoal
+COPY extensions/effects-ssh ./extensions/effects-ssh
+
+WORKDIR /src/extensions/effects-ssh
+ARG TARGETOS=linux
+ARG TARGETARCH
+ENV CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOWORK=off \
+    GOFLAGS=-mod=readonly
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath \
+      -ldflags="-s -w -buildid=" \
+      -o /out/shoal-effects-ssh ./cmd/shoal-effects-ssh \
+ && mkdir -p /out/journal
+
+FROM --platform=linux/amd64 gcr.io/distroless/static-debian12@sha256:b7ebc675e6df3e26840de28a9d119969806b5542902111bfd111964d0930c08a AS runtime-amd64
+FROM --platform=linux/arm64 gcr.io/distroless/static-debian12@sha256:ff3d007f159ebbbdf9130affa1125b10c50a909821c7130419df4e979a197c79 AS runtime-arm64
+
+FROM runtime-${TARGETARCH}
+
+ARG VERSION=dev
+ARG REVISION=unknown
+ARG CREATED
+LABEL org.opencontainers.image.title="shoal-effects-ssh" \
+      org.opencontainers.image.description="Shoal effects-ssh: runs operator-registered SSH commands at most once per action, for the effects gateway (#450)" \
+      org.opencontainers.image.source="https://github.com/phrocker/shoal-oss" \
+      org.opencontainers.image.documentation="https://github.com/phrocker/shoal-oss/blob/main/docs/effects-ssh.md" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"
+
+COPY --from=build /out/shoal-effects-ssh /usr/local/bin/shoal-effects-ssh
+# The journal's mount point, owned by the runtime account. The chart mounts a
+# ReadWriteOnce PersistentVolumeClaim here and passes it as -journal-dir. The
+# image ships no journal: serve never creates one, and an empty directory here
+# (a volume that failed to mount) is refused by -journal-id.
+COPY --from=build --chown=65532:65532 /out/journal /var/lib/effects-ssh
+
+# distroless's nonroot account, uid/gid 65532, which the chart's
+# securityContext also names.
+USER 65532:65532
+# SIGTERM stops new keys and lets runs finish within -shutdown-grace.
+STOPSIGNAL SIGTERM
+EXPOSE 8443
+ENTRYPOINT ["/usr/local/bin/shoal-effects-ssh"]
+# No default that runs: serve needs its flags and an initialized journal, and
+# journal init is a one-off step. The default prints the usage.
+CMD ["help"]

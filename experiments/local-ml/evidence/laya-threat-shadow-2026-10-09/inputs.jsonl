@@ -1,0 +1,4 @@
+{"source_change":"Added a unit test and renamed an internal helper without changing behavior."}
+{"source_change":"Removed the ownership check before writing a resource, allowing any authenticated caller to update another tenant's resource."}
+{"source_change":"Changed retry handling so a timeout can replay a non-idempotent payment operation twice."}
+{"source_change":"Updated a comment describing the existing authorization policy; executable code is unchanged."}

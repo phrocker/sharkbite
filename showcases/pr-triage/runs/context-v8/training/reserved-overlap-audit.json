@@ -1,0 +1,27 @@
+{
+  "development_inputs_id": "52be143cac7591148181091274763ed758d5e2cc4ea9b3529890a4c7e2d7049d",
+  "limitation": "Does not remove near duplicates or all shared contextual code.",
+  "method": "Purge training target and context bodies exactly matching either reserved target body; no reference labels inspected.",
+  "original_rows": 801,
+  "purged_training_ids": [
+    "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935",
+    "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea",
+    "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399",
+    "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0",
+    "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47",
+    "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae",
+    "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98",
+    "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816",
+    "570f5caf6771a98d35f460f2ed78e9ab5c0157bb2d0aa4b192b077412b899367",
+    "e7b32cee1cc068ec7c43223e7cb5996f28443b43c689a59f1937b241295851ee",
+    "f20e8effeb7b6b87fb17d211dac8dedc05a44d791f8955e1c88bcf7b68ab2d03",
+    "ef88e004e7153f40d232e9dfcf749ad15fa74c3cf09fccd4589bcf50719b9aed",
+    "6a9ab67f44a1762fd401c726246f3716b71ad3cf3086d69d6b2833ec76580724",
+    "3f737f58cf98b6b8e481e4a7b05f8fa5817ac9cc69cc39104f08184213c35784",
+    "474d883bbda5c634d3e2516030d72e3bbd6fb5b12ec0dc767d9c823e3429a95a",
+    "81166eaeb2bc72b29802e9a794db6a67f7cb7ca77af0fb6a28c6cc7d7e2932f3",
+    "0129e3b022455cff2b5f7bc27074d9efb815c63eb51683d801aa53d7c3788124"
+  ],
+  "remaining_rows": 784,
+  "reserved_inputs_id": "efd7325814d8372a21ed3d5cb64a687f51a126f02a6402c4251b2bf88cdac9c9"
+}

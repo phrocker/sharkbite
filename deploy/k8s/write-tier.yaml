@@ -1,0 +1,186 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoal-embed-headless
+  labels:
+    app.kubernetes.io/name: shoal-embed
+    app.kubernetes.io/component: write-tier
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: shoal-embed
+    app.kubernetes.io/component: write-tier
+  ports:
+    - name: grpc
+      port: 9876
+      targetPort: grpc
+    - name: metrics
+      port: 9877
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: shoal-embed
+  labels:
+    app.kubernetes.io/name: shoal-embed
+    app.kubernetes.io/component: write-tier
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  # Scale one StatefulSet per shard. Increase replicas only after the write
+  # routing/ownership model for that shard is defined.
+  replicas: 1
+  serviceName: shoal-embed-headless
+  # Explicit rollout contract instead of relying on the apps/v1 default
+  # (which happens to already be RollingUpdate with partition: 0 today).
+  # Spelling it out here means a future default change upstream can't
+  # silently change this StatefulSet's rollout behavior.
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal-embed
+      app.kubernetes.io/component: write-tier
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shoal-embed
+        app.kubernetes.io/component: write-tier
+        app.kubernetes.io/part-of: shoal-platform
+    spec:
+      # 10s readiness-withdrawal quiesce + 30s drain + margin for engine close
+      # before Kubernetes escalates to SIGKILL.
+      terminationGracePeriodSeconds: 50
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: shoal-embed
+          image: ghcr.io/example/shoal:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/shoal-embed"]
+          args:
+            - serve
+            - --data=$(SHOAL_EMBED_DATA_DIR)
+            - --address=0.0.0.0:$(SHOAL_EMBED_GRPC_PORT)
+            - --metrics-address=0.0.0.0:$(SHOAL_EMBED_METRICS_PORT)
+            - --quiesce-delay=10s
+            # TLS is opt-in and off by default (see deploy/README.md's TLS
+            # section). To enable it: mount a Secret containing tls.crt /
+            # tls.key (and, for mutual TLS, ca.crt) at
+            # /var/run/secrets/shoal/tls, then uncomment the two lines
+            # below (add a third --tls-client-ca line for mutual TLS) and
+            # the matching volume/volumeMount further down.
+            # - --tls-cert=/var/run/secrets/shoal/tls/tls.crt
+            # - --tls-key=/var/run/secrets/shoal/tls/tls.key
+            # - --tls-client-ca=/var/run/secrets/shoal/tls/ca.crt
+          envFrom:
+            - configMapRef:
+                name: shoal-platform-config
+          ports:
+            - name: grpc
+              containerPort: 9876
+            - name: metrics
+              containerPort: 9877
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/shoal
+            - name: object-storage-credentials
+              mountPath: /var/run/secrets/shoal/gcs
+              readOnly: true
+            # Uncomment together with the --tls-* args above and the
+            # matching volume below to enable TLS.
+            # - name: tls-credentials
+            #   mountPath: /var/run/secrets/shoal/tls
+            #   readOnly: true
+          # If TLS is enabled above (uncommented --tls-* args), these
+          # probes must change too: kubelet httpGet probes don't verify
+          # the server certificate, so add `scheme: HTTPS` to both probes
+          # below for plain TLS. Mutual TLS (--tls-client-ca) additionally
+          # requires a client certificate that kubelet cannot present, so
+          # httpGet cannot be used at all in that mode — replace both
+          # probes' `httpGet` block with `tcpSocket: {port: metrics}`
+          # instead (a reachability check only, not a /readyz check). The
+          # Helm chart makes this switch automatically; see
+          # deploy/helm/shoal/templates/embed-statefulset.yaml.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: object-storage-credentials
+          secret:
+            secretName: shoal-object-storage-credentials
+            optional: true
+        # Uncomment to enable TLS; must be a Secret with tls.crt / tls.key
+        # (and ca.crt for mutual TLS) — see deploy/README.md's TLS section.
+        # - name: tls-credentials
+        #   secret:
+        #     secretName: shoal-embed-tls
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 50Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shoal-embed
+  labels:
+    app.kubernetes.io/name: shoal-embed
+    app.kubernetes.io/component: write-tier
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  # This shard's StatefulSet runs a single replica today (see the replicas
+  # comment above), and there is no live tablet-migration/handoff path yet
+  # (that's tracked separately — tserver/compactor role work, out of scope
+  # here). maxUnavailable: 0 means the Eviction API (kubectl drain, cluster
+  # autoscaler node consolidation, and similar voluntary-disruption paths)
+  # will refuse to evict this pod rather than silently taking the shard's
+  # only writer offline, regardless of replica count: this budget is
+  # enforced against every pod the selector matches, so scaling the
+  # StatefulSet up does not by itself unblock a drain of an existing pod —
+  # maxUnavailable: 0 still permits zero unavailable pods no matter how
+  # many replicas exist. This does NOT block an operator-initiated
+  # rolling update (kubectl rollout restart / helm upgrade): the
+  # StatefulSet controller replaces pods directly and is not subject to
+  # PDBs. It DOES mean a node drain targeting this pod's node will report
+  # a failure until the operator either deletes the pod directly
+  # (bypassing the Eviction API) or temporarily raises/removes this
+  # budget — see deploy/README.md's rolling-upgrade/rollback runbook.
+  maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal-embed
+      app.kubernetes.io/component: write-tier

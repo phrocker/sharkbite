@@ -1,0 +1,135 @@
+{
+  "base": "bf5d4420e66fa124f05f88348bf36051d2945960",
+  "diff": "diff --git a/cmd/shoal-compactor/main.go b/cmd/shoal-compactor/main.go\nindex e91d93e..fbdd166 100644\n--- a/cmd/shoal-compactor/main.go\n+++ b/cmd/shoal-compactor/main.go\n@@ -387,11 +387,12 @@ func main() {\n \t\toperations, err = roleops.Start(*metricsAddress, workerOperationsHandler(metrics), tlsConfig)\n \t\tif err != nil {\n \t\t\tdie(\"shoal-compactor: operations listener: %v\", err)\n \t\t}\n \t\tgo func() {\n-\t\t\tif err := <-operations.Done(); err != nil {\n+\t\t\t<-operations.Done()\n+\t\t\tif err := operations.Err(); err != nil {\n \t\t\t\tlogger.Error(\"metrics server failed\", slog.String(\"err\", err.Error()))\n \t\t\t\tcancel()\n \t\t\t}\n \t\t}()\n \t}\ndiff --git a/cmd/shoal-tserver/main.go b/cmd/shoal-tserver/main.go\nindex c0e279a..4d37666 100644\n--- a/cmd/shoal-tserver/main.go\n+++ b/cmd/shoal-tserver/main.go\n@@ -318,11 +318,12 @@ func main() {\n \t\t)\n \t\tif err != nil {\n \t\t\tdie(\"operations listener: %v\", err)\n \t\t}\n \t\tgo func() {\n-\t\t\tif err := <-operations.Done(); err != nil {\n+\t\t\t<-operations.Done()\n+\t\t\tif err := operations.Err(); err != nil {\n \t\t\t\tselect {\n \t\t\t\tcase serverErr <- err:\n \t\t\t\tdefault:\n \t\t\t\t}\n \t\t\t}\ndiff --git a/internal/roleops/roleops.go b/internal/roleops/roleops.go\nindex e74e3bb..b65b4c8 100644\n--- a/internal/roleops/roleops.go\n+++ b/internal/roleops/roleops.go\n@@ -128,42 +128,73 @@ func dependenciesSnapshot(dependencies *Dependencies) []Dependency {\n \treturn dependencies.Snapshot()\n }\n \n type Server struct {\n \thttp *http.Server\n-\tdone chan error\n-\tonce sync.Once\n+\t// done is closed once the serve loop has returned. It carries no value,\n+\t// because a value can only be delivered to one receiver: when it did, a\n+\t// caller watching Done and a caller in Shutdown raced for the serve error\n+\t// and whichever lost observed nil.\n+\tdone chan struct{}\n+\t// serveErr is written once before done is closed, so every goroutine that\n+\t// observes the close is guaranteed to see it.\n+\tserveErr error\n+\tonce     sync.Once\n }\n \n func Start(address string, handler http.Handler, tlsConfig *tls.Config) (*Server, error) {\n \tlistener, err := net.Listen(\"tcp\", address)\n \tif err != nil {\n \t\treturn nil, err\n \t}\n \tif tlsConfig != nil {\n \t\tlistener = tls.NewListener(listener, tlsConfig.Clone())\n \t}\n+\treturn serve(address, listener, handler), nil\n+}\n+\n+// serve is the half of Start that does not bind, so a test can supply a\n+// listener that fails and assert what happens to the resulting serve error.\n+// Without a seam here the error path is unreachable, and a regression test for\n+// it can only assert the nil case, which passes whether or not the error is\n+// delivered at all.\n+func serve(address string, listener net.Listener, handler http.Handler) *Server {\n \tserver := &Server{\n \t\thttp: &http.Server{\n \t\t\tAddr:              address,\n \t\t\tHandler:           handler,\n \t\t\tReadHeaderTimeout: 5 * time.Second,\n \t\t},\n-\t\tdone: make(chan error, 1),\n+\t\tdone: make(chan struct{}),\n \t}\n \tgo func() {\n \t\terr := server.http.Serve(listener)\n \t\tif errors.Is(err, http.ErrServerClosed) {\n \t\t\terr = nil\n \t\t}\n-\t\tserver.done <- err\n+\t\tserver.serveErr = err\n \t\tclose(server.done)\n \t}()\n-\treturn server, nil\n+\treturn server\n }\n \n-func (s *Server) Done() <-chan error { return s.done }\n+// Done is closed when the serve loop has returned. Once it is readable the\n+// loop has exited, so a caller that shuts down and then releases the\n+// listener's resources is not racing it.\n+func (s *Server) Done() <-chan struct{} { return s.done }\n+\n+// Err reports why the serve loop returned. It is only meaningful once Done is\n+// readable, and every caller sees the same value rather than the first one\n+// consuming it.\n+func (s *Server) Err() error {\n+\tselect {\n+\tcase <-s.done:\n+\t\treturn s.serveErr\n+\tdefault:\n+\t\treturn nil\n+\t}\n+}\n \n func (s *Server) Shutdown(ctx context.Context) error {\n \tif s == nil {\n \t\treturn nil\n \t}\n@@ -172,15 +203,25 @@ func (s *Server) Shutdown(ctx context.Context) error {\n \t\tshutdownErr = s.http.Shutdown(ctx)\n \t\tif shutdownErr != nil {\n \t\t\t_ = s.http.Close()\n \t\t}\n \t\tselect {\n-\t\tcase serveErr := <-s.done:\n-\t\t\tshutdownErr = errors.Join(shutdownErr, serveErr)\n+\t\tcase <-s.done:\n+\t\t\tshutdownErr = errors.Join(shutdownErr, s.serveErr)\n \t\tcase <-ctx.Done():\n+\t\t\t// Close unblocks Serve, so the join below is bounded by the\n+\t\t\t// goroutine finishing rather than by the caller's deadline.\n+\t\t\t//\n+\t\t\t// Returning on the context alone would let Shutdown outrun the\n+\t\t\t// serve loop, which is the ordering this function exists to\n+\t\t\t// guarantee. It is reachable whenever the context is already done\n+\t\t\t// on entry, including a shutdown context reused after waiting on\n+\t\t\t// another server, because a ready Done case can win the select\n+\t\t\t// before the goroutine has closed s.done.\n \t\t\t_ = s.http.Close()\n-\t\t\tshutdownErr = errors.Join(shutdownErr, ctx.Err())\n+\t\t\t<-s.done\n+\t\t\tshutdownErr = errors.Join(shutdownErr, ctx.Err(), s.serveErr)\n \t\t}\n \t})\n \treturn shutdownErr\n }\n \ndiff --git a/internal/roleops/roleops_test.go b/internal/roleops/roleops_test.go\nindex fa4f226..f878a1d 100644\n--- a/internal/roleops/roleops_test.go\n+++ b/internal/roleops/roleops_test.go\n@@ -1,9 +1,11 @@\n package roleops\n \n import (\n \t\"context\"\n+\t\"errors\"\n+\t\"net\"\n \t\"net/http\"\n \t\"net/http/httptest\"\n \t\"strings\"\n \t\"testing\"\n \t\"time\"\n@@ -37,11 +39,192 @@ func TestServerShutdownJoinsServeLoop(t *testing.T) {\n \tctx, cancel := context.WithTimeout(context.Background(), time.Second)\n \tdefer cancel()\n \tif err := server.Shutdown(ctx); err != nil {\n \t\tt.Fatal(err)\n \t}\n+\t// Deliberately non-blocking. The assertion is that Done is *already*\n+\t// closed at the moment Shutdown returns, which is the join this function\n+\t// promises. Waiting for the close instead would pass against the old\n+\t// send-then-close implementation too, where Shutdown could return in the\n+\t// gap between the send and the close: the wait would simply observe the\n+\t// close a moment later and report success.\n+\t//\n+\t// This was flaky before because the implementation was racy, not because\n+\t// the assertion was wrong. Now that the serve loop closes Done before\n+\t// Shutdown can return, it is deterministic.\n \tselect {\n \tcase <-server.Done():\n \tdefault:\n-\t\tt.Fatal(\"shutdown returned before serve loop ended\")\n+\t\tt.Fatal(\"shutdown returned before the serve loop ended\")\n+\t}\n+\tif err := server.Err(); err != nil {\n+\t\tt.Fatalf(\"serve loop error after clean shutdown: %v\", err)\n+\t}\n+}\n+\n+// TestShutdownAndWatcherBothSeeTheServeError proves the serve error is not\n+// consumed by whichever caller reads first. The channel previously carried a\n+// single value, so a goroutine watching Done and a caller inside Shutdown\n+// raced for it, and the loser observed nil. Both real consumers of this\n+// package, shoal-tserver and shoal-compactor, watch Done in a goroutine and\n+// call Shutdown on exit, so a metrics server that failed for a real reason\n+// could have its error silently dropped.\n+func TestShutdownAndWatcherBothSeeTheServeError(t *testing.T) {\n+\tserver, err := Start(\"127.0.0.1:0\", Handler(NewDependencies(), nil), nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\twatched := make(chan error, 1)\n+\tgo func() {\n+\t\t<-server.Done()\n+\t\twatched <- server.Err()\n+\t}()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\tdefer cancel()\n+\tif err := server.Shutdown(ctx); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tselect {\n+\tcase err := <-watched:\n+\t\t// A clean shutdown reports no serve error to either observer. The\n+\t\t// point is that both observed the same thing rather than one of them\n+\t\t// consuming it.\n+\t\tif err != nil {\n+\t\t\tt.Fatalf(\"watcher saw %v after a clean shutdown\", err)\n+\t\t}\n+\tcase <-ctx.Done():\n+\t\tt.Fatal(\"watcher never observed the serve loop ending\")\n+\t}\n+\tif err := server.Err(); err != nil {\n+\t\tt.Fatalf(\"Err after shutdown = %v\", err)\n+\t}\n+}\n+\n+// TestShutdownIsIdempotent guards the sync.Once path now that Shutdown reads a\n+// closed channel rather than draining a value.\n+func TestShutdownIsIdempotent(t *testing.T) {\n+\tserver, err := Start(\"127.0.0.1:0\", Handler(NewDependencies(), nil), nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\tdefer cancel()\n+\tif err := server.Shutdown(ctx); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif err := server.Shutdown(ctx); err != nil {\n+\t\tt.Fatalf(\"second shutdown = %v\", err)\n+\t}\n+\tselect {\n+\tcase <-server.Done():\n+\tdefault:\n+\t\tt.Fatal(\"done must remain readable after repeated shutdown\")\n+\t}\n+}\n+\n+// failingListener fails every Accept with a sentinel, so http.Server.Serve\n+// returns something that is not ErrServerClosed and the serve error path is\n+// actually reachable.\n+type failingListener struct {\n+\taddr net.Addr\n+\terr  error\n+}\n+\n+func (l failingListener) Accept() (net.Conn, error) { return nil, l.err }\n+func (l failingListener) Close() error              { return nil }\n+func (l failingListener) Addr() net.Addr            { return l.addr }\n+\n+// TestServeErrorReachesBothObservers is the regression test for the bug that\n+// motivated this change. The serve error used to be a single buffered value,\n+// so a goroutine watching Done and a caller inside Shutdown raced for it and\n+// whichever lost observed nil. Both consumers of this package do exactly that,\n+// so a metrics server failing for a real reason could have its error silently\n+// dropped.\n+//\n+// A clean shutdown cannot test this: it reports nil to everyone, so the\n+// assertion would hold even if Err always returned nil. The listener therefore\n+// fails with a sentinel and both observers must see it.\n+func TestServeErrorReachesBothObservers(t *testing.T) {\n+\tsentinel := errors.New(\"listener is gone\")\n+\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\taddress := listener.Addr()\n+\tif err := listener.Close(); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tserver := serve(\"127.0.0.1:0\",\n+\t\tfailingListener{addr: address, err: sentinel},\n+\t\tHandler(NewDependencies(), nil))\n+\n+\twatched := make(chan error, 1)\n+\tgo func() {\n+\t\t<-server.Done()\n+\t\twatched <- server.Err()\n+\t}()\n+\n+\tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\tdefer cancel()\n+\t// Wait for the loop to fail on its own before shutting down. Calling\n+\t// Shutdown first would mark the server closed and Serve would return\n+\t// ErrServerClosed instead, which is normalized to nil and would test\n+\t// nothing.\n+\tselect {\n+\tcase <-server.Done():\n+\tcase <-ctx.Done():\n+\t\tt.Fatal(\"serve loop never failed\")\n+\t}\n+\tshutdownErr := server.Shutdown(ctx)\n+\tif !errors.Is(shutdownErr, sentinel) {\n+\t\tt.Fatalf(\"Shutdown did not surface the serve error: %v\", shutdownErr)\n+\t}\n+\tselect {\n+\tcase observed := <-watched:\n+\t\tif !errors.Is(observed, sentinel) {\n+\t\t\tt.Fatalf(\"watcher saw %v, want the serve error\", observed)\n+\t\t}\n+\tcase <-ctx.Done():\n+\t\tt.Fatal(\"watcher never observed the serve loop ending\")\n+\t}\n+\tif !errors.Is(server.Err(), sentinel) {\n+\t\tt.Fatalf(\"Err after shutdown = %v\", server.Err())\n+\t}\n+}\n+\n+// TestShutdownJoinsEvenWhenTheContextIsAlreadyDone covers the branch the\n+// happy-path test cannot reach. With an expired context the select's Done case\n+// is immediately ready and can win before the serve goroutine has closed its\n+// channel, so returning there would break the join this function promises.\n+// Close unblocks Serve, so waiting is bounded rather than a deadlock.\n+//\n+// It is reachable in practice: shoal-compactor reuses a shutdown context after\n+// waiting on another server, by which point it may already be expired.\n+func TestShutdownJoinsEvenWhenTheContextIsAlreadyDone(t *testing.T) {\n+\tserver, err := Start(\"127.0.0.1:0\", Handler(NewDependencies(), nil), nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\texpired, cancel := context.WithCancel(context.Background())\n+\tcancel()\n+\n+\tdone := make(chan error, 1)\n+\tgo func() { done <- server.Shutdown(expired) }()\n+\n+\t// Deliberately no assertion on the returned error. Both select cases can\n+\t// be ready at once and Go picks among them at random, and http.Shutdown\n+\t// returns nil when it finishes closing before the context is consulted, so\n+\t// whether a context cause appears is genuinely nondeterministic here. The\n+\t// property under test is the join.\n+\tselect {\n+\tcase <-done:\n+\tcase <-time.After(10 * time.Second):\n+\t\tt.Fatal(\"shutdown blocked instead of joining a closed serve loop\")\n+\t}\n+\n+\tselect {\n+\tcase <-server.Done():\n+\tdefault:\n+\t\tt.Fatal(\"shutdown returned on the context before the serve loop ended\")\n \t}\n }\n",
+  "head": "13e05c74d5984abc6d7e5993cbf3edbe1bc06da9",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 382,
+  "units": [
+    {
+      "id": "e57883f03e7dd8fdfb806f413aa41388b1c56154953a3297105171fa1d36f4fe",
+      "kind": "function",
+      "path": "cmd/shoal-compactor/main.go",
+      "symbol": "function:main"
+    },
+    {
+      "id": "7b1ac0c7ac8206f45fb0641b186dc99f4673e141a134dcb5ec5ebe384d8b056b",
+      "kind": "function",
+      "path": "cmd/shoal-tserver/main.go",
+      "symbol": "function:main"
+    },
+    {
+      "id": "6db007b0eb3e3f55b5db0908d967c2f7b012d3b4ab5fc1e7e27539d09982a841",
+      "kind": "function",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "function:*Server.Done"
+    },
+    {
+      "id": "4bf1d57c6d732598a454f522eefe0c256809b1aea757b543e9561b2f50544260",
+      "kind": "function",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "function:*Server.Err"
+    },
+    {
+      "id": "e71f1a627b29cee2e0b60578ae012f33b508903be2860e03f885bdfd17488e7a",
+      "kind": "function",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "function:*Server.Shutdown"
+    },
+    {
+      "id": "5b04b4c15030c43c1c218cb3ac70975794feea8467fd384447dd7b8ec44f9e3c",
+      "kind": "function",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "function:Start"
+    },
+    {
+      "id": "ffc51fa21b497e1334d30cd9929530cb484bb86232f39f1d870e6f5b1ce236f2",
+      "kind": "function",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "function:serve"
+    },
+    {
+      "id": "b19c063ccf9c0cabb02f3a29c3f4fedb4cf9e07d83cf9ca003c11cf22e79ac11",
+      "kind": "type",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "type:Server"
+    },
+    {
+      "id": "5386b03d3ed30d2ffd37cd60762f3fbbd67623b29e88d997b03bdf2829707237",
+      "kind": "file_context",
+      "path": "internal/roleops/roleops.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "dee6ad2815af17c66fbf6d19da0f785a779459866b46470ca40ab5c54536201e",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:TestServeErrorReachesBothObservers"
+    },
+    {
+      "id": "466a2db1287cfecb95154e62616405d4668acfe8970b0de14775f8b11b90325e",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:TestServerShutdownJoinsServeLoop"
+    },
+    {
+      "id": "6f9add946c4e16980d495c574dea263c610ad0e46dbaeef6a5c38d72e9b1a2ec",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:TestShutdownAndWatcherBothSeeTheServeError"
+    },
+    {
+      "id": "bedb3b179cf163f26f120959f03a1f9374514fe1faeeae642df97535ee1697d5",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:TestShutdownIsIdempotent"
+    },
+    {
+      "id": "f16396ed1a25324cd3e76ef547ff33f6de98df106d7336b0b36859dc255ab812",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:TestShutdownJoinsEvenWhenTheContextIsAlreadyDone"
+    },
+    {
+      "id": "802b1c3aed7eda45eb2baa64de852de9b2f607e12384f208f7300fcebb30763f",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:failingListener.Accept"
+    },
+    {
+      "id": "64e1d00bdfce4da728c01de311a965f9de844dabbb9a93be799778489ffacea2",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:failingListener.Addr"
+    },
+    {
+      "id": "e47db0fac8a389524105a42e30d8d2feb47be4c22bf38ea2eca04b56b7677483",
+      "kind": "function",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "function:failingListener.Close"
+    },
+    {
+      "id": "0ba8d8391ce3a5c36bf29427c8bdc25c18c262ded1bc1014326ce96ed5a6ed8f",
+      "kind": "import",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "import:\"context\",\"errors\",\"net\",\"net/http\",\"net/http/httptest\",\"strings\",\"testing\",\"time\""
+    },
+    {
+      "id": "6d578b851f4a64e90baf1bcf642d4d6619b2811598f6eac3324ff2f2ac49f8a3",
+      "kind": "import",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "import:\"context\",\"net/http\",\"net/http/httptest\",\"strings\",\"testing\",\"time\""
+    },
+    {
+      "id": "359168e75c71f25e8759a5b932f940d97eead911ebbe3554da92470483e4349a",
+      "kind": "type",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "type:failingListener"
+    },
+    {
+      "id": "a91a3b3305a0de0a72f6b63ab9ac7d28d491350038192563e105acb08983fac2",
+      "kind": "file_context",
+      "path": "internal/roleops/roleops_test.go",
+      "symbol": "file_context"
+    }
+  ]
+}

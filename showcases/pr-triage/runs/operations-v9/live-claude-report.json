@@ -1,0 +1,38 @@
+{
+  "assessment_sha256": "6bde2f6fcff137c78a90729577607b9b45cbf1b72f0cb0cce5a198cce63c4dca",
+  "id": "69505e8e8c3bac72cca09487bfd15eb64bb0b9d14104a80fa4dcf406a7ecd5b8",
+  "inputs_id": "e91cc9e07d9965a7b0da5573fed6f3f6d4ed93237a68f472db74e94d5b19b46a",
+  "limitations": [
+    "Agent-assessed relevance, not verified defects.",
+    "Retrospective reserved cohort; no production source exclusions.",
+    "Bytes are not downstream token/cost savings."
+  ],
+  "metrics": {
+    "dropped_ids": [
+      "00dd9540118158d1be73866785eb53c9c29cbe7440f2d8bc05061a507a4cf6db"
+    ],
+    "dropped_unknown_ids": [],
+    "missed_ids": [],
+    "missed_positive": 0,
+    "positive": 9,
+    "proposed_dropped": 1,
+    "proposed_reduction": 0.038461538461538464,
+    "relevance_recall": 1.0,
+    "units": 26
+  },
+  "model_id": "60030e721c92a9124906913c739a115574a33b7b0f3e1de71d165595c334dd94",
+  "optimization_enabled": false,
+  "prediction_id": "cf70f043fe9ea8f0b7787439a5b8022036a2141943267345e559d04c8061bf9c",
+  "volumes": {
+    "diff_bytes": {
+      "fraction": 0.007766851931024654,
+      "proposed_lower_priority": 327,
+      "total": 42102
+    },
+    "source_bytes": {
+      "fraction": 0.0032890486426801046,
+      "proposed_lower_priority": 280,
+      "total": 85131
+    }
+  }
+}

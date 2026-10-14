@@ -1,0 +1,9 @@
+{
+  "frozen_prediction_id": "388bb997e062cfcb85efd42665f8279b0a2aeb84df6b9269ed705c512fdea6bd",
+  "maximum_score_delta": 0.0,
+  "median_cpu_ms": 0.7807768415659666,
+  "note": "Schema2 adds enforced recipe and renderer identity. This is a post-evaluation attestation; original experiment selection did not enforce recipe fingerprint. No weights, threshold or predictions changed.",
+  "replay_id": "cadaf62869bdb43c1c61d27f1abb8136e880dceb5a1f9e7f18374c1a1601ba47",
+  "status": "post_review_recipe_binding_and_replay",
+  "units": 210
+}

@@ -1,0 +1,20 @@
+{{- if eq (include "shoal.explorerEnabled" .) "true" }}
+{{- with .Values.explorer.auth.oidc.approverMapping }}
+{{- /* The operator approver mapping (#451), rendered from values into a
+       ConfigMap this chart owns and mounted read-only by the explorer
+       StatefulSet, which carries its checksum so a change rolls the pod. The
+       document is emitted with toJson and quoted, so no value in it can end
+       the scalar; validate.yaml's line-break walk refuses control characters
+       in it as in every other value, and the workspace refuses the file at
+       startup if it is not a valid shoal.approvers/v1 mapping. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shoal.explorerApproversName" $ | quote }}
+  labels:
+    {{- include "shoal.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: explorer
+data:
+  approvers.json: {{ toJson . | quote }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,9 @@
+{
+  "label_authority": "analyst expectation; chronology is not independently attested",
+  "cases": [
+    {"case": 1, "expected_risk": "routine"},
+    {"case": 2, "expected_risk": "critical"},
+    {"case": 3, "expected_risk": "critical"},
+    {"case": 4, "expected_risk": "routine"}
+  ]
+}

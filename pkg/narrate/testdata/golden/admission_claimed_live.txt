@@ -1,0 +1,14 @@
+outcome dispatch.outcome.claimed
+  Action close-ticket on agent agent-7 was admitted for egresses-content and external and has not reported an outcome.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7 egresses-content external
+gap dispatch.gap.effect_possible
+  The action declares an external or egress effect and is claimed, so an effect may already have happened.
+  record=action:act-1
+history dispatch.history.requested
+  alice requested admission at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+next dispatch.next.options
+  What can happen next: the caller reports success before the lease ends at 2026-10-08 12:06:00 UTC, or the caller reports failure before the lease ends at 2026-10-08 12:06:00 UTC.
+  record=action:act-1

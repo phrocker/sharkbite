@@ -1,0 +1,66 @@
+{
+  "candidate_arm": "offline counterfactual only",
+  "extractor_sha256": "622fae48bfed00e6b53470ae72e71be9a674019c59835b8505b8e66bce4031d2",
+  "id": "247e7f6302418917b69c1a4ed7184904925af2465a6cb99bd477d0aebe1b778c",
+  "packets": [
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 399,
+      "prompt_bytes": 337322,
+      "prompt_sha256": "eb6a0c03a93621c2674f91a67c47eb2893590d3a7b4bbcc9f203f9dbfd264fc3"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 16,
+      "pr": 399,
+      "prompt_bytes": 323644,
+      "prompt_sha256": "c3f445c8ff5b49f80d6af8b649354bd26bf61918632d10d9697947237bc14ad7"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 361,
+      "prompt_bytes": 8361,
+      "prompt_sha256": "7d3bce8b8f2636a5b6cbe66a59770e101114740fd6dc631c627419db250b2f71"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 1,
+      "pr": 361,
+      "prompt_bytes": 6473,
+      "prompt_sha256": "69fd3751a1be737b7ea1cae33e10f568a7d6a49248ad8cafd0ff9b07107c5d38"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 360,
+      "prompt_bytes": 4610,
+      "prompt_sha256": "298ee10d1ecc1d9af4d6fedf516ad50cfed4576a596f69964c84794d6ffd8f81"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 0,
+      "pr": 360,
+      "prompt_bytes": 4610,
+      "prompt_sha256": "298ee10d1ecc1d9af4d6fedf516ad50cfed4576a596f69964c84794d6ffd8f81"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 357,
+      "prompt_bytes": 130099,
+      "prompt_sha256": "3d6e947b735c5bb4a51ae6e87089e36c215fd16a40c396522b0b10ff38f9d743"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 15,
+      "pr": 357,
+      "prompt_bytes": 118073,
+      "prompt_sha256": "c5b72c125784fb9d48440643b1ee0a21f5cbeaf160d28089bea9cc5bf8c1c960"
+    }
+  ],
+  "real_review_action": "full_review",
+  "runner_sha256": "67075017a3cd6583dc426deaed3592b1fb5dc51720034a388bd0481f54df36fb",
+  "source_helpers_sha256": "f6634c5657eb987e42d8f125b5007a910375686361664bd1df4a7c68a309dd9e"
+}

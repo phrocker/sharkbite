@@ -1,0 +1,22 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "lookup",
+    "template": "lookup:runs_in:in"
+  },
+  "cues": [
+    "runs",
+    "running",
+    "run"
+  ],
+  "patterns": [
+    "what runs in {subject}",
+    "which services run in {subject}",
+    "what is running in {subject}"
+  ],
+  "slots": [
+    {
+      "name": "subject"
+    }
+  ]
+}

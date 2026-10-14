@@ -1,0 +1,158 @@
+== edge enqueue
+history dispatch.transition.enqueue
+  At 2026-10-08 12:00:00 UTC, alice enqueued it with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice
+
+== edge enqueue alone
+history dispatch.transition.enqueue
+  At 2026-10-08 12:00:00 UTC, alice enqueued it with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice
+
+== edge admit
+history dispatch.transition.admit
+  At 2026-10-08 12:01:00 UTC, alice was admitted for egresses-content and external.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice egresses-content external
+
+== edge admit alone
+history dispatch.transition.admit
+  At 2026-10-08 12:01:00 UTC, alice was admitted for egresses-content and external.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice egresses-content external
+
+== edge admit alone after a lapsed claim
+history dispatch.transition.admit
+  At 2026-10-08 12:01:00 UTC, alice was admitted for egresses-content and external.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice egresses-content external
+
+== edge deny
+history dispatch.transition.deny
+  At 2026-10-08 12:00:00 UTC, admission for alice was refused.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice
+
+== edge deny alone
+history dispatch.transition.deny
+  At 2026-10-08 12:00:00 UTC, admission for alice was refused.
+  record=action:act-1 transition=t-edge principal=alice request=req-1
+  identifiers alice
+
+== edge claim
+history dispatch.transition.enqueue
+  At 2026-10-08 12:00:00 UTC, alice enqueued it with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 transition=t-from principal=alice request=req-1
+  identifiers alice
+history dispatch.transition.claim
+  At 2026-10-08 12:01:00 UTC, worker-1 claimed it with a lease of 5 minutes.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge claim alone
+history dispatch.transition.claim
+  At 2026-10-08 12:01:00 UTC, worker-1 claimed it with a lease of 5 minutes.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge claim alone after a lapsed claim
+history dispatch.transition.reclaim
+  At 2026-10-08 12:01:00 UTC, after the previous lease lapsed, worker-1 claimed it again with a lease of 5 minutes.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge cancel
+history dispatch.transition.enqueue
+  At 2026-10-08 12:00:00 UTC, alice enqueued it with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 transition=t-from principal=alice request=req-1
+  identifiers alice
+history dispatch.transition.cancel
+  At 2026-10-08 12:10:00 UTC, it was canceled before anyone claimed it.
+  record=action:act-1 transition=t-edge
+
+== edge cancel alone
+history dispatch.transition.cancel
+  At 2026-10-08 12:10:00 UTC, it was canceled before anyone claimed it.
+  record=action:act-1 transition=t-edge
+
+== edge complete
+history dispatch.transition.claim
+  At 2026-10-08 12:01:00 UTC, worker-1 claimed it with a lease of 5 minutes.
+  record=action:act-1 transition=t-from principal=worker-1 claim=claim-1
+  identifiers worker-1
+history dispatch.transition.complete
+  At 2026-10-08 12:03:00 UTC, worker-1 reported success.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge complete alone
+history dispatch.transition.complete
+  At 2026-10-08 12:03:00 UTC, worker-1 reported success.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge complete alone after a lapsed claim
+history dispatch.transition.complete
+  At 2026-10-08 12:03:00 UTC, worker-1 reported success.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge fail
+history dispatch.transition.claim
+  At 2026-10-08 12:01:00 UTC, worker-1 claimed it with a lease of 5 minutes.
+  record=action:act-1 transition=t-from principal=worker-1 claim=claim-1
+  identifiers worker-1
+history dispatch.transition.fail
+  At 2026-10-08 12:03:00 UTC, it was recorded as failed with outcome_unknown after worker-1 reported its outcome; the record does not say whether worker-1 or Shoal assigned the code.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1 worker-1
+
+== edge fail alone
+history dispatch.transition.fail
+  At 2026-10-08 12:03:00 UTC, it was recorded as failed with outcome_unknown after worker-1 reported its outcome; the record does not say whether worker-1 or Shoal assigned the code.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1 worker-1
+
+== edge fail alone after a lapsed claim
+history dispatch.transition.fail
+  At 2026-10-08 12:03:00 UTC, it was recorded as failed with outcome_unknown after worker-1 reported its outcome; the record does not say whether worker-1 or Shoal assigned the code.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1 worker-1
+
+== edge reclaim
+history dispatch.transition.claim_run
+  Between 2026-10-08 12:01:00 UTC and 2026-10-08 12:01:00 UTC it was claimed 2 times by worker-1; each claim before the last lapsed without a report.
+  record=action:act-1 transition=t-from transition=t-edge principal=worker-1 claim=claim-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge reclaim alone
+history dispatch.transition.reclaim
+  At 2026-10-08 12:01:00 UTC, after the previous lease lapsed, worker-1 claimed it again with a lease of 5 minutes.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge reclaim alone after a lapsed claim
+history dispatch.transition.reclaim
+  At 2026-10-08 12:01:00 UTC, after the previous lease lapsed, worker-1 claimed it again with a lease of 5 minutes.
+  record=action:act-1 transition=t-edge principal=worker-1 claim=claim-1
+  identifiers worker-1
+
+== edge cancel_lapsed
+history dispatch.transition.claim
+  At 2026-10-08 12:01:00 UTC, worker-1 claimed it with a lease of 5 minutes.
+  record=action:act-1 transition=t-from principal=worker-1 claim=claim-1
+  identifiers worker-1
+history dispatch.transition.cancel_lapsed
+  At 2026-10-08 12:10:00 UTC, it was canceled after its last claim lapsed.
+  record=action:act-1 transition=t-edge
+
+== edge cancel_lapsed alone
+history dispatch.transition.cancel_lapsed
+  At 2026-10-08 12:10:00 UTC, it was canceled after its last claim lapsed.
+  record=action:act-1 transition=t-edge
+
+== edge cancel_lapsed alone after a lapsed claim
+history dispatch.transition.cancel_lapsed
+  At 2026-10-08 12:10:00 UTC, it was canceled after its last claim lapsed.
+  record=action:act-1 transition=t-edge

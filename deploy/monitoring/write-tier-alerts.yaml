@@ -1,0 +1,44 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: shoal-write-tier
+spec:
+  groups:
+    - name: shoal-tserver
+      rules:
+        - alert: ShoalTServerDependencyUnavailable
+          expr: min by (pod, name) (shoal_dependency_ready{job=~".*tserver.*"}) == 0
+          for: 2m
+          labels: {severity: critical}
+          annotations: {summary: "Shoal tserver operational dependency is unavailable"}
+        - alert: ShoalTServerIngestBackpressure
+          expr: sum(rate(shoal_tserver_ingest_backpressure_total[5m])) > 0
+          for: 5m
+          labels: {severity: warning}
+          annotations: {summary: "Shoal tserver is applying ingest backpressure"}
+        - alert: ShoalTServerWALOrMincFailures
+          expr: sum(rate(shoal_tserver_wal_failures_total[5m]) + rate(shoal_tserver_minc_failures_total[5m])) > 0
+          for: 5m
+          labels: {severity: critical}
+          annotations: {summary: "Shoal tserver WAL or minor compaction failures detected"}
+    - name: shoal-compactor
+      rules:
+        - alert: ShoalCompactorDependencyUnavailable
+          expr: min by (pod, name) (shoal_dependency_ready{job=~".*compactor.*"}) == 0
+          for: 2m
+          labels: {severity: warning}
+          annotations: {summary: "Shoal compactor operational dependency is unavailable"}
+        - alert: ShoalCompactorFailures
+          expr: sum(rate(shoal_compactor_jobs_failed_total[5m])) > 0
+          for: 5m
+          labels: {severity: warning}
+          annotations: {summary: "Shoal compactor jobs are failing"}
+        - alert: ShoalCompactorCompletionAmbiguous
+          expr: increase(shoal_compactor_completion_ambiguous_total[15m]) > 0
+          labels: {severity: critical}
+          annotations: {summary: "Shoal compactor has ambiguous completion state"}
+        - alert: ShoalCompactorRetrying
+          expr: sum(rate(shoal_compactor_retries_total[5m])) > 0
+          for: 10m
+          labels: {severity: warning}
+          annotations: {summary: "Shoal compactor is persistently retrying"}

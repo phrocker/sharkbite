@@ -1,0 +1,322 @@
+{{- if eq (include "shoal.explorerEnabled" .) "true" }}
+{{- $explorer := .Values.explorer -}}
+{{- $oidc := $explorer.auth.oidc -}}
+{{- $approverMappingDir := "/etc/shoal/approvers" -}}
+{{- $labelGrantsDir := "/etc/shoal/label-grants" -}}
+{{- $executorMappingDir := "/etc/shoal/executors" -}}
+{{- /* Every value-derived string in this template is a quoted scalar: the
+       container arguments as whole arguments, and the image, pull policy,
+       credential references, mount path and storage request each on its own.
+       Before that, a line break in explorer.storageSize or
+       explorer.storageClassName added fields of the operator's choosing to
+       the volume claim (#468). validate.yaml refuses the character as well;
+       quoting is the half that holds if a refusal is ever lost. This template
+       is not rendered by any storage profile, so quoting changes no byte of
+       an output that must stay identical. Numbers (replicas, ports, the grace
+       period, the partition) stay bare because the API server wants them as
+       numbers, and validate.yaml's walk refuses a line break in their string
+       form. nodeSelector, tolerations, affinity and resources go through
+       toYaml, which cannot be quoted: the block it emits is the structure, so
+       there validate.yaml's refusal of line breaks in their keys and values
+       is the only defence, not a second one. */ -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "shoal.explorerName" . }}
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: explorer
+spec:
+  # A StatefulSet rather than a Deployment, and not for ordinal identity: its
+  # rolling update stops the old pod before starting the new one. A Deployment
+  # surges by default, which would put two processes on one ReadWriteOnce state
+  # root — the split-brain the workspace has no protocol for.
+  replicas: {{ $explorer.replicas }}
+  serviceName: {{ include "shoal.explorerHeadlessName" . }}
+  podManagementPolicy: OrderedReady
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: {{ $explorer.updateStrategy.partition }}
+  selector:
+    matchLabels:
+      {{- include "shoal.explorerSelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "shoal.explorerSelectorLabels" . | nindent 8 }}
+        app.kubernetes.io/part-of: shoal-platform
+      {{- if or $oidc.approverMapping $oidc.labelGrants $oidc.executorMapping }}
+      # The approver mapping, the label grants and the executor mapping are
+      # the settings that are files rather than arguments (they are
+      # documents, and the workspace reads them from disk once, at startup),
+      # so each carries the checksum that rolls the pod when it changes.
+      annotations:
+        {{- with $oidc.approverMapping }}
+        checksum/approver-mapping: {{ toJson . | sha256sum | quote }}
+        {{- end }}
+        {{- with $oidc.labelGrants }}
+        checksum/label-grants: {{ toJson . | sha256sum | quote }}
+        {{- end }}
+        {{- with $oidc.executorMapping }}
+        checksum/executor-mapping: {{ toJson . | sha256sum | quote }}
+        {{- end }}
+      {{- end }}
+    spec:
+      # Every setting is an argument on this pod spec rather than a ConfigMap.
+      # A changed argument changes the pod template and rolls the pod on its
+      # own; a ConfigMap would need a checksum annotation to get the same
+      # effect, and without one an edited disclosure setting would leave the
+      # running process on the old posture while the chart claimed the new one.
+      terminationGracePeriodSeconds: {{ $explorer.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with $explorer.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $explorer.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with $explorer.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: shoal-explore-web
+          image: {{ printf "%v:%v" $explorer.image.repository $explorer.image.tag | quote }}
+          imagePullPolicy: {{ $explorer.image.pullPolicy | quote }}
+          command: ["/usr/local/bin/shoal-explore-web"]
+          args:
+            # One state root: -state-dir places the corpus and the durable
+            # policy catalog beneath it, so the single mount below persists
+            # everything a restart needs.
+            - {{ printf "-state-dir=%v" ($explorer.stateDir) | quote }}
+            - {{ printf "-listen=0.0.0.0:%v" ($explorer.containerPort) | quote }}
+            - {{ printf "-health-address=0.0.0.0:%v" ($explorer.healthPort) | quote }}
+            - {{ printf "-allowed-host=%v" (include "shoal.explorerAllowedHosts" .) | quote }}
+            {{- if $explorer.disclosure.concealWithholding }}
+            - -conceal-withholding
+            {{- end }}
+            {{- if gt (int $explorer.disclosure.mosaic.maxDomains) 0 }}
+            - {{ printf "-mosaic-budget=%v" ($explorer.disclosure.mosaic.maxDomains) | quote }}
+            - {{ printf "-mosaic-window=%v" ($explorer.disclosure.mosaic.window) | quote }}
+            {{- end }}
+            {{- if $explorer.declassification.requireReason }}
+            - -require-declassification-reason
+            {{- end }}
+            {{- $maxNodeAdjacency := int64 ((($explorer.graph | default dict).maxNodeAdjacency) | default 0) }}
+            {{- if gt $maxNodeAdjacency 0 }}
+            - {{ printf "-max-bounded-node-adjacency=%d" $maxNodeAdjacency | quote }}
+            {{- end }}
+            - {{ printf "-oidc-issuer=%v" ($oidc.issuer) | quote }}
+            - {{ printf "-oidc-audience=%v" (join "," $oidc.audiences) | quote }}
+            - {{ printf "-oidc-authorization-claim=%v" ($oidc.authorizationClaim) | quote }}
+            {{- with $oidc.discoveryURL }}
+            - {{ printf "-oidc-discovery-url=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.jwksURI }}
+            - {{ printf "-oidc-jwks-uri=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.allowedAlgs }}
+            - {{ printf "-oidc-allowed-algs=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.clockSkew }}
+            - {{ printf "-oidc-clock-skew=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.subjectClaim }}
+            - {{ printf "-oidc-subject-claim=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.actorClaim }}
+            - {{ printf "-oidc-actor-claim=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.clientIDClaim }}
+            - {{ printf "-oidc-client-id-claim=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.delegationClaim }}
+            - {{ printf "-oidc-delegation-claim=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.readerValues }}
+            - {{ printf "-oidc-reader-values=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $oidc.contributorValues }}
+            - {{ printf "-oidc-contributor-values=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $oidc.fleetValues }}
+            - {{ printf "-oidc-fleet-values=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $oidc.browserClientID }}
+            - {{ printf "-oidc-browser-client-id=%v" (.) | quote }}
+            {{- end }}
+            {{- with $oidc.browserScope }}
+            - {{ printf "-oidc-browser-scope=%v" (.) | quote }}
+            {{- end }}
+            {{- if $oidc.approverMapping }}
+            - {{ printf "-oidc-approver-mapping-file=%s/approvers.json" $approverMappingDir | quote }}
+            {{- end }}
+            {{- if $oidc.labelGrants }}
+            - {{ printf "-oidc-label-grants-file=%s/label-grants.json" $labelGrantsDir | quote }}
+            {{- end }}
+            {{- if $oidc.executorMapping }}
+            - {{ printf "-oidc-executor-mapping-file=%s/executors.json" $executorMappingDir | quote }}
+            {{- end }}
+            {{- with $oidc.identityClaim }}
+            - {{ printf "-oidc-identity-claim=%s" (toJson .) | quote }}
+            {{- end }}
+            {{- with $oidc.identitySchemeMigrateFrom }}
+            - {{ printf "-oidc-identity-scheme-migrate=%v" (.) | quote }}
+            {{- end }}
+            {{- with $explorer.chat.provider }}
+            - {{ printf "-chat-provider=%v" (.) | quote }}
+            - {{ printf "-chat-model=%v" ($explorer.chat.model) | quote }}
+            - {{ printf "-chat-base-url=%v" ($explorer.chat.baseURL) | quote }}
+            - {{ printf "-chat-api-key-env=%v" ($explorer.chat.apiKeyEnv) | quote }}
+            {{- with $explorer.chat.organization }}
+            - {{ printf "-chat-organization=%v" (.) | quote }}
+            {{- end }}
+            {{- with $explorer.chat.project }}
+            - {{ printf "-chat-project=%v" (.) | quote }}
+            {{- end }}
+            {{- end }}
+            {{- with $explorer.embedding.provider }}
+            - {{ printf "-embedding-provider=%v" (.) | quote }}
+            - {{ printf "-embedding-model=%v" ($explorer.embedding.model) | quote }}
+            - {{ printf "-embedding-dimensions=%v" ($explorer.embedding.dimensions) | quote }}
+            {{- with $explorer.embedding.baseURL }}
+            - {{ printf "-embedding-base-url=%v" (.) | quote }}
+            {{- end }}
+            - {{ printf "-embedding-api-key-env=%v" ($explorer.embedding.apiKeyEnv) | quote }}
+            {{- end }}
+            {{- with $explorer.fleet.executorRefs }}
+            - {{ printf "-fleet-executor-refs=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $explorer.fleet.askExecutorRef }}
+            - {{ printf "-fleet-ask-executor-ref=%v" (.) | quote }}
+            {{- end }}
+            {{- with $explorer.fleet.externalExecutorRefs }}
+            - {{ printf "-fleet-external-executor-refs=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $explorer.fleet.externalEgressExecutorRefs }}
+            - {{ printf "-fleet-external-egress-executor-refs=%v" (join "," .) | quote }}
+            {{- end }}
+            {{- with $explorer.ontologyFile }}
+            - {{ printf "-ontology-file=%v" (.) | quote }}
+            {{- end }}
+          {{- if or (and $explorer.chat.credentialSecretName $explorer.chat.provider) (and $explorer.embedding.credentialSecretName $explorer.embedding.provider) }}
+          env:
+            {{- if and $explorer.chat.credentialSecretName $explorer.chat.provider }}
+            - name: {{ $explorer.chat.apiKeyEnv | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $explorer.chat.credentialSecretName | quote }}
+                  key: {{ $explorer.chat.credentialSecretKey | quote }}
+            {{- end }}
+            {{- if and $explorer.embedding.credentialSecretName $explorer.embedding.provider }}
+            - name: {{ $explorer.embedding.apiKeyEnv | quote }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $explorer.embedding.credentialSecretName | quote }}
+                  key: {{ $explorer.embedding.credentialSecretKey | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ $explorer.containerPort }}
+            - name: health
+              containerPort: {{ $explorer.healthPort }}
+          volumeMounts:
+            - name: state
+              mountPath: {{ $explorer.stateDir | quote }}
+            # The root filesystem is read-only, and the engine writes temporary
+            # files outside the state root on some paths (for example
+            # internal/engine/rfile_export.go, which creates its verification
+            # file in the system temp directory). An emptyDir keeps those
+            # working without giving the rest of the root back.
+            - name: tmp
+              mountPath: /tmp
+            {{- if $oidc.approverMapping }}
+            - name: approver-mapping
+              mountPath: {{ $approverMappingDir | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if $oidc.labelGrants }}
+            - name: label-grants
+              mountPath: {{ $labelGrantsDir | quote }}
+              readOnly: true
+            {{- end }}
+            {{- if $oidc.executorMapping }}
+            - name: executor-mapping
+              mountPath: {{ $executorMappingDir | quote }}
+              readOnly: true
+            {{- end }}
+          # Both probes address the health port, never the workspace port. The
+          # workspace refuses any request whose Host is not an exactly
+          # configured authority, and a kubelet addresses the pod by its
+          # runtime-assigned IP, which allowedHosts cannot name. A probe there
+          # answers 421 and the pod never becomes ready.
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          # The corpus and policy catalog can take a while to open on a large
+          # state root. A startup probe gives that time without also making the
+          # liveness probe slow to notice a wedged process afterwards.
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            periodSeconds: 5
+            failureThreshold: 60
+          resources:
+            {{- toYaml $explorer.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        {{- if $oidc.approverMapping }}
+        - name: approver-mapping
+          configMap:
+            name: {{ include "shoal.explorerApproversName" . | quote }}
+        {{- end }}
+        {{- if $oidc.labelGrants }}
+        - name: label-grants
+          configMap:
+            name: {{ include "shoal.explorerLabelGrantsName" . | quote }}
+        {{- end }}
+        {{- if $oidc.executorMapping }}
+        - name: executor-mapping
+          configMap:
+            name: {{ include "shoal.explorerExecutorsName" . | quote }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: state
+      spec:
+        # ReadWriteOnce is the honest access mode: one process owns this engine.
+        accessModes: ["ReadWriteOnce"]
+        {{- with $explorer.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ $explorer.storageSize | quote }}
+{{- end }}

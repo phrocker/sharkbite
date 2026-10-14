@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "kind": "promotion_record",
+  "candidate_id": "388741deda4b04b1da6ac841bbea2b477ada3a3e98b842edc4272515c0151d75",
+  "predictions_id": "cfe468c7af275b99e93a8dfd0a8c7909ff7503fce4458566cf980dbc2fc843ef",
+  "evaluation_policy_id": "cde2585f2b36219bb59b9de4bd8aa9e002d11dba75bc77f985dae4b86d9ea724",
+  "ledger_id": "9c01461705ac48e1a81d4bbeee8f64730cf301d772350e31e56bc74d862d4cb5",
+  "dataset_id": "6a939db447acf91217f4f8914ae7fb3a0c76aa146c9d3aafa7d3727baa4fa004",
+  "metrics": [
+    {
+      "assessor": "frontier",
+      "positives": 67,
+      "missed_ids": [
+        "692e99b88c32a15e3529659f7a0becde39994bf02d55d7da595c3e5215dad00d",
+        "a523af273b5f89089c8cc2b6fa8b8e923395accbb1b261ed428d717956b3b4ff"
+      ],
+      "recall": 0.9701492537313433,
+      "unknown_lowered_ids": []
+    },
+    {
+      "assessor": "claude",
+      "positives": 64,
+      "missed_ids": [],
+      "recall": 1.0,
+      "unknown_lowered_ids": []
+    }
+  ],
+  "families": 10,
+  "reasons": [
+    "frontier: quality/sample gate failed",
+    "evaluation policy reconstructed after experiment"
+  ],
+  "disposition": "hold",
+  "permitted_action": "full_review",
+  "optimization_enabled": false,
+  "limitation": "Relevance assessments are not defect truth. No quality-parity or exclusion authorization.",
+  "id": "108df68a9be577f97b6538c25ffeedbfbe9c084141b894bb91252159ef8c98f7"
+}
