@@ -1,0 +1,37 @@
+{
+  "calls": [
+    {
+      "charged_microusd": 417087,
+      "id": "pr415-a-b0",
+      "prompt_sha256": "4b5eadaac06f71e37434328d4e91c60c93898613968536b505cc7be71c389cd5",
+      "reserved_microusd": 3000000,
+      "status": "settled"
+    },
+    {
+      "charged_microusd": 115593,
+      "id": "pr415-a-b1",
+      "prompt_sha256": "411a457a54b9f564663fd3d91ed6248af169f2d62aff4c550fde518455e26baf",
+      "reserved_microusd": 3000000,
+      "status": "settled"
+    },
+    {
+      "charged_microusd": 410541,
+      "id": "pr415-b-b0",
+      "prompt_sha256": "4b5eadaac06f71e37434328d4e91c60c93898613968536b505cc7be71c389cd5",
+      "reserved_microusd": 3000000,
+      "status": "settled"
+    },
+    {
+      "charged_microusd": 103677,
+      "id": "pr415-b-b1",
+      "prompt_sha256": "411a457a54b9f564663fd3d91ed6248af169f2d62aff4c550fde518455e26baf",
+      "reserved_microusd": 3000000,
+      "status": "settled"
+    }
+  ],
+  "charged_or_reserved_usd": 1.046898,
+  "limit_usd": 25,
+  "limitation": "Provider-reported cost, not billing attestation. Unpriced/interrupted calls retain full reservation.",
+  "protocol_id": "7602a628b97b3811bcf4af43857661d5fa75ba6dff186ec46e2a380d592ea27e",
+  "reported_paid_usd": 1.046898
+}

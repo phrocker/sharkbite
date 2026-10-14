@@ -1,0 +1,7 @@
+# Drop a captured cluster RFile here as `captured.rf` to exercise
+# `groundtruth_test.go`. Generate with:
+#
+#   ./bin/shoal-rfile-pull -src gs://<bucket>/<path>/<file>.rf \
+#                          -dst internal/rfile/testdata/captured.rf
+#
+# Pick a small file (a few MB); this directory is committed.

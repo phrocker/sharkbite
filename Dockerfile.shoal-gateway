@@ -1,0 +1,75 @@
+# syntax=docker/dockerfile:1.7
+
+# The effects gateway (#391), cmd/shoal-gateway: one static binary on
+# distroless, run as a fixed non-root account. The base images are the same
+# digest-pinned references Dockerfile.shoal-embed builds from; where they come
+# from is #638's decision, not this file's. See docs/effects-gateway-deploy.md.
+
+ARG GO_IMAGE=golang@sha256:ebd54034f076819b3054f155db53660ded951612bb4dfd277f933e62059e5d5a
+
+FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS build
+WORKDIR /src
+
+COPY go.mod go.sum ./
+# The sidecar is a local `replace` target, so its go.mod must exist before the
+# dependency download resolves.
+COPY wal-quorum-sidecar/go.mod wal-quorum-sidecar/go.sum ./wal-quorum-sidecar/
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
+
+# The packages the command imports: cmd/shoal-gateway, internal/..., pkg/...
+# and the accumulo package (`go list -deps ./cmd/shoal-gateway`).
+COPY cmd/shoal-gateway ./cmd/shoal-gateway
+COPY internal ./internal
+COPY pkg ./pkg
+COPY accumulo ./accumulo
+
+ARG TARGETOS=linux
+ARG TARGETARCH
+# go.work pins a newer toolchain than this base image; the command builds on
+# the module's own go directive, so the image builds outside the workspace.
+ENV CGO_ENABLED=0 \
+    GOOS=${TARGETOS} \
+    GOARCH=${TARGETARCH} \
+    GOWORK=off
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    go build -trimpath \
+      -ldflags="-s -w -buildid=" \
+      -o /out/shoal-gateway ./cmd/shoal-gateway \
+ && mkdir -p /out/state
+
+FROM --platform=linux/amd64 gcr.io/distroless/static-debian12@sha256:b7ebc675e6df3e26840de28a9d119969806b5542902111bfd111964d0930c08a AS runtime-amd64
+FROM --platform=linux/arm64 gcr.io/distroless/static-debian12@sha256:ff3d007f159ebbbdf9130affa1125b10c50a909821c7130419df4e979a197c79 AS runtime-arm64
+
+FROM runtime-${TARGETARCH}
+
+ARG VERSION=dev
+ARG REVISION=unknown
+ARG CREATED
+LABEL org.opencontainers.image.title="shoal-gateway" \
+      org.opencontainers.image.description="Shoal effects gateway: performs fleet actions against one HTTP surface (#391)" \
+      org.opencontainers.image.source="https://github.com/phrocker/shoal-oss" \
+      org.opencontainers.image.documentation="https://github.com/phrocker/shoal-oss/blob/main/docs/effects-gateway-deploy.md" \
+      org.opencontainers.image.licenses="Apache-2.0" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.revision="${REVISION}" \
+      org.opencontainers.image.created="${CREATED}"
+
+COPY --from=build /out/shoal-gateway /usr/local/bin/shoal-gateway
+# The unrecorded log's mount point, owned by the runtime account so a volume
+# that keeps the image's ownership is writable. The chart mounts a
+# PersistentVolumeClaim here and passes -unrecorded-dir under it; the log must
+# never live in the container's own filesystem.
+COPY --from=build --chown=65532:65532 /out/state /var/lib/shoal-gateway
+
+# distroless's nonroot account, uid/gid 65532, which the chart's
+# securityContext also names.
+USER 65532:65532
+# SIGTERM drains, within the grace period `shoal-gateway grace-period` prints;
+# a second signal is a hard stop.
+STOPSIGNAL SIGTERM
+EXPOSE 8102
+ENTRYPOINT ["/usr/local/bin/shoal-gateway"]
+# No default that runs: `run` needs its flags, every one of them deployment
+# specific, and the chart passes them. The default prints the usage.
+CMD ["help"]

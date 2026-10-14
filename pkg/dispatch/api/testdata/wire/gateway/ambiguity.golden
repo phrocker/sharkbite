@@ -1,0 +1,9 @@
+POST /shoal/api/v1/fleet/actions/YQD_/ambiguity
+header Accept: application/json
+header Accept-Encoding: gzip
+header Authorization: Bearer dispatch-token
+header Content-Length: 281
+header Content-Type: application/json
+header Shoal-Correlation-Id: trace-527
+header User-Agent: shoal-effects-gateway/1
+body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"dHJhY2UtNTI3\",\"reason_code\":\"gateway_ambiguity\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T12:01:30.123456789Z\"},\"expected_version\":0,\"claim_fence\":1,\"outcome\":\"outcome_unknown\",\"target\":\"api.example\",\"reference\":\"ch_1\"}"

@@ -1,0 +1,5 @@
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.7.2
+joblib==1.6.0
+threadpoolctl==3.7.0

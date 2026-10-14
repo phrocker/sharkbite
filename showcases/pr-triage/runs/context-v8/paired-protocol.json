@@ -1,0 +1,14 @@
+{
+  "selection_rule": "First four PRs in frozen V8 collection order with changed Go functions. Use full PR manifests and score every changed function, not just relevance sample.",
+  "prs": [
+    314,
+    312,
+    311,
+    310
+  ],
+  "model_id": "0178ed5e2ce1e0ee1182c0dbc891b6c7d8fa41060cde94a248484204f608fc27",
+  "labels_inspected": false,
+  "review_protocol": "Paired complete before/after declaration packets, shared non-function context, no tools, isolated Claude calls; one call per arm per PR. Source-adjudicate findings; shared cache and stochastic response confounding remain.",
+  "optimization_enabled": false,
+  "id": "645cde83b227abfa9a2245b660af172706bce0d491e38b4e6f3e22c7500c4707"
+}

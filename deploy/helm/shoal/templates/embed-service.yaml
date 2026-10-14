@@ -1,0 +1,22 @@
+{{- if eq (include "shoal.writeTierEnabled" .) "true" }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "shoal.fullname" . }}-embed-headless
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: write-tier
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: shoal-embed
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    app.kubernetes.io/component: write-tier
+  ports:
+    - name: grpc
+      port: {{ .Values.writeTier.grpcPort }}
+      targetPort: grpc
+    - name: metrics
+      port: {{ .Values.writeTier.metricsPort }}
+      targetPort: metrics
+{{- end }}

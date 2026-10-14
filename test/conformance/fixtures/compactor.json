@@ -1,0 +1,45 @@
+{
+  "schema_version": 3,
+  "role": "compactor",
+  "adapter": "compactor-production-v2",
+  "accumulo_version": "4.0.0-SNAPSHOT",
+  "accumulo_revision": "1a716b2c1bb5762ead4b46d2bc4f53e13873b314",
+  "summary": "compactor adapter proves deterministic publication and coordinator completion",
+  "evidence": [
+    {
+      "gate": "publication",
+      "kind": "go-test",
+      "reference": "internal/compactexec/executor_test.go#TestExecutePublishesDeterministicOutputAndStats",
+      "source_sha256": "f0443ee8fff4028e30ff0c53504c2922515b24e4563b8650f962c3ff915c8e49",
+      "replay_command": ["go", "test", "./internal/compactexec", "-run", "^TestExecutePublishesDeterministicOutputAndStats$", "-count=1"]
+    },
+    {
+      "gate": "completion",
+      "kind": "go-test",
+      "reference": "internal/compactexec/executor_test.go#TestCompletionAdapterUsesExistingAccumuloContract",
+      "source_sha256": "f0443ee8fff4028e30ff0c53504c2922515b24e4563b8650f962c3ff915c8e49",
+      "replay_command": ["go", "test", "./internal/compactexec", "-run", "^TestCompletionAdapterUsesExistingAccumuloContract$", "-count=1"]
+    },
+    {
+      "gate": "cancellation",
+      "kind": "go-test",
+      "reference": "internal/compactexec/executor_test.go#TestCancellationNeverPublishes",
+      "source_sha256": "f0443ee8fff4028e30ff0c53504c2922515b24e4563b8650f962c3ff915c8e49",
+      "replay_command": ["go", "test", "./internal/compactexec", "-run", "^TestCancellationNeverPublishes$", "-count=1"]
+    },
+    {
+      "gate": "restart-reconciliation",
+      "kind": "go-test",
+      "reference": "cmd/shoal-compactor/worker_test.go#TestWorkerRestartCompletesUnattemptedIntentOnce",
+      "source_sha256": "09251069af69ce06f7b4a842d2000891d4e8b731500583b9ef41cc1436d7b7bd",
+      "replay_command": ["go", "test", "./cmd/shoal-compactor", "-run", "^TestWorkerRestartCompletesUnattemptedIntentOnce$", "-count=1"]
+    },
+    {
+      "gate": "fenced-input",
+      "kind": "go-test",
+      "reference": "internal/compactjob/compactjob_test.go#TestTranslateRefusesFencedInput",
+      "source_sha256": "2f26bf15627daa9722f8d5d13c3c284dad7308cab227006f5e5c70f83fcfc039",
+      "replay_command": ["go", "test", "./internal/compactjob", "-run", "^TestTranslateRefusesFencedInput$", "-count=1"]
+    }
+  ]
+}

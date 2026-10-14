@@ -1,0 +1,125 @@
+# The enforcement plane on its own: the LLM gateway, no storage tier.
+#
+# This profile does not install as shipped, and that is deliberate. Every value
+# below that is empty is one the chart refuses to render without, because the
+# gateway's failure mode is not a crash. It is required to fail closed, so almost
+# every way of misconfiguring it produces a pod that passes every probe and
+# denies every call — indistinguishable from a total outage of whatever sits
+# behind it.
+#
+# Fill them in, then:
+#
+#   helm install shoal deploy/helm/shoal -f my-llm-gateway-values.yaml
+#
+# `helm template` names the first missing one, so working through the errors in
+# order is a usable checklist. See docs/llm-gateway-deploy.md.
+#
+# The explorer is not enabled here. The gateway needs one to ask, but it does not
+# need it in this release: admission.url can point at an explorer installed
+# separately, in another namespace, or in another cluster. Enabling both from
+# one values file is the combined install, not the default one — see the docs.
+mode: single
+objectStorage:
+  # No storage tier in this profile, so no object-storage credentials.
+  createSecret: false
+writeTier:
+  enabled: false
+
+llmGateway:
+  enabled: true
+  image:
+    repository: ghcr.io/YOUR_ORG/shoal-llm-gateway
+    tag: TAG
+  # Two, and raise it rather than lower it. The gateway is stateless, so replicas
+  # are independent askers of the same decision plane — and a denial here stops
+  # the caller's work outright, so an unavailable gateway is an outage for
+  # everything configured to go through it.
+  replicas: 2
+  # Required: the gateway serves TLS by default, and this names the
+  # kubernetes.io/tls Secret (tls.crt, tls.key) it serves — a cert-manager
+  # Certificate's Secret rotates in place without rolling the pod. Clients use
+  # an https:// base URL. For an mTLS mesh that encrypts the hop instead, set
+  # enabled: false; see docs/llm-gateway-deploy.md, Listener transport.
+  tls:
+    enabled: true
+    secretName: ""
+  service:
+    type: ClusterIP
+  # The authority clients send as their OpenAI base URL — usually the port-less
+  # Service or ingress name. With none, every request is refused with 421
+  # Misdirected Request before admission is even asked.
+  allowedHosts: []
+  admission:
+    # Base URL of the explorer's authenticated API.
+    url: ""
+    # Required in this form. The explorer's API is authenticated in every
+    # deployment this chart can render, so without a token every admission
+    # request is a 401 and the gateway denies every call.
+    #
+    # The alternative is a file, which is the only form a rotating credential
+    # has: a projected ServiceAccount token is rewritten in place by the
+    # kubelet and never updates an environment variable, and a container's
+    # environment cannot change after start at all. Replace the two keys above
+    # with the three below for that — and see docs/llm-gateway-deploy.md, which
+    # has the whole worked example:
+    #
+    #   serviceAccountName: shoal-llm-gateway   (at the llmGateway level)
+    #   admission:
+    #     tokenFile: /var/run/secrets/shoal/token
+    #     tokenFileSource: projected
+    #     tokenAudience: shoal
+    #
+    # Exactly one form renders. The binary refuses both at once rather than
+    # ranking them, and naming a Secret beside a projected token is refused
+    # here too: it would be a credential the pod never opens.
+    credentialSecretName: ""
+    credentialSecretKey: token
+    # Capped at 5m by the admission surface itself (MaxActionClaimTTL). A
+    # larger value is refused rather than shortened, which denies every call.
+    #
+    # It is also the window the gateway drains for on SIGTERM, so
+    # terminationGracePeriodSeconds has to exceed it by at least 5s. Raising
+    # one without the other is refused at render: a SIGKILL mid-drain kills
+    # the calls whose grant has already been spent.
+    lease: 60s
+    # An in-cluster explorer is reached over http://, because the chart renders
+    # its listener plaintext behind a ClusterIP. Setting this to true is the
+    # acknowledgement that the token and the verdict cross the pod network in
+    # the clear; prefer https:// wherever the hop leaves the cluster.
+    allowPlaintext: false
+  upstream:
+    # The real OpenAI-compatible provider, including the version segment it
+    # documents (https://api.openai.com/v1, http://localhost:11434/v1). Must be
+    # https:// unless it is loopback: this request carries the prompt and the
+    # credential, and there is no acknowledgement that accepts plaintext here.
+    baseURL: ""
+    # Required for a remote provider: the credential is read at request time
+    # and nothing puts it in the pod without a Secret.
+    #
+    # The same file form is available here, for the same reason — an
+    # environment variable cannot be rotated under a running pod, while a
+    # Secret mounted as a volume is updated in place:
+    #
+    #   upstream:
+    #     apiKeyFile: /etc/shoal/upstream/api-key
+    #     apiKeyFileSource: secret    # or volume, for a CSI driver
+    #
+    # The two credential files must sit in different directories, because each
+    # is mounted at its own file's directory.
+    credentialSecretName: ""
+    credentialSecretKey: api-key
+    # Must not exceed admission.lease, or a call can outlive the permission it
+    # was granted under and the admission is abandoned rather than reported.
+    requestTimeout: 30s
+  # The registered descriptor this gateway admits against. All six are resolved
+  # together; an incomplete identity is refused by the plane on every request.
+  identity:
+    # Canonical unpadded base64url, like the scope identities below: this is
+    # the encoded ID, not a descriptor's display name.
+    agentID: ""
+    agentGeneration: 1
+    capability: ""
+    action: ""
+    # Canonical unpadded base64url, as every opaque identity in the API is.
+    sourceID: ""
+    policyID: ""

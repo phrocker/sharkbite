@@ -1,0 +1,421 @@
+{{- /* The effects gateways (#391): one set of objects per enabled entry of
+       effectsGateways. validate.yaml has already refused every entry this
+       renders wrongly; see docs/effects-gateway-deploy.md, "In the chart".
+
+       Every value an operator writes reaches the manifests as a quoted scalar
+       or through toJson, never bare and never through toYaml: a JSON flow
+       value is quoted by construction, so no string in an entry can end a
+       scalar and become YAML of its own. */ -}}
+{{- range $gateway := fromJsonArray (include "shoal.effectsGateways" .) }}
+{{- if $gateway.enabled }}
+{{- $root := $ -}}
+{{- $key := printf "effectsGateways[%v]" $gateway._index -}}
+{{- $name := include "shoal.effectsGatewayName" (dict "root" $root "gateway" $gateway) -}}
+{{- $selector := include "shoal.effectsGatewaySelectorLabels" (dict "root" $root "gateway" $gateway) -}}
+{{- $serviceAccount := default $name $gateway.serviceAccountName -}}
+{{- $routes := toJson $gateway.routes -}}
+{{- $unrecorded := $gateway.unrecorded -}}
+{{- $target := $gateway.target -}}
+{{- $dispatch := $gateway.dispatch -}}
+{{- $attestation := $gateway.attestation -}}
+{{- $loopbackTarget := eq (include "shoal.urlIsLoopback" $target.baseURL) "true" -}}
+{{- if not $gateway.serviceAccountName }}
+---
+# The gateway's own identity. Its projected token's subject is
+# system:serviceaccount:<namespace>:<this name>, which is the subject the
+# explorer's executor mapping binds to this gateway's executor reference. One
+# account per gateway: two gateways on one account would be two workers on one
+# principal (#514). validate.yaml refuses two enabled entries with the same
+# effective account, executor reference, descriptor or existing claim.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-gateway
+# The pod needs no Kubernetes API credential: it speaks HTTP to the explorer
+# with the projected executor token and HTTP to the target with the target's
+# credential. The executor token is an explicit projection, which this does not
+# suppress.
+automountServiceAccountToken: false
+{{- end }}
+---
+# The route table, rendered with toJson and read once at startup through
+# -routes. The Deployment carries its checksum, so a changed table rolls the
+# pod; the gateway would otherwise keep performing the old table.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-routes" $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-gateway
+data:
+  routes.json: {{ $routes | quote }}
+{{- if eq $unrecorded.storage "persistentVolumeClaim" }}
+---
+# The unrecorded-report log (#514). It holds the reports the explorer refused,
+# did not find or could not confirm: effects that happened and are on no
+# record. Losing it loses the only trace of them, so the claim outlives an
+# uninstall (resource-policy: keep) and must be deleted by hand once its log
+# is empty (`shoal-gateway unrecorded list`).
+#
+# ReadWriteOnce, and the Deployment is Recreate: the old pod is gone before the
+# new one mounts the claim. The directory's lock refuses a second process on
+# the same log in any case.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ printf "%s-unrecorded" $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-gateway
+  annotations:
+    helm.sh/resource-policy: keep
+spec:
+  accessModes: ["ReadWriteOnce"]
+  {{- with $unrecorded.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ $unrecorded.size | quote }}
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-gateway
+spec:
+  # One, or zero to stop it; validate.yaml refuses anything else (#391). Two
+  # replicas would be one executor principal holding claims from two
+  # processes, over one unrecorded log.
+  replicas: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.replicas" $key) "value" $gateway.replicas) }}
+  # Recreate, never RollingUpdate: a rollout stops the old pod, waits for it
+  # to terminate — its drain included — and only then starts the new one. A
+  # surge would put two gateways on one ReadWriteOnce log and one executor
+  # principal at once; the second would refuse to start on the log's lock at
+  # best, and at worst, on a volume that does attach to two pods on one node,
+  # would wait on the lock while the rollout reported progress.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- $selector | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- $selector | nindent 8 }}
+        app.kubernetes.io/part-of: shoal-platform
+      annotations:
+        checksum/routes: {{ sha256sum $routes | quote }}
+        # /metrics is served on the health port.
+        prometheus.io/scrape: "true"
+        prometheus.io/port: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.healthPort" $key) "value" $gateway.healthPort) | quote }}
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: {{ $serviceAccount | quote }}
+      automountServiceAccountToken: false
+      # Computed, not configured: T + max(5s, 3 × planeTimeout) + 2 × 5s + 5s,
+      # the formula `shoal-gateway grace-period` prints for the same timeouts
+      # (validate-chart.sh compares the two). A shorter one has the kubelet
+      # SIGKILL a worker that has performed an effect and not yet reported it.
+      # terminationGracePeriodSeconds in the entry can only raise it.
+      terminationGracePeriodSeconds: {{ include "shoal.effectsGatewayGracePeriod" (dict "name" $key "gateway" $gateway) }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        # The credential volumes are written owned by root at 0440, and the
+        # unrecorded claim is mounted owned by root: fsGroup is what makes
+        # both readable, and the claim writable, by uid 65532.
+        fsGroup: 65532
+        fsGroupChangePolicy: OnRootMismatch
+        seccompProfile:
+          type: RuntimeDefault
+      {{- with $gateway.nodeSelector }}
+      nodeSelector: {{ toJson . }}
+      {{- end }}
+      {{- with $gateway.tolerations }}
+      tolerations: {{ toJson . }}
+      {{- end }}
+      {{- with $gateway.affinity }}
+      affinity: {{ toJson . }}
+      {{- end }}
+      containers:
+        - name: shoal-gateway
+          image: {{ printf "%v:%v" $gateway.image.repository $gateway.image.tag | quote }}
+          imagePullPolicy: {{ $gateway.image.pullPolicy | quote }}
+          command: ["/usr/local/bin/shoal-gateway"]
+          args:
+            - "run"
+            - {{ printf "-dispatch-url=%v" $dispatch.url | quote }}
+            - {{ printf "-allow-plaintext-dispatch=%v" $dispatch.allowPlaintext | quote }}
+            - "-dispatch-token-file=/var/run/shoal/dispatch/token"
+            - {{ printf "-agent-id=%v" $gateway.agentID | quote }}
+            - {{ printf "-capability=%v" $gateway.capability | quote }}
+            - {{ printf "-surface-name=%v" $gateway.surfaceName | quote }}
+            - {{ printf "-executor-ref=%v" $gateway.executorRef | quote }}
+            - {{ printf "-target-base-url=%v" $target.baseURL | quote }}
+            - {{ printf "-target-allow-private=%v" $target.allowPrivate | quote }}
+            - {{ printf "-target-auth-header=%v" $target.authHeader | quote }}
+            {{- if $target.credentialSecretName }}
+            - "-target-credential-file=/var/run/shoal/target/credential"
+            {{- end }}
+            {{- if $target.caSecretName }}
+            - "-target-ca-file=/var/run/shoal/target-ca/ca.crt"
+            {{- end }}
+            {{- if $target.clientCertificate.secretName }}
+            - "-target-client-cert-file=/var/run/shoal/target-client/tls.crt"
+            - "-target-client-key-file=/var/run/shoal/target-client/tls.key"
+            {{- end }}
+            {{- with $target.idempotencyHeader }}
+            - {{ printf "-idempotency-header=%v" . | quote }}
+            {{- end }}
+            {{- with $target.idempotencyRetention }}
+            - {{ printf "-idempotency-retention=%v" . | quote }}
+            {{- end }}
+            # The route table, from the ConfigMap through the environment. The
+            # kubelet substitutes $(VAR) in an argument once and does not
+            # rescan the substituted text, so nothing in a route is expanded.
+            - "-routes=$(SHOAL_GATEWAY_ROUTES)"
+            - {{ printf "-claim-lease=%v" $gateway.timing.claimLease | quote }}
+            - {{ printf "-operation-timeout=%v" $gateway.timing.operationTimeout | quote }}
+            - {{ printf "-plane-timeout=%v" $gateway.timing.planeTimeout | quote }}
+            - {{ printf "-renew=%v" $gateway.timing.renew | quote }}
+            - {{ printf "-max-in-flight=%s" (include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.maxInFlight" $key) "value" $gateway.maxInFlight)) | quote }}
+            - {{ printf "-pull-limit=%s" (include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.pullLimit" $key) "value" $gateway.pullLimit)) | quote }}
+            - {{ printf "-pull-interval=%v" $gateway.pullInterval | quote }}
+            - {{ printf "-max-response-bytes=%s" (include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.maxResponseBytes" $key) "value" $gateway.maxResponseBytes)) | quote }}
+            - {{ printf "-health-address=0.0.0.0:%s" (include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.healthPort" $key) "value" $gateway.healthPort)) | quote }}
+            # A subdirectory of the claim, which `run` creates 0700: a fresh
+            # filesystem's root can hold lost+found, and the log's directory
+            # is the gateway's alone.
+            - "-unrecorded-dir=/var/lib/shoal-gateway/unrecorded"
+            - "-pod-name=$(SHOAL_POD_NAME)"
+            {{- if $attestation.secretName }}
+            - "-attestation-statement-file=/var/run/shoal/attestation/statement"
+            - "-attestation-key-file=/var/run/shoal/attestation/key"
+            {{- end }}
+          env:
+            - name: SHOAL_POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: SHOAL_GATEWAY_ROUTES
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ printf "%s-routes" $name | quote }}
+                  key: routes.json
+          ports:
+            - name: health
+              containerPort: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.healthPort" $key) "value" $gateway.healthPort) }}
+          # Liveness is /healthz, 200 while the process answers, draining
+          # included: a gateway draining on purpose has not failed, and
+          # restarting it would cut the drain short. Readiness is /readyz, 200
+          # only while the worker is pulling; there is no Service to take the
+          # pod out of, so it is what a rollout waits on and what an alert on
+          # a full unrecorded log (detail unrecorded_log_full) watches.
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: health
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: health
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          resources: {{ toJson $gateway.resources }}
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+            # The only writable path is the unrecorded claim.
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: dispatch-token
+              mountPath: /var/run/shoal/dispatch
+              readOnly: true
+            {{- if $target.credentialSecretName }}
+            - name: target-credential
+              mountPath: /var/run/shoal/target
+              readOnly: true
+            {{- end }}
+            {{- if $target.caSecretName }}
+            - name: target-ca
+              mountPath: /var/run/shoal/target-ca
+              readOnly: true
+            {{- end }}
+            {{- if $target.clientCertificate.secretName }}
+            - name: target-client
+              mountPath: /var/run/shoal/target-client
+              readOnly: true
+            {{- end }}
+            {{- if $attestation.secretName }}
+            - name: attestation
+              mountPath: /var/run/shoal/attestation
+              readOnly: true
+            {{- end }}
+            - name: unrecorded
+              mountPath: /var/lib/shoal-gateway
+      volumes:
+        # Read per call by the gateway, so a rotated token or an updated
+        # Secret takes effect without a restart. 0440 with fsGroup 65532:
+        # readable by the gateway and nobody else.
+        - name: dispatch-token
+          {{- if eq $dispatch.tokenSource "projected" }}
+          projected:
+            defaultMode: 0440
+            sources:
+              - serviceAccountToken:
+                  path: token
+                  audience: {{ $dispatch.tokenAudience | quote }}
+                  expirationSeconds: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.dispatch.tokenExpirationSeconds" $key) "value" $dispatch.tokenExpirationSeconds) }}
+          {{- else }}
+          secret:
+            secretName: {{ $dispatch.credentialSecretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $dispatch.credentialSecretKey | quote }}
+                path: token
+          {{- end }}
+        {{- if $target.credentialSecretName }}
+        - name: target-credential
+          secret:
+            secretName: {{ $target.credentialSecretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $target.credentialSecretKey | quote }}
+                path: credential
+        {{- end }}
+        {{- if $target.caSecretName }}
+        # The target's CA (#662), for the target client only.
+        - name: target-ca
+          secret:
+            secretName: {{ $target.caSecretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $target.caSecretKey | quote }}
+                path: ca.crt
+        {{- end }}
+        {{- if $target.clientCertificate.secretName }}
+        # The client certificate presented to the target (#662), re-read at
+        # each handshake, so a cert-manager rotation takes effect in place.
+        - name: target-client
+          secret:
+            secretName: {{ $target.clientCertificate.secretName | quote }}
+            defaultMode: 0440
+            items:
+              - {key: tls.crt, path: tls.crt}
+              - {key: tls.key, path: tls.key}
+        {{- end }}
+        {{- if $attestation.secretName }}
+        - name: attestation
+          secret:
+            secretName: {{ $attestation.secretName | quote }}
+            defaultMode: 0440
+            items:
+              - key: {{ $attestation.statementKey | quote }}
+                path: statement
+              - key: {{ $attestation.keyKey | quote }}
+                path: key
+        {{- end }}
+        - name: unrecorded
+          {{- if eq $unrecorded.storage "persistentVolumeClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ printf "%s-unrecorded" $name | quote }}
+          {{- else if eq $unrecorded.storage "existingClaim" }}
+          persistentVolumeClaim:
+            claimName: {{ $unrecorded.existingClaim | quote }}
+          {{- else }}
+          # UNSAFE, acknowledged with acceptLossOfUnrecordedReports: the log
+          # is deleted with the pod, and with it the record of every effect
+          # the explorer refused to record.
+          emptyDir: {}
+          {{- end }}
+{{- if $gateway.networkPolicy.enabled }}
+{{- $policy := $gateway.networkPolicy -}}
+{{- $parsedTarget := urlParse $target.baseURL -}}
+{{- $targetPort := regexFind "[0-9]+$" (regexFind ":[0-9]+$" $parsedTarget.host) -}}
+{{- if not $targetPort -}}
+{{- $targetPort = ternary "443" "80" (eq $parsedTarget.scheme "https") -}}
+{{- end }}
+---
+# Ingress to the health port only. Egress to DNS, the explorer and the
+# target's CIDRs on the target's ports, and nothing else: no metadata service,
+# no other cluster workload. NetworkPolicy matches addresses, so an FQDN target
+# is held only to the CIDRs listed; the gateway's own dialer still refuses
+# link-local and metadata addresses whatever the policy allows.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name | quote }}
+  labels:
+    {{- include "shoal.labels" $root | nindent 4 }}
+    app.kubernetes.io/component: effects-gateway
+spec:
+  podSelector:
+    matchLabels:
+      {{- $selector | nindent 6 }}
+  policyTypes: ["Ingress", "Egress"]
+  ingress:
+    - ports:
+        - port: health
+          protocol: TCP
+  egress:
+    - ports:
+        - port: 53
+          protocol: UDP
+        - port: 53
+          protocol: TCP
+    - to:
+        - podSelector:
+            {{- if $policy.explorer.podLabels }}
+            matchLabels: {{ toJson $policy.explorer.podLabels }}
+            {{- else }}
+            matchLabels:
+              {{- include "shoal.explorerSelectorLabels" $root | nindent 14 }}
+            {{- end }}
+          {{- with $policy.explorer.namespaceLabels }}
+          namespaceSelector:
+            matchLabels: {{ toJson . }}
+          {{- end }}
+      ports:
+        - port: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.networkPolicy.explorer.port" $key) "value" (default $root.Values.explorer.containerPort $policy.explorer.port)) }}
+          protocol: TCP
+    {{- $sshTarget := include "shoal.effectsSshForGateway" (dict "root" $root "gateway" $gateway) }}
+    {{- if $sshTarget }}
+    {{- $sshTarget = fromJson $sshTarget }}
+    # The target is this release's effects-ssh entry: reached by its pods'
+    # labels on its port, not by an address range.
+    - to:
+        - podSelector:
+            matchLabels:
+              {{- $sshTarget.selector | nindent 14 }}
+      ports:
+        - port: {{ $sshTarget.port }}
+          protocol: TCP
+    {{- else if not $loopbackTarget }}
+    - to:
+        {{- range $cidr := $policy.targetCIDRs }}
+        - ipBlock:
+            cidr: {{ $cidr | quote }}
+        {{- end }}
+      ports:
+        {{- range $port := (default (list $targetPort) $policy.targetPorts) }}
+        - port: {{ include "shoal.effectsGatewayWhole" (dict "name" (printf "%s.networkPolicy.targetPorts" $key) "value" $port) }}
+          protocol: TCP
+        {{- end }}
+    {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

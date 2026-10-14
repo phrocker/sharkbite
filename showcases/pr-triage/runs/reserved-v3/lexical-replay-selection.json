@@ -1,0 +1,18 @@
+{
+  "assessment_sha256": "699441860a04bf88d0e9b7af5eddcaef9d43643a0679d5a19472ff122a8d438a",
+  "binding_status": "Post-evaluation replay attestation. Original selection did not enforce recipe identity; this record does not claim it did. Numeric replay comparison is required separately.",
+  "development_manifest_id": "aa87c0bff365028b2cf804ab0d720beea25a4fdd7420cf2433aaa1c3f7278bb0",
+  "id": "976666f97b27b3df8dabf51e5c66ddc31546e5c8ce59938dc7c446c060360469",
+  "id_label": "frozen-lexical-v2",
+  "implementation_sha256": "07f7aab9748a8c3907652b21c740703c9dac0f173ab1fc680d7fccfc6d95dcf3",
+  "model": "char-wb-3-5-tfidf-logistic-C1-balanced",
+  "original_selection_id": "7f9cf5453f280d449ae8fb82ccce8115c9325cc63c179128092a7ada395210cd",
+  "prior_result_id": "57ec6ea57e0b35c3ea8d8b23c2dad930574a0c535d196ba160bd182c066630b2",
+  "recipe_id": "78daf0be3e69323b3a7063c695f2efb0dc452674583dd93367934fe536ad9689",
+  "status": "shadow_only_research_candidate",
+  "threshold": 0.44486624961756,
+  "training_data": "pilot-v1 only; no v2 validation rows used",
+  "validation_labels_inspected": true,
+  "validation_manifest_id": "4a9fae1bce36006dadae2f44bb799cc2b76ae2fb2959fd5db4c41df28490de38",
+  "validation_predictions_run": true
+}

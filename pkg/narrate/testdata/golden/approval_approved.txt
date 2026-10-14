@@ -1,0 +1,19 @@
+outcome approval.outcome.approved
+  The request to run action close-ticket on agent agent-7 is approved and has not yet become work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+blocked approval.blocked.approved
+  It is waiting for the requester to re-request it.
+  record=approval:act-1
+next approval.next.options
+  What can happen next: the requester re-requests the same request before 2026-10-08 13:00:00 UTC and it becomes work; the requester does not come back and it expires at 2026-10-08 13:00:00 UTC; or agent agent-7 or the policy generation moves on for good and it is recorded as unable to progress.
+  record=approval:act-1
+  identifiers agent-7

@@ -1,0 +1,8 @@
+POST /api/v1/fleet/agents/YWdlbnQ/resolve
+request content-type: application/json
+request body: "{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\",\"extra\":1}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: decode request body: JSON key does not match a field exactly: \\\"extra\\\"\"}\n"

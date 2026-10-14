@@ -1,0 +1,76 @@
+name: Helm chart
+
+# The explorer and llm-gateway templates exist to make a misconfiguration fail at
+# render rather than at runtime in a pod log. A guard that stops firing is
+# invisible: the chart still renders, still installs, and produces a workspace
+# that denies everything or answers nothing — or an enforcement plane that
+# passes every probe and refuses every call. This runs the same checks locally
+# available through deploy/helm/validate-chart.sh so that cannot happen quietly.
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/helm-chart.yml"
+      - "deploy/helm/**"
+      # The chart computes the effects gateway's grace period from the
+      # binary's formula and checks the two agree, and runs the binary on the
+      # arguments it renders: a change on either side must run this job.
+      - "cmd/shoal-gateway/**"
+      - "internal/effectsgateway/**"
+      - "docs/effects-gateway-deploy.md"
+      # The chart runs the effects-ssh binary on the arguments it renders.
+      - "extensions/effects-ssh/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/helm-chart.yml"
+      - "deploy/helm/**"
+      # The chart computes the effects gateway's grace period from the
+      # binary's formula and checks the two agree, and runs the binary on the
+      # arguments it renders: a change on either side must run this job.
+      - "cmd/shoal-gateway/**"
+      - "internal/effectsgateway/**"
+      - "docs/effects-gateway-deploy.md"
+      # The chart runs the effects-ssh binary on the arguments it renders.
+      - "extensions/effects-ssh/**"
+
+concurrency:
+  group: helm-chart-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: lint / render / guards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.16.2
+      - name: Install kubeconform
+        run: |
+          version=v0.6.7
+          curl -fsSL "https://github.com/yannh/kubeconform/releases/download/${version}/kubeconform-linux-amd64.tar.gz" |
+            tar -xz -C /usr/local/bin kubeconform
+          kubeconform -v
+      - name: Install PyYAML
+        # The rendered-object checks parse Helm output with PyYAML, which is not
+        # in Python's standard library. The runner image happens to ship it
+        # today, so leaving it undeclared passes until the image changes and
+        # then fails as a ModuleNotFoundError that looks nothing like a chart
+        # problem.
+        run: python3 -m pip install --disable-pip-version-check 'pyyaml==6.0.2'
+      # validate-chart.sh builds cmd/shoal-gateway to compare the chart's
+      # grace period with `shoal-gateway grace-period` and to run the binary
+      # on the arguments the chart renders.
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Validate the chart
+        env:
+          GOWORK: "off"
+        run: ./deploy/helm/validate-chart.sh

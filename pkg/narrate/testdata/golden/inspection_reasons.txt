@@ -1,0 +1,14 @@
+outcome decision.eligibility.outcome
+  1 of 3 subjects may be scored under the task’s evidence policy.
+  record=eligibility:e-1 decision_request=dr-1
+reason decision.inspection.source_stale
+  2 subjects are held because a source observation is older than the evidence policy allows: subject2 and subject3.
+  record=eligibility:e-1 subject=subject2 subject=subject3
+  identifiers subject2 subject3
+reason decision.inspection.subject_unsupported
+  1 subject is held because the subject has no supported evidence: subject2.
+  record=eligibility:e-1 subject=subject2
+  identifiers subject2
+next decision.eligibility.next
+  Subjects that may not be scored are inspected ordinarily; fix the evidence named above and request a new decision to score them.
+  record=eligibility:e-1

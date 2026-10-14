@@ -1,0 +1,12 @@
+[
+  {
+    "action": "restart-web",
+    "method": "POST",
+    "path": "/v1/commands/restart-web",
+    "effects": ["external"],
+    "idempotency": "key",
+    "conflict": {"status": [409], "pointer": "/state", "equals": ["completed"]},
+    "retryable": [503],
+    "reference": {"pointer": "/reference", "pattern": "(exit-[0-9]{1,10}|signal-[A-Z0-9]{1,16})(-truncated)?"}
+  }
+]

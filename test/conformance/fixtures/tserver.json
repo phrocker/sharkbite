@@ -1,0 +1,45 @@
+{
+  "schema_version": 3,
+  "role": "tserver",
+  "adapter": "tserver-production-v2",
+  "accumulo_version": "4.0.0-SNAPSHOT",
+  "accumulo_revision": "1a716b2c1bb5762ead4b46d2bc4f53e13873b314",
+  "summary": "tserver adapter proves lock, assignment, ingest, minor compaction, WAL recovery, restart, and fencing contracts",
+  "evidence": [
+    {
+      "gate": "service-lock-lifecycle",
+      "kind": "go-test",
+      "reference": "internal/tserver/servicelock_test.go#TestAcquireCreatesAnAccumuloCompatibleLockNode",
+      "source_sha256": "76a5e7b3ea9a2928f06c563276485a1795ac56f48be259e987f93c6408e768ab",
+      "replay_command": ["go", "test", "./internal/tserver", "-run", "^TestAcquireCreatesAnAccumuloCompatibleLockNode$", "-count=1"]
+    },
+    {
+      "gate": "assignment-lifecycle",
+      "kind": "go-test",
+      "reference": "internal/tserverrpc/adapter_test.go#TestLifecycleReportsRemainOrderedDuringReconnect",
+      "source_sha256": "f248bfd0e3cbefb9dc47cc6033a179fe6c0ad2e0b98b69f9e8dcbc9f7fc2999b",
+      "replay_command": ["go", "test", "./internal/tserverrpc", "-run", "^TestLifecycleReportsRemainOrderedDuringReconnect$", "-count=1"]
+    },
+    {
+      "gate": "ingest-minor-compaction",
+      "kind": "go-test",
+      "reference": "internal/hostedingest/tablet_test.go#TestTabletDurableCommitMinorCompactionAndAmbiguousResponses",
+      "source_sha256": "11f206063ea10d388c0870102107a23ea14e517b16e25a9a4e62ba0f57a0172a",
+      "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletDurableCommitMinorCompactionAndAmbiguousResponses$", "-count=1"]
+    },
+    {
+      "gate": "wal-recovery",
+      "kind": "go-test",
+      "reference": "internal/hostedingest/tablet_test.go#TestTabletRestartReplaysReferencedWALExactlyOnce",
+      "source_sha256": "11f206063ea10d388c0870102107a23ea14e517b16e25a9a4e62ba0f57a0172a",
+      "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletRestartReplaysReferencedWALExactlyOnce$", "-count=1"]
+    },
+    {
+      "gate": "restart-fencing",
+      "kind": "go-test",
+      "reference": "internal/hostedingest/tablet_test.go#TestTabletFencesStaleOwnerDuringCommit",
+      "source_sha256": "11f206063ea10d388c0870102107a23ea14e517b16e25a9a4e62ba0f57a0172a",
+      "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletFencesStaleOwnerDuringCommit$", "-count=1"]
+    }
+  ]
+}

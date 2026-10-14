@@ -1,0 +1,267 @@
+{
+  "base": "269abfa4ec14a5040af3d544d1fee4df83592706",
+  "diff": "diff --git a/cmd/shoal-explore-web/health.go b/cmd/shoal-explore-web/health.go\nnew file mode 100644\nindex 0000000..a4798cf\n--- /dev/null\n+++ b/cmd/shoal-explore-web/health.go\n@@ -0,0 +1,194 @@\n+// Licensed to the Apache Software Foundation (ASF) under one\n+// or more contributor license agreements. See the NOTICE file\n+// distributed with this work for additional information\n+// regarding copyright ownership. The ASF licenses this file\n+// to you under the Apache License, Version 2.0 (the\n+// \"License\"); you may not use this file except in compliance\n+// with the License. You may obtain a copy of the License at\n+//\n+//     https://www.apache.org/licenses/LICENSE-2.0\n+//\n+// Unless required by applicable law or agreed to in writing,\n+// software distributed under the License is distributed on an\n+// \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+// KIND, either express or implied. See the License for the\n+// specific language governing permissions and limitations\n+// under the License.\n+\n+package main\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"net\"\n+\t\"net/http\"\n+\t\"sync/atomic\"\n+\t\"time\"\n+)\n+\n+// The health surface is deliberately a second listener rather than two more\n+// routes on the workspace handler.\n+//\n+// The workspace handler refuses any request whose Host is not an exactly\n+// matching configured authority (webapi.Handler.ServeHTTP consults\n+// hostAuthority.permits before routing, authentication, or anything else). A\n+// kubelet probe addresses the pod by its runtime-assigned IP, which no\n+// statically configured authority list can name, so every probe against the\n+// workspace port answers 421 and the pod never becomes ready. Widening the\n+// authority list to admit the pod IP would weaken the control that exists to\n+// stop misdirected and DNS-rebound requests, to fix an operational problem.\n+//\n+// A separate listener keeps that control untouched. It also separates the two\n+// audiences: the workspace port serves callers who hold a decision, and the\n+// health port serves an orchestrator that holds nothing and must learn\n+// nothing. This mirrors the read fleet, which already answers /healthz and\n+// /readyz on its metrics listener rather than on its Thrift port.\n+//\n+// The surface discloses nothing. Both routes answer with a status code and a\n+// fixed string; neither consults the corpus, the policy catalog, the\n+// authenticator, or the request. An unauthenticated prober learns that a Shoal\n+// workspace process is up, which the open TCP port already tells it.\n+\n+// healthState is the readiness bit shared between the serving path and the\n+// health handler. It is false until the workspace is actually serving and\n+// false again as soon as shutdown begins, so a draining pod is removed from\n+// Service endpoints before it stops accepting connections.\n+type healthState struct {\n+\tready atomic.Bool\n+}\n+\n+func (s *healthState) markReady()    { s.ready.Store(true) }\n+func (s *healthState) markDraining() { s.ready.Store(false) }\n+\n+// newHealthHandler builds the health mux. Any path other than the two routes\n+// is a 404 from the mux, so the surface cannot grow by accident.\n+func newHealthHandler(state *healthState) http.Handler {\n+\tmux := http.NewServeMux()\n+\t// Liveness answers for the process, not the workspace. It stays 200 while\n+\t// draining: a pod that is shedding traffic on purpose must not be killed\n+\t// and restarted for it.\n+\tmux.HandleFunc(\"GET /healthz\", func(writer http.ResponseWriter, _ *http.Request) {\n+\t\twriteHealth(writer, http.StatusOK, \"ok\")\n+\t})\n+\t// Readiness answers for the workspace listener. It is 503 both before the\n+\t// workspace serves and after shutdown begins.\n+\tmux.HandleFunc(\"GET /readyz\", func(writer http.ResponseWriter, _ *http.Request) {\n+\t\tif !state.ready.Load() {\n+\t\t\twriteHealth(writer, http.StatusServiceUnavailable, \"not ready\")\n+\t\t\treturn\n+\t\t}\n+\t\twriteHealth(writer, http.StatusOK, \"ready\")\n+\t})\n+\treturn mux\n+}\n+\n+func writeHealth(writer http.ResponseWriter, status int, body string) {\n+\twriter.Header().Set(\"Content-Type\", \"text/plain; charset=utf-8\")\n+\twriter.Header().Set(\"X-Content-Type-Options\", \"nosniff\")\n+\twriter.WriteHeader(status)\n+\t_, _ = writer.Write([]byte(body + \"\\n\"))\n+}\n+\n+// healthServer owns the health listener and its serve loop.\n+//\n+// done is closed exactly once, when the serve loop returns, and serveErr is\n+// written before that close. Shutdown therefore waits on a single signal and\n+// reads a settled value, rather than racing a watcher and a caller for the\n+// same error over a channel — the failure mode fixed in the roleops shutdown\n+// path (#382).\n+type healthServer struct {\n+\tlistener net.Listener\n+\tserver   *http.Server\n+\tdone     chan struct{}\n+\tserveErr error\n+}\n+\n+// startHealthServer binds the health address and begins serving.\n+//\n+// It is called only after the corpus, policy catalog and workspace handler are\n+// constructed. Binding later is the point: the health port accepting a\n+// connection at all already means construction finished, so a probe cannot see\n+// a ready-looking socket while the workspace is still opening its corpus. The\n+// workspace listener does not have that property, because it is bound early so\n+// an address the workspace may not serve is refused before the corpus opens.\n+func startHealthServer(address string, state *healthState) (*healthServer, error) {\n+\tlistener, err := listenHealthTCP(\"tcp\", address)\n+\tif err != nil {\n+\t\treturn nil, err\n+\t}\n+\thealth := &healthServer{\n+\t\tlistener: listener,\n+\t\tserver: &http.Server{\n+\t\t\tHandler:           newHealthHandler(state),\n+\t\t\tReadHeaderTimeout: 5 * time.Second,\n+\t\t\tReadTimeout:       10 * time.Second,\n+\t\t\tWriteTimeout:      10 * time.Second,\n+\t\t\tIdleTimeout:       30 * time.Second,\n+\t\t},\n+\t\tdone: make(chan struct{}),\n+\t}\n+\tgo func() {\n+\t\tdefer close(health.done)\n+\t\terr := health.server.Serve(listener)\n+\t\tif !errors.Is(err, http.ErrServerClosed) {\n+\t\t\thealth.serveErr = err\n+\t\t}\n+\t}()\n+\treturn health, nil\n+}\n+\n+// listenHealthTCP is a variable so tests can prove a bind failure is reported\n+// rather than swallowed.\n+var listenHealthTCP = net.Listen\n+\n+// address reports the resolved listen address, which differs from the\n+// requested one whenever the request named port zero.\n+func (h *healthServer) address() string {\n+\tif h == nil {\n+\t\treturn \"\"\n+\t}\n+\treturn h.listener.Addr().String()\n+}\n+\n+// shutdown stops the health server and reports the first error that mattered:\n+// a serve loop that died on its own outranks a slow graceful close, because it\n+// is the one that says the surface stopped answering for a reason nobody asked\n+// for.\n+func (h *healthServer) shutdown(ctx context.Context) error {\n+\tif h == nil {\n+\t\treturn nil\n+\t}\n+\tcloseErr := h.server.Shutdown(ctx)\n+\t<-h.done\n+\tif h.serveErr != nil {\n+\t\treturn h.serveErr\n+\t}\n+\treturn closeErr\n+}\n+\n+// gracefulServer is the part of *http.Server that drain needs, so a test can\n+// observe the readiness bit at the moment the workspace is asked to stop.\n+type gracefulServer interface {\n+\tShutdown(context.Context) error\n+}\n+\n+// drain runs the shutdown sequence in the order the readiness contract\n+// requires.\n+//\n+// Readiness drops first, before the workspace is asked to stop. That ordering\n+// is the whole point: the endpoints controller needs a not-ready reading to\n+// stop routing new requests here, and it can only get one while this process\n+// is still answering probes. Shutting the workspace down first would close the\n+// door on in-flight work that was routed during the gap.\n+//\n+// The health surface closes last, after the workspace has finished its\n+// graceful close, so the not-ready answer stays available for as long as there\n+// is a process to ask.\n+func drain(ctx context.Context, state *healthState, workspace gracefulServer, health *healthServer) error {\n+\tstate.markDraining()\n+\tcloseErr := workspace.Shutdown(ctx)\n+\tif healthErr := health.shutdown(ctx); closeErr == nil {\n+\t\tcloseErr = healthErr\n+\t}\n+\treturn closeErr\n+}\ndiff --git a/cmd/shoal-explore-web/health_test.go b/cmd/shoal-explore-web/health_test.go\nnew file mode 100644\nindex 0000000..125ecb9\n--- /dev/null\n+++ b/cmd/shoal-explore-web/health_test.go\n@@ -0,0 +1,406 @@\n+// Licensed to the Apache Software Foundation (ASF) under one\n+// or more contributor license agreements. See the NOTICE file\n+// distributed with this work for additional information\n+// regarding copyright ownership. The ASF licenses this file\n+// to you under the Apache License, Version 2.0 (the\n+// \"License\"); you may not use this file except in compliance\n+// with the License. You may obtain a copy of the License at\n+//\n+//     https://www.apache.org/licenses/LICENSE-2.0\n+//\n+// Unless required by applicable law or agreed to in writing,\n+// software distributed under the License is distributed on an\n+// \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+// KIND, either express or implied. See the License for the\n+// specific language governing permissions and limitations\n+// under the License.\n+\n+package main\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"fmt\"\n+\t\"net\"\n+\t\"net/http\"\n+\t\"regexp\"\n+\t\"strings\"\n+\t\"testing\"\n+\t\"time\"\n+)\n+\n+// TestHealthSurfaceAnswersTheProbeTheWorkspaceRefuses is the reason this\n+// listener exists. The workspace handler refuses any request whose Host is not\n+// an exactly configured authority, and an orchestrator probe addresses the pod\n+// by an authority no static configuration can name. Here -allowed-host names an\n+// external authority, as a real deployment behind a Service must, and the probe\n+// arrives addressed to the socket instead.\n+//\n+// The two assertions are one claim: the same request that the workspace port\n+// answers 421 is answered 200 by the health port.\n+func TestHealthSurfaceAnswersTheProbeTheWorkspaceRefuses(t *testing.T) {\n+\tworkspaceURL, healthURL, stop := startWorkspaceWithHealth(t,\n+\t\t\"-allowed-host\", \"shoal.example.test\")\n+\tdefer stop()\n+\n+\tworkspaceHost := strings.TrimPrefix(workspaceURL, \"http://\")\n+\tif status := probeStatus(t, workspaceURL+\"/api/v1/auth-config\", workspaceHost); status != http.StatusMisdirectedRequest {\n+\t\tt.Fatalf(\"workspace port answered a socket-addressed probe with %d, want %d: \"+\n+\t\t\t\"the host-authority gate is not refusing it, so this test no longer \"+\n+\t\t\t\"demonstrates why the health listener exists\",\n+\t\t\tstatus, http.StatusMisdirectedRequest)\n+\t}\n+\thealthHost := strings.TrimPrefix(healthURL, \"http://\")\n+\tif status := probeStatus(t, healthURL+\"/readyz\", healthHost); status != http.StatusOK {\n+\t\tt.Fatalf(\"health port answered a socket-addressed probe with %d, want 200\", status)\n+\t}\n+}\n+\n+// TestHealthSurfaceServesOnlyItsTwoRoutes pins the surface closed. A path that\n+// exists on the workspace handler must not exist here, or the health listener\n+// becomes an unauthenticated way to reach the workspace.\n+func TestHealthSurfaceServesOnlyItsTwoRoutes(t *testing.T) {\n+\t_, healthURL, stop := startWorkspaceWithHealth(t)\n+\tdefer stop()\n+\n+\thost := strings.TrimPrefix(healthURL, \"http://\")\n+\tfor _, path := range []string{\n+\t\t\"/\", \"/api/v1/meta\", \"/api/v1/auth-config\", \"/api/v1/documents\",\n+\t\t\"/assets/app.js\", \"/healthz/../api/v1/meta\",\n+\t} {\n+\t\tif status := probeStatus(t, healthURL+path, host); status != http.StatusNotFound {\n+\t\t\tt.Fatalf(\"health port served %q with %d, want 404\", path, status)\n+\t\t}\n+\t}\n+}\n+\n+// TestHealthSurfaceIsAbsentUnlessRequested keeps the default unchanged: an\n+// operator who does not ask for a second listener does not get one.\n+func TestHealthSurfaceIsAbsentUnlessRequested(t *testing.T) {\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tdefer cancel()\n+\toutput := &lockedBuffer{}\n+\tdone := make(chan error, 1)\n+\tgo func() {\n+\t\tdone <- run(ctx, []string{\n+\t\t\t\"-data\", t.TempDir(), \"-listen\", \"127.0.0.1:0\", \"-dev-auth\",\n+\t\t}, output)\n+\t}()\n+\twaitForListeningURL(t, output)\n+\tif strings.Contains(output.String(), \"Health surface\") {\n+\t\tt.Fatalf(\"health surface started without -health-address: %q\", output.String())\n+\t}\n+\tcancel()\n+\twaitForRunToReturn(t, done)\n+}\n+\n+// TestHealthAddressBindFailureIsFatal proves the failure is reported rather\n+// than degraded into a workspace that serves while every probe is refused\n+// because nothing is listening.\n+func TestHealthAddressBindFailureIsFatal(t *testing.T) {\n+\toccupied, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer occupied.Close()\n+\n+\tctx, cancel := context.WithCancel(context.Background())\n+\tdefer cancel()\n+\tdone := make(chan error, 1)\n+\tgo func() {\n+\t\tdone <- run(ctx, []string{\n+\t\t\t\"-data\", t.TempDir(), \"-listen\", \"127.0.0.1:0\", \"-dev-auth\",\n+\t\t\t\"-health-address\", occupied.Addr().String(),\n+\t\t}, &lockedBuffer{})\n+\t}()\n+\tselect {\n+\tcase err := <-done:\n+\t\tif err == nil {\n+\t\t\tt.Fatal(\"run returned nil for an unbindable health address\")\n+\t\t}\n+\t\tif !strings.Contains(err.Error(), occupied.Addr().String()) {\n+\t\t\tt.Fatalf(\"error does not name the address that failed: %v\", err)\n+\t\t}\n+\tcase <-time.After(10 * time.Second):\n+\t\tt.Fatal(\"run kept serving with no health listener\")\n+\t}\n+}\n+\n+// TestHealthHandlerSeparatesLivenessFromReadiness covers the three states the\n+// integration tests cannot hold still: not-yet-ready, ready, and draining.\n+//\n+// The draining case is the one that matters operationally. Readiness must drop\n+// so the endpoints controller stops routing new work, while liveness must not,\n+// because a pod shedding traffic on purpose has not failed and restarting it\n+// throws away the graceful close.\n+func TestHealthHandlerSeparatesLivenessFromReadiness(t *testing.T) {\n+\tstate := &healthState{}\n+\thandler := newHealthHandler(state)\n+\n+\tfor _, probe := range []struct {\n+\t\tname       string\n+\t\ttransition func()\n+\t\treadiness  int\n+\t\tliveness   int\n+\t}{\n+\t\t{\"before serving\", func() {}, http.StatusServiceUnavailable, http.StatusOK},\n+\t\t{\"serving\", state.markReady, http.StatusOK, http.StatusOK},\n+\t\t{\"draining\", state.markDraining, http.StatusServiceUnavailable, http.StatusOK},\n+\t} {\n+\t\tprobe.transition()\n+\t\tif got := handlerStatus(t, handler, \"/readyz\"); got != probe.readiness {\n+\t\t\tt.Fatalf(\"%s: /readyz = %d, want %d\", probe.name, got, probe.readiness)\n+\t\t}\n+\t\tif got := handlerStatus(t, handler, \"/healthz\"); got != probe.liveness {\n+\t\t\tt.Fatalf(\"%s: /healthz = %d, want %d\", probe.name, got, probe.liveness)\n+\t\t}\n+\t}\n+}\n+\n+// TestHealthResponsesCarryNoWorkspaceState pins the disclosure property: the\n+// bodies are fixed strings. A future readiness check that consults the corpus\n+// or the policy catalog must not reach an unauthenticated prober through here.\n+func TestHealthResponsesCarryNoWorkspaceState(t *testing.T) {\n+\tstate := &healthState{}\n+\tstate.markReady()\n+\thandler := newHealthHandler(state)\n+\tfor path, want := range map[string]string{\"/healthz\": \"ok\\n\", \"/readyz\": \"ready\\n\"} {\n+\t\trecorder := recordHealth(t, handler, path)\n+\t\tif body := recorder.body; body != want {\n+\t\t\tt.Fatalf(\"%s body = %q, want %q\", path, body, want)\n+\t\t}\n+\t\tif got := recorder.header.Get(\"Content-Type\"); got != \"text/plain; charset=utf-8\" {\n+\t\t\tt.Fatalf(\"%s content type = %q\", path, got)\n+\t\t}\n+\t}\n+}\n+\n+// TestDrainDropsReadinessBeforeTheWorkspaceStopsAccepting tests the wiring,\n+// not the bit. TestHealthHandlerSeparatesLivenessFromReadiness sets the state\n+// by hand and would keep passing if shutdown never touched it; this asserts the\n+// order the shutdown path actually executes, by reading readiness at the moment\n+// the workspace is asked to stop.\n+func TestDrainDropsReadinessBeforeTheWorkspaceStopsAccepting(t *testing.T) {\n+\tstate := &healthState{}\n+\tstate.markReady()\n+\tworkspace := &recordingServer{state: state}\n+\n+\tif err := drain(context.Background(), state, workspace, nil); err != nil {\n+\t\tt.Fatalf(\"drain: %v\", err)\n+\t}\n+\tif !workspace.calledShutdown {\n+\t\tt.Fatal(\"drain never shut the workspace down\")\n+\t}\n+\tif workspace.readyAtShutdown {\n+\t\tt.Fatal(\"the workspace was shut down while still reporting ready: \" +\n+\t\t\t\"the endpoints controller had no not-ready reading to act on, so \" +\n+\t\t\t\"requests routed during the gap arrive at a closed listener\")\n+\t}\n+}\n+\n+// TestDrainReportsTheWorkspaceErrorOverTheHealthClose pins which failure wins.\n+func TestDrainReportsTheWorkspaceErrorOverTheHealthClose(t *testing.T) {\n+\tstate := &healthState{}\n+\tstate.markReady()\n+\twant := errors.New(\"workspace close failed\")\n+\terr := drain(context.Background(), state, &recordingServer{state: state, err: want}, nil)\n+\tif !errors.Is(err, want) {\n+\t\tt.Fatalf(\"drain error = %v, want %v\", err, want)\n+\t}\n+}\n+\n+type recordingServer struct {\n+\tstate           *healthState\n+\terr             error\n+\tcalledShutdown  bool\n+\treadyAtShutdown bool\n+}\n+\n+func (s *recordingServer) Shutdown(context.Context) error {\n+\ts.calledShutdown = true\n+\ts.readyAtShutdown = s.state.ready.Load()\n+\treturn s.err\n+}\n+\n+// TestHealthServerReportsAServeLoopThatDiedOnItsOwn covers the failure the\n+// roleops shutdown path had (#382): a serve loop that returns an unexpected\n+// error, where the error was consumed by whichever reader won a race and never\n+// reached the caller.\n+//\n+// Closing the listener directly, rather than through Shutdown, is what makes\n+// the error survive: once Shutdown has been called, net/http reports every\n+// subsequent accept failure as ErrServerClosed, which is exactly the graceful\n+// case this must not be confused with.\n+func TestHealthServerReportsAServeLoopThatDiedOnItsOwn(t *testing.T) {\n+\thealth, err := startHealthServer(\"127.0.0.1:0\", &healthState{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif err := health.listener.Close(); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\t<-health.done\n+\n+\tshutdownErr := health.shutdown(context.Background())\n+\tif shutdownErr == nil {\n+\t\tt.Fatal(\"shutdown reported success for a serve loop that failed: \" +\n+\t\t\t\"the error was recorded by the goroutine and never returned\")\n+\t}\n+\tif errors.Is(shutdownErr, http.ErrServerClosed) {\n+\t\tt.Fatalf(\"shutdown reported the graceful close instead of the failure: %v\", shutdownErr)\n+\t}\n+}\n+\n+// TestHealthShutdownJoinsTheServeLoop is the other half, and the one the test\n+// above cannot make: that shutdown waits for the goroutine rather than reading\n+// a field the goroutine has not written yet.\n+//\n+// The listener blocks in Accept for a fixed delay, so the serve loop is\n+// provably still running when Shutdown returns. A shutdown that joins cannot\n+// return until the loop has finished; one that does not returns while the\n+// goroutine is still in flight, which is both a lost error and a data race on\n+// serveErr.\n+func TestHealthShutdownJoinsTheServeLoop(t *testing.T) {\n+\trestore := stubHealthListener(t, &slowFailingListener{\n+\t\tdelay: 250 * time.Millisecond, err: errors.New(\"health listener failed\"),\n+\t})\n+\tdefer restore()\n+\n+\thealth, err := startHealthServer(\"127.0.0.1:0\", &healthState{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif err := health.shutdown(context.Background()); err != nil {\n+\t\tt.Fatalf(\"shutdown: %v\", err)\n+\t}\n+\tselect {\n+\tcase <-health.done:\n+\tdefault:\n+\t\tt.Fatal(\"shutdown returned while the serve loop was still running: \" +\n+\t\t\t\"serveErr is read without waiting for the goroutine that writes it\")\n+\t}\n+}\n+\n+// slowFailingListener blocks in Accept for a fixed delay and then fails. The\n+// error is a plain error rather than a net.Error, so net/http treats it as\n+// fatal and returns instead of retrying.\n+type slowFailingListener struct {\n+\tdelay time.Duration\n+\terr   error\n+}\n+\n+func (l *slowFailingListener) Accept() (net.Conn, error) {\n+\ttime.Sleep(l.delay)\n+\treturn nil, l.err\n+}\n+func (l *slowFailingListener) Close() error   { return nil }\n+func (l *slowFailingListener) Addr() net.Addr { return &net.TCPAddr{IP: net.IPv4(127, 0, 0, 1)} }\n+\n+func stubHealthListener(t *testing.T, listener net.Listener) func() {\n+\tt.Helper()\n+\tprevious := listenHealthTCP\n+\tlistenHealthTCP = func(string, string) (net.Listener, error) { return listener, nil }\n+\treturn func() { listenHealthTCP = previous }\n+}\n+\n+var healthSurfacePattern = regexp.MustCompile(`Health surface listening at (http://\\S+)`)\n+\n+// startWorkspaceWithHealth runs a workspace with both listeners on ephemeral\n+// ports and returns their URLs plus a stop function that waits for a clean\n+// shutdown.\n+func startWorkspaceWithHealth(t *testing.T, extraArgs ...string) (string, string, func()) {\n+\tt.Helper()\n+\tctx, cancel := context.WithCancel(context.Background())\n+\toutput := &lockedBuffer{}\n+\tdone := make(chan error, 1)\n+\targs := append([]string{\n+\t\t\"-data\", t.TempDir(), \"-listen\", \"127.0.0.1:0\", \"-dev-auth\",\n+\t\t\"-health-address\", \"127.0.0.1:0\",\n+\t}, extraArgs...)\n+\tgo func() { done <- run(ctx, args, output) }()\n+\n+\tworkspaceURL := waitForListeningURL(t, output)\n+\thealthURL := \"\"\n+\tdeadline := time.Now().Add(5 * time.Second)\n+\tfor time.Now().Before(deadline) {\n+\t\tif match := healthSurfacePattern.FindStringSubmatch(output.String()); match != nil {\n+\t\t\thealthURL = match[1]\n+\t\t\tbreak\n+\t\t}\n+\t\ttime.Sleep(10 * time.Millisecond)\n+\t}\n+\tif healthURL == \"\" {\n+\t\tcancel()\n+\t\tt.Fatalf(\"health surface never reported an address: %q\", output.String())\n+\t}\n+\treturn workspaceURL, healthURL, func() {\n+\t\tcancel()\n+\t\twaitForRunToReturn(t, done)\n+\t}\n+}\n+\n+func waitForRunToReturn(t *testing.T, done <-chan error) {\n+\tt.Helper()\n+\tselect {\n+\tcase err := <-done:\n+\t\tif err != nil {\n+\t\t\tt.Fatalf(\"run: %v\", err)\n+\t\t}\n+\tcase <-time.After(10 * time.Second):\n+\t\tt.Fatal(\"run did not return\")\n+\t}\n+}\n+\n+// probeStatus issues a GET with an explicit Host, which is how a kubelet probe\n+// differs from a browser request: the authority names the socket rather than\n+// the external name the deployment is configured for.\n+func probeStatus(t *testing.T, url, host string) int {\n+\tt.Helper()\n+\trequest, err := http.NewRequest(http.MethodGet, url, nil)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\trequest.Host = host\n+\tclient := http.Client{Timeout: 5 * time.Second}\n+\tresponse, err := client.Do(request)\n+\tif err != nil {\n+\t\tt.Fatalf(\"GET %s with Host %s: %v\", url, host, err)\n+\t}\n+\tdefer response.Body.Close()\n+\treturn response.StatusCode\n+}\n+\n+type healthRecorder struct {\n+\tstatus int\n+\tbody   string\n+\theader http.Header\n+}\n+\n+func recordHealth(t *testing.T, handler http.Handler, path string) healthRecorder {\n+\tt.Helper()\n+\tlistener, err := net.Listen(\"tcp\", \"127.0.0.1:0\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tserver := &http.Server{Handler: handler}\n+\tgo func() { _ = server.Serve(listener) }()\n+\tdefer server.Close()\n+\n+\tresponse, err := http.Get(fmt.Sprintf(\"http://%s%s\", listener.Addr(), path))\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer response.Body.Close()\n+\tbody := make([]byte, 64)\n+\tread, _ := response.Body.Read(body)\n+\treturn healthRecorder{\n+\t\tstatus: response.StatusCode,\n+\t\tbody:   string(body[:read]),\n+\t\theader: response.Header,\n+\t}\n+}\n+\n+func handlerStatus(t *testing.T, handler http.Handler, path string) int {\n+\tt.Helper()\n+\treturn recordHealth(t, handler, path).status\n+}\ndiff --git a/cmd/shoal-explore-web/main.go b/cmd/shoal-explore-web/main.go\nindex 52a00d9..206bdcf 100644\n--- a/cmd/shoal-explore-web/main.go\n+++ b/cmd/shoal-explore-web/main.go\n@@ -89,10 +89,25 @@ func run(ctx context.Context, args []string, output io.Writer) error {\n \t\t\"Durable policy catalog directory. Overrides the location derived from \"+\n \t\t\t\"-state-dir or -data; must be persisted for registrations to \"+\n \t\t\t\"survive a restart\",\n \t)\n \tlisten := flags.String(\"listen\", \"127.0.0.1:8080\", \"HTTP listen address\")\n+\thealthAddress := flags.String(\n+\t\t\"health-address\", os.Getenv(\"SHOAL_HEALTH_ADDRESS\"),\n+\t\t\"Optional separate listen address serving GET /healthz and GET /readyz \"+\n+\t\t\t\"for orchestrator probes. Empty disables it. This is a second \"+\n+\t\t\t\"listener on purpose: the workspace listener refuses any request \"+\n+\t\t\t\"whose Host is not an exactly configured authority, which a probe \"+\n+\t\t\t\"addressing the pod by its runtime-assigned IP can never satisfy. \"+\n+\t\t\t\"The surface answers with a status code and a fixed string and \"+\n+\t\t\t\"reads no corpus, policy or identity state, so it is safe to bind \"+\n+\t\t\t\"where the workspace port is not. /readyz reports not-ready until \"+\n+\t\t\t\"the workspace is serving and again as soon as shutdown begins, so \"+\n+\t\t\t\"a draining instance leaves Service endpoints before it stops \"+\n+\t\t\t\"accepting; /healthz stays ok throughout a drain. Environment \"+\n+\t\t\t\"fallback SHOAL_HEALTH_ADDRESS\",\n+\t)\n \tallowedHost := flags.String(\n \t\t\"allowed-host\", \"\",\n \t\t\"Comma-separated exact-match allow-list of external authorities (host \"+\n \t\t\t\"or host:port) an inbound request's Host/:authority must match; the \"+\n \t\t\t\"hostname compares case-insensitively and the port exactly. No \"+\n@@ -721,21 +736,46 @@ func run(ctx context.Context, args []string, output io.Writer) error {\n \t\t\t\tpolicyDir, corpusDir,\n \t\t\t)\n \t\t}\n \t}\n \tfmt.Fprintf(output, \"Shoal Explorer listening at http://%s\\n\", listener.Addr())\n+\t// Bound here, after the corpus and policy catalog are open and the handler\n+\t// is built, so that the health port accepting a connection already means\n+\t// construction finished. A bind failure is fatal rather than degraded: an\n+\t// operator who asked for a probe surface and silently did not get one would\n+\t// read every probe failure as the workspace being down.\n+\thealth := (*healthServer)(nil)\n+\tstate := &healthState{}\n+\tif address := strings.TrimSpace(*healthAddress); address != \"\" {\n+\t\thealth, err = startHealthServer(address, state)\n+\t\tif err != nil {\n+\t\t\tlistener.Close()\n+\t\t\treturn fmt.Errorf(\"listen on %s: %w\", address, err)\n+\t\t}\n+\t\tfmt.Fprintf(output, \"Health surface listening at http://%s\\n\", health.address())\n+\t}\n \tshutdownDone := make(chan error, 1)\n \tgo func() {\n \t\t<-ctx.Done()\n+\t\t// drain drops readiness before the workspace stops accepting, so the\n+\t\t// instance keeps answering requests already routed to it while the\n+\t\t// endpoints controller stops routing new ones.\n \t\tshutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n \t\tdefer cancel()\n-\t\tshutdownDone <- server.Shutdown(shutdown)\n+\t\tshutdownDone <- drain(shutdown, state, server, health)\n \t}()\n+\tstate.markReady()\n \terr = server.Serve(listener)\n \tif errors.Is(err, http.ErrServerClosed) {\n \t\treturn <-shutdownDone\n \t}\n+\t// The workspace serve loop failed on its own. Nothing signalled the\n+\t// shutdown goroutine, so close the health listener here rather than leaking\n+\t// it past the returning process.\n+\tshutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\tdefer cancel()\n+\t_ = drain(shutdown, state, server, health)\n \treturn err\n }\n \n type embeddingConfig struct {\n \tprovider   string\ndiff --git a/cmd/shoal-explore-web/main_test.go b/cmd/shoal-explore-web/main_test.go\nindex 2570b91..903df56 100644\n--- a/cmd/shoal-explore-web/main_test.go\n+++ b/cmd/shoal-explore-web/main_test.go\n@@ -450,11 +450,15 @@ func waitForListeningURL(t *testing.T, output *lockedBuffer) string {\n \tt.Helper()\n \tdeadline := time.Now().Add(5 * time.Second)\n \tfor time.Now().Before(deadline) {\n \t\tline := output.String()\n \t\tif index := strings.Index(line, \"http://\"); index >= 0 {\n-\t\t\treturn strings.TrimSpace(line[index:])\n+\t\t\t// Stop at the first whitespace rather than the end of the buffer:\n+\t\t\t// the process can report a second listener (the health surface) on\n+\t\t\t// a following line, and taking the remainder would return both\n+\t\t\t// addresses joined by a newline.\n+\t\t\treturn strings.TrimSpace(strings.Fields(line[index:])[0])\n \t\t}\n \t\ttime.Sleep(10 * time.Millisecond)\n \t}\n \tt.Fatalf(\"server did not report listen address: %q\", output.String())\n \treturn \"\"\ndiff --git a/docs/shoal-explore-web-deploy.md b/docs/shoal-explore-web-deploy.md\nindex 4f717b4..822a3de 100644\n--- a/docs/shoal-explore-web-deploy.md\n+++ b/docs/shoal-explore-web-deploy.md\n@@ -439,10 +439,63 @@ unset, the command prints a one-time startup **WARNING** naming the bound\n address and the `421` consequence, before any request is served. This is the\n most common way to trip over the gate; refusals themselves are not logged\n per-request, because the `Host` is attacker-controlled and would invite a log\n flood.\n \n+## Orchestrator probes: the health surface\n+\n+The host-authority gate above runs before routing, before authentication, and\n+before anything else. That is correct for the workspace, and it makes the\n+workspace port unusable as a probe target under an orchestrator: a Kubernetes\n+kubelet addresses a pod by its runtime-assigned IP, which no static\n+`-allowed-host` list can name, so every probe answers `421` and the pod never\n+becomes ready.\n+\n+`-health-address` (environment fallback `SHOAL_HEALTH_ADDRESS`) opens a second\n+listener for exactly this. Empty disables it, so a local or compose deployment\n+is unchanged.\n+\n+| Route     | Meaning                                                                 |\n+| --------- | ----------------------------------------------------------------------- |\n+| `GET /healthz` | The process is up. Stays `200` throughout a drain.                 |\n+| `GET /readyz`  | The workspace is serving. `503` before it serves and from the moment shutdown begins. |\n+\n+Both answer with a status code and a fixed string. Neither reads the corpus,\n+the policy catalog, the authenticator, or the request, so binding this port\n+where the workspace port may not be bound discloses nothing beyond the fact\n+that a Shoal process is listening — which the open socket already says. Any\n+other path is a `404`; the surface is two routes and cannot grow by accident.\n+\n+The split between the two routes is what makes a rolling update safe.\n+Readiness drops **before** the workspace stops accepting, so the endpoints\n+controller removes the pod from the Service while it is still finishing\n+in-flight requests. Liveness does not drop, because a pod shedding traffic on\n+purpose has not failed, and restarting it would throw away the graceful close.\n+\n+The listener is opened after the corpus and policy catalog are open. That\n+ordering matters: a probe that connects at all already means construction\n+finished, so there is no window in which a TCP check reports ready while the\n+workspace is still opening its corpus. The workspace listener cannot offer that,\n+because it is deliberately bound early so an address the workspace may not serve\n+is refused before any state is touched.\n+\n+A `-health-address` that cannot be bound is fatal. An operator who asked for a\n+probe surface and silently did not get one would read every probe failure as\n+the workspace being down.\n+\n+```console\n+$ shoal-explore-web -listen 0.0.0.0:8098 -allowed-host explorer.example.test \\\n+    -health-address 0.0.0.0:8099 ...\n+Shoal Explorer listening at http://0.0.0.0:8098\n+Health surface listening at http://0.0.0.0:8099\n+\n+$ curl -s -o /dev/null -w '%{http_code}\\n' -H 'Host: 10.1.2.3:8098' http://10.1.2.3:8098/api/v1/auth-config\n+421\n+$ curl -s -o /dev/null -w '%{http_code}\\n' -H 'Host: 10.1.2.3:8099' http://10.1.2.3:8099/readyz\n+200\n+```\n+\n ## The unsafe-configuration guard\n \n The dangerous combination — a shared/public bind with the development\n authenticator — **fails closed at startup** before any socket is bound. This is\n enforced by `selectAuthenticator` / `listenAddressIsLoopback` in\n",
+  "head": "b47e055dc4983f402cc80e041f84202a54f3c42b",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 392,
+  "units": [
+    {
+      "id": "8e677deac2fcaa67982f4fb81195581c413b1ff2b9914a18f45700f85ce7ecdc",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:*healthServer.address"
+    },
+    {
+      "id": "c1256c0be82e4703d56ef09fe0730f6f29365372dec4cb8d71227c40140bcd10",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:*healthServer.shutdown"
+    },
+    {
+      "id": "f6556ffa94bc4571d3232b81954115ce567c5e409d8cffef74d9adf68d4cb0fc",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:*healthState.markDraining"
+    },
+    {
+      "id": "93f7fd93928d78e5d5b247048896649d6020777c71e4714cd4b124d519784e33",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:*healthState.markReady"
+    },
+    {
+      "id": "d8ead9fc23d94f781819f19b86c12ca2a0a4c37cd3342392d60c3d4234ae502b",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:drain"
+    },
+    {
+      "id": "3f96346e574fccab23faff07b0ca65c563855c19a5cfc91b4cd3dd228c190214",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:newHealthHandler"
+    },
+    {
+      "id": "e7658e508d95674bdfae2f9afbd87fbf5c15341bca81fc87a047880f950f615f",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:startHealthServer"
+    },
+    {
+      "id": "3b7e19e34a1f857efa0bbee3d8f937518182b55bb7550c075c4b5b58119a43b2",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "function:writeHealth"
+    },
+    {
+      "id": "0438b1ed86016194d49e332d26a5f798b0c730395c23f2049cc57fdc74dd7868",
+      "kind": "import",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "import:\"context\",\"errors\",\"net\",\"net/http\",\"sync/atomic\",\"time\""
+    },
+    {
+      "id": "cc774216528fcbfc22664d169cf8887ba836f6bbd3420f9a21b40ded3bea48a1",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "type:gracefulServer"
+    },
+    {
+      "id": "e43c315680d4b1f347640103a71a748200d20f6a0e4836a7bfc325c90977d2a4",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "type:healthServer"
+    },
+    {
+      "id": "d62d97e11f118115f5eb041ba57ab6233b32c06ebe2853093b91144cdaa144ed",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "type:healthState"
+    },
+    {
+      "id": "d04ed4825ad02fd8246468a2100fc02a9acdb9c57ebcc9890e2a5ede1cdb8bac",
+      "kind": "var",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "var:listenHealthTCP"
+    },
+    {
+      "id": "4fc36ca6021868d8f9259d5ba481cd2e8bc7b763dc4ac8db59c82942168e908d",
+      "kind": "file_context",
+      "path": "cmd/shoal-explore-web/health.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "b35a757d7b6d80dcdbe5027fbab2011b6d8d2b95ada7225523f43678a2624ef2",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:*recordingServer.Shutdown"
+    },
+    {
+      "id": "c26968169bd95f26bbd23cdd65faedace8741330e4194d70656d5101f6882a82",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:*slowFailingListener.Accept"
+    },
+    {
+      "id": "23f34d119f2ddcbbb56e1ce2f66ada93bfb0c232e2b87808a05e11e9f4a69078",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:*slowFailingListener.Addr"
+    },
+    {
+      "id": "aa20d8344527c1f96b5df4761fb3f5523b967c60c1cc40254f19540045831da7",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:*slowFailingListener.Close"
+    },
+    {
+      "id": "7c4cb446104b10ec27e3d0d5727b682f8a4f996cf4b69ac0cdefbba5a3e20f69",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestDrainDropsReadinessBeforeTheWorkspaceStopsAccepting"
+    },
+    {
+      "id": "328a71b69159a31e12df3e580df0a01587c8e8d1d369c96262523d0021d5926d",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestDrainReportsTheWorkspaceErrorOverTheHealthClose"
+    },
+    {
+      "id": "d6ff4aea0e975990086965849cacbe5495994f18b0a3dd2eaf9977b7c2f79fbf",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthAddressBindFailureIsFatal"
+    },
+    {
+      "id": "35bcfa2f17da823cd97c0b7ae083ff97812e6f57e3d559d644157f2d297d5207",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthHandlerSeparatesLivenessFromReadiness"
+    },
+    {
+      "id": "e8ffffec09d8faba9754c43df398bc53c024c769ddbe6760e77e0b6e1e2a0bed",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthResponsesCarryNoWorkspaceState"
+    },
+    {
+      "id": "7c37d86e08227c157d14c1ee6f36f108f57f0e58cc3b9939873e63255b9edd5b",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthServerReportsAServeLoopThatDiedOnItsOwn"
+    },
+    {
+      "id": "7305f509bdeab3003a65c12a9f054f1c2e4615ce42de2611ce2daa19630127c9",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthShutdownJoinsTheServeLoop"
+    },
+    {
+      "id": "97f400d42f810971673d9e63f424fe3a8d3326769400230ab2ce4e931d557067",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthSurfaceAnswersTheProbeTheWorkspaceRefuses"
+    },
+    {
+      "id": "c07a82ecf52394177b2ba81745a18025fc65fa8277635a32e6ff05525c1be8cd",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthSurfaceIsAbsentUnlessRequested"
+    },
+    {
+      "id": "e19114f7db18ff88744eb5e569d7e67eb7380ee93753385142bcdd6b2e106243",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:TestHealthSurfaceServesOnlyItsTwoRoutes"
+    },
+    {
+      "id": "039d0ed4261556fdd8a47bed476f9905a3c9ff069aab39cd18f90eac4e115226",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:handlerStatus"
+    },
+    {
+      "id": "1c5f3f37ca00c71993885a7285421409697419955983c5ecc135abb564790c50",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:probeStatus"
+    },
+    {
+      "id": "1837c16193b361fb320ae48021a61bbb9a233bcde5ec3c817e32ab921c773d85",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:recordHealth"
+    },
+    {
+      "id": "bd48c88a79368c0558b1d81cfd26dea8b30f2f3fac00d8003a89e74089270561",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:startWorkspaceWithHealth"
+    },
+    {
+      "id": "06bd73f20668290161e8bc4a684a21f641039c26ed9d48c4afbdd187da389226",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:stubHealthListener"
+    },
+    {
+      "id": "c7905c7e9c2a138fd5f45ef06588aeaf33199d4f434e8492c3911644bf5d7a12",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "function:waitForRunToReturn"
+    },
+    {
+      "id": "b248d10e320dee34960a38df5ac5fb7ce13bcee762f0966ba021ee53b65eaa03",
+      "kind": "import",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "import:\"context\",\"errors\",\"fmt\",\"net\",\"net/http\",\"regexp\",\"strings\",\"testing\",\"time\""
+    },
+    {
+      "id": "e460f1a8c791dbdabbb82b4b7b2bcff108ab0502f0f46ac30371b5eb1a27424e",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "type:healthRecorder"
+    },
+    {
+      "id": "d022df01478ea76aad8185abff871f3e4f80bfecfcffdc99d2952ca33cca297b",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "type:recordingServer"
+    },
+    {
+      "id": "cb5f0c3257864c034e26a405351b38a92974806a6c0bb4a0838c5e1c046a3fda",
+      "kind": "type",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "type:slowFailingListener"
+    },
+    {
+      "id": "23e140b2b7b0c5d72b24f3d4cbadaf0d691f0a6692054f86dc367e42a94efeb2",
+      "kind": "var",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "var:healthSurfacePattern"
+    },
+    {
+      "id": "3d2fe29376fc87c9b2547418bd98c1429ddfb4b9f2761c81261fdcffde68c074",
+      "kind": "file_context",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "15f31d0903dad3ba381cd0e2d2e46e0123b87a081b83f2c673141b40df819118",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/main.go",
+      "symbol": "function:run"
+    },
+    {
+      "id": "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816",
+      "kind": "function",
+      "path": "cmd/shoal-explore-web/main_test.go",
+      "symbol": "function:waitForListeningURL"
+    },
+    {
+      "id": "a266355201efb05f8f8620a16ca7ea919e29d27dc650b9d9f9739096262f0140",
+      "kind": "non_go",
+      "path": "docs/shoal-explore-web-deploy.md",
+      "symbol": "file"
+    }
+  ]
+}

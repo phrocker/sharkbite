@@ -1,0 +1,305 @@
+{
+  "code_findings": [
+    {
+      "evidence": "All eight packet record hashes differ from corresponding call hashes; each validates independently under its convention.",
+      "fix": "Use digest(prompt.encode()) for raw artifact identity or explicitly name and retain both hash conventions. Do not rewrite historical records.",
+      "id": "HARNESS-1",
+      "issue": "prompt_sha256 hashes canonical JSON string while invocation receipts hash raw file bytes",
+      "severity": "P2",
+      "source": "showcases/pr-triage/paired_review.py:43"
+    },
+    {
+      "evidence": "A function row with disposition=token_limit, review_score=None, proposal=lower_priority passes prepare and yields an empty candidate declarations list. Current real predictions do not demonstrate this inconsistency.",
+      "fix": "Require validated predicted disposition, finite in-range score and consistent frozen threshold before omission; otherwise retain or reject.",
+      "id": "HARNESS-2",
+      "issue": "Malformed/nonpredicted dispositions can remove code",
+      "severity": "P2",
+      "source": "showcases/pr-triage/paired_review.py:37"
+    },
+    {
+      "evidence": "Collector stores actual path bytes in non_utf8_paths_base64 but prepare passes [non-UTF-8 path: ...] to git diff. Actual raw path is never reconstructed, so fallback can silently be empty. Not exercised by this cohort.",
+      "fix": "Decode lossless recorded path bytes and use literal pathspecs; if evidence cannot be represented, record unavailable evidence instead of an apparently complete empty diff.",
+      "id": "HARNESS-3",
+      "issue": "Non-UTF-8 path fallback uses display placeholder as Git path",
+      "severity": "P2",
+      "source": "showcases/pr-triage/paired_review.py:31"
+    }
+  ],
+  "id": "50878e3e21e495d45177ce76a19dc4596b89ed40dd20f3d8fab1f3c74768b0d0",
+  "limitations": [
+    "Existing open PRs predate registration; operational shadow, not a prospective PR cohort.",
+    "31 of32 nominally omitted functions remain in shared full-file diffs. Only PR357 function:*table.close loses changed-code evidence. Most savings are duplicate removal.",
+    "Both full and candidate arms contain partial declaration diffs, not complete function bodies or dependency context. Full-arm Open false positive demonstrates this limitation.",
+    "Paired preparer does not enforce collector120000-byte review-packet bound: PR399 had packet_byte_limit but paired full prompt is351345 bytes; PR357 full is137046 bytes. This new unbounded packet policy must be stated or bounded explicitly.",
+    "Only one stochastic review per arm per PR; differences in findings do not establish defect recall. PR360 identical prompts produce differing text, demonstrating sampling variation.",
+    "Use ordinary+cache-creation+cache-read tokens as total input. Reported cost includes unequal cache creation/read effects and output reasoning; PR360 identical inputs have unequal costs.",
+    "Model alias opus is not a version pin; preserve actual returned model identity for each call.",
+    "No inference of human quality parity, confirmed defect recall, or general production cost savings from four PRs.",
+    "Source adjudication is static inspection, not exploit/concurrency reproduction. Unknown conditions remain explicit."
+  ],
+  "manifest_id": "9d871c8264c84b53b1cec83fd8f358145cd9654c186f263179ef516a645991cd",
+  "observed_usage": {
+    "candidate": {
+      "input_tokens_total": 246163,
+      "output_tokens": 12081,
+      "reported_cost_usd": 2.1218394
+    },
+    "full": {
+      "input_tokens_total": 262249,
+      "output_tokens": 11370,
+      "reported_cost_usd": 2.2580304
+    }
+  },
+  "overlap_audit": {
+    "comparison": "SHA256 of canonical exact render(unit,diff) including metadata; no near-duplicate claim",
+    "comparisons": [
+      {
+        "exact_diff_state_collisions": [],
+        "function_count": 459,
+        "id": "60a3f90d20391e3cf5bb62df322e9dee61fc768eb7fbe97577f5e3ce5c0a00fe",
+        "name": "frozen_adapter_development",
+        "path": "/tmp/shoal-volume-v4/inputs.json"
+      },
+      {
+        "exact_diff_state_collisions": [],
+        "function_count": 189,
+        "id": "a96eb18eece8cea6d5945ec2ec375351c24edd7f28dbb4526249d6052bd5121f",
+        "name": "v5_sample",
+        "path": "/tmp/shoal-reserved-v5/sampled-manifest.json"
+      },
+      {
+        "exact_diff_state_collisions": [],
+        "function_count": 1312,
+        "id": "9bfddeba69f2eb4ad5dd6ea6810c83f5ac20a13b2555a238d040ff7ed1373472",
+        "name": "v5_full_manifest",
+        "path": "/tmp/shoal-reserved-v5/manifest.json"
+      }
+    ],
+    "live_function_count": 153
+  },
+  "packet_coverage": [
+    {
+      "collector_review_packet_disposition": "packet_byte_limit",
+      "nominal_omitted": 16,
+      "omitted_in_shared_file_diffs": 16,
+      "pr": 399,
+      "truly_omitted": []
+    },
+    {
+      "collector_review_packet_disposition": "available",
+      "nominal_omitted": 1,
+      "omitted_in_shared_file_diffs": 1,
+      "pr": 361,
+      "truly_omitted": []
+    },
+    {
+      "collector_review_packet_disposition": "available",
+      "nominal_omitted": 0,
+      "omitted_in_shared_file_diffs": 0,
+      "pr": 360,
+      "truly_omitted": []
+    },
+    {
+      "collector_review_packet_disposition": "available",
+      "nominal_omitted": 15,
+      "omitted_in_shared_file_diffs": 14,
+      "pr": 357,
+      "truly_omitted": [
+        {
+          "path": "internal/engine/table.go",
+          "symbol": "function:*table.close",
+          "unit_id": "8c4d180be2acff0157618e849d086290807f03b7ffb762ffe0f386a1c7c3652a"
+        }
+      ]
+    }
+  ],
+  "packet_identity": [
+    {
+      "actual_file_sha256": "a109e9d812bb7a3e0e466bd4711da8267975a0808785e4e9c5c2ec4db5a14d97",
+      "call_prompt_sha256": "a109e9d812bb7a3e0e466bd4711da8267975a0808785e4e9c5c2ec4db5a14d97",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-399-full",
+      "packet_record_canonical_string_sha256": "22786cc4d5d181eb50f1e4d36027fe5aa8a2d3f85290c5d64f956be20066b71c",
+      "prompt_bytes": 351345
+    },
+    {
+      "actual_file_sha256": "8981577c124dc9af6da5131259f7908553858a32043dfc68405fd3829f1c6568",
+      "call_prompt_sha256": "8981577c124dc9af6da5131259f7908553858a32043dfc68405fd3829f1c6568",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-399-candidate",
+      "packet_record_canonical_string_sha256": "abc3f0b338f685c80810fa148ceb120b0c5955ee9171373bbdd1ded5e1793cad",
+      "prompt_bytes": 336870
+    },
+    {
+      "actual_file_sha256": "aeb3539f34834e7e9557dd9f154af8f475f0f4f24f6f9b93726024804f74519a",
+      "call_prompt_sha256": "aeb3539f34834e7e9557dd9f154af8f475f0f4f24f6f9b93726024804f74519a",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-361-full",
+      "packet_record_canonical_string_sha256": "85a959cfa2eef8650e9dcf354b67ec12e1d25feafbbabccf30b8438a40e91cdd",
+      "prompt_bytes": 9062
+    },
+    {
+      "actual_file_sha256": "480a9bdce5e69ab030bcfcaed1869aaca284bc2c15ce7598f8131d8300cc4034",
+      "call_prompt_sha256": "480a9bdce5e69ab030bcfcaed1869aaca284bc2c15ce7598f8131d8300cc4034",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-361-candidate",
+      "packet_record_canonical_string_sha256": "72e8ab94e69f82307891e6edc5d9302db0dda0bf308d4d3f1d19d29328131ab3",
+      "prompt_bytes": 7089
+    },
+    {
+      "actual_file_sha256": "5f45734b8b144e3fe062d06e1b89e6264fc538efa9d842a797f1860fb274de50",
+      "call_prompt_sha256": "5f45734b8b144e3fe062d06e1b89e6264fc538efa9d842a797f1860fb274de50",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-360-full",
+      "packet_record_canonical_string_sha256": "0757d5e1555b19c0074bc231ffec9fe51dd43f17ffec9f94d5cd992326f2300f",
+      "prompt_bytes": 4555
+    },
+    {
+      "actual_file_sha256": "5f45734b8b144e3fe062d06e1b89e6264fc538efa9d842a797f1860fb274de50",
+      "call_prompt_sha256": "5f45734b8b144e3fe062d06e1b89e6264fc538efa9d842a797f1860fb274de50",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-360-candidate",
+      "packet_record_canonical_string_sha256": "0757d5e1555b19c0074bc231ffec9fe51dd43f17ffec9f94d5cd992326f2300f",
+      "prompt_bytes": 4555
+    },
+    {
+      "actual_file_sha256": "36e59d6b68f38a0762ea4b7e9b4a28e77c20a5e1340c641049e764f3eb8daa86",
+      "call_prompt_sha256": "36e59d6b68f38a0762ea4b7e9b4a28e77c20a5e1340c641049e764f3eb8daa86",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-357-full",
+      "packet_record_canonical_string_sha256": "2f877008515a9be02d211a582b43ffd80cf783dc8d361cb647af9d231fb6ab89",
+      "prompt_bytes": 137046
+    },
+    {
+      "actual_file_sha256": "6bd3402c2a25204e338e724777d5107d45de0d0b56c9e952b4ad6c8021f130c1",
+      "call_prompt_sha256": "6bd3402c2a25204e338e724777d5107d45de0d0b56c9e952b4ad6c8021f130c1",
+      "call_raw_bytes_digest_matches": true,
+      "canonical_string_digest_matches": true,
+      "packet": "pr-357-candidate",
+      "packet_record_canonical_string_sha256": "a8994b659c7e6746ed092426ac96e2467c9c50c94689ac6d9a415743af1def1f",
+      "prompt_bytes": 124532
+    }
+  ],
+  "prediction_id": "13b46ba189cc46194d903cb46b5ad1f262f9641303aa3cda9301ce02c71862ce",
+  "scope": "No source edits or GitHub comments. Read model responses only after explicit parent authorization; no v5 assessor files read.",
+  "selection_id": "0e07a69fe9c999e87f118c06b1fc3ab0704f83b02aed29bfc2a47ae6f1d5324c",
+  "source_adjudication": [
+    {
+      "arms": [
+        "full",
+        "candidate"
+      ],
+      "conclusion": "Confirmed filesystem staging/cleanup can continue after Close releases new authority. Unlocked staging existed before this PR; the new fencing guard incompletely covers it. Specific corruption/deletion of successor-owned files is not established: names are random, cleanup tracks this import files, and final authority check prevents table registration after close. Whether source-parent is the protected e.dir depends on supplied manifest/backend.",
+      "count_as_confirmed_new_security_defect": false,
+      "head": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+      "id": "357-import-authority-window",
+      "pr": 357,
+      "severity": "low_to_medium_pending_contract",
+      "verdict": "partially_supported_incomplete_new_fence",
+      "witnesses": [
+        "internal/engine/rfile_export.go:966-971 releases e.mu.RLock before validation/staging",
+        "internal/engine/rfile_export.go:989 stages before final authority check at1006",
+        "internal/engine/rfile_export.go:993-998 registers rollback before deferred unlock at1005, so rollback runs after unlock",
+        "internal/engine/rfile_export.go:1144-1148 stages beside sourcePath with SHA plus random128-bit nonce",
+        "internal/engine/rfile_export.go:1099-1106 removes only tracked staged paths",
+        "internal/engine/engine.go:712-726 Close takes e.mu.Lock, closes tables, releases authority"
+      ]
+    },
+    {
+      "arms": [
+        "full"
+      ],
+      "conclusion": "The claimed missing cleanup exists in unchanged source outside the supplied declaration diff hunk. No established Open failure resource leak or unfenced background writer from this claim.",
+      "count_as_confirmed_new_security_defect": false,
+      "head": "1c2e8c6725ab6a70388e4e1185824e692f2ae911",
+      "id": "357-open-table-leak",
+      "pr": 357,
+      "verdict": "refuted",
+      "witnesses": [
+        "internal/engine/engine.go:181-184 calls eng.Close() when openTable fails",
+        "internal/engine/engine.go:719-725 Close closes all tracked tables before releasing authority"
+      ]
+    },
+    {
+      "arms": [
+        "full",
+        "candidate"
+      ],
+      "conclusion": "A same-principal invoke client can newly enumerate live ordinary dispatch claim IDs via Outstanding and submit them through Report. This conflates worker claims with admission tokens. No cross-principal or different-client takeover is established. Add admission-record discrimination to both surfaces.",
+      "count_as_confirmed_new_security_defect": true,
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "id": "399-admission-dispatch-type-confusion",
+      "pr": 399,
+      "severity": "medium",
+      "verdict": "supported_new",
+      "witnesses": [
+        "pkg/explorer/fleet/admission.go:799-826 returns every same-principal claimed record with ClaimID and version; no AdmittedEffects check",
+        "pkg/explorer/fleet/admission.go:705-710 forwards token to CompleteClaim without admission-type check",
+        "pkg/explorer/fleet/dispatch_service.go:1103-1117 principal includes subject,actor,client,delegation chain",
+        "pkg/explorer/fleet/dispatch_service.go:944-983 pre-existing invoke Pull withholds unexpired claimed records",
+        "pkg/explorer/fleet/dispatch_service.go:787-795 Status requires dispatch operation",
+        "pkg/explorer/fleet/dispatch_service.go:479-507 CompleteClaim requires matching current claim/version"
+      ]
+    },
+    {
+      "arms": [
+        "full"
+      ],
+      "conclusion": "Raw action-ID disclosure is concrete, but the same invoke principal could already obtain it through Pull before this PR. Do not count as newly created privilege/disclosure in this evaluation.",
+      "count_as_confirmed_new_security_defect": false,
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "id": "399-raw-cursor-disclosure",
+      "pr": 399,
+      "severity": "medium",
+      "verdict": "supported_preexisting_disclosure_surface_repeated_by_new_endpoint",
+      "witnesses": [
+        "pkg/explorer/fleet/admission.go:795-805 copies global scan cursor before principal filtering",
+        "internal/explorerfleet/dispatch_store.go:107-108 returns raw action ID suffix as Next",
+        "pkg/explorer/fleet/dispatch_service.go:944-958 existing invoke Pull already returns identical raw cursor before filtering"
+      ]
+    },
+    {
+      "arms": [
+        "candidate"
+      ],
+      "conclusion": "A valid caller can distinguish an occupied guessed action ID, but enqueue/Invoke already has the oracle. The claim that lookup happens before any authorization is false, and cross-principal live-grant replay is refuted by equivalentEnqueue.",
+      "count_as_confirmed_new_security_defect": false,
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "id": "399-request-id-oracle",
+      "pr": 399,
+      "severity": "low",
+      "verdict": "supported_preexisting_oracle_pattern_with_overstatement_refuted",
+      "witnesses": [
+        "pkg/explorer/fleet/admission.go:321-340 queuedRecord authorizes target before global ID lookup",
+        "pkg/explorer/fleet/admission.go:374-375 non-equivalent existing record returns conflict",
+        "pkg/explorer/fleet/dispatch_service.go:64-83 existing enqueue/Invoke already distinguishes occupied IDs",
+        "pkg/explorer/fleet/dispatch_service.go:1299-1304 equivalentEnqueue checks subject,actor,client,delegation,fingerprint and policy generation"
+      ]
+    },
+    {
+      "arms": [
+        "candidate"
+      ],
+      "conclusion": "Without a restrictor, per-reference registration policy is not resolved. This is documented supported weaker configuration; hosted startup wires the authorized client. No actual unprotected deployment or unauthorized data access was established. Do not count as a proven new defect.",
+      "count_as_confirmed_new_security_defect": false,
+      "head": "b7360cabad1cbeb3450bb783ba774eb531e50d36",
+      "id": "399-optional-restrictor",
+      "pr": 399,
+      "verdict": "conditional_deployment_limitation_not_confirmed_bypass",
+      "witnesses": [
+        "pkg/explorer/fleet/admission.go:238-246 explicitly documents optional restrictor/deployment invariant",
+        "pkg/explorer/fleet/admission.go:558-565 documents request-level rather than per-reference authorization",
+        "pkg/explorer/fleet/admission.go:578-608 uses request scope, restrictor optionally narrows"
+      ]
+    }
+  ],
+  "status": "read_only_code_review_and_source_adjudication_proposals",
+  "tests": "24 Python unit tests passed in pinned experiment environment."
+}

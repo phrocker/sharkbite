@@ -1,0 +1,25 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "oncall",
+    "action": "page_team"
+  },
+  "cues": [
+    "page"
+  ],
+  "patterns": [
+    "[please] page [the] {team} [now]"
+  ],
+  "slots": [
+    {
+      "name": "team",
+      "node_kinds": [
+        "team"
+      ]
+    }
+  ],
+  "input": {
+    "team": "$team"
+  }
+}

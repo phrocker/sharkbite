@@ -1,0 +1,18 @@
+outcome approval.outcome.enqueued
+  The request to run action close-ticket on agent agent-7 was approved and became work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.materialized
+  It was committed to become work at 2026-10-08 12:20:00 UTC.
+  record=approval:act-1
+next approval.next.enqueued
+  Where the work is now is the action’s own status.
+  record=approval:act-1 action=action:act-1

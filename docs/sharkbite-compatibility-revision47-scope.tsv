@@ -1,0 +1,3210 @@
+# Revision-47 Sharkbite client-scope disposition manifest.
+# Matrix: docs/sharkbite-compatibility.md revision 47.
+# Sharkbite source: phrocker/sharkbite@7f2625f74331b0cd4a75dc0484949c40f1409686.
+# Shoal source: phrocker/shoal-oss@282bbfb849f9c4d6e8c9d9f9f098ff904de6feea.
+# Policy: docs/sharkbite-client-scope.md.
+# Columns: ROW-ID<TAB>DISPOSITION<TAB>RULE<TAB>PINNED-MATRIX-STATUS.
+# Entries are in matrix order; validator rules, not aggregate counts, authorize dispositions.
+SB-PKG-001	Required gap	core-required-gap	Missing C ABI
+SB-PKG-002	Required gap	core-required-gap	Missing C ABI
+SB-PKG-003	Required gap	core-required-gap	Missing C ABI
+SB-PKG-004	Required gap	core-required-gap	Missing C ABI
+SB-PKG-005	Not required	not-required-rationale	Not required (rationale required)
+SB-PKG-006	Not required	not-required-rationale	Not required (rationale required)
+SB-PKG-007	Required gap	core-required-gap	Missing C ABI
+SB-PKG-008	Required gap	core-required-gap	Missing C ABI
+SB-PKG-009	Required gap	core-required-gap	Missing C ABI
+SB-PKG-010	Required gap	core-required-gap	Behavior mismatch
+SB-PKG-011	Required gap	core-required-gap	Missing C ABI
+SB-PKG-012	Optional	optional-python-extra	Missing C ABI
+SB-PKG-013	Optional	optional-python-extra	Missing C ABI
+SB-PKG-014	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-CFG-001	Covered	core-covered	Covered
+SB-CFG-002	Covered	core-covered	Covered
+SB-CFG-003	Covered	core-covered	Covered
+SB-CFG-004	Covered	core-covered	Covered
+SB-CFG-005	Covered	core-covered	Covered
+SB-CFG-024	Covered	core-covered	Covered
+SB-CFG-025	Not required	not-required-rationale	Not required (rationale required)
+SB-CFG-006	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-007	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-026	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-027	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-028	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-029	Covered	core-covered	Covered
+SB-CFG-030	Covered	core-covered	Covered
+SB-CFG-031	Covered	core-covered	Covered
+SB-CFG-032	Covered	core-covered	Covered
+SB-CFG-033	Not required	not-required-rationale	Not required (rationale required)
+SB-CFG-034	Not required	not-required-rationale	Not required (rationale required)
+SB-CFG-035	Covered	core-covered	Covered
+SB-CFG-036	Covered	core-covered	Covered
+SB-CFG-008	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-009	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-019	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-010	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-020	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-011	Not required	not-required-rationale	Not required (rationale required)
+SB-CFG-012	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-013	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-021	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-014	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-CFG-022	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-CFG-015	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-023	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-016	Not required	not-required-rationale	Not required (rationale required)
+SB-CFG-017	Required gap	core-required-gap	Behavior mismatch
+SB-CFG-018	Not required	not-required-rationale	Not required (rationale required)
+SB-CONN-001	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-002	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-003	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-004	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-005	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-006	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-007	Required gap	core-required-gap	Missing Go
+SB-CONN-008	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-009	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-010	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-CONN-011	Covered	core-covered	Covered
+SB-CONN-012	Required gap	core-required-gap	Behavior mismatch
+SB-CONN-013	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-001	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-002	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-003	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-004	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-072	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-005	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-006	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-007	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-008	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-009	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-010	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-011	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-012	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-013	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-014	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-015	Covered	core-covered	Covered
+SB-DATA-073	Covered	core-covered	Covered
+SB-DATA-016	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-017	Covered	core-covered	Covered
+SB-DATA-018	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-019	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-020	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-021	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-022	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-023	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-024	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-025	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-026	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-027	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-028	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-029	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-030	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-031	Covered	core-covered	Covered
+SB-DATA-032	Covered	core-covered	Covered
+SB-DATA-033	Covered	core-covered	Covered
+SB-DATA-074	Covered	core-covered	Covered
+SB-DATA-034	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-035	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-036	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-037	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-038	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-039	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-040	Required gap	core-required-gap	Missing C ABI
+SB-DATA-041	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-042	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-043	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-044	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-045	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-046	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-047	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-048	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-049	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-050	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-051	Covered	core-covered	Covered
+SB-DATA-052	Covered	core-covered	Covered
+SB-DATA-053	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-075	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-054	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-055	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-056	Required gap	core-required-gap	Missing Go
+SB-DATA-057	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-069	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-058	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-070	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-059	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-071	Required gap	core-required-gap	Behavior mismatch
+SB-DATA-060	Not required	not-required-rationale	Not required (rationale required)
+SB-DATA-061	Required gap	core-required-gap	Missing Go
+SB-DATA-062	Required gap	core-required-gap	Missing Go
+SB-DATA-063	Required gap	core-required-gap	Missing Go
+SB-DATA-064	Required gap	core-required-gap	Missing Go
+SB-DATA-065	Required gap	core-required-gap	Missing Go
+SB-DATA-066	Required gap	core-required-gap	Missing Go
+SB-DATA-067	Required gap	core-required-gap	Missing Go
+SB-DATA-068	Required gap	core-required-gap	Missing Go
+SB-SCAN-001	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-002	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-003	Required gap	core-required-gap	Missing C ABI
+SB-SCAN-004	Covered	core-covered	Covered
+SB-SCAN-005	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-006	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-007	Required gap	core-required-gap	Missing Go
+SB-SCAN-008	Required gap	core-required-gap	Missing Go
+SB-SCAN-009	Required gap	core-required-gap	Missing Go
+SB-SCAN-010	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-011	Required gap	core-required-gap	Missing C ABI
+SB-SCAN-028	Required gap	core-required-gap	Missing C ABI
+SB-SCAN-012	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-013	Not required	not-required-rationale	Not required (rationale required)
+SB-SCAN-014	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-SCAN-015	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-SCAN-016	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-SCAN-017	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-018	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-019	Covered	core-covered	Covered
+SB-SCAN-020	Covered	core-covered	Covered
+SB-SCAN-021	Covered	core-covered	Covered
+SB-SCAN-022	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-023	Not required	not-required-rationale	Not required (rationale required)
+SB-SCAN-024	Covered	core-covered	Covered
+SB-SCAN-025	Not required	not-required-rationale	Not required (rationale required)
+SB-SCAN-026	Required gap	core-required-gap	Behavior mismatch
+SB-SCAN-027	Not required	not-required-rationale	Not required (rationale required)
+SB-TORCH-001	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-002	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-003	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-004	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-005	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-006	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-007	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-008	Optional	optional-python-extra	Missing C ABI
+SB-TORCH-009	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-001	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-002	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-003	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-004	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-005	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-006	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-007	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-008	Optional	optional-python-extra	Not required (rationale required)
+SB-PANDA-009	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-010	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-011	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-012	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-013	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-014	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-015	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-016	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-017	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-018	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-019	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-020	Optional	optional-python-extra	Missing C ABI
+SB-PANDA-021	Optional	optional-python-extra	Missing C ABI
+SB-WRITE-001	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-002	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-003	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-004	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-005	Required gap	core-required-gap	Missing C ABI
+SB-WRITE-023	Required gap	core-required-gap	Missing C ABI
+SB-WRITE-006	Covered	core-covered	Covered
+SB-WRITE-007	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-008	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-009	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-010	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-011	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-012	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-013	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-014	Required gap	core-required-gap	Behavior mismatch
+SB-WRITE-015	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-016	Covered	core-covered	Covered
+SB-WRITE-017	Covered	core-covered	Covered
+SB-WRITE-018	Covered	core-covered	Covered
+SB-WRITE-019	Covered	core-covered	Covered
+SB-WRITE-020	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-021	Not required	not-required-rationale	Not required (rationale required)
+SB-WRITE-022	Not required	not-required-rationale	Not required (rationale required)
+SB-BASE-001	Covered	core-covered	Covered
+SB-BASE-002	Covered	core-covered	Covered
+SB-BASE-003	Covered	core-covered	Covered
+SB-BASE-004	Covered	core-covered	Covered
+SB-BASE-005	Covered	core-covered	Covered
+SB-BASE-006	Covered	core-covered	Covered
+SB-BASE-007	Covered	core-covered	Covered
+SB-BASE-008	Covered	core-covered	Covered
+SB-BASE-009	Covered	core-covered	Covered
+SB-BASE-010	Not required	not-required-rationale	Not required (rationale required)
+SB-BASE-011	Covered	core-covered	Covered
+SB-BASE-012	Covered	core-covered	Covered
+SB-BASE-013	Covered	core-covered	Covered
+SB-BASE-014	Covered	core-covered	Covered
+SB-BASE-015	Not required	not-required-rationale	Not required (rationale required)
+SB-BASE-016	Covered	core-covered	Covered
+SB-BASE-017	Covered	core-covered	Covered
+SB-BASE-018	Covered	core-covered	Covered
+SB-BASE-019	Covered	core-covered	Covered
+SB-BASE-020	Covered	core-covered	Covered
+SB-TABLE-001	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-002	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-003	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-004	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-005	Covered	core-covered	Covered
+SB-TABLE-006	Required gap	core-required-gap	Missing Go
+SB-TABLE-007	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-008	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-009	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-010	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-011	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-012	Covered	core-covered	Covered
+SB-TABLE-013	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-014	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-015	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-016	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-017	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-018	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-019	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-020	Not required	not-required-rationale	Not required (rationale required)
+SB-TABLE-021	Required gap	core-required-gap	Behavior mismatch
+SB-TABLE-022	Required gap	core-required-gap	Behavior mismatch
+SB-NS-001	Required gap	core-required-gap	Behavior mismatch
+SB-NS-002	Required gap	core-required-gap	Behavior mismatch
+SB-NS-003	Required gap	core-required-gap	Behavior mismatch
+SB-NS-004	Required gap	core-required-gap	Behavior mismatch
+SB-NS-005	Required gap	core-required-gap	Behavior mismatch
+SB-NS-006	Required gap	core-required-gap	Behavior mismatch
+SB-NS-007	Required gap	core-required-gap	Behavior mismatch
+SB-NS-008	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-001	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-002	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-003	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-004	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-005	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-006	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-007	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-008	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-009	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-010	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-011	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-012	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-013	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-014	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-015	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-016	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-017	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-018	Required gap	core-required-gap	Behavior mismatch
+SB-SEC-019	Not required	not-required-rationale	Not required (rationale required)
+SB-STAT-001	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-054	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-002	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-055	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-003	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-056	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-004	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-057	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-005	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-058	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-006	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-059	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-007	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-060	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-008	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-061	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-009	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-062	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-010	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-063	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-011	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-064	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-012	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-065	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-013	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-066	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-014	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-067	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-015	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-068	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-016	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-069	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-017	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-070	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-018	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-071	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-019	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-072	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-020	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-073	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-021	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-074	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-022	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-075	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-023	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-076	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-024	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-077	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-025	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-078	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-026	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-079	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-027	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-039	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-040	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-041	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-042	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-028	Not required	not-required-rationale	Not required (rationale required)
+SB-STAT-043	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-029	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-080	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-030	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-081	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-031	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-082	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-032	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-083	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-033	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-084	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-034	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-044	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-045	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-046	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-047	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-048	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-035	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-049	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-050	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-051	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-052	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-053	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-036	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-037	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-STAT-038	Required gap	core-required-gap	Missing Go
+SB-RFILE-001	Covered	core-covered	Covered
+SB-RFILE-002	Covered	core-covered	Covered
+SB-RFILE-003	Covered	core-covered	Covered
+SB-RFILE-004	Covered	core-covered	Covered
+SB-RFILE-005	Required gap	core-required-gap	Behavior mismatch
+SB-RFILE-006	Covered	core-covered	Covered
+SB-RFILE-007	Covered	core-covered	Covered
+SB-RFILE-008	Covered	core-covered	Covered
+SB-RFILE-009	Covered	core-covered	Covered
+SB-RFILE-010	Covered	core-covered	Covered
+SB-RFILE-011	Covered	core-covered	Covered
+SB-RFILE-012	Covered	core-covered	Covered
+SB-RFILE-013	Covered	core-covered	Covered
+SB-RFILE-014	Covered	core-covered	Covered
+SB-RFILE-025	Covered	core-covered	Covered
+SB-RFILE-026	Covered	core-covered	Covered
+SB-RFILE-027	Covered	core-covered	Covered
+SB-RFILE-028	Covered	core-covered	Covered
+SB-RFILE-015	Covered	core-covered	Covered
+SB-RFILE-036	Covered	core-covered	Covered
+SB-RFILE-016	Covered	core-covered	Covered
+SB-RFILE-017	Covered	core-covered	Covered
+SB-RFILE-029	Covered	core-covered	Covered
+SB-RFILE-030	Covered	core-covered	Covered
+SB-RFILE-031	Covered	core-covered	Covered
+SB-RFILE-032	Covered	core-covered	Covered
+SB-RFILE-033	Covered	core-covered	Covered
+SB-RFILE-018	Covered	core-covered	Covered
+SB-RFILE-019	Covered	core-covered	Covered
+SB-RFILE-020	Covered	core-covered	Covered
+SB-RFILE-034	Covered	core-covered	Covered
+SB-RFILE-035	Covered	core-covered	Covered
+SB-RFILE-021	Covered	core-covered	Covered
+SB-RFILE-022	Not required	not-required-rationale	Not required (rationale required)
+SB-RFILE-023	Not required	not-required-rationale	Not required (rationale required)
+SB-RFILE-024	Not required	not-required-rationale	Not required (rationale required)
+SB-HDFS-001	Covered	core-covered	Covered
+SB-HDFS-002	Covered	core-covered	Covered
+SB-HDFS-003	Covered	core-covered	Covered
+SB-HDFS-004	Covered	core-covered	Covered
+SB-HDFS-005	Covered	core-covered	Covered
+SB-HDFS-006	Covered	core-covered	Covered
+SB-HDFS-007	Covered	core-covered	Covered
+SB-HDFS-008	Required gap	core-required-gap	Missing Go
+SB-HDFS-009	Required gap	core-required-gap	Missing Go
+SB-HDFS-010	Covered	core-covered	Covered
+SB-HDFS-015	Covered	core-covered	Covered
+SB-HDFS-016	Covered	core-covered	Covered
+SB-HDFS-017	Covered	core-covered	Covered
+SB-HDFS-018	Covered	core-covered	Covered
+SB-HDFS-011	Covered	core-covered	Covered
+SB-HDFS-019	Covered	core-covered	Covered
+SB-HDFS-020	Covered	core-covered	Covered
+SB-HDFS-021	Covered	core-covered	Covered
+SB-HDFS-022	Covered	core-covered	Covered
+SB-HDFS-012	Covered	core-covered	Covered
+SB-HDFS-023	Covered	core-covered	Covered
+SB-HDFS-024	Covered	core-covered	Covered
+SB-HDFS-025	Covered	core-covered	Covered
+SB-HDFS-026	Covered	core-covered	Covered
+SB-HDFS-013	Covered	core-covered	Covered
+SB-HDFS-014	Covered	core-covered	Covered
+SB-LOG-001	Covered	core-covered	Covered
+SB-LOG-002	Covered	core-covered	Covered
+SB-LOG-003	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-001	Covered	core-covered	Covered
+SB-ERR-002	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-003	Approved divergence	core-approved-divergence	Intentional divergence (approval required)
+SB-ERR-004	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-005	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-006	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-007	Required gap	core-required-gap	Behavior mismatch
+SB-ERR-008	Covered	core-covered	Covered
+SB-ERR-009	Required gap	core-required-gap	Missing Go
+SB-ERR-010	Covered	core-covered	Covered
+SB-ERR-011	Covered	core-covered	Covered
+SB-ERR-012	Not required	not-required-rationale	Not required (rationale required)
+SB-ERR-013	Not required	not-required-rationale	Not required (rationale required)
+SB-ERR-014	Covered	core-covered	Covered
+SB-ERR-015	Not required	not-required-rationale	Not required (rationale required)
+SB-ERR-016	Required gap	core-required-gap	Behavior mismatch
+SB-CPP-001	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-015	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-002	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-016	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-017	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-018	Optional	optional-legacy-cxx	Missing C ABI
+SB-CPP-003	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-019	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-020	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-004	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-021	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-022	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-005	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-023	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-024	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-025	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-026	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-027	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-028	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-029	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-006	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-030	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-031	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-032	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-033	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-034	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-007	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-035	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-036	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-008	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-037	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-038	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-039	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-040	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-041	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-042	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-043	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-044	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-045	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-046	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-047	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-048	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-049	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-050	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-051	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-052	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-053	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-054	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-055	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-056	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-057	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-058	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-059	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-060	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-061	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-062	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-063	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-064	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-065	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-066	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-067	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-068	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-069	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-070	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CPP-009	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-010	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-011	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-012	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CPP-013	Optional	optional-legacy-cxx	Missing Go
+SB-CPP-014	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0001	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0002	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0003	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0004	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0005	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0006	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0007	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0008	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0009	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0010	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0011	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0012	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0013	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0014	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0015	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0016	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0017	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0018	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0019	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0020	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0021	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0022	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0023	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0024	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0025	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0026	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0027	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0028	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0029	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0030	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0031	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0032	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0033	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0034	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0035	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0036	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0037	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0038	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0039	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0040	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0041	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0042	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0043	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0044	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0045	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0046	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0047	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0048	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0049	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0050	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0051	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0052	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0053	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0054	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0055	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0056	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0057	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0058	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0059	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0060	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0061	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0062	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0063	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0064	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0065	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0066	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0067	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0068	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0069	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0070	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0071	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0072	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0073	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0074	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0075	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0076	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0077	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0078	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0079	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0080	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0081	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0082	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0083	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0084	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0085	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0086	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0087	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0088	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0089	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0090	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0091	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0092	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0093	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0094	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0095	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0096	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0097	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0098	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0099	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0100	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0101	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0102	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0103	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0104	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0105	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0106	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0107	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0108	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0109	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0110	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0111	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0112	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0113	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0114	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0115	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0116	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0117	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0118	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0119	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0120	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0121	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0122	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0123	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0124	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0125	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0126	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0127	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0128	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0129	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0130	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0131	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0132	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0133	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0134	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0135	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0136	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0137	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0138	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0139	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0140	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0141	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0142	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0143	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0144	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0145	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0146	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0147	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0148	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0149	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0150	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0151	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0152	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0153	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0154	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0155	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0156	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0157	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0158	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0159	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0160	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0161	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0162	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0163	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0164	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0165	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0166	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0167	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0168	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0169	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0170	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0171	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0172	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0173	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0174	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0175	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0176	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0177	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0178	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0179	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0180	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0181	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0182	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0183	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0184	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0185	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0186	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0187	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0188	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0189	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0190	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0191	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0192	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0193	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0194	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0195	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0196	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0197	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0198	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0199	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0200	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0201	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0202	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0203	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0204	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0205	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0206	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0207	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0208	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0209	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0210	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0211	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0212	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0213	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0214	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0215	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0216	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0217	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0218	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0219	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0220	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0221	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0222	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0223	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0224	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0225	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0226	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0227	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0228	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0229	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0230	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0231	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0232	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0233	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0234	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0235	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0236	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0237	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0238	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0239	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0240	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0241	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0242	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0243	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0244	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0245	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0246	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0247	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0248	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0249	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0250	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0251	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0252	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0253	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0254	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0255	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0256	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0257	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0258	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0259	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0260	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0261	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0262	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0263	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0264	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0265	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0266	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0267	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0268	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0269	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0270	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0271	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0272	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0273	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0274	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0275	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0276	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0277	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0278	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0279	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0280	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0281	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0282	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0283	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0284	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0285	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0286	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0287	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0288	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0289	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0290	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0291	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0292	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0293	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0294	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0295	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0296	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0297	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0298	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0299	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0300	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0301	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0302	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0303	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0304	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0305	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0306	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0307	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0308	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0309	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0310	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0311	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0312	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0313	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0314	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0315	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0316	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0317	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0318	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0319	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0320	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0321	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0322	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0323	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0324	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0325	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0326	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0327	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0328	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0329	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0330	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0331	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0332	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0333	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0334	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0335	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0336	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0337	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0338	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0339	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0340	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0341	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0342	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0343	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0344	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0345	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0346	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0347	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0348	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0349	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0350	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0351	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0352	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0353	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0354	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0355	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0356	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0357	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0358	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0359	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0360	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0361	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0362	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0363	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0364	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0365	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0366	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0367	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0368	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0369	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0370	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0371	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0372	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0373	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0374	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0375	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0376	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0377	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0378	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0379	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0380	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0381	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0382	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0383	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0384	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0385	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0386	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0387	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0388	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0389	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0390	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0391	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0392	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0393	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0394	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0395	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0396	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0397	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0398	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0399	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0400	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0401	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0402	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0403	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0404	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0405	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0406	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0407	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0408	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0409	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0410	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0411	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0412	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0413	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0414	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0415	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0416	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0417	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0418	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0419	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0420	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0421	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0422	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0423	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0424	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0425	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0426	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0427	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0428	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0429	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0430	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0431	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0432	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0433	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0434	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0435	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0436	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0437	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0438	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0439	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0440	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0441	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0442	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0443	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0444	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0445	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0446	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0447	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0448	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0449	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0450	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0451	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0452	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0453	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0454	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0455	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0456	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0457	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0458	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0459	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0460	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0461	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0462	Optional	optional-legacy-cxx	Covered
+SB-CXX-0463	Optional	optional-legacy-cxx	Covered
+SB-CXX-0464	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0465	Optional	optional-legacy-cxx	Covered
+SB-CXX-0466	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0467	Optional	optional-legacy-cxx	Covered
+SB-CXX-0468	Optional	optional-legacy-cxx	Covered
+SB-CXX-0469	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0470	Optional	optional-legacy-cxx	Covered
+SB-CXX-0471	Optional	optional-legacy-cxx	Covered
+SB-CXX-0472	Optional	optional-legacy-cxx	Covered
+SB-CXX-0473	Optional	optional-legacy-cxx	Covered
+SB-CXX-0474	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0475	Optional	optional-legacy-cxx	Covered
+SB-CXX-0476	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0477	Optional	optional-legacy-cxx	Covered
+SB-CXX-0478	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0479	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0480	Optional	optional-legacy-cxx	Covered
+SB-CXX-0481	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0482	Optional	optional-legacy-cxx	Covered
+SB-CXX-0483	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0484	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0485	Optional	optional-legacy-cxx	Covered
+SB-CXX-0486	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0487	Optional	optional-legacy-cxx	Covered
+SB-CXX-0488	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0489	Optional	optional-legacy-cxx	Covered
+SB-CXX-0490	Optional	optional-legacy-cxx	Covered
+SB-CXX-0491	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0492	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0493	Optional	optional-legacy-cxx	Covered
+SB-CXX-0494	Optional	optional-legacy-cxx	Covered
+SB-CXX-0495	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0496	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0497	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0498	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0499	Optional	optional-legacy-cxx	Covered
+SB-CXX-0500	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0501	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0502	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0503	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0504	Optional	optional-legacy-cxx	Covered
+SB-CXX-0505	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0506	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0507	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0508	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0509	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0510	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0511	Optional	optional-legacy-cxx	Covered
+SB-CXX-0512	Optional	optional-legacy-cxx	Covered
+SB-CXX-0513	Optional	optional-legacy-cxx	Covered
+SB-CXX-0514	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0515	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0516	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0517	Optional	optional-legacy-cxx	Covered
+SB-CXX-0518	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0519	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0520	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0521	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0522	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0523	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0524	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0525	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0526	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0527	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0528	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0529	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0530	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0531	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0532	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0533	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0534	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0535	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0536	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0537	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0538	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0539	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0540	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0541	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0542	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0543	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0544	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0545	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0546	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0547	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0548	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0549	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0550	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0551	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0552	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0553	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0554	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0555	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0556	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0557	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0558	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0559	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0560	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0561	Optional	optional-legacy-cxx	Missing C ABI
+SB-CXX-0562	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0563	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0564	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0565	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0566	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0567	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0568	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0569	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0570	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0571	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0572	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0573	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0574	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0575	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0576	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0577	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0578	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0579	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0580	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0581	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0582	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0583	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0584	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0585	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0586	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0587	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0588	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0589	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0590	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0591	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0592	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0593	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0594	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0595	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0596	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0597	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0598	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0599	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0600	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0601	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0602	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0603	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0604	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0605	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0606	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0607	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0608	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0609	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0610	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0611	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0612	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0613	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0614	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0615	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0616	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0617	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0618	Optional	optional-legacy-cxx	Covered
+SB-CXX-0619	Optional	optional-legacy-cxx	Covered
+SB-CXX-0620	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0621	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0622	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0623	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0624	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0625	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0626	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0627	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0628	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0629	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0630	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0631	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0632	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0633	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0634	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0635	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0636	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0637	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0638	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0639	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0640	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0641	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0642	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0643	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0644	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0645	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0646	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0647	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0648	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0649	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0650	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0651	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0652	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0653	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0654	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0655	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0656	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0657	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0658	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0659	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0660	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0661	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0662	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0663	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0664	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0665	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0666	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0667	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0668	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0669	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0670	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0671	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0672	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0673	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0674	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0675	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0676	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0677	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0678	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0679	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0680	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0681	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0682	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0683	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0684	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0685	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0686	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0687	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0688	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0689	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0690	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0691	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0692	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0693	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0694	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0695	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0696	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0697	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0698	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0699	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0700	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0701	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0702	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0703	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0704	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0705	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0706	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0707	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0708	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0709	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0710	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0711	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0712	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0713	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0714	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0715	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0716	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0717	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0718	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0719	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0720	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0721	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0722	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0723	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0724	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0725	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0726	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0727	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0728	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0729	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0730	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0731	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0732	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0733	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0734	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0735	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0736	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0737	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0738	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0739	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0740	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0741	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0742	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0743	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0744	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0745	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0746	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0747	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0748	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0749	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0750	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0751	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0752	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0753	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0754	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0755	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0756	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0757	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0758	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0759	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0760	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0761	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0762	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0763	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0764	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0765	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0766	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0767	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0768	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0769	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0770	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0771	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0772	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0773	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0774	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0775	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0776	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0777	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0778	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0779	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0780	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0781	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0782	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0783	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0784	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0785	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0786	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0787	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0788	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0789	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0790	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0791	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0792	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0793	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0794	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0795	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0796	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0797	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0798	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0799	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0800	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0801	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0802	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0803	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0804	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0805	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0806	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0807	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0808	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0809	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0810	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0811	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0812	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0813	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0814	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0815	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0816	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0817	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0818	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0819	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0820	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0821	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0822	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0823	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0824	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0825	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0826	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0827	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0828	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0829	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0830	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0831	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0832	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0833	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0834	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0835	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0836	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0837	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0838	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0839	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0840	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0841	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0842	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0843	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0844	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0845	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0846	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0847	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0848	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0849	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0850	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0851	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0852	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0853	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0854	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0855	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0856	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0857	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0858	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0859	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0860	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0861	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0862	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0863	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0864	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0865	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0866	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0867	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0868	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0869	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0870	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0871	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0872	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0873	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0874	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0875	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0876	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0877	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0878	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0879	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0880	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0881	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0882	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0883	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0884	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0885	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0886	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0887	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0888	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0889	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0890	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0891	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0892	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0893	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0894	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0895	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0896	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0897	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0898	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0899	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0900	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0901	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0902	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0903	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0904	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0905	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0906	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0907	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0908	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0909	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0910	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0911	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0912	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0913	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0914	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0915	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0916	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0917	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0918	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0919	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0920	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0921	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0922	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0923	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0924	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0925	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0926	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0927	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0928	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0929	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0930	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0931	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0932	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0933	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0934	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0935	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0936	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0937	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0938	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0939	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0940	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-0941	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0942	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0943	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0944	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0945	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0946	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0947	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0948	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0949	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0950	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0951	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0952	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0953	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0954	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0955	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0956	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-0957	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0958	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0959	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0960	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0961	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0962	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0963	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0964	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0965	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0966	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0967	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0968	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0969	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0970	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0971	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0972	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0973	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0974	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0975	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0976	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0977	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0978	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0979	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0980	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0981	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0982	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0983	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0984	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0985	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0986	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0987	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0988	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0989	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0990	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0991	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0992	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0993	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0994	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0995	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0996	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0997	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0998	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-0999	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1000	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1001	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1002	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1003	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1004	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1005	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1006	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1007	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1008	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1009	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1010	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1011	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1012	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1013	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1014	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1015	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1016	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1017	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1018	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1019	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1020	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1021	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1022	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1023	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1024	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1025	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1026	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1027	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1028	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1029	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1030	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1031	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1032	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1033	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1034	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1035	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1036	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1037	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1038	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1039	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1040	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1041	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1042	Optional	optional-legacy-cxx	Covered
+SB-CXX-1043	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1044	Optional	optional-legacy-cxx	Covered
+SB-CXX-1045	Optional	optional-legacy-cxx	Covered
+SB-CXX-1046	Optional	optional-legacy-cxx	Covered
+SB-CXX-1047	Optional	optional-legacy-cxx	Covered
+SB-CXX-1048	Optional	optional-legacy-cxx	Covered
+SB-CXX-1049	Optional	optional-legacy-cxx	Covered
+SB-CXX-1050	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1051	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1052	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1053	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1054	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1055	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1056	Optional	optional-legacy-cxx	Covered
+SB-CXX-1057	Optional	optional-legacy-cxx	Covered
+SB-CXX-1058	Optional	optional-legacy-cxx	Covered
+SB-CXX-1059	Optional	optional-legacy-cxx	Covered
+SB-CXX-1060	Optional	optional-legacy-cxx	Covered
+SB-CXX-1061	Optional	optional-legacy-cxx	Covered
+SB-CXX-1062	Optional	optional-legacy-cxx	Covered
+SB-CXX-1063	Optional	optional-legacy-cxx	Covered
+SB-CXX-1064	Optional	optional-legacy-cxx	Covered
+SB-CXX-1065	Optional	optional-legacy-cxx	Covered
+SB-CXX-1066	Optional	optional-legacy-cxx	Covered
+SB-CXX-1067	Optional	optional-legacy-cxx	Covered
+SB-CXX-1068	Optional	optional-legacy-cxx	Covered
+SB-CXX-1069	Optional	optional-legacy-cxx	Covered
+SB-CXX-1070	Optional	optional-legacy-cxx	Covered
+SB-CXX-1071	Optional	optional-legacy-cxx	Covered
+SB-CXX-1072	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1073	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1074	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1075	Optional	optional-legacy-cxx	Covered
+SB-CXX-1076	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1077	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1078	Optional	optional-legacy-cxx	Covered
+SB-CXX-1079	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1080	Optional	optional-legacy-cxx	Covered
+SB-CXX-1081	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1082	Optional	optional-legacy-cxx	Covered
+SB-CXX-1083	Optional	optional-legacy-cxx	Covered
+SB-CXX-1084	Optional	optional-legacy-cxx	Covered
+SB-CXX-1085	Optional	optional-legacy-cxx	Covered
+SB-CXX-1086	Optional	optional-legacy-cxx	Covered
+SB-CXX-1087	Optional	optional-legacy-cxx	Covered
+SB-CXX-1088	Optional	optional-legacy-cxx	Covered
+SB-CXX-1089	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1090	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1091	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1092	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1093	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1094	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1095	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1096	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1097	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1098	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1099	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1100	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1101	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1102	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1103	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1104	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1105	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1106	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1107	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1108	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1109	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1110	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1111	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1112	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1113	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1114	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1115	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1116	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1117	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1118	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1119	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1120	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1121	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1122	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1123	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1124	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1125	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1126	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1127	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1128	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1129	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1130	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1131	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1132	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1133	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1134	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1135	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1136	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1137	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1138	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1139	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1140	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1141	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1142	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1143	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1144	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1145	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1146	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1147	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1148	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1149	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1150	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1151	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1152	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1153	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1154	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1155	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1156	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1157	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1158	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1159	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1160	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1161	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1162	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1163	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1164	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1165	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1166	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1167	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1168	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1169	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1170	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1171	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1172	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1173	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1174	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1175	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1176	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1177	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1178	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1179	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1180	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1181	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1182	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1183	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1184	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1185	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1186	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1187	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1188	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1189	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1190	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1191	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1192	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1193	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1194	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1195	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1196	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1197	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1198	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1199	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1200	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1201	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1202	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1203	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1204	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1205	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1206	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1207	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1208	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1209	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1210	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1211	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1212	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1213	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1214	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1215	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1216	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1217	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1218	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1219	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1220	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1221	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1222	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1223	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1224	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1225	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1226	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1227	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1228	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1229	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1230	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1231	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1232	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1233	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1234	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1235	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1236	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1237	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1238	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1239	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1240	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1241	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1242	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1243	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1244	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1245	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1246	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1247	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1248	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1249	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1250	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1251	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1252	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1253	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1254	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1255	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1256	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1257	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1258	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1259	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1260	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1261	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1262	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1263	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1264	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1265	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1266	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1267	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1268	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1269	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1270	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1271	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1272	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1273	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1274	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1275	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1276	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1277	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1278	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1279	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1280	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1281	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1282	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1283	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1284	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1285	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1286	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1287	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1288	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1289	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1290	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1291	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1292	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1293	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1294	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1295	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1296	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1297	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1298	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1299	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1300	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1301	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1302	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1303	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1304	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1305	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1306	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1307	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1308	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1309	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1310	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1311	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1312	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1313	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1314	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1315	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1316	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1317	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1318	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1319	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1320	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1321	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1322	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1323	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1324	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1325	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1326	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1327	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1328	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1329	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1330	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1331	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1332	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1333	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1334	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1335	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1336	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1337	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1338	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1339	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1340	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1341	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1342	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1343	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1344	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1345	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1346	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1347	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1348	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1349	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1350	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1351	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1352	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1353	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1354	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1355	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1356	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1357	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1358	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1359	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1360	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1361	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1362	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1363	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1364	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1365	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1366	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1367	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1368	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1369	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1370	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1371	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1372	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1373	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1374	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1375	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1376	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1377	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1378	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1379	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1380	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1381	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1382	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1383	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1384	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1385	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1386	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1387	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1388	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1389	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1390	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1391	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1392	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1393	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1394	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1395	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1396	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1397	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1398	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1399	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1400	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1401	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1402	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1403	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1404	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1405	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1406	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1407	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1408	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1409	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1410	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1411	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1412	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1413	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1414	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1415	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1416	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1417	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1418	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1419	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1420	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1421	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1422	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1423	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1424	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1425	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1426	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1427	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1428	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1429	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1430	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1431	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1432	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1433	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1434	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1435	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1436	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1437	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1438	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1439	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1440	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1441	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1442	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1443	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1444	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1445	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1446	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1447	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1448	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1449	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1450	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1451	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1452	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1453	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1454	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1455	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1456	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1457	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1458	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1459	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1460	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1461	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1462	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1463	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1464	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1465	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1466	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1467	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1468	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1469	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1470	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1471	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1472	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1473	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1474	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1475	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1476	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1477	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1478	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1479	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1480	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1481	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1482	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1483	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1484	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1485	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1486	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1487	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1488	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1489	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1490	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1491	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1492	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1493	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1494	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1495	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1496	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1497	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1498	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1499	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1500	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1501	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1502	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1503	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1504	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1505	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1506	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1507	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1508	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1509	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1510	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1511	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1512	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1513	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1514	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1515	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1516	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1517	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1518	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1519	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1520	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1521	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1522	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1523	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1524	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1525	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1526	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1527	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1528	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1529	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1530	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1531	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1532	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1533	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1534	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1535	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1536	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1537	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1538	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1539	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1540	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1541	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1542	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1543	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1544	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1545	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1546	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1547	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1548	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1549	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1550	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1551	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1552	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1553	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1554	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1555	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1556	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1557	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1558	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1559	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1560	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1561	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1562	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1563	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1564	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1565	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1566	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1567	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1568	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1569	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1570	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1571	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1572	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1573	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1574	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1575	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1576	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1577	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1578	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1579	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1580	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1581	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1582	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1583	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1584	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1585	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1586	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1587	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1588	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1589	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1590	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1591	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1592	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1593	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1594	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1595	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1596	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1597	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1598	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1599	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1600	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1601	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1602	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1603	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1604	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1605	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1606	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1607	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1608	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1609	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1610	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1611	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1612	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1613	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1614	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1615	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1616	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1617	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1618	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1619	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1620	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1621	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1622	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1623	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1624	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1625	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1626	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1627	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1628	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1629	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1630	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1631	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1632	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1633	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1634	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1635	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1636	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1637	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1638	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1639	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1640	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1641	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1642	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1643	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1644	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1645	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1646	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1647	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1648	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1649	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1650	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1651	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1652	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1653	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1654	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1655	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1656	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1657	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1658	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1659	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1660	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1661	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1662	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1663	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1664	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1665	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1666	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1667	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1668	Optional	optional-legacy-cxx	Behavior mismatch
+SB-CXX-1669	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1670	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1671	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1672	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1673	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1674	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1675	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1676	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1677	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1678	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1679	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1680	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1681	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1682	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1683	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1684	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1685	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1686	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1687	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1688	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1689	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1690	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1691	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1692	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1693	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1694	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1695	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1696	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1697	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1698	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1699	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1700	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1701	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1702	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1703	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1704	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1705	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1706	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1707	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1708	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1709	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1710	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1711	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1712	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1713	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1714	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1715	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1716	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1717	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1718	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1719	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1720	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1721	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1722	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1723	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1724	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1725	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1726	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1727	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1728	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1729	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1730	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1731	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1732	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1733	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1734	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1735	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1736	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1737	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1738	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1739	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1740	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1741	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1742	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1743	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1744	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1745	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1746	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1747	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1748	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1749	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1750	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1751	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1752	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1753	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1754	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1755	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1756	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1757	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1758	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1759	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1760	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1761	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1762	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1763	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1764	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1765	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1766	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1767	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1768	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1769	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1770	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1771	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1772	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1773	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1774	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1775	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1776	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1777	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1778	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1779	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1780	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1781	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1782	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1783	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1784	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1785	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1786	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1787	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1788	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1789	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1790	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1791	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1792	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1793	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1794	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1795	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1796	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1797	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1798	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1799	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1800	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1801	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1802	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1803	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1804	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1805	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1806	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1807	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1808	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1809	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1810	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1811	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1812	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1813	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1814	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1815	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1816	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1817	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1818	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1819	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1820	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1821	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1822	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1823	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1824	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1825	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1826	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1827	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1828	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1829	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1830	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1831	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1832	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1833	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1834	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1835	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1836	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1837	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1838	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1839	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1840	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1841	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1842	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1843	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1844	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1845	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1846	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1847	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1848	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1849	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1850	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1851	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1852	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1853	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1854	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1855	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1856	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1857	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1858	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1859	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1860	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1861	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1862	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1863	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1864	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1865	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1866	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1867	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1868	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1869	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1870	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1871	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1872	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1873	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1874	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1875	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1876	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1877	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1878	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1879	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1880	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1881	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1882	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1883	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1884	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1885	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1886	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1887	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1888	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1889	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1890	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1891	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1892	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1893	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1894	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1895	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1896	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1897	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1898	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1899	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1900	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1901	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1902	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1903	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1904	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1905	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1906	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1907	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-1908	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1909	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1910	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1911	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1912	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1913	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1914	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1915	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1916	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1917	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1918	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1919	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1920	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1921	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1922	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1923	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1924	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1925	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1926	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1927	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1928	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1929	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1930	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1931	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1932	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1933	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1934	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1935	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1936	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1937	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1938	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1939	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1940	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1941	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1942	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1943	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1944	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1945	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1946	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1947	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1948	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1949	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1950	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1951	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1952	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1953	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1954	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1955	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1956	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1957	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1958	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1959	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1960	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1961	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1962	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1963	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1964	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1965	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1966	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1967	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1968	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1969	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1970	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1971	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1972	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1973	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1974	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1975	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1976	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1977	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1978	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1979	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1980	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1981	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1982	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1983	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1984	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1985	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1986	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1987	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1988	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1989	Optional	optional-legacy-cxx	Covered
+SB-CXX-1990	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1991	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1992	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1993	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1994	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1995	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1996	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1997	Optional	optional-legacy-cxx	Covered
+SB-CXX-1998	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-1999	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2000	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2001	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2002	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2003	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2004	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2005	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2006	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2007	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2008	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2009	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2010	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2011	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2012	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2013	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2014	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2015	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2016	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2017	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2018	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2019	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2020	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2021	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2022	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2023	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2024	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2025	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2026	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2027	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2028	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2029	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2030	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2031	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2032	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2033	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2034	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2035	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2036	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2037	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2038	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2039	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2040	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2041	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2042	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2043	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2044	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2045	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2046	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2047	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2048	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2049	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2050	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2051	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2052	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2053	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2054	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2055	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2056	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2057	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2058	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2059	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2060	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2061	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2062	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2063	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2064	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2065	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2066	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2067	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2068	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2069	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2070	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2071	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2072	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2073	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2074	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2075	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2076	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2077	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2078	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2079	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2080	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2081	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2082	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2083	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2084	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2085	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2086	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2087	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2088	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2089	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2090	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2091	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2092	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2093	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2094	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2095	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2096	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2097	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2098	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2099	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2100	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2101	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2102	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2103	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2104	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2105	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2106	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2107	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2108	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2109	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2110	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2111	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2112	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2113	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2114	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2115	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2116	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2117	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2118	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2119	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2120	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2121	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2122	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2123	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2124	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2125	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2126	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2127	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2128	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2129	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2130	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2131	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2132	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2133	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2134	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2135	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2136	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2137	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2138	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2139	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2140	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2141	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2142	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2143	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2144	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2145	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2146	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2147	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2148	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2149	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2150	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2151	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2152	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2153	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2154	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2155	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2156	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2157	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2158	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2159	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2160	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2161	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2162	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2163	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2164	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2165	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2166	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2167	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2168	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2169	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2170	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2171	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2172	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2173	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2174	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2175	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2176	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2177	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2178	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2179	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2180	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2181	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2182	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2183	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2184	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2185	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2186	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2187	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2188	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2189	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2190	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2191	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2192	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2193	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2194	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2195	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2196	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2197	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2198	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2199	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2200	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2201	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2202	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2203	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2204	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2205	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2206	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2207	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2208	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2209	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2210	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2211	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2212	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2213	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2214	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2215	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2216	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2217	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2218	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2219	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2220	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2221	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2222	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2223	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2224	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2225	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2226	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2227	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2228	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2229	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2230	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2231	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2232	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2233	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2234	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2235	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2236	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2237	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2238	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2239	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2240	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2241	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2242	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2243	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2244	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2245	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2246	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2247	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2248	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2249	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2250	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2251	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2252	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2253	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2254	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2255	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2256	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2257	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2258	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2259	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2260	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2261	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2262	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2263	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2264	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2265	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2266	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2267	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2268	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2269	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2270	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2271	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2272	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2273	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2274	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2275	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2276	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2277	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2278	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2279	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2280	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2281	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2282	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2283	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2284	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2285	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2286	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2287	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2288	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2289	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2290	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2291	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2292	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2293	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2294	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2295	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2296	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2297	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2298	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2299	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2300	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2301	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2302	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2303	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2304	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2305	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2306	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2307	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2308	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2309	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2310	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2311	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2312	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2313	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2314	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2315	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2316	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2317	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2318	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2319	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2320	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2321	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2322	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2323	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2324	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2325	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2326	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2327	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2328	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2329	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2330	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2331	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2332	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2333	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2334	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2335	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2336	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2337	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2338	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2339	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2340	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2341	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2342	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2343	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2344	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2345	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2346	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2347	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2348	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2349	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2350	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2351	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2352	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2353	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2354	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2355	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2356	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2357	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2358	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2359	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2360	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2361	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2362	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2363	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2364	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2365	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2366	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2367	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2368	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2369	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2370	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2371	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2372	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2373	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2374	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2375	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2376	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2377	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2378	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2379	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2380	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2381	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2382	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2383	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2384	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2385	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2386	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2387	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2388	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2389	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2390	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2391	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2392	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2393	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2394	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2395	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2396	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2397	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2398	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2399	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2400	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2401	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2402	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2403	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2404	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2405	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2406	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2407	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2408	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2409	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2410	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2411	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2412	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2413	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2414	Optional	optional-legacy-cxx	Covered
+SB-CXX-2415	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2416	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2417	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2418	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2419	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2420	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2421	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2422	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2423	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2424	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2425	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2426	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2427	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2428	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2429	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2430	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2431	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2432	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2433	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2434	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2435	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2436	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2437	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2438	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2439	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2440	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2441	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2442	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2443	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2444	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2445	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2446	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2447	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2448	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2449	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2450	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2451	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2452	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2453	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2454	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2455	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2456	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2457	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2458	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2459	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2460	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2461	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2462	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2463	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2464	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2465	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2466	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2467	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2468	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2469	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2470	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2471	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2472	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2473	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2474	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2475	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2476	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2477	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2478	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2479	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2480	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2481	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2482	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2483	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2484	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2485	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2486	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2487	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2488	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2489	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2490	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2491	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2492	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2493	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2494	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2495	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2496	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2497	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2498	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2499	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2500	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2501	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2502	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2503	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2504	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2505	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2506	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2507	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2508	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2509	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2510	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2511	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2512	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2513	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2514	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2515	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2516	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2517	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2518	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2519	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2520	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2521	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2522	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2523	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2524	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2525	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2526	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2527	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2528	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2529	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2530	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2531	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2532	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2533	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2534	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2535	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2536	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2537	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2538	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2539	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2540	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2541	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2542	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2543	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2544	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2545	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2546	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2547	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2548	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2549	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2550	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2551	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2552	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2553	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2554	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2555	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2556	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2557	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2558	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2559	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2560	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2561	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2562	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2563	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2564	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2565	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2566	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2567	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2568	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2569	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2570	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2571	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2572	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2573	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2574	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2575	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2576	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2577	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2578	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2579	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2580	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2581	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2582	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2583	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2584	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2585	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2586	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2587	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2588	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2589	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2590	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2591	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2592	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2593	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2594	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2595	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2596	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2597	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2598	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2599	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2600	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2601	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2602	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2603	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2604	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2605	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2606	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2607	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2608	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2609	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2610	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2611	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2612	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2613	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2614	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2615	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2616	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-CXX-2617	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2618	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2619	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2620	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2621	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2622	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2623	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2624	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2625	Optional	optional-legacy-cxx	Missing Go
+SB-CXX-2626	Optional	optional-legacy-cxx	Missing Go
+SB-EMB-001	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-002	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-003	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-004	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-005	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-006	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-007	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-008	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-009	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-010	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-011	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-012	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-013	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-014	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-015	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-016	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-017	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-018	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-019	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-020	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-021	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-022	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-023	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-024	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-025	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-026	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-027	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-028	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-029	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-030	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-031	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-032	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-033	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-034	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-EMB-035	Optional	optional-legacy-cxx	Not required (rationale required)
+SB-XCUT-001	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-002	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-003	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-004	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-005	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-006	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-007	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-008	Covered	core-covered	Covered
+SB-XCUT-009	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-010	Covered	core-covered	Covered
+SB-XCUT-011	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-012	Covered	core-covered	Covered
+SB-XCUT-013	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-014	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-015	Required gap	core-required-gap	Missing Go
+SB-XCUT-016	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-017	Required gap	core-required-gap	Missing C ABI
+SB-XCUT-018	Required gap	core-required-gap	Behavior mismatch
+SB-XCUT-019	Required gap	core-required-gap	Missing C ABI

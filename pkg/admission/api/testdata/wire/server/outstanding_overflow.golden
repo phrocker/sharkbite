@@ -1,0 +1,9 @@
+POST /api/v1/admission/outstanding
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_call\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"after\":\"Y3Vyc29y\",\"limit\":10}"
+provider calls: 1
+provider input: fleet.OutstandingAdmissionsRequest{After:[]uint8{0x63, 0x75, 0x72, 0x73, 0x6f, 0x72}, Limit:10, Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"llm_gateway_call", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}}
+status: 500
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: ""

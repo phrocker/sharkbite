@@ -1,0 +1,8 @@
+{
+  "status": "reserved_unlabeled",
+  "datasets": [
+    {
+      "manifest": "/tmp/shoal-context-v8-reserved/sampled-manifest.json"
+    }
+  ]
+}

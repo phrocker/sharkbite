@@ -1,0 +1,1054 @@
+{
+  "assessor": "claude-opus",
+  "blinding": "pinned full PR diff plus before/after function bodies; no Laya predictions or other reviewer labels",
+  "calls": [
+    {
+      "cost_usd": 1.1063956000000001,
+      "duration_api_ms": 99265,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 118747,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.1063956000000001,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 7799,
+          "provider": "firstParty",
+          "thinkingTokens": 2413,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "25519298fbd33eef9b0f9eef4f66606abd119116def365d7d0d3f2847a6039d5"
+    },
+    {
+      "cost_usd": 1.0044756000000001,
+      "duration_api_ms": 84201,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 109722,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 1.0044756000000001,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 6313,
+          "provider": "firstParty",
+          "thinkingTokens": 1118,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "87299f029bd74a621da3fc53e7fa83174264a5f4984916d1888fe8a19026100a"
+    },
+    {
+      "cost_usd": 0.7014556000000001,
+      "duration_api_ms": 78861,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 72412,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.7014556000000001,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 6086,
+          "provider": "firstParty",
+          "thinkingTokens": 1818,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "903cc2d17bc12ec7935bb801116ff1ba36450baf7f7b3f3b41ad28b190afdcad"
+    },
+    {
+      "cost_usd": 0.5087996,
+      "duration_api_ms": 29317,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 58305,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.5087996,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2096,
+          "provider": "firstParty",
+          "thinkingTokens": 271,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "aed7905f0a1552f6c9e0109860c9e3f4924326722a3f10f33365903a794f628e"
+    },
+    {
+      "cost_usd": 0.2264236,
+      "duration_api_ms": 31157,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 22318,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.2264236,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2372,
+          "provider": "firstParty",
+          "thinkingTokens": 744,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "4c723d80b50d20929668daf7e1d54cbfca31ce179436e82e476c3f63d62e06fb"
+    }
+  ],
+  "labels": [
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "c3d7207ad87931d56e272fde7895ae89e3ff4ebf3e3cb3baf39322dc56101e49",
+      "witness": "New bind refuses any executor reference not already in the -fleet-executor-refs allowlist and rejects typed-nil implementations, gating which references can resolve to a real ActionExecutor (executable capability enforcement)."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "d00bf84713c2a0db212a30af21814ea5a68fd7530ad44c80127c466d927da938",
+      "witness": "End-to-end happy-path acceptance test: binds decisions, invokes, and asserts DispatchSucceeded plus non-empty evidence, snapshot pin, and fingerprint. It asserts evidence integrity and success, with no denial or boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "28ad1202569d3e27c7e5ede282c20a1c15c36518b594bd3801c02b0163adda2f",
+      "witness": "Asserts bind refuses a typed-nil *AskExecutor and leaves the placeholder in place. This is dependency-validity and panic avoidance, not the allowlist or authorization boundary itself."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "db7a985d0ed5d07e16f77425a74f764fe98844e21734b6139440e4b80736c1bd",
+      "witness": "Directly asserts that binding the unallowlisted reference \"smuggled\" fails closed and never resolves, while the allowlisted reference resolves to an ActionExecutor. This is the executable-capability allowlist invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "2edda21878306a2855209aac78efd8ce0d75333cee9ff602f1dd8143039a7e39",
+      "witness": "Fixture builder returning a fleet.Spec with a fixed domain, scope, executor ref, and ask capability schemas. It is setup only and asserts nothing."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "a70d38e2cef773b47f81a31346c7f17bfaa3031c7dbca3ad43d920a9fae6a2ea",
+      "witness": "Test helper constructing an auth.Decision from supplied operations and workspace IDs. It is fixture setup with no assertion of a boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "9c62e4a37fef920be704e1ba03d0533d2330e19c7d585c9adcb7b91c6f212995",
+      "witness": "Test double whose Ask always returns an error and is never invoked. It exists only to satisfy NewAskExecutor's provider requirement."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "5a5fbedb476ecfb9c22bb33ac11511fabae6a1cf2873618b4e4aadf4164e3ec3",
+      "witness": "Adds the -fleet-ask-executor-ref flag and binds a real AskExecutor (backed by the chat provider) to an allowlisted reference at composition time. This newly grants executable capability to registered agents; it errors if the chat provider is absent or bind refuses."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "44a292d6b2d67f0d30c454714b6978b2382d775bea6efeaf8039e61d6f75ef62",
+      "witness": "Removes the \"evidence visibility is required\" rejection, so empty label sets are now accepted as public on durable ActionRecord evidence. This changes the disclosure-label semantics readers must honor (see #369)."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "7dda312ed608f53c94d58a03021624264006b115c1e1d173c96b257589baee00",
+      "witness": "Trivial accessor returning the configured action name."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "abd8b31cd40d39bab69b31c09e772df753ed1ea0f5cf40e3fb8a6cd51e980c3c",
+      "witness": "Trivial accessor returning the configured capability name."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "0bdec6ea5fe303d4a2b30c3d8b5bca604a63c36b8474ef7524a02bdfee5287b1",
+      "witness": "Refuses invocations whose capability/action mismatch the executor, delegates to the authorized provider under the request ctx, and maps ErrorUnauthorized to a failure. The committed output is restricted to a content-free receipt because dispatch reads skip label checks."
+    },
+    {
+      "label": "unknown",
+      "pr": 368,
+      "unit_id": "8461e845a71f39a32a175c1dc56de9cd367fc6da659e6b29d219aa25bbd4039e",
+      "witness": "Returns a cached result keyed only by IdempotencyKey, before the authorized provider.Ask runs. Whether that key is scoped per action and principal depends on dispatch key derivation not in the pinned source, so authorization bypass on retry is unresolved."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "7eb63be66017b419cab3d5116d15ead441b57d3d54c22f0cdbd34527be820f9e",
+      "witness": "Bounded FIFO cache insertion under a mutex, storing a cloned result by key. This is idempotency bookkeeping; any access implication lives in recall's lookup."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "1ae6ad1b2736eb34959a53cf96ca1b37c60f6697f0d0eb0427fd02afa8a91af3",
+      "witness": "Returns a static JSON input schema (question, top_k). This is pure schema serialization."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "20dce4bbdcec17fa9082b244624a0bf175368bf582242b2d2e46749e5d180935",
+      "witness": "Returns a static output schema with additionalProperties false. It is declarative serialization; the content restriction itself is enforced by askExecutorOutput."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "ed40ef7a31b6ffddd1985772010eaab35f11708d38ea1892a85927a827a27dab",
+      "witness": "Constructor validation: requires a provider, applies defaults, checks canonical names, and rejects a negative cache bound. This is configuration plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "4d34b0df5c196e40b3cc1e333cb5f37f78c4f7bbbeeaa4657a2a846d5a58a4cd",
+      "witness": "Collects anchor IDs cited by claims into a set. This is evidence accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "7fd36c9572fc0dfa877806eff54b60652e232643dd53b7c45e548e56e9b6e539",
+      "witness": "Dedupes, translates, and packs evidence refs cited-first within MaxActionEvidence, tallying truncation. This is evidence accounting and bounds with no access decision."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "10e1ff9ce618738777a9df7d69ebc1eff05d52035bf701433693472e68ef07ff",
+      "witness": "Propagates conjoined source visibility labels onto each dispatch EvidenceRef, and now accepts empty labels as public instead of dropping them. It determines the disclosure labels persisted on durable evidence."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "039af60ed7ad4e6f0b599c8c97eafd5778aab56ea5839dd93aa56135b66ab1d7",
+      "witness": "Builds the receipt from counts, verification, and encoded snapshot/session IDs only, deliberately excluding claims, reasons, and labels. Output is readable without a visibility-label check, so this is the disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "5bd12c83a753a7afb0625026e4c39443d4a7d6d09c9006265d23e006a2c97cad",
+      "witness": "Copies the Output and Evidence slices for cache isolation. This is generic plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "7a286ba6f7375379eb77e473b382c87256826326d8afffdd767369293e9a8204",
+      "witness": "Linear membership check over IDs."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "1011abfe9d80ef0118d9ac2624fbbca637cf7c86376bf2b13396e7f1c6ea4c69",
+      "witness": "Decodes and validates input JSON: required question, byte bound, and top_k at most MaxTopK. This is input validation, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "e5dd1e11b836323060743f1a9a16ceba8f1ed0c5171f0940de83cae30e77354e",
+      "witness": "Order-preserving ID dedupe helper."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "68ec872d25f2bac8cd871a20cad07b31436238132c893b16c9684c5923bf13e8",
+      "witness": "Wraps askExecutorOutput with evidenceCount 0 and an error code, returning a nil error so the receipt persists. This is failure-reporting plumbing; content restriction lives in askExecutorOutput."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "8a8e3845b9a07ddb2cbc4d5ab6113db5dbe2cfbe5ebc4c8cf7a801ddc32f9957",
+      "witness": "Test double recording calls and the last request, then returning a canned envelope or error."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "1abe57767fe0ed5d573f5384739becaf83d2222c77ef16cf2a910b447e5ff9fa",
+      "witness": "Asserts cited anchors survive member-bound truncation. This tests evidence accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "2764428f0d8e8310125f417301b6a8d89b9527e974048cef38632e342aa631f7",
+      "witness": "Asserts packing stops at MaxActionEvidence/3 anchors and the truncation flag is set. This tests bounds and accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "69730763136264bfd88fa5971b2abbfc0d5c8c02696d02fb1e19478e17b66a1d",
+      "witness": "Asserts an untranslatable cited anchor sets citedDropped without setting truncated. This tests evidence accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "318cd868c69413365c6092b92fd53825087f1e559ec5239a4f76ff53c4c14584",
+      "witness": "Asserts assertions naming unreferenced edges are dropped and the result is canonical. This is an evidence-integrity check."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "12ab86eab176a92711128cc3ad5b4f3c82be5200e5f989e51772595f758cb17f",
+      "witness": "Asserts anonymous, broken-path, and empty anchors are skipped and tallied. This tests evidence translation and accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "2efcdfc0eb521790f367caaa7949b5984de25b7ccbc02277131c6eba42b3b627",
+      "witness": "Happy-path test asserting one evidence ref, three node roles, the snapshot pin, and receipt counts. The empty-visibility check confirms recordability rather than a denial boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "ba4b0f687a222c3dc37cab117f97caea2afb0c612be03228a841fdda69d0f33c",
+      "witness": "Asserts unverified or ontology-missing envelopes fail with AskErrorUnverified, record no evidence, and keep the session ID. This is a verification-integrity check."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "17900b395ae556ea0324fab95b0a97626bf2ddb01edbfdeb0c7718f3a29b2772",
+      "witness": "Asserts an absent top_k is forwarded as zero and an explicit value is preserved. This is parameter plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "fc22fcd4bea601141fec45f660dffa4ac9d0918ddaa94cd7017de65a62362081",
+      "witness": "Retry test: the same key yields one provider call and a different key triggers a new call. It checks idempotency, not principal isolation."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "d5c7340894652e8f7e77d9bdd60d4bcccfb95877d19ec2cc9cec8905e954cadb",
+      "witness": "Directly asserts the receipt Output contains no quote, issue reason, document ID, or output_visibility, and only allowlisted keys. This is the disclosure boundary, since dispatch readers skip label checks."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "2e631120aeb5929a41c820feb6067b7d7fa5a53556e4c0d23c907bf6e9615329",
+      "witness": "Asserts labeled source visibility (project-x, secret) is carried canonically onto the recorded EvidenceRef. This is the value readers must enforce for disclosure."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "e72a7810e12bba7e9fa01069f0fa8f6476c83e696956bad9ab3894c5ba700fe1",
+      "witness": "Asserts the executor refuses a foreign capability/action (documents/delete) with AskErrorUnsupportedAction. This is executable-capability enforcement."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "e997859b914f33587d5e81e29d9f325ea66117ee7c7c78099a6874faa58b48c3",
+      "witness": "Asserts a future snapshot yields AskErrorEvidenceSkew with no truncation flag and a visible pin. This is provenance and evidence integrity."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "736261aa200a57c83a92277af22df68f26094c659a94d654f6453f8f315ae585",
+      "witness": "Asserts an oversized cited path sets citedDropped and the receipt names the session. This tests evidence accounting."
+    },
+    {
+      "label": "review",
+      "pr": 368,
+      "unit_id": "8ff9e3137083cc0e82f34d44d379bbea25f11a099a674b51539031853d3df9b8",
+      "witness": "Asserts a provider ErrorUnauthorized (\"retrieve is not permitted\") fails the action with AskErrorReasoningUnauthorized and a returned error, distinct from generic failure. The authorization refusal is not converted to success."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "5a7878d8d67d0d5eac2a477b07b9a6917454aa18a3a718893ba02b5e22de6ac4",
+      "witness": "Asserts a forged anchor, unverified evidence, or mismatched effective visibility yields AskErrorInvalidEnvelope with no evidence. These are envelope-integrity checks delegated to Validate."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "0cf1215106c5866db999f2a79e2409d2451222a8a5b2209782be5ef3c6c0c317",
+      "witness": "Fixture building a self-consistent CitationEvidence with a canonical anchor and the supplied visibility."
+    },
+    {
+      "label": "routine",
+      "pr": 368,
+      "unit_id": "2e39a48917304a24bc39f0299cfd74d8448b49576d6916ef41c6cda66a6615c6",
+      "witness": "Fixture building a Validate-passing, finalized CitationEnvelope with a canonical response ID."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "071532945ea4c2c79104fa747f0d4bd4a7793c4a011060761813d4dbeb8173d6",
+      "witness": "Asserts that only SHOAL_CONCEAL_WITHHOLDING==\"1\" enables concealment and that values such as \"true\" or \" 1\" resolve false. This pins how the disclosure control is switched on."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "2afbe6a2d852ef0d99ae3973a697ae049f6a45beee33534c4f5c6bcea99c0899",
+      "witness": "Only checks that run() parses -conceal-withholding without a \"not defined\" error, using a cancelled context. It asserts flag registration, not any disclosure boundary."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "d3c8ab5379f0d16587567e5a573c7468336ebcd4a220068a6b377be31208189f",
+      "witness": "Against the real openService composition, asserts the outsider sees Suppressed>0 by default and Suppressed/Restricted==0 when concealed. Also asserts no documents are readable in either mode."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "2741e66cd30806a7bc704414bf8e69e37b8f7a7cdeae958c794ee1c629e5bef2",
+      "witness": "Fixture setup: opens the service, ingests one document, and binds an outsider decision with a non-owning source grant. It makes no assertions about the boundary itself."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "7832a7b179837baded51a66a3ab514ca0d79f13289c4f223a6a2c70219967f58",
+      "witness": "New function that decides the default for the disclosure-concealment control from the environment via an exact match on \"1\". This directly determines whether withholding counts are disclosed."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "9fcfdfb4aee34ca8f3c2eae28a6f989f580085dc2fb5ea72066b5814a8e12038",
+      "witness": "Adds service.ConcealWithholding(config.concealWithholding) to the embedded composition. This is the only path by which the deployment's disclosure-boundary option reaches the served EmbeddedService."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "76d7af1c6c385d3b10de5ebb0da8257047edd3afc8a875175d9574e05eb87bcb",
+      "witness": "Registers the -conceal-withholding flag with an env-derived default and passes *concealWithholding into serviceConfig. This controls whether withheld-document counts are disclosed to callers."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "479ffce6a4697e1a719ed6fec429c3c699decc4d623396ffec3d61d4e2172acc",
+      "witness": "Extracted assertion helper: validates the probes (at least one, named, no duplicates) and runs each through runProbe as a subtest. It is the entry point for the withheld-vs-control indistinguishability assertions."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "bc5d2cc0deb301d41416baf7f0368efda3ab77dc97814289034aa431302319c5",
+      "witness": "JSON unmarshal into a map, used only for diagnostic field naming. It is pure deserialization."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "b950cc58cfbdbffa12424d4d1a8ef8f32364da7f24046e119237126cb3a1672b",
+      "witness": "Its comment says it is diagnostic output only. The actual assertion is the byte comparison in runProbe."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "b7f378a8a3237adefd5c189350ef917a251c176d7c6e5f5fe4a9aefa7da65db4",
+      "witness": "Pure serialization: json.Marshal, with a null literal for a nil value."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "2bde6a5017619c4806106ba0a926ca74d335b202e84b9be89f80f5e2b7681059",
+      "witness": "Extracted assertion helper: fails when withheld and control encodings differ and the surface is not declared Distinguishable, or when a declared-distinguishable surface becomes identical. This is the disclosure-boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "6c9a6776ce531d44ccffddfeda8b144e009eeb91e595c5cc8170a41933b64000",
+      "witness": "Fixture helper that binds a principal granted both compartments. It asserts nothing."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "d85f91b05f78ec65519738b506aa138356ea06e88697e9300e4c2278b28d1a50",
+      "witness": "Accessor returning the fixture clock."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "2357ebb662ee77a327ec08fd4c2079768fa1cfd92ff50242c109778cb9ad38d9",
+      "witness": "Accessor returning the fixture authority's resolver."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "9f2dc04317623c92e93e678e874f7a6b627d5f146ddcf53b90c4dcb09a0c3334",
+      "witness": "Fixture helper that binds a principal granted only the open compartment. It asserts nothing."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "00e889d6e5ab236e28ed70b45097cd9f5f986f01b05e12f3dab5508e8784f972",
+      "witness": "Fixture setup: builds an auth.Decision with the given sources and policies and binds it into a context. It contains no boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "acea74d14ea5cf8eb0f36625968de9df1a9d51966d1454dfd68e81d0538e0d19",
+      "witness": "Fixture plumbing: constructs an authorized.Client with a static policy selector for one compartment."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "ee7140382417cbde6a277edbdda599327abea6ec2da215b4f8eed90d69fbc831",
+      "witness": "Test double: a generation reader returning a map lookup under a read lock."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "b581b7ad7ce70e515fec8967fb5188e812f638023adc873f3869c5fc66277bb7",
+      "witness": "Fixture setup: a two-compartment corpus with one ingested document per compartment. It makes no assertions about authorization outcomes."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "1acb62a192c6ab65163a13eb10e8234f720ec8629401c3b203068a91544c8ba2",
+      "witness": "Asserts the cleared principal retrieves the restricted term with Suppressed==0. Also asserts the uncleared principal gets zero results for it, which is a direct object-authorization assertion."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "5265719d5c7cbc7a879cfe2e44b491c4af738ff4714cf6f84cbb76ca88271751",
+      "witness": "Asserts the uncleared principal's Disclosure is identical across open, restricted, and absent terms. This pins that withholding counts are not a per-query existence oracle."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "02af14b2d90f1f6a09c305d914bd77e2f0f5cea47e59424975bcedce3ad1241e",
+      "witness": "Runs a conformance probe asserting the uncleared principal's retrieval for the restricted term is byte-identical to that for an absent term. This is a disclosure-boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "a8a2772ce4dcb80898adf7a21dddc4574deaac4caa5f6c5236b3371d97ce6b40",
+      "witness": "Helper that calls RetrieveWithDisclosure and packages the result. It fails only on error and makes no boundary assertion."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "cbbcadf9eb007d68a466d8bc59f9c808d3896e0d3c49adaa110c5b1b0d3b12b3",
+      "witness": "Asserts that the grounded Ask outcome for an uncleared principal is indistinguishable between the restricted and absent terms. It first guards that the cleared principal is answerable."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "c2722a2e4a62ad757927209ff5a6c4284a0dba5611a5f17ecf77527edae9e322",
+      "witness": "Helper that wraps service.Ask into an envelope or an error code and text. It makes no assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "b0c960b717242c3469e9803b401ceab43d906fa87b0502068e51d012e4c6f1e4",
+      "witness": "Test double returning nil documents and the configured disclosure."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "080cf34dd085713a8a5f8e5f00ee3225ace73ea39f2803824362b9df0175a4c0",
+      "witness": "Test double returning an empty response, the configured report, and the configured error."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "7b3cfa786843d8d6fe1c7d0f05b3bd7a2427b079cafa6ac1474a49a23e79002d",
+      "witness": "Test double returning a fixed snapshot."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "2d855255d4a6ef96b1d94038537a464f2cc9d8bb390b427584110b0d796b29bd",
+      "witness": "Asserts that with concealment on, a failed retrieval's error, embedding report, and HTTP body do not vary with withholding. This is a disclosure boundary on the error path."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "bb12d3a66108b8134fa0971f90f867583c402ac6579b9637db0f1fb4227bd259",
+      "witness": "Asserts that the default (unconcealed) documents and retrieve responses are Distinguishable. This pins the deliberate disclosure trade so any silent change fails."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "4fc5353218fe8b0e141b7cefd3bb91a5539657c4283dcccc2004a1f2cb2c0abf",
+      "witness": "Asserts that with concealment on, the documents, retrieve, and embedding-report responses are byte-identical for withheld versus control disclosures."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "d862f8adc8feaac309467028c7fa137e50f31ba5a5e0ad753d36930887a10c4b",
+      "witness": "Asserts that concealment does not mutate the original report kept for audit. This is an evidence-integrity check, not a disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "7e4e01f721b5b5d15522f9517bf4fb99ff1f5b20e71d519cb65e64e7c9c0e378",
+      "witness": "Probe plumbing that builds a stub service and returns the Documents response. It makes no assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "89811db2c96d3cb24bbff6c538a495fba492ad58a4ea21982e6f2affaecbd66a",
+      "witness": "Probe plumbing: triggers a failing retrieval and captures the error text, the embedding report, and the writeError HTTP encoding. Comparison happens elsewhere."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "58cfca2a7611af4eee0ba461a0cc162b932843e3e620c1953e39ee292922aac4",
+      "witness": "Probe plumbing that builds a stub service and returns the Retrieve response."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "3a2331c738d7467ad13705dd2ad026da6242da1d628ffcc30b409971b32e1937",
+      "witness": "Fixture wrapper delegating to withholdingServiceFailing with a nil error."
+    },
+    {
+      "label": "routine",
+      "pr": 377,
+      "unit_id": "e14e57cf8b9b854146682792d72cd64b2a1a667f2b48a6d689da60234ccfe20a",
+      "witness": "Fixture setup: constructs an EmbeddedService over the stub and sets ConcealWithholding. It makes no assertion."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "81dbd3f96c81c7827411e0071b76af7f524a99712c839610b21113bccffadebd",
+      "witness": "Asserts that disclose passes the counts through by default and zeroes both Suppressed and Restricted when concealed. This is the direct disclosure-boundary assertion."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "00cf3d32d1fb2cad3f7be39fd9811c824eefdbd7b92df1dbf2a5c2cee0f9879e",
+      "witness": "Asserts that concealment clears the embedding report's Suppressed and Restricted booleans while preserving the other fields. This tests that the derived withholding signal is removed."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "5a4bd9121ef9620abe832abfbbd805917da21aa27b264afb6823ae48af679232",
+      "witness": "Asserts that concealed disclose and discloseEmbedding outputs are equal for withheld versus nothing-withheld inputs. This is an indistinguishability invariant."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "fcb63080b6bfd2fe824731cb9f31dd8b1521aefc36d3932ebc794a4e2c38cef6",
+      "witness": "New setter toggling concealWithholding, which governs whether withholding counts are disclosed in every response."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "6f978f8bf622dfc53f883a6e2db39e6a19058bf2d4d21fd39d551a778e8f7f83",
+      "witness": "Response Suppressed/Restricted now come from s.disclose(disclosure) instead of the raw counts. This changes what withholding information callers receive."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "ef82ee4377267f819e961ff7127df6f478fb8c08862ef0526159ea6c1db13929",
+      "witness": "Success and error paths now route the counts and embedding report through disclose/discloseEmbedding. This gates the withholding signal in RetrievalResponse and EmbeddingQueryError."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "0e7e1c940fa4ad11c56aa254a63d11c40eb681b6309e182a06ab1948cfd37105",
+      "witness": "Returns a zero Disclosure when concealWithholding is set, otherwise the raw counts. This implements the disclosure boundary."
+    },
+    {
+      "label": "review",
+      "pr": 377,
+      "unit_id": "09a7fb015544b0534baa4371fd88ad7a12ed0b3781a9064ff58af5d67f4fa2ec",
+      "witness": "When concealing, copies the report and clears the Suppressed and Restricted booleans. This implements concealment of the derived withholding signal."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "2f6e77a140e8ac10012a90e38ab68e1008c70e9d0059717ca2a7c716d02f0fe6",
+      "witness": "Asserts external/evidence Effect survives encodeDescriptor/decodeDescriptor round-trip; a dropped field made stored external actions resolve as evidence-only, bypassing resolveAction's ceiling check."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "2d3d74789ec1839fb58f12b88cb1abd5dfb61b8b9baefbc5ad37f3c72d9c2bd6",
+      "witness": "Codec backward-compatibility test: synthesized version-1 record decodes with zero-value Effect instead of being rejected; asserts migration behavior, not a ceiling boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "435be2f1997f34150f52e48f236cca02b19c031d61c9becf9a57e889b268c1ce",
+      "witness": "Fixture builder returning a fleet.Descriptor with a parameterized action Effect; no assertion or enforcement logic."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "bd7137e372042ae3e0d5fa116d257af9cb08fa037aa7d3f5b1c1547d9b8ff4a5",
+      "witness": "Test helper rewriting bytes to emulate version-1 layout (strip four zero bytes, set version word); fixture manipulation only."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "76463a18b50b4f7c772bfe7abdd5aa648d328fd0e9612a24577a438018ce4c5e",
+      "witness": "Now reads action.Effect for v2 records without validation and defaults v1 to evidence; this unvalidated stored value feeds resolveAction's exceeds() ceiling check."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "ae06d6a00d7002ac49bab0b65bda73db9370fa7e0969b1dbdce44cfa8efb1fa7",
+      "witness": "Now persists action.Effect; omission previously let a stored external action decode as evidence-only and pass the executor-ceiling check at resolution."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "bb29785bdee507fd13ec3c8f518632f5ddec6ca54341c089fe169c87c7a592f2",
+      "witness": "Adds selected.Effect.exceeds(executorCeiling(raw)) refusal before returning executor, enforcing the effect ceiling at resolution after host rebinds."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "645f48a2bf9d2aa260a15235e12c46699f221c312714577c062e88497b7cc8e1",
+      "witness": "Test double Execute that increments a call counter and returns an empty result."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "4eb3ecfb0e80b4dd7d79d2ce623c5f536aac96200411ac6207b58c796901c0b4",
+      "witness": "Test double returning its configured ceiling field."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "8eac36c67564d22513a479e0247b59c1ae30dbccae471a6b74f6e8406ef2e13e",
+      "witness": "Compatibility test: EffectEvidence is the empty zero value and canonicalCapabilities preserves it; asserts legacy meaning, not ceiling enforcement."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "c5985305254e964b1d61b18432509baf5751f76a5b0761f0bb4b75a13ed2ad71",
+      "witness": "Asserts capabilitiesSubset rejects child widening evidence action to external, and permits narrowing: directly tests the delegation effect-narrowing invariant."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "155e2ad600c91442fdb4554aac1fe48c15e9fef780384e4ad6953f66286b952c",
+      "witness": "Asserts cloneDescriptor carries EffectExternal; per comment, dropping it re-resolved external actions as evidence-only, silently bypassing the ceiling after registration."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "6b60c1ea5c43b231cb4642bbaed4b458f9d1440d86ba0e7e57479b8e57c96fab",
+      "witness": "Pins byte-level mutation digest for evidence-only descriptors across upgrade to keep heartbeat/revoke retries valid; digest stability, not authorization."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "a341b2de0faed57fcfa3dcb3dae7490b0f64ec333f2988345ce2d07eed3baf61",
+      "witness": "Asserts validateDeclaredEffects refuses external action under evidence ceiling and admits matching ceilings: direct effect-ceiling invariant test."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "cde36742055c1d80ad4b497a8a7c1ef18d5fe0e1bb1c311fc77ce323e8319431",
+      "witness": "Asserts registryMutationDigest differs by Effect and stays stable; an evidence-integrity/replay-identity check rather than ceiling enforcement."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "9197bb6ad633d3009bfd4503e7508aa7b5e86098629dd4732506ce6b862e1669",
+      "witness": "Registers external action under external ceiling, rebinds to evidence-only executor, asserts resolveAction refuses and executor is never invoked."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "8666a85d1367f058be15ce8970643ae5bff180bb6630d6324d1f60cc53f13be2",
+      "witness": "Drives Service.Register asserting external action is refused under evidence and undeclared executors and admitted under external ceiling."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "d979796d2c67955e30d8bd974f7bc547fc490faf0238a2ab0764adf8e693508f",
+      "witness": "Asserts executorCeiling defaults undeclared executors to evidence and that external actions are refused under that default: conservative ceiling invariant."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "439b25b5eec5731e0b38f29babb7c38f64f2c4f1e8db76365a52d9f714ee55e1",
+      "witness": "Asserts canonicalCapabilities rejects an unrecognized Effect class, pinning fail-closed declaration validation at registration."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "9e574bd64b31139a4b7626bc1f5b8394480374776cd3747c7698e3875867b9ae",
+      "witness": "Asserts unknown effect is refused by validateDeclaredEffects at every ceiling and fails capabilitiesSubset narrowing check."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "7a348eac7ac32cfae489482be7df91ee471e9dd7fb1da2bfe8108301e933cab3",
+      "witness": "Asserts exceeds() fails closed: unknown declaration exceeds every ceiling, unknown ceiling permits only evidence, known comparisons unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "03bef4b8a06846b3911b4a6c0303153a185081eb9b5ba46e87ce8bde9486450c",
+      "witness": "Test double implementing EffectBounded by returning a configured ceiling."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "2333822df6b40557809a2555c74f753868d4b6e7463d9e81420ec6f7d393a7ef",
+      "witness": "Fixture constructing an auth.Decision granting register/resolve/invoke/dispatch for the test; setup only, no assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "b8488e01614250b51c57e1bedb4461afc479c789724dbebb2f36e18bcedcacdd",
+      "witness": "Fixture returning a capability with an evidence-only action."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "6fc6609be46e6fb9d8c47c887ca34c3185a79c72014cce4ee7aa50249ab5168a",
+      "witness": "Fixture returning a capability with an EffectExternal action."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "178efb16915b1893940ef01231c68c7936da1f79f1e3f6b6847ad4f85da3ec1d",
+      "witness": "Fixture wrapping registerRequest and setting the first action's Effect to external."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "682321573be49cb5960bfcd83714bbbf84c760c8dd3c03951e6fb53d93ec3058",
+      "witness": "New core ceiling comparison: unknown declarations always exceed, unknown ceilings permit only evidence, external exceeds non-external; used by Register, resolveAction, capabilitiesSubset."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "ee3dfd1583817989b628b9ab5b5d1a9a1a0517e396cabb43ca795214a5ac5c0b",
+      "witness": "Whitelists evidence/external effect classes; exceeds() and canonicalCapabilities depend on it to fail closed on unknown values."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "a4ed23d3cb2e481ffeeb33f19302bc356d945333b1122be94c29dd45ea311cb8",
+      "witness": "Now validates action.Effect and carries it into canonical capabilities, rejecting unknown classes before registration enforcement."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "c1539e51fbcb75d3b9737642f1d61bf7d5681126bb3925a6f9b199e45cdbc054",
+      "witness": "Now copies action.Effect; previously dropped, so cloned descriptors returned/re-resolved external actions as evidence-only, defeating the ceiling check."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "b12d42972c03ca21014eeaed14507458bb93394787c5e8f7da84e0511367a104",
+      "witness": "Derives executor ceiling from EffectBounded.MaxEffect, defaulting to evidence; the ceiling input for Register and resolveAction enforcement."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "267ae25330936bf9cde3147e8caddc05c8b8f8cb2ca934dfe2a42fbdaa505a0d",
+      "witness": "Now captures resolved executor and calls validateDeclaredEffects(spec.Capabilities, executorCeiling(executor)), refusing registration exceeding the host ceiling."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "7f3e4103de6b98d64ef811f1433962a088aed258faa74edc02b71d6e693197c1",
+      "witness": "Adds !wantedAction.Effect.exceeds(allowedAction.Effect) to subset match, preventing delegation or generation updates from widening effect."
+    },
+    {
+      "label": "routine",
+      "pr": 381,
+      "unit_id": "c1cdc364ed9f9468aeeb5d9c535381015bc2b1741f57fd757ec27935be1ac60c",
+      "witness": "Appends non-evidence Effect to the mutation digest for replay identity while keeping evidence digests stable; evidence-integrity accounting, not enforcement."
+    },
+    {
+      "label": "review",
+      "pr": 381,
+      "unit_id": "827f5243c2f156d0a07dd6484af926430358208d7f84228fa7b04f568ca6b184",
+      "witness": "New registration-time check refusing any action whose Effect exceeds the bound executor's ceiling."
+    },
+    {
+      "label": "unknown",
+      "pr": 381,
+      "unit_id": "9407112aaa8f8aa4801492a1158503293502da4ddeb05a6c46e2471aec910073",
+      "witness": "Now copies Effect in webapi capability clone; whether clones feed Register (where dropping would downgrade external to evidence) or only API output is unresolved without caller context."
+    },
+    {
+      "label": "unknown",
+      "pr": 381,
+      "unit_id": "60cbc3e43ccb19525e5dd8cc8463e4610cfe656d93dc89610c6b1709677142ce",
+      "witness": "Asserts cloneFleetCapabilities preserves Effect and does not alias; relevance depends on unresolved callers of the clone (registration path versus response rendering)."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "e57883f03e7dd8fdfb806f413aa41388b1c56154953a3297105171fa1d36f4fe",
+      "witness": "Only the operations-listener watcher goroutine changes: waits on Done() then reads Err() to log and cancel. This is shutdown-error propagation for the metrics server. Role auth, credentials, and TLS setup are unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "7b1ac0c7ac8206f45fb0641b186dc99f4673e141a134dcb5ec5ebe384d8b056b",
+      "witness": "The watcher goroutine now does <-operations.Done() then operations.Err() before forwarding to serverErr. This is lifecycle error plumbing only. ExactAuthenticator, ingest gating, and TLS wiring are untouched."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "6db007b0eb3e3f55b5db0908d967c2f7b012d3b4ab5fc1e7e27539d09982a841",
+      "witness": "Return type changes from <-chan error to <-chan struct{}, a close-only completion signal for the serve loop. It has no access, disclosure, or identity semantics."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "4bf1d57c6d732598a454f522eefe0c256809b1aea757b543e9561b2f50544260",
+      "witness": "New accessor returning the stored serveErr once done is closed, otherwise nil. It is pure error-reporting plumbing for listener lifecycle."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "e71f1a627b29cee2e0b60578ae012f33b508903be2860e03f885bdfd17488e7a",
+      "witness": "Shutdown reads s.serveErr after done closes. On ctx expiry it now waits <-s.done after Close so it joins the serve loop. This is ordering and error-join logic, not an authorization boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "5b04b4c15030c43c1c218cb3ac70975794feea8467fd384447dd7b8ec44f9e3c",
+      "witness": "The body is refactored to delegate to serve() after binding. The tls.NewListener wrapping with tlsConfig.Clone() is unchanged, so TLS enforcement behavior is identical."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "ffc51fa21b497e1334d30cd9929530cb484bb86232f39f1d870e6f5b1ce236f2",
+      "witness": "Extracted test seam that builds the http.Server with the same handler and timeout. The goroutine stores serveErr and then closes done. The change concerns error delivery only; the handler and listener are passed through unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "dee6ad2815af17c66fbf6d19da0f785a779459866b46470ca40ab5c54536201e",
+      "witness": "Uses failingListener to assert the sentinel serve error reaches Shutdown, the watcher, and Err(). This tests error propagation, not any security invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "466a2db1287cfecb95154e62616405d4668acfe8970b0de14775f8b11b90325e",
+      "witness": "Adds a comment and an Err()==nil assertion after a clean shutdown. It is a lifecycle join test with no authorization or disclosure assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "6f9add946c4e16980d495c574dea263c610ad0e46dbaeef6a5c38d72e9b1a2ec",
+      "witness": "Asserts that a watcher and Shutdown both observe a nil serve error after a clean shutdown. This is a happy-path lifecycle test."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "bedb3b179cf163f26f120959f03a1f9374514fe1faeeae642df97535ee1697d5",
+      "witness": "Asserts a repeated Shutdown returns nil and Done stays closed. This checks sync.Once idempotency only."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "f16396ed1a25324cd3e76ef547ff33f6de98df106d7336b0b36859dc255ab812",
+      "witness": "Calls Shutdown with an already-cancelled context and asserts Done is closed on return, i.e. the serve-loop join. This is an ordering test, not a security boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "802b1c3aed7eda45eb2baa64de852de9b2f607e12384f208f7300fcebb30763f",
+      "witness": "Test double: Accept always returns the configured sentinel error so the serve error path is reachable."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "64e1d00bdfce4da728c01de311a965f9de844dabbb9a93be799778489ffacea2",
+      "witness": "Test double: Addr returns the stored address to satisfy the net.Listener interface."
+    },
+    {
+      "label": "routine",
+      "pr": 382,
+      "unit_id": "e47db0fac8a389524105a42e30d8d2feb47be4c22bf38ea2eca04b56b7677483",
+      "witness": "Test double: Close is a no-op returning nil to satisfy the net.Listener interface."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "415e86574e7d5c763bb10c92ee6b23c5690e8d4d06a3fccfbd11099cff357cfc",
+      "witness": "New fixture accessor returning a constant well-formed nonexistent ID (doc_000…) used as a probe control. It implements and asserts no boundary itself."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "8b0b98eecbb1bdf9968b81b2c18803d0e7cb737128d74a370958b660ac7a103b",
+      "witness": "New trivial getter returning c.open, the readable node ID. It is fixture plumbing only, with no authorization logic or assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "c22f7d393a3f3e409be065a4ae1f264b940ff89d6460437546806f5fda8bab38",
+      "witness": "New trivial getter returning c.restricted. It is a fixture accessor only, and supporting security probes is insufficient on its own."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "3b1e1511585b5add2c4beee0e4c270d4b3af007b1d635f495bebdfc5c675c9c7",
+      "witness": "Fixture setup change: it captures the ingested document IDs and adds an open→restricted 'references' edge via open.Connect as admin. It builds test data and asserts only ingest/connect success."
+    },
+    {
+      "label": "review",
+      "pr": 383,
+      "unit_id": "324c1cf08d2fedd4d91cd26f439e07e8ac61df0e4c4a2e0ba3f00f850648f6ef",
+      "witness": "Asserts that the cleared principal expands the restricted node and that the uncleared principal gets an error ('must not expand it'). This directly asserts the access authorization boundary on authorized.Client.Neighborhood."
+    },
+    {
+      "label": "review",
+      "pr": 383,
+      "unit_id": "521877114618dce0b0009d055a0183970502db47dbe7ebb74ae4ea20d4c37b37",
+      "witness": "Runs a disclosure Probe that compares the uncleared Neighborhood of a restricted node against an absent node. It directly asserts the no-existence-oracle disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "43ac6cdd055ae1ed6f244cd40bf73e0e93a403fa0ae80fa94dd72f1a4bd072c7",
+      "witness": "Test helper that calls Client.Neighborhood and records the result or the error code and text. It captures outcomes for comparison but does not itself assert any boundary."
+    },
+    {
+      "label": "review",
+      "pr": 383,
+      "unit_id": "01a809474d0a8bf9fd3eef3dae278bf9a41fbc1aba186f302762bc7ccd57da55",
+      "witness": "On EmbeddedService.Neighborhood, asserts that the cleared principal gets nodes for the restricted node while the uncleared principal errors. This directly asserts access denial on the served surface."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "7482ba1a943392848863860bf52ede97f852e28782a4986d4a561638d2cca2d4",
+      "witness": "Only checks that the cleared principal resolves a non-empty path open→restricted, a fixture-validity guard. It has no denial or disclosure assertion; this is a happy-path reachability check."
+    },
+    {
+      "label": "review",
+      "pr": 383,
+      "unit_id": "718e3db3e4ce92545103c74caae3458a3fe8696ced0b7ab4e3f522aec85d2129",
+      "witness": "Runs disclosure Probes for the uncleared served Neighborhood and for Path target resolution (restricted vs absent). It directly asserts a withheld target is indistinguishable from a nonexistent one."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "106855ba2e397d90316038ad5d459a185ebc583c1963af70ece8012c87e87e99",
+      "witness": "Classifies an error into a shoal.ErrorCode and message for outcome capture. This is pure test plumbing with no assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "bd7b0cfc68f37c198ce9a3f2d9eee9a61f1263f10f5e4ad02127a1f393968993",
+      "witness": "Wraps service.Neighborhood with depth 2 into a graphOutcome. It is a test helper that captures results and asserts nothing."
+    },
+    {
+      "label": "routine",
+      "pr": 383,
+      "unit_id": "b6ce398bb0c957eec693477a9b7d5bcfa4e480cb7019627c6674cfb5c0e6f56e",
+      "witness": "Wraps service.Path with MaxDepth 3 into a graphOutcome. It is a test helper that captures results and asserts nothing."
+    }
+  ],
+  "limitations": [
+    "Retrospective relevance proposals, not defect truth",
+    "No tools or runtime verification; unknown allowed when caller context missing"
+  ],
+  "status": "proposed"
+}

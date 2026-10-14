@@ -1,0 +1,17 @@
+outcome decision.outcome.abstained
+  Decision task source-priority v1 abstained on the whole request at 2026-10-08 12:00:01 UTC; no answers were recorded.
+  record=prediction:decision:prediction:v1:1185b21643e70077d7532254ca22ed57ca9e754cd872e9c5ceb8ea2872c2fc7b decision_request=decision:request:v1:49878f6facc7e250ff509a0c71b71dfb74a04f5b8542e56ed5696ebdc4d71b98 picture=decision:picture:v1:61d748c39c43580fbed4326a16143b7e0c4b35140e6b31ff2971a3a5f8859e89 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.reason.abstained.evidence_ineligible
+  The abstention was reported, by the predictor or the service, as evidence_ineligible, which, if accurate, means the evidence for at least one requested subject did not meet the task’s evidence policy.
+  record=prediction:decision:prediction:v1:1185b21643e70077d7532254ca22ed57ca9e754cd872e9c5ceb8ea2872c2fc7b
+gap decision.gap.truncated
+  The evidence was truncated to fit the token budget (2048 input tokens against a budget of 2048), so no subject could be scored.
+  record=prediction:decision:prediction:v1:1185b21643e70077d7532254ca22ed57ca9e754cd872e9c5ceb8ea2872c2fc7b picture=decision:picture:v1:61d748c39c43580fbed4326a16143b7e0c4b35140e6b31ff2971a3a5f8859e89
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:1185b21643e70077d7532254ca22ed57ca9e754cd872e9c5ceb8ea2872c2fc7b principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.abstained.evidence_ineligible
+  If the evidence was ineligible, fix the gaps or request only eligible subjects in a new decision request; until then, inspect ordinarily.
+  record=prediction:decision:prediction:v1:1185b21643e70077d7532254ca22ed57ca9e754cd872e9c5ceb8ea2872c2fc7b

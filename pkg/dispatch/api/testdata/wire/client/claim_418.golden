@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: unexpected_status (HTTP 418, teapot)
+kind: unexpected_status
+status: 418 code: "teapot" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: unexpected_status(418)

@@ -1,0 +1,7 @@
+POST /shoal/api/v1/admission/request
+header Accept-Encoding: gzip
+header Authorization: Bearer plane-token
+header Content-Length: 479
+header Content-Type: application/json
+header User-Agent: Go-http-client/1.1
+body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_call\",\"deadline\":\"2026-09-06T14:01:30.123456789+02:00\"},\"id\":\"YWRtaXNzaW9u\",\"idempotency_key\":\"YWRtaXNzaW9u\",\"token_id\":\"dG9rZW4\",\"agent_id\":\"YWdlbnQ\",\"agent_generation\":7,\"capability\":\"llm.gateway\",\"action\":\"complete\",\"source_id\":null,\"policy_id\":null,\"object_id\":\"b2JqZWN0\",\"effects\":[\"egresses-content\",\"reads-corpus\"],\"input\":{\"model\":\"gpt\",\"messages\":2},\"lease\":90000000000}"

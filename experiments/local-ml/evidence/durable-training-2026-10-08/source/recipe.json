@@ -1,0 +1,1 @@
+{"feature_transform":"none","fit_split":"train","kind":"numeric-linear-svm-training","parameters":{"C":1.0,"class_weight":null,"dual":false,"fit_intercept":true,"intercept_scaling":1.0,"loss":"squared_hinge","max_iter":100000,"multi_class":"ovr","penalty":"l2","random_state":1729,"tol":1e-08,"verbose":0},"row_order":"id-ascending","schema":1,"threshold":0.0}

@@ -1,0 +1,237 @@
+{
+  "base": "d7b0b19c7d7c0364b23a3be3b12f2a786607522d",
+  "diff": "diff --git a/pkg/explorer/authorized/accumulator.go b/pkg/explorer/authorized/accumulator.go\nnew file mode 100644\nindex 0000000..eb9a036\n--- /dev/null\n+++ b/pkg/explorer/authorized/accumulator.go\n@@ -0,0 +1,123 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package authorized\n+\n+import (\n+\t\"bytes\"\n+\t\"context\"\n+\t\"encoding/binary\"\n+\t\"sync\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n+)\n+\n+// AccumulatorRecord holds one identity's state within a fixed window. State's\n+// zero value must represent an unencumbered identity. This is an in-memory\n+// contract; ledger adapters retain ownership of their persisted format.\n+type AccumulatorRecord[T any] struct {\n+\tWindowStart time.Time\n+\tState       T\n+}\n+\n+// AccumulatorLedger persists windowed state through the policy store. Load\n+// must return independently owned state; Store must retain its own copy and\n+// atomically replace a record. Implementations supply durability, just as\n+// CoOccurrenceLedger does.\n+type AccumulatorLedger[T any] interface {\n+\tLoad(context.Context, string) (AccumulatorRecord[T], bool, error)\n+\tStore(context.Context, string, AccumulatorRecord[T]) error\n+}\n+\n+// Accumulator serializes windowed, per-identity read/modify/write operations.\n+// The caller supplies the meaning of state and its bound. All updates sharing\n+// a ledger namespace must use the same instance for serialization; independent\n+// instances or processes require coordination by the caller, as with MosaicBudget.\n+// An Accumulator must be constructed with NewAccumulator and must not be copied.\n+type Accumulator[T any] struct {\n+\tmu        sync.Mutex\n+\tledger    AccumulatorLedger[T]\n+\twindow    time.Duration\n+\tnamespace string\n+}\n+\n+// NewAccumulator fails closed without a ledger, positive window, or identity\n+// namespace. Use a stable, distinct namespace for each control sharing a ledger.\n+// Construction enables the accumulator; callers implement optional disabling\n+// by bypassing construction and Update entirely.\n+func NewAccumulator[T any](ledger AccumulatorLedger[T], window time.Duration, namespace string) (*Accumulator[T], error) {\n+\tif window <= 0 {\n+\t\treturn nil, dependencyRequired(\"accumulator window\")\n+\t}\n+\tif isNilDependency(ledger) {\n+\t\treturn nil, dependencyRequired(\"accumulator ledger\")\n+\t}\n+\tif namespace == \"\" {\n+\t\treturn nil, dependencyRequired(\"accumulator identity namespace\")\n+\t}\n+\treturn &Accumulator[T]{ledger: ledger, window: window, namespace: namespace}, nil\n+}\n+\n+// Update loads the identity's state, starts a fresh window for missing, expired,\n+// or future-dated records, and persists the result of contribute. The callback\n+// runs under the accumulator lock and must not reenter Update. A callback error\n+// prevents Store; any error returns zero state. Callers must not disclose a\n+// callback's provisional result before Update successfully persists it.\n+func (a *Accumulator[T]) Update(ctx context.Context, decision auth.Decision, now time.Time, contribute func(T) (T, error)) (T, error) {\n+\tvar zero T\n+\tif a == nil || isNilDependency(a.ledger) || a.window <= 0 || a.namespace == \"\" || contribute == nil {\n+\t\treturn zero, dependencyRequired(\"initialized accumulator and contribution\")\n+\t}\n+\ta.mu.Lock()\n+\tdefer a.mu.Unlock()\n+\tkey := accumulatorIdentityKey(a.namespace, decision)\n+\trecord, found, err := a.ledger.Load(ctx, key)\n+\tif err != nil {\n+\t\treturn zero, err\n+\t}\n+\tif !found || now.Before(record.WindowStart) || now.Sub(record.WindowStart) >= a.window {\n+\t\trecord = AccumulatorRecord[T]{WindowStart: now}\n+\t}\n+\tstate, err := contribute(record.State)\n+\tif err != nil {\n+\t\treturn zero, err\n+\t}\n+\trecord.State = state\n+\tif err := a.ledger.Store(ctx, key, record); err != nil {\n+\t\treturn zero, err\n+\t}\n+\treturn state, nil\n+}\n+\n+// accumulatorIdentityKey keeps raw subjects and authorization domains out of\n+// the ledger. Length framing prevents ambiguous component concatenations.\n+func accumulatorIdentityKey(namespace string, decision auth.Decision) string {\n+\tvar buf bytes.Buffer\n+\twriteComponent := func(value []byte) {\n+\t\tvar length [8]byte\n+\t\tbinary.BigEndian.PutUint64(length[:], uint64(len(value)))\n+\t\t_, _ = buf.Write(length[:])\n+\t\t_, _ = buf.Write(value)\n+\t}\n+\twriteComponent(decision.AuthorizationDomain())\n+\twriteComponent([]byte(decision.Subject()))\n+\treturn auth.DigestBytes(\n+\t\tnamespace, buf.Bytes()).String()\n+}\ndiff --git a/pkg/explorer/authorized/accumulator_test.go b/pkg/explorer/authorized/accumulator_test.go\nnew file mode 100644\nindex 0000000..abe6801\n--- /dev/null\n+++ b/pkg/explorer/authorized/accumulator_test.go\n@@ -0,0 +1,356 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package authorized\n+\n+import (\n+\t\"context\"\n+\t\"errors\"\n+\t\"reflect\"\n+\t\"sync\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+// A scalar ledger proves the substrate does not require domain-set semantics.\n+type counterLedger struct {\n+\trecords           map[string]AccumulatorRecord[int]\n+\tloads, stores     int\n+\tloadErr, storeErr error\n+}\n+\n+func (l *counterLedger) Load(_ context.Context, key string) (AccumulatorRecord[int], bool, error) {\n+\tl.loads++\n+\trecord, found := l.records[key]\n+\treturn record, found, l.loadErr\n+}\n+func (l *counterLedger) Store(_ context.Context, key string, record AccumulatorRecord[int]) error {\n+\tl.stores++\n+\tif l.storeErr != nil {\n+\t\treturn l.storeErr\n+\t}\n+\tif l.records == nil {\n+\t\tl.records = make(map[string]AccumulatorRecord[int])\n+\t}\n+\tl.records[key] = record\n+\treturn nil\n+}\n+func increment(state int) (int, error) { return state + 1, nil }\n+\n+func TestAccumulatorConstruction(t *testing.T) {\n+\tvar typedNil *counterLedger\n+\tfor _, tc := range []struct {\n+\t\tname      string\n+\t\tledger    AccumulatorLedger[int]\n+\t\twindow    time.Duration\n+\t\tnamespace string\n+\t}{\n+\t\t{\"missing ledger\", nil, time.Hour, \"counter\"},\n+\t\t{\"typed nil ledger\", typedNil, time.Hour, \"counter\"},\n+\t\t{\"zero window\", &counterLedger{}, 0, \"counter\"},\n+\t\t{\"negative window\", &counterLedger{}, -time.Hour, \"counter\"},\n+\t\t{\"missing namespace\", &counterLedger{}, time.Hour, \"\"},\n+\t} {\n+\t\tt.Run(tc.name, func(t *testing.T) {\n+\t\t\tif a, err := NewAccumulator(tc.ledger, tc.window, tc.namespace); a != nil || err == nil {\n+\t\t\t\tt.Fatalf(\"construction = %v, %v; want nil and error\", a, err)\n+\t\t\t}\n+\t\t})\n+\t}\n+\tfor _, a := range []*Accumulator[int]{nil, {}} {\n+\t\tif state, err := a.Update(context.Background(), auth.Decision{}, time.Now(), increment); state != 0 || err == nil {\n+\t\t\tt.Fatalf(\"uninitialized update = %d, %v\", state, err)\n+\t\t}\n+\t}\n+}\n+\n+func TestAccumulatorWindows(t *testing.T) {\n+\tstart := time.Unix(1700000000, 0).UTC()\n+\tfor _, tc := range []struct {\n+\t\tname    string\n+\t\telapsed time.Duration\n+\t\twant    int\n+\t}{\n+\t\t{\"same instant\", 0, 2},\n+\t\t{\"inside\", time.Hour - time.Nanosecond, 2},\n+\t\t{\"exact boundary\", time.Hour, 1},\n+\t\t{\"expired\", 2 * time.Hour, 1},\n+\t\t{\"clock rollback\", -time.Nanosecond, 1},\n+\t} {\n+\t\tt.Run(tc.name, func(t *testing.T) {\n+\t\t\tledger := &counterLedger{}\n+\t\t\ta, err := NewAccumulator[int](ledger, time.Hour, \"counter\")\n+\t\t\tif err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\tif _, err := a.Update(context.Background(), auth.Decision{}, start, increment); err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\t// Reconstruction over the same ledger must preserve state.\n+\t\t\ta, err = NewAccumulator[int](ledger, time.Hour, \"counter\")\n+\t\t\tif err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\tnow := start.Add(tc.elapsed)\n+\t\t\tgot, err := a.Update(context.Background(), auth.Decision{}, now, increment)\n+\t\t\tif err != nil || got != tc.want {\n+\t\t\t\tt.Fatalf(\"state = %d, %v; want %d\", got, err, tc.want)\n+\t\t\t}\n+\t\t\twantStart := start\n+\t\t\tif tc.want == 1 {\n+\t\t\t\twantStart = now\n+\t\t\t}\n+\t\t\tfor _, record := range ledger.records {\n+\t\t\t\tif !record.WindowStart.Equal(wantStart) {\n+\t\t\t\t\tt.Fatalf(\"window = %v, want %v\", record.WindowStart, wantStart)\n+\t\t\t\t}\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+func TestAccumulatorFailuresDoNotReleaseState(t *testing.T) {\n+\tfailure := errors.New(\"ledger unavailable\")\n+\tfor _, phase := range []string{\"load\", \"contribute\", \"store\"} {\n+\t\tt.Run(phase, func(t *testing.T) {\n+\t\t\tledger := &counterLedger{}\n+\t\t\ta, err := NewAccumulator[int](ledger, time.Hour, \"counter\")\n+\t\t\tif err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\tif phase == \"load\" {\n+\t\t\t\tledger.loadErr = failure\n+\t\t\t}\n+\t\t\tif phase == \"store\" {\n+\t\t\t\tledger.storeErr = failure\n+\t\t\t}\n+\t\t\tcalled := false\n+\t\t\tgot, err := a.Update(context.Background(), auth.Decision{}, time.Now(), func(state int) (int, error) {\n+\t\t\t\tcalled = true\n+\t\t\t\tif phase == \"contribute\" {\n+\t\t\t\t\treturn 42, failure\n+\t\t\t\t}\n+\t\t\t\treturn 42, nil\n+\t\t\t})\n+\t\t\tif got != 0 || !errors.Is(err, failure) {\n+\t\t\t\tt.Fatalf(\"update = %d, %v\", got, err)\n+\t\t\t}\n+\t\t\tif called != (phase != \"load\") {\n+\t\t\t\tt.Fatalf(\"callback called = %v\", called)\n+\t\t\t}\n+\t\t\twantStores := 0\n+\t\t\tif phase == \"store\" {\n+\t\t\t\twantStores = 1\n+\t\t\t}\n+\t\t\tif ledger.stores != wantStores || len(ledger.records) != 0 {\n+\t\t\t\tt.Fatalf(\"unexpected stores/state: %+v\", ledger)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+func TestAccumulatorSerializesConcurrentUpdates(t *testing.T) {\n+\tledger := &counterLedger{}\n+\ta, err := NewAccumulator[int](ledger, time.Hour, \"counter\")\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tnow := time.Now()\n+\tvar wg sync.WaitGroup\n+\tfor i := 0; i < 100; i++ {\n+\t\twg.Add(1)\n+\t\tgo func() {\n+\t\t\tdefer wg.Done()\n+\t\t\tif _, err := a.Update(context.Background(), auth.Decision{}, now, increment); err != nil {\n+\t\t\t\tt.Error(err)\n+\t\t\t}\n+\t\t}()\n+\t}\n+\twg.Wait()\n+\tif len(ledger.records) != 1 {\n+\t\tt.Fatalf(\"records = %d\", len(ledger.records))\n+\t}\n+\tfor _, record := range ledger.records {\n+\t\tif record.State != 100 {\n+\t\t\tt.Fatalf(\"state = %d, want 100\", record.State)\n+\t\t}\n+\t}\n+}\n+\n+func accumulatorDecision(t *testing.T, domain, subject string) auth.Decision {\n+\tt.Helper()\n+\tdecision, err := auth.NewDecision(auth.DecisionConfig{\n+\t\tSubject: shoal.ID(subject), Actor: \"actor\", RequestID: \"request\",\n+\t\tAuthorizationDomain: []byte(domain), AllowedOperations: []auth.Operation{auth.OperationRead},\n+\t\tPermittedSourceIDs: [][]byte{[]byte(\"source\")}, PermittedPolicyIDs: [][]byte{[]byte(\"policy\")},\n+\t\tPolicyGeneration: 1, AuthenticationExpires: time.Unix(1800000000, 0),\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn decision\n+}\n+\n+func TestAccumulatorIdentityIsolationAndLegacyFraming(t *testing.T) {\n+\tdecision := accumulatorDecision(t, \"ab\", \"c\")\n+\t// Historical mosaic framing: uint64 big-endian byte lengths, domain, subject.\n+\tframed := []byte{0, 0, 0, 0, 0, 0, 0, 2, 'a', 'b', 0, 0, 0, 0, 0, 0, 0, 1, 'c'}\n+\texpected := auth.DigestBytes(\"explorer-mosaic-identity-v1\", framed).String()\n+\tif got := accumulatorIdentityKey(\"explorer-mosaic-identity-v1\", decision); got != expected {\n+\t\tt.Fatalf(\"legacy key changed: %s != %s\", got, expected)\n+\t}\n+\tkeys := map[string]bool{}\n+\tfor _, pair := range [][2]string{{\"ab\", \"c\"}, {\"a\", \"bc\"}, {\"ab\", \"d\"}, {\"cd\", \"c\"}} {\n+\t\tfor _, namespace := range []string{\"explorer-mosaic-identity-v1\", \"other-control\"} {\n+\t\t\tkey := accumulatorIdentityKey(namespace, accumulatorDecision(t, pair[0], pair[1]))\n+\t\t\tif keys[key] {\n+\t\t\t\tt.Fatalf(\"identity/namespace collision: %v %s\", pair, namespace)\n+\t\t\t}\n+\t\t\tkeys[key] = true\n+\t\t}\n+\t}\n+}\n+\n+func TestMosaicAccumulatorReadsLegacyRecord(t *testing.T) {\n+\tdir := t.TempDir()\n+\tstore, err := OpenDurablePolicyStore(dir)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tnow := time.Unix(1700000000, 0).UTC()\n+\tdecision := accumulatorDecision(t, \"ab\", \"c\")\n+\tkey := auth.DigestBytes(\"explorer-mosaic-identity-v1\", []byte{0, 0, 0, 0, 0, 0, 0, 2, 'a', 'b', 0, 0, 0, 0, 0, 0, 0, 1, 'c'}).String()\n+\t// Seed the pre-extraction record directly through the historical row/kind.\n+\tif err := store.writeRow([]byte(\"mosaic/\"+key), byte(8), persistedCoOccurrence{\n+\t\tSeq: 1, Key: key, WindowStartUnixNano: now.UnixNano(), Domains: []string{\"z\"},\n+\t}); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif err := store.Close(); err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tstore, err = OpenDurablePolicyStore(dir)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdefer store.Close()\n+\tbudget := MosaicBudget{MaxDomains: 2, Window: time.Hour}\n+\ta, err := budget.accumulator(store)\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tclient := &Client{mosaic: budget, accumulator: a}\n+\tselection, err := client.applyMosaicBudget(context.Background(), decision, now.Add(time.Second),\n+\t\t[]shoal.ID{\"old\", \"new\", \"restricted\", \"repeat\"},\n+\t\tmap[shoal.ID]string{\"old\": \"z\", \"new\": \"a\", \"restricted\": \"b\", \"repeat\": \"a\"})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif selection.restricted != 1 || !reflect.DeepEqual(selection.allowed, map[shoal.ID]struct{}{\"old\": {}, \"new\": {}, \"repeat\": {}}) {\n+\t\tt.Fatalf(\"selection = %+v\", selection)\n+\t}\n+\trecord, found, err := store.LoadCoOccurrence(context.Background(), key)\n+\tif err != nil || !found || !record.WindowStart.Equal(now) || !reflect.DeepEqual(record.Domains, []string{\"a\", \"z\"}) {\n+\t\tt.Fatalf(\"record = %+v, %v, %v\", record, found, err)\n+\t}\n+\t// Pin the serialized schema, envelope kind and row prefix independently.\n+\ttyp := reflect.TypeOf(persistedCoOccurrence{})\n+\twantFields := []string{\"Seq:uint64\", \"Key:string\", \"WindowStartUnixNano:int64\", \"Domains:[]string\"}\n+\tvar fields []string\n+\tfor i := 0; i < typ.NumField(); i++ {\n+\t\tf := typ.Field(i)\n+\t\tfields = append(fields, f.Name+\":\"+f.Type.String())\n+\t}\n+\tif !reflect.DeepEqual(fields, wantFields) || policyKindCoOccurrence != 8 || string(policyCoOccurrenceRow(key)) != \"mosaic/\"+key {\n+\t\tt.Fatalf(\"persisted schema changed: %v\", fields)\n+\t}\n+}\n+\n+// A failing policy store exercises the mosaic adapter and its disclosure path.\n+type failingMosaicStore struct {\n+\t*MemoryPolicyStore\n+\tloadErr, storeErr error\n+}\n+\n+func (s failingMosaicStore) LoadCoOccurrence(ctx context.Context, key string) (CoOccurrenceRecord, bool, error) {\n+\tif s.loadErr != nil {\n+\t\treturn CoOccurrenceRecord{}, false, s.loadErr\n+\t}\n+\treturn s.MemoryPolicyStore.LoadCoOccurrence(ctx, key)\n+}\n+func (s failingMosaicStore) StoreCoOccurrence(ctx context.Context, key string, record CoOccurrenceRecord) error {\n+\tif s.storeErr != nil {\n+\t\treturn s.storeErr\n+\t}\n+\treturn s.MemoryPolicyStore.StoreCoOccurrence(ctx, key, record)\n+}\n+\n+func TestMosaicAccumulatorFailureDiscardsProvisionalDisclosure(t *testing.T) {\n+\tfailure := errors.New(\"storage failed\")\n+\tfor _, phase := range []string{\"load\", \"store\", \"domain\"} {\n+\t\tt.Run(phase, func(t *testing.T) {\n+\t\t\tstore := failingMosaicStore{MemoryPolicyStore: NewMemoryPolicyStore()}\n+\t\t\tif phase == \"load\" {\n+\t\t\t\tstore.loadErr = failure\n+\t\t\t}\n+\t\t\tif phase == \"store\" {\n+\t\t\t\tstore.storeErr = failure\n+\t\t\t}\n+\t\t\tbudget := MosaicBudget{MaxDomains: 1, Window: time.Hour}\n+\t\t\ta, err := budget.accumulator(store)\n+\t\t\tif err != nil {\n+\t\t\t\tt.Fatal(err)\n+\t\t\t}\n+\t\t\tclient := &Client{mosaic: budget, accumulator: a}\n+\t\t\tdomains := map[shoal.ID]string{\"allowed\": \"a\", \"withheld\": \"b\", \"last\": \"a\"}\n+\t\t\tif phase == \"domain\" {\n+\t\t\t\tdomains[\"last\"] = \"\"\n+\t\t\t}\n+\t\t\tselection, err := client.applyMosaicBudget(context.Background(), auth.Decision{}, time.Now(),\n+\t\t\t\t[]shoal.ID{\"allowed\", \"withheld\", \"last\"}, domains)\n+\t\t\tif err == nil || selection.allowed != nil || selection.restricted != 0 {\n+\t\t\t\tt.Fatalf(\"failed read returned selection: %+v, %v\", selection, err)\n+\t\t\t}\n+\t\t\tif phase != \"domain\" && !errors.Is(err, failure) {\n+\t\t\t\tt.Fatalf(\"error = %v\", err)\n+\t\t\t}\n+\t\t\tif len(store.coOccurrence) != 0 {\n+\t\t\t\tt.Fatalf(\"failed update stored domains: %v\", store.coOccurrence)\n+\t\t\t}\n+\t\t})\n+\t}\n+}\n+\n+func TestMosaicDisabledBypassesAccumulatorAndDomainResolution(t *testing.T) {\n+\t// An invalid window and absent ledger remain acceptable when disabled.\n+\tbudget := MosaicBudget{Window: -time.Hour}\n+\ta, err := budget.accumulator(nil)\n+\tif err != nil || a != nil {\n+\t\tt.Fatalf(\"disabled construction = %v, %v\", a, err)\n+\t}\n+\tclient := &Client{mosaic: budget}\n+\tselection, err := client.restrictCoOccurrence(context.Background(), auth.Decision{}, time.Now(),\n+\t\t[]shoal.ID{\"one\", \"two\"}, func(shoal.ID) string { t.Fatal(\"disabled domain resolver called\"); return \"\" })\n+\tif err != nil || len(selection.allowed) != 2 || selection.restricted != 0 {\n+\t\tt.Fatalf(\"disabled selection = %+v, %v\", selection, err)\n+\t}\n+}\ndiff --git a/pkg/explorer/authorized/client.go b/pkg/explorer/authorized/client.go\nindex 4a2502d..17c38b5 100644\n--- a/pkg/explorer/authorized/client.go\n+++ b/pkg/explorer/authorized/client.go\n@@ -138,14 +138,13 @@ type Client struct {\n \tedgePolicySelector  EdgePolicySelector\n \tpolicyStore         PolicyStore\n \tgenerationReader    auth.GenerationReader\n \tclock               func() time.Time\n \tmosaic              MosaicBudget\n-\tledger              CoOccurrenceLedger\n+\taccumulator         *Accumulator[[]string]\n \tmutationMu          sync.Mutex\n \tvectorMu            sync.Mutex\n-\tbudgetMu            sync.Mutex\n \tvectorAvailability  authorizedVectorAvailabilityCache\n }\n \n type authorizedVectorAvailabilityCache struct {\n \tkey       string\n@@ -199,20 +198,13 @@ func NewClient(config Config) (*Client, error) {\n \t\tedgeSelector, ok = config.PolicySelector.(EdgePolicySelector)\n \t\tif !ok || isNilDependency(edgeSelector) {\n \t\t\treturn nil, dependencyRequired(\"edge policy selector\")\n \t\t}\n \t}\n-\tvar ledger CoOccurrenceLedger\n-\tif config.Mosaic.enabled() {\n-\t\tif config.Mosaic.Window <= 0 {\n-\t\t\treturn nil, dependencyRequired(\"mosaic co-occurrence window\")\n-\t\t}\n-\t\tvar ok bool\n-\t\tledger, ok = config.PolicyStore.(CoOccurrenceLedger)\n-\t\tif !ok || isNilDependency(ledger) {\n-\t\t\treturn nil, dependencyRequired(\"co-occurrence ledger\")\n-\t\t}\n+\taccumulator, err := config.Mosaic.accumulator(config.PolicyStore)\n+\tif err != nil {\n+\t\treturn nil, err\n \t}\n \treturn &Client{\n \t\tbase:                config.Base,\n \t\tvectorScorer:        config.VectorScorer,\n \t\tinteractionSink:     config.InteractionWriter,\n@@ -227,11 +219,11 @@ func NewClient(config Config) (*Client, error) {\n \t\tedgePolicySelector:  edgeSelector,\n \t\tpolicyStore:         config.PolicyStore,\n \t\tgenerationReader:    config.GenerationReader,\n \t\tclock:               config.Clock,\n \t\tmosaic:              config.Mosaic,\n-\t\tledger:              ledger,\n+\t\taccumulator:         accumulator,\n \t}, nil\n }\n \n // Ingest authorizes and catalogs one immutable revision. A successful base\n // commit is never reported as success until its exact policy registration is\ndiff --git a/pkg/explorer/authorized/mosaic.go b/pkg/explorer/authorized/mosaic.go\nindex 86522b7..3f9570f 100644\n--- a/pkg/explorer/authorized/mosaic.go\n+++ b/pkg/explorer/authorized/mosaic.go\n@@ -18,13 +18,11 @@\n  */\n \n package authorized\n \n import (\n-\t\"bytes\"\n \t\"context\"\n-\t\"encoding/binary\"\n \t\"sort\"\n \t\"time\"\n \n \t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n \t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n@@ -103,27 +101,10 @@ func (r AccessRule) sensitivityDomain() string {\n \treturn auth.DigestBytes(\n \t\t\"explorer-sensitivity-domain-v1\", logicalRuleBytes(r.keys),\n \t).String()\n }\n \n-// mosaicIdentityKey derives the stable per-identity ledger key from the\n-// decision's authorization domain and subject. It is a one-way digest, so the\n-// persisted co-occurrence records never carry the raw identity.\n-func mosaicIdentityKey(decision auth.Decision) string {\n-\tvar buf bytes.Buffer\n-\twriteComponent := func(value []byte) {\n-\t\tvar length [8]byte\n-\t\tbinary.BigEndian.PutUint64(length[:], uint64(len(value)))\n-\t\t_, _ = buf.Write(length[:])\n-\t\t_, _ = buf.Write(value)\n-\t}\n-\twriteComponent(decision.AuthorizationDomain())\n-\twriteComponent([]byte(decision.Subject()))\n-\treturn auth.DigestBytes(\n-\t\t\"explorer-mosaic-identity-v1\", buf.Bytes()).String()\n-}\n-\n // mosaicSelection is the outcome of applying the co-occurrence budget to one\n // identity's ordered set of authorized documents: the documents that remain\n // visible and how many were withheld to stay within the budget.\n type mosaicSelection struct {\n \tallowed    map[shoal.ID]struct{}\n@@ -168,77 +149,90 @@ func (c *Client) restrictCoOccurrence(\n // domain is withheld and counted as restricted.\n //\n // The charge is a set union over observed domains, so repeating an identical\n // read never double-charges: admitted domains are already present and re-admit\n // for free, and withheld domains remain withheld. The whole update runs under\n-// budgetMu and persists through the ledger so concurrent reads by one identity\n-// serialize and survive restarts.\n+// the accumulator lock and persists through the ledger so concurrent reads by\n+// one identity serialize and survive restarts.\n func (c *Client) applyMosaicBudget(\n \tctx context.Context,\n \tdecision auth.Decision,\n \tnow time.Time,\n \torder []shoal.ID,\n \tdomains map[shoal.ID]string,\n ) (mosaicSelection, error) {\n-\tc.budgetMu.Lock()\n-\tdefer c.budgetMu.Unlock()\n+\tselection := mosaicSelection{allowed: make(map[shoal.ID]struct{}, len(order))}\n+\t_, err := c.accumulator.Update(ctx, decision, now, func(previous []string) ([]string, error) {\n+\t\tobserved := make(map[string]struct{}, len(previous))\n+\t\tfor _, domain := range previous {\n+\t\t\tobserved[domain] = struct{}{}\n+\t\t}\n+\t\tbudget := int(c.mosaic.MaxDomains)\n+\t\tfor _, documentID := range order {\n+\t\t\tdomain := domains[documentID]\n+\t\t\tif domain == \"\" {\n+\t\t\t\t// Every authorized document is governed by a nonempty rule, so an\n+\t\t\t\t// empty sensitivity domain is an internal inconsistency. Fail\n+\t\t\t\t// closed rather than collapse ungoverned documents into one shared\n+\t\t\t\t// compartment.\n+\t\t\t\treturn nil, inconsistentBase()\n+\t\t\t}\n+\t\t\tif _, seen := observed[domain]; seen {\n+\t\t\t\tselection.allowed[documentID] = struct{}{}\n+\t\t\t\tcontinue\n+\t\t\t}\n+\t\t\tif len(observed) < budget {\n+\t\t\t\tobserved[domain] = struct{}{}\n+\t\t\t\tselection.allowed[documentID] = struct{}{}\n+\t\t\t\tcontinue\n+\t\t\t}\n+\t\t\t// Load-bearing: the withholding branch is pinned by\n+\t\t\t// TestMosaicBudgetWithholdsCrossDomainResults; deleting the increment\n+\t\t\t// or the continue would let a restricted document through.\n+\t\t\tselection.restricted++\n+\t\t}\n \n-\tkey := mosaicIdentityKey(decision)\n-\trecord, found, err := c.ledger.LoadCoOccurrence(ctx, key)\n+\t\tdomainsOut := make([]string, 0, len(observed))\n+\t\tfor domain := range observed {\n+\t\t\tdomainsOut = append(domainsOut, domain)\n+\t\t}\n+\t\tsort.Strings(domainsOut)\n+\t\treturn domainsOut, nil\n+\t})\n \tif err != nil {\n \t\treturn mosaicSelection{}, err\n \t}\n+\treturn selection, nil\n+}\n \n-\tobserved := make(map[string]struct{})\n-\twindowStart := now\n-\t// A found record within its window carries the domains already locked in;\n-\t// an expired window, a clock that moved backward, or a missing record all\n-\t// open a fresh window with no observed domains. Load-bearing: the reset is\n-\t// pinned by TestMosaicBudgetResetsAfterWindow.\n-\tif found &&\n-\t\t!now.Before(record.WindowStart) &&\n-\t\tnow.Sub(record.WindowStart) < c.mosaic.Window {\n-\t\twindowStart = record.WindowStart\n-\t\tfor _, domain := range record.Domains {\n-\t\t\tobserved[domain] = struct{}{}\n-\t\t}\n-\t}\n+// mosaicLedger adapts the existing record without changing its persisted schema.\n+type mosaicLedger struct{ CoOccurrenceLedger }\n \n-\tselection := mosaicSelection{allowed: make(map[shoal.ID]struct{}, len(order))}\n-\tbudget := int(c.mosaic.MaxDomains)\n-\tfor _, documentID := range order {\n-\t\tdomain := domains[documentID]\n-\t\tif domain == \"\" {\n-\t\t\t// Every authorized document is governed by a nonempty rule, so an\n-\t\t\t// empty sensitivity domain is an internal inconsistency. Fail\n-\t\t\t// closed rather than collapse ungoverned documents into one shared\n-\t\t\t// compartment.\n-\t\t\treturn mosaicSelection{}, inconsistentBase()\n-\t\t}\n-\t\tif _, seen := observed[domain]; seen {\n-\t\t\tselection.allowed[documentID] = struct{}{}\n-\t\t\tcontinue\n-\t\t}\n-\t\tif len(observed) < budget {\n-\t\t\tobserved[domain] = struct{}{}\n-\t\t\tselection.allowed[documentID] = struct{}{}\n-\t\t\tcontinue\n-\t\t}\n-\t\t// Load-bearing: the withholding branch is pinned by\n-\t\t// TestMosaicBudgetWithholdsCrossDomainResults; deleting the increment\n-\t\t// or the continue would let a restricted document through.\n-\t\tselection.restricted++\n-\t}\n+func (l mosaicLedger) Load(ctx context.Context, key string) (AccumulatorRecord[[]string], bool, error) {\n+\trecord, found, err := l.LoadCoOccurrence(ctx, key)\n+\treturn AccumulatorRecord[[]string]{WindowStart: record.WindowStart, State: record.Domains}, found, err\n+}\n \n-\tdomainsOut := make([]string, 0, len(observed))\n-\tfor domain := range observed {\n-\t\tdomainsOut = append(domainsOut, domain)\n+func (l mosaicLedger) Store(ctx context.Context, key string, record AccumulatorRecord[[]string]) error {\n+\treturn l.StoreCoOccurrence(ctx, key, CoOccurrenceRecord{WindowStart: record.WindowStart, Domains: record.State})\n+}\n+\n+func (b MosaicBudget) accumulator(store PolicyStore) (*Accumulator[[]string], error) {\n+\tif !b.enabled() {\n+\t\treturn nil, nil\n \t}\n-\tsort.Strings(domainsOut)\n-\tif err := c.ledger.StoreCoOccurrence(ctx, key, CoOccurrenceRecord{\n-\t\tWindowStart: windowStart,\n-\t\tDomains:     domainsOut,\n-\t}); err != nil {\n-\t\treturn mosaicSelection{}, err\n+\tledger, _ := store.(CoOccurrenceLedger)\n+\t// Do not hide a nil underlying ledger inside a nonnil adapter.\n+\tvar adapter AccumulatorLedger[[]string]\n+\tif !isNilDependency(ledger) {\n+\t\tadapter = mosaicLedger{ledger}\n \t}\n-\treturn selection, nil\n+\taccumulator, err := NewAccumulator(adapter, b.Window, \"explorer-mosaic-identity-v1\")\n+\tif err != nil {\n+\t\t// Preserve the existing construction errors as well as validation order.\n+\t\tif b.Window <= 0 {\n+\t\t\treturn nil, dependencyRequired(\"mosaic co-occurrence window\")\n+\t\t}\n+\t\treturn nil, dependencyRequired(\"co-occurrence ledger\")\n+\t}\n+\treturn accumulator, nil\n }\ndiff --git a/pkg/explorer/authorized/mosaic_internal_test.go b/pkg/explorer/authorized/mosaic_internal_test.go\nindex e922c96..6f17d42 100644\n--- a/pkg/explorer/authorized/mosaic_internal_test.go\n+++ b/pkg/explorer/authorized/mosaic_internal_test.go\n@@ -46,14 +46,16 @@ func TestEmptySensitivityDomainIsProducible(t *testing.T) {\n // consistency guard in applyMosaicBudget. An empty sensitivity domain means a\n // document is not governed by any rule key; admitting it would collapse every\n // such document into one shared compartment and silently bypass the budget.\n // The guard must reject the read instead of returning a partial selection.\n func TestMosaicBudgetFailsClosedOnEmptySensitivityDomain(t *testing.T) {\n-\tclient := &Client{\n-\t\tmosaic: MosaicBudget{MaxDomains: 4, Window: time.Hour},\n-\t\tledger: NewMemoryPolicyStore(),\n+\tbudget := MosaicBudget{MaxDomains: 4, Window: time.Hour}\n+\taccumulator, err := budget.accumulator(NewMemoryPolicyStore())\n+\tif err != nil {\n+\t\tt.Fatal(err)\n \t}\n+\tclient := &Client{mosaic: budget, accumulator: accumulator}\n \n \tungoverned := shoal.ID(\"doc-ungoverned\")\n \tselection, err := client.applyMosaicBudget(\n \t\tcontext.Background(),\n \t\tauth.Decision{},\n",
+  "head": "463c93401ae025807cce4d3b73ef7f5d898a4351",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 397,
+  "units": [
+    {
+      "id": "d04c7062cf53aa67ec1b6e6d70ed131231a868a6b1b342dba59bb97a4433e13c",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "function:*Accumulator[T].Update"
+    },
+    {
+      "id": "d04d9843152b50848172bbfb25ff6223a1ce3bb08ae64bfa3a4e757caa1107ab",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "function:NewAccumulator"
+    },
+    {
+      "id": "f167c6034db406013b2df1c007205b1b7ec056c83d8e699802ec65fb175c42ef",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "function:accumulatorIdentityKey"
+    },
+    {
+      "id": "fab2b11c02aebfffacf1ea42ebb55f295a7efe5a0ab85c8609242cdfaf05d1e1",
+      "kind": "import",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "import:\"bytes\",\"context\",\"encoding/binary\",\"sync\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\""
+    },
+    {
+      "id": "100fbab7936e5dbc488c13d946f81d140a37851f0c0a14b88f6a023d4c007905",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "type:Accumulator"
+    },
+    {
+      "id": "7aa1d71125624382f1aa9253bebf911aac7c666019acac2432012d6472ba5021",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "type:AccumulatorLedger"
+    },
+    {
+      "id": "fc47bde73f35536743a6e1f29131420f77d4ab1226e5c74f284be3e01ed21845",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "type:AccumulatorRecord"
+    },
+    {
+      "id": "67f6d1cfd8b56eb9961fe96da8cf8233d5164b7763236efc5107369d4d8a2375",
+      "kind": "file_context",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "00b02b0446f7028b3c6aef976d7c651155d025ca1dbd57ef308d180d83ba6e0e",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:*counterLedger.Load"
+    },
+    {
+      "id": "12c0d81eb308cd8dc79bdcdcee244e98153f8f68589b27e44a58c47b2e1c52f3",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:*counterLedger.Store"
+    },
+    {
+      "id": "0e14e5ce5232cb5c44580ad5ed5d7075c1f0ed8a9a6ea57924bc826516eb3f38",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestAccumulatorConstruction"
+    },
+    {
+      "id": "743e32122c8ce2b6fdcd2a79bcc7b801744c1d948c4bd7b4a40d47a0816d97d9",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestAccumulatorFailuresDoNotReleaseState"
+    },
+    {
+      "id": "77875e229811204f9214449260d7f18f93b7d42b8290cbbf5e19de82232a0235",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestAccumulatorIdentityIsolationAndLegacyFraming"
+    },
+    {
+      "id": "68a5ea29a2db2d46ee8569328eab44df62dfb92280c88deef1d8dfd6a5221cc6",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestAccumulatorSerializesConcurrentUpdates"
+    },
+    {
+      "id": "d5ee27f511a975f6ab3ed0f6cb6925c28e9815dbe7465b9ecc3032d6173946d5",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestAccumulatorWindows"
+    },
+    {
+      "id": "a7963255bc4e5e1cfb2fbfd4a055287dd1aa8df3196614bb106b2f5d727fd0ae",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestMosaicAccumulatorFailureDiscardsProvisionalDisclosure"
+    },
+    {
+      "id": "d3ddf80fe68033255ca5299eaa1f13f91e334be4fee4f7e4ad1a9142e0d9135b",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestMosaicAccumulatorReadsLegacyRecord"
+    },
+    {
+      "id": "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:TestMosaicDisabledBypassesAccumulatorAndDomainResolution"
+    },
+    {
+      "id": "d5a5afdbffb98614d27296fef5380376787a79b5025f89f74301db58ce80cdf3",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:accumulatorDecision"
+    },
+    {
+      "id": "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:failingMosaicStore.LoadCoOccurrence"
+    },
+    {
+      "id": "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:failingMosaicStore.StoreCoOccurrence"
+    },
+    {
+      "id": "1e6d55de41d9bd24a1ab82a5a8f2028307a0deb7a2cd446ba5d04125a43f0fe8",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "function:increment"
+    },
+    {
+      "id": "834e79e881dc7281ab9f1701a653d59980b829487cc8a06fa03d624b24ec1b40",
+      "kind": "import",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "import:\"context\",\"errors\",\"reflect\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "9f3ef9875509b2973f3a616af3b7571eb05d28ff317aa39bdeda2344b04a6733",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "type:counterLedger"
+    },
+    {
+      "id": "23dc6483a74044514314eed105f4185ecc510f56f30b31b427754c851ea7111e",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "type:failingMosaicStore"
+    },
+    {
+      "id": "09c7d25e3de30455b49f3a9e409584ed2d576195a490f50f937d1e03e52dbd08",
+      "kind": "file_context",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "4feb50568498c09e46271a70e043be19daba25d94af42691c8a515fcedba54d5",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/client.go",
+      "symbol": "function:NewClient"
+    },
+    {
+      "id": "f9a82b7c9534941c29f50470943124a4022e677fd7a337c2a93777ed405f1d72",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/client.go",
+      "symbol": "type:Client"
+    },
+    {
+      "id": "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "function:*Client.applyMosaicBudget"
+    },
+    {
+      "id": "ff2de5ceb015c78ca2276332a05ef321dafc79d43949c9a0d5f6584257be75b8",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "function:MosaicBudget.accumulator"
+    },
+    {
+      "id": "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "function:mosaicIdentityKey"
+    },
+    {
+      "id": "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "function:mosaicLedger.Load"
+    },
+    {
+      "id": "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "function:mosaicLedger.Store"
+    },
+    {
+      "id": "6a6d1549111276daea3218e98f0c2f04403d30fa4d560343919842d74a692dce",
+      "kind": "import",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "import:\"bytes\",\"context\",\"encoding/binary\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "5d74371b56d686bb9036ab4e21e836600685c240363469adb17467fb44a0c04d",
+      "kind": "import",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "import:\"context\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "d4af68d33489e645fec92ad1da787b7bf115434a7d0b6ef22a1d508f4ccc91c1",
+      "kind": "type",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "type:mosaicLedger"
+    },
+    {
+      "id": "7b718cf49c20725014f48c47db9853c5c3454ff68949b770ba86f556adc6ebb7",
+      "kind": "file_context",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "5cfaf50efb750ee3ad9dbe0c20b615c9e848781e03f93938b51dca2dfae4e755",
+      "kind": "function",
+      "path": "pkg/explorer/authorized/mosaic_internal_test.go",
+      "symbol": "function:TestMosaicBudgetFailsClosedOnEmptySensitivityDomain"
+    }
+  ]
+}

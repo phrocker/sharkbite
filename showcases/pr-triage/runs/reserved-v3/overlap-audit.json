@@ -1,0 +1,7 @@
+{
+  "method": "exact original_state canonical hashes; includes path and complete before/after",
+  "development_vs_validation_v2": 0,
+  "development_vs_reserved_sample": 0,
+  "validation_v2_vs_reserved_sample": 0,
+  "limitation": "Does not exclude near duplicates, related fix families, shared paths or public pretraining overlap."
+}

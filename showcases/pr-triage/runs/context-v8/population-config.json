@@ -1,0 +1,8 @@
+{
+  "status": "reserved_full_population_unlabeled",
+  "datasets": [
+    {
+      "manifest": "/tmp/shoal-context-v8-reserved/manifest.json"
+    }
+  ]
+}

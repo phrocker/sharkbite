@@ -1,0 +1,8 @@
+internal/thrift/idl/** text eol=lf
+internal/thrift/gen/** text eol=lf
+*.sh text eol=lf
+test/accumulo/**/*.sh text eol=lf
+test/accumulo/conf/** text eol=lf
+testdata/explorer-eval/** text eol=lf
+# Byte-exact fixture: a lone carriage return the boundary check must see.
+internal/importboundary/testdata/cgo-probe-lonecr/cmd/shoal-capi/probe.c -text

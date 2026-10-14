@@ -1,0 +1,9 @@
+POST /api/v1/admission/request
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_call\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"id\":\"YWRtaXNzaW9u\",\"idempotency_key\":\"a2V5\",\"token_id\":\"dG9rZW4\",\"agent_id\":\"YWdlbnQ\",\"agent_generation\":3,\"capability\":\"llm.gateway\",\"action\":\"complete\",\"source_id\":\"c291cmNl\",\"policy_id\":\"cG9saWN5\",\"object_id\":\"b2JqZWN0\",\"effects\":[\"egresses-content\",\"reads-corpus\"],\"input\":{\"prompt_digest\":\"abc\",\"n\":1},\"disclosures\":[\"ZG9jLWE\",\"ZG9jLWI\"],\"lease\":60000000000}"
+provider calls: 1
+provider input: fleet.AdmissionRequest{ID:[]uint8{0x61, 0x64, 0x6d, 0x69, 0x73, 0x73, 0x69, 0x6f, 0x6e}, IdempotencyKey:[]uint8{0x6b, 0x65, 0x79}, TokenID:[]uint8{0x74, 0x6f, 0x6b, 0x65, 0x6e}, AgentID:"agent", AgentGeneration:3, Capability:"llm.gateway", Action:"complete", SourceID:[]uint8{0x73, 0x6f, 0x75, 0x72, 0x63, 0x65}, PolicyID:[]uint8{0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79}, ObjectID:"object", Effects:fleet.Effects{"egresses-content", "reads-corpus"}, Input:json.RawMessage{0x7b, 0x22, 0x70, 0x72, 0x6f, 0x6d, 0x70, 0x74, 0x5f, 0x64, 0x69, 0x67, 0x65, 0x73, 0x74, 0x22, 0x3a, 0x22, 0x61, 0x62, 0x63, 0x22, 0x2c, 0x22, 0x6e, 0x22, 0x3a, 0x31, 0x7d}, Disclosures:[]shoal.ID{"doc-a", "doc-b"}, Lease:60000000000, Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"llm_gateway_call", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}}
+status: 404
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"not_found\",\"message\":\"not_found: fleet action not found\"}\n"

@@ -1,0 +1,55 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "decision",
+    "profile": "service-operation-risk"
+  },
+  "cues": [
+    "risky",
+    "risk",
+    "safe"
+  ],
+  "patterns": [
+    "how risky is {operation} {service}",
+    "what is the risk of {operation} {service}",
+    "would {operation} {service} be risky",
+    "is it safe to {operation} {service}",
+    "how risky is it to {operation} {service}"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "operation",
+      "enum": {
+        "restart": [
+          "restarting",
+          "restart",
+          "bouncing",
+          "bounce"
+        ],
+        "rollback": [
+          "rolling back",
+          "roll back",
+          "rollback"
+        ],
+        "scale": [
+          "scaling",
+          "scale"
+        ],
+        "flush": [
+          "flushing",
+          "flush"
+        ]
+      }
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "operation": "$operation"
+  }
+}

@@ -1,0 +1,369 @@
+{
+  "version": 3,
+  "accumuloVersion": "4.0",
+  "mandatoryStacks": [
+    {
+      "context": "scan",
+      "systemIterators": [
+        "deleting",
+        "columnFamilySkipping",
+        "visibility"
+      ]
+    },
+    {
+      "context": "minc",
+      "systemIterators": [
+        "deleting"
+      ]
+    },
+    {
+      "context": "majc",
+      "systemIterators": [
+        "deleting"
+      ]
+    },
+    {
+      "context": "offline",
+      "systemIterators": [
+        "deleting"
+      ]
+    }
+  ],
+  "iterators": [
+    {
+      "name": "versioning",
+      "javaClasses": [
+        "org.apache.accumulo.core.iterators.user.VersioningIterator",
+        "org.apache.accumulo.core.iterators.VersioningIterator"
+      ],
+      "contexts": [
+        "scan",
+        "minc",
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "scan",
+        "minc",
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "maxVersions"
+      ]
+    },
+    {
+      "name": "visibility",
+      "javaClasses": [
+        "org.apache.accumulo.core.iteratorsImpl.system.VisibilityFilter",
+        "org.apache.accumulo.core.iterators.system.VisibilityFilter"
+      ],
+      "contexts": [
+        "scan",
+        "minc",
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "scan"
+      ]
+    },
+    {
+      "name": "deleting",
+      "javaClasses": [
+        "org.apache.accumulo.core.iteratorsImpl.system.DeletingIterator",
+        "org.apache.accumulo.core.iterators.system.DeletingIterator",
+        "org.apache.accumulo.core.iterators.DeletingIterator"
+      ],
+      "contexts": [
+        "scan",
+        "minc",
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "scan",
+        "minc",
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "propagateDeletes",
+        "behavior"
+      ]
+    },
+    {
+      "name": "latentEdgeDiscovery",
+      "javaClasses": [
+        "org.apache.accumulo.core.graph.LatentEdgeDiscoveryIterator"
+      ],
+      "contexts": [
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "similarityThreshold",
+        "maxPairsPerCell",
+        "maxCellBuffer",
+        "edgeCF",
+        "embeddingCF",
+        "embeddingCQ",
+        "semanticMode",
+        "maxEdgesPerVertex",
+        "maxVectors",
+        "direction",
+        "inverseEdgeCF"
+      ]
+    },
+    {
+      "name": "semanticEdge",
+      "contexts": [
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "similarityThreshold",
+        "maxPairsPerCell",
+        "maxCellBuffer",
+        "edgeCF",
+        "embeddingCF",
+        "embeddingCQ",
+        "semanticMode",
+        "maxEdgesPerVertex",
+        "maxVectors",
+        "direction",
+        "inverseEdgeCF"
+      ]
+    },
+    {
+      "name": "graphRank",
+      "javaClasses": [
+        "org.apache.accumulo.core.graph.GraphRankIterator"
+      ],
+      "contexts": [
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "dampingFactor",
+        "maxIterations",
+        "edgeType",
+        "maxVertices",
+        "convergenceThreshold",
+        "vertexCF",
+        "edgeCFPrefix",
+        "labelCQ",
+        "rankCQ"
+      ]
+    },
+    {
+      "name": "causalInference",
+      "javaClasses": [
+        "org.apache.accumulo.core.graph.CausalInferenceEngine"
+      ],
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "query.b64",
+        "startVertex",
+        "direction",
+        "maxDepth",
+        "threshold",
+        "edgeType",
+        "maxVertices",
+        "vertexCF",
+        "embeddingCQ",
+        "edgeCFPrefix",
+        "inverseEdgeCFPrefix",
+        "resultCF",
+        "resultCQ"
+      ]
+    },
+    {
+      "name": "termIndex",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "termCount",
+        "primaryPrefix",
+        "idSource",
+        "postingCF",
+        "phrase",
+        "numericLower",
+        "numericLowerSet",
+        "numericUpper",
+        "numericUpperSet",
+        "numericLowerInclusive",
+        "numericUpperInclusive"
+      ],
+      "optionPatterns": [
+        "term.\u003cn\u003e"
+      ]
+    },
+    {
+      "name": "vectorKNN",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "query.b64",
+        "embeddingSpace",
+        "topK",
+        "embeddingCF",
+        "metric",
+        "minScore"
+      ]
+    },
+    {
+      "name": "edgeExpand",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "anchorCount",
+        "edgeCF",
+        "edgeField",
+        "fieldSep",
+        "idIndex",
+        "relIndex",
+        "relCount",
+        "primaryPrefix",
+        "includeAnchors",
+        "maxHops",
+        "edgeWeightCount"
+      ],
+      "optionPatterns": [
+        "anchor.\u003cn\u003e",
+        "rel.\u003cn\u003e",
+        "edgeWeight.rel.\u003cn\u003e",
+        "edgeWeight.weight.\u003cn\u003e"
+      ]
+    },
+    {
+      "name": "scoreFilter",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "scoreCF",
+        "method",
+        "query.b64",
+        "topK",
+        "paramCount",
+        "timestampAnchorMs",
+        "halfLifeMs"
+      ],
+      "optionPatterns": [
+        "param.\u003cn\u003e"
+      ]
+    },
+    {
+      "name": "graphAggregation",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "aggregationOp",
+        "groupBy",
+        "rowPrefixSep",
+        "valueCF",
+        "valueCQ",
+        "resultRow",
+        "resultCF"
+      ]
+    },
+    {
+      "name": "anomalyDetect",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "valueCF",
+        "valueCQ",
+        "min",
+        "max"
+      ]
+    },
+    {
+      "name": "visibilityStamp",
+      "contexts": [
+        "majc",
+        "offline"
+      ],
+      "activeContexts": [
+        "majc",
+        "offline"
+      ],
+      "optionKeys": [
+        "label",
+        "mode"
+      ]
+    },
+    {
+      "name": "asOf",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "asOfTimestamp"
+      ]
+    },
+    {
+      "name": "documentIndex",
+      "contexts": [
+        "scan"
+      ],
+      "activeContexts": [
+        "scan"
+      ],
+      "optionKeys": [
+        "shardCount",
+        "termCount",
+        "boolOp"
+      ],
+      "optionPatterns": [
+        "shard.\u003cn\u003e",
+        "term.\u003cn\u003e.field",
+        "term.\u003cn\u003e.value"
+      ]
+    }
+  ]
+}

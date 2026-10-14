@@ -1,0 +1,17 @@
+{
+  "binding_status": "Post-evaluation extractor/source-helper binding. Original candidate used this same extractor; this record adds enforcement and requires score-parity verification.",
+  "development_result_id": "ab1d452a5a67c89867758deee39ef078658fa6e523908203714798f4c232f007",
+  "extractor_sha256": "622fae48bfed00e6b53470ae72e71be9a674019c59835b8505b8e66bce4031d2",
+  "id": "a1259ecfc0af568186ea6d26d62801bee7623f63d2fc2b35fc40f4601f61b790",
+  "inputs_id": "60a3f90d20391e3cf5bb62df322e9dee61fc768eb7fbe97577f5e3ce5c0a00fe",
+  "model": "weighted-char-tfidf-logistic-on-diff-and-syntactic-callers",
+  "optimization_enabled": false,
+  "original_selection_id": "cbdc53e218d549613582f9b107dbc883cf9b8161683905f9c3429b51720daa09",
+  "renderer_sha256": "35ea55e70c9139cd39436dd4a3abad8e05ac457233c17391d994f25727b53d44",
+  "runner_sha256": "7ab6b7b6c1858d92e0db4e20bf73e905fc4b874e0e3245ff4c8dc2c6e275bf42",
+  "source_helpers_sha256": "00efc5458ca6abbb73edbd0bbf3c7967f4faa32fbeb3c4103c556648e1ae221e",
+  "threshold": 0.35885048068263103,
+  "training_runner_sha256": "28be7ede0e9047f0174004010503a2725e7c52b90f2b2b0152621615cadcc3f4",
+  "validation_labels_inspected": true,
+  "validation_manifest_id": "a96eb18eece8cea6d5945ec2ec375351c24edd7f28dbb4526249d6052bd5121f"
+}

@@ -1,0 +1,171 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoal-read
+  labels:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: read-fleet
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: read-fleet
+  ports:
+    - name: thrift
+      port: 9800
+      targetPort: thrift
+    - name: metrics
+      port: 9801
+      targetPort: metrics
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9801"
+    prometheus.io/path: /metrics
+  name: shoal-read
+  labels:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: read-fleet
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  replicas: 3
+  # Explicit rollout contract instead of relying on the apps/v1 default
+  # (25% maxUnavailable/maxSurge, which round down/up to 0/1 for these 3
+  # replicas — spelling it out as maxUnavailable: 0 here pins that exact
+  # behavior explicitly rather than leaving it to rounding). Keeps all 3
+  # replicas serving throughout a rollout: an old replica is never
+  # removed until the one extra (maxSurge: 1) surge pod has passed
+  # readiness, since the controller isn't allowed any unavailable pods in
+  # between.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: read-fleet
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shoal
+        app.kubernetes.io/component: read-fleet
+        app.kubernetes.io/part-of: shoal-platform
+    spec:
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: shoal
+                    app.kubernetes.io/component: read-fleet
+                topologyKey: kubernetes.io/hostname
+      containers:
+        - name: shoal
+          image: ghcr.io/example/shoal:dev
+          imagePullPolicy: IfNotPresent
+          command: ["/shoal"]
+          args:
+            - -listen=$(SHOAL_THRIFT_LISTEN)
+            - -zk=$(SHOAL_ZK)
+            - -instance=$(SHOAL_INSTANCE)
+            - -accumulo-version=$(SHOAL_ACCUMULO_VERSION)
+            - -user=$(SHOAL_METADATA_USER)
+            - -storage=$(SHOAL_STORAGE_SCHEME)
+            - -cache-bytes=$(SHOAL_CACHE_BYTES)
+            - -log-level=$(SHOAL_LOG_LEVEL)
+            - -prewarm-tables=$(SHOAL_PREWARM_TABLES)
+            - -prewarm-parallelism=$(SHOAL_PREWARM_PARALLELISM)
+            - -metrics-address=$(SHOAL_READ_METRICS_LISTEN)
+            - -readiness-interval=$(SHOAL_READ_READINESS_INTERVAL)
+            - -quiesce-delay=$(SHOAL_READ_QUIESCE_DELAY)
+            - -drain-timeout=$(SHOAL_READ_DRAIN_TIMEOUT)
+            # TLS is opt-in. Mount a Secret as read-tls and uncomment:
+            # - -tls-cert=/var/run/secrets/shoal/read-tls/tls.crt
+            # - -tls-key=/var/run/secrets/shoal/read-tls/tls.key
+            # - -tls-client-ca=/var/run/secrets/shoal/read-tls/ca.crt
+          envFrom:
+            - configMapRef:
+                name: shoal-platform-config
+          env:
+            - name: SHOAL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: shoal-object-storage-credentials
+                  key: accumulo-password
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/shoal/gcs/key.json
+          ports:
+            - name: thrift
+              containerPort: 9800
+            - name: metrics
+              containerPort: 9801
+          volumeMounts:
+            - name: object-storage-credentials
+              mountPath: /var/run/secrets/shoal/gcs
+              readOnly: true
+          readinessProbe:
+            # If the commented TLS flags above are enabled, add
+            # scheme: HTTPS. For mutual TLS, use tcpSocket on metrics
+            # because kubelet cannot present a client certificate.
+            httpGet:
+              path: /readyz
+              port: metrics
+            initialDelaySeconds: 1
+            periodSeconds: 5
+            failureThreshold: 1
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: "2"
+              memory: 2Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+      volumes:
+        - name: object-storage-credentials
+          secret:
+            secretName: shoal-object-storage-credentials
+            optional: true
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shoal-read
+  labels:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: read-fleet
+    app.kubernetes.io/part-of: shoal-platform
+spec:
+  # Stateless read replicas spread across nodes (see the pod anti-affinity
+  # above): allow one voluntary disruption at a time so at least 2 of 3
+  # stay available to serve reads.
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: read-fleet

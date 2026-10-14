@@ -1,0 +1,7 @@
+POST /shoal/api/v1/admission/report
+header Accept-Encoding: gzip
+header Authorization: Bearer plane-token
+header Content-Length: 311
+header Content-Type: application/json
+header User-Agent: Go-http-client/1.1
+body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"llm_gateway_report\",\"deadline\":\"2026-09-06T14:01:30.123456789+02:00\"},\"token\":{\"action_id\":\"YQD_\",\"token_id\":\"dG9rZW4\",\"version\":2,\"expires_at\":\"2026-09-06T14:01:00.123456789+02:00\"},\"outcome\":{\"usage\":{\"total_tokens\":12}}}"

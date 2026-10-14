@@ -1,166 +1,224 @@
+# Sharkbite
 
-# ![logo](https://www.sharkbite.io/wp-content/uploads/2017/02/sharkbite.jpg) Sharkbite 
-![Ubuntu CICD Pipeline](https://github.com/phrocker/sharkbite/workflows/Ubuntu%20CICD%20Pipeline/badge.svg)
+Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
 
-**S**harkbite is a native client for key/value stores. With 
-initial support for [Apache Accumulo](https://accumulo.apache.org/), the design can and has been used to support other key/value
-stores. Development began in 2014 and has  slowly evolved. there is no structural specificity to Accumulo
-despite being the base implementation. Despite this the examples below will look very much like Accumulo due to aliasing. This is intentional.
-
-Capabilities That will be supported in V0.7 : 
-
- * **Pysharkbite**, the native python implementation can be installed via pip install sharkbite for linux and osx
- * Works with Accumulo 1.6.x, 1.7.x, 1.8.x, 1.9.x and 2.x
- * **Read/Write** : Reading and writing data to Accumulo is currently supported.
- * **Table Operations** 
- * **Security Operations** 
- * **Python Iterators**  : Python iterators run natively at the tablet server. They are supported either through the labmda iterators in Python or the typical python interfaces. 
- 
-About the name
-
-**S**harkbite's name originated from design as a connector that abstracted components in which we tightly
-coupled and gripped interfaces of the underlying datastore. With an abstraction layer for access, and using
-cross compatible objects, the underlying interfaces are heavily coupled to each database. As a result, Sharkbite
-became a fitting name since interfaces exist to abstract the high coupling that exists within implementations of 
-the API.
-
-## Requirements
-
-	GNU 4+
-	cmake
-	make
-	python3.7-dev ( for python bindings )
-	
-### For Libthrift
-	bison 3+
-	libboost.
-	automake
-	autotool
-	autoconf
-	libtool
-	libevent-dev
-	unzip
-	
-Lib Boost is a compile time dependency for thrift. It is not required at runtime, so will no be referenced via any compiled artifact.
-	
-### For Native Python Iterators
- 	JDK ( such as OpenJDK)
- ## Build Options
- The following is a list of build options in cmake. Preface this with -D at the command line. An example command might be
-
-```
-cmake -DPYTHON_ITERATOR_SUPPORT=ON -DCMAKE_BUILD_TYPE=Release -D BUILD_TESTS=ON -D BUILD_PYTHON_TESTS=ON ..
-``` 
-
-| CMAKE Option | Default value  |  Purpose  
-|--|--|--|
-|BUILD_TESTS  | ON | Build all tests
-|BUILD_PYTHON_TESTS  | OFF  | Builds python Integration tests that are used for verification and validation
-|NATIVE_ARCH  | OFF  | Builds using native architecture symbols. 
-|PYTHON_ITERATOR_SUPPORT  | OFF  | Builds the python iterator jar
+Shoal remains the name of the underlying Go engine and its stable evidence, provenance, and decision contracts.
 
 
+Shoal is an evidence and enforcement layer for AI systems. It keeps the chain
+from **what was observed** to **what an agent may do** inspectable:
 
-## Building Linux
-```
-mkdir build && cd build && cmake .. && cmake --build . ; make test
+- authorized retrieval returns exact evidence and provenance;
+- snapshots make the source state reproducible;
+- decisions, outcomes, and adjudications are append-only records;
+- actions are checked against declared effects and host policy;
+- missing authority or evidence fails closed.
 
-This will build the package and library, which you can use. It will also build
-examples in the examples directory+	
+Shoal is a set of Go libraries, local commands, and services. It does not try
+to be an agent runtime or a model vendor.
+
+## Choose a path
+
+| You want to… | Start here |
+|---|---|
+| Explore a cited local corpus | [Explorer quickstart](#explorer) |
+| Use the browser workspace | [Web workspace](#web-workspace) |
+| Measure local model decisions | [Local decisions](docs/local-decisions.md) |
+| Build against the knowledge contracts | [Public packages](#public-packages) |
+| Run a local sorted KV engine | [Embedded engine](#embedded-engine) |
+| Evaluate Accumulo compatibility | [Compatibility harness](test/accumulo/README.md) |
+| Understand the product direction | [Platform product plan](docs/platform-product-plan.md) |
+
+Capability status and validation evidence are tracked in
+[`FEATURES.md`](FEATURES.md). Proposed or shadow-only workflows are labeled as
+such in their design documents; they are not production guarantees.
+
+## Explorer
+
+The Explorer is the easiest way to try Shoal. It ingests Markdown or plain text,
+builds deterministic document and graph structure, and returns claims with
+revision-specific citations.
+
+```bash
+go run ./cmd/shoal-explore ingest \
+  -data .shoal/explorer \
+  -file docs/platform-product-plan.md
+
+go run ./cmd/shoal-explore ask \
+  -data .shoal/explorer \
+  -question "what gates local to cluster promotion?"
 ```
 
-## Building on OSX
+The answer includes source ranges, graph paths, a snapshot identity, and an
+execution trace. When the corpus does not support an answer, Explorer returns a
+grounded no-answer with a logged issue.
 
-Follow the same procedures as above, but you may need to force linking bison 3.x
-if you installed it via Homebrew
+The default provider is deterministic and offline. Select a configured local or
+compatible provider when needed:
 
-## What we provide
-
-Please note that the library of sharkbite consists of C bindings to allow you to create various connectors
-via our C interfaces and a Python binding built via Pybind11. 
-
-## Python Lib
-The Python library can be installed by simply typing pip install . into the root source directory.
-During this process the C++ library and python bindings will be built.
-
-[A Python example](https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py) is included. This is your primary example of the Python bound sharkbite
-library.
-
-## Python Iterators
-
-### Recommended
-We now support python iterators. If you don't have a need to build sharkbite and don't wish to use JNI for the python bindings, you can build
-the native-iterators-jni package without the rest of sharkbite. Simply run mvn package in the native-iterators-jni directory
-and the target directory will have the required JAR with all necessary dependencies. 
-
-### Using JNI bindings for python ( not recommended )
-
-By using the cmake option PYTHON_ITERATOR_SUPPORT ( cmake -DPYTHON_ITERATOR_SUPPORT=ON ) we will build the necessary infrastructure to support python iterators using 
-either JNI or Jython. 
-
-Iterators can be defined as single function lambdas or by implementing the seek or next methods.
-
-
-The first example implements the seek and onNext methods. seek is optional if you don't wish to adjust the range. Once keys are being iterated you may get the top key. You may call 
-iterator.next() after or the infrastructure will do that for you. 
-
+```bash
+go run ./cmd/shoal-explore ask \
+  -data .shoal/explorer \
+  -provider ollama \
+  -question "summarize the authorization boundary"
 ```
 
-class myIterator: 
-  def seek(iterator,soughtRange):
-    range = Range("a")
-    iterator.seek(range)
+Explorer's retrieval and inference contracts are provider-neutral. See
+[`docs/explorer-demo-walkthrough.md`](docs/explorer-demo-walkthrough.md) for a
+complete local walkthrough.
 
+## Web workspace
 
-  def onNext(iterator):
-    if (iterator.hasTop()):
-    	kv = KeyValue()
-  	  key = iterator.getTopKey()
-  	  cf = key.getColumnFamily()
-  	  value = iterator.getTopValue()
-  	  key.setColumnFamily("oh changed " + cf)
-  	  iterator.next()
-  	  return KeyValue(key,value)
-    else: 
-      return None
+`shoal-explore-web` puts an authenticated browser workspace over an existing
+corpus:
 
+```bash
+go run ./cmd/shoal-explore-web \
+  -data .shoal/explorer \
+  -listen 127.0.0.1:8080 \
+  -dev-auth
 ```
 
-If this is defined in a separate file, you may use it with the following code snippet
+The workspace provides document browsing, retrieval with exact citations, graph
+navigation, and ontology views. When a host configures the local decision
+providers, it also exposes a **Decisions** tab for receipts, registrations,
+cohort exports, outcomes, and adjudications. These records support measurable
+shadow decisions; the console does not promote or exclude a model. Provider
+wiring for the default host is tracked in
+[issue #645](https://github.com/phrocker/shoal-oss/issues/645).
+
+Every request carries an authorization decision enforced below the transport.
+Unauthenticated requests receive `401`; the service does not guess an identity.
+`-dev-auth` is limited to loopback. Deployment and OIDC configuration are
+documented in
+[`docs/shoal-explore-web-deploy.md`](docs/shoal-explore-web-deploy.md).
+
+## Why the evidence boundary matters
+
+Shoal derives citation identities from the evidence it actually resolves, so a
+caller cannot invent an anchor ID. Unauthorized documents are removed before
+ranking and do not influence results. A restricted term and a nonexistent term
+use the same encoded response, preventing authorization probing.
+
+Snapshots, revisions, `as_of`, ontology versions, and authorization fingerprints
+make a result inspectable later. A valid record still describes what was known at
+that point; it does not make a changed world true.
+
+Execution has a separate boundary. Actions declare their effects, hosts declare
+what they permit, and mismatches fail closed. Reading a corpus, transmitting
+content, and mutating an external system are distinct effects rather than a
+single privilege ladder.
+
+## Public packages
+
+The main contracts are organized by concern:
+
+- [`pkg/document`](pkg/document), [`pkg/graph`](pkg/graph), and
+  [`pkg/ontology`](pkg/ontology) model source structure and relationships.
+- [`pkg/retrieval`](pkg/retrieval) and [`pkg/contextpack`](pkg/contextpack) build
+  bounded, authorized evidence.
+- [`pkg/inference`](pkg/inference) defines provider-neutral grounded inference.
+- [`pkg/decision`](pkg/decision) defines measured task, prediction, outcome, and
+  evaluation records.
+- [`pkg/explorer`](pkg/explorer) provides the authorized workspace and Explorer
+  integration.
+- [`pkg/interaction`](pkg/interaction) and
+  [`pkg/explorer/fleet`](pkg/explorer/fleet) record bounded execution.
+
+The local-decision contracts, provenance rules, dataset boundaries, and
+shadow-learning loop are described in
+[`docs/local-decisions.md`](docs/local-decisions.md) and
+[`docs/decision-contracts.md`](docs/decision-contracts.md).
+
+## Embedded engine
+
+`shoal-embed` is a standalone sorted key/value engine. It has no ZooKeeper or
+Accumulo dependency and stores durable RFile, Parquet, or mixed-format tablets.
+
+```bash
+go run ./cmd/shoal-embed init \
+  --table graph \
+  --splits "entity:,event:,knowledge:" \
+  --data ~/.shoal/data
+
+go run ./cmd/shoal-embed write \
+  --table graph --data ~/.shoal/data < mutations.jsonl
+
+go run ./cmd/shoal-embed scan \
+  --table graph --data ~/.shoal/data
+```
+
+Use the default RFile profile for point and range lookups or Accumulo
+interoperability. Use `--workload analytical` for Parquet-oriented scans and
+aggregation. The storage and SQL details are in
+[`docs/shoalql-accumulo.md`](docs/shoalql-accumulo.md) and
+[`docs/explorer-accumulo-adapter.md`](docs/explorer-accumulo-adapter.md).
+
+Shoal also includes a read-optimized Accumulo-compatible serving role,
+tablet-server and compactor roles, and a C ABI/Python compatibility layer.
+Those roles have separate validation gates; see
+[`ARCHITECTURE.md`](ARCHITECTURE.md), [`FEATURES.md`](FEATURES.md), and
+[`python/README.md`](python/README.md).
+
+## Build and test
+
+Requirements for the normal Go workflow are Go 1.25+, Python 3.9+ for the
+compatibility package, `make`, and a native C toolchain.
+
+```bash
+git clone https://github.com/phrocker/sharkbite.git
+cd sharkbite
+
+make build
+make test
+```
+
+Useful targets:
+
+```bash
+make capi                  # build the stable C connector ABI
+make thrift-gen            # regenerate checked-in Thrift bindings
+make thrift-verify         # verify generated bindings are current
+make test-accumulo-static  # validate the pinned harness without Docker
+make test-accumulo        # run the live Accumulo harness
+make conformance-live      # run live release conformance checks
+```
+
+The live Accumulo targets are opt-in. Docker absence is reported as unsupported,
+not as a passing conformance result. See
+[`test/accumulo/README.md`](test/accumulo/README.md).
+
+## Documentation map
+
+- [Explorer demo](docs/explorer-demo-walkthrough.md)
+- [Explorer public contract](docs/explorer-public-contract.md)
+- [Inference contracts](docs/inference-contracts.md)
+- [Local decisions and learning](docs/local-decisions.md)
+- [Decision HTTP APIs](docs/decision-http-api.md)
+- [Adjudication](docs/decision-adjudication.md)
+- [Deployment and effects](docs/effects-gateway-deploy.md)
+- [Embedded engine](docs/shoal-embed-container.md)
+- [Iterator capability registry](docs/iterator-capability-registry.md)
+- [Offline compaction design](docs/offline-compaction-design.md)
+- [Offline compaction runbook](docs/offline-compaction.md)
+- [C ABI and Python compatibility](capi/README.md)
+- [Distributed serving architecture](ARCHITECTURE.md)
+- [Accumulo test harness](test/accumulo/README.md)
+
+For generated API or compatibility details, start from the package README or
+the relevant document above rather than this overview.
+
+## Repository layout
 
 ```
-with open('test.iter', 'r') as file:
-  iterator = file.read()
-## name, iterator text, priority
-iterator = pysharkbite.PythonIterator("PythonIterator",iteratortext,100)
-scanner.addIterator(iterator)    
+cmd/         user-facing commands and services
+pkg/         public knowledge, inference, decision, and Explorer contracts
+internal/    engine, storage, protocol, serving, and compatibility internals
+docs/        architecture, validation, deployment, and operator guides
+test/        conformance and integration harnesses
+python/      Sharkbite import-compatible package
 ```
 
-Alternative you may use lambdas. The lambda you provide will be passed the KeyValue ( getKey() and getValue() return the constituent parts). A partial code example of setting it up is below.
-You may return a Key or KeyValue object. If you return the former an empty value will be return ed.
+## License
 
-```
-## define only the name and priority 
-iterator = pysharkbite.PythonIterator("PythonIterator",100)
-## define a lambda to ajust the column family.
-iterator = iterator.onNext("lambda x : Key( x.getKey().getRow(), 'new cf', x.getKey().getColumnQualifier()) ")
-
-scanner.addIterator(iterator)
-```
-
-You may either define a python iterator as a text implementation or a lambda. Both cannot be used simulaneously. 
-
-## C Library
-
-The C library is a wrapper around the C++ Code. We supply a target called "capi". 
-
-This python example is vestigial and only exists as an example of the C-API wrappers. Implementations can be written
-in Go, Rust, Ruby, etc. 
-
-## Examples
-
-A C++ Example can be found [here](https://www.github.com/phrocker/sharkbite/blob/master/examples/CppExample.cpp) as well as in src/examples/
-
-A Python example can be found [here] (https://github.com/phrocker/sharkbite/blob/master/examples/pythonexample.py)
-
-[Apache Accumulo]: https://accumulo.apache.org
+Apache License, Version 2.0.

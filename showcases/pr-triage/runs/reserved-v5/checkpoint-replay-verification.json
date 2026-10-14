@@ -1,0 +1,10 @@
+{
+  "exact_score_and_proposal_parity": true,
+  "id": "9e81deb73d431c0ce8a5cc3e1f53d0792a7d9d44abac17e77ec8369c0a2d6309",
+  "kind": "preserved_checkpoint_replay",
+  "maximum_score_delta": 0,
+  "original_prediction_id": "8edb0fb0df0bcd273723b36043b1f326248d8e9f72e1e555b3fd8530b0fffd05",
+  "qualification": "Independent reload replay; original training-process logits were not saved.",
+  "replay_prediction_id": "f5633792303caf531b866d2e8bc11b7f90267cd588b4398c455ad0bfc0726292",
+  "units": 189
+}

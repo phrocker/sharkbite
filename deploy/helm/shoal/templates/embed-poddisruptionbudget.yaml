@@ -1,0 +1,16 @@
+{{- if and (eq (include "shoal.writeTierEnabled" .) "true") .Values.writeTier.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "shoal.fullname" . }}-embed
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: write-tier
+spec:
+  maxUnavailable: {{ .Values.writeTier.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal-embed
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: write-tier
+{{- end }}

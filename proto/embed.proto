@@ -1,0 +1,438 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+syntax = "proto3";
+
+package shoal.embed.v1;
+
+option go_package = "github.com/phrocker/shoal-oss/internal/embedpb";
+
+// ShoalEmbed is the gRPC service for the embedded storage engine.
+// It exposes table management, writes, scans, compaction, and status.
+service ShoalEmbed {
+  // CreateTable creates a new table with optional split points.
+  rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
+
+  // CreateTableV2 enforces the safety-critical default_embedding field. New
+  // clients use this RPC for embedding-bearing tables so pre-V2 servers fail
+  // closed with UNIMPLEMENTED rather than ignoring the field.
+  rpc CreateTableV2(CreateTableRequest) returns (CreateTableResponse);
+
+  // Write writes an unconditional batch of mutations to a table.
+  rpc Write(WriteRequest) returns (WriteResponse);
+
+  // ConditionalWrite atomically evaluates optional per-mutation conditions
+  // and writes accepted mutations. A separate RPC makes mixed-version clients
+  // fail closed: servers predating conditional writes return UNIMPLEMENTED
+  // instead of ignoring unknown condition fields and writing unconditionally.
+  rpc ConditionalWrite(WriteRequest) returns (WriteResponse);
+
+  // Scan reads cells from a table. Results are streamed back.
+  rpc Scan(ScanRequest) returns (stream ScanResponse);
+
+  // ScanV2 enforces safety-critical vector embedding-space identity. Clients
+  // issuing vector_search must use this RPC so pre-V2 servers fail closed with
+  // UNIMPLEMENTED rather than ignoring the embedding_space field.
+  rpc ScanV2(ScanRequest) returns (stream ScanResponse);
+
+  // Flush forces memtables to RFiles for a table.
+  rpc Flush(FlushRequest) returns (FlushResponse);
+
+  // Compact runs major compaction on a table.
+  rpc Compact(CompactRequest) returns (CompactResponse);
+
+  // Status returns engine metadata (table list, etc.).
+  rpc Status(StatusRequest) returns (StatusResponse);
+}
+
+// TableWorkload is the table's access-pattern profile. It controls the
+// default immutable persistence format when file_format is left unspecified.
+enum TableWorkload {
+  TABLE_WORKLOAD_UNSPECIFIED = 0;
+  TABLE_WORKLOAD_OPERATIONAL = 1;
+  TABLE_WORKLOAD_ANALYTICAL = 2;
+}
+
+// TableFileFormat is the immutable persistence format written by flushes and
+// compactions.
+enum TableFileFormat {
+  TABLE_FILE_FORMAT_UNSPECIFIED = 0;
+  TABLE_FILE_FORMAT_RFILE = 1;
+  TABLE_FILE_FORMAT_PARQUET = 2;
+}
+
+// ── CreateTable ─────────────────────────────────────────────────
+
+message CreateTableRequest {
+  string table = 1;
+  repeated string splits = 2;
+  // Optional workload profile. Unspecified preserves the existing default
+  // create-table behavior unless file_format implies a specific profile.
+  TableWorkload workload = 3;
+  // Optional immutable persistence format. Unspecified preserves the existing
+  // create-table behavior unless workload implies a specific format.
+  TableFileFormat file_format = 4;
+  // Actual embedding state stamped into future immutable files. Uses the
+  // canonical FileState grammar: has_embeddings:<identity>, no_embeddings,
+  // or unknown. Empty records no claim and therefore reads as unknown.
+  string default_embedding = 5;
+}
+
+message CreateTableResponse {
+  string table = 1;
+  int32 tablets = 2;
+  TableWorkload workload = 3;
+  TableFileFormat file_format = 4;
+}
+
+// ── Write ───────────────────────────────────────────────────────
+
+message Mutation {
+  bytes row = 1;
+  repeated Entry entries = 2;
+  // Compare-and-set predicates used by ConditionalWrite. All conditions must
+  // match before any entry is written. Write rejects mutations that set this
+  // field so callers cannot accidentally depend on unknown-field behavior.
+  repeated Condition conditions = 3;
+}
+
+message Entry {
+  bytes column_family = 1;
+  bytes column_qualifier = 2;
+  bytes column_visibility = 3;
+  int64 timestamp = 4;
+  bytes value = 5;
+  bool delete = 6;
+}
+
+message Condition {
+  bytes column_family = 1;
+  bytes column_qualifier = 2;
+  // Visibility is part of an Accumulo cell coordinate. Conditions only
+  // inspect versions with this exact visibility; empty means empty visibility.
+  bytes column_visibility = 3;
+  // When present, inspect the exact timestamp. When absent, inspect the newest
+  // version at the coordinate; a newest tombstone makes the coordinate absent.
+  optional int64 timestamp = 4;
+  oneof predicate {
+    // Set true to require that no live value exists at the selected
+    // coordinate/version.
+    bool absent = 5;
+    // Require that the selected live value exactly equals these bytes.
+    bytes value_equals = 6;
+  }
+}
+
+message WriteRequest {
+  string table = 1;
+  repeated Mutation mutations = 2;
+}
+
+enum MutationStatus {
+  MUTATION_STATUS_UNSPECIFIED = 0;
+  MUTATION_STATUS_ACCEPTED = 1;
+  MUTATION_STATUS_REJECTED = 2;
+}
+
+message MutationResult {
+  MutationStatus status = 1;
+}
+
+message WriteResponse {
+  // Number of accepted mutations. For requests without conditions this
+  // remains equal to len(mutations), preserving the original contract.
+  int32 written = 1;
+  // One result per request mutation, in request order.
+  repeated MutationResult results = 2;
+}
+
+// ── Scan ────────────────────────────────────────────────────────
+
+message ScanRequest {
+  string table = 1;
+  // Row prefix for prefix scans (mutually exclusive with start/end).
+  string row_prefix = 2;
+  // Explicit range bounds.
+  bytes start_row = 3;
+  bool start_inclusive = 4;
+  bytes end_row = 5;
+  bool end_inclusive = 6;
+  // Max cells to return (0 = unlimited).
+  int32 limit = 7;
+  // Batch size for streaming chunks (0 = server default).
+  int32 batch_size = 8;
+  // Optional server-side term-index (keyword) pushdown. When set, the scan
+  // resolves the given posting rows to their referenced primary rows and
+  // streams back the primary rows' cells instead of the raw range. This is
+  // additive: a request that leaves term_filter unset behaves exactly as
+  // before.
+  TermFilter term_filter = 9;
+  // Optional server-side vector k-NN pushdown. When set, the scan scores
+  // packed-float32 embedding cells in range against a query vector and streams
+  // back only the top-k cells, each cell's value replaced by a big-endian
+  // float32 similarity score (score-descending). This is additive: a request
+  // that leaves vector_search unset behaves exactly as before. term_filter and
+  // vector_search are mutually exclusive.
+  VectorSearch vector_search = 10;
+  // Optional server-side one-hop graph expansion. When set, the scan walks the
+  // given anchor rows' edge cells, resolves the embedded neighbor ids to
+  // neighbor rows, and streams back those rows' cells. This is additive: a
+  // request that leaves edge_expand unset behaves exactly as before. At most
+  // one of term_filter, vector_search, edge_expand and score_filter may be set.
+  EdgeExpand edge_expand = 11;
+  // Optional server-side read-time scoring pushdown. When set, the scan scores
+  // cells in range, keeps the top-k, and streams those cells with the value
+  // replaced by a big-endian float32 score (score-descending). This is
+  // additive: a request that leaves score_filter unset behaves exactly as
+  // before. At most one of term_filter, vector_search, edge_expand and
+  // score_filter may be set.
+  ScoreFilter score_filter = 12;
+  // Optional as-of (time-travel) ceiling: when > 0, the scan ignores every
+  // cell whose timestamp is greater than as_of, reconstructing the table as
+  // it existed at that instant. Applied beneath versioning/deletion so the
+  // newest surviving version <= as_of wins and tombstones written after as_of
+  // are not yet in effect — matching Accumulo's timestamp-filter semantics.
+  // Additive: as_of <= 0 (the default) behaves exactly as before. Works with
+  // plain range/prefix scans; it is independent of the pushdown filters above.
+  int64 as_of = 13;
+}
+
+// TermFilter configures the term-index pushdown iterator. A consumer
+// maintains an inverted index as ordinary cells — posting rows (e.g.
+// "idx:<term>") with one cell per matching primary row. TermFilter moves the
+// "scan postings, then point-lookup each primary row" join server-side: the
+// engine walks the listed posting rows, resolves each posting to a primary
+// row, and returns the primary rows' cells directly.
+//
+// The engine defines only the mechanism (resolve postings -> primary rows);
+// the posting/primary schema is the consumer's, supplied here per scan.
+message TermFilter {
+  // Posting row keys to look up, e.g. "idx:graph". Postings from all rows are
+  // unioned and de-duplicated before resolution.
+  repeated bytes term_rows = 1;
+  // Prefix prepended to each resolved id to form the primary row key. Empty
+  // means the resolved id is itself the full primary row.
+  bytes primary_prefix = 2;
+  // Where in a posting cell the primary id lives: "qualifier" (default) reads
+  // the column qualifier; "value" reads the cell value.
+  string id_source = 3;
+  // Optional column family restriction: when non-empty, only posting cells
+  // with this column family are treated as postings. Empty = every cell in a
+  // posting row is a posting.
+  bytes posting_cf = 4;
+  // When true, postings from term_rows are matched as an ordered adjacent
+  // phrase instead of the existing union/de-duplicate keyword behavior. Unset
+  // false preserves the original TermFilter semantics exactly.
+  bool phrase = 5;
+  // Optional numeric-valued posting range. When set, only postings whose
+  // consumer-encoded numeric value falls within the requested bounds are
+  // resolved. Unset preserves the original TermFilter semantics exactly.
+  NumericRange numeric_range = 6;
+}
+
+// NumericRange restricts term postings whose consumer-owned numeric value is
+// within lower/upper bounds. The engine defines only the range mechanism; the
+// posting value schema and numeric meaning are supplied by the consumer.
+message NumericRange {
+  // Lower bound value. Used only when lower_set is true.
+  double lower = 1;
+  bool lower_set = 2;
+  // Upper bound value. Used only when upper_set is true.
+  double upper = 3;
+  bool upper_set = 4;
+  // Bound inclusivity. Defaults false mean exclusive when the bound is set.
+  bool lower_inclusive = 5;
+  bool upper_inclusive = 6;
+}
+
+// VectorSearch configures the brute-force vector k-NN pushdown iterator. A
+// consumer co-locates an embedding with its primary row as an ordinary cell —
+// a reserved column family whose value is the embedding packed as big-endian
+// float32. VectorSearch moves the "stream every embedding back and rank it"
+// search server-side: the engine scores each embedding cell against the query,
+// keeps the k best, and returns those cells with the value replaced by a
+// big-endian float32 similarity score, best first.
+//
+// The engine defines only the mechanism (score cells -> top-k); the embedding
+// schema is the consumer's, supplied here per scan.
+message VectorSearch {
+  // Query vector, packed big-endian float32 (length = dim*4). Required.
+  bytes query = 1;
+  // Number of nearest cells to return (k). 0 = server default (10).
+  int32 top_k = 2;
+  // Optional column family restriction: when non-empty, only cells with this
+  // column family are treated as embeddings. Empty = every cell in range.
+  bytes embedding_cf = 3;
+  // Similarity metric: "cosine" (default when empty), "dot", or "l2".
+  string metric = 4;
+  // Optional lower bound: cells scoring below it are dropped. Scores are
+  // oriented so larger is better (l2 uses negative squared distance), so this
+  // filters the same way for every metric. Unset (0) means no minimum is
+  // applied unless min_score_set is true.
+  float min_score = 5;
+  // Distinguishes "min_score deliberately 0" from "min_score unset".
+  bool min_score_set = 6;
+  // Stable provider/model/version/dimension/normalization identity of query.
+  // Required for identity-safe raw-vector comparison.
+  string embedding_space = 7;
+}
+
+// ScoreFilter configures the read-time scoring pushdown iterator. A consumer
+// stores score inputs as ordinary cells: vectors, timestamps, or feature
+// values in a reserved column family. ScoreFilter moves the "stream cells,
+// compute a consumer-selected score, then keep top-k" step server-side: the
+// engine scores each candidate cell, keeps the k best, and returns those cells
+// with the value replaced by a big-endian float32 score, best first.
+//
+// The engine defines only the mechanism (score cells -> top-k); the scoring
+// schema and method parameters are the consumer's, supplied here per scan.
+message ScoreFilter {
+  // Optional column family restriction for the value to score. Empty = every
+  // cell in range is a candidate.
+  bytes score_cf = 1;
+  // Scoring selector, e.g. "vector_sim", "time_decay", or "linear". Empty =
+  // server default for the requested deployment.
+  string method = 2;
+  // Optional query vector, packed big-endian float32. Methods that need a query
+  // vector (for example vector_sim) require this to be non-empty.
+  bytes query = 3;
+  // Number of scored cells to return (k). 0 = server default (10).
+  int32 top_k = 4;
+  // Method-specific float parameters, interpreted by the consumer-selected
+  // method (for example feature weights or decay coefficients).
+  repeated float params = 5;
+  // Timestamp anchor for time-decay scoring, in Unix milliseconds. 0 means the
+  // server may use its default anchor (typically now).
+  int64 timestamp_anchor_ms = 6;
+  // Half-life for time-decay scoring, in milliseconds. 0 means no explicit
+  // half-life was supplied.
+  int64 half_life_ms = 7;
+}
+
+// EdgeExpand configures the one-hop graph-expansion pushdown iterator. A
+// consumer co-locates a node's out-edges with the node row as ordinary cells —
+// each edge is a cell whose column family marks it as an edge and whose column
+// qualifier (or value) encodes the relationship and the neighbor's id.
+// EdgeExpand moves the "scan edges, then point-lookup each neighbor" traversal
+// server-side: the engine walks the listed anchor rows' edge cells, extracts
+// each neighbor id, resolves it to a neighbor row, and returns the neighbor
+// rows' cells directly.
+//
+// The engine defines only the mechanism (anchor edge cells -> neighbor rows);
+// the edge schema is the consumer's, supplied here per scan — no relationship
+// or column-family vocabulary is baked in.
+message EdgeExpand {
+  // Anchor (source) row keys to expand from. Neighbors from all anchors are
+  // unioned and de-duplicated.
+  repeated bytes anchor_rows = 1;
+  // Optional column family marking edge cells on an anchor row. Empty = every
+  // cell on an anchor row is an edge.
+  bytes edge_cf = 2;
+  // Where the edge token (the relationship+neighbor encoding) lives in an edge
+  // cell: "qualifier" (default) reads the column qualifier; "value" reads the
+  // cell value.
+  string edge_field = 3;
+  // Optional separator splitting the edge token into fields (e.g. a NUL between
+  // relationship and neighbor id). Empty = the whole token is the neighbor id.
+  bytes field_sep = 4;
+  // When field_sep is set, the split-field index holding the neighbor id; -1
+  // (the default when id_index_set is false) = the last field.
+  int32 id_index = 5;
+  // Distinguishes "id_index deliberately 0" from "id_index unset (-1)".
+  bool id_index_set = 6;
+  // When field_sep is set, the split-field index holding the relationship
+  // (default 0); used only for relationship filtering.
+  int32 rel_index = 7;
+  // Optional relationship allowlist: when non-empty, only edges whose
+  // relationship field is listed are expanded. Requires field_sep.
+  repeated string relationships = 8;
+  // Prepended to each neighbor id to form the neighbor row key.
+  bytes primary_prefix = 9;
+  // When true, also emit the anchor rows' own cells.
+  bool include_anchors = 10;
+  // Optional hop limit for intent-biased traversal. Unset/0 preserves today's
+  // exact one-hop expansion semantics; values > 1 request multi-hop expansion.
+  int32 max_hops = 11;
+  // Optional relationship weights for intent-bias. Weights bias
+  // which edge types are followed during multi-hop expansion; an empty list
+  // preserves the existing unweighted relationship allowlist behavior.
+  repeated EdgeWeight edge_weights = 12;
+}
+
+// EdgeWeight assigns an intent weight to one relationship type during multi-hop
+// graph expansion. Relationship strings use the consumer's edge vocabulary.
+message EdgeWeight {
+  string relationship = 1;
+  float weight = 2;
+}
+
+message Cell {
+  bytes row = 1;
+  bytes column_family = 2;
+  bytes column_qualifier = 3;
+  bytes column_visibility = 4;
+  int64 timestamp = 5;
+  bytes value = 6;
+}
+
+message ScanResponse {
+  repeated Cell cells = 1;
+}
+
+// ── Flush ───────────────────────────────────────────────────────
+
+message FlushRequest {
+  string table = 1;
+}
+
+message FlushResponse {}
+
+// ── Compact ─────────────────────────────────────────────────────
+
+message CompactRequest {
+  string table = 1;
+  // Optional target workload profile for compaction/migration. When set
+  // without file_format, compaction rewrites immutable files using that
+  // profile's default format.
+  TableWorkload workload = 2;
+  // Optional target immutable persistence format for compaction/migration.
+  // When set without workload, workload is inferred from the format.
+  TableFileFormat file_format = 3;
+}
+
+message CompactResponse {
+  string table = 1;
+  TableWorkload workload = 2;
+  TableFileFormat file_format = 3;
+}
+
+// ── Status ──────────────────────────────────────────────────────
+
+message StatusRequest {}
+
+message TableStatus {
+  string table = 1;
+  int32 tablets = 2;
+  int32 immutable_files = 3;
+  TableWorkload workload = 4;
+  TableFileFormat file_format = 5;
+}
+
+message StatusResponse {
+  repeated string tables = 1;
+  repeated TableStatus table_statuses = 2;
+}

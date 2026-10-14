@@ -1,0 +1,38 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "logs",
+    "action": "tail_logs"
+  },
+  "cues": [
+    "tail",
+    "logs",
+    "stream",
+    "follow"
+  ],
+  "patterns": [
+    "tail [the] {service} logs [in {environment}]",
+    "tail logs for {service} [in {environment}]",
+    "stream [the] {service} logs [in {environment}]",
+    "follow [the] {service} logs [in {environment}]"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "environment": "$environment"
+  }
+}

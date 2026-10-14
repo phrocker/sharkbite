@@ -1,0 +1,38 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "deploy",
+    "action": "rollback"
+  },
+  "cues": [
+    "rollback",
+    "revert",
+    "roll"
+  ],
+  "patterns": [
+    "[please] roll back [the] {service} [deploy] in {environment}",
+    "[please] roll back [the] {service} [deploy] on {environment}",
+    "[please] rollback {service} in {environment}",
+    "[please] revert {service} in {environment}",
+    "[please] roll back [the] {service} [deploy]"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "environment": "$environment"
+  }
+}

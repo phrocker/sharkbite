@@ -1,0 +1,56 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "ops",
+    "action": "restart_service"
+  },
+  "cues": [
+    "restart",
+    "bounce",
+    "reboot"
+  ],
+  "patterns": [
+    "[please] restart [the] {service} [service] in {environment} [{mode}]",
+    "[please] restart [the] {service} [service] on {environment} [{mode}]",
+    "[please] {mode} restart {service} in {environment}",
+    "[please] {mode} restart {service} on {environment}",
+    "[please] bounce {service} [in {environment}]",
+    "[please] bounce {service} [on {environment}]",
+    "[please] reboot {service} [on {environment}]",
+    "[please] reboot {service} [in {environment}]",
+    "[please] restart [the] {service} [service]"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    },
+    {
+      "name": "mode",
+      "enum": {
+        "graceful": [
+          "gracefully",
+          "graceful"
+        ],
+        "force": [
+          "force",
+          "forcefully"
+        ]
+      }
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "environment": "$environment",
+    "mode": "$mode"
+  }
+}

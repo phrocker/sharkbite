@@ -1,0 +1,404 @@
+{
+  "adjudications": [
+    {
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": true,
+      "id": "314-budget-uint32-truncation",
+      "limits": [
+        "Requires out-of-range operator configuration; not an untrusted remote input path.",
+        "On32-bit platforms the flag parser rejects values beyond uint range.",
+        "Static source review only; server was not launched with this flag."
+      ],
+      "pr": 314,
+      "reasoning": "On a64-bit uint platform, accepted operator value4294967296 narrows to0 and disables mosaic enforcement. No guard for this flag value appears between parse and construction. Other large values wrap to smaller budgets.",
+      "recommendation": "Reject values exceeding math.MaxUint32 before conversion, or parse directly with an explicit32-bit bound.",
+      "reported_by": [
+        "full",
+        "candidate"
+      ],
+      "scope": "requested_shared_concrete_claim",
+      "severity": "low",
+      "verdict": "source_supported_new_configuration_defect",
+      "witnesses": [
+        "cmd/shoal-explore-web/main.go:120-125 flag is flags.Uint",
+        "cmd/shoal-explore-web/main.go:266-269 narrows uint to uint32 without checking maximum",
+        "pkg/explorer/authorized/mosaic.go:45-53 zero MaxDomains disables control"
+      ]
+    },
+    {
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": true,
+      "id": "311-stale-extraction-check",
+      "limits": [
+        "Authorized wrapper protects its ordinary path with mutationMu plus catalog mutation lease and a current-source revision check.",
+        "No authorization bypass or specific reachable concurrent authorized deployment was established.",
+        "No dynamic interleaving or end-to-end stale graph reproduction executed."
+      ],
+      "pr": 311,
+      "reasoning": "Base API schedule Plan(r1), publish a newer revision r2, Commit(r1) is not rejected by the purported staleness guard as long as r1 remains stored. The comparison only confirms the identity used for its own lookup. Old extraction can enter the current graph because graph assembly does not compare its source revision to latest.",
+      "recommendation": "Compare planned revision with the actual current/latest revision under the commit lock; explicitly define historical extraction publication semantics.",
+      "reported_by": [
+        "full",
+        "candidate"
+      ],
+      "scope": "requested_shared_concrete_claim",
+      "severity": "low",
+      "verdict": "source_supported_new_staleness_check_defect",
+      "witnesses": [
+        "pkg/explorer/extraction.go:258-264 CommitExtraction looks up planned RevisionID then compares that returned exact ID",
+        "pkg/explorer/extraction.go:282-292 nonempty revision lookup returns revisions[revisionID]; empty means latest",
+        "pkg/explorer/explorer.go:731-743 extraction inclusion checks document node presence, not revision currency",
+        "pkg/explorer/authorized/extraction.go:61-82 authorized wrapper holds mutation lock/lease, checks requested revision against authorized current source"
+      ]
+    },
+    {
+      "candidate_body_omitted": false,
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": false,
+      "id": "314-backward-clock-reset",
+      "limits": [
+        "No actual clock rollback or unauthorized aggregate disclosure demonstrated.",
+        "The comment acknowledges this trade-off; do not represent it as an undisclosed implementation accident."
+      ],
+      "pr": 314,
+      "reasoning": "Backward wall-clock movement does reset the observed-domain window early. This is explicitly programmed behavior, not an inference from missing code. Whether it violates the deployed budget contract depends on clock assumptions and chosen rollback policy.",
+      "reported_by": [
+        "full"
+      ],
+      "scope": "full_only_claim",
+      "verdict": "source_supported_conditional_policy_risk_not_established_exploit",
+      "witnesses": [
+        "pkg/explorer/authorized/mosaic.go:191-204 future WindowStart causes empty observed set with windowStart=now",
+        "pkg/explorer/authorized/mosaic.go:193-196 explicitly documents resetting on backward clock movement",
+        "pkg/explorer/authorized/durable.go:893-899 persists wall-clock UnixNano"
+      ]
+    },
+    {
+      "candidate_body_omitted": false,
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": false,
+      "id": "314-memory-before-durable-write",
+      "limits": [
+        "Unreviewed side channels or broken lower-layer durability contracts are not assumed.",
+        "Transient over-restriction after failed attempts is possible and differs from authorization bypass."
+      ],
+      "pr": 314,
+      "reasoning": "Memory/disk divergence on a write failure is real, but the newly charged documents are not disclosed by that failed read. Restarting with the last durable observed set does not by itself forget a successful disclosure. A later successful read persists the accumulated state before returning its evidence. The stated steps therefore do not establish a fail-open budget defect.",
+      "reported_by": [
+        "full"
+      ],
+      "scope": "full_only_claim",
+      "verdict": "state_divergence_supported_security_undercount_inference_not_supported",
+      "witnesses": [
+        "pkg/explorer/authorized/durable.go:752-765 memory is updated before persistence and write errors propagate",
+        "pkg/explorer/authorized/mosaic.go:237-243 ledger error returns empty selection and error",
+        "pkg/explorer/authorized/documents.go:135-142 ledger error aborts document response",
+        "pkg/explorer/authorized/retrieve.go:149-154 ledger error aborts retrieval response"
+      ]
+    },
+    {
+      "candidate_body_omitted": false,
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": false,
+      "id": "311-durable-node-resurrection",
+      "limits": [
+        "A concrete conflicting intrinsic/standalone node-ID transition was not constructed.",
+        "Whether other mutation paths create such a transition remains unresolved and outside this bounded pass.",
+        "Current-revision checks fail closed for stale node bindings in inspected canonical graph reads."
+      ],
+      "pr": 311,
+      "reasoning": "Reconstruction does unconditionally overlay persisted standalone node records. However, ordinary extracted-node registrations are not shown to be removed during re-ingest: replaceCurrent handles revision.NodeIDs, while extraction adds independent PutNode entries. A stale extracted registration may already survive in memory, so a new restart-only resurrection or policy widening is not established by the alleged scenario.",
+      "reported_by": [
+        "full"
+      ],
+      "scope": "full_only_claim",
+      "verdict": "overwrite_mechanism_supported_reachable_resurrection_unresolved",
+      "witnesses": [
+        "pkg/explorer/authorized/durable.go:398-427 reconstructs current intrinsic registrations",
+        "pkg/explorer/authorized/durable.go:468-474 then overlays all persisted standalone node records",
+        "pkg/explorer/authorized/store.go:1154-1177 replaceCurrent deletes/rebuilds only IDs listed in revision.NodeIDs",
+        "pkg/explorer/authorized/extraction.go:89-99 extracted nodes are separate PutNode registrations",
+        "pkg/explorer/authorized/graph.go:363-372 canonical node reads reject stale revision bindings"
+      ]
+    },
+    {
+      "candidate_body_omitted": false,
+      "count_as_proven_exploit": false,
+      "count_as_source_supported_code_defect": false,
+      "id": "311-edge-registration-old-rule",
+      "limits": [
+        "No narrowed-rule scenario producing an unauthorized edge read was established.",
+        "Residual stale-state/lifecycle semantics may warrant focused testing, but are not counted as a proven defect."
+      ],
+      "pr": 311,
+      "reasoning": "Extracted edge registration omits source revision binding. The missing context from the claim has a significant guard: edgeAllowsResolved checks both endpoint rules, and canonical graph reads check endpoint revision currency. An old edge rule alone does not demonstrate disclosure after a source-rule narrowing.",
+      "reported_by": [
+        "full"
+      ],
+      "scope": "full_only_claim",
+      "verdict": "missing_revision_fields_supported_authorization_bypass_unresolved",
+      "witnesses": [
+        "pkg/explorer/authorized/extraction.go:101-107 registers extracted edges with Edge and Rule only",
+        "pkg/explorer/authorized/store.go:1318-1328 application-edge normalization intentionally returns Edge and Rule only",
+        "pkg/explorer/authorized/graph.go:252-298 edge authorization requires edge rule and both endpoint rules",
+        "pkg/explorer/authorized/graph.go:363-372 stale endpoint registration revision is rejected"
+      ]
+    }
+  ],
+  "comparison": {
+    "all_full_only_implicated_primary_bodies_retained_in_candidate": true,
+    "causal_omission_claim_supported": false,
+    "full_only_claims_reviewed": 4,
+    "quality_parity_established": false,
+    "reason": "All four full-only primary implementations remained present and byte-identical in candidate packets. The two requested concrete code defects were raised by both arms. Remaining claims are unresolved; model claims alone are not defect labels. One stochastic review pair cannot establish defect recall or quality parity.",
+    "requested_shared_claims_source_supported_in_both_arms": [
+      "314-budget-uint32-truncation",
+      "311-stale-extraction-check"
+    ]
+  },
+  "id": "e1daec43b1e0287890c0cd11fc732cce6f0364beb85eabf242557ce78ba73995",
+  "limitations": [
+    "Confirmed here means source-supported code-path defect, not reproduced exploit or independent defect ground truth.",
+    "Full-only differences include unsupported inferences and a documented conditional clock policy; they must not be counted automatically as missed security defects.",
+    "The stale revision check is a correctness/fail-closed boundary concern; inspected authorized wrapper mitigates its ordinary path.",
+    "No conclusion is made about the unreviewed common or candidate-only claims listed explicitly in this artifact."
+  ],
+  "manifest_id": "1de308dcf93073c4ada1e8e903961931117ce9e9e750261f637874bb967ffd35",
+  "packet_body_audit": [
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "98d6b30026e3a1aee5ab5695985d500cabcae55ef3ac561512e5c021eff3cb67",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 314,
+      "symbol": "function:*Client.applyMosaicBudget"
+    },
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "214bce228be1858d80710d09bd0eb85821813e6a5dbd1c9f6d5c8b48da3bff86",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "pkg/explorer/authorized/durable.go",
+      "pr": 314,
+      "symbol": "function:*DurablePolicyStore.StoreCoOccurrence"
+    },
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "21446cb8758bae387040b5d559957bf3b0dab7d2bcdf7b9ead053049e94f6eee",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "pkg/explorer/authorized/durable.go",
+      "pr": 311,
+      "symbol": "function:*DurablePolicyStore.reconstruct"
+    },
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "af2b273d3126bf5d92beefc4558a6c99dd6c295397cfb2076f502549e109081a",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "pkg/explorer/authorized/extraction.go",
+      "pr": 311,
+      "symbol": "function:*Client.ExtractDocument"
+    },
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "017c2ce331052043980705cc045bb7007916ddc5c2ffb9636724133a3cada7e5",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "cmd/shoal-explore-web/main.go",
+      "pr": 314,
+      "symbol": "function:run"
+    },
+    {
+      "before_after_identical": true,
+      "candidate_after_sha256": "e40a51146803250f0b83e8482986b0bd7b3613d0e18779b89249e94605fd04a1",
+      "candidate_present": true,
+      "full_present": true,
+      "path": "pkg/explorer/extraction.go",
+      "pr": 311,
+      "symbol": "function:*Explorer.CommitExtraction"
+    }
+  ],
+  "paired_report_id": "b49986b51cff215d444b45f6f0a49786f44118d8a4bf0a3f5cbb262f9aadd45a",
+  "scope": "Full-only claims and the two requested shared concrete claims; no exhaustive historical repository audit. No source edits, no GitHub messages, no exploit execution.",
+  "source_receipts": [
+    {
+      "head": "b0a5ee2ad3c1cd2b8147b56c156f140b2d69ceeb",
+      "path": "cmd/shoal-explore-web/main.go",
+      "pr": 314,
+      "raw_sha256": "e64d01ca74aa541b24287ada6efd5ce914ce8a962100491cd2f654898e4c5916"
+    },
+    {
+      "head": "b0a5ee2ad3c1cd2b8147b56c156f140b2d69ceeb",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 314,
+      "raw_sha256": "9015cba5190d4585690546dcc5ea969a1dcb2653ae271d7df647008fd951a8b1"
+    },
+    {
+      "head": "b0a5ee2ad3c1cd2b8147b56c156f140b2d69ceeb",
+      "path": "pkg/explorer/authorized/durable.go",
+      "pr": 314,
+      "raw_sha256": "fbbbc0a49aad622a2afce02d2053fd59c57c19c5fe796f277e54fed407874e12"
+    },
+    {
+      "head": "b0a5ee2ad3c1cd2b8147b56c156f140b2d69ceeb",
+      "path": "pkg/explorer/authorized/documents.go",
+      "pr": 314,
+      "raw_sha256": "4ae31b8ee21b7bd6c6f42337ce8addf81ab921a0db06236688c7809adc118e4c"
+    },
+    {
+      "head": "b0a5ee2ad3c1cd2b8147b56c156f140b2d69ceeb",
+      "path": "pkg/explorer/authorized/retrieve.go",
+      "pr": 314,
+      "raw_sha256": "a1d4e6adea9428e2d992c1c5406cbecb02c9174bf039d1077694f29eaa56d870"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/extraction.go",
+      "pr": 311,
+      "raw_sha256": "b15ff59b1c682b849fd7001a6904e64fbc812c8f05dbdc24f779357770136dca"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/explorer.go",
+      "pr": 311,
+      "raw_sha256": "b5395af9f13307d4eed2dae8cd47b547e6b586c42e50b98d3d507d1a778d9694"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/authorized/extraction.go",
+      "pr": 311,
+      "raw_sha256": "326215275bd63de75c78bea5225a196c7c386d5c8e3aac679b1d530cffa7036b"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/authorized/store.go",
+      "pr": 311,
+      "raw_sha256": "21c1b230ce69664c0c1b5528d5ce8534c082e375d31c469b34444b45238c1c60"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/authorized/durable.go",
+      "pr": 311,
+      "raw_sha256": "b04fb982c24681c7bf8c72a71da52e8086fb71c927626854d3449e584993f975"
+    },
+    {
+      "head": "f0a2e934d9924f0478752b30bd2c9f605f7c3942",
+      "path": "pkg/explorer/authorized/graph.go",
+      "pr": 311,
+      "raw_sha256": "e5a1a319ea3956a86a7002e585219079d7990c908729f2ed55adc7d389d3b686"
+    }
+  ],
+  "status": "bounded_static_source_adjudication_proposals",
+  "unresolved_other_llm_claims": [
+    {
+      "arm": "full",
+      "claim": "The mosaic co-occurrence budget is enforced only on the Documents listing and Retrieve paths. No changed code applies restrictCoOccurrence to the direct Document read, Neighborhood, Path, Changes feed, or other graph reads. An identity whose cross-domain documents are 'Restricted' in the listing can still read them by ID, or through graph and change-feed endpoints, and observe more distinct sensitivity domains than MaxDomains. The config comment says an enabled control 'fails closed', and the UI tells users the documents were 'withheld'. Enforcement is actually partial.",
+      "finding_index_zero_based": 0,
+      "path": "pkg/explorer/authorized/documents.go",
+      "pr": 314,
+      "symbol": "function:*Client.documents / function:*Client.retrieve (restrictCoOccurrence call sites)",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "The mosaic budget only covers the listing and retrieval paths, so an identity can bypass it through other read paths. restrictCoOccurrence is wired into Client.documents and Client.retrieve only. The direct Document read, Neighborhood/path, graph expansion and the Changes feed are not in the changed code and gain no co-occurrence charge or check. An identity whose budget has withheld domain B from listing and retrieval can still read a B document directly by ID. It may know that ID from an earlier window, the change feed, or graph traversal, and it can then aggregate the domains the control is meant to keep apart.",
+      "finding_index_zero_based": 0,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 314,
+      "symbol": "function:*Client.restrictCoOccurrence",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "The load-modify-store of the per-identity ledger record is serialized only by the per-Client budgetMu, not by the shared ledger. If several authorized.Client instances share one PolicyStore, as the new webapi fixture does, concurrent reads by the same identity can each load the same prior domain set. Each can then admit a different new domain and overwrite the other's stored record (last write wins). The identity observes more distinct domains than MaxDomains, and the persisted record under-reports what was disclosed.",
+      "finding_index_zero_based": 1,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 314,
+      "symbol": "function:*Client.applyMosaicBudget",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "full",
+      "claim": "The new state-mutating POST /api/v1/extract endpoint does no workspace-mutation or anti-CSRF header check before it publishes graph content. The existing mutation path (ingest) is exercised with the x-shoal-workspace-request header, and the changesEndpoint comment says that header is required for mutations but not for reads. If the header is enforced per endpoint rather than in shared middleware, a cross-site request carrying ambient credentials could trigger extraction and graph publication.",
+      "finding_index_zero_based": 0,
+      "path": "pkg/explorer/webapi/http.go",
+      "pr": 311,
+      "symbol": "function:extractEndpoint",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "full",
+      "claim": "Neighborhood responses now carry the citation, quote and path of non-derivation evidence. Extracted relationship assertions use the whole source document as their evidence anchor (Range 0..len(Content)), so the full document text reaches any caller who can see the extracted edge. That caller is authorized under OperationNeighborhood, not OperationRead. filterNeighborhood now attaches these assertions to admitted edges. If a rule grants neighborhood but not read, document content leaks through graph traversal.",
+      "finding_index_zero_based": 1,
+      "path": "pkg/explorer/webapi/wire.go",
+      "pr": 311,
+      "symbol": "function:wireEvidenceRefValue",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "full",
+      "claim": "When a rule has no keys, the namespace is empty. extractionContextLocked then skips namespace filtering and feeds every entity node from all authorization scopes into the extraction context. The heuristic extractor then reuses a foreign node's ID through ExistingNodeID. PutNode rejects the mismatched rule with a conflict, and the conflict is mapped to not-found. The extraction outcome still depends on whether another scope holds an entity with the same type and key, which is a cross-scope existence oracle and cross-tenant context aggregation.",
+      "finding_index_zero_based": 3,
+      "path": "pkg/explorer/authorized/rule.go",
+      "pr": 311,
+      "symbol": "function:AccessRule.extractionEntityNamespace",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "Non-derived (inferred) extraction assertions are now attached to any admitted edge that is visible under OperationNeighborhood. Their evidence carries the full source document text as a quote, and wire.go now serializes Citation, Quote and Path. A principal allowed Neighborhood on a document's rule, but not Read, can therefore obtain the document body through graph assertions. This bypasses operation-level separation between neighborhood and read.",
+      "finding_index_zero_based": 0,
+      "path": "pkg/explorer/authorized/bounded.go",
+      "pr": 311,
+      "symbol": "function:*Client.filterNeighborhood / function:derivedAssertionsByEdge",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "When the source rule has no keys, extractionEntityNamespace returns an empty namespace, and the namespace filter is skipped. The extraction context then includes entity nodes from every namespace, including other tenants' hidden entities. The heuristic resolves matching type/key to the lowest foreign node ID (ActionReference). PutNode then conflicts and returns ObjectNotFound, while otherwise extraction succeeds. A caller can therefore probe whether hidden entities with chosen names exist. With a Generator, foreign node content is also placed in the model prompt.",
+      "finding_index_zero_based": 1,
+      "path": "pkg/explorer/extraction.go",
+      "pr": 311,
+      "symbol": "function:*Explorer.extractionContextLocked / function:existingOntologyNodes",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "Extracted node registrations are pinned to the source DocumentID/RevisionID and are never refreshed. The base graph keeps publishing old extraction records while the document node exists, even after the document is revised. canonicalRegisteredNodes then returns ObjectNotFound for the whole Neighborhood whenever a stale extracted node is a candidate. Re-extraction cannot repair this: the same-rule merge returns nil and keeps the stale RevisionID. Shared same-tenant entities inherit the first document's revision, so revising one document breaks graph reads for every document sharing that entity. This is fail-closed, but it is a persistent authorized-read denial.",
+      "finding_index_zero_based": 2,
+      "path": "pkg/explorer/authorized/store.go",
+      "pr": 311,
+      "symbol": "function:*MemoryPolicyStore.PutNode / function:*Client.canonicalRegisteredNodes",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "POST /api/v1/extract is a state-mutating action that writes graph and policy state. The handler shows no workspace-mutation header (x-shoal-workspace-request) check. The code comments imply ingest-style mutations require that header as CSRF protection, so extraction may be triggerable cross-site with an authenticated user's session.",
+      "finding_index_zero_based": 4,
+      "path": "pkg/explorer/webapi/http.go",
+      "pr": 311,
+      "symbol": "function:extractEndpoint",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "Authentication and authorization failures on a batch no longer go through the action-error path, so re-authentication handling may be skipped. Each batch error is caught, turned into a per-file 'failed' row, and the loop keeps sending the remaining batches with the same auth headers. Previously an ingest error went straight to showActionError. That function sits next to needsReauthentication and challengedForBearer in this file, so it likely drives the bearer challenge / re-login flow. Now a 401 with WWW-Authenticate: Bearer, or a 403 from a revoked ingest permission, is shown only as text. It does not trigger re-authentication or disable the upload capability, and further requests are sent after the server has already refused the principal. The server still enforces access, so this is a fail-closed regression in the client, not a bypass.",
+      "finding_index_zero_based": 0,
+      "path": "pkg/explorer/webapi/static/app.js",
+      "pr": 310,
+      "symbol": "uploadFiles",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    },
+    {
+      "arm": "candidate",
+      "claim": "The new directory picker uploads every file under the chosen directory, with no filtering. That includes dotfiles and VCS or secret material such as .env, .git/config, and private keys stored as text. Each file's full relative path is also embedded in the server-visible name, which becomes the Title, the URI, and the uploadMetadataLabel. The server accepts any valid UTF-8 text file. If the workspace corpus can be read by other principals, choosing a project directory can put credentials and local path structure into it without an explicit per-file choice.",
+      "finding_index_zero_based": 1,
+      "path": "pkg/explorer/webapi/static/app.js",
+      "pr": 310,
+      "symbol": "selectedUploadFiles / uploadEntries",
+      "verdict": "not_adjudicated_outside_requested_scope"
+    }
+  ]
+}

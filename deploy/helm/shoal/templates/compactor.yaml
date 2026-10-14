@@ -1,0 +1,117 @@
+{{- if eq (include "shoal.compactorEnabled" .) "true" }}
+apiVersion: v1
+kind: Service
+metadata: {name: shoal-compactor}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: shoal, app.kubernetes.io/component: compactor}
+  ports:
+    - {name: thrift, port: {{ .Values.compactor.thriftPort }}, targetPort: thrift}
+    - {name: metrics, port: {{ .Values.compactor.metricsPort }}, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: shoal-compactor}
+spec:
+  serviceName: shoal-compactor
+  replicas: {{ .Values.compactor.replicas }}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate: {partition: {{ .Values.compactor.updateStrategy.partition }}}
+  selector:
+    matchLabels: &labels {app.kubernetes.io/name: shoal, app.kubernetes.io/component: compactor}
+  template:
+    metadata:
+      labels: *labels
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: {{ .Values.compactor.metricsPort | quote }}}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.compactor.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: shoal-compactor
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/shoal-compactor"]
+          args:
+            - -listen=:{{ .Values.compactor.thriftPort }}
+            - -advertise=$(POD_NAME).shoal-compactor.$(POD_NAMESPACE).svc:{{ .Values.compactor.thriftPort }}
+            - -metrics-address=:{{ .Values.compactor.metricsPort }}
+            - -zk=$(SHOAL_ZK)
+            - -instance=$(SHOAL_INSTANCE)
+            - -accumulo-version=$(SHOAL_ACCUMULO_VERSION)
+            - -group={{ .Values.compactor.group }}
+            - -hdfs-namenode={{ required "compactor.hdfsNamenode is required when compactor is enabled" .Values.compactor.hdfsNamenode }}
+            - -state-file=/var/lib/shoal/compactor/completion.json
+            - -shutdown-timeout={{ .Values.compactor.shutdownTimeout }}
+            {{- if .Values.compactor.tls.enabled }}
+            {{- if not .Values.compactor.tls.secretName }}{{ fail "compactor.tls.secretName is required when TLS is enabled" }}{{- end }}
+            - -tls-cert=/var/run/secrets/shoal/tls/tls.crt
+            - -tls-key=/var/run/secrets/shoal/tls/tls.key
+            {{- if .Values.compactor.tls.requireClientCert }}
+            - -tls-client-ca=/var/run/secrets/shoal/tls/ca.crt
+            {{- end }}
+            {{- end }}
+          envFrom: [{configMapRef: {name: shoal-platform-config}}]
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: POD_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+            - {name: SHOAL_PASSWORD, valueFrom: {secretKeyRef: {name: {{ .Values.compactor.credentialsSecretName }}, key: accumulo-password}}}
+            - {name: ACCUMULO_INSTANCE_SECRET, valueFrom: {secretKeyRef: {name: {{ .Values.compactor.credentialsSecretName }}, key: accumulo-instance-secret}}}
+            - {name: SHOAL_SYSTEM_TOKEN_BASE64, valueFrom: {secretKeyRef: {name: {{ .Values.compactor.credentialsSecretName }}, key: accumulo-system-token-base64}}}
+          ports:
+            - {name: thrift, containerPort: {{ .Values.compactor.thriftPort }}}
+            - {name: metrics, containerPort: {{ .Values.compactor.metricsPort }}}
+          startupProbe:
+            {{- if .Values.compactor.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /startupz, port: metrics{{ if .Values.compactor.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            {{- if .Values.compactor.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /readyz, port: metrics{{ if .Values.compactor.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+          livenessProbe:
+            {{- if .Values.compactor.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /healthz, port: metrics{{ if .Values.compactor.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+          volumeMounts:
+            - {name: state, mountPath: /var/lib/shoal}
+            {{- if .Values.compactor.tls.enabled }}
+            - {name: tls, mountPath: /var/run/secrets/shoal/tls, readOnly: true}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+      {{- if .Values.compactor.tls.enabled }}
+      volumes:
+        - {name: tls, secret: {secretName: {{ .Values.compactor.tls.secretName }}}}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata: {name: state}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: {requests: {storage: {{ .Values.compactor.stateStorageSize }}}}
+{{- if .Values.compactor.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: shoal-compactor}
+spec:
+  maxUnavailable: {{ .Values.compactor.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: shoal, app.kubernetes.io/component: compactor}
+{{- end }}
+{{- end }}

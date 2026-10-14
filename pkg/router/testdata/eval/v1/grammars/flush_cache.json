@@ -1,0 +1,38 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "ops",
+    "action": "flush_cache"
+  },
+  "cues": [
+    "flush",
+    "cache",
+    "purge",
+    "clear"
+  ],
+  "patterns": [
+    "[please] flush [the] {service} cache [in {environment}]",
+    "[please] flush cache for {service} [in {environment}]",
+    "[please] clear the cache for {service} [in {environment}]",
+    "[please] purge [the] {service} cache [in {environment}]"
+  ],
+  "slots": [
+    {
+      "name": "service",
+      "node_kinds": [
+        "service"
+      ]
+    },
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    }
+  ],
+  "input": {
+    "service": "$service",
+    "environment": "$environment"
+  }
+}

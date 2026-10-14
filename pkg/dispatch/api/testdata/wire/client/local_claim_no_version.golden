@@ -1,0 +1,7 @@
+requests: 0
+error: dispatch claim: refused_locally: expected version is required
+kind: refused_locally
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: refused_locally(0)

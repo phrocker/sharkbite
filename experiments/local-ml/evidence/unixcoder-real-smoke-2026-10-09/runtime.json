@@ -1,0 +1,35 @@
+{
+  "artifact_id": "e88f63c3450dbf78f797983640da42c98b61b356fe1d5a8c22828d1ea3aa43cf",
+  "device": "cpu",
+  "elapsed_seconds": 0.25141720892861485,
+  "embedding_dimension": 768,
+  "kind": "unixcoder_real_smoke",
+  "label_authority": "synthetic smoke labels; no quality claim",
+  "manifest_id": "955d091f2c6bdafb68ae61baa1dc5a68dea830899b8e986e4e1ca901059fef52",
+  "optimization_enabled": false,
+  "python": "3.11.14",
+  "repo": "microsoft/unixcoder-base",
+  "revision": "5604afdc964f6c53782a6813140ade5216b99006",
+  "schema": 1,
+  "scores": {
+    "test-close": 0.5000001193010645,
+    "test-grant": 0.7310585233318114,
+    "test-read": 0.5000001393069207,
+    "test-rename": 0.5000000763857886,
+    "test-replay": 0.7310584768335701,
+    "test-tenant-write": 0.7310584722695102
+  },
+  "snapshot_revision": "5604afdc964f6c53782a6813140ade5216b99006",
+  "tokenizer_sha256": "888668b489c64b5627ebec9b788768c7e94eb8a93bfc6c5f4b84170981cfaa74",
+  "torch": "2.8.0+cu128",
+  "training_rows": [
+    "close",
+    "grant",
+    "read",
+    "rename",
+    "replay",
+    "tenant-write"
+  ],
+  "transformers": "5.17.0",
+  "weights_sha256": "6732b60037b086557e4c731c3748c99b4fec735d9ffe3c4c70061fd142e6b9d9"
+}

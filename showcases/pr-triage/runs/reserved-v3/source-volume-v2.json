@@ -1,0 +1,25 @@
+{
+  "candidates": {
+    "laya-scorer": {
+      "all_before_after_source_bytes": 514140,
+      "fraction": 0.05993309215388805,
+      "proposed_lower_priority_functions": 51,
+      "proposed_lower_priority_source_bytes": 30814,
+      "sampled_functions": 210,
+      "all_function_diff_bytes": 278791,
+      "proposed_lower_priority_diff_bytes": 30853,
+      "diff_fraction": 0.1106671305745164
+    },
+    "lexical": {
+      "all_before_after_source_bytes": 514140,
+      "fraction": 0.013560508810829736,
+      "proposed_lower_priority_functions": 31,
+      "proposed_lower_priority_source_bytes": 6972,
+      "sampled_functions": 210,
+      "all_function_diff_bytes": 278791,
+      "proposed_lower_priority_diff_bytes": 8350,
+      "diff_fraction": 0.029950751638324048
+    }
+  },
+  "scope": "UTF-8 bytes of complete before/after sampled function bodies and 5-context-line function diffs, including doc comments. Not LLM tokens, total PR evidence, or realized savings."
+}

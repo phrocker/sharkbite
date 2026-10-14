@@ -1,0 +1,19 @@
+{
+  "candidates": {
+    "laya-scorer": {
+      "all_before_after_source_bytes": 514140,
+      "fraction": 0.05993309215388805,
+      "proposed_lower_priority_functions": 51,
+      "proposed_lower_priority_source_bytes": 30814,
+      "sampled_functions": 210
+    },
+    "lexical": {
+      "all_before_after_source_bytes": 514140,
+      "fraction": 0.013560508810829736,
+      "proposed_lower_priority_functions": 31,
+      "proposed_lower_priority_source_bytes": 6972,
+      "sampled_functions": 210
+    }
+  },
+  "scope": "UTF-8 bytes of complete before/after sampled function bodies only, including doc comments. Not diff bytes, LLM tokens, total PR evidence, or realized savings."
+}

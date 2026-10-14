@@ -1,0 +1,21 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "lookup",
+    "template": "lookup:depends_on:out"
+  },
+  "cues": [
+    "depend",
+    "dependencies"
+  ],
+  "patterns": [
+    "what does {subject} depend on",
+    "list the dependencies of {subject}",
+    "which services does {subject} depend on"
+  ],
+  "slots": [
+    {
+      "name": "subject"
+    }
+  ]
+}

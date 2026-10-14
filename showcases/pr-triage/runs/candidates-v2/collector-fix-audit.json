@@ -1,0 +1,32 @@
+{
+  "purpose": "Recollection after PR410 fixes; observations retained unchanged",
+  "cohorts": [
+    {
+      "cohort": "pilot",
+      "before_manifest_id": "aa87c0bff365028b2cf804ab0d720beea25a4fdd7420cf2433aaa1c3f7278bb0",
+      "after_manifest_id": "4aadc1f8a52142f9cc405ab2b6dbedd6abeef7293de5d655336bd3c9da3e5c44",
+      "units_identical": true,
+      "before_units": 146,
+      "after_units": 146,
+      "cases_identical": true
+    },
+    {
+      "cohort": "validation-v2",
+      "before_manifest_id": "cccac6a1759f0cd20ad379feeaeb6fa16bf41180fc106c4539f28a9805bac84a",
+      "after_manifest_id": "8c5f8342bb297a266624bf428fe09fa82801cb0ebc195401ed1d545d87139d08",
+      "units_identical": true,
+      "before_units": 243,
+      "after_units": 243,
+      "cases_identical": true
+    },
+    {
+      "cohort": "reserved-v3",
+      "before_manifest_id": "fcb47102d50b92fd492836984b2879e9491d4510805db0ac05471d64bdf9f352",
+      "after_manifest_id": "4f20d5f985bc60ca902edf622361c2c153fd3acb4edbecdb7ba4ac41742083ab",
+      "units_identical": true,
+      "before_units": 1792,
+      "after_units": 1792,
+      "cases_identical": true
+    }
+  ]
+}

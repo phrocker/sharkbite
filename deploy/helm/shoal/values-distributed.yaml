@@ -1,0 +1,5 @@
+mode: distributed
+
+image:
+  repository: ghcr.io/YOUR_ORG/shoal
+  tag: TAG

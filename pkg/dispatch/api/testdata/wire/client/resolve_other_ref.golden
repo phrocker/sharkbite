@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: refused_locally: the descriptor is bound to another executor ref; a gateway serves only its own
+kind: refused_locally
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: refused_locally(0)

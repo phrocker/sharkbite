@@ -199,23 +199,3 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
-
-
-This includes derived works from the Apache NiFi MiNiFi c++ (ALv2 Licensed ) project (https://github.com/apache/nifi):
-Copyright 2019 The Apache Software Foundation
-The derived and original works are listed below:
-    BackTrace.h
-    ThreadPool.h
-    Properties.h/Properties.cpp
-    Logger.h
-    LoggerConfiguration.h/LoggerConfiguration.cpp
-    StringUtils.h/StringUtils.cpp
-    ClassUtils.h/ClassUtils.cpp
-    JavaClass.h
-    JavaDefs.h
-    JavaException.h
-    JniMethod.h
-    JNIUtil.h
-    JVMLoader.h
-    ScriptException.h/cpp
-    

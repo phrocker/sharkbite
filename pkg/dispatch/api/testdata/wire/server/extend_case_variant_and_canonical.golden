@@ -1,0 +1,8 @@
+POST /api/v1/fleet/actions/YQD_/extend
+request content-type: application/json
+request body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"},\"claim_fence\":2,\"claim_id\":\"Z3cxfHBvZHxjbGFpbQ\",\"lease\":60000000000,\"CONTEXT\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"}}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: decode request body: JSON key does not match a field exactly: \\\"CONTEXT\\\"\"}\n"

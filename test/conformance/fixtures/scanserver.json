@@ -1,0 +1,24 @@
+{
+  "schema_version": 3,
+  "role": "scanserver",
+  "adapter": "stateful-scan-continuation-v2",
+  "accumulo_version": "4.0.0-SNAPSHOT",
+  "accumulo_revision": "1a716b2c1bb5762ead4b46d2bc4f53e13873b314",
+  "summary": "scan adapter preserves stateful single-scan and multi-tablet continuation",
+  "evidence": [
+    {
+      "gate": "stateful-continuation",
+      "kind": "go-test",
+      "reference": "internal/scanserver/session_test.go#TestStartScan_ContinuationAtExactByteBoundary",
+      "source_sha256": "58a6de4b92c16bfe14597c8ef0d6c5bfcd847ef199f0b7c0e424b96f0fccc7fe",
+      "replay_command": ["go", "test", "./internal/scanserver", "-run", "^TestStartScan_ContinuationAtExactByteBoundary$", "-count=1"]
+    },
+    {
+      "gate": "cancel-resume",
+      "kind": "go-test",
+      "reference": "internal/scanserver/session_test.go#TestContinueScan_CanceledRequestDoesNotConsumePage",
+      "source_sha256": "58a6de4b92c16bfe14597c8ef0d6c5bfcd847ef199f0b7c0e424b96f0fccc7fe",
+      "replay_command": ["go", "test", "./internal/scanserver", "-run", "^TestContinueScan_CanceledRequestDoesNotConsumePage$", "-count=1"]
+    }
+  ]
+}

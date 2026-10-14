@@ -1,0 +1,8 @@
+{
+  "name": "failure",
+  "source_sha256": "86c1c1583bf0a212de50141fa1161ef77ce736875af863ffab950a6e71f3c7cc",
+  "command_exit": 1,
+  "want_evidence_state": "fail",
+  "want_state": "fail",
+  "want_exit": 1
+}

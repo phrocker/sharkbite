@@ -1,0 +1,14 @@
+outcome dispatch.outcome.queued
+  Action close-ticket on agent agent-7 is queued and has not been claimed.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1
+  identifiers close-ticket agent-7
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+blocked dispatch.blocked.unclaimed
+  No worker has claimed it yet.
+  record=action:act-1
+next dispatch.next.options
+  What can happen next: a worker claims it before the deadline at 2026-10-08 14:00:00 UTC, or it is canceled.
+  record=action:act-1

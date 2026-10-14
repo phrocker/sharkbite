@@ -1,0 +1,30 @@
+{
+  "status": "development_only_all_prior_through_V8_retired",
+  "purpose": "Learn syntax-operation projections and compare linear SVM versus logistic, code versus operation facts; no hardcoded authorization term decisions.",
+  "datasets": [
+    {
+      "manifest": "showcases/pr-triage/runs/pilot-v1/manifest.json",
+      "assessment": "showcases/pr-triage/runs/candidates-v2/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/validation-v2/manifest.json",
+      "assessment": "showcases/pr-triage/runs/validation-v2/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/reserved-v3/sampled-manifest.json",
+      "assessment": "showcases/pr-triage/runs/reserved-v3/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/reserved-v5/sampled-manifest.json",
+      "assessment": "showcases/pr-triage/runs/reserved-v5/adjudication.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/live-v6/manifest.json",
+      "assessment": "showcases/pr-triage/runs/live-v6/frontier.json"
+    },
+    {
+      "manifest": "showcases/pr-triage/runs/context-v8/sampled-manifest.json",
+      "assessment": "showcases/pr-triage/runs/context-v8/frontier.json"
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shoal.fullname" . }}-config
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+data:
+  # The write-tier manifest explicitly opts into shoal-embed serve's HTTP
+  # observability listener with --metrics-address (see embed-statefulset.yaml);
+  # the CLI default remains the legacy one-port gRPC-only behavior.
+  SHOAL_EMBED_DATA_DIR: {{ .Values.writeTier.dataDir | quote }}
+  SHOAL_EMBED_GRPC_PORT: {{ .Values.writeTier.grpcPort | quote }}
+  SHOAL_EMBED_METRICS_PORT: {{ .Values.writeTier.metricsPort | quote }}
+  # TODO(shoal): object bucket/prefix are desired platform config but are not consumed by cmd/shoal-embed yet.
+  SHOAL_OBJECT_STORAGE_BACKEND: {{ .Values.objectStorage.backend | quote }}
+  SHOAL_OBJECT_BUCKET: {{ .Values.objectStorage.bucket | quote }}
+  SHOAL_OBJECT_PREFIX: {{ .Values.objectStorage.prefix | quote }}
+  SHOAL_THRIFT_LISTEN: {{ .Values.readFleet.listen | quote }}
+  SHOAL_READ_METRICS_LISTEN: {{ printf ":%v" .Values.readFleet.metricsPort | quote }}
+  SHOAL_READ_READINESS_INTERVAL: {{ .Values.readFleet.readinessInterval | quote }}
+  SHOAL_READ_QUIESCE_DELAY: {{ .Values.readFleet.quiesceDelay | quote }}
+  SHOAL_READ_DRAIN_TIMEOUT: {{ .Values.readFleet.drainTimeout | quote }}
+  SHOAL_ZK: {{ .Values.readFleet.zk | quote }}
+  SHOAL_INSTANCE: {{ .Values.readFleet.instance | quote }}
+  SHOAL_ACCUMULO_VERSION: {{ .Values.readFleet.accumuloVersion | quote }}
+  SHOAL_METADATA_USER: {{ .Values.readFleet.metadataUser | quote }}
+  SHOAL_STORAGE_SCHEME: {{ .Values.objectStorage.backend | quote }}
+  SHOAL_CACHE_BYTES: {{ .Values.readFleet.cacheBytes | quote }}
+  SHOAL_LOG_LEVEL: {{ .Values.readFleet.logLevel | quote }}
+  SHOAL_PREWARM_TABLES: {{ .Values.readFleet.prewarmTables | quote }}
+  SHOAL_PREWARM_PARALLELISM: {{ .Values.readFleet.prewarmParallelism | quote }}

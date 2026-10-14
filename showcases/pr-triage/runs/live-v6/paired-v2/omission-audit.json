@@ -1,0 +1,200 @@
+{
+  "units": [
+    {
+      "unit_id": "3dc45afcac22084c52bdd5405dd7bf89afba2673bbbed5b1eb4a5256da9a55bb",
+      "pr": 399,
+      "symbol": "function:*boundAdmission.Outstanding",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "1d478e0b2a7aa950abbc0436b8cf852bdb9d75c7c26f8a6c9d2ba4ab3fd9fe6f",
+      "pr": 399,
+      "symbol": "function:*boundAdmission.Report",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "43fed54c1838d84d30192de61776ab095db4de577237df5db29dd8e01ccf89aa",
+      "pr": 399,
+      "symbol": "function:*boundAdmission.requestContext",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "0677fd7d535061037feec4d149cf14f5971c7633b0b3329e242731091bb594e0",
+      "pr": 399,
+      "symbol": "function:Obligations.empty",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "ef64da97e47ebf6fbbb43fad27e9fe16273965d83c39e84f47650ab6d37dd842",
+      "pr": 399,
+      "symbol": "function:*admissionHarness.context",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "34680fbe3c16f5b46a4873caaf4589aaa3e0a541f342350a2fa290c0e3ad801c",
+      "pr": 399,
+      "symbol": "function:*admissionHarness.request",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "0d2754fcfcaab2f6bcbff6b7f20c21f8e428c343df87de91a5767894a2a17594",
+      "pr": 399,
+      "symbol": "function:mustReason",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "8496c1206a485cc62287b54f4ba1a966c778fb6ca4dffdfecfa329ca60730555",
+      "pr": 399,
+      "symbol": "function:newAdmissionHarness",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "fdc917811bed1f7c54983212f131d40c0abfaccc2cc1a9e9961276fffc628a84",
+      "pr": 399,
+      "symbol": "function:admissionRequestWire.decode",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "ac063e6c2161a5e945886c7c73e432d7108b15b13ce092a71f1a0eaf180526c0",
+      "pr": 399,
+      "symbol": "function:mountAdmission",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "a5263990ea2201b934ca0a82e4d7831a2f6527794f5e4bc3ec642dbccf7f13d7",
+      "pr": 399,
+      "symbol": "function:*stubAdmissionProvider.Outstanding",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "641cc57057098bcf994ad37987b36f102e63f76e8347e02560386bbe1d4a3280",
+      "pr": 399,
+      "symbol": "function:*stubAdmissionProvider.Report",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "67bfc22e8ff313a6d9b1f6f3866803074d7b1321cb321ff98c43f9ba72f44b0f",
+      "pr": 399,
+      "symbol": "function:*stubAdmissionProvider.Request",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "9de5360e0dc545090c6b0890c822dc66e656a8ba4248a4a2dbf117054d60bc2d",
+      "pr": 399,
+      "symbol": "function:admissionPost",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "596cf3b371f2cd4286a7d383f9183a9d410c4bcba634ebca4530953d7682f17b",
+      "pr": 399,
+      "symbol": "function:admissionRequestBody",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "ff5ec6c50c8b1e5d73e23ea02f5efba6ac1f03504197349d576179f7bcdeaeed",
+      "pr": 399,
+      "symbol": "function:admissionTestHandler",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "c7028da11f52a0453a86a9a5d275bebcf6df40d1749ab199e0f26a08ead7c515",
+      "pr": 361,
+      "symbol": "function:TestEncodeCompressesRepeatedCells",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "839539c0d709bcaaa973a17dc87e4276810b7fac336f12987831a1110dab455d",
+      "pr": 357,
+      "symbol": "function:assertEvent",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "4743457a63f60a3503c0299fd9617a64e0eec8e5d0c796cffb23ec5d428ebdbb",
+      "pr": 357,
+      "symbol": "function:*EmbeddedCoordinator.Watch",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "1eec0ee5c0b18dfac55b6638fe166e9168bf162fb5e8583130c7457abe6d0cef",
+      "pr": 357,
+      "symbol": "function:*embeddedLease.AdvanceEpoch",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "4743503e69ece7ad9412111e671802925134392c1fffe50e5035aa6aa68fbb67",
+      "pr": 357,
+      "symbol": "function:*embeddedLease.Lost",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "5f6b5caa9b1340145b8ee495d33b61ff84b8aa0b83b2f888dc1110201eed15f0",
+      "pr": 357,
+      "symbol": "function:*embeddedLease.Release",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "ad24283c41ccc0879f59ee1a57d54c4ceef2b66f416505d7a7f5e7d3857b477e",
+      "pr": 357,
+      "symbol": "function:ensureJSONEOF",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "dd834b4802a6c7641e2581be5d7b6d2dff39a47126b908b6d7e63cb675c8ee7a",
+      "pr": 357,
+      "symbol": "function:readEmbeddedManifest",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "51b4352708f2cb57573488055bdd7af26037ce92fd00982c18c27cee17ffd87a",
+      "pr": 357,
+      "symbol": "function:writeEmbeddedManifest",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "46dcc56f30a2cd407bc1b4ad7b56332a2a60e6e2105b5944b68f51a6df9ba418",
+      "pr": 357,
+      "symbol": "function:TestEmbeddedCoordinatorFailsClosedOnCorruptManifest",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "ae2dc50b827350fa6a71f6ebea890ea6d3f75abf61f35bfb0851f0be69e338d0",
+      "pr": 357,
+      "symbol": "function:TestEmbeddedCoordinatorWatchSignalsResyncOnOverflow",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "48f69c81fa37014ad0b8f17d8ebf2f3380e21e89f50804065b529ae160911012",
+      "pr": 357,
+      "symbol": "function:assertWatchKind",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "c4cc88f36a9ab3f1f06cf93d147c6fd1ac09db791b742f2c48759c6c78b19e39",
+      "pr": 357,
+      "symbol": "function:*blockingExportBackend.Open",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "7e3b42b5abe80cf647f4a4336b85032c704ec76c7c7df1fc19f147758e0ef444",
+      "pr": 357,
+      "symbol": "function:*blockingExportBackend.unblock",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "5e67db9a2fe4334ca126eeb6a346e100f87c7134a87f98da8e469d3d5aad1224",
+      "pr": 357,
+      "symbol": "function:TestExportSerializesWithCompaction",
+      "complete_changed_body_still_present": false
+    },
+    {
+      "unit_id": "8c4d180be2acff0157618e849d086290807f03b7ffb762ffe0f386a1c7c3652a",
+      "pr": 357,
+      "symbol": "function:*table.close",
+      "complete_changed_body_still_present": false
+    }
+  ],
+  "nominal_omissions": 32,
+  "changed_bodies_still_present": 0,
+  "limitation": "Exact complete-body check; common fragments may remain as context.",
+  "id": "e77e4c516ef6103d267a5ed0a8b073715752a96fffc0c878bb5a1deb57eb6314"
+}

@@ -1,0 +1,21 @@
+{{- if eq (include "shoal.explorerEnabled" .) "true" }}
+{{- with .Values.explorer.auth.oidc.executorMapping }}
+{{- /* The operator executor mapping (#391), rendered from values into a
+       ConfigMap this chart owns and mounted read-only by the explorer
+       StatefulSet, which carries its checksum so a change rolls the pod: the
+       workspace reads the file once, at startup. As with the approver
+       mapping, the document is emitted with toJson and quoted, so no value in
+       it can end the scalar; validate.yaml refuses the shapes the workspace
+       would refuse at startup, and the workspace still refuses the file if it
+       is not a valid shoal.executors/v1 document. */}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "shoal.explorerExecutorsName" $ | quote }}
+  labels:
+    {{- include "shoal.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: explorer
+data:
+  executors.json: {{ toJson . | quote }}
+{{- end }}
+{{- end }}

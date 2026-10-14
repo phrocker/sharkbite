@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/ambiguity
+error: dispatch ambiguity: ambiguity_unrecorded (HTTP 403)
+kind: ambiguity_unrecorded
+status: 403 code: "" failure: ""
+is ambiguity unrecorded: true
+is unexpected EOF: false is deadline: false
+chain: ambiguity_unrecorded(403) > unauthorized(403)

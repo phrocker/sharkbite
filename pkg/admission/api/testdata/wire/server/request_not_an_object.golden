@@ -1,0 +1,8 @@
+POST /api/v1/admission/request
+request content-type: application/json
+request body: "[]"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: decode request body: json: cannot unmarshal array into Go value of type webapi.admissionRequestWire\"}\n"

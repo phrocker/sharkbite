@@ -1,0 +1,9 @@
+POST /shoal/api/v1/fleet/actions/pull
+header Accept: application/json
+header Accept-Encoding: gzip
+header Authorization: Bearer dispatch-token
+header Content-Length: 223
+header Content-Type: application/json
+header Shoal-Correlation-Id: gw-poll-<nonce>
+header User-Agent: shoal-effects-gateway/1
+body: "{\"context\":{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"<base64url(gw-poll-<nonce>)>\",\"reason_code\":\"gateway_poll\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T12:01:30.123456789Z\"},\"limit\":256}"

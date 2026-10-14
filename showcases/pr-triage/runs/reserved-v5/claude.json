@@ -1,0 +1,1400 @@
+{
+  "assessor": "claude-opus-blinded",
+  "blinding": "pinned sampled function bodies and whole PR diff when under byte limit; no model predictions or other reviewer judgments",
+  "calls": [
+    {
+      "cost_usd": 0.6966116,
+      "duration_api_ms": 40199,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 79099,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.6966116,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3169,
+          "provider": "firstParty",
+          "thinkingTokens": 824,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "543bef8052e14bfa1b6b88d188dcf70de0d79b0c0edc7d0bd107d66c6b74df76"
+    },
+    {
+      "cost_usd": 0.22787559999999998,
+      "duration_api_ms": 54900,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 17417,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.22787559999999998,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 4405,
+          "provider": "firstParty",
+          "thinkingTokens": 1814,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "f291f9bc1fe84cfd83a56280273555c2e78efb14dce35933f23fc1ad90943815"
+    },
+    {
+      "cost_usd": 0.19346359999999999,
+      "duration_api_ms": 37859,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 16578,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.19346359999999999,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3020,
+          "provider": "firstParty",
+          "thinkingTokens": 727,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "05eadc422239f4117eff5ea569906767f1948d2400fc485f449ae73b9a0ba7e2"
+    },
+    {
+      "cost_usd": 0.2238476,
+      "duration_api_ms": 23771,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 23396,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.2238476,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1812,
+          "provider": "firstParty",
+          "thinkingTokens": 406,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "f8260ec346790547a5f719e0dc6bbdbbbbe45e2aa4e43dab724c73cdd5c039b2"
+    },
+    {
+      "cost_usd": 0.25918759999999996,
+      "duration_api_ms": 25324,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 27481,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.25918759999999996,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1945,
+          "provider": "firstParty",
+          "thinkingTokens": 378,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "7a181479e4073707d1701c26d9c0cc25f281d9762263146b58c610fea2b03504"
+    },
+    {
+      "cost_usd": 0.3038756,
+      "duration_api_ms": 47650,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 28152,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.3038756,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3911,
+          "provider": "firstParty",
+          "thinkingTokens": 1647,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "e4c73ed5a591a11e77d8e1f9dcf3f6be804ce593644797b23b06dc21dc9f9132"
+    },
+    {
+      "cost_usd": 0.2879236,
+      "duration_api_ms": 35528,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 28638,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.2879236,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2919,
+          "provider": "firstParty",
+          "thinkingTokens": 1035,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "9a49f02a267af27da10952142984bfab22c7886bfe1a2ddea72f9684bb6946a7"
+    },
+    {
+      "cost_usd": 0.4167436,
+      "duration_api_ms": 51240,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 41393,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.4167436,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 4258,
+          "provider": "firstParty",
+          "thinkingTokens": 1680,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "297a0cb2ee0945b9a91b1d628a448b992626e9afbd7e886e431c4d9e21548fd5"
+    },
+    {
+      "cost_usd": 0.2429636,
+      "duration_api_ms": 46815,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 20893,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.2429636,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 3769,
+          "provider": "firstParty",
+          "thinkingTokens": 1341,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "4a24fb9a05fe0f04252e85e21f418a121c7071531e2005cc0e3145a9fff109fa"
+    },
+    {
+      "cost_usd": 0.41494759999999997,
+      "duration_api_ms": 22822,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 47326,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.41494759999999997,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1795,
+          "provider": "firstParty",
+          "thinkingTokens": 417,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "d59246a1f585cb0a1c01982963b6fe15c4d975723a59f1b790c89746a29bf332"
+    },
+    {
+      "cost_usd": 0.3549756,
+      "duration_api_ms": 23063,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 39332,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.3549756,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 1994,
+          "provider": "firstParty",
+          "thinkingTokens": 624,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "03eeb8f9bb365bd7842e5f2667302b2ac0acbbcd86fdf064e42e19ee1dd39dcf"
+    },
+    {
+      "cost_usd": 0.4278436,
+      "duration_api_ms": 25092,
+      "model_usage": {
+        "claude-opus-5-5": {
+          "cacheCreationInputTokens": 48323,
+          "cacheReadInputTokens": 2158,
+          "canonicalModel": "claude-opus-5-5",
+          "contextWindow": 1000000,
+          "costBasis": "list",
+          "costUSD": 0.4278436,
+          "inputTokens": 2,
+          "maxOutputTokens": 128000,
+          "outputTokens": 2041,
+          "provider": "firstParty",
+          "thinkingTokens": 804,
+          "webSearchRequests": 0
+        }
+      },
+      "response_sha256": "769ad4a49373043b008125db5254d367b38717d945553bb0a794eaf439a1030f"
+    }
+  ],
+  "labels": [
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "52ccd74d99391321875c34cb072058904390f1d284249ba4376fcfeec6460471",
+      "witness": "Pure JSON decoding of the recompute response: strict unmarshal, then conversion of wire detail via derivationDetailValue. No access or disclosure decision."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "81abca65b898c1a5502992f8d3de19186503ba7d6ca8955a36bafd6b202825da",
+      "witness": "UI test asserting derived versus asserted edge detection, the ◆ marker and aria-label in the graph list. Presentation only, no authorization invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "9139280929a3612b462390dfbda40e5dd0790884fb7ffabcf9f77220a4834787",
+      "witness": "Happy-path HTTP test over an unauthenticated explorer corpus. Checks detail fields, wire encoding and digest stability or drift. No identity or denial assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "952cf47868fdc98ff9227ba86367e3510f99387ab2490af80e5d9041abdf90c3",
+      "witness": "Started-server dev-auth test that only asserts successful recompute and digest stability. It has no denial or cross-identity check, so a bare unauthorized client would also pass. The comment's authorization claim is not asserted."
+    },
+    {
+      "label": "review",
+      "pr": 313,
+      "unit_id": "d9747711fcdcb1a7be80c12f9dc0078ff980351adc5e2e93b6e0a8d1d1055361",
+      "witness": "Directly asserts identity isolation. Identity B recomputing A's assertion gets not_found, and that error is byte-identical to the error for a nonexistent assertion, which rules out an existence oracle."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "0129e3b022455cff2b5f7bc27074d9efb815c63eb51683d801aa53d7c3788124",
+      "witness": "Fixture setup that builds two authorized clients, binds principals and seeds a latent cell. It supports the authz test but makes no assertion and enforces no boundary itself."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "06fd4aee4db4fb187585e79285b37de2925b02451ca4aac8538ade5f4d7e364a",
+      "witness": "Asserts that length prefixes separate metadata boundaries in the digest. This is determinism and integrity of the fingerprint, not an access or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "081b76b13bad46bc721ae807c5359abcdef480e8b92c8ad57e153b69891da3df",
+      "witness": "Test helper that posts to the neighborhood endpoint and extracts the single derived assertion's wire ID. Plumbing only."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "a0469fc8dfd08852ad376fd5ca863221e7728cd2e0bacc0d2daa25787276da0e",
+      "witness": "Pure serialization: maps DerivationDetail fields to their wire form, encoding IDs and metadata. No filtering or access decision."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "e3a624ead916e90b0d50e3aed39586d5b4ba738ca2105093272d2e2f58f41bd3",
+      "witness": "Asserts that mutating each derivation field changes the digest. Digest completeness is an integrity property, not an authorization one."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "52723a59d6c7c3f65765d676dc6ea6262cb81567cc549cee4a60bc274884b8ba",
+      "witness": "Converts an already-read assertion into detail and returns NotFound for non-derived or incomplete evidence. The authorization scoping happens upstream in rederiveAssertion's bounded read, not here."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "d6840179fa9bec6a9673c7eb7776e1ea54cd7fe82466d10ca6612d9cf300851f",
+      "witness": "Asserts an unknown assertion ID returns 404 on an unauthenticated corpus. This is fail-closed existence handling with no identity or authorization boundary involved."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "0705d20ac1920bec8c22d206fa84fe188771021ca260d63817cbcaccb2b5eb36",
+      "witness": "Test server setup wrapping a bare explorer in EmbeddedService and a handler. Plumbing only."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "27cebf46a4d8c9f1dd557d71cbca7910fa766d4669f2be1be4c0d9004f91ce22",
+      "witness": "Round-trip test showing base64UrlDecode inverts base64UrlEncode. Pure encoding."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "0db9d4d1f9ade97917983c2016d22b882f34eb690d5c1d0bafbca39947cdbf32",
+      "witness": "Generic HTTP POST helper returning the status code and body."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "dcbbefe970864f0595e34f36802beedd4fed20846ba66d9e0847327dc1d0a006",
+      "witness": "Asserts the digest is stable across 512 calls regardless of map iteration order. This is a determinism check."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "7042cf588136f65d5acf5fae3006b55f0ea06c1e37cb03ab4f983040ee3213fd",
+      "witness": "Fixture that ingests source and target documents and writes a latent link cell into an unauthenticated corpus. Seeding only."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "c64b9aa8cb162388676f7bcb55193d5124d9db9312558c0259e3ae965b8abde9",
+      "witness": "UI harness changes that export functions, add canvas stubs, and add fake neighborhood and recompute fetch handlers. Test doubles and plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "71e6d5a706edfe1b6bda7b5812f4a10b08f4eaa0cff3a2f8c868c52fcc933784",
+      "witness": "Pure deserialization: decodes wire IDs and metadata into DerivationDetail, with error wrapping."
+    },
+    {
+      "label": "routine",
+      "pr": 313,
+      "unit_id": "9f890633b44b2a0a92564a4f90552f2318ea97d435aefa659571738697116886",
+      "witness": "UI test asserting that a changed digest shows 'Inputs changed' and a 404 shows 'no longer reproduces'. Presentation of drift, with no authorization or denial boundary asserted."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "5cd6a383a6ce9c981493c6ab5c13c764db6bbec5cd46ea4000759db23c79dcc4",
+      "witness": "Asserts browser config fields (client ID, scope, authorize/token endpoints) come from discovery metadata. These are non-secret login parameters; no access, disclosure, or identity boundary is asserted."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "68f69cef3f793198cb9aff68cd3ecd4a7ed1c22a2a31c360afe34594f8c0784b",
+      "witness": "Asserts newDevelopmentBackfill returns nil for the OIDC authenticator selected by selectAuthenticator. This pins that production OIDC auth never receives a development identity or authority backfill."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "4eb59eefcda105811a3b3abf0ae6645e12fe864a57ed0e1e073c3bdc27b2fa0e",
+      "witness": "Deletes the Entra JWKS parser that decided which kid-indexed public keys verify tokens. Its trust-set logic moves to the stricter oidc.go parseJWKS, changing token-acceptance key selection."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "0f9672c609ad0ff1afd1bb49850175fd7cc63ded9c7bc31629b236d6d2d8b282",
+      "witness": "Builds ECDSA verification keys from JWKS entries. It restricts curves to P-256/384/521 and rejects off-curve points, gating which keys can authenticate tokens."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "18e4286de308fd726c348b6f6fa3c9184485e1993d37dfb16f06a3755f4c340b",
+      "witness": "Deleted helper that derived non-secret browser PKCE parameters (tenant, client ID, default scope, authority) from Entra config. Its own comment states nothing here is a secret; no enforcement."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "57607b9318baea316b4f16a0e85aed9d04a6b6ac786f26182322100975fdcdbf",
+      "witness": "Test double that increments a call counter and returns an empty DocumentsResponse. It implements no boundary itself."
+    },
+    {
+      "label": "unknown",
+      "pr": 316,
+      "unit_id": "175535ff75f0f5c037760843f94f10f52f434484109cb9aa94ca0c2345890358",
+      "witness": "Generic helper that rejects an empty configured value set as required. Whether its callers use it for audiences or role-claim values (fail-closed authorization config) is not visible in the sampled source."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "a3ff89445cb3a90b8466b929236d674ea3e539dcc29ba561685a342a96efd958",
+      "witness": "Deletes the single generic Unauthorized denial, which carried no token-derived detail. This disclosure-boundary role is presumably replaced by oidcDenied, so the boundary error source changes."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "18fc5cd8fab311e51fa2db45b94419a5aa1e82395e2d5718cbfb225861367a27",
+      "witness": "Extracts a required string-list claim, rejecting a missing, malformed, non-string, or all-blank claim. It likely feeds the authorizationClaim-to-role mapping that decides access."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "3c5ef450638f3149ff618f4ed1d17927fb6a640707f97294e6d1097c002a707c",
+      "witness": "Asserts main.bicep still contains the deprecated Entra parameter and env-var strings. This is a deployment compatibility text check, not enforcement of any authorization invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "ab101a1fc7b284bbf5450b46996d91bcda0960afb236d55ba63777489d381a72",
+      "witness": "Syntactic validation of the host in configured OIDC endpoint URLs: forbidden characters, port range, DNS label rules. This is operator config hygiene, not an access or identity decision."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "2fca5909ef080740d6762c18363c7e650825c44c2d7a41deabaa52e590d733ff",
+      "witness": "The new JWKS parser rejects duplicate kids, skips non-sig use and non-verify key_ops, and binds alg per key. This changes which keys can verify tokens."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "24ba4ba68a4f29c8f7591fc87ac3ef2ec571cfe0d293ac189bb2473961cea0fa",
+      "witness": "Deletes the test asserting that Authenticate collapses expired, wrong-audience, and unknown-kid failures into one generic denial. This removes a disclosure-boundary (oracle) assertion."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "2ad95a846272a04f81da47fa7f769da7c679cc8f68146b0056ea60a02c2a8c34",
+      "witness": "Deletes the test asserting that an HS256 token signed with the RSA public key is rejected by the method allowlist. This removes an authentication-bypass (algorithm confusion) assertion."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "ae0e55337c3eb37b3041ecb7e85ccb007f09a9fa5e3f1c37c4369a813be324b1",
+      "witness": "Deletes the test asserting that an incomplete Entra config fails closed, with no authenticator and no anonymous serving fallback. This removes an access-boundary assertion."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "c5852d24f114eaa73e8dd8769b237ff28e0aa363f0b6b281fd20d8cf9342fa15",
+      "witness": "Deletes the test asserting that unknown-kid tokens are rejected with errNoMatchingKey and cause at most one metadata fetch. This removes a token-rejection assertion alongside the anti-amplification check."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "55d85dcb6948f3dd62de25c2bd30623af449fd7495b92e051adeb66cf1a5b38a",
+      "witness": "Asserts that Authenticate accepts a token whose aud matches any one of multiple configured audiences. This pins the audience-matching semantics of the access boundary."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "fcbf2b9f81787e9086771b0a92c0feac0b86593f8bf4d0743021941890719f7d",
+      "witness": "Asserts that garbage, expired, unmapped-access, and unknown-kid tokens are rejected with the identical oidcDenied error and never echo the raw token. These are disclosure and access boundary assertions."
+    },
+    {
+      "label": "review",
+      "pr": 316,
+      "unit_id": "3d45e996ab390ed40e3ff1b2686a01366d1141d7917f6a6b6b1bc330f89a404b",
+      "witness": "Asserts parseJWKS rejects malformed JSON, symmetric-only sets, enc-use keys, and duplicate kids. This pins which verification keys may authenticate tokens."
+    },
+    {
+      "label": "routine",
+      "pr": 316,
+      "unit_id": "734403f7a6666e04914b174d050a2126ba29b444481d448a7ae628f71411a59a",
+      "witness": "Deleted test fixture helper that constructs an entraAuthenticator or fails the test. It is pure setup with no asserted boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "799fc02620af6b0c02c04fbf7f0f7bbf5e011c8f2c30bb8611b5b49fc18f9775",
+      "witness": "Constructs codec with buffered reader (64KiB) and writer; pure I/O plumbing with no access, identity, or disclosure decision."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "f28e54463ded9379e6cde31de1e6c94b47a14f6476fad8bd8434d7d23e518875",
+      "witness": "Asserts NotFound tool errors bypass compressor and remain IsError; checks error/compression semantics, not an authorization or disclosure boundary, despite Authority fixture setup."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "69c37f1c3ca18110cd5c9c43d0859e29724bcd710bd3f011afc797280d7345ef",
+      "witness": "Test string helper splitting output into non-blank lines; generic parsing utility with no security assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "29a9633bd57c5994cc0e9e9fdc799115901156be002ee7c3aa299b7d1cdc4fd3",
+      "witness": "Wraps formatted message in ErrInvalidCompressionInput sentinel; error construction plumbing only."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "38a8c8cb24475029da0102ad9a9029f60ee64eabda359a428ac056cf2694d938",
+      "witness": "Replaces failures with invalid UTF-8 or oversized code/message by generic internal failure; triggered by size/encoding validity, not sensitivity, so bounding rather than disclosure control."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "9de12ed31816dee1e9504e53d1d13d35bbd3dd26e7ecf58f230f72d8eb23d00e",
+      "witness": "Asserts opaque binary IDs and metadata round-trip via base64url on wire; pure serialization fidelity test, no access or tenant assertion."
+    },
+    {
+      "label": "review",
+      "pr": 317,
+      "unit_id": "af12220e4c5693460e86dc7da38029eea884b2483b59f260aeb2f8c477b9fe16",
+      "witness": "Builds process identity: forbids mixing -dev-auth with explicit fields, requires subject/actor/domain/source/policy, parses permitted operations, sets domain and dev operation set; directly defines identity and capability scope."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "bc84311636f5ae51599353d59a1ea740a1d20f940f8cca27276cb06e5d46b07b",
+      "witness": "Validates JSON-RPC ID is absent, string, or integer number; protocol syntax validation only."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "2fcade583bd04d4bda201656209558506d3010895550696ac6b4f8804f8100d9",
+      "witness": "Asserts zero budget omits nonempty items and keeps zero-byte ones; compression/budget accounting, not disclosure authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "5492867761b9365142b2377e8e77f99b78eb628a0b0e3e406564c74be0757a5a",
+      "witness": "Strictly parses JSON-RPC envelope: UTF-8/JSON validity, object form, ID, version, method presence; protocol validation without authorization effect."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "436f7bb96c6afd86a5bec503d2a2e4632ba2caeb629f070fc745760b5befa2cd",
+      "witness": "Reports ingest availability from optional provider, false for typed-nil; feature-presence check, not permission enforcement, per visible body."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "f7544702d70fae3fec243b3a9146d6ba96f4c8031a6770a19755d66cd57e1eec",
+      "witness": "Constructor rejecting absent server or nil close function; lifecycle plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "c49b87a534a5f9be482252eb9e174a576e490b5539aca525457ff3664ec2f067",
+      "witness": "Treats empty or null raw JSON as no-op, else delegates to strictDecode; decoding plumbing."
+    },
+    {
+      "label": "review",
+      "pr": 317,
+      "unit_id": "57cf1e742fd2c35af623dc7f091018a781051d1072bb9c02a7a7512b615e2774",
+      "witness": "Maps errors to client-visible failures: Unauthorized collapses to 'authorization denied', Internal and non-shoal errors hide messages; defines what error detail crosses the tool disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "a1835404b8edc89a7579a44873025ef4e73dd812361ba680dc5b09d070765f71",
+      "witness": "Asserts typed-nil server rejection, serve/close error joining, single close, no stdout on failure; lifecycle error propagation, -dev-auth only fixture input."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "adc15ebfd196e62de52d192099235c642ce709dc833ef8029873bef1413cf8ab",
+      "witness": "Chooses response ID for protocol failures, falling back to null on parse error or invalid ID; JSON-RPC correlation plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "27dd0453314ca0fd9c9b3840aab1a35c3b31a203a14883242f6f06b9b580ee6a",
+      "witness": "Trims ASCII whitespace from byte slice without allocation; generic utility."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "c12250bfa208dd0cbfa753723c9a561f74a12db5f8655c3cfd485ae7b22d5d40",
+      "witness": "Happy-path test that five read tools dispatch once each to stub service; asserts routing, not an authorization or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "17de2c850a08ecc00ab1d1cda0ca84022e186d31488d745e2248be27544fcb37",
+      "witness": "Asserts protocol version negotiation, raw ID preservation, and initialize/initialized ordering; protocol lifecycle state, not access authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 317,
+      "unit_id": "274f0b6e276c519c038901f100a73f571064bfc3ce801087b5f8dece4081dc16",
+      "witness": "Wires runWith with os.Getenv and buildApplication dependencies; entry-point plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "5d62d88ffeedcdd11981be7536365b7c8bfa067a387f90fd8b3d5c864eb0dfe0",
+      "witness": "New helper converts four-plus column leading whitespace to non-breaking spaces so model prose does not become an indented code block. This is markdown formatting, not an authorization, tenant, or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "951324b1814d23dcb156ed64c7ea63fba44bf40a8bc6f09a9597835fa64e74ed",
+      "witness": "Removed inline escaper that HTML-escaped and backslash-escaped markdown metacharacters. The deletion affects only how CLI output text renders; no access or identity decision depends on it."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "513505e9b8f3d303089efc798a20238b72fe0e4806d7fb4bc9b5169d669eeca1",
+      "witness": "New predicate detects setext underline lines of '=' or '-' so they can be escaped. This is pure markdown syntax classification with no authorization semantics."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "c75687683b344863099c1cfb66e1906c778e8c4ca1be496c079f4c534c3e4ce1",
+      "witness": "New predicate detects hyphen thematic breaks (three or more '-' with whitespace) for escaping. This is markdown rendering classification only, with no access or disclosure control."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "d4c57692f511c501e4d81fbea902b77d6cbb877ced634d57aa25093d3c5f4d14",
+      "witness": "New prose escaper backslash-escapes markdown and HTML metacharacters and block markers per line in the answer text. This is output-injection hygiene for CLI rendering, not an authorization, tenant, or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "50e9b40ebf959a0c3be218b875368e6ebccf20e2a0e64f3b0ca55216730feff3",
+      "witness": "Test asserts escaping and code-span rendering of script, link, and heading payloads, plus the absence of double escaping. The authorization field appears only as rendered text; no access or disclosure invariant is asserted."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "13e8118768a466557e4c4ace728ab489fa4e8ec2346545bf4af76dbed68a990d",
+      "witness": "Switches field rendering from markdownInline to markdownCode/markdownProse, including the displayed authorization string. Only the formatting of already-selected output changes; no enforcement or filtering changes."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "903bc265be3d08916351a652059ff0c0808440c0cf7e6b3fa7a03d4cc12c87ca",
+      "witness": "Now collapses newlines to spaces and returns an empty string for empty input before building the backtick fence. This is code-span formatting and serialization only."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "0bec11435fdf9b7a7cf208da82abdca214fe048bbab2dbeeaa9d609a1ab8f253",
+      "witness": "Adds assertions for empty-input and multiline code-span output. These check rendering hygiene, not any authorization or isolation invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "bb49680e570a44c91097b914dbb6ca491d053c10beb027617b38c43fdcd16d07",
+      "witness": "New helper locates block-level markdown markers (quote, heading, list, fence, ordered list) to escape. This is syntax detection for rendering with no access-control role."
+    },
+    {
+      "label": "routine",
+      "pr": 318,
+      "unit_id": "f69d8fb6cb1f62b092383961e4e54144d96ec489fd63e685f73d472c727ea3be",
+      "witness": "New predicate recognizes ATX headings of one to six '#' characters followed by whitespace or end of line. This is pure markdown classification."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "ac757cdb7244115fa88ca9b8589c4e0542528e11124ce121b8f5131029f429a7",
+      "witness": "Test now pre-spends one token, then asserts all-or-nothing throttling for AdmitFiles(3). It covers rate-limit and budget accounting for embedding convergence, not an access, tenant, disclosure, or identity boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "8c13bb524474c3569484f36b6aefc2d34539e52ccfde96db6c08219e09406646",
+      "witness": "Adds a token-bucket overdraft for requests wider than burst, creating negative rate debt. This is provider throughput governance. The MaxFiles budget checks stay separate in AdmitFiles, and no authorization boundary is involved."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "1f33bf3b7fa4371542e337a750dbaf27d00110142f90b27111698e0d8a7fc8bc",
+      "witness": "New test asserts that a wide reservation borrows rate capacity, that Settle(0) refunds the file budget, and that the throttle message and debt survive pause/resume. This is rate/effect accounting, not an authorization invariant."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "fe7cd2d04afffeec1a0c08684a6def0804629ebac9672a85a8f5a3961f74b1ee",
+      "witness": "Asserts that mixed embedding-space inputs are not merged when the provider fails (ErrMismatch) and that the reservation is refunded. Here 'identity' means embedding-model space consistency, not principal or tenant isolation."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "8ee413243aad9f10f436239002568c2074525be2ac356c2f485b9b49799c40b5",
+      "witness": "Concurrency test asserts exactly one wide reservation is admitted under rate debt, with the admitted, refused, and spent stats checked. This is throughput and accounting correctness, not an authorization boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "0dfa6178615218687976bd7a0720b734dbc7a6d86e712c3af3d716af04ad73ba",
+      "witness": "Asserts that a cancelled context produces no published output and leaves governor accounting unchanged. This covers cancellation and effect accounting only."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "f25932c070c82a912e6536d76d04f64cba865961727051f710b41895de66efdc",
+      "witness": "Asserts that small admissions cannot starve a wide reservation, and that debt then throttles the next admission. This is fairness in rate limiting, not access control."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "2ce236d396fafbf71fa047359391056c36e78c4ca23eaf0e3c542bc1ff8a355c",
+      "witness": "Fixture helper that writes a one-cell rfile tagged with an embedding-space state for compaction inputs. It is pure test setup."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "7001d66ada64cf0ac00936498ae810fe2d5e577bcda54b91b489e33ec4f547c0",
+      "witness": "Asserts that a provider outage preserves the model-old space, refunds SpentFiles, and allows a throttled retry after refill. This is a retry/accounting test with no authorization or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "e6df335abdc110326e89505e0734c18a249cd6a076e88fa6aab1fa44e85fe461",
+      "witness": "The only change swaps the inline throttle error for throttledErrorLocked, plus doc comments. State, budget, and cell checks are unchanged. This is error-message plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "595df4413f2a8b446f1b2da802f9d27479b31ecabe293b0da43782eb97cc66bf",
+      "witness": "New helper formats the throttle error with a retry-wait hint for wide requests and wraps the existing sentinels. It only builds an error message."
+    },
+    {
+      "label": "routine",
+      "pr": 319,
+      "unit_id": "9dbdf80ab76283270d1eba1d8111d6dfbb3310174ef71b7cd61de6572c1f1abe",
+      "witness": "Happy-path test: a 4-file merge converges to model-new with Burst 1 and charges four files and four cells. This is convergence and accounting behavior, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "615b74bdf09848b8736db436bc7e9e6fbcef52b45d29a9f07252f7349197b4cc",
+      "witness": "New morphism structural validation: safety-kind match, version identities, evidence ordering, kind-specific source/target arity, canonical ID. This is schema-evolution integrity with no access, tenant, disclosure, or identity check."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "e9daebf49dfe4ee36b659c72f3c14599d74777443898d6c917b051621069e336",
+      "witness": "Test fixture that builds N concept definitions and a target version for bound tests. It asserts no authorization invariant."
+    },
+    {
+      "label": "unknown",
+      "pr": 320,
+      "unit_id": "d28d1e86e9fcd5d3db57ab142d5c61ad4016ccbe33bb483ff997efdcd25f10d8",
+      "witness": "Adds a validated SelectedOntology to the trusted authorization Decision. Whether the selected ontology constrains access or disclosure depends on downstream lens consumers, which are not in the sampled source."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "405cd4bded2ba62822f2d130033b21a0b90a71c9bf0cbcb698ee2394ac5bbd0e",
+      "witness": "Rejects property owner-set narrowing across ontology versions. The owners are schema concept owners, a semantic evolution rule, not an access-control principal boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "85acb70df00da6cbc81fd54a6e4a89ecac6823eebbe0bb5488934507cb908145",
+      "witness": "Concurrency test for the proposal capacity bound: exactly one accepted, overflow Unavailable, identical retry allowed. This is capacity accounting, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "a20a00903434a6bb605b2361e9ac26373d8b0634a1e0986d638adfc984c08709",
+      "witness": "Derives the canonical morphism ID from its fields; pure identity hashing and serialization."
+    },
+    {
+      "label": "unknown",
+      "pr": 320,
+      "unit_id": "ef88e004e7153f40d232e9dfcf749ad15fa74c3cf09fccd4589bcf50719b9aed",
+      "witness": "The authorized client now returns an injected ontologyProposals dependency instead of type-asserting the base store. It is unresolved whether this replaces an unwrapped base capability with an authorized wrapper."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "4d7b12afae15d1b71b437b415cbbcf86d48814f69dc56679665e51f6208a4a6e",
+      "witness": "Enforces a proposal count bound before building the published catalog. This is resource bounding only."
+    },
+    {
+      "label": "unknown",
+      "pr": 320,
+      "unit_id": "02b626b205a65a13325b509261a875bfd7fc278f9c3187c9b308e365144f26dc",
+      "witness": "The changed test now asserts that the bound decision carries the selected ontology per tool call. Whether ontology selection is an authorization or isolation invariant is unresolved from sampled source."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "4101c6c180bf76a7ef2a351ce24ad55eb7f8dd309cc4a84f6703fe2dd038becd",
+      "witness": "Replays the published proposal chain with ambiguity, cycle, and bound checks to derive active versions. This is catalog state logic without an access decision."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "f2cf1b08092c1f1d7af5f70bd221bc21f5c94f2d1193ecd9820ce320f9d2b8e6",
+      "witness": "Snapshots the configured ontology under a read lock and fetches mutation state from the store. This is plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "d9254d30a6d63a27d919b754b53a77e73f15847c257eb55f45886bf6c53e7f95",
+      "witness": "Constructor that clones inputs, sorts evidence, derives the ID, and validates the morphism semantics. No authorization boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "dd0c699743a0939e7539a6ed4e21c162cac269b6a34d72caf76ac8bde8c1eb49",
+      "witness": "Trivial accessor returning the morphism kind."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "b86110bc0bad85643668b3d0eec8c62742569256cb8d82b5d47649a1693f028c",
+      "witness": "Accessor returning cloned metadata."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "930362001cd0d19d0033f4180bd6530ed84af24b5ea5418866fa0a8e9665275a",
+      "witness": "Returns a clone of the active catalog tip."
+    },
+    {
+      "label": "review",
+      "pr": 320,
+      "unit_id": "6a9ab67f44a1762fd401c726246f3716b71ad3cf3086d69d6b2833ec76580724",
+      "witness": "Applies the decision-based applyOntologyLens to the authorized, filtered neighborhood before return, and adds a generation-guard recheck. This changes the post-authorization disclosure path of an authorized graph read."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "d20c738dd70e4aa80f7f52f8785ee5da4654002964e3c3b67002a3b3bebb4ac1",
+      "witness": "Accessor returning a cloned target version."
+    },
+    {
+      "label": "unknown",
+      "pr": 320,
+      "unit_id": "d72558c09c6ea2031dee5a632b4e852653d4a27c2d0bc916263d087a87865e65",
+      "witness": "Mutation projection calls projectOntologyProposalWithEvidence with false, possibly omitting evidence from responses. Whether this is a disclosure boundary is unresolved without the callee."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "62cc49e6f759b3299bfb43d547fd46bcac7dc2fae39e9626920259934d91da83",
+      "witness": "Test asserting that lens inference rejects unmapped semantic changes. This is schema-evolution completeness, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 320,
+      "unit_id": "1b8c06a4ab35549ff0d49c3b2cb59b57d922d88eb537110849245b102f1ffd43",
+      "witness": "Reads the configured version and store proposals and builds a bounded published catalog. This is discovery plumbing with no access check changed."
+    },
+    {
+      "label": "unknown",
+      "pr": 321,
+      "unit_id": "d07dcac794c99287ff5883c260376d01f3daecdfe4e1c47a51dae2d5614679bd",
+      "witness": "New exact-match parser delegating to Operation.Validate. The diff shows no production callers, so it cannot be resolved whether parsed values feed authorization decisions or only serialization."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "dbe09dbbc34928c65998f8ab15ae8201363df17480714d1520e4430179488c17",
+      "witness": "Asserts the migration role still permits legacy operations but no product actions. Also asserts NewDecision rejects a migration-role ceiling granting product actions. This directly asserts a capability ceiling."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "87a77e4ade11b31b40201ec07ebc644d5cadb1e3e181ef4b033de06e5b3165fa",
+      "witness": "Replaces the migration role's `return true` wildcard in Allows with an explicit legacy operation set. This narrows the migration capability ceiling so it excludes new product actions."
+    },
+    {
+      "label": "routine",
+      "pr": 321,
+      "unit_id": "5a4703e8942f5dedc90a23f4e41b15ac0c4cd0c418f3bee3d2a9421edae77ccf",
+      "witness": "Test helper that builds a map from an operation list. It is generic fixture plumbing and implements or asserts no boundary itself."
+    },
+    {
+      "label": "routine",
+      "pr": 321,
+      "unit_id": "8fc6964d98449296459f239c154fdc92fb14e5cbd0b4a8b322cb3bd535a55e67",
+      "witness": "Returns a fixed ResourceRequest fixture (domain, source, policy, object). This is fixture setup only; the assertions live in callers."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "d76b366f31b086cbf7a7d671878240507d6badc2a414bdeaa581665fde5d535e",
+      "witness": "Adds 13 product-action operations to the valid set. Allows gates on Validate, so the previous migration `return true` would have granted every new operation. This changes the authorization operation universe."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "badcf2bc7caab133f29c4ec8ce7060d2186ae1f9972fe8af1554ea06905c999b",
+      "witness": "Asserts legacy roles cannot acquire product actions. For each new role it asserts NewDecision rejects out-of-ceiling operations and AuthorizeObject permits in-ceiling ones. This is a privilege-escalation ceiling assertion."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "3f4dd2a8100e1e911b7eeb8db4020b670c9eb0a6f4729fba567b15090e6e6f0d",
+      "witness": "Accepts 11 new service roles. The test shows these roles are then usable in NewDecision and policies, so this changes which service capability identities can be configured."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "e7dcdd9f278684a7a4bac403b403c39228bb2ca5f343791b472e2b2c1142771d",
+      "witness": "Asserts that the audit event's String() does not expose the private object attribute for each product action. This directly asserts a disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 321,
+      "unit_id": "85928bc6f752d0de83a6581e016e47eda074b9d3e6a813c5cbff4df97b18f090",
+      "witness": "Checks role string values and Validate acceptance for inventory stability. This is serialization stability; it asserts no access ceiling."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "3a8974c0c49368318aa671c05802c79411ec256ad7d5f8852f6d22e7348e5ee5",
+      "witness": "Restricts migration to legacy operations and adds per-role product-action ceilings. Each new role permits only its operations plus validation. This is capability-ceiling enforcement."
+    },
+    {
+      "label": "routine",
+      "pr": 321,
+      "unit_id": "dadfe6fb26b905517f4155d81fc3121cc7d7d7b1febce9a18fb9deb8f59ae91b",
+      "witness": "Asserts a service policy encodes and decodes each new role intact. This is pure serialization round-trip; it asserts no permission boundary."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "92a72c8934439ec8279acd864a5cdb6cee607d3597fb0d6ca3f13482cdb6e2b1",
+      "witness": "Asserts the full role×operation Allows matrix. Unknown operations and empty/unknown roles are denied, and every operation has some ceiling. This directly asserts capability ceilings."
+    },
+    {
+      "label": "review",
+      "pr": 321,
+      "unit_id": "c5838608cfa766924dd5bc7b3ec735d205b44295e5375df03bf016f985fbac85",
+      "witness": "Asserts an ordinary reader gets unauthorized for product actions and explicit capability grants them. An out-of-scope source yields non-disclosing not_found, so it asserts object authorization and a disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 321,
+      "unit_id": "c0a93378e3ab15f524c23b1747a5b6419dd3782d37b33075bc140c7f360ac9c6",
+      "witness": "Checks operation string stability, Validate acceptance, and ParseOperation exact-match rejection of malformed strings. This is serialization/parsing; it asserts no authorization outcome."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "53ff347a215b1bf6defb674b28cf8793a1a3a58268ae11ec463ebd086e14943f",
+      "witness": "Test now asserts embedding-space identity errors (ErrQueryIdentityRequired, ErrMismatch, ErrInvalidState) on IVF Add. These are vector-space compatibility checks, not access, tenant, or disclosure boundaries."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "0ac4914bf58b45937d2d10212a92e2220a7140900d802243fb77fae5b5c3bfce",
+      "witness": "Init adds context wiring and ValidateQueryStates on the VectorKNNEmbeddingSpace option. This validates vector-space identity for query correctness; it does not change authorization or visibility filtering."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "3b958aea476ee9b98a995bcf8226d37ab9f441e791c5adeb1536817065e8626e",
+      "witness": "Only change is adding EmbeddingSpace to fixture records and queries. The existing visibility/Authorizations assertions are unchanged, so the changed behavior itself asserts no new boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "c4d25d47ff4d7fd83a8c4c82f8578a6d915a50678f1eb801260180b4a5a107ec",
+      "witness": "Adds an embeddingSpace constant to records and the search request. The public/secret visibility assertion is pre-existing and unchanged; the change is fixture plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "4ff6c815d0253ae1ff31ab49a9a4eb952c776b0e373839429cbdba0d5d4f9593",
+      "witness": "ScanHosted now delegates to ScanHostedContext with context.Background, passing opts and topStack unchanged. This is context plumbing with no visible change to authorization handling."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "906f46c5bcc4f802739bd2ceac22ba8c08ad025137347c2868fcea254ebc449c",
+      "witness": "Adds VectorOptions{EmbeddingSpace} to planner test options. This is fixture setup for a plan-shape assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "e1d1e87bb96e190bdd11f4d2fe17993bc7c92b7e80ebca17e7baab5f2167884f",
+      "witness": "New gRPC wrapper forwards the table, splits, and DefaultEmbedding to CreateTableV2. This is pure plumbing with no authorization logic."
+    },
+    {
+      "label": "unknown",
+      "pr": 323,
+      "unit_id": "feb6aefa0fccbca65df3362c8fad4adf30c7f68ce862f66ed2eda22239785256",
+      "witness": "New wrapper feeds vectorScores and a true flag into validateRetrievedResponseInternal alongside the auth decision. The internal body is not shown, so it is unclear whether this alters citation-authorization validation."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "f2fdcb906bd1248e5bc66a7b02f341e7167ceda958b0391fe20bf5ef8e4e61c2",
+      "witness": "Asserts that an exact vector query fails with ErrQueryMetadataMissing before scanning. This is an embedding-metadata compatibility guard, not an access or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "3f737f58cf98b6b8e481e4a7b05f8fa5817ac9cc69cc39104f08184213c35784",
+      "witness": "Only swaps the Disclosure accumulator for a RetrievalReport passed to retrieve. The return still drops the report, so this is accounting-type plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "226f4ff6380f2fc72d777804487bf1290b671b636c512fe4cf42a842680e78e7",
+      "witness": "Formats a config-table row name for the embedding-space identity. This is pure key naming."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "53e5af0d8ca09426c3718f4427dc50eb535c27881256c8d1e11564f51d4cfd7b",
+      "witness": "Test double that emits embedding query events and synthetic errors before delegating. It supports tests but implements and asserts no boundary itself."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "81959fbcbdf640790c5c5ca8de44d2af9ed7c27a9c390f8d66e69d381f5dfbf2",
+      "witness": "Asserts that embedding-space mismatch, missing identity, and missing metadata errors fail closed. These are vector-space consistency checks, not authorization or disclosure invariants."
+    },
+    {
+      "label": "review",
+      "pr": 323,
+      "unit_id": "f44056c3386afe3ea03ed687090f9919f949b1980107bb71c1e3a95d9ecaa9b6",
+      "witness": "Deleted function governed which Suppressed/Restricted counts reach callers, a documented disclosure boundary (an existence oracle). Its removal changes the disclosure-count emission path, and the replacement is not shown."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "75291da49a9dd3f4ea56f150ec8f300e75287fbc411c47d9bd0dc090bf2b3b92",
+      "witness": "Test double that builds synthetic EmbeddingQueryEvent space identities, fanout, and availability. It is fixture logic with no boundary assertion."
+    },
+    {
+      "label": "review",
+      "pr": 323,
+      "unit_id": "474d883bbda5c634d3e2516030d72e3bbd6fb5b12ec0dc767d9c823e3429a95a",
+      "witness": "Authorized retrieval restructured: a deferred guard.Check now zeroes Disclosure and gates identity disclosure; probeAuthorizedVector and the guarded emptyRetrieval are removed; vector scores are computed over the authorized projection. These directly affect access and disclosure boundaries."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "dde54b51c8d628cb87f7bd33e93e3707e64bad53e29ed6b9c810d95b211e1486",
+      "witness": "Asserts that EnsureTable rejects a legacy store lacking embedding support (ErrQueryMetadataMissing). This is a capability/compatibility check, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "81166eaeb2bc72b29802e9a794db6a67f7cb7ca77af0fb6a28c6cc7d7e2932f3",
+      "witness": "Registry snapshot adds the VectorKNNEmbeddingSpace option key. This is a serialization/registry drift check."
+    },
+    {
+      "label": "unknown",
+      "pr": 323,
+      "unit_id": "7e6c0108d4a85885d88ec674f0003ae61715a770aee70fad5b6f81d3650ada68",
+      "witness": "New ScanV2 RPC exposes s.scan through an additional endpoint. Whether authorization and visibility enforcement cover it depends on s.scan or interceptors, which are not shown."
+    },
+    {
+      "label": "routine",
+      "pr": 323,
+      "unit_id": "c2cd59803e617b5b9243dec7c86da5dbf8cc41b719e47674c3553937d328d9a3",
+      "witness": "Fake embedder returns a model-space identity string for a default dimension. This is a test/adapter double with no boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "b61e83b5f3cf144aa20391cc313c86e31b0f348b7d6cbf0713107e14babc06bd",
+      "witness": "Deep-copies a slice of coordination.TXN byte slices; pure aliasing-safe cloning with no access, disclosure, or capability decision."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "054c79d1f053173cb4ff438c62e38313e87ad9b847338f63085c002ee4be3b46",
+      "witness": "Read-locked accessor returning cloneAuthority(r.authority). It exposes a copy of the configured writer authority but makes no enforcement decision itself."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "d0540031e5e69389655649f76ea1bce187abe8724e2e25d846a1a06fd823c31d",
+      "witness": "Test-stage wrapper that forwards ScanPrefixFrom, including the visibility argument, unchanged to the inner store. Delegation plumbing only."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "7a957d40f41c8b74d46f61dd4a0c1bacc9aa4ea224ebb6b6f45dd056d35b9691",
+      "witness": "Constructor that validates the domain, requires a store, and copies domain and visibility into IntentStore. Setup plumbing with no boundary decision."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "708af34faf4231d275a9a0470c41c6ff20d5ec078edb81df931018cf1ea573e1",
+      "witness": "Test fixture helper that CAS-deletes an epoch outcome cell to simulate a missing outcome. Fault injection, not an authorization assertion."
+    },
+    {
+      "label": "review",
+      "pr": 324,
+      "unit_id": "a417e70bf44333cad1c503a2f829746e8abadd58ce58cbbdd0a807a8bd7cf2c8",
+      "witness": "Open requires embedded-primary authority and rejects startup when headMatchesAuthority fails against durable allocator state (writer fence). It also forbids the coordination table as a physical write target. This is capability enforcement."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "d5cbdc225dcf9262e219a30e6fe90c064fe3e8b7b6f2f63f8630dc9536228d9d",
+      "witness": "Absent-or-identical CAS marker write with read-back disambiguation and conflict/unavailable error mapping. Idempotency plumbing only."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "f0ca50105ebde33d260336bfccd236152dc170707ba359b0892e84c828b42a6e",
+      "witness": "Returns false when publication is nil; otherwise delegates PendingPublications and wraps the error as unavailable. Status plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "efe16fd13a66754546023666e3e968ce5308011cb9c451c2ce409b1ba33dec2f",
+      "witness": "Test double that records published=true and returns an empty result. The body contains no boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "5a76697ac0149ffc8d02558f1459ef464e1697e7025faa1311e3808a595200c0",
+      "witness": "Asserts recovery restores an ambiguous record-attempt binding and that an exact retry is unchanged without duplicating the frontier. Durability and retry correctness, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "0326d4e77d3f676573cfca747a62e33f4191f99bcfb3617a5bf42e5634c497e2",
+      "witness": "Reads a record attempt, decodes it, and validates the persisted document and row match. Evidence-integrity decoding with no access or disclosure decision."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "531b2589d663622b923bb463f6b13990d8815df9844fd0bcc8668cbb7f925af8",
+      "witness": "Length-prefixed encoding of table, row, family, qualifier, visibility, and timestamp into an identity string. Pure serialization."
+    },
+    {
+      "label": "unknown",
+      "pr": 324,
+      "unit_id": "4bd456435d033568ed155caeb7b94a2b0bae08a0a66e087d1f2bdda88d384af3",
+      "witness": "Builds the attempt row under a domain prefix and stamps it with the store's control visibility. Whether domain scoping and control visibility form a tenant or disclosure boundary is unresolved without caller and label-semantics context."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "3ccf034fc3dc3fbaa36155988b9292f31e1ecf6836c8ba590e84da12450b6c9b",
+      "witness": "Length-prefixed encoding of manifest entry components, epoch slot, timestamp, and value digest into an identity key. Pure serialization."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "517e7199f0299f05f1ccdf1c807409657aa7ffa6517cc148769cfda259911f37",
+      "witness": "Stages 32 indeterminate publications, reopens with high recovery concurrency, and asserts none remain pending. Concurrency and recovery test."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "298b40aa5e780415955b9efb56a92e8dc5591a1f7c732c89766d6070ec9dbfdc",
+      "witness": "Derives a retry token from an existing attempt, rejecting expected-epoch/digest mismatches or live attempts as conflicts. Optimistic-concurrency logic, not authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "374c1e0e5dc0abf1cb6c639115424028569ab7220f373a7d6b44c3ef2221c088",
+      "witness": "Bounded recovery retry loop with exponential backoff that waits for expected resolution on ErrUnavailable. Retry plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "d9d25c7440fe055979db35ea929b68e03f9bc72fed57ad9a1d5ce586d0480823",
+      "witness": "Assembles a RecordPublication request with fixed table and columns, the default logical policy, and the expected head. Request construction and serialization."
+    },
+    {
+      "label": "routine",
+      "pr": 324,
+      "unit_id": "1f4053a96a69e125fae356562acf73ce36d2db27459712aad1acf0a90b067d84",
+      "witness": "Asserts an oversized key or conflicting record-key binding fails without pending orphans or a recovered head. Binding and orphan-recovery correctness, not access control."
+    },
+    {
+      "label": "unknown",
+      "pr": 324,
+      "unit_id": "16a6d55dcdcddb93f6b8494285158d9b4417de7ff1b9ad7469437278f8f97124",
+      "witness": "Rejects physical cells whose visibility digest disagrees with the manifest, validates table names, and rejects duplicates. Unclear whether this enforces the disclosure label or is only integrity; caller and manifest-authorization context are missing."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "19af38d40fad7fc182846f9316669d1d1a1303e2e4e12f607ab1456af7119623",
+      "witness": "New test checks that lexical-only retrieval emits no embedding observer events. This asserts telemetry emission, not an access, disclosure, or identity boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "73d09a9bb1690f21e82308b8f129f64aee36e5e764ca3c4a48bf0dfae5986bba",
+      "witness": "New test checks that an embedding-space identity mismatch returns ErrorConflict with providerCalled=false and zero calls. This asserts provider-call accounting and model provenance consistency, not principal identity isolation or authorization."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "905a629ff3527b68a35ba8f163bb10f6cb236975386541179d59d6ca6ea2328d",
+      "witness": "The change adds an observer and asserts the event's Participating list equals [space-a space-b]. This is telemetry content verification alongside existing rank-fusion determinism checks."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "5e4f0c31dec7278718aabecff6e8fca88582f61cbb73bdedb21e2b8b45c13bc4",
+      "witness": "The change only populates queryEvent.Participating with sorted space identities from the scored targets after scoring. Citation validation and the authorization-wrapper projection path are unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "c3e1f7142c84891e61fe7cf01f3599a84e49c57575a44e9c64e494d12b401e37",
+      "witness": "New test asserts that Participating is empty and Completed is [space-empty] when vector retrieval returns no results. This is observability accounting, not a boundary assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "077a7a307fecd254ea5238961f6f65960ef34079cf422155cbcea8bf7bcdb985",
+      "witness": "The change adds a bool return reporting whether embedder.Embed was actually invoked. The identity and provenance mismatch checks are unchanged, so this is effect accounting only."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "9bcb5f4c9f25b2e91e564140ef309bd014b5d821e747920337b1116b68e9e492",
+      "witness": "Only the inventory path changes, from v2 to v3 JSON. The test remains a registry-drift equality check and does not assert visibility enforcement behavior."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "e033be1418a9d710a18972576f3319c798b8abb96d8599233bb9e5aa414fd23f",
+      "witness": "The change adds computation of the Participating space identities from the top-K ranked matches for the observer event. Scope filtering, the reserved-kind exclusion, and the results are unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "a23ca632e1493e9c2fbc48d9c8daa0f15a8390d57b9a755c705ba827905fd90f",
+      "witness": "The change adds a defensive copy of the new Participating slice when cloning the event. This is pure plumbing for telemetry."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "fc8997e87b2eca9fde4df63a1cbf213d957783f19360e15b2a52c850b7f55a27",
+      "witness": "The change is a mechanical call-site update that discards the new providerCalled return from embedQueryInSpace. Availability probe logic is unchanged."
+    },
+    {
+      "label": "routine",
+      "pr": 331,
+      "unit_id": "01398f3dca4ce3ea8359f0831346b3da9b76faa29214fb618cce875fb8afc3e3",
+      "witness": "providerCalled now comes from the actual Embed invocation instead of embedder presence, which fixes the provider-call count. The cache and provenance checks are unchanged, so this is effect accounting."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "d4dd0b9706efc716d9d82e3ac97574d5e0108badd673e16585a376c2290cf4ef",
+      "witness": "Adds strict JSON string-encoding validation for v1 document records after the existing, unchanged commit gate. This is corruption validation and ordering; it enforces no access, tenant, or disclosure boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "da9b78784347365e0fa826467655395356feb4c23a456f1d351ef762c62ce7b7",
+      "witness": "Asserts that uncommitted corrupt v1 residue is ignored while committed corruption fails open. This checks commit-visibility ordering and evidence integrity, not an authorization or identity boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "955687eec07ea1973eed3132ac8419ef03db27adcad6f776d3d3a4cec7ea79f5",
+      "witness": "Asserts that ScanCommitted returns ErrInvalid for a negative Frontier epoch. This is input-validation plumbing with no authorization semantics."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "d8a38cf7fec49b0ef0d0ac49f84362f9af8c22a864455425522f759d6c949a99",
+      "witness": "Excludes document rows from eager v1 JSON validation, deferring it to loadDocumentRecord after the commit check. This is load-path ordering and integrity handling only."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "2b240746459bb5d4f57a01cb744ca74e1199a2fa191432aaed9704b509034bb3",
+      "witness": "Replaces nil-value detection with a foundValue flag so empty cell values are preserved and duplicates are still detected. This is a serialization/lookup correctness fix, not a boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "687c38082d9ddbfdd2a774fba66b4a176220c5648caa71c3f93b0b5c109072a9",
+      "witness": "Adds Frontier.Validate for nonzero request frontiers. Table allowlist and visibility matching are unchanged; the change is epoch input validation only."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "f2b9a6aaaa6fecc7c88011c54513e0c6972244723783db4f56a30da269a5cf6c",
+      "witness": "Adds a parameterized maxScanned bound and counts only exact-coordinate matches. This is work-limit accounting; the unchanged exact visibility/coordinate filter is not altered."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "37fab24596096f5c5dfebb4731dc3bcb816dc3ec5b02dae5a023395a09a27b90",
+      "witness": "Asserts that RecordAttempt returns an empty value for a nil-value publication. This is a serialization correctness test with no authorization assertion."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "ef32166f95573c540ccea3d1880b9d41a0c621a5f23b9ba0275e668a5fa3b6c1",
+      "witness": "Now a thin wrapper that delegates to readCommittedCell with MaxCommittedScanCells. This is pure plumbing refactoring."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "27e96c8a3a95662d556f7c6c670bd1389fb8ea03462a02dbf5a4edb1ac2943fa",
+      "witness": "Asserts that sibling qualifiers in the same row do not consume the exact-read work limit of 1. This tests work accounting, not a disclosure or access boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 333,
+      "unit_id": "b8d17cc5c54c818d223471f740b93856c2cca286c988d3540c59657faa3b66be",
+      "witness": "The test double now returns a configurable committed flag instead of false. This is fixture/test-double plumbing."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "8ef579ae534f5ca82f5c4f328fb576e061ac6c69e91bd13d5d7471a658a377ac",
+      "witness": "Only the fixture decision now also grants OperationRetrieve. The test still asserts that a forged sink result yields an indeterminate commit, which is an evidence-integrity and commit-semantics check, not an authorization boundary."
+    },
+    {
+      "label": "review",
+      "pr": 338,
+      "unit_id": "c2f68cab502975f4abea5e7760df40e3fb11fe4c86be1d6f3e7b0f4736caf727",
+      "witness": "Removes the analytics_read substitution. authorizeInteractionEvidence now always reauthorizes touched nodes and edges with OperationRetrieve. This changes which operation grant gates disclosure of recorded graph evidence for analytics identities."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "7fd052d4fd45229ea2ce84eab71410346943bfc2e2f3e69803b15c7f41209eb4",
+      "witness": "The only change adds OperationRetrieve to the fixture decisions. The assertions check assertion completeness, edge counts and document scan counts. That is evidence integrity and accounting, not an asserted authorization denial or boundary."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "dc618dca38f2fbe40d1b1502fb9b8ac2d44c22cb8a37805099fe442d36c03bb1",
+      "witness": "A fixture helper that builds and binds a decision. Its only change adds OperationRetrieve to AllowedOperations. It is setup plumbing and makes no assertion of its own."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "f333456dc885b81444ea3a1ceda1a7bf7baae8af7361758f1278951856817d4a",
+      "witness": "The only change adds a Retrieve grant to the decision. The existing assertions cover recorded actor, reason and operation metadata plus durable recovery on a happy path. No changed behavior asserts a denial or isolation boundary."
+    },
+    {
+      "label": "review",
+      "pr": 338,
+      "unit_id": "9ca3520fd7c22c46066efbf17cb61163832e2454a6efb72fe4ef52e1b5e011ce",
+      "witness": "ServiceRoleAnalytics.Allows now permits OperationRetrieve in addition to AnalyticsRead and Validate. This widens the analytics service role's operation ceiling, which directly changes capability enforcement."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "601c67a433bb905027e3495f86f50398113694097e754328d19c154a41e73814",
+      "witness": "The only change grants Retrieve in the fixture decision. The test asserts that a missing edge yields NotFound and an exact edge is recorded. That checks evidence existence and integrity, not an authorization denial."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "463bf975eb0226bb75e53987ec823a9a0af630d6e32d27315d05ba370af5fe6b",
+      "witness": "A happy-path MCP analytics recording test. The only change adds OperationRetrieve to the decision grant. It asserts only a durable receipt and a single interaction."
+    },
+    {
+      "label": "routine",
+      "pr": 338,
+      "unit_id": "5c83561acccb6c7287ee29f3bb47ef68d51afe5d791dab05203b55fb454fecf9",
+      "witness": "The fixture decision gains OperationRetrieve. The test asserts that a committed sink failure yields indeterminate-commit semantics. That is commit-status handling, not an authorization boundary."
+    }
+  ],
+  "limitations": [
+    "Retrospective relevance proposals, not defect truth",
+    "Whole PR diffs explicitly unavailable when oversized; sampled function bodies complete",
+    "No tools or runtime execution"
+  ],
+  "status": "proposed"
+}

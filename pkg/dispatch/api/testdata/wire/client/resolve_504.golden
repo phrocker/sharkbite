@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/agents/YWdlbnQ/resolve
+error: dispatch resolve: deadline (HTTP 504)
+kind: deadline
+status: 504 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: deadline(504)

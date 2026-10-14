@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: protocol (HTTP 200): response exceeds the client's bound
+kind: protocol
+status: 200 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: protocol(200)

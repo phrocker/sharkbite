@@ -1,0 +1,69 @@
+{
+  "candidate_arm": "offline counterfactual only",
+  "extractor_sha256": "622fae48bfed00e6b53470ae72e71be9a674019c59835b8505b8e66bce4031d2",
+  "max_prompt_bytes": 1000000,
+  "packets": [
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 314,
+      "prompt_bytes": 245688,
+      "prompt_sha256": "85eadce4f764a669377b1a3e4230e6159c6fb8623651bb0b256f9ca133485f64"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 1,
+      "pr": 314,
+      "prompt_bytes": 242734,
+      "prompt_sha256": "3cb148b4acfa289eed328e08ec1a14de9ee9113e37d6bc6cbe3d6ba92b30a6b1"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 312,
+      "prompt_bytes": 18314,
+      "prompt_sha256": "02053ac4f3a5dd9cf76f066e75d42bf0cf8beeab2fb03338ba6353e63feb889a"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 2,
+      "pr": 312,
+      "prompt_bytes": 16964,
+      "prompt_sha256": "09d0bd08fb0fc15e6eb24385c349f495179e1416ef1b927f5be050539402cb8f"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 311,
+      "prompt_bytes": 341005,
+      "prompt_sha256": "635c4edcfaf584ba008ec262c0a9028cd99e66b9d924b65aa9e4c15df7f1ea1c"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 23,
+      "pr": 311,
+      "prompt_bytes": 329202,
+      "prompt_sha256": "545f60cb116e273064f9a4ce10cf6bb583d9fe881c9c30f5dcc23550f8cfadbc"
+    },
+    {
+      "arm": "full",
+      "omitted": 0,
+      "pr": 310,
+      "prompt_bytes": 97931,
+      "prompt_sha256": "c7e0cc6614aa7303160d5cc8972396dffb697a75f6fbe81bad2bd047fa83a6e3"
+    },
+    {
+      "arm": "candidate",
+      "omitted": 4,
+      "pr": 310,
+      "prompt_bytes": 94708,
+      "prompt_sha256": "23a5f9ade98f934f068c4c4466ca7a7f6ff6e262e88c3a12c5c7c189e6c0594f"
+    }
+  ],
+  "real_review_action": "full_review",
+  "runner_sha256": "f1e291407cf2bcb3f66b92f66975a1c627b0fa6f314504a0cff176675956142f",
+  "source_helpers_sha256": "f6634c5657eb987e42d8f125b5007a910375686361664bd1df4a7c68a309dd9e",
+  "population_packets_id": "bced0cefc82fd43282377102f7e21115f4414bcbb9dcb6c141109697b12056cb",
+  "protocol_id": "645cde83b227abfa9a2245b660af172706bce0d491e38b4e6f3e22c7500c4707",
+  "id": "53625c695971e14be5db17d58ee1f4ce27bc9ad236ca65bbc068f0d2e3bb36c8"
+}

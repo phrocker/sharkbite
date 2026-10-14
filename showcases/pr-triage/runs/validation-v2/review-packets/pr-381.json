@@ -1,0 +1,345 @@
+{
+  "base": "7d5cb2452e27e17b0c5b922a4da777cfe800aa34",
+  "diff": "diff --git a/README.md b/README.md\nindex a55f778..9df71da 100644\n--- a/README.md\n+++ b/README.md\n@@ -99,21 +99,30 @@ The record is built to make that detectable. It can't make it impossible.\n Shoal handles the knowledge and the permission around execution. It isn't\n trying to be your agent runtime.\n \n It registers agents, narrows what they're allowed to do, leases and dispatches\n work, takes back execution evidence, and publishes lifecycle events. The only\n-executor that ships runs work whose effect lands in Shoal's own evidence\n-record: answering a question about the corpus. Anything touching the outside\n-world is meant to be dispatched to an executor and recorded, not performed\n-here.\n-\n-Meant to be, because right now that line is held by which executor is bound\n-rather than by anything in the interface. `ActionExecutor` is an ordinary Go\n-interface, and a host that binds an implementation doing external work would\n-not be stopped. Making the boundary enforceable, so a capability declaring an\n-external effect can't register against an in-process executor, is\n-[#366](https://github.com/phrocker/shoal-oss/issues/366).\n+executor that ships answers questions about the corpus, which mutates nothing\n+outside Shoal. Anything that changes the outside world is dispatched to an\n+executor and recorded, not performed here.\n+\n+That line is enforced, not just intended. An action declares whether it\n+mutates anything outside Shoal, the host declares what it permits an executor\n+to do, and an action declaring an external effect can neither register against\n+an evidence-only executor nor resolve to one later if the host rebinds the\n+reference. Unrecognized values fail closed in both directions.\n+\n+It is a declaration check, not a sandbox. Nothing stops Go code a host chose to\n+bind from opening a socket, and nothing tries to. What it stops is the\n+mismatch, where an action claims external work and quietly runs in-process\n+anyway.\n+\n+One honest gap: the two classes split on *mutation*, so they cannot express\n+transmission. An action that sends corpus content to a hosted model and changes\n+nothing outside is evidence-only under this definition — accurate about\n+consequence, silent about disclosure. That is\n+[#385](https://github.com/phrocker/shoal-oss/issues/385).\n \n The point of the boundary either way: whatever ends up doing the work, the\n reason it was allowed to lives in Shoal.\n \n ## What people build with it\ndiff --git a/internal/explorerfleet/effect_codec_test.go b/internal/explorerfleet/effect_codec_test.go\nnew file mode 100644\nindex 0000000..5d3aafa\n--- /dev/null\n+++ b/internal/explorerfleet/effect_codec_test.go\n@@ -0,0 +1,119 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package explorerfleet\n+\n+import (\n+\t\"bytes\"\n+\t\"crypto/sha256\"\n+\t\"encoding/binary\"\n+\t\"encoding/json\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/fleet\"\n+)\n+\n+func effectDescriptor(effect fleet.Effect) fleet.Descriptor {\n+\tschema := json.RawMessage(`{\"type\":\"object\"}`)\n+\treturn fleet.Descriptor{\n+\t\tID: \"agent\", Generation: 1, Subject: \"owner\", Actor: \"operator\",\n+\t\tAuthorizationDomain: []byte(\"domain\"),\n+\t\tScopes: []fleet.Scope{{\n+\t\t\tSourceID: []byte(\"source\"), PolicyID: []byte(\"policy\"),\n+\t\t}},\n+\t\tExecutorRef: \"executor\",\n+\t\tCapabilities: []fleet.Capability{{Name: \"deploy\", Actions: []fleet.Action{{\n+\t\t\tName: \"ship\", Effect: effect,\n+\t\t\tInputSchema: schema, OutputSchema: schema,\n+\t\t}}}},\n+\t\tLeaseExpiresAt: time.Unix(1, 0).UTC(),\n+\t\tUpdatedAt:      time.Unix(1, 0).UTC(),\n+\t}\n+}\n+\n+// TestEffectSurvivesTheDurableCodec is the regression test for the bug that\n+// made the effect boundary bypassable by persisting it. The field was validated\n+// at registration and then dropped on encode, so a stored external action read\n+// back as evidence-only and the resolution check saw the zero value.\n+func TestEffectSurvivesTheDurableCodec(t *testing.T) {\n+\tfor _, effect := range []fleet.Effect{\n+\t\tfleet.EffectEvidence, fleet.EffectExternal,\n+\t} {\n+\t\tdescriptor := effectDescriptor(effect)\n+\t\tencoded, err := encodeDescriptor(descriptor, [sha256.Size]byte{})\n+\t\tif err != nil {\n+\t\t\tt.Fatalf(\"encode %q: %v\", effect, err)\n+\t\t}\n+\t\tdecoded, _, err := decodeDescriptor(encoded)\n+\t\tif err != nil {\n+\t\t\tt.Fatalf(\"decode %q: %v\", effect, err)\n+\t\t}\n+\t\tgot := decoded.Capabilities[0].Actions[0].Effect\n+\t\tif got != effect {\n+\t\t\tt.Fatalf(\"effect %q did not survive the codec, got %q\", effect, got)\n+\t\t}\n+\t}\n+}\n+\n+// TestVersionOneRecordsDecodeAsEvidence proves the compatibility claim rather\n+// than asserting it. A record written before the effect class existed has no\n+// field for it, and must decode with the zero value it was written with rather\n+// than being rejected.\n+func TestVersionOneRecordsDecodeAsEvidence(t *testing.T) {\n+\tencoded, err := encodeDescriptor(\n+\t\teffectDescriptor(fleet.EffectEvidence), [sha256.Size]byte{})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\t// A version-2 record of an evidence-only action differs from the version-1\n+\t// layout by exactly the four zero bytes writeString emits for the empty\n+\t// effect, plus the version word. Removing those reproduces the older\n+\t// encoding without duplicating the whole encoder here.\n+\tlegacy := legacyVersionOne(t, encoded)\n+\tdecoded, _, err := decodeDescriptor(legacy)\n+\tif err != nil {\n+\t\tt.Fatalf(\"a version-1 record must still decode: %v\", err)\n+\t}\n+\tif got := decoded.Capabilities[0].Actions[0].Effect; got != fleet.EffectEvidence {\n+\t\tt.Fatalf(\"version-1 effect = %q, want the zero value\", got)\n+\t}\n+}\n+\n+// legacyVersionOne turns a version-2 encoding of an evidence-only descriptor\n+// into the version-1 layout: version word set to 1, and the four zero bytes\n+// that writeString wrote for the empty effect removed.\n+func legacyVersionOne(t *testing.T, encoded []byte) []byte {\n+\tt.Helper()\n+\t// The effect immediately follows the action name, which is \"ship\".\n+\tmarker := append([]byte{0, 0, 0, 4}, []byte(\"ship\")...)\n+\tindex := bytes.Index(encoded, marker)\n+\tif index < 0 {\n+\t\tt.Fatal(\"could not locate the action name in the encoding\")\n+\t}\n+\teffectAt := index + len(marker)\n+\tif !bytes.Equal(encoded[effectAt:effectAt+4], []byte{0, 0, 0, 0}) {\n+\t\tt.Fatalf(\"expected an empty effect string at %d\", effectAt)\n+\t}\n+\tlegacy := make([]byte, 0, len(encoded)-4)\n+\tlegacy = append(legacy, encoded[:effectAt]...)\n+\tlegacy = append(legacy, encoded[effectAt+4:]...)\n+\tbinary.BigEndian.PutUint16(legacy[0:2], 1)\n+\treturn legacy\n+}\ndiff --git a/internal/explorerfleet/store.go b/internal/explorerfleet/store.go\nindex 670bfff..db89159 100644\n--- a/internal/explorerfleet/store.go\n+++ b/internal/explorerfleet/store.go\n@@ -36,13 +36,18 @@ import (\n \t\"github.com/phrocker/shoal-oss/pkg/explorer/fleet\"\n \t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n )\n \n const (\n-\tTable               = \"_shoal_explorer_fleet\"\n-\tagentKind    byte   = 'A'\n-\tcodecVersion uint16 = 1\n+\tTable          = \"_shoal_explorer_fleet\"\n+\tagentKind byte = 'A'\n+\t// codecVersion 2 adds the action effect class. Version 1 records predate\n+\t// it and decode as fleet.EffectEvidence, which is the zero value and the\n+\t// meaning they were written with, so an existing corpus keeps working\n+\t// without a migration.\n+\tcodecVersion       uint16 = 2\n+\tcodecVersionEffect uint16 = 2\n )\n \n var (\n \trecordFamily    = []byte(\"r\")\n \trecordQualifier = []byte(\"descriptor\")\n@@ -379,10 +384,11 @@ func encodeDescriptor(\n \tfor _, capability := range descriptor.Capabilities {\n \t\twriteString(&buffer, capability.Name)\n \t\twriteU32(&buffer, uint32(len(capability.Actions)))\n \t\tfor _, action := range capability.Actions {\n \t\t\twriteString(&buffer, action.Name)\n+\t\t\twriteString(&buffer, string(action.Effect))\n \t\t\twriteBytes(&buffer, action.InputSchema)\n \t\t\twriteBytes(&buffer, action.OutputSchema)\n \t\t}\n \t}\n \twriteI64(&buffer, descriptor.LeaseExpiresAt.UnixNano())\n@@ -400,11 +406,15 @@ func decodeDescriptor(value []byte) (\n \t[sha256.Size]byte,\n \terror,\n ) {\n \treader := bytes.NewReader(value)\n \tversion, err := readU16(reader)\n-\tif err != nil || version != codecVersion {\n+\t// Both versions are accepted on read. A version-1 record was written\n+\t// before the effect class existed and carries no field for it, so it\n+\t// decodes with the zero value, which is the meaning it was written with.\n+\t// Only version 2 is written.\n+\tif err != nil || (version != 1 && version != codecVersion) {\n \t\treturn fleet.Descriptor{}, [sha256.Size]byte{},\n \t\t\terrors.New(\"unknown descriptor encoding\")\n \t}\n \tvar descriptor fleet.Descriptor\n \tif descriptor.ID, err = readID(reader); err != nil {\n@@ -466,10 +476,17 @@ func decodeDescriptor(value []byte) (\n \t\tfor j := range descriptor.Capabilities[i].Actions {\n \t\t\taction := &descriptor.Capabilities[i].Actions[j]\n \t\t\tif action.Name, err = readString(reader, fleet.MaxNameBytes); err != nil {\n \t\t\t\treturn fleet.Descriptor{}, [sha256.Size]byte{}, err\n \t\t\t}\n+\t\t\tif version >= codecVersionEffect {\n+\t\t\t\teffect, effectErr := readString(reader, fleet.MaxNameBytes)\n+\t\t\t\tif effectErr != nil {\n+\t\t\t\t\treturn fleet.Descriptor{}, [sha256.Size]byte{}, effectErr\n+\t\t\t\t}\n+\t\t\t\taction.Effect = fleet.Effect(effect)\n+\t\t\t}\n \t\t\tif action.InputSchema, err = readBytes(reader, fleet.MaxSchemaBytes); err != nil {\n \t\t\t\treturn fleet.Descriptor{}, [sha256.Size]byte{}, err\n \t\t\t}\n \t\t\tif action.OutputSchema, err = readBytes(reader, fleet.MaxSchemaBytes); err != nil {\n \t\t\t\treturn fleet.Descriptor{}, [sha256.Size]byte{}, err\ndiff --git a/pkg/explorer/fleet/dispatch_service.go b/pkg/explorer/fleet/dispatch_service.go\nindex b519aa8..8960adb 100644\n--- a/pkg/explorer/fleet/dispatch_service.go\n+++ b/pkg/explorer/fleet/dispatch_service.go\n@@ -958,10 +958,20 @@ func (s *Service) resolveAction(\n \t}\n \texecutor, ok := raw.(ActionExecutor)\n \tif !ok {\n \t\treturn Descriptor{}, Action{}, nil, shoal.NewError(shoal.ErrorUnavailable, \"registered executor does not implement action execution\")\n \t}\n+\t// Re-checked at resolution, not only at registration. A host can rebind an\n+\t// executor reference to a narrower ceiling while descriptors registered\n+\t// under the old one are still live, and those must stop resolving rather\n+\t// than keep running against a binding that no longer permits them.\n+\tif selected.Effect.exceeds(executorCeiling(raw)) {\n+\t\treturn Descriptor{}, Action{}, nil, shoal.NewError(\n+\t\t\tshoal.ErrorUnavailable,\n+\t\t\t\"action declares an external effect but its executor is bound \"+\n+\t\t\t\t\"for evidence-only work\")\n+\t}\n \treturn cloneDescriptor(descriptor), *selected, executor, nil\n }\n \n func executorKey(actionID, idempotency []byte) []byte {\n \t// v2 replaces the unshipped NUL-delimited encoding. It applies only when a\ndiff --git a/pkg/explorer/fleet/effect_test.go b/pkg/explorer/fleet/effect_test.go\nnew file mode 100644\nindex 0000000..175c173\n--- /dev/null\n+++ b/pkg/explorer/fleet/effect_test.go\n@@ -0,0 +1,412 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements. See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership. The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License. You may obtain a copy of the License at\n+ *\n+ *     https://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied. See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+\n+package fleet\n+\n+import (\n+\t\"context\"\n+\t\"encoding/hex\"\n+\t\"encoding/json\"\n+\t\"testing\"\n+\t\"time\"\n+\n+\t\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"\n+\t\"github.com/phrocker/shoal-oss/pkg/shoal\"\n+)\n+\n+var anyObject = json.RawMessage(`{\"type\":\"object\"}`)\n+\n+type ceilingExecutor struct{ ceiling Effect }\n+\n+func (e ceilingExecutor) MaxEffect() Effect { return e.ceiling }\n+\n+type unboundedExecutor struct{}\n+\n+func externalAction() []Capability {\n+\treturn []Capability{{Name: \"deploy\", Actions: []Action{{\n+\t\tName: \"ship\", Effect: EffectExternal,\n+\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t}}}}\n+}\n+\n+func evidenceAction() []Capability {\n+\treturn []Capability{{Name: \"explorer.reason\", Actions: []Action{{\n+\t\tName: \"ask\", InputSchema: anyObject, OutputSchema: anyObject,\n+\t}}}}\n+}\n+\n+// TestExternalEffectNeedsAnExternalCeiling is the boundary the README states:\n+// Shoal runs evidence-only work and dispatches the rest. An action declaring an\n+// external effect cannot resolve to an executor the host bound for evidence.\n+func TestExternalEffectNeedsAnExternalCeiling(t *testing.T) {\n+\tif err := validateDeclaredEffects(\n+\t\texternalAction(), EffectEvidence); err == nil {\n+\t\tt.Fatal(\"an external action must not register against an evidence executor\")\n+\t}\n+\tif err := validateDeclaredEffects(\n+\t\texternalAction(), EffectExternal); err != nil {\n+\t\tt.Fatalf(\"an external ceiling must admit an external action: %v\", err)\n+\t}\n+\tif err := validateDeclaredEffects(\n+\t\tevidenceAction(), EffectEvidence); err != nil {\n+\t\tt.Fatalf(\"evidence work must run under an evidence ceiling: %v\", err)\n+\t}\n+}\n+\n+// TestUndeclaredExecutorIsEvidenceOnly pins the conservative default. A host\n+// that wants an executor to perform external work has to say so; forgetting to\n+// declare must not widen what an executor may run.\n+func TestUndeclaredExecutorIsEvidenceOnly(t *testing.T) {\n+\tif got := executorCeiling(unboundedExecutor{}); got != EffectEvidence {\n+\t\tt.Fatalf(\"undeclared executor ceiling = %q\", got)\n+\t}\n+\tif got := executorCeiling(ceilingExecutor{ceiling: EffectExternal}); got != EffectExternal {\n+\t\tt.Fatalf(\"declared ceiling = %q\", got)\n+\t}\n+\tif err := validateDeclaredEffects(\n+\t\texternalAction(), executorCeiling(unboundedExecutor{})); err == nil {\n+\t\tt.Fatal(\"an undeclared executor must not admit external work\")\n+\t}\n+}\n+\n+// TestAbsentEffectKeepsItsPreviousMeaning proves the zero value is\n+// evidence-only, so descriptors registered before this field existed continue\n+// to resolve exactly as they did.\n+func TestAbsentEffectKeepsItsPreviousMeaning(t *testing.T) {\n+\tif EffectEvidence != \"\" {\n+\t\tt.Fatal(\"evidence must be the zero value or existing descriptors change meaning\")\n+\t}\n+\tcanonical, err := canonicalCapabilities(evidenceAction())\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tif canonical[0].Actions[0].Effect != EffectEvidence {\n+\t\tt.Fatalf(\"absent effect canonicalized to %q\", canonical[0].Actions[0].Effect)\n+\t}\n+}\n+\n+// TestUnknownEffectFailsClosed proves a class nobody recognizes is refused\n+// rather than silently treated as the permissive or the restrictive one.\n+func TestUnknownEffectFailsClosed(t *testing.T) {\n+\t_, err := canonicalCapabilities([]Capability{{\n+\t\tName: \"c\", Actions: []Action{{\n+\t\t\tName: \"a\", Effect: Effect(\"whatever\"),\n+\t\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t\t}},\n+\t}})\n+\tif err == nil {\n+\t\tt.Fatal(\"an unknown effect class must be refused\")\n+\t}\n+}\n+\n+// TestDelegationCannotWidenEffect proves effect is part of what delegation may\n+// narrow. Without it a child, or a later generation, could turn an\n+// evidence-only action into an external one and still pass the subset check\n+// that exists to stop widening, whenever its executor had an external ceiling.\n+func TestDelegationCannotWidenEffect(t *testing.T) {\n+\tevidence := evidenceAction()\n+\texternal := []Capability{{Name: \"explorer.reason\", Actions: []Action{{\n+\t\tName: \"ask\", Effect: EffectExternal,\n+\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t}}}}\n+\n+\tif capabilitiesSubset(external, evidence) {\n+\t\tt.Fatal(\"a child must not widen an evidence-only action to external\")\n+\t}\n+\tif !capabilitiesSubset(evidence, external) {\n+\t\tt.Fatal(\"a child may narrow an external action to evidence-only\")\n+\t}\n+\tif !capabilitiesSubset(evidence, evidence) ||\n+\t\t!capabilitiesSubset(external, external) {\n+\t\tt.Fatal(\"an unchanged effect must remain a subset of itself\")\n+\t}\n+}\n+\n+// TestEffectSurvivesCloning proves the field is carried by cloneDescriptor.\n+// It was not, so a registered external action was returned to callers, and\n+// re-resolved, as evidence-only: the boundary was enforced once at\n+// registration and then silently dropped.\n+func TestEffectSurvivesCloning(t *testing.T) {\n+\tdescriptor := Descriptor{Capabilities: []Capability{{\n+\t\tName: \"deploy\", Actions: []Action{{\n+\t\t\tName: \"ship\", Effect: EffectExternal,\n+\t\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t\t}},\n+\t}}}\n+\tclone := cloneDescriptor(descriptor)\n+\tif got := clone.Capabilities[0].Actions[0].Effect; got != EffectExternal {\n+\t\tt.Fatalf(\"cloned effect = %q, want %q\", got, EffectExternal)\n+\t}\n+}\n+\n+// TestMutationDigestSeparatesEffects proves an otherwise identical\n+// registration with a different effect is a different mutation. The digest\n+// omitted the field, so an exact replay could swap an evidence-only action for\n+// an external one under the same mutation identity and be treated as the same\n+// request.\n+func TestMutationDigestSeparatesEffects(t *testing.T) {\n+\tmutation := func(effect Effect) Mutation {\n+\t\treturn Mutation{Descriptor: Descriptor{\n+\t\t\tID: \"agent\", Generation: 1,\n+\t\t\tCapabilities: []Capability{{Name: \"deploy\", Actions: []Action{{\n+\t\t\t\tName: \"ship\", Effect: effect,\n+\t\t\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t\t\t}}}},\n+\t\t}}\n+\t}\n+\tevidence := registryMutationDigest(mutation(EffectEvidence))\n+\texternal := registryMutationDigest(mutation(EffectExternal))\n+\tif evidence == external {\n+\t\tt.Fatal(\"effect must change the mutation digest\")\n+\t}\n+\tif registryMutationDigest(mutation(EffectExternal)) != external {\n+\t\tt.Fatal(\"the digest must stay stable for an unchanged effect\")\n+\t}\n+}\n+\n+// TestUnknownEffectsFailClosedAtResolution is the regression test for a\n+// high-severity hole. Registration validates a declared effect, but the durable\n+// decoder reads whatever string is stored, so a malformed or tampered\n+// descriptor can reach resolution having never passed validation. Comparing\n+// only against the exact external string made every unrecognized value\n+// permitted under an evidence-only ceiling, which inverts the purpose of the\n+// class.\n+func TestUnknownEffectsFailClosedAtResolution(t *testing.T) {\n+\tunknown := Effect(\"something-nobody-defined\")\n+\n+\t// An unrecognized declaration is an unproven claim: beyond every ceiling.\n+\tfor _, ceiling := range []Effect{EffectEvidence, EffectExternal, unknown} {\n+\t\tif !unknown.exceeds(ceiling) {\n+\t\t\tt.Fatalf(\"unknown declaration was permitted under ceiling %q\", ceiling)\n+\t\t}\n+\t}\n+\n+\t// An unrecognized ceiling is a host that failed to declare itself: it\n+\t// permits evidence and nothing more.\n+\tif EffectEvidence.exceeds(unknown) {\n+\t\tt.Fatal(\"evidence-only work must remain permitted under an unknown ceiling\")\n+\t}\n+\tif !EffectExternal.exceeds(unknown) {\n+\t\tt.Fatal(\"an unknown ceiling must not authorize external work\")\n+\t}\n+\n+\t// The known cases are unchanged.\n+\tif EffectExternal.exceeds(EffectEvidence) != true ||\n+\t\tEffectExternal.exceeds(EffectExternal) != false ||\n+\t\tEffectEvidence.exceeds(EffectEvidence) != false ||\n+\t\tEffectEvidence.exceeds(EffectExternal) != false {\n+\t\tt.Fatal(\"the recognized comparisons changed\")\n+\t}\n+}\n+\n+// TestUnknownEffectFromStorageIsRefusedAtRegistration pins the same rule\n+// through the narrowing comparison, which is the other place a stored value is\n+// compared rather than validated.\n+func TestUnknownEffectFromStorageIsRefusedAtRegistration(t *testing.T) {\n+\tunknown := []Capability{{Name: \"explorer.reason\", Actions: []Action{{\n+\t\tName: \"ask\", Effect: Effect(\"decoded-from-a-tampered-record\"),\n+\t\tInputSchema: anyObject, OutputSchema: anyObject,\n+\t}}}}\n+\tif err := validateDeclaredEffects(unknown, EffectEvidence); err == nil {\n+\t\tt.Fatal(\"an unknown declared effect must not register\")\n+\t}\n+\tif err := validateDeclaredEffects(unknown, EffectExternal); err == nil {\n+\t\tt.Fatal(\"an unknown declared effect must not register even at the widest ceiling\")\n+\t}\n+\tif capabilitiesSubset(unknown, evidenceAction()) {\n+\t\tt.Fatal(\"an unknown effect must not pass the narrowing check\")\n+\t}\n+}\n+\n+// externalRegisterRequest is registerRequest with the action declaring an\n+// external effect, so the request reaches Service.Register and exercises the\n+// real enforcement call rather than the validator underneath it.\n+func externalRegisterRequest(now time.Time, requestID, id, source string) RegisterRequest {\n+\trequest := registerRequest(now, requestID, id, \"\", source)\n+\trequest.Spec.Capabilities[0].Actions[0].Effect = EffectExternal\n+\treturn request\n+}\n+\n+// TestServiceRegisterEnforcesTheEffectCeiling reaches the enforcement through\n+// Service.Register. The other effect tests call validateDeclaredEffects and\n+// exceeds directly, so removing the call from Register would leave them all\n+// green while the boundary stopped existing.\n+func TestServiceRegisterEnforcesTheEffectCeiling(t *testing.T) {\n+\tnow := time.Date(2026, 9, 6, 8, 0, 0, 0, time.UTC)\n+\tauthority, err := auth.NewAuthorityWithClock(func() time.Time { return now })\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tnewService := func(executor Executor) *Service {\n+\t\tservice, err := NewService(Config{\n+\t\t\tStore: newMemoryStore(), Resolver: authority.Resolver(),\n+\t\t\tRecorder: &memoryRecorder{}, Snapshots: fixedSnapshot{now},\n+\t\t\tExecutors: executorMap{\"exec\": executor},\n+\t\t\tClock:     func() time.Time { return now },\n+\t\t})\n+\t\tif err != nil {\n+\t\t\tt.Fatal(err)\n+\t\t}\n+\t\treturn service\n+\t}\n+\tdecision := testDecision(\n+\t\tt, \"owner\", \"owner-actor\", \"effect-request\", [][]byte{[]byte(\"source-a\")})\n+\tctx := bindDecision(t, authority, decision)\n+\n+\t// An executor the host bound for evidence-only work must refuse an\n+\t// external declaration at registration.\n+\tevidenceOnly := newService(ceilingExecutor{ceiling: EffectEvidence})\n+\tif _, err := evidenceOnly.Register(ctx,\n+\t\texternalRegisterRequest(now, \"effect-request\", \"agent\", \"source-a\"),\n+\t); err == nil {\n+\t\tt.Fatal(\"Register admitted an external action under an evidence ceiling\")\n+\t}\n+\n+\t// An undeclared executor is read as evidence-only, so it must refuse too.\n+\tundeclared := newService(struct{}{})\n+\tif _, err := undeclared.Register(ctx,\n+\t\texternalRegisterRequest(now, \"effect-request\", \"agent\", \"source-a\"),\n+\t); err == nil {\n+\t\tt.Fatal(\"Register admitted an external action under an undeclared executor\")\n+\t}\n+\n+\t// A host that declared the wider ceiling admits it.\n+\texternal := newService(ceilingExecutor{ceiling: EffectExternal})\n+\tdescriptor, err := external.Register(ctx,\n+\t\texternalRegisterRequest(now, \"effect-request\", \"agent\", \"source-a\"))\n+\tif err != nil {\n+\t\tt.Fatalf(\"Register refused an external action under an external ceiling: %v\", err)\n+\t}\n+\tif got := descriptor.Capabilities[0].Actions[0].Effect; got != EffectExternal {\n+\t\tt.Fatalf(\"registered effect = %q, want %q\", got, EffectExternal)\n+\t}\n+}\n+\n+// TestResolveActionRefusesAfterARebindToANarrowerCeiling is the case that\n+// motivated checking at resolution as well as registration. A descriptor\n+// registered while the host permitted external work must stop resolving once\n+// the reference is rebound to an evidence-only executor, without the executor\n+// being invoked.\n+func TestResolveActionRefusesAfterARebindToANarrowerCeiling(t *testing.T) {\n+\tnow := time.Date(2026, 9, 6, 8, 0, 0, 0, time.UTC)\n+\tauthority, err := auth.NewAuthorityWithClock(func() time.Time { return now })\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tstore := newMemoryStore()\n+\t// The registry is mutable, standing in for a host that rebinds a reference\n+\t// between process starts while durable descriptors survive.\n+\texecutors := executorMap{\"exec\": ceilingExecutor{ceiling: EffectExternal}}\n+\tservice, err := NewService(Config{\n+\t\tStore: store, Resolver: authority.Resolver(),\n+\t\tRecorder: &memoryRecorder{}, Snapshots: fixedSnapshot{now},\n+\t\tExecutors: executors, Clock: func() time.Time { return now },\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\tdecision := effectDecision(t, \"effect-request\")\n+\tctx := bindDecision(t, authority, decision)\n+\tdescriptor, err := service.Register(ctx,\n+\t\texternalRegisterRequest(now, \"effect-request\", \"agent\", \"source-a\"))\n+\tif err != nil {\n+\t\tt.Fatalf(\"register under the wider ceiling: %v\", err)\n+\t}\n+\n+\t// Rebind to an executor that both implements execution and is bound for\n+\t// evidence-only work, so the refusal cannot be attributed to a missing\n+\t// ActionExecutor.\n+\ttracked := &countingActionExecutor{ceiling: EffectEvidence}\n+\texecutors[\"exec\"] = tracked\n+\n+\t_, _, _, err = service.resolveAction(\n+\t\tctx, decision, descriptor.ID, descriptor.Generation,\n+\t\t\"search\", \"query\", []byte(\"source-a\"), []byte(\"policy\"), \"object\",\n+\t\tauth.OperationInvoke, now)\n+\tif err == nil {\n+\t\tt.Fatal(\"resolution succeeded against a narrower ceiling\")\n+\t}\n+\tif tracked.calls != 0 {\n+\t\tt.Fatalf(\"executor was invoked %d times despite the refusal\", tracked.calls)\n+\t}\n+}\n+\n+// countingActionExecutor implements execution and records whether it ran, so a\n+// refusal can be distinguished from a silent success.\n+type countingActionExecutor struct {\n+\tceiling Effect\n+\tcalls   int\n+}\n+\n+func (e *countingActionExecutor) MaxEffect() Effect { return e.ceiling }\n+\n+func (e *countingActionExecutor) Execute(\n+\tcontext.Context, Invocation,\n+) (ExecutionResult, error) {\n+\te.calls++\n+\treturn ExecutionResult{}, nil\n+}\n+\n+// effectDecision is testDecision plus OperationInvoke, which resolveAction\n+// authorizes and the shared helper does not grant.\n+func effectDecision(t *testing.T, requestID string) auth.Decision {\n+\tt.Helper()\n+\tdecision, err := auth.NewDecision(auth.DecisionConfig{\n+\t\tSubject: \"owner\", Actor: \"owner-actor\",\n+\t\tAuthorizationDomain: []byte(\"domain\"),\n+\t\tAllowedOperations: []auth.Operation{\n+\t\t\tauth.OperationAgentRegister, auth.OperationAgentResolve,\n+\t\t\tauth.OperationInvoke, auth.OperationDispatch,\n+\t\t},\n+\t\tPermittedSourceIDs:    [][]byte{[]byte(\"source-a\")},\n+\t\tPermittedPolicyIDs:    [][]byte{[]byte(\"policy\")},\n+\t\tPolicyGeneration:      1,\n+\t\tAuthenticationExpires: time.Date(2026, 9, 7, 0, 0, 0, 0, time.UTC),\n+\t\tRequestID:             shoal.ID(requestID),\n+\t})\n+\tif err != nil {\n+\t\tt.Fatal(err)\n+\t}\n+\treturn decision\n+}\n+\n+// TestEvidenceMutationDigestIsUnchangedAcrossTheUpgrade pins the byte-level\n+// stability of an evidence-only mutation digest. The value below was computed\n+// from main before the effect field existed.\n+//\n+// It matters because the digest namespace is still v1 and the value is\n+// embedded in the lifecycle QueryDigest, where a changed digest reads as a\n+// divergent mutation. Hashing the zero value would have changed every existing\n+// mutation, since an empty field still contributes its eight-byte length\n+// prefix, and a heartbeat or revoke retry that spanned an upgrade would then\n+// have been rejected.\n+func TestEvidenceMutationDigestIsUnchangedAcrossTheUpgrade(t *testing.T) {\n+\tconst beforeTheEffectField = \"990a0fe870e3c27d873e281441bcb7cb\" +\n+\t\t\"cf299cf6dd5c6a5060d3dda992d5512f\"\n+\tdigest := registryMutationDigest(Mutation{Descriptor: Descriptor{\n+\t\tID: \"agent\", Generation: 1,\n+\t\tCapabilities: []Capability{{Name: \"deploy\", Actions: []Action{{\n+\t\t\tName: \"ship\", InputSchema: anyObject, OutputSchema: anyObject,\n+\t\t}}}},\n+\t}})\n+\tif got := hex.EncodeToString(digest[:]); got != beforeTheEffectField {\n+\t\tt.Fatalf(\"evidence-only mutation digest changed\\n got  %s\\n want %s\",\n+\t\t\tgot, beforeTheEffectField)\n+\t}\n+}\ndiff --git a/pkg/explorer/fleet/model.go b/pkg/explorer/fleet/model.go\nindex 9c61dc2..61aa775 100644\n--- a/pkg/explorer/fleet/model.go\n+++ b/pkg/explorer/fleet/model.go\n@@ -50,14 +50,91 @@ const (\n type Scope struct {\n \tSourceID []byte `json:\"source_id\"`\n \tPolicyID []byte `json:\"policy_id\"`\n }\n \n+// Effect classifies where an action's consequences land. It is the boundary\n+// between what Shoal will run itself and what it will only dispatch.\n+//\n+// This is a declaration check, not a sandbox. Nothing prevents Go code bound\n+// as an in-process executor from opening a socket, and nothing here tries to.\n+// What it prevents is the mismatch: an action declaring an external effect\n+// cannot resolve to an executor the host bound as evidence-only, so external\n+// work cannot be performed in-process by accident or by a descriptor that\n+// claims otherwise. A host that binds an executor doing external work under an\n+// evidence-only ceiling has misdeclared its own configuration, and no\n+// invariant here can detect that.\n+type Effect string\n+\n+// These two classes split on *mutation*, and only on mutation. They cannot\n+// express transmission: an action that sends content off-host and changes\n+// nothing is EffectEvidence under this definition, which is accurate about\n+// consequence and silent about disclosure. Issue #385 adds the missing class.\n+// Until it lands, an action that transmits has no declaration that is both\n+// honest and available, so declare by what it changes and record the\n+// limitation rather than picking whichever class feels safer.\n+const (\n+\t// EffectEvidence is work that mutates nothing outside Shoal. Recording an\n+\t// interaction is the clearest case. It is the zero value, so a descriptor\n+\t// written before this field existed keeps its previous meaning.\n+\t//\n+\t// It does not assert that nothing left the host. Reading the corpus and\n+\t// handing passages to a configured model provider mutates nothing and is\n+\t// therefore evidence under this definition, while the provider may be\n+\t// off-host. That is the gap #385 closes.\n+\tEffectEvidence Effect = \"\"\n+\t// EffectExternal is work that mutates something outside Shoal's evidence\n+\t// record: writing to another system, changing a host, sending a message\n+\t// that someone acts on. Shoal dispatches it and records the outcome; it\n+\t// does not run it.\n+\tEffectExternal Effect = \"external\"\n+)\n+\n+func (e Effect) validate() error {\n+\tswitch e {\n+\tcase EffectEvidence, EffectExternal:\n+\t\treturn nil\n+\tdefault:\n+\t\treturn shoal.NewError(\n+\t\t\tshoal.ErrorInvalidArgument, \"action effect is not a known class\")\n+\t}\n+}\n+\n+// exceeds reports whether this effect is beyond what a ceiling permits.\n+//\n+// Unrecognized values fail closed, and asymmetrically, because the two sides\n+// mean opposite things. Registration validates a declaration, but the durable\n+// decoder reads whatever string is stored, so a malformed or tampered\n+// descriptor can reach resolution without ever having passed validation. An\n+// unrecognized *declaration* is therefore treated as beyond every ceiling: it\n+// is an unproven claim and gets the most restrictive reading. An unrecognized\n+// *ceiling* is treated as permitting only evidence: it is a host that failed to\n+// declare its own configuration and gets the least permissive reading.\n+//\n+// Both directions resolve to refusing more, never less. Comparing against the\n+// exact external string alone made every unknown value permitted, which is the\n+// opposite of what the class is for.\n+func (e Effect) exceeds(ceiling Effect) bool {\n+\tdeclarationKnown := e.validate() == nil\n+\tceilingKnown := ceiling.validate() == nil\n+\tswitch {\n+\tcase !declarationKnown:\n+\t\treturn true\n+\tcase !ceilingKnown:\n+\t\treturn e != EffectEvidence\n+\tdefault:\n+\t\treturn e == EffectExternal && ceiling != EffectExternal\n+\t}\n+}\n+\n type Action struct {\n \tName         string          `json:\"name\"`\n \tInputSchema  json.RawMessage `json:\"input_schema\"`\n \tOutputSchema json.RawMessage `json:\"output_schema\"`\n+\t// Effect declares where this action's consequences land. Empty means\n+\t// evidence-only.\n+\tEffect Effect `json:\"effect,omitempty\"`\n }\n \n type Capability struct {\n \tName    string   `json:\"name\"`\n \tActions []Action `json:\"actions\"`\n@@ -140,10 +217,26 @@ type ListPage struct {\n \tNext        []byte\n }\n \n type Executor interface{}\n \n+// EffectBounded is the host's declaration of what an executor is permitted to\n+// do. An executor that does not implement it is treated as evidence-only,\n+// which is the conservative reading: a host that wants an executor to perform\n+// external work has to say so.\n+type EffectBounded interface {\n+\tMaxEffect() Effect\n+}\n+\n+// executorCeiling reports the effect class an executor may serve.\n+func executorCeiling(executor Executor) Effect {\n+\tif bounded, ok := executor.(EffectBounded); ok {\n+\t\treturn bounded.MaxEffect()\n+\t}\n+\treturn EffectEvidence\n+}\n+\n type ExecutorRegistry interface {\n \tResolveExecutor(string) (Executor, bool)\n }\n \n type Resolved struct {\n@@ -262,12 +355,16 @@ func canonicalCapabilities(input []Capability) ([]Capability, error) {\n \t\t\t}\n \t\t\toutputSchema, err := canonicalSchema(action.OutputSchema)\n \t\t\tif err != nil {\n \t\t\t\treturn nil, err\n \t\t\t}\n+\t\t\tif err := action.Effect.validate(); err != nil {\n+\t\t\t\treturn nil, err\n+\t\t\t}\n \t\t\tresult[i].Actions[j] = Action{\n-\t\t\t\tName: action.Name, InputSchema: inputSchema, OutputSchema: outputSchema,\n+\t\t\t\tName: action.Name, InputSchema: inputSchema,\n+\t\t\t\tOutputSchema: outputSchema, Effect: action.Effect,\n \t\t\t}\n \t\t}\n \t\tsort.Slice(result[i].Actions, func(a, b int) bool {\n \t\t\treturn result[i].Actions[a].Name < result[i].Actions[b].Name\n \t\t})\n@@ -342,10 +439,11 @@ func cloneDescriptor(input Descriptor) Descriptor {\n \t\tresult.Capabilities[i].Actions = make([]Action, len(input.Capabilities[i].Actions))\n \t\tfor j := range input.Capabilities[i].Actions {\n \t\t\taction := input.Capabilities[i].Actions[j]\n \t\t\tresult.Capabilities[i].Actions[j] = Action{\n \t\t\t\tName:         action.Name,\n+\t\t\t\tEffect:       action.Effect,\n \t\t\t\tInputSchema:  append(json.RawMessage(nil), action.InputSchema...),\n \t\t\t\tOutputSchema: append(json.RawMessage(nil), action.OutputSchema...),\n \t\t\t}\n \t\t}\n \t}\ndiff --git a/pkg/explorer/fleet/service.go b/pkg/explorer/fleet/service.go\nindex 80631a4..0927b59 100644\n--- a/pkg/explorer/fleet/service.go\n+++ b/pkg/explorer/fleet/service.go\n@@ -106,13 +106,22 @@ func (s *Service) Register(ctx context.Context, request RegisterRequest) (Descri\n \t}\n \tif err := authorizeScopes(decision, auth.OperationAgentRegister, spec.ID,\n \t\tspec.AuthorizationDomain, spec.Scopes, now); err != nil {\n \t\treturn Descriptor{}, err\n \t}\n-\tif _, ok := s.executors.ResolveExecutor(spec.ExecutorRef); !ok {\n+\texecutor, ok := s.executors.ResolveExecutor(spec.ExecutorRef)\n+\tif !ok {\n \t\treturn Descriptor{}, shoal.NewError(shoal.ErrorInvalidArgument, \"executor reference is not registered by the host\")\n \t}\n+\t// Refuse a descriptor that could never run within its own declaration.\n+\t// Catching it here rather than at invoke means an agent claiming an\n+\t// external effect against an evidence-only executor never becomes\n+\t// registered state that looks operable.\n+\tif err := validateDeclaredEffects(\n+\t\tspec.Capabilities, executorCeiling(executor)); err != nil {\n+\t\treturn Descriptor{}, err\n+\t}\n \tif spec.ParentID != \"\" {\n \t\tif err := authorizeScopes(decision, auth.OperationDelegate, spec.ID,\n \t\t\tspec.AuthorizationDomain, spec.Scopes, now); err != nil {\n \t\t\treturn Descriptor{}, err\n \t\t}\n@@ -633,10 +642,26 @@ func registryMutationDigest(mutation Mutation) [sha256.Size]byte {\n \twriteRegistryDigestField(digest, []byte(descriptor.ExecutorRef))\n \tfor _, capability := range descriptor.Capabilities {\n \t\twriteRegistryDigestField(digest, []byte(capability.Name))\n \t\tfor _, action := range capability.Actions {\n \t\t\twriteRegistryDigestField(digest, []byte(action.Name))\n+\t\t\t// Appended only for a non-evidence effect, so an evidence-only\n+\t\t\t// mutation hashes exactly as it did before this field existed.\n+\t\t\t//\n+\t\t\t// Hashing the zero value would have changed the bytes of every\n+\t\t\t// existing mutation, because an empty field still contributes its\n+\t\t\t// eight-byte length prefix, while the namespace above still says\n+\t\t\t// v1. This digest is embedded in the lifecycle QueryDigest, where\n+\t\t\t// a changed value reads as a divergent mutation, so a heartbeat or\n+\t\t\t// revoke retry that spans an upgrade would have been rejected.\n+\t\t\t//\n+\t\t\t// External still differs from evidence, because it appends bytes\n+\t\t\t// evidence does not, which is what keeps a replay from quietly\n+\t\t\t// swapping one for the other under the same mutation identity.\n+\t\t\tif action.Effect != EffectEvidence {\n+\t\t\t\twriteRegistryDigestField(digest, []byte(action.Effect))\n+\t\t\t}\n \t\t\twriteRegistryDigestField(digest, action.InputSchema)\n \t\t\twriteRegistryDigestField(digest, action.OutputSchema)\n \t\t}\n \t}\n \twriteRegistryDigestInt64(digest, descriptor.LeaseExpiresAt.UnixNano())\n@@ -674,10 +699,27 @@ func authorizeScopes(decision auth.Decision, operation auth.Operation, id shoal.\n func authorizeDescriptor(decision auth.Decision, operation auth.Operation, descriptor Descriptor, now time.Time) error {\n \treturn authorizeScopes(decision, operation, descriptor.ID,\n \t\tdescriptor.AuthorizationDomain, descriptor.Scopes, now)\n }\n \n+// validateDeclaredEffects refuses any action whose declared effect exceeds\n+// what the host permits its bound executor to do.\n+func validateDeclaredEffects(capabilities []Capability, ceiling Effect) error {\n+\tfor _, capability := range capabilities {\n+\t\tfor _, action := range capability.Actions {\n+\t\t\tif action.Effect.exceeds(ceiling) {\n+\t\t\t\treturn shoal.NewError(\n+\t\t\t\t\tshoal.ErrorInvalidArgument,\n+\t\t\t\t\t\"action declares an external effect but its executor is \"+\n+\t\t\t\t\t\t\"bound for evidence-only work; external effects are \"+\n+\t\t\t\t\t\t\"dispatched, not performed in process\")\n+\t\t\t}\n+\t\t}\n+\t}\n+\treturn nil\n+}\n+\n func validateGeneration(generation int64) error {\n \tif generation < 0 || generation == math.MaxInt64 {\n \t\treturn shoal.NewError(\n \t\t\tshoal.ErrorInvalidArgument,\n \t\t\t\"expected generation is outside the incrementable range\",\n@@ -736,13 +778,19 @@ func capabilitiesSubset(child, parent []Capability) bool {\n \t\t\treturn false\n \t\t}\n \t\tfor _, wantedAction := range wantedCapability.Actions {\n \t\t\tfound := false\n \t\t\tfor _, allowedAction := range allowed.Actions {\n+\t\t\t\t// Effect is part of what delegation may narrow. Without it a\n+\t\t\t\t// child, or a later generation, could turn an evidence-only\n+\t\t\t\t// action into an external one and still pass as a subset,\n+\t\t\t\t// which would let the effect boundary be widened by exactly\n+\t\t\t\t// the path that exists to prevent widening.\n \t\t\t\tif wantedAction.Name == allowedAction.Name &&\n \t\t\t\t\tbytes.Equal(wantedAction.InputSchema, allowedAction.InputSchema) &&\n-\t\t\t\t\tbytes.Equal(wantedAction.OutputSchema, allowedAction.OutputSchema) {\n+\t\t\t\t\tbytes.Equal(wantedAction.OutputSchema, allowedAction.OutputSchema) &&\n+\t\t\t\t\t!wantedAction.Effect.exceeds(allowedAction.Effect) {\n \t\t\t\t\tfound = true\n \t\t\t\t\tbreak\n \t\t\t\t}\n \t\t\t}\n \t\t\tif !found {\ndiff --git a/pkg/explorer/webapi/fleet_executor.go b/pkg/explorer/webapi/fleet_executor.go\nindex 1f34f96..fb4c056 100644\n--- a/pkg/explorer/webapi/fleet_executor.go\n+++ b/pkg/explorer/webapi/fleet_executor.go\n@@ -195,10 +195,32 @@ func NewAskExecutor(config AskExecutorConfig) (*AskExecutor, error) {\n // Capability and Action report what this executor serves, so a composition\n // owner can register a descriptor that matches without restating literals.\n func (e *AskExecutor) Capability() string { return e.capability }\n func (e *AskExecutor) Action() string     { return e.action }\n \n+// This executor deliberately declares no effect ceiling, and the reason is\n+// worth stating because the obvious declaration would be false.\n+//\n+// It mutates nothing outside Shoal, so fleet.EffectEvidence looks correct. But\n+// it hands retrieved passages to a configured model provider, and that provider\n+// may post them off-host: the web composition builds it from Ollama or an\n+// OpenAI-compatible generator, and only the former is loopback by default.\n+// Declaring evidence-only would assert that nothing leaves the host, while the\n+// action may transmit corpus content and incur a billed call.\n+//\n+// The wider class is not the answer either. Declaring external would raise this\n+// executor's ceiling and let genuinely external actions resolve to it, which is\n+// worse than understating.\n+//\n+// The current two classes split on mutation and cannot express transmission, so\n+// no honest declaration exists yet. Leaving it undeclared falls back to\n+// evidence-only, which is the conservative reading for *enforcement*: an action\n+// declaring an external effect still will not resolve here. It is not a claim\n+// about what this executor does. Issue #385 adds the missing class, at which\n+// point the ceiling should be derived from the configured provider rather than\n+// returned as a constant.\n+\n // AskActionInputSchema is the declarative schema a descriptor must register\n // for this action. Registering it from here keeps admission and execution from\n // drifting apart.\n func AskActionInputSchema() json.RawMessage {\n \treturn json.RawMessage(`{\"type\":\"object\",\"properties\":{` +\ndiff --git a/pkg/explorer/webapi/fleet_registry.go b/pkg/explorer/webapi/fleet_registry.go\nindex ab2a5b1..e43d5f4 100644\n--- a/pkg/explorer/webapi/fleet_registry.go\n+++ b/pkg/explorer/webapi/fleet_registry.go\n@@ -361,10 +361,11 @@ func cloneFleetCapabilities(input []fleet.Capability) []fleet.Capability {\n \t\tresult[i].Name = input[i].Name\n \t\tresult[i].Actions = make([]fleet.Action, len(input[i].Actions))\n \t\tfor j := range input[i].Actions {\n \t\t\tresult[i].Actions[j] = fleet.Action{\n \t\t\t\tName:         input[i].Actions[j].Name,\n+\t\t\t\tEffect:       input[i].Actions[j].Effect,\n \t\t\t\tInputSchema:  append(json.RawMessage(nil), input[i].Actions[j].InputSchema...),\n \t\t\t\tOutputSchema: append(json.RawMessage(nil), input[i].Actions[j].OutputSchema...),\n \t\t\t}\n \t\t}\n \t}\ndiff --git a/pkg/explorer/webapi/fleet_registry_test.go b/pkg/explorer/webapi/fleet_registry_test.go\nindex 4bed229..dd5158a 100644\n--- a/pkg/explorer/webapi/fleet_registry_test.go\n+++ b/pkg/explorer/webapi/fleet_registry_test.go\n@@ -143,5 +143,40 @@ func (p *stubFleetProvider) Resolve(ctx context.Context, request fleet.ResolveRe\n \t}, nil\n }\n func (*stubFleetProvider) List(context.Context, fleet.ListRequest) (fleet.ListPage, error) {\n \treturn fleet.ListPage{}, nil\n }\n+\n+// TestCloneFleetCapabilitiesCarriesTheEffect guards the HTTP boundary's copy of\n+// an authorization-relevant field. cloneFleetCapabilities is a separate\n+// propagation path from the fleet package's own cloneDescriptor, so the effect\n+// tests there stay green if this assignment is dropped — and dropping it would\n+// present an external action to an API consumer as evidence-only, which is the\n+// safe-looking direction and therefore the dangerous one.\n+func TestCloneFleetCapabilitiesCarriesTheEffect(t *testing.T) {\n+\tschema := json.RawMessage(`{\"type\":\"object\"}`)\n+\tsource := []fleet.Capability{{Name: \"deploy\", Actions: []fleet.Action{\n+\t\t{\n+\t\t\tName: \"ship\", Effect: fleet.EffectExternal,\n+\t\t\tInputSchema: schema, OutputSchema: schema,\n+\t\t},\n+\t\t{\n+\t\t\tName:        \"describe\",\n+\t\t\tInputSchema: schema, OutputSchema: schema,\n+\t\t},\n+\t}}}\n+\tcloned := cloneFleetCapabilities(source)\n+\tif len(cloned) != 1 || len(cloned[0].Actions) != 2 {\n+\t\tt.Fatalf(\"clone shape = %#v\", cloned)\n+\t}\n+\tif got := cloned[0].Actions[0].Effect; got != fleet.EffectExternal {\n+\t\tt.Fatalf(\"external effect became %q at the API boundary\", got)\n+\t}\n+\tif got := cloned[0].Actions[1].Effect; got != fleet.EffectEvidence {\n+\t\tt.Fatalf(\"evidence effect became %q\", got)\n+\t}\n+\t// The clone must be independent, or a caller could mutate registry state.\n+\tcloned[0].Actions[0].Effect = fleet.EffectEvidence\n+\tif source[0].Actions[0].Effect != fleet.EffectExternal {\n+\t\tt.Fatal(\"clone aliased the source capability\")\n+\t}\n+}\n",
+  "head": "269abfa4ec14a5040af3d544d1fee4df83592706",
+  "limitations": "Syntax-only declaration extraction; no complete callgraph, type resolution, historical authorization graph, or verified invariants. All optimization eligibility remains false.",
+  "pr": 381,
+  "units": [
+    {
+      "id": "e9520731795b591b16ffe99ad3a7cf8d74612b10e297d9efdc5399e28ca5bf21",
+      "kind": "non_go",
+      "path": "README.md",
+      "symbol": "file"
+    },
+    {
+      "id": "2f6e77a140e8ac10012a90e38ab68e1008c70e9d0059717ca2a7c716d02f0fe6",
+      "kind": "function",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "function:TestEffectSurvivesTheDurableCodec"
+    },
+    {
+      "id": "2d3d74789ec1839fb58f12b88cb1abd5dfb61b8b9baefbc5ad37f3c72d9c2bd6",
+      "kind": "function",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "function:TestVersionOneRecordsDecodeAsEvidence"
+    },
+    {
+      "id": "435be2f1997f34150f52e48f236cca02b19c031d61c9becf9a57e889b268c1ce",
+      "kind": "function",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "function:effectDescriptor"
+    },
+    {
+      "id": "bd7137e372042ae3e0d5fa116d257af9cb08fa037aa7d3f5b1c1547d9b8ff4a5",
+      "kind": "function",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "function:legacyVersionOne"
+    },
+    {
+      "id": "186399a4bc12ebd730033bf1e3ac7ce3c16b660c5c7c730660fa50f9caa23e75",
+      "kind": "import",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "import:\"bytes\",\"crypto/sha256\",\"encoding/binary\",\"encoding/json\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/fleet\""
+    },
+    {
+      "id": "1b8b883c233f4ce850d3844de61e4d2592e13cd79693020a6df2fa490e895866",
+      "kind": "file_context",
+      "path": "internal/explorerfleet/effect_codec_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "563d27a594dfdfbb9afbbe9e97e65803018b4155745f43e11f052786d65196c1",
+      "kind": "const",
+      "path": "internal/explorerfleet/store.go",
+      "symbol": "const:Table,agentKind,codecVersion"
+    },
+    {
+      "id": "8bd01df9a7b68d0d9ccba19d8875859b93a538f3831e2952d8337562d4ee37b7",
+      "kind": "const",
+      "path": "internal/explorerfleet/store.go",
+      "symbol": "const:Table,agentKind,codecVersion,codecVersionEffect"
+    },
+    {
+      "id": "76463a18b50b4f7c772bfe7abdd5aa648d328fd0e9612a24577a438018ce4c5e",
+      "kind": "function",
+      "path": "internal/explorerfleet/store.go",
+      "symbol": "function:decodeDescriptor"
+    },
+    {
+      "id": "ae06d6a00d7002ac49bab0b65bda73db9370fa7e0969b1dbdce44cfa8efb1fa7",
+      "kind": "function",
+      "path": "internal/explorerfleet/store.go",
+      "symbol": "function:encodeDescriptor"
+    },
+    {
+      "id": "bb29785bdee507fd13ec3c8f518632f5ddec6ca54341c089fe169c87c7a592f2",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "symbol": "function:*Service.resolveAction"
+    },
+    {
+      "id": "645f48a2bf9d2aa260a15235e12c46699f221c312714577c062e88497b7cc8e1",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:*countingActionExecutor.Execute"
+    },
+    {
+      "id": "4eb3ecfb0e80b4dd7d79d2ce623c5f536aac96200411ac6207b58c796901c0b4",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:*countingActionExecutor.MaxEffect"
+    },
+    {
+      "id": "8eac36c67564d22513a479e0247b59c1ae30dbccae471a6b74f6e8406ef2e13e",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestAbsentEffectKeepsItsPreviousMeaning"
+    },
+    {
+      "id": "c5985305254e964b1d61b18432509baf5751f76a5b0761f0bb4b75a13ed2ad71",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestDelegationCannotWidenEffect"
+    },
+    {
+      "id": "155e2ad600c91442fdb4554aac1fe48c15e9fef780384e4ad6953f66286b952c",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestEffectSurvivesCloning"
+    },
+    {
+      "id": "6b60c1ea5c43b231cb4642bbaed4b458f9d1440d86ba0e7e57479b8e57c96fab",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestEvidenceMutationDigestIsUnchangedAcrossTheUpgrade"
+    },
+    {
+      "id": "a341b2de0faed57fcfa3dcb3dae7490b0f64ec333f2988345ce2d07eed3baf61",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestExternalEffectNeedsAnExternalCeiling"
+    },
+    {
+      "id": "cde36742055c1d80ad4b497a8a7c1ef18d5fe0e1bb1c311fc77ce323e8319431",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestMutationDigestSeparatesEffects"
+    },
+    {
+      "id": "9197bb6ad633d3009bfd4503e7508aa7b5e86098629dd4732506ce6b862e1669",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestResolveActionRefusesAfterARebindToANarrowerCeiling"
+    },
+    {
+      "id": "8666a85d1367f058be15ce8970643ae5bff180bb6630d6324d1f60cc53f13be2",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestServiceRegisterEnforcesTheEffectCeiling"
+    },
+    {
+      "id": "d979796d2c67955e30d8bd974f7bc547fc490faf0238a2ab0764adf8e693508f",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestUndeclaredExecutorIsEvidenceOnly"
+    },
+    {
+      "id": "439b25b5eec5731e0b38f29babb7c38f64f2c4f1e8db76365a52d9f714ee55e1",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestUnknownEffectFailsClosed"
+    },
+    {
+      "id": "9e574bd64b31139a4b7626bc1f5b8394480374776cd3747c7698e3875867b9ae",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestUnknownEffectFromStorageIsRefusedAtRegistration"
+    },
+    {
+      "id": "7a348eac7ac32cfae489482be7df91ee471e9dd7fb1da2bfe8108301e933cab3",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:TestUnknownEffectsFailClosedAtResolution"
+    },
+    {
+      "id": "03bef4b8a06846b3911b4a6c0303153a185081eb9b5ba46e87ce8bde9486450c",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:ceilingExecutor.MaxEffect"
+    },
+    {
+      "id": "2333822df6b40557809a2555c74f753868d4b6e7463d9e81420ec6f7d393a7ef",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:effectDecision"
+    },
+    {
+      "id": "b8488e01614250b51c57e1bedb4461afc479c789724dbebb2f36e18bcedcacdd",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:evidenceAction"
+    },
+    {
+      "id": "6fc6609be46e6fb9d8c47c887ca34c3185a79c72014cce4ee7aa50249ab5168a",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:externalAction"
+    },
+    {
+      "id": "178efb16915b1893940ef01231c68c7936da1f79f1e3f6b6847ad4f85da3ec1d",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "function:externalRegisterRequest"
+    },
+    {
+      "id": "260d2d04800e1a721ccf075c78366d77e045f82bb6e5334ed22e636906495661",
+      "kind": "import",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "import:\"context\",\"encoding/hex\",\"encoding/json\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\""
+    },
+    {
+      "id": "c6fe24647313b63e98acfe8c42e961d3f16dfe5bb58180eb02cfdd1cc0381336",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "type:ceilingExecutor"
+    },
+    {
+      "id": "21f9eee4e065532370c97df223909e2a3a6ecf28176ed23bf1cbd547c78232cc",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "type:countingActionExecutor"
+    },
+    {
+      "id": "14f7c937f048557c643a30daceda9d92d7d74daaf75af2005e4409b4fbd9c4d2",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "type:unboundedExecutor"
+    },
+    {
+      "id": "6a9e508f2ed676c361c9ba5eff770343e968885b7ae1704336c0e071f6914133",
+      "kind": "var",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "var:anyObject"
+    },
+    {
+      "id": "d114898c94154832554b5c55b3f909a6e1f2b15e8a58e10268470901be9aefd6",
+      "kind": "file_context",
+      "path": "pkg/explorer/fleet/effect_test.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "7fc953dc09eedda31a09aef6e5f37a51ee8effd3b6e7fc5a6113c0507e820bd1",
+      "kind": "const",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "const:EffectEvidence,EffectExternal"
+    },
+    {
+      "id": "682321573be49cb5960bfcd83714bbbf84c760c8dd3c03951e6fb53d93ec3058",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "function:Effect.exceeds"
+    },
+    {
+      "id": "ee3dfd1583817989b628b9ab5b5d1a9a1a0517e396cabb43ca795214a5ac5c0b",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "function:Effect.validate"
+    },
+    {
+      "id": "a4ed23d3cb2e481ffeeb33f19302bc356d945333b1122be94c29dd45ea311cb8",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "function:canonicalCapabilities"
+    },
+    {
+      "id": "c1539e51fbcb75d3b9737642f1d61bf7d5681126bb3925a6f9b199e45cdbc054",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "function:cloneDescriptor"
+    },
+    {
+      "id": "b12d42972c03ca21014eeaed14507458bb93394787c5e8f7da84e0511367a104",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "function:executorCeiling"
+    },
+    {
+      "id": "589a3828ef95832a3043f60614f541b22daf3f58261d0ac47d8d94e25ddae054",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "type:Action"
+    },
+    {
+      "id": "f28288d5e564b49e2cfdba0d9978e3fde0f6022020521e4a974ee8cdc1668fb8",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "type:Effect"
+    },
+    {
+      "id": "04919ef801e8127a93cd66c6391f863ac0113904676043981c95957532f92c49",
+      "kind": "type",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "type:EffectBounded"
+    },
+    {
+      "id": "f5f44836597cacfce7493b2f7e9aa6e3631913643a4129870740b3dd3dfdb8f9",
+      "kind": "file_context",
+      "path": "pkg/explorer/fleet/model.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "267ae25330936bf9cde3147e8caddc05c8b8f8cb2ca934dfe2a42fbdaa505a0d",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/service.go",
+      "symbol": "function:*Service.Register"
+    },
+    {
+      "id": "7f3e4103de6b98d64ef811f1433962a088aed258faa74edc02b71d6e693197c1",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/service.go",
+      "symbol": "function:capabilitiesSubset"
+    },
+    {
+      "id": "c1cdc364ed9f9468aeeb5d9c535381015bc2b1741f57fd757ec27935be1ac60c",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/service.go",
+      "symbol": "function:registryMutationDigest"
+    },
+    {
+      "id": "827f5243c2f156d0a07dd6484af926430358208d7f84228fa7b04f568ca6b184",
+      "kind": "function",
+      "path": "pkg/explorer/fleet/service.go",
+      "symbol": "function:validateDeclaredEffects"
+    },
+    {
+      "id": "299abde5ddd897cac4bff104497ebcbf957d4f1ade4cd3a0685c004d7eefc056",
+      "kind": "file_context",
+      "path": "pkg/explorer/fleet/service.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "ad003f28ea7653cee287b3cf76d22ac7abcdf4fcf7c8c5f9cde00498f53d555f",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/fleet_executor.go",
+      "symbol": "file_context"
+    },
+    {
+      "id": "9407112aaa8f8aa4801492a1158503293502da4ddeb05a6c46e2471aec910073",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/fleet_registry.go",
+      "symbol": "function:cloneFleetCapabilities"
+    },
+    {
+      "id": "60cbc3e43ccb19525e5dd8cc8463e4610cfe656d93dc89610c6b1709677142ce",
+      "kind": "function",
+      "path": "pkg/explorer/webapi/fleet_registry_test.go",
+      "symbol": "function:TestCloneFleetCapabilitiesCarriesTheEffect"
+    },
+    {
+      "id": "2fdf14363ea08ba00fb242be5c7794dd46d2cbe075decde39f9bda2b534b4536",
+      "kind": "file_context",
+      "path": "pkg/explorer/webapi/fleet_registry_test.go",
+      "symbol": "file_context"
+    }
+  ]
+}

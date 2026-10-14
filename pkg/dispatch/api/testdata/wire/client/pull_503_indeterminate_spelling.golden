@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/pull
+error: dispatch pull: indeterminate (HTTP 503)
+kind: indeterminate
+status: 503 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: indeterminate(503)

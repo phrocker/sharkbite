@@ -1,0 +1,28 @@
+outcome dispatch.outcome.succeeded
+  Action close-ticket on agent agent-7 was reported as succeeded by worker-1 at 2026-10-08 12:03:00 UTC.
+  record=action:act-1 agent=agent-7 request=req-1 correlation=corr-1 principal=worker-1 claim=claim-1
+  identifiers close-ticket agent-7 worker-1
+gap dispatch.gap.effect_may
+  An external effect may have occurred; reconcile with the target.
+  record=action:act-1
+gap dispatch.gap.no_evidence
+  The result carries no evidence references.
+  record=action:act-1
+history dispatch.history.requested
+  alice enqueued it at 2026-10-08 12:00:00 UTC, with a deadline of 2026-10-08 14:00:00 UTC.
+  record=action:act-1 principal=alice request=req-1
+  identifiers alice
+history dispatch.history.approved
+  bob approved the request at 2026-10-08 11:55:00 UTC, under policy generation 9.
+  record=action:act-1 principal=bob approval_digest=0000000000000000000000000000000000000000000000000000000000000000
+  identifiers bob
+history dispatch.history.claims
+  It was claimed once.
+  record=action:act-1
+history dispatch.history.claimant
+  The last claim was held by worker-1.
+  record=action:act-1 principal=worker-1 claim=claim-1
+  identifiers worker-1
+next dispatch.next.succeeded
+  Nothing further happens to this action; its output is recorded.
+  record=action:act-1

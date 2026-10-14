@@ -1,0 +1,3543 @@
+{
+  "assessors": [
+    {
+      "assessor": "codex-frontier",
+      "eligible_baseline_cross_tab": [
+        {
+          "baseline": "review",
+          "count": 19,
+          "proposed_reviewer": "review"
+        },
+        {
+          "baseline": "review",
+          "count": 1,
+          "proposed_reviewer": "routine"
+        },
+        {
+          "baseline": "routine",
+          "count": 12,
+          "proposed_reviewer": "review"
+        },
+        {
+          "baseline": "routine",
+          "count": 23,
+          "proposed_reviewer": "routine"
+        }
+      ],
+      "eligible_cross_tab": [
+        {
+          "count": 3,
+          "model": "insufficient",
+          "proposed_reviewer": "review"
+        },
+        {
+          "count": 11,
+          "model": "insufficient",
+          "proposed_reviewer": "routine"
+        },
+        {
+          "count": 7,
+          "model": "review",
+          "proposed_reviewer": "review"
+        },
+        {
+          "count": 3,
+          "model": "review",
+          "proposed_reviewer": "routine"
+        },
+        {
+          "count": 21,
+          "model": "routine",
+          "proposed_reviewer": "review"
+        },
+        {
+          "count": 10,
+          "model": "routine",
+          "proposed_reviewer": "routine"
+        }
+      ],
+      "label_counts": {
+        "review": 86,
+        "routine": 47,
+        "unknown": 13
+      },
+      "limitations": [
+        "Only the four supplied public full-diff packets and their unit inventories were read. No model predictions, manifest, protocol outputs, current source, network or external reviews were consulted.",
+        "Relevance classification is not vulnerability confirmation. Unchanged callees, runtime behavior, complete types and historical invariants were not verified.",
+        "file_context units provide no residual source spans; these were classified unknown rather than inferred from the file name or assigned the whole file label.",
+        "Negative cases needing adversarial challenge: PR 395 naming/selectors and PDB may indirectly influence isolation or single-writer policy durability; PR 392 lifecycle/health state may disclose operational state or affect fail-closed startup beyond the shown paths.",
+        "Negative cases needing adversarial challenge: PR 394 output-schema validation, failed-result reporting and requestMayCommit response ambiguity may carry security meaning through unseen callers; no-op provider stubs may mask missing boundary coverage.",
+        "Import-only and primitive test-helper routine labels concern the declarations shown, not all transitive behavior of the containing file. Helpers directly configuring or asserting an authorization/disclosure boundary were classified review.",
+        "Source comments were treated as untrusted explanatory claims, not instructions; classifications rely on visible code or clearly identified documentation/configuration effects."
+      ],
+      "sha256": "04d814b13fdf60dae004f2c4f469cf07061e32e185bbe65bd6dc1d16d6723a6d"
+    },
+    {
+      "assessor": "claude-opus-full-diff",
+      "eligible_baseline_cross_tab": [
+        {
+          "baseline": "review",
+          "count": 13,
+          "proposed_reviewer": "review"
+        },
+        {
+          "baseline": "review",
+          "count": 7,
+          "proposed_reviewer": "routine"
+        },
+        {
+          "baseline": "routine",
+          "count": 5,
+          "proposed_reviewer": "review"
+        },
+        {
+          "baseline": "routine",
+          "count": 30,
+          "proposed_reviewer": "routine"
+        }
+      ],
+      "eligible_cross_tab": [
+        {
+          "count": 14,
+          "model": "insufficient",
+          "proposed_reviewer": "routine"
+        },
+        {
+          "count": 6,
+          "model": "review",
+          "proposed_reviewer": "review"
+        },
+        {
+          "count": 4,
+          "model": "review",
+          "proposed_reviewer": "routine"
+        },
+        {
+          "count": 12,
+          "model": "routine",
+          "proposed_reviewer": "review"
+        },
+        {
+          "count": 19,
+          "model": "routine",
+          "proposed_reviewer": "routine"
+        }
+      ],
+      "label_counts": {
+        "review": 68,
+        "routine": 78
+      },
+      "limitations": [
+        "Assessment uses only the shown diffs; no callgraph, type resolution, or unchanged callers such as s.begin, sameActionPrincipal, requestContext, or MountAuthenticated.",
+        "Labels indicate authorization relevance only; no bug is claimed or confirmed.",
+        "Borderline calls: claim-fence/lease tests are labeled review as write-authority checks; EffectPossible bookkeeping, output/evidence validation, and response-loss commit marking are labeled routine.",
+        "Test doubles and fixtures are labeled routine even when they feed authorization tests; the tests that assert the behavior carry the review label.",
+        "For PR 395, Helm guards are config-level; whether rendered flags match runtime enforcement was not verified.",
+        "For PR 397, key/schema compatibility with existing persisted mosaic records is inferred from the tests, not verified against stored data.",
+        "For PR 392, whether the health listener is exposed beyond the kubelet depends on deployment network policy, which is not shown."
+      ],
+      "sha256": "3870af1103bcabeeebc3978b92adfd327f608ed411d8ff1962be4dd96fc60261"
+    }
+  ],
+  "dispositions": {
+    "predicted": 55,
+    "token_limit": 38,
+    "unsupported_unit": 53
+  },
+  "exclusion_enabled": false,
+  "id": "8bcceeaf6c9b444b88eebc01f7da1d5acf3037a132e41f9fd4e27b14fefa43ea",
+  "latency_ms": {
+    "count": 55,
+    "first": 307.5983179733157,
+    "max": 307.5983179733157,
+    "median": 14.345450792461634
+  },
+  "limitations": [
+    "Retrospective convenience cohort; not held-out quality evidence.",
+    "Proposed frontier relevance labels; no independently confirmed defect oracle.",
+    "Function input excludes dependency bodies; no unit is eligible for exclusion.",
+    "No paired reduced-context downstream reviews, realized token savings, or total-cost estimate.",
+    "Local content-addressed experiment artifacts are not production Shoal decision/API receipts."
+  ],
+  "manifest_id": "aa87c0bff365028b2cf804ab0d720beea25a4fdd7420cf2433aaa1c3f7278bb0",
+  "mode": "retrospective_reconstruction",
+  "model_labels": {
+    "insufficient": 14,
+    "review": 10,
+    "routine": 31
+  },
+  "observations": [
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d04c7062cf53aa67ec1b6e6d70ed131231a868a6b1b342dba59bb97a4433e13c",
+          "witness": "Update keys state by decision identity and fails closed: `return zero, dependencyRequired(\"initialized accumulator and contribution\")`; errors prevent Store and return zero state."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d04c7062cf53aa67ec1b6e6d70ed131231a868a6b1b342dba59bb97a4433e13c",
+          "witness": "Update keys by auth.Decision, resets a window, and returns zero on Load/contribute/Store error; this gates mosaic disclosure."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "function:*Accumulator[T].Update",
+      "unit_id": "d04c7062cf53aa67ec1b6e6d70ed131231a868a6b1b342dba59bb97a4433e13c"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d04d9843152b50848172bbfb25ff6223a1ce3bb08ae64bfa3a4e757caa1107ab",
+          "witness": "NewAccumulator fails closed: `dependencyRequired(\"accumulator ledger\")`, window <= 0, empty identity namespace rejected."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d04d9843152b50848172bbfb25ff6223a1ce3bb08ae64bfa3a4e757caa1107ab",
+          "witness": "NewAccumulator rejects nonpositive window, nil ledger and empty namespace before construction."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "function:NewAccumulator",
+      "unit_id": "d04d9843152b50848172bbfb25ff6223a1ce3bb08ae64bfa3a4e757caa1107ab"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "f167c6034db406013b2df1c007205b1b7ec056c83d8e699802ec65fb175c42ef",
+          "witness": "Per-identity isolation key: `writeComponent(decision.AuthorizationDomain())`, `writeComponent([]byte(decision.Subject()))`, digested with namespace."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "f167c6034db406013b2df1c007205b1b7ec056c83d8e699802ec65fb175c42ef",
+          "witness": "writeComponent(decision.AuthorizationDomain()); writeComponent([]byte(decision.Subject())) binds accounting to domain and subject."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "function:accumulatorIdentityKey",
+      "unit_id": "f167c6034db406013b2df1c007205b1b7ec056c83d8e699802ec65fb175c42ef"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "fab2b11c02aebfffacf1ea42ebb55f295a7efe5a0ab85c8609242cdfaf05d1e1",
+          "witness": "Import list only: bytes, context, encoding/binary, sync, time, explorer/auth."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "fab2b11c02aebfffacf1ea42ebb55f295a7efe5a0ab85c8609242cdfaf05d1e1",
+          "witness": "Only imports bytes/context/encoding/binary/sync/time/auth; no executable authorization decision in this unit."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "import:\"bytes\",\"context\",\"encoding/binary\",\"sync\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\"",
+      "unit_id": "fab2b11c02aebfffacf1ea42ebb55f295a7efe5a0ab85c8609242cdfaf05d1e1"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "100fbab7936e5dbc488c13d946f81d140a37851f0c0a14b88f6a023d4c007905",
+          "witness": "Holds `mu sync.Mutex` and `namespace`, which serialize the mosaic budget and separate identity keyspaces; replaces Client.budgetMu."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "100fbab7936e5dbc488c13d946f81d140a37851f0c0a14b88f6a023d4c007905",
+          "witness": "Accumulator carries mu, ledger, window and namespace used to serialize per-identity disclosure accounting."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "type:Accumulator",
+      "unit_id": "100fbab7936e5dbc488c13d946f81d140a37851f0c0a14b88f6a023d4c007905"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "7aa1d71125624382f1aa9253bebf911aac7c666019acac2432012d6472ba5021",
+          "witness": "Generic persistence interface `Load`/`Store`; the diff shows no authorization logic in this interface."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "7aa1d71125624382f1aa9253bebf911aac7c666019acac2432012d6472ba5021",
+          "witness": "Load and Store of AccumulatorRecord define the persistence boundary used before disclosure is released."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "type:AccumulatorLedger",
+      "unit_id": "7aa1d71125624382f1aa9253bebf911aac7c666019acac2432012d6472ba5021"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "fc47bde73f35536743a6e1f29131420f77d4ab1226e5c74f284be3e01ed21845",
+          "witness": "Data holder `WindowStart time.Time; State T`; no checks."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "fc47bde73f35536743a6e1f29131420f77d4ab1226e5c74f284be3e01ed21845",
+          "witness": "WindowStart and State determine retained disclosure history and window resets."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "type:AccumulatorRecord",
+      "unit_id": "fc47bde73f35536743a6e1f29131420f77d4ab1226e5c74f284be3e01ed21845"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "67f6d1cfd8b56eb9961fe96da8cf8233d5164b7763236efc5107369d4d8a2375",
+          "witness": "New file in package `authorized` providing the substrate for the mosaic disclosure budget and identity keying."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 397,
+          "unit_id": "67f6d1cfd8b56eb9961fe96da8cf8233d5164b7763236efc5107369d4d8a2375",
+          "witness": "file_context has no source span; cannot distinguish residual license/comments from the authorization-bearing declarations."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator.go",
+      "pr": 397,
+      "symbol": "file_context",
+      "unit_id": "67f6d1cfd8b56eb9961fe96da8cf8233d5164b7763236efc5107369d4d8a2375"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "00b02b0446f7028b3c6aef976d7c651155d025ca1dbd57ef308d180d83ba6e0e",
+          "witness": "Test double: `l.loads++; record, found := l.records[key]`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "00b02b0446f7028b3c6aef976d7c651155d025ca1dbd57ef308d180d83ba6e0e",
+          "witness": "counterLedger.Load returns l.loadErr; used to exercise fail-closed accumulator loads."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:*counterLedger.Load",
+      "unit_id": "00b02b0446f7028b3c6aef976d7c651155d025ca1dbd57ef308d180d83ba6e0e"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "12c0d81eb308cd8dc79bdcdcee244e98153f8f68589b27e44a58c47b2e1c52f3",
+          "witness": "Test double storing into map, with `storeErr` injection."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "12c0d81eb308cd8dc79bdcdcee244e98153f8f68589b27e44a58c47b2e1c52f3",
+          "witness": "counterLedger.Store returns l.storeErr before persisting; exercises failure before disclosure."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:*counterLedger.Store",
+      "unit_id": "12c0d81eb308cd8dc79bdcdcee244e98153f8f68589b27e44a58c47b2e1c52f3"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "0e14e5ce5232cb5c44580ad5ed5d7075c1f0ed8a9a6ea57924bc826516eb3f38",
+          "witness": "Tests fail-closed construction: \"missing ledger\", \"typed nil ledger\", \"zero window\", \"missing namespace\" must return nil and error."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "0e14e5ce5232cb5c44580ad5ed5d7075c1f0ed8a9a6ea57924bc826516eb3f38",
+          "witness": "TestAccumulatorConstruction rejects missing/typed-nil ledger, bad window, missing namespace and uninitialized Update."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestAccumulatorConstruction",
+      "unit_id": "0e14e5ce5232cb5c44580ad5ed5d7075c1f0ed8a9a6ea57924bc826516eb3f38"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "743e32122c8ce2b6fdcd2a79bcc7b801744c1d948c4bd7b4a40d47a0816d97d9",
+          "witness": "Asserts load/contribute/store failures return `got != 0 || !errors.Is(err, failure)` and persist nothing."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "743e32122c8ce2b6fdcd2a79bcc7b801744c1d948c4bd7b4a40d47a0816d97d9",
+          "witness": "TestAccumulatorFailuresDoNotReleaseState asserts got != 0 or missing failure is fatal for load/contribute/store errors."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestAccumulatorFailuresDoNotReleaseState",
+      "unit_id": "743e32122c8ce2b6fdcd2a79bcc7b801744c1d948c4bd7b4a40d47a0816d97d9"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "77875e229811204f9214449260d7f18f93b7d42b8290cbbf5e19de82232a0235",
+          "witness": "Checks identity/namespace collisions for {\"ab\",\"c\"} vs {\"a\",\"bc\"} and pins legacy key `explorer-mosaic-identity-v1`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "77875e229811204f9214449260d7f18f93b7d42b8290cbbf5e19de82232a0235",
+          "witness": "Identity test varies domain, subject and namespace and rejects key collisions."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestAccumulatorIdentityIsolationAndLegacyFraming",
+      "unit_id": "77875e229811204f9214449260d7f18f93b7d42b8290cbbf5e19de82232a0235"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "68a5ea29a2db2d46ee8569328eab44df62dfb92280c88deef1d8dfd6a5221cc6",
+          "witness": "100 concurrent Updates must yield `record.State != 100` false. A lost update would under-count the disclosure budget."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "68a5ea29a2db2d46ee8569328eab44df62dfb92280c88deef1d8dfd6a5221cc6",
+          "witness": "100 concurrent Updates must leave State == 100; lost accounting can weaken the disclosure budget."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestAccumulatorSerializesConcurrentUpdates",
+      "unit_id": "68a5ea29a2db2d46ee8569328eab44df62dfb92280c88deef1d8dfd6a5221cc6"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d5ee27f511a975f6ab3ed0f6cb6925c28e9815dbe7465b9ecc3032d6173946d5",
+          "witness": "Pins window-reset semantics including \"clock rollback\". These govern when the mosaic budget resets."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d5ee27f511a975f6ab3ed0f6cb6925c28e9815dbe7465b9ecc3032d6173946d5",
+          "witness": "Window test covers exact expiry, rollback and reconstruction, all determining how long disclosure charges survive."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestAccumulatorWindows",
+      "unit_id": "d5ee27f511a975f6ab3ed0f6cb6925c28e9815dbe7465b9ecc3032d6173946d5"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "a7963255bc4e5e1cfb2fbfd4a055287dd1aa8df3196614bb106b2f5d727fd0ae",
+          "witness": "Asserts a failed read returns no selection: `selection.allowed != nil` fails; tests the empty-domain fail-closed case."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "a7963255bc4e5e1cfb2fbfd4a055287dd1aa8df3196614bb106b2f5d727fd0ae",
+          "witness": "Failure test requires selection.allowed == nil and selection.restricted == 0 for ledger/domain errors."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestMosaicAccumulatorFailureDiscardsProvisionalDisclosure",
+      "unit_id": "a7963255bc4e5e1cfb2fbfd4a055287dd1aa8df3196614bb106b2f5d727fd0ae"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d3ddf80fe68033255ca5299eaa1f13f91e334be4fee4f7e4ad1a9142e0d9135b",
+          "witness": "A legacy record must still restrict: `selection.restricted != 1` fails; also pins persisted schema `policyKindCoOccurrence != 8`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d3ddf80fe68033255ca5299eaa1f13f91e334be4fee4f7e4ad1a9142e0d9135b",
+          "witness": "Legacy record test asserts restricted == 1 and exact allowed IDs after loading historical identity accounting."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestMosaicAccumulatorReadsLegacyRecord",
+      "unit_id": "d3ddf80fe68033255ca5299eaa1f13f91e334be4fee4f7e4ad1a9142e0d9135b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935",
+          "witness": "Disabled budget: `budget.accumulator(nil)` returns nil,nil and all documents are allowed. Pins the bypass condition."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935",
+          "witness": "Disabled-budget test expects two allowed IDs and forbids domain resolution; exercises explicit control bypass configuration."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:TestMosaicDisabledBypassesAccumulatorAndDomainResolution",
+      "unit_id": "3f739aabc51353bb632affd9ce17a19098dc222bd53414f00999de277fead935"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "d5a5afdbffb98614d27296fef5380376787a79b5025f89f74301db58ce80cdf3",
+          "witness": "Fixture that builds `auth.NewDecision(auth.DecisionConfig{...})` for the tests; contains no assertions."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d5a5afdbffb98614d27296fef5380376787a79b5025f89f74301db58ce80cdf3",
+          "witness": "accumulatorDecision supplies Subject, AuthorizationDomain, AllowedOperations, PermittedSourceIDs and PermittedPolicyIDs."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:accumulatorDecision",
+      "unit_id": "d5a5afdbffb98614d27296fef5380376787a79b5025f89f74301db58ce80cdf3"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea",
+          "witness": "Error-injection wrapper: `if s.loadErr != nil { return CoOccurrenceRecord{}, false, s.loadErr }`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea",
+          "witness": "failingMosaicStore.LoadCoOccurrence injects loadErr into the disclosure accounting path."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:failingMosaicStore.LoadCoOccurrence",
+      "unit_id": "79373311a4ca6b490af1435b286b154ff78ca0c5bcb872ec121dbc7bfda156ea"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399",
+          "witness": "Error-injection wrapper: `if s.storeErr != nil { return s.storeErr }`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399",
+          "witness": "failingMosaicStore.StoreCoOccurrence injects storeErr before disclosure persistence."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:failingMosaicStore.StoreCoOccurrence",
+      "unit_id": "3c476166cfa573c120ed63347d5566d21cdfd77499859b80fbf55a529d09b399"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "1e6d55de41d9bd24a1ab82a5a8f2028307a0deb7a2cd446ba5d04125a43f0fe8",
+          "witness": "`return state + 1, nil`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "1e6d55de41d9bd24a1ab82a5a8f2028307a0deb7a2cd446ba5d04125a43f0fe8",
+          "witness": "increment is only return state + 1, nil; it makes no identity, scope or denial choice."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "function:increment",
+      "unit_id": "1e6d55de41d9bd24a1ab82a5a8f2028307a0deb7a2cd446ba5d04125a43f0fe8"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "834e79e881dc7281ab9f1701a653d59980b829487cc8a06fa03d624b24ec1b40",
+          "witness": "Test imports only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "834e79e881dc7281ab9f1701a653d59980b829487cc8a06fa03d624b24ec1b40",
+          "witness": "Import-only unit adds test and auth dependencies without an executable check."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "import:\"context\",\"errors\",\"reflect\",\"sync\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\"",
+      "unit_id": "834e79e881dc7281ab9f1701a653d59980b829487cc8a06fa03d624b24ec1b40"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "9f3ef9875509b2973f3a616af3b7571eb05d28ff317aa39bdeda2344b04a6733",
+          "witness": "Test ledger struct with records map and error fields."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "9f3ef9875509b2973f3a616af3b7571eb05d28ff317aa39bdeda2344b04a6733",
+          "witness": "counterLedger stores failure injection and per-key AccumulatorRecord state for fail-closed/isolation tests."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "type:counterLedger",
+      "unit_id": "9f3ef9875509b2973f3a616af3b7571eb05d28ff317aa39bdeda2344b04a6733"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "23dc6483a74044514314eed105f4185ecc510f56f30b31b427754c851ea7111e",
+          "witness": "Test struct embedding `*MemoryPolicyStore` with `loadErr, storeErr`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "23dc6483a74044514314eed105f4185ecc510f56f30b31b427754c851ea7111e",
+          "witness": "failingMosaicStore embeds MemoryPolicyStore and loadErr/storeErr for disclosure failure tests."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "type:failingMosaicStore",
+      "unit_id": "23dc6483a74044514314eed105f4185ecc510f56f30b31b427754c851ea7111e"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "09c7d25e3de30455b49f3a9e409584ed2d576195a490f50f937d1e03e52dbd08",
+          "witness": "New test file exercising mosaic fail-closed behavior, identity isolation and disclosure withholding."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 397,
+          "unit_id": "09c7d25e3de30455b49f3a9e409584ed2d576195a490f50f937d1e03e52dbd08",
+          "witness": "file_context has no source span to attribute beyond the named test declarations."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/accumulator_test.go",
+      "pr": 397,
+      "symbol": "file_context",
+      "unit_id": "09c7d25e3de30455b49f3a9e409584ed2d576195a490f50f937d1e03e52dbd08"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "4feb50568498c09e46271a70e043be19daba25d94af42691c8a515fcedba54d5",
+          "witness": "Inline fail-closed ledger/window validation replaced by `config.Mosaic.accumulator(config.PolicyStore)`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "4feb50568498c09e46271a70e043be19daba25d94af42691c8a515fcedba54d5",
+          "witness": "NewClient now calls config.Mosaic.accumulator(config.PolicyStore) and aborts on error."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/client.go",
+      "pr": 397,
+      "symbol": "function:NewClient",
+      "unit_id": "4feb50568498c09e46271a70e043be19daba25d94af42691c8a515fcedba54d5"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "f9a82b7c9534941c29f50470943124a4022e677fd7a337c2a93777ed405f1d72",
+          "witness": "Removes `budgetMu sync.Mutex` and `ledger`. Budget serialization now depends on `accumulator *Accumulator[[]string]`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "f9a82b7c9534941c29f50470943124a4022e677fd7a337c2a93777ed405f1d72",
+          "witness": "Client replaces ledger and budgetMu with accumulator, changing ownership of disclosure accounting and serialization."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/client.go",
+      "pr": 397,
+      "symbol": "type:Client",
+      "unit_id": "f9a82b7c9534941c29f50470943124a4022e677fd7a337c2a93777ed405f1d72"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0",
+          "witness": "Mosaic withholding logic moved into callback: `selection.restricted++`, `return nil, inconsistentBase()` on empty domain."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0",
+          "witness": "applyMosaicBudget admits seen/in-budget domains, increments restricted otherwise, and returns empty selection on Update error."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "function:*Client.applyMosaicBudget",
+      "unit_id": "5cd8648dcaaf8f7517ab0e964de87262ec95eb1f1c9107974048b496a2bd43e0"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "ff2de5ceb015c78ca2276332a05ef321dafc79d43949c9a0d5f6584257be75b8",
+          "witness": "`if !b.enabled() { return nil, nil }`; nil-ledger guard; maps errors to `dependencyRequired(\"co-occurrence ledger\")`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "ff2de5ceb015c78ca2276332a05ef321dafc79d43949c9a0d5f6584257be75b8",
+          "witness": "MosaicBudget.accumulator bypasses when disabled and rejects nil ledger/bad window when enabled."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "function:MosaicBudget.accumulator",
+      "unit_id": "ff2de5ceb015c78ca2276332a05ef321dafc79d43949c9a0d5f6584257be75b8"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47",
+          "witness": "Removed identity key derivation; replaced by accumulatorIdentityKey. Key compatibility affects per-identity budget continuity."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47",
+          "witness": "Deleted mosaicIdentityKey framed AuthorizationDomain and Subject; identity isolation is moved to accumulatorIdentityKey."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "function:mosaicIdentityKey",
+      "unit_id": "311b6010c3ca8f267c01a556a76816291d8fbc1bf835a235f10dad82e21b0c47"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae",
+          "witness": "Adapter maps persisted `record.Domains` into State. A wrong mapping would reset an identity's budget."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae",
+          "witness": "mosaicLedger.Load maps persisted WindowStart/Domains to accumulator state used to constrain disclosure."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "function:mosaicLedger.Load",
+      "unit_id": "83a55ee169af99146ce4e49e31712caaba7054613856ec52792af28ab87e79ae"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98",
+          "witness": "`StoreCoOccurrence(... Domains: record.State)` persists the observed domains that bound future disclosure."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98",
+          "witness": "mosaicLedger.Store persists accumulator State as CoOccurrenceRecord.Domains before disclosure returns."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "function:mosaicLedger.Store",
+      "unit_id": "33ecdd54e5bca0922d4bf4744001c2e7f8e655baa34f075a2fc69d1bb3fbef98"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "6a6d1549111276daea3218e98f0c2f04403d30fa4d560343919842d74a692dce",
+          "witness": "Removed imports `bytes`, `encoding/binary`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "6a6d1549111276daea3218e98f0c2f04403d30fa4d560343919842d74a692dce",
+          "witness": "Removed import group changes bytes/encoding dependencies only; identity algorithm relocation is assessed separately."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "import:\"bytes\",\"context\",\"encoding/binary\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\"",
+      "unit_id": "6a6d1549111276daea3218e98f0c2f04403d30fa4d560343919842d74a692dce"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "5d74371b56d686bb9036ab4e21e836600685c240363469adb17467fb44a0c04d",
+          "witness": "Remaining import list; no logic."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "5d74371b56d686bb9036ab4e21e836600685c240363469adb17467fb44a0c04d",
+          "witness": "New import group alone has no policy decision or authority configuration."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "import:\"context\",\"sort\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\"",
+      "unit_id": "5d74371b56d686bb9036ab4e21e836600685c240363469adb17467fb44a0c04d"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 397,
+          "unit_id": "d4af68d33489e645fec92ad1da787b7bf115434a7d0b6ef22a1d508f4ccc91c1",
+          "witness": "`type mosaicLedger struct{ CoOccurrenceLedger }` wrapper declaration."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "d4af68d33489e645fec92ad1da787b7bf115434a7d0b6ef22a1d508f4ccc91c1",
+          "witness": "mosaicLedger wraps CoOccurrenceLedger as the persistence adapter for disclosure accounting."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "type:mosaicLedger",
+      "unit_id": "d4af68d33489e645fec92ad1da787b7bf115434a7d0b6ef22a1d508f4ccc91c1"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "7b718cf49c20725014f48c47db9853c5c3454ff68949b770ba86f556adc6ebb7",
+          "witness": "Mosaic co-occurrence disclosure control refactored to a shared accumulator."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 397,
+          "unit_id": "7b718cf49c20725014f48c47db9853c5c3454ff68949b770ba86f556adc6ebb7",
+          "witness": "file_context has no residual source span; unit-level relevance cannot be assigned confidently."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic.go",
+      "pr": 397,
+      "symbol": "file_context",
+      "unit_id": "7b718cf49c20725014f48c47db9853c5c3454ff68949b770ba86f556adc6ebb7"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "5cfaf50efb750ee3ad9dbe0c20b615c9e848781e03f93938b51dca2dfae4e755",
+          "witness": "Fail-closed test now constructed via `budget.accumulator(NewMemoryPolicyStore())`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 397,
+          "unit_id": "5cfaf50efb750ee3ad9dbe0c20b615c9e848781e03f93938b51dca2dfae4e755",
+          "witness": "Fail-closed empty-domain test now constructs the accumulator before invoking applyMosaicBudget on an ungoverned document."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/authorized/mosaic_internal_test.go",
+      "pr": 397,
+      "symbol": "function:TestMosaicBudgetFailsClosedOnEmptySensitivityDomain",
+      "unit_id": "5cfaf50efb750ee3ad9dbe0c20b615c9e848781e03f93938b51dca2dfae4e755"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "90b9d0d922663fec37c56ddc33618ece668ab149d62d14ed78094fcd17904399",
+          "witness": "`bound, err := r.requestContext(ctx, request.Context)` authenticates the remote completion as the caller."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "90b9d0d922663fec37c56ddc33618ece668ab149d62d14ed78094fcd17904399",
+          "witness": "CompleteClaim calls r.requestContext(ctx, request.Context), returns on error, and replaces request.Context with bound."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "pr": 394,
+      "symbol": "function:*boundFleetDispatch.CompleteClaim",
+      "unit_id": "90b9d0d922663fec37c56ddc33618ece668ab149d62d14ed78094fcd17904399"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "2f0d7e86b9a74ab933c7500b970947e1bb2e2d13f2fa91beffd6ee75e954d55f",
+          "witness": "Adds a new bound dispatch entrypoint `CompleteClaim` to the web command."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "2f0d7e86b9a74ab933c7500b970947e1bb2e2d13f2fa91beffd6ee75e954d55f",
+          "witness": "file_context has no residual span distinct from the new bound completion method."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/fleet.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "2f0d7e86b9a74ab933c7500b970947e1bb2e2d13f2fa91beffd6ee75e954d55f"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "5be6f3efa1f3634ab6acefeb97f99de3870c823bce44bd2393fa95f080e97ec4",
+          "witness": "Helper asserting `stored.State != DispatchClaimed`; no authorization logic itself."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5be6f3efa1f3634ab6acefeb97f99de3870c823bce44bd2393fa95f080e97ec4",
+          "witness": "assertStillClaimed verifies refused completion leaves both State and Version unchanged."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:*completionFixture.assertStillClaimed",
+      "unit_id": "5be6f3efa1f3634ab6acefeb97f99de3870c823bce44bd2393fa95f080e97ec4"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "ec734d01c8d8db8163cef54744cf27182a778e92cdce2e4092b7652c9738c2d4",
+          "witness": "Builds a well-formed `CompletionRequest` fixture."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "ec734d01c8d8db8163cef54744cf27182a778e92cdce2e4092b7652c9738c2d4",
+          "witness": "completion supplies claimed ID/version, ClaimID and dispatchContext used by fencing tests."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:*completionFixture.completion",
+      "unit_id": "ec734d01c8d8db8163cef54744cf27182a778e92cdce2e4092b7652c9738c2d4"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "2b1b5c2e39e638a0ab5599be22191e90c0191fd26f82b9b1b1a7e2842cbce492",
+          "witness": "Stub that returns `ErrorInternal` if the in-process path runs."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "2b1b5c2e39e638a0ab5599be22191e90c0191fd26f82b9b1b1a7e2842cbce492",
+          "witness": "remoteBoundExecutor.Execute only records accidental invocation and returns an internal test failure; no authorization choice."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:*remoteBoundExecutor.Execute",
+      "unit_id": "2b1b5c2e39e638a0ab5599be22191e90c0191fd26f82b9b1b1a7e2842cbce492"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "3156da35eb2de0c0d0a56eff6ffea0f4ac9127d1b91f09883b8e5da222e3237b",
+          "witness": "`return EffectExternal` sets the executor ceiling, which gates resolution of external-effect actions."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "3156da35eb2de0c0d0a56eff6ffea0f4ac9127d1b91f09883b8e5da222e3237b",
+          "witness": "remoteBoundExecutor.MaxEffect returns EffectExternal, configuring the executor effect ceiling."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:*remoteBoundExecutor.MaxEffect",
+      "unit_id": "3156da35eb2de0c0d0a56eff6ffea0f4ac9127d1b91f09883b8e5da222e3237b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "e7443321e7b3d086786d56a42bef8dff848ffdd87602790efb1951f2b3ef89a3",
+          "witness": "Checks the `EffectPossible` bookkeeping flag per effect; state tracking, not access control."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "e7443321e7b3d086786d56a42bef8dff848ffdd87602790efb1951f2b3ef89a3",
+          "witness": "TestClaimMarksAnExternalEffectPossibleBeforeItHappens distinguishes external/evidence effect declarations and persisted claim state."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestClaimMarksAnExternalEffectPossibleBeforeItHappens",
+      "unit_id": "e7443321e7b3d086786d56a42bef8dff848ffdd87602790efb1951f2b3ef89a3"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "4f7cd3f1f7b6523c6d33b6b52ed6b95378bdf0e958d6b4849ed2185feed456bf",
+          "witness": "After cancel, a late reporter must get `ErrClaimLost`. Tests the claim fence on write authority."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "4f7cd3f1f7b6523c6d33b6b52ed6b95378bdf0e958d6b4849ed2185feed456bf",
+          "witness": "Cancelled-action test requires ErrClaimLost on late completion and preserves the canceled record."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimDoesNotAcknowledgeACancelledAction",
+      "unit_id": "4f7cd3f1f7b6523c6d33b6b52ed6b95378bdf0e958d6b4849ed2185feed456bf"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5933f56d80f38587f353e7d1a81a50d0c6d30c14399df15058f8cdae66f09efc",
+          "witness": "A stranger `ClaimID = \"other-worker\"` must get `ErrClaimLost`, not another worker's record."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5933f56d80f38587f353e7d1a81a50d0c6d30c14399df15058f8cdae66f09efc",
+          "witness": "Different worker ClaimID must yield ErrClaimLost and must not receive the first worker output."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimDoesNotHandOneWorkersRecordToAnother",
+      "unit_id": "5933f56d80f38587f353e7d1a81a50d0c6d30c14399df15058f8cdae66f09efc"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "e6e8887d2d6e219a413652660973fb9d97893bb4bfacc0f4bcc020bdeeb6d91a",
+          "witness": "Happy path to `DispatchSucceeded`. Only incidentally checks that `ExecutionFingerprint` is set."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "e6e8887d2d6e219a413652660973fb9d97893bb4bfacc0f4bcc020bdeeb6d91a",
+          "witness": "Successful completion test requires nonzero ExecutionFingerprint to pin execution authority."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimDrivesARemoteActionToSucceeded",
+      "unit_id": "e6e8887d2d6e219a413652660973fb9d97893bb4bfacc0f4bcc020bdeeb6d91a"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "8f675e7b83e29543a3e2119cf1e097464e7c102c1ac1937bb528b445c17e601a",
+          "witness": "Another principal's completion must return `shoal.ErrorNotFound`, preventing existence probing."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "8f675e7b83e29543a3e2119cf1e097464e7c102c1ac1937bb528b445c17e601a",
+          "witness": "Stranger principal is bound through the same authority; completion must return ErrorNotFound and write nothing."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimHidesAnotherPrincipalsAction",
+      "unit_id": "8f675e7b83e29543a3e2119cf1e097464e7c102c1ac1937bb528b445c17e601a"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "4874bedb17c1a664bc3274a51d32a07f3a7f3500a0048291572c90dcba6681e9",
+          "witness": "Reported failure recorded as `DispatchFailed` with \"gateway_refused\"."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "4874bedb17c1a664bc3274a51d32a07f3a7f3500a0048291572c90dcba6681e9",
+          "witness": "ReportedFailure checks terminal DispatchFailed/ErrorCode persistence, without testing a principal, scope or denial boundary."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimRecordsAReportedFailure",
+      "unit_id": "4874bedb17c1a664bc3274a51d32a07f3a7f3500a0048291572c90dcba6681e9"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "d1c5e8b9b5837baa9f8915880e5f14d51845b54f0152ddde666393f155f5f4a2",
+          "witness": "Input validation: a failure without ErrorCode returns `ErrorInvalidArgument`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "d1c5e8b9b5837baa9f8915880e5f14d51845b54f0152ddde666393f155f5f4a2",
+          "witness": "FailureWithNoReason checks protocol validation for empty ErrorCode, not an authorization boundary."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimRefusesAFailureWithNoReason",
+      "unit_id": "d1c5e8b9b5837baa9f8915880e5f14d51845b54f0152ddde666393f155f5f4a2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "b6ce0987e404741b85e46f9b10d4bff390f5bdf2564bef16baf21994e8ba4654",
+          "witness": "Different claim ID or stale/future version must return `ErrClaimLost` and write nothing."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "b6ce0987e404741b85e46f9b10d4bff390f5bdf2564bef16baf21994e8ba4654",
+          "witness": "StaleClaim varies claim ID and expected version and requires ErrClaimLost without state mutation."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimRefusesAStaleClaim",
+      "unit_id": "b6ce0987e404741b85e46f9b10d4bff390f5bdf2564bef16baf21994e8ba4654"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5de28e047d66e5469e9fdd31fe0f0620a28677ca9386dd5edcafc67fd6545d24",
+          "witness": "Past the claim lease or action deadline, completion is refused with `ErrClaimLost`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5de28e047d66e5469e9fdd31fe0f0620a28677ca9386dd5edcafc67fd6545d24",
+          "witness": "ExpiredLease tests claim expiry/action deadline refusal and no writes."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimRefusesAnExpiredLease",
+      "unit_id": "5de28e047d66e5469e9fdd31fe0f0620a28677ca9386dd5edcafc67fd6545d24"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "9d15a9143f19a03271c00abdfe3220ce0aa679a06aaf745064896bf87f2b4aec",
+          "witness": "Idempotent replay returns the same committed record; tests retry semantics."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "9d15a9143f19a03271c00abdfe3220ce0aa679a06aaf745064896bf87f2b4aec",
+          "witness": "Replay test returns prior committed output under the same claim; exercises the claim-bound disclosure path."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimReplayReturnsTheCommittedRecord",
+      "unit_id": "9d15a9143f19a03271c00abdfe3220ce0aa679a06aaf745064896bf87f2b4aec"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "ec8b69de288ef36dd32e6165200c4106c0f9b3dc32a91f29b5e4827121a6185a",
+          "witness": "Unpinned evidence yields \"invalid_executor_evidence\"; data validation."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "ec8b69de288ef36dd32e6165200c4106c0f9b3dc32a91f29b5e4827121a6185a",
+          "witness": "Evidence test rejects an unpinned EvidenceRef and asserts rejected evidence is not persisted."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimValidatesEvidenceAsTheInProcessPathDoes",
+      "unit_id": "ec8b69de288ef36dd32e6165200c4106c0f9b3dc32a91f29b5e4827121a6185a"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "0885a5aa30e5b77cfe6917d5882853e3b808d95c547d8a142fe874959df99e28",
+          "witness": "Schema-violating output yields \"invalid_executor_output\"; data validation."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "0885a5aa30e5b77cfe6917d5882853e3b808d95c547d8a142fe874959df99e28",
+          "witness": "Output test checks JSON output schema boolean/extra field rejection; no apparent authority or scope check in this diff."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestCompleteClaimValidatesOutputAsTheInProcessPathDoes",
+      "unit_id": "0885a5aa30e5b77cfe6917d5882853e3b808d95c547d8a142fe874959df99e28"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "9cbf420dae2a0e5b70a6408059585408fedbf4bc8ea08aa52b4268ab0401f1ef",
+          "witness": "ExecuteClaim must refuse an executor without Execute. Pins the fail-closed boundary after resolveActionBinding relaxation."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "9cbf420dae2a0e5b70a6408059585408fedbf4bc8ea08aa52b4268ab0401f1ef",
+          "witness": "ExecuteClaim must refuse a remote-only executor lacking Execute after binding requirements are relaxed."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestExecuteClaimStillRequiresARunnableExecutor",
+      "unit_id": "9cbf420dae2a0e5b70a6408059585408fedbf4bc8ea08aa52b4268ab0401f1ef"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "13a6fdd3b7bc1e6770caf86eeac6f9552474aa16a1f7cbc1d4de533b5a200ee2",
+          "witness": "Claim and complete succeed through `remoteOnlyExecutor{}`; exercises relaxed binding resolution with the effect ceiling."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "13a6fdd3b7bc1e6770caf86eeac6f9552474aa16a1f7cbc1d4de533b5a200ee2",
+          "witness": "RemoteExecutor test permits remote completion through an EffectExternal ceiling without in-process Execute."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:TestRemoteExecutorNeedsNoInProcessExecute",
+      "unit_id": "13a6fdd3b7bc1e6770caf86eeac6f9552474aa16a1f7cbc1d4de533b5a200ee2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "b17274e41f9f21404442b374425db690c437f06207f992e556c91004e9d16971",
+          "witness": "Fixture wrapper delegating to `newCompletionFixtureWithExecutor`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "b17274e41f9f21404442b374425db690c437f06207f992e556c91004e9d16971",
+          "witness": "newCompletionFixture selects effect and remote executor for claim authorization tests."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:newCompletionFixture",
+      "unit_id": "b17274e41f9f21404442b374425db690c437f06207f992e556c91004e9d16971"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "9a119bae3a49291e37b91944034db607d096a40e5cfac7664abdb2eba06ad2d7",
+          "witness": "Fixture setup: authority, registry, `dispatchDecision(... OperationDispatch, OperationInvoke)`, enqueue and claim."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "9a119bae3a49291e37b91944034db607d096a40e5cfac7664abdb2eba06ad2d7",
+          "witness": "Fixture binds an owner decision with OperationDispatch/OperationInvoke through an Authority and creates a live claim."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:newCompletionFixtureWithExecutor",
+      "unit_id": "9a119bae3a49291e37b91944034db607d096a40e5cfac7664abdb2eba06ad2d7"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "4f22c14e2ae6a0ebb7c30ed427d454dfbbdfd757d2083fb5a3a7c31e099bd527",
+          "witness": "`return EffectExternal` declares the ceiling consulted by `selected.Effect.exceeds(executorCeiling(raw))`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "4f22c14e2ae6a0ebb7c30ed427d454dfbbdfd757d2083fb5a3a7c31e099bd527",
+          "witness": "remoteOnlyExecutor.MaxEffect returns EffectExternal and thus configures an effect boundary."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "function:remoteOnlyExecutor.MaxEffect",
+      "unit_id": "4f22c14e2ae6a0ebb7c30ed427d454dfbbdfd757d2083fb5a3a7c31e099bd527"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "ba01a540498e3870fed14efebea6008a1aee778ef262a1e13f6fd64e158618c2",
+          "witness": "Test imports only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "ba01a540498e3870fed14efebea6008a1aee778ef262a1e13f6fd64e158618c2",
+          "witness": "Imports alone add test dependencies and do not implement any boundary."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "import:\"context\",\"encoding/json\",\"errors\",\"testing\",\"time\",\"github.com/phrocker/shoal-oss/pkg/explorer/auth\",\"github.com/phrocker/shoal-oss/pkg/shoal\"",
+      "unit_id": "ba01a540498e3870fed14efebea6008a1aee778ef262a1e13f6fd64e158618c2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "9a210f2c11c2c95aa4c0085f3e0a2881323f112000b862ce750b347a85d215f8",
+          "witness": "Fixture struct fields: service, store, authority, claimed, ctx, clock."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "9a210f2c11c2c95aa4c0085f3e0a2881323f112000b862ce750b347a85d215f8",
+          "witness": "completionFixture carries Authority, bound ctx, claimed record and clock used in identity/lease boundary tests."
+        }
+      },
+      "baseline": "review",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "type:completionFixture",
+      "unit_id": "9a210f2c11c2c95aa4c0085f3e0a2881323f112000b862ce750b347a85d215f8"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "1d165007aec2b09bc72ea985c816149ad1b76b8c4895f1cc601c2b35a330368b",
+          "witness": "`type remoteBoundExecutor struct{ executed bool }`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "1d165007aec2b09bc72ea985c816149ad1b76b8c4895f1cc601c2b35a330368b",
+          "witness": "remoteBoundExecutor type contains only executed bool; effect ceiling is in its separately assessed method."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "type:remoteBoundExecutor",
+      "unit_id": "1d165007aec2b09bc72ea985c816149ad1b76b8c4895f1cc601c2b35a330368b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "6cb742b54c04a1d8dc523a7397ad4034f4ab276d1fc145e0169a27bf76095b37",
+          "witness": "Empty struct `remoteOnlyExecutor struct{}`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "6cb742b54c04a1d8dc523a7397ad4034f4ab276d1fc145e0169a27bf76095b37",
+          "witness": "remoteOnlyExecutor is an empty struct; the separately assessed MaxEffect method supplies the boundary."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "type:remoteOnlyExecutor",
+      "unit_id": "6cb742b54c04a1d8dc523a7397ad4034f4ab276d1fc145e0169a27bf76095b37"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "19a178004dc4e03d56725f83cb70ddf6435a598ab982576e68f08e965d91bd44",
+          "witness": "New test file covering principal hiding, claim fencing, and effect ceiling for remote completion."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "19a178004dc4e03d56725f83cb70ddf6435a598ab982576e68f08e965d91bd44",
+          "witness": "file_context has no span separating residual comments from authorization test declarations."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_completion_test.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "19a178004dc4e03d56725f83cb70ddf6435a598ab982576e68f08e965d91bd44"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "dc226d6406efe77e7a814c9aae8093e610495e8775408183c6b55d8f6c24e041",
+          "witness": "New request carrying `ClaimID`, `ExpectedVersion`, `Context RequestContext`, which bind completion authority to a claim and caller."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "dc226d6406efe77e7a814c9aae8093e610495e8775408183c6b55d8f6c24e041",
+          "witness": "CompletionRequest carries ID, ExpectedVersion, ClaimID and Context used to bind a remote report to its claim and principal."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_model.go",
+      "pr": 394,
+      "symbol": "type:CompletionRequest",
+      "unit_id": "dc226d6406efe77e7a814c9aae8093e610495e8775408183c6b55d8f6c24e041"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "f3b55d147ca1bbb903c0d79991d5586dbc93a61321e3944a05478cf0fd871f90",
+          "witness": "Model file adds the authority-bearing `CompletionRequest` with `RequestContext`."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "f3b55d147ca1bbb903c0d79991d5586dbc93a61321e3944a05478cf0fd871f90",
+          "witness": "file_context has no residual source span distinct from CompletionRequest."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_model.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "f3b55d147ca1bbb903c0d79991d5586dbc93a61321e3944a05478cf0fd871f90"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "fbf472777b820d9b5c72ea565ceb92a332dbe979c5734e605ff624f05f2aae91",
+          "witness": "Adds `s.registry.resolveActionBinding(ctx, decision, ... auth.OperationInvoke, now)` inside Claim."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "fbf472777b820d9b5c72ea565ceb92a332dbe979c5734e605ff624f05f2aae91",
+          "witness": "Claim calls resolveActionBinding with decision, source/policy/object and OperationInvoke; effect ceiling affects claim state."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.Claim",
+      "unit_id": "fbf472777b820d9b5c72ea565ceb92a332dbe979c5734e605ff624f05f2aae91"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "2a565eb42e237e1c3c1a11c859b7d31e8c6b4ac30cfae048b0951d83b7732a58",
+          "witness": "New authorized write path: `s.begin(ctx, auth.OperationInvoke, ...)`, `authorizedCurrent`, claim/version/lease fence."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "2a565eb42e237e1c3c1a11c859b7d31e8c6b4ac30cfae048b0951d83b7732a58",
+          "witness": "CompleteClaim resolves authorizedCurrent and verifies claim ID/version/state/lease before accepting remote output."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.CompleteClaim",
+      "unit_id": "2a565eb42e237e1c3c1a11c859b7d31e8c6b4ac30cfae048b0951d83b7732a58"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "6378723d34f001a625dee6acef62c8d615af0fbacdca8c019a759e1c8fcfdb78",
+          "witness": "Terminal logic moved to `s.applyExecutionResult(...)`, which includes the principal and registry recheck."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "6378723d34f001a625dee6acef62c8d615af0fbacdca8c019a759e1c8fcfdb78",
+          "witness": "ExecuteClaim now delegates terminal processing to applyExecutionResult, which rechecks principal and action binding."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.ExecuteClaim",
+      "unit_id": "6378723d34f001a625dee6acef62c8d615af0fbacdca8c019a759e1c8fcfdb78"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "306c1939b894aba7e1c7b75ea92961c7a3e3fcc42e70125073acbdf041e44424",
+          "witness": "Visibility filter changed from `resolveAction` to `resolveActionBinding`, so remote-only actions are now listed."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "306c1939b894aba7e1c7b75ea92961c7a3e3fcc42e70125073acbdf041e44424",
+          "witness": "Pull switches authorization resolution to resolveActionBinding after sameActionPrincipal filtering."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.Pull",
+      "unit_id": "306c1939b894aba7e1c7b75ea92961c7a3e3fcc42e70125073acbdf041e44424"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "3554c1dd12636d70d7b18413e5efe083f1004f235009e1f26dbc4d1ec06dd226",
+          "witness": "Final check `sameActionPrincipal(finalDecision, current)` plus `resolveActionBinding` before commit; shared by the remote path."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "3554c1dd12636d70d7b18413e5efe083f1004f235009e1f26dbc4d1ec06dd226",
+          "witness": "applyExecutionResult checks sameActionPrincipal(finalDecision,current) and resolves current binding before terminal commit."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.applyExecutionResult",
+      "unit_id": "3554c1dd12636d70d7b18413e5efe083f1004f235009e1f26dbc4d1ec06dd226"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5ab278c14aad798cb4cf35b7d5d161bcc57f8ae99777b23529aec3c851ebd581",
+          "witness": "Authorization gate now calls `resolveActionBinding`; unauthorized maps to `auth.ObjectNotFound()`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "5ab278c14aad798cb4cf35b7d5d161bcc57f8ae99777b23529aec3c851ebd581",
+          "witness": "authorizedCurrent changes action resolver while retaining unauthorized/not-found mapping to auth.ObjectNotFound()."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.authorizedCurrent",
+      "unit_id": "5ab278c14aad798cb4cf35b7d5d161bcc57f8ae99777b23529aec3c851ebd581"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "d2ee361448c1982a6949b424908d2ef1081fefa96ea7153fec338fb7bc6d2357",
+          "witness": "Enqueue admission switched to `s.registry.resolveActionBinding(ctx, decision, ...)`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "d2ee361448c1982a6949b424908d2ef1081fefa96ea7153fec338fb7bc6d2357",
+          "witness": "enqueue switches to resolveActionBinding with decision and source/policy/object operation scope."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*DispatchService.enqueue",
+      "unit_id": "d2ee361448c1982a6949b424908d2ef1081fefa96ea7153fec338fb7bc6d2357"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "b802ed70f2883d889390a1da3c738123977853e5a4ca02882d0c50f1b7603607",
+          "witness": "Now wraps resolveActionBinding and asserts `raw.(ActionExecutor)`; the runnable-executor check is split out."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "b802ed70f2883d889390a1da3c738123977853e5a4ca02882d0c50f1b7603607",
+          "witness": "resolveAction delegates security binding to resolveActionBinding then requires ActionExecutor."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*Service.resolveAction",
+      "unit_id": "b802ed70f2883d889390a1da3c738123977853e5a4ca02882d0c50f1b7603607"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "db7f1f3b61625423d1ef85cd26680abe3b36334cb66577f5bbe584f412438c08",
+          "witness": "Core resolution: `AuthorizationDomain` match, generation, effect ceiling `selected.Effect.exceeds(executorCeiling(raw))`; returns `any`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "db7f1f3b61625423d1ef85cd26680abe3b36334cb66577f5bbe584f412438c08",
+          "witness": "resolveActionBinding compares descriptor.AuthorizationDomain with decision.AuthorizationDomain and enforces executorCeiling(raw)."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "function:*Service.resolveActionBinding",
+      "unit_id": "db7f1f3b61625423d1ef85cd26680abe3b36334cb66577f5bbe584f412438c08"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "c5c643a7651e87a76e958f196705df8b76da6b52002f068b4519218112f7ef8b",
+          "witness": "Dispatch service authorization resolution restructured across claim, pull, enqueue and completion."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "c5c643a7651e87a76e958f196705df8b76da6b52002f068b4519218112f7ef8b",
+          "witness": "file_context has no residual span distinct from the changed authorization-bearing functions."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/fleet/dispatch_service.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "c5c643a7651e87a76e958f196705df8b76da6b52002f068b4519218112f7ef8b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "a560e485a2185e178dbe1b5cac0a684608e697497678aeadfc355c1c44ec99d7",
+          "witness": "Interface-satisfying stub returning `fleet.ActionRecord{}, nil`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "a560e485a2185e178dbe1b5cac0a684608e697497678aeadfc355c1c44ec99d7",
+          "witness": "fleetToolService.CompleteClaim test stub only returns fleet.ActionRecord{}, nil; no boundary assertion."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/mcp/fleet_dispatch_test.go",
+      "pr": 394,
+      "symbol": "function:*fleetToolService.CompleteClaim",
+      "unit_id": "a560e485a2185e178dbe1b5cac0a684608e697497678aeadfc355c1c44ec99d7"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "96c63245a5a1ee5ec53aab0739b29707ed391cb646d3e48bd76e5e4c5ffa856a",
+          "witness": "Only a stub method added to a test double."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "96c63245a5a1ee5ec53aab0739b29707ed391cb646d3e48bd76e5e4c5ffa856a",
+          "witness": "file_context lacks a residual span; only a no-op compatibility stub is visible as the change."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/mcp/fleet_dispatch_test.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "96c63245a5a1ee5ec53aab0739b29707ed391cb646d3e48bd76e5e4c5ffa856a"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "dec4c134d4a8a21d9ba7cf6e648a386a5fd09a9d242ad9a4f8565fc0980dd575",
+          "witness": "Interface-satisfying stub returning `fleet.ActionRecord{}, nil`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "dec4c134d4a8a21d9ba7cf6e648a386a5fd09a9d242ad9a4f8565fc0980dd575",
+          "witness": "httpFleetToolService.CompleteClaim only returns empty record and nil in a test stub."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/mcp/http_test.go",
+      "pr": 394,
+      "symbol": "function:*httpFleetToolService.CompleteClaim",
+      "unit_id": "dec4c134d4a8a21d9ba7cf6e648a386a5fd09a9d242ad9a4f8565fc0980dd575"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "d1bf3968e378b4103abcefa1a89e46b6ab3952bec45ab15b5b17385602144606",
+          "witness": "Only a stub method added to a test double."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "d1bf3968e378b4103abcefa1a89e46b6ab3952bec45ab15b5b17385602144606",
+          "witness": "file_context lacks a residual span; only a no-op compatibility stub is shown."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/mcp/http_test.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "d1bf3968e378b4103abcefa1a89e46b6ab3952bec45ab15b5b17385602144606"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "7845009128e8acc17f11858e4f7ec09603de03a9cf58b2bfe9713b1da4c914fe",
+          "witness": "New route `POST /api/v1/fleet/actions/{action}/complete` forwarding caller context to `provider.CompleteClaim`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "7845009128e8acc17f11858e4f7ec09603de03a9cf58b2bfe9713b1da4c914fe",
+          "witness": "New POST complete route decodes claim/context and passes r.Context() plus action/claim IDs to provider.CompleteClaim."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/webapi/fleet_dispatch.go",
+      "pr": 394,
+      "symbol": "function:mountFleetDispatch",
+      "unit_id": "7845009128e8acc17f11858e4f7ec09603de03a9cf58b2bfe9713b1da4c914fe"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "29d085f3e81626f2014a065e88559c9cb000f8a70c9a2ae0ab8de3c1e849e970",
+          "witness": "Provider interface adds `CompleteClaim`; the HTTP surface is mounted via `MountAuthenticated`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "29d085f3e81626f2014a065e88559c9cb000f8a70c9a2ae0ab8de3c1e849e970",
+          "witness": "FleetDispatchProvider gains CompleteClaim, exposing remote completion through the dispatch service boundary."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/webapi/fleet_dispatch.go",
+      "pr": 394,
+      "symbol": "type:FleetDispatchProvider",
+      "unit_id": "29d085f3e81626f2014a065e88559c9cb000f8a70c9a2ae0ab8de3c1e849e970"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "7d6372092d5d8a7b7e9ed21bf35d18dfcd990095c6241fd2630fb159ca730cf2",
+          "witness": "JSON wire struct; decoding only, with no checks in the type."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "7d6372092d5d8a7b7e9ed21bf35d18dfcd990095c6241fd2630fb159ca730cf2",
+          "witness": "fleetCompletionWire accepts caller-supplied Context, ExpectedVersion and ClaimID, which feed claim authorization."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/webapi/fleet_dispatch.go",
+      "pr": 394,
+      "symbol": "type:fleetCompletionWire",
+      "unit_id": "7d6372092d5d8a7b7e9ed21bf35d18dfcd990095c6241fd2630fb159ca730cf2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "bb44f7e269bc1c8a8fb6cf03fea1e6388b51e9af8877a6bee6c0ae4ab583af95",
+          "witness": "Adds a new externally reachable write endpoint for dispatch completion."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "bb44f7e269bc1c8a8fb6cf03fea1e6388b51e9af8877a6bee6c0ae4ab583af95",
+          "witness": "file_context lacks a residual span distinct from new completion route/wire/interface."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/webapi/fleet_dispatch.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "bb44f7e269bc1c8a8fb6cf03fea1e6388b51e9af8877a6bee6c0ae4ab583af95"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "3f589266b2ffbf62495103aca6023b48f4053122d742f7e2f4e9ae10670b1a45",
+          "witness": "Stub returning `fleet.ActionRecord{}, nil`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "3f589266b2ffbf62495103aca6023b48f4053122d742f7e2f4e9ae10670b1a45",
+          "witness": "stubDispatchProvider.CompleteClaim simply returns empty record and nil; no boundary assertion."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "pkg/explorer/webapi/fleet_dispatch_test.go",
+      "pr": 394,
+      "symbol": "function:*stubDispatchProvider.CompleteClaim",
+      "unit_id": "3f589266b2ffbf62495103aca6023b48f4053122d742f7e2f4e9ae10670b1a45"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "2f240be228c029de61d73558464f01b5e4f991af2e5ca5797b2836c668ae47fc",
+          "witness": "Only a stub method added to a test double."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 394,
+          "unit_id": "2f240be228c029de61d73558464f01b5e4f991af2e5ca5797b2836c668ae47fc",
+          "witness": "file_context lacks a residual span; only a no-op stub declaration is added."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "pkg/explorer/webapi/fleet_dispatch_test.go",
+      "pr": 394,
+      "symbol": "file_context",
+      "unit_id": "2f240be228c029de61d73558464f01b5e4f991af2e5ca5797b2836c668ae47fc"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "bd6789acf26e9b21ac0c12df0ed6bcc863e907dc63a252b2c6308f0f5b824cd5",
+          "witness": "Pins `/api/v1/fleet/actions/action/complete` to `auth.OperationInvoke`; unlisted routes are refused."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "bd6789acf26e9b21ac0c12df0ed6bcc863e907dc63a252b2c6308f0f5b824cd5",
+          "witness": "Route-operation test expects complete and claim POST routes to require auth.OperationInvoke."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/webapi/workspace_response_internal_test.go",
+      "pr": 394,
+      "symbol": "function:TestWorkspaceOperationForRequestUsesRouteOperation",
+      "unit_id": "bd6789acf26e9b21ac0c12df0ed6bcc863e907dc63a252b2c6308f0f5b824cd5"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "df4fa6dfb9c77d9602d3156a2b0da21959682aa66db6351a7b29dd8e065f2346",
+          "witness": "Adds `/complete` to the response-loss/commit marking list; about indeterminate outcomes, not access."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "df4fa6dfb9c77d9602d3156a2b0da21959682aa66db6351a7b29dd8e065f2346",
+          "witness": "ClampAnalytics test adds completion to response-loss/possible-commit handling; this is ambiguity reporting, with no shown authorization check."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/webapi/workspace_response_internal_test.go",
+      "pr": 394,
+      "symbol": "function:TestWorkspaceSettingsClampAnalyticsAndMarkResponseLoss",
+      "unit_id": "df4fa6dfb9c77d9602d3156a2b0da21959682aa66db6351a7b29dd8e065f2346"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "228e68597445b4eb34f0cff23485a642d1921c8d29222de89091f1626e473a29",
+          "witness": "`strings.HasSuffix(path, \"/complete\")` added to commit classification for response-loss handling."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 394,
+          "unit_id": "228e68597445b4eb34f0cff23485a642d1921c8d29222de89091f1626e473a29",
+          "witness": "requestMayCommit adds /complete to the write-outcome classification; it does not choose permission or scope."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/webapi/workspace_settings.go",
+      "pr": 394,
+      "symbol": "function:requestMayCommit",
+      "unit_id": "228e68597445b4eb34f0cff23485a642d1921c8d29222de89091f1626e473a29"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "41b588f454f971c2abbe528035b0bbb307477748ad8f1dc0ec584fbfb24e9df2",
+          "witness": "Maps `/complete` suffix to `auth.OperationInvoke`, the operation required for workspace routing."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 394,
+          "unit_id": "41b588f454f971c2abbe528035b0bbb307477748ad8f1dc0ec584fbfb24e9df2",
+          "witness": "workspaceOperationForRequest maps /complete POST requests to auth.OperationInvoke."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "pkg/explorer/webapi/workspace_settings.go",
+      "pr": 394,
+      "symbol": "function:workspaceOperationForRequest",
+      "unit_id": "41b588f454f971c2abbe528035b0bbb307477748ad8f1dc0ec584fbfb24e9df2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "ce97e9b13ad1e0ea6f935f5d227e7f452ea8d0727545910ce761410ada1f5b54",
+          "witness": "CI runs `./deploy/helm/validate-chart.sh`, which asserts auth/OIDC guards still refuse; `permissions: contents: read`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "ce97e9b13ad1e0ea6f935f5d227e7f452ea8d0727545910ce761410ada1f5b54",
+          "witness": "Workflow runs ./deploy/helm/validate-chart.sh, which exercises OIDC, role mapping, host and executor allow-list guards."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": ".github/workflows/helm-chart.yml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "ce97e9b13ad1e0ea6f935f5d227e7f452ea8d0727545910ce761410ada1f5b54"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "10fc7c0122c25180cf4ee3dcc3f29dbbba8c0e6916b45415612578d2200e3cbf",
+          "witness": "Documentation only; describes `explorer.auth.mode: oidc` guards without code effect."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "10fc7c0122c25180cf4ee3dcc3f29dbbba8c0e6916b45415612578d2200e3cbf",
+          "witness": "Deployment instructions require allowedHosts, issuer/audiences/authorizationClaim and role mapping; describe refusal of dev-auth."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/README.md",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "10fc7c0122c25180cf4ee3dcc3f29dbbba8c0e6916b45415612578d2200e3cbf"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "8874f4d8d84a015f104c703a82781db89b0d6580033d47d04acf73cc8483266a",
+          "witness": "Name truncation `trunc 45` and selector labels; no auth effect."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "8874f4d8d84a015f104c703a82781db89b0d6580033d47d04acf73cc8483266a",
+          "witness": "Helpers implement enabled flag, bounded Kubernetes names and release/component selectors; no principal or authorization policy mapping is shown. Challenge selector/name collision effects."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/templates/_helpers.tpl",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "8874f4d8d84a015f104c703a82781db89b0d6580033d47d04acf73cc8483266a"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "b5d0a8b0d1f725cba947ad5fc8aaa176d552e18d1b5bde7efcdbdc08113d4da8",
+          "witness": "PodDisruptionBudget `maxUnavailable`; availability only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "b5d0a8b0d1f725cba947ad5fc8aaa176d552e18d1b5bde7efcdbdc08113d4da8",
+          "witness": "PodDisruptionBudget sets maxUnavailable and pod selector; shown effect is availability rather than authorization. Challenge indirect effects on single-writer policy state."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/templates/explorer-poddisruptionbudget.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "b5d0a8b0d1f725cba947ad5fc8aaa176d552e18d1b5bde7efcdbdc08113d4da8"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "efad713fc958288d61016a2654cd7b17b9c541dc7f995a5216abd24932290f8e",
+          "witness": "Headless Service deliberately omits the health port to avoid making \"an unauthenticated endpoint routable in-cluster\"."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "efad713fc958288d61016a2654cd7b17b9c541dc7f995a5216abd24932290f8e",
+          "witness": "Service exposes only targetPort: http; health surface is excluded, defining exposure of the separate unauthenticated endpoint."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/templates/explorer-service.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "efad713fc958288d61016a2654cd7b17b9c541dc7f995a5216abd24932290f8e"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "ab448dd5ddafc2513974ffaa693c008ba28eeb7f031493913b3382ba49c5c785",
+          "witness": "Renders `-oidc-issuer`, `-oidc-authorization-claim`, role values, `-allowed-host`, `-fleet-executor-refs`, `-mosaic-budget`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "ab448dd5ddafc2513974ffaa693c008ba28eeb7f031493913b3382ba49c5c785",
+          "witness": "StatefulSet wires -allowed-host, OIDC role/delegation claims, mosaic budget and fleet executor allow-list into runtime arguments."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/templates/explorer-statefulset.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "ab448dd5ddafc2513974ffaa693c008ba28eeb7f031493913b3382ba49c5c785"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "b8761506ed5da97e8d082c0ba86e48e238d15352c20887042f3baf0bf21df6e8",
+          "witness": "`fail` unless `explorer.auth.mode` is \"oidc\"; requires authorizationClaim, role values, allowedHosts; rejects REPLACE_ME."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "b8761506ed5da97e8d082c0ba86e48e238d15352c20887042f3baf0bf21df6e8",
+          "witness": "validate.yaml refuses non-OIDC mode, missing authorization claim/role values and ask executor references outside executorRefs."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/templates/validate.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "b8761506ed5da97e8d082c0ba86e48e238d15352c20887042f3baf0bf21df6e8"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "686f220f09e366c5435f9fd855cdd7e95d902bdd6e75855d35ba2c2cf8d35fc4",
+          "witness": "Profile sets `auth: mode: oidc` with empty issuer/audiences/authorizationClaim/role mappings."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "686f220f09e366c5435f9fd855cdd7e95d902bdd6e75855d35ba2c2cf8d35fc4",
+          "witness": "Explorer preset sets auth.mode: oidc and empty issuer/audiences/authorizationClaim/role values pending required configuration."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/values-explorer.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "686f220f09e366c5435f9fd855cdd7e95d902bdd6e75855d35ba2c2cf8d35fc4"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "3f3c8b47e2868127e04e9df80a445045bb4ca0ae4e7eecfc226fd14245474767",
+          "witness": "Defaults for `auth.oidc`, `allowedAlgs`, `disclosure.concealWithholding`, `mosaic.maxDomains: 0`, `fleet.executorRefs`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "3f3c8b47e2868127e04e9df80a445045bb4ca0ae4e7eecfc226fd14245474767",
+          "witness": "Default values define OIDC/delegation claims, role mappings, disclosure mosaic settings and fleet executorRefs."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/shoal/values.yaml",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "3f3c8b47e2868127e04e9df80a445045bb4ca0ae4e7eecfc226fd14245474767"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "fb1a32327ecc5af0a35aaf7e90878b0e02add7bf1be08858058fb09a94ee2ac7",
+          "witness": "Asserts `refuses \"dev-auth requested\"`, \"no authorization claim\", \"placeholder reader value\", \"ask executor not allowlisted\"."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "fb1a32327ecc5af0a35aaf7e90878b0e02add7bf1be08858058fb09a94ee2ac7",
+          "witness": "Validation script asserts refusal for dev-auth, missing claim/roles, missing hosts and ask executor not allowlisted."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "deploy/helm/validate-chart.sh",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "fb1a32327ecc5af0a35aaf7e90878b0e02add7bf1be08858058fb09a94ee2ac7"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 395,
+          "unit_id": "c99fe7425a9decf665be818f2860968328cdc529ebd2f707d57864696913b128",
+          "witness": "Documentation table of chart refusals; no executable effect."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 395,
+          "unit_id": "c99fe7425a9decf665be818f2860968328cdc529ebd2f707d57864696913b128",
+          "witness": "Documentation prescribes required OIDC authority/role mappings and explains disclosure-setting rollout and refusal guards."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "docs/shoal-explore-web-deploy.md",
+      "pr": 395,
+      "symbol": "file",
+      "unit_id": "c99fe7425a9decf665be818f2860968328cdc529ebd2f707d57864696913b128"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "8e677deac2fcaa67982f4fb81195581c413b1ff2b9914a18f45700f85ce7ecdc",
+          "witness": "`return h.listener.Addr().String()`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "8e677deac2fcaa67982f4fb81195581c413b1ff2b9914a18f45700f85ce7ecdc",
+          "witness": "address returns listener.Addr().String() or empty string; no authority decision or protected data access."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:*healthServer.address",
+      "unit_id": "8e677deac2fcaa67982f4fb81195581c413b1ff2b9914a18f45700f85ce7ecdc"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c1256c0be82e4703d56ef09fe0730f6f29365372dec4cb8d71227c40140bcd10",
+          "witness": "Shutdown and error ordering: `closeErr := h.server.Shutdown(ctx); <-h.done`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c1256c0be82e4703d56ef09fe0730f6f29365372dec4cb8d71227c40140bcd10",
+          "witness": "shutdown joins Serve and chooses its error over Shutdown error; only lifecycle/error propagation is shown."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:*healthServer.shutdown",
+      "unit_id": "c1256c0be82e4703d56ef09fe0730f6f29365372dec4cb8d71227c40140bcd10"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "f6556ffa94bc4571d3232b81954115ce567c5e409d8cffef74d9adf68d4cb0fc",
+          "witness": "`s.ready.Store(false)`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "f6556ffa94bc4571d3232b81954115ce567c5e409d8cffef74d9adf68d4cb0fc",
+          "witness": "markDraining only stores false in the atomic readiness bit."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:*healthState.markDraining",
+      "unit_id": "f6556ffa94bc4571d3232b81954115ce567c5e409d8cffef74d9adf68d4cb0fc"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "93f7fd93928d78e5d5b247048896649d6020777c71e4714cd4b124d519784e33",
+          "witness": "`s.ready.Store(true)`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "93f7fd93928d78e5d5b247048896649d6020777c71e4714cd4b124d519784e33",
+          "witness": "markReady only stores true in the atomic readiness bit."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:*healthState.markReady",
+      "unit_id": "93f7fd93928d78e5d5b247048896649d6020777c71e4714cd4b124d519784e33"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d8ead9fc23d94f781819f19b86c12ca2a0a4c37cd3342392d60c3d4234ae502b",
+          "witness": "Shutdown ordering: `state.markDraining()` then `workspace.Shutdown(ctx)`; lifecycle only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d8ead9fc23d94f781819f19b86c12ca2a0a4c37cd3342392d60c3d4234ae502b",
+          "witness": "drain lowers readiness then shuts down workspace and health; it does not change request authorization."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:drain",
+      "unit_id": "d8ead9fc23d94f781819f19b86c12ca2a0a4c37cd3342392d60c3d4234ae502b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "3f96346e574fccab23faff07b0ca65c563855c19a5cfc91b4cd3dd228c190214",
+          "witness": "Unauthenticated mux outside the host-authority gate; restricted to `GET /healthz` and `GET /readyz`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "3f96346e574fccab23faff07b0ca65c563855c19a5cfc91b4cd3dd228c190214",
+          "witness": "newHealthHandler creates a fresh mux with only GET /healthz and /readyz and fixed bodies, delimiting an unauthenticated surface."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:newHealthHandler",
+      "unit_id": "3f96346e574fccab23faff07b0ca65c563855c19a5cfc91b4cd3dd228c190214"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e7658e508d95674bdfae2f9afbd87fbf5c15341bca81fc87a047880f950f615f",
+          "witness": "Binds a second listener that bypasses `hostAuthority.permits` and authentication."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e7658e508d95674bdfae2f9afbd87fbf5c15341bca81fc87a047880f950f615f",
+          "witness": "startHealthServer binds a separate listener with Handler: newHealthHandler(state), without workspace authentication middleware."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:startHealthServer",
+      "unit_id": "e7658e508d95674bdfae2f9afbd87fbf5c15341bca81fc87a047880f950f615f"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "3b7e19e34a1f857efa0bbee3d8f937518182b55bb7550c075c4b5b58119a43b2",
+          "witness": "Writes fixed body with `X-Content-Type-Options: nosniff`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "3b7e19e34a1f857efa0bbee3d8f937518182b55bb7550c075c4b5b58119a43b2",
+          "witness": "writeHealth controls body/header output of the unauthenticated health surface; only fixed caller strings are shown."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "function:writeHealth",
+      "unit_id": "3b7e19e34a1f857efa0bbee3d8f937518182b55bb7550c075c4b5b58119a43b2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "0438b1ed86016194d49e332d26a5f798b0c730395c23f2049cc57fdc74dd7868",
+          "witness": "Standard library imports only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "0438b1ed86016194d49e332d26a5f798b0c730395c23f2049cc57fdc74dd7868",
+          "witness": "Imports are standard library networking/lifecycle utilities; no boundary decision resides in the import declaration."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "import:\"context\",\"errors\",\"net\",\"net/http\",\"sync/atomic\",\"time\"",
+      "unit_id": "0438b1ed86016194d49e332d26a5f798b0c730395c23f2049cc57fdc74dd7868"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "cc774216528fcbfc22664d169cf8887ba836f6bbd3420f9a21b40ded3bea48a1",
+          "witness": "`Shutdown(context.Context) error` interface."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "cc774216528fcbfc22664d169cf8887ba836f6bbd3420f9a21b40ded3bea48a1",
+          "witness": "gracefulServer only requires Shutdown(context.Context) error."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "type:gracefulServer",
+      "unit_id": "cc774216528fcbfc22664d169cf8887ba836f6bbd3420f9a21b40ded3bea48a1"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "e43c315680d4b1f347640103a71a748200d20f6a0e4836a7bfc325c90977d2a4",
+          "witness": "Struct: listener, server, done, serveErr."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "e43c315680d4b1f347640103a71a748200d20f6a0e4836a7bfc325c90977d2a4",
+          "witness": "healthServer stores listener/server/done/serveErr lifecycle fields; handler exposure is assessed in startHealthServer."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "type:healthServer",
+      "unit_id": "e43c315680d4b1f347640103a71a748200d20f6a0e4836a7bfc325c90977d2a4"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d62d97e11f118115f5eb041ba57ab6233b32c06ebe2853093b91144cdaa144ed",
+          "witness": "`ready atomic.Bool`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d62d97e11f118115f5eb041ba57ab6233b32c06ebe2853093b91144cdaa144ed",
+          "witness": "healthState holds only atomic readiness; no identity, corpus or policy information."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "type:healthState",
+      "unit_id": "d62d97e11f118115f5eb041ba57ab6233b32c06ebe2853093b91144cdaa144ed"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d04ed4825ad02fd8246468a2100fc02a9acdb9c57ebcc9890e2a5ede1cdb8bac",
+          "witness": "`var listenHealthTCP = net.Listen` test seam."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d04ed4825ad02fd8246468a2100fc02a9acdb9c57ebcc9890e2a5ede1cdb8bac",
+          "witness": "listenHealthTCP aliases net.Listen for injection; no address policy is enforced here."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "var:listenHealthTCP",
+      "unit_id": "d04ed4825ad02fd8246468a2100fc02a9acdb9c57ebcc9890e2a5ede1cdb8bac"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "4fc36ca6021868d8f9259d5ba481cd2e8bc7b763dc4ac8db59c82942168e908d",
+          "witness": "New file introduces an unauthenticated listener that bypasses the workspace Host gate."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 392,
+          "unit_id": "4fc36ca6021868d8f9259d5ba481cd2e8bc7b763dc4ac8db59c82942168e908d",
+          "witness": "file_context has no residual source span; full-file comments discuss an authentication boundary but are not executable evidence."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health.go",
+      "pr": 392,
+      "symbol": "file_context",
+      "unit_id": "4fc36ca6021868d8f9259d5ba481cd2e8bc7b763dc4ac8db59c82942168e908d"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "b35a757d7b6d80dcdbe5027fbab2011b6d8d2b95ada7225523f43678a2624ef2",
+          "witness": "Records `readyAtShutdown = s.state.ready.Load()`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "b35a757d7b6d80dcdbe5027fbab2011b6d8d2b95ada7225523f43678a2624ef2",
+          "witness": "recordingServer.Shutdown records readiness and returns injected error for lifecycle tests."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:*recordingServer.Shutdown",
+      "unit_id": "b35a757d7b6d80dcdbe5027fbab2011b6d8d2b95ada7225523f43678a2624ef2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c26968169bd95f26bbd23cdd65faedace8741330e4194d70656d5101f6882a82",
+          "witness": "`time.Sleep(l.delay); return nil, l.err`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c26968169bd95f26bbd23cdd65faedace8741330e4194d70656d5101f6882a82",
+          "witness": "slowFailingListener.Accept sleeps and returns injected error; lifecycle test plumbing only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:*slowFailingListener.Accept",
+      "unit_id": "c26968169bd95f26bbd23cdd65faedace8741330e4194d70656d5101f6882a82"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "23f34d119f2ddcbbb56e1ce2f66ada93bfb0c232e2b87808a05e11e9f4a69078",
+          "witness": "Returns fixed 127.0.0.1 TCPAddr."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "23f34d119f2ddcbbb56e1ce2f66ada93bfb0c232e2b87808a05e11e9f4a69078",
+          "witness": "slowFailingListener.Addr returns a loopback TCPAddr; no authority comparison."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:*slowFailingListener.Addr",
+      "unit_id": "23f34d119f2ddcbbb56e1ce2f66ada93bfb0c232e2b87808a05e11e9f4a69078"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "aa20d8344527c1f96b5df4761fb3f5523b967c60c1cc40254f19540045831da7",
+          "witness": "`return nil`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "aa20d8344527c1f96b5df4761fb3f5523b967c60c1cc40254f19540045831da7",
+          "witness": "slowFailingListener.Close returns nil; test plumbing only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:*slowFailingListener.Close",
+      "unit_id": "aa20d8344527c1f96b5df4761fb3f5523b967c60c1cc40254f19540045831da7"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7c4cb446104b10ec27e3d0d5727b682f8a4f996cf4b69ac0cdefbba5a3e20f69",
+          "witness": "Asserts readiness false at workspace shutdown; lifecycle ordering."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7c4cb446104b10ec27e3d0d5727b682f8a4f996cf4b69ac0cdefbba5a3e20f69",
+          "witness": "DrainDropsReadiness test checks ordering of readiness and shutdown; no protected-resource decision."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestDrainDropsReadinessBeforeTheWorkspaceStopsAccepting",
+      "unit_id": "7c4cb446104b10ec27e3d0d5727b682f8a4f996cf4b69ac0cdefbba5a3e20f69"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "328a71b69159a31e12df3e580df0a01587c8e8d1d369c96262523d0021d5926d",
+          "witness": "Error precedence `errors.Is(err, want)`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "328a71b69159a31e12df3e580df0a01587c8e8d1d369c96262523d0021d5926d",
+          "witness": "DrainReports test checks error precedence only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestDrainReportsTheWorkspaceErrorOverTheHealthClose",
+      "unit_id": "328a71b69159a31e12df3e580df0a01587c8e8d1d369c96262523d0021d5926d"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d6ff4aea0e975990086965849cacbe5495994f18b0a3dd2eaf9977b7c2f79fbf",
+          "witness": "Bind failure must be fatal; operational, not access control."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d6ff4aea0e975990086965849cacbe5495994f18b0a3dd2eaf9977b7c2f79fbf",
+          "witness": "BindFailure test checks startup error on occupied health socket; no authorization denial path is exercised."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthAddressBindFailureIsFatal",
+      "unit_id": "d6ff4aea0e975990086965849cacbe5495994f18b0a3dd2eaf9977b7c2f79fbf"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "35bcfa2f17da823cd97c0b7ae083ff97812e6f57e3d559d644157f2d297d5207",
+          "witness": "/readyz vs /healthz status across the before-serving, serving and draining states."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "35bcfa2f17da823cd97c0b7ae083ff97812e6f57e3d559d644157f2d297d5207",
+          "witness": "HandlerSeparates test asserts liveness/readiness statuses across lifecycle states only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthHandlerSeparatesLivenessFromReadiness",
+      "unit_id": "35bcfa2f17da823cd97c0b7ae083ff97812e6f57e3d559d644157f2d297d5207"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e8ffffec09d8faba9754c43df398bc53c024c769ddbe6760e77e0b6e1e2a0bed",
+          "witness": "Pins fixed bodies \"ok\\n\"/\"ready\\n\" so the unauthenticated prober gets no workspace state."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e8ffffec09d8faba9754c43df398bc53c024c769ddbe6760e77e0b6e1e2a0bed",
+          "witness": "ResponsesCarryNoWorkspaceState asserts exact fixed bodies ok/ready on the unauthenticated handler."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthResponsesCarryNoWorkspaceState",
+      "unit_id": "e8ffffec09d8faba9754c43df398bc53c024c769ddbe6760e77e0b6e1e2a0bed"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7c37d86e08227c157d14c1ee6f36f108f57f0e58cc3b9939873e63255b9edd5b",
+          "witness": "Serve-loop error surfaced by shutdown."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7c37d86e08227c157d14c1ee6f36f108f57f0e58cc3b9939873e63255b9edd5b",
+          "witness": "ServeLoopDied test checks unexpected accept failure survives shutdown, not an authorization decision."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthServerReportsAServeLoopThatDiedOnItsOwn",
+      "unit_id": "7c37d86e08227c157d14c1ee6f36f108f57f0e58cc3b9939873e63255b9edd5b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7305f509bdeab3003a65c12a9f054f1c2e4615ce42de2611ce2daa19630127c9",
+          "witness": "Shutdown joins goroutine via `<-health.done`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "7305f509bdeab3003a65c12a9f054f1c2e4615ce42de2611ce2daa19630127c9",
+          "witness": "ShutdownJoins test checks Serve goroutine completion/error synchronization only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthShutdownJoinsTheServeLoop",
+      "unit_id": "7305f509bdeab3003a65c12a9f054f1c2e4615ce42de2611ce2daa19630127c9"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "97f400d42f810971673d9e63f424fe3a8d3326769400230ab2ce4e931d557067",
+          "witness": "Asserts the workspace returns `http.StatusMisdirectedRequest` for a socket Host while health returns 200; pins the host gate."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "97f400d42f810971673d9e63f424fe3a8d3326769400230ab2ce4e931d557067",
+          "witness": "Probe test sets -allowed-host shoal.example.test and expects workspace 421 but health 200 for socket-addressed Host."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthSurfaceAnswersTheProbeTheWorkspaceRefuses",
+      "unit_id": "97f400d42f810971673d9e63f424fe3a8d3326769400230ab2ce4e931d557067"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "c07a82ecf52394177b2ba81745a18025fc65fa8277635a32e6ff05525c1be8cd",
+          "witness": "Default opens no unauthenticated second listener: fails if output contains \"Health surface\"."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "c07a82ecf52394177b2ba81745a18025fc65fa8277635a32e6ff05525c1be8cd",
+          "witness": "AbsentUnlessRequested test checks an unauthenticated second listener is not enabled by default."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthSurfaceIsAbsentUnlessRequested",
+      "unit_id": "c07a82ecf52394177b2ba81745a18025fc65fa8277635a32e6ff05525c1be8cd"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e19114f7db18ff88744eb5e569d7e67eb7380ee93753385142bcdd6b2e106243",
+          "witness": "Workspace paths like \"/api/v1/documents\" must be 404 on the health port."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e19114f7db18ff88744eb5e569d7e67eb7380ee93753385142bcdd6b2e106243",
+          "witness": "ServesOnlyTwoRoutes tests workspace API/assets and traversal path return 404 on health listener."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:TestHealthSurfaceServesOnlyItsTwoRoutes",
+      "unit_id": "e19114f7db18ff88744eb5e569d7e67eb7380ee93753385142bcdd6b2e106243"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "039d0ed4261556fdd8a47bed476f9905a3c9ff069aab39cd18f90eac4e115226",
+          "witness": "`return recordHealth(t, handler, path).status`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "039d0ed4261556fdd8a47bed476f9905a3c9ff069aab39cd18f90eac4e115226",
+          "witness": "handlerStatus simply returns recordHealth(...).status; generic HTTP test helper."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:handlerStatus",
+      "unit_id": "039d0ed4261556fdd8a47bed476f9905a3c9ff069aab39cd18f90eac4e115226"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "1c5f3f37ca00c71993885a7285421409697419955983c5ecc135abb564790c50",
+          "witness": "GET helper setting `request.Host = host`."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "1c5f3f37ca00c71993885a7285421409697419955983c5ecc135abb564790c50",
+          "witness": "probeStatus explicitly sets request.Host = host, exercising host-authority and health-surface separation."
+        }
+      },
+      "baseline": "review",
+      "disposition": "predicted",
+      "model": "review",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:probeStatus",
+      "unit_id": "1c5f3f37ca00c71993885a7285421409697419955983c5ecc135abb564790c50"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "1837c16193b361fb320ae48021a61bbb9a233bcde5ec3c817e32ab921c773d85",
+          "witness": "Serves handler on ephemeral port and records response."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "1837c16193b361fb320ae48021a61bbb9a233bcde5ec3c817e32ab921c773d85",
+          "witness": "recordHealth captures body/header/status for the no-workspace-state disclosure assertion."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:recordHealth",
+      "unit_id": "1837c16193b361fb320ae48021a61bbb9a233bcde5ec3c817e32ab921c773d85"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "bd48c88a79368c0558b1d81cfd26dea8b30f2f3fac00d8003a89e74089270561",
+          "witness": "Starts `run` with `-dev-auth` and `-health-address 127.0.0.1:0`; harness only."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "bd48c88a79368c0558b1d81cfd26dea8b30f2f3fac00d8003a89e74089270561",
+          "witness": "startWorkspaceWithHealth launches -dev-auth and separate -health-address with optional -allowed-host for boundary tests."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:startWorkspaceWithHealth",
+      "unit_id": "bd48c88a79368c0558b1d81cfd26dea8b30f2f3fac00d8003a89e74089270561"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "06bd73f20668290161e8bc4a684a21f641039c26ed9d48c4afbdd187da389226",
+          "witness": "Swaps `listenHealthTCP` for a stub."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "06bd73f20668290161e8bc4a684a21f641039c26ed9d48c4afbdd187da389226",
+          "witness": "stubHealthListener temporarily replaces listenHealthTCP for lifecycle error tests."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "insufficient",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:stubHealthListener",
+      "unit_id": "06bd73f20668290161e8bc4a684a21f641039c26ed9d48c4afbdd187da389226"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c7905c7e9c2a138fd5f45ef06588aeaf33199d4f434e8492c3911644bf5d7a12",
+          "witness": "Waits on done channel with 10s timeout."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "c7905c7e9c2a138fd5f45ef06588aeaf33199d4f434e8492c3911644bf5d7a12",
+          "witness": "waitForRunToReturn waits for process completion/error with timeout; no boundary logic."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "predicted",
+      "model": "routine",
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "function:waitForRunToReturn",
+      "unit_id": "c7905c7e9c2a138fd5f45ef06588aeaf33199d4f434e8492c3911644bf5d7a12"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "b248d10e320dee34960a38df5ac5fb7ce13bcee762f0966ba021ee53b65eaa03",
+          "witness": "Test imports only."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "b248d10e320dee34960a38df5ac5fb7ce13bcee762f0966ba021ee53b65eaa03",
+          "witness": "Standard library test imports alone contain no authority choice."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "import:\"context\",\"errors\",\"fmt\",\"net\",\"net/http\",\"regexp\",\"strings\",\"testing\",\"time\"",
+      "unit_id": "b248d10e320dee34960a38df5ac5fb7ce13bcee762f0966ba021ee53b65eaa03"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "e460f1a8c791dbdabbb82b4b7b2bcff108ab0502f0f46ac30371b5eb1a27424e",
+          "witness": "Struct: status, body, header."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "e460f1a8c791dbdabbb82b4b7b2bcff108ab0502f0f46ac30371b5eb1a27424e",
+          "witness": "healthRecorder stores body/header/status consumed by the fixed unauthenticated disclosure test."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "type:healthRecorder",
+      "unit_id": "e460f1a8c791dbdabbb82b4b7b2bcff108ab0502f0f46ac30371b5eb1a27424e"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d022df01478ea76aad8185abff871f3e4f80bfecfcffdc99d2952ca33cca297b",
+          "witness": "Test struct recording shutdown calls."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "d022df01478ea76aad8185abff871f3e4f80bfecfcffdc99d2952ca33cca297b",
+          "witness": "recordingServer holds readiness/error/shutdown bookkeeping only."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "type:recordingServer",
+      "unit_id": "d022df01478ea76aad8185abff871f3e4f80bfecfcffdc99d2952ca33cca297b"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "cb5f0c3257864c034e26a405351b38a92974806a6c0bb4a0838c5e1c046a3fda",
+          "witness": "Struct: delay, err."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "cb5f0c3257864c034e26a405351b38a92974806a6c0bb4a0838c5e1c046a3fda",
+          "witness": "slowFailingListener contains delay and error for shutdown synchronization tests."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "type:slowFailingListener",
+      "unit_id": "cb5f0c3257864c034e26a405351b38a92974806a6c0bb4a0838c5e1c046a3fda"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "23e140b2b7b0c5d72b24f3d4cbadaf0d691f0a6692054f86dc367e42a94efeb2",
+          "witness": "Regex `Health surface listening at (http://\\S+)`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "23e140b2b7b0c5d72b24f3d4cbadaf0d691f0a6692054f86dc367e42a94efeb2",
+          "witness": "healthSurfacePattern extracts a reported listener URL; no identity or authorization parsing."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "var:healthSurfacePattern",
+      "unit_id": "23e140b2b7b0c5d72b24f3d4cbadaf0d691f0a6692054f86dc367e42a94efeb2"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "3d2fe29376fc87c9b2547418bd98c1429ddfb4b9f2761c81261fdcffde68c074",
+          "witness": "Test file includes host-gate 421 assertion and closed-surface 404 checks for the unauthenticated listener."
+        },
+        "codex-frontier": {
+          "label": "unknown",
+          "pr": 392,
+          "unit_id": "3d2fe29376fc87c9b2547418bd98c1429ddfb4b9f2761c81261fdcffde68c074",
+          "witness": "file_context has no residual span separating authorization-related test commentary from the declarations."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/health_test.go",
+      "pr": 392,
+      "symbol": "file_context",
+      "unit_id": "3d2fe29376fc87c9b2547418bd98c1429ddfb4b9f2761c81261fdcffde68c074"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "15f31d0903dad3ba381cd0e2d2e46e0123b87a081b83f2c673141b40df819118",
+          "witness": "Adds `-health-address` / `SHOAL_HEALTH_ADDRESS` opening a listener outside authentication and host-authority checks."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "15f31d0903dad3ba381cd0e2d2e46e0123b87a081b83f2c673141b40df819118",
+          "witness": "run adds optional health-address/environment listener separately from workspace handling; this changes unauthenticated reachable surface."
+        }
+      },
+      "baseline": "review",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/main.go",
+      "pr": 392,
+      "symbol": "function:run",
+      "unit_id": "15f31d0903dad3ba381cd0e2d2e46e0123b87a081b83f2c673141b40df819118"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816",
+          "witness": "Parsing fix: `strings.Fields(line[index:])[0]`."
+        },
+        "codex-frontier": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816",
+          "witness": "waitForListeningURL changes parsing to first whitespace-separated URL; no authorization decision."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "token_limit",
+      "model": null,
+      "path": "cmd/shoal-explore-web/main_test.go",
+      "pr": 392,
+      "symbol": "function:waitForListeningURL",
+      "unit_id": "0ee220e7a53c714ebf2a926d4690dcd01de0872653c9ff26fd756efb5e5be816"
+    },
+    {
+      "assessments": {
+        "claude-opus-full-diff": {
+          "label": "routine",
+          "pr": 392,
+          "unit_id": "a266355201efb05f8f8620a16ca7ea919e29d27dc650b9d9f9739096262f0140",
+          "witness": "Documentation of health routes and curl examples; no executable effect."
+        },
+        "codex-frontier": {
+          "label": "review",
+          "pr": 392,
+          "unit_id": "a266355201efb05f8f8620a16ca7ea919e29d27dc650b9d9f9739096262f0140",
+          "witness": "Deployment guide instructs use of separate unauthenticated health listener and contrasts workspace Host 421 with health 200."
+        }
+      },
+      "baseline": "routine",
+      "disposition": "unsupported_unit",
+      "model": null,
+      "path": "docs/shoal-explore-web-deploy.md",
+      "pr": 392,
+      "symbol": "file",
+      "unit_id": "a266355201efb05f8f8620a16ca7ea919e29d27dc650b9d9f9739096262f0140"
+    }
+  ],
+  "population": {
+    "files": 31,
+    "functions": 93,
+    "prs": 4,
+    "units": 146
+  },
+  "predictions_id": "432992a9c020e53c835218f76c837a93131f8fd448aeb851622fb22e44a19293",
+  "protocol_id": "shoal-authorization-shadow-pilot-v1",
+  "reviewer_agreement": {
+    "count": 105,
+    "denominator": 146,
+    "meaning": "agreement of proposed labels, not correctness"
+  },
+  "schema": 1
+}

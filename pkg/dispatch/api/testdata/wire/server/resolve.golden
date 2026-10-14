@@ -1,0 +1,9 @@
+POST /api/v1/fleet/agents/YWdlbnQ/resolve
+request content-type: application/json
+request body: "{\"request_id\":\"cmVxdWVzdA\",\"correlation_id\":\"Y29ycmVsYXRpb24\",\"reason_code\":\"gateway_claim\",\"reason_detail\":\"detail\",\"deadline\":\"2026-09-06T14:01:02.5+02:00\"}"
+provider calls: 1
+provider input: fleet.ResolveRequest{Context:fleet.RequestContext{RequestID:"request", CorrelationID:"correlation", ReasonCode:"gateway_claim", ReasonDetail:"detail", Deadline:time.Date(2026, time.September, 6, 14, 1, 2, 500000000, time.Location(""))}, ID:"agent"}
+status: 200
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"id\":\"YWdlbnQ\",\"generation\":7,\"subject\":\"c3ViamVjdA\",\"actor\":\"YWN0b3I\",\"authorization_domain\":\"ZG9tYWlu\",\"scopes\":[{\"source_id\":\"c291cmNl\",\"policy_id\":\"cG9saWN5\"}],\"executor_ref\":\"gateway\",\"capabilities\":[{\"name\":\"effects.gateway\",\"actions\":[{\"name\":\"charge\",\"input_schema\":{\"type\":\"object\"},\"output_schema\":{\"type\":\"object\"},\"effects\":[\"egresses-content\",\"external\"],\"effect\":\"external\",\"requires_attestation\":true},{\"name\":\"read\",\"input_schema\":{},\"output_schema\":{},\"effects\":[\"reads-corpus\"],\"requires_approval\":true},{\"name\":\"noop\",\"input_schema\":{},\"output_schema\":{}}]}],\"lease_expires_at\":\"2026-09-06T13:00:00+02:00\",\"updated_at\":\"2026-09-06T10:00:00Z\",\"revoked_at\":\"0001-01-01T00:00:00Z\"}\n"

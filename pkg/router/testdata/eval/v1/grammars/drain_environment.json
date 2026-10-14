@@ -1,0 +1,25 @@
+{
+  "schema": "shoal.router.grammar/v1",
+  "target": {
+    "kind": "action",
+    "capability": "maintenance",
+    "action": "drain_environment"
+  },
+  "cues": [
+    "drain"
+  ],
+  "patterns": [
+    "[please] drain [the] {environment} [environment]"
+  ],
+  "slots": [
+    {
+      "name": "environment",
+      "node_kinds": [
+        "environment"
+      ]
+    }
+  ],
+  "input": {
+    "environment": "$environment"
+  }
+}

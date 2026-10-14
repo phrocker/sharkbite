@@ -1,0 +1,16 @@
+import concurrent.futures,json,subprocess,time,hashlib
+from pathlib import Path
+root=Path('/tmp/shoal-live-v6/paired-v2')
+def run(path):
+ start=time.monotonic()
+ args=['/home/marc/.local/bin/claude','-p','--model','opus','--tools','','--strict-mcp-config','--mcp-config','{"mcpServers":{}}','--setting-sources','','--settings','{"disableAllHooks":true}','--no-session-persistence','--output-format','json','--max-budget-usd','3']
+ proc=subprocess.run(args,input=path.read_text(),capture_output=True,text=True)
+ (root/(path.stem+'.response.json')).write_text(proc.stdout)
+ (root/(path.stem+'.stderr.txt')).write_text(proc.stderr)
+ record={'packet':path.name,'prompt_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'elapsed_seconds':time.monotonic()-start,'exit_code':proc.returncode}
+ (root/(path.stem+'.call.json')).write_text(json.dumps(record,indent=2)+'\n')
+ print(json.dumps(record),flush=True)
+paths=sorted(root.glob('pr-*.txt'))
+# Independent isolated calls, alternating which arm runs first by PR.
+paths.sort(key=lambda p:(int(p.name.split('-')[1]),p.name.endswith('full.txt') if int(p.name.split('-')[1])%2 else p.name.endswith('candidate.txt')))
+with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:list(pool.map(run,paths))

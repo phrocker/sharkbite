@@ -1,0 +1,200 @@
+#!/usr/bin/env python3
+# Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
+"""Pinned partial package context and supervised CPU decision experiments."""
+import argparse
+import inspect
+import json
+import math
+from pathlib import Path
+import re
+import time
+from candidates import checked, change_text, original_state
+from ranking import load_labels, select_threshold
+from shadow import canonical, digest, git, parsed, source, write_new
+
+LIMITS={'package_files':80,'file_bytes':250000,'edges_each_direction':4,'edge_body_bytes':3000}
+RECIPES=[(view,kind,c) for view in ('code','context') for kind,c in [('char',1.),('word',1.),('mixed',.3),('mixed',1.),('mixed',3.)]]
+
+
+def leaf(name):
+    return re.sub(r'\[.*\]$', '', name).split('.')[-1]
+
+
+def package_index(repo, extractor, revision, path, cache):
+    directory=str(Path(path).parent);key=(revision,directory)
+    if key not in cache:
+        names=git(repo,'ls-tree','-r','--name-only','-z',revision,'--',':(literal)'+directory).decode().split('\0')
+        names=sorted(p for p in names if p.endswith('.go') and str(Path(p).parent)==directory)
+        selected=names[:LIMITS['package_files']]
+        documents=[];failures=[]
+        for name in selected:
+            src=source(repo,revision,name,LIMITS['file_bytes'])
+            if src['disposition']!='available':failures.append({'path':name,'reason':src['disposition']});continue
+            doc=parsed(extractor,name,src)
+            if doc.get('error'):failures.append({'path':name,'reason':'parse_error'});continue
+            for d in doc['declarations']:
+                if d['kind']=='function':documents.append({'path':name,**d})
+        cache[key]={'declarations':documents,'files_total':len(names),'files_parsed':len(selected)-len(failures),'omitted_files':max(0,len(names)-len(selected)),'failures':failures}
+    return cache[key]
+
+
+def neighborhood(unit,repo,extractor,cache):
+    output={'resolution':'same-directory syntactic candidates; Go package/build membership, receivers, interfaces, cross-directory and dynamic edges unresolved','sides':{}}
+    for side,revkey,pathkey in [('before','base','before_path'),('after','head','after_path')]:
+        declaration=unit.get(side)
+        if not declaration:output['sides'][side]={'disposition':'absent'};continue
+        index=package_index(repo,extractor,unit[revkey],unit[pathkey],cache)
+        target=leaf(declaration['name']);called={leaf(x) for x in declaration['syntactic_calls']}
+        others=[d for d in index['declarations'] if not(d['path']==unit[pathkey] and d['key']==declaration['key'])]
+        groups={'callers':[d for d in others if target in {leaf(x) for x in d['syntactic_calls']}],
+                'callees':[d for d in others if leaf(d['name']) in called]}
+        record={k:v for k,v in index.items() if k!='declarations'};record.update(disposition='partial',revision=unit[revkey],path=unit[pathkey])
+        for direction,candidates in groups.items():
+            candidates.sort(key=lambda d:(d['path'].endswith('_test.go'),d['path']!=unit[pathkey],d['path'],d['start_byte']))
+            eligible=[d for d in candidates if len(d['text'].encode())<=LIMITS['edge_body_bytes']]
+            chosen=eligible[:LIMITS['edges_each_direction']]
+            record[direction]={'candidate_count':len(candidates),'omitted_count':len(candidates)-len(chosen),
+                'evidence':[{'path':d['path'],'symbol':d['key'],'text':d['text'],'source_sha256':digest(d['text'].encode()),'lines':[d['start_line'],d['end_line']]} for d in chosen]}
+        output['sides'][side]=record
+    return output
+
+
+def representation(unit,context):
+    # Revision hashes and source digests remain receipts, never learned text features.
+    code=canonical(original_state(unit))
+    evidence=[]
+    for side,record in context['sides'].items():
+        for direction in ('callers','callees'):
+            data=record.get(direction,{})
+            for item in data.get('evidence',[]):evidence.append({'side':side,'direction':direction,'path':item['path'],'symbol':item['symbol'],'text':item['text']})
+        evidence.append({'side':side,'coverage':{k:record.get(k) for k in ('disposition','files_total','files_parsed','omitted_files')},'omitted_edges':{d:record.get(d,{}).get('omitted_count') for d in ('callers','callees')}})
+    return {'code':code,'context':code+'\n'+canonical({'resolution':context['resolution'],'evidence':evidence})}
+
+
+def evidence_contract(extractor_sha256):
+    return {'representation_sha256':digest(''.join(inspect.getsource(f) for f in (leaf,package_index,neighborhood,representation,original_state,change_text,canonical))),
+            'limits':LIMITS,'extractor_sha256':extractor_sha256,'source_helpers_sha256':digest(Path(__file__).with_name('shadow.py').read_bytes())}
+
+
+def build(args):
+    config=json.loads(args.config.read_text());rows=[];cache={};sources=[]
+    for spec in config['datasets']:
+        manifest=checked(Path(spec['manifest']));units={u['id']:u for c in manifest['cases'] for u in c['units'] if u['kind']=='function'}
+        if spec.get('assessment'):
+            _,labels=load_labels(Path(spec['assessment']),units)
+        else:labels={uid:'unknown' for uid in units}
+        sources.append({'manifest_id':manifest['id'],'assessment_sha256':digest(Path(spec['assessment']).read_bytes()) if spec.get('assessment') else None})
+        for uid,u in units.items():
+            context=neighborhood(u,args.repo,args.extractor,cache)
+            rows.append({'unit_id':uid,'pr':u['pr'],'label':labels[uid],'path':u['path'],'symbol':u['symbol'],'text':representation(u,context),'context':context,
+                         'target_body_sha256':[digest(u[s]['text'].encode()) for s in ('before','after') if u[s]],'code_state_sha256':digest(original_state(u)),'diff_state_sha256':digest(change_text(u)),
+                         'source_bytes':sum(len((u[s] or {}).get('text','').encode()) for s in ('before','after')),'diff_bytes':len(change_text(u).encode())})
+        print(json.dumps({'manifest':manifest['id'],'functions':len(units),'total_rows':len(rows)}),flush=True)
+    if len({r['unit_id'] for r in rows})!=len(rows):raise ValueError('duplicate units')
+    result={'evidence_contract':evidence_contract(digest(args.extractor.read_bytes())),'status':config['status'],'rows':rows,'sources':sources,'limits':LIMITS,'builder_sha256':digest(Path(__file__).read_bytes()),'extractor_sha256':digest(args.extractor.read_bytes()),'source_helpers_sha256':digest(Path(__file__).with_name('shadow.py').read_bytes()),'optimization_enabled':False};result['id']=digest(result);write_new(args.output,result)
+
+
+def tokens(text):
+    return re.sub(r'([a-z0-9])([A-Z])',r'\1 \2',text).lower()
+
+
+def vectorizer(kind):
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.pipeline import FeatureUnion
+    char=TfidfVectorizer(analyzer='char_wb',ngram_range=(3,5),max_features=30000,sublinear_tf=True)
+    word=TfidfVectorizer(preprocessor=tokens,token_pattern=r'[a-zA-Z_][a-zA-Z_0-9]+',ngram_range=(1,2),max_features=30000,sublinear_tf=True)
+    return FeatureUnion([('char',char),('word',word)]) if kind=='mixed' else char if kind=='char' else word
+
+
+def fit(rows,recipe):
+    from sklearn.linear_model import LogisticRegression
+    view,kind,c=recipe;v=vectorizer(kind);x=v.fit_transform([r['text'][view] for r in rows]);m=LogisticRegression(C=c,class_weight='balanced',max_iter=1000,random_state=42,solver='liblinear').fit(x,[r['label']=='review' for r in rows]);return v,m
+
+
+def score(model,rows,view):
+    v,m=model;result=dict(zip([r['unit_id'] for r in rows],map(float,m.predict_proba(v.transform([r['text'][view] for r in rows]))[:,1])))
+    if any(not math.isfinite(x) or not 0<=x<=1 for x in result.values()):raise ValueError('invalid predicted score')
+    return result
+
+
+def bundle(model,recipe):
+    v,m=model
+    vs=v.transformer_list if recipe[1]=='mixed' else [(recipe[1],v)]
+    return {'recipe':recipe,'vectorizers':[{'kind':kind,'vocabulary':{k:int(i) for k,i in item.vocabulary_.items()},'idf':item.idf_.tolist()} for kind,item in vs],'coef':m.coef_.tolist(),'intercept':m.intercept_.tolist(),'classes':m.classes_.tolist()}
+
+
+def restore(data):
+    import numpy as np
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    from sklearn.linear_model import LogisticRegression
+    from sklearn.pipeline import FeatureUnion
+    if data['classes']!=[False,True] or data['recipe'] not in [list(r) for r in RECIPES] and tuple(data['recipe']) not in RECIPES:
+        raise ValueError('invalid classifier classes or recipe')
+    total=0
+    for spec in data['vectorizers']:
+        vocab=spec['vocabulary'];idf=np.asarray(spec['idf'])
+        if sorted(vocab.values())!=list(range(len(vocab))) or idf.shape!=(len(vocab),) or not np.isfinite(idf).all() or (idf<=0).any():raise ValueError('invalid vocabulary or idf')
+        total+=len(vocab)
+    coef=np.asarray(data['coef']);intercept=np.asarray(data['intercept'])
+    if coef.shape!=(1,total) or intercept.shape!=(1,) or not np.isfinite(coef).all() or not np.isfinite(intercept).all():raise ValueError('invalid classifier parameters')
+    expected=['char','word'] if data['recipe'][1]=='mixed' else [data['recipe'][1]]
+    if [v['kind'] for v in data['vectorizers']]!=expected:raise ValueError('vectorizer layout mismatch')
+    vs=[]
+    for spec in data['vectorizers']:
+        v=vectorizer(spec['kind']);v.vocabulary_=spec['vocabulary'];v.fixed_vocabulary_=True;v.idf_=np.asarray(spec['idf']);vs.append((spec['kind'],v))
+    v=FeatureUnion(vs) if len(vs)>1 else vs[0][1]
+    m=LogisticRegression();m.coef_=np.asarray(data['coef']);m.intercept_=np.asarray(data['intercept']);m.classes_=np.asarray(data['classes']);m.n_features_in_=m.coef_.shape[1]
+    return v,m
+
+
+def train(args):
+    import sklearn
+    if sklearn.__version__!='1.7.2':raise ValueError('requires pinned sklearn1.7.2')
+    inputs=checked(args.inputs)
+    if inputs['evidence_contract']!=evidence_contract(inputs['extractor_sha256']):raise ValueError('training evidence contract mismatch')
+    rows=inputs['rows'];args.output.mkdir()
+    prs=sorted({r['pr'] for r in rows});folds={p:i%5 for i,p in enumerate(prs)}
+    config={'inputs_id':inputs['id'],'recipes':RECIPES,'folds':folds,'target_relevance_recall':.98,'selection_utility':'max source bytes reduced among OOF thresholds meeting98% relevance and zero dropped unknowns','optimization_enabled':False,'status':'all_previous_labels_retired_to_development','runner_sha256':digest(Path(__file__).read_bytes()),'sklearn_version':sklearn.__version__};write_new(args.output/'config.json',config)
+    labels={r['unit_id']:r['label'] for r in rows};results=[]
+    for index,recipe in enumerate(RECIPES):
+        started=time.perf_counter();scores={};audit=[]
+        for fold in range(5):
+            test=[r for r in rows if folds[r['pr']]==fold];hashes={r['code_state_sha256'] for r in test};diffs={r['diff_state_sha256'] for r in test}
+            test_bodies={h for r in test for h in r['target_body_sha256']}
+            eligible=[r for r in rows if folds[r['pr']]!=fold and r['label']!='unknown' and r['code_state_sha256'] not in hashes and r['diff_state_sha256'] not in diffs]
+            def evidence_bodies(row):
+                return set(row['target_body_sha256'])|{item['source_sha256'] for side in row['context']['sides'].values() for direction in ('callers','callees') for item in side.get(direction,{}).get('evidence',[])}
+            training=[r for r in eligible if not evidence_bodies(r)&test_bodies]
+            model=fit(training,recipe);scores.update(score(model,test,recipe[0]));audit.append({'fold':fold,'purged_target_or_context_overlap':len(eligible)-len(training),'train_ids':[r['unit_id'] for r in training],'test_ids':[r['unit_id'] for r in test]})
+        selection=select_threshold(scores,labels,.98);dropped=set(selection['dropped_ids']);reduced=sum(r['source_bytes'] for r in rows if r['unit_id'] in dropped)
+        result={'recipe':recipe,'selection':selection,'scores':scores,'fold_audit':audit,'source_bytes_reduced':reduced,'source_bytes_total':sum(r['source_bytes'] for r in rows),'elapsed_seconds':time.perf_counter()-started};result['id']=digest(result);write_new(args.output/f'candidate-{index}.json',result);results.append(result)
+        print(json.dumps({'recipe':recipe,'relevance_recall':selection['relevance_recall'],'proposed_functions':selection['proposed_dropped'],'source_byte_reduction':reduced/result['source_bytes_total']}),flush=True)
+    winner=max(results,key=lambda r:r['source_bytes_reduced']);model=fit([r for r in rows if r['label']!='unknown'],winner['recipe']);data=bundle(model,winner['recipe'])
+    artifact={'evidence_contract':inputs['evidence_contract'],'schema':1,'kind':'context-tfidf-logistic','parameters':data,'threshold':winner['selection']['threshold'],'development_inputs_id':inputs['id'],'selected_result_id':winner['id'],'runner_sha256':digest(Path(__file__).read_bytes()),'sklearn_version':sklearn.__version__,'optimization_enabled':False};artifact['id']=digest(artifact);write_new(args.output/'model.json',artifact)
+    a=score(model,rows,winner['recipe'][0]);b=score(restore(data),rows,winner['recipe'][0]);delta=max(abs(a[k]-b[k]) for k in a)
+    if delta>1e-12:raise ValueError('data-only model replay mismatch')
+    write_new(args.output/'replay.json',{'rows':len(rows),'max_score_delta':delta,'model_id':artifact['id']})
+
+
+def predict(args):
+    import sklearn
+    inputs=checked(args.inputs);artifact=checked(args.model);selection=checked(args.selection)
+    if selection['model_id']!=artifact['id'] or selection['inputs_id']!=inputs['id']:raise ValueError('frozen selection mismatch')
+    if inputs['evidence_contract']!=artifact['evidence_contract'] or artifact['evidence_contract']!=evidence_contract(inputs['extractor_sha256']):raise ValueError('prediction evidence contract mismatch')
+    if not math.isfinite(artifact['threshold']):raise ValueError('invalid threshold')
+    if artifact['runner_sha256']!=digest(Path(__file__).read_bytes()) or artifact['sklearn_version']!=sklearn.__version__:raise ValueError('frozen runner mismatch')
+    model=restore(artifact['parameters']);start=time.perf_counter();scores=score(model,inputs['rows'],artifact['parameters']['recipe'][0]);elapsed=time.perf_counter()-start
+    result={'inputs_id':inputs['id'],'model_id':artifact['id'],'threshold':artifact['threshold'],'scores':scores,'elapsed_seconds':elapsed,'predictions':[{'unit_id':u,'review_score':s,'disposition':'predicted','proposal':'lower_priority' if s<artifact['threshold'] else 'retain','action':'full_review','optimization_eligible':False} for u,s in scores.items()],'optimization_enabled':False};result['id']=digest(result);write_new(args.output,result)
+
+
+def main():
+    p=argparse.ArgumentParser(description=__doc__);s=p.add_subparsers(dest='command',required=True)
+    b=s.add_parser('build')
+    for name in ('config','repo','extractor','output'):b.add_argument('--'+name,type=Path,required=True)
+    t=s.add_parser('train')
+    for name in ('inputs','output'):t.add_argument('--'+name,type=Path,required=True)
+    t=s.add_parser('predict')
+    for name in ('inputs','model','selection','output'):t.add_argument('--'+name,type=Path,required=True)
+    args=p.parse_args();globals()[args.command](args)
+
+if __name__=='__main__':main()

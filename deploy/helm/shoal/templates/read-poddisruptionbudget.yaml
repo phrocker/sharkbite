@@ -1,0 +1,16 @@
+{{- if and (eq (include "shoal.readFleetEnabled" .) "true") .Values.readFleet.podDisruptionBudget.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "shoal.fullname" . }}-read
+  labels:
+    {{- include "shoal.labels" . | nindent 4 }}
+    app.kubernetes.io/component: read-fleet
+spec:
+  maxUnavailable: {{ .Values.readFleet.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: read-fleet
+{{- end }}

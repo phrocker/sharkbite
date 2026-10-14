@@ -1,0 +1,104 @@
+{
+  "comment": "Synthetic router evaluation world v1. Sources gate visibility: alice sees shared; bob sees shared and secret.",
+  "callers": {
+    "alice": ["shared"],
+    "bob": ["shared", "secret"]
+  },
+  "concepts": ["service", "team", "environment"],
+  "relationships": [
+    {"key": "depends_on", "from": ["service"], "to": ["service"], "directed": true},
+    {"key": "owned_by", "from": ["service"], "to": ["team"], "directed": true},
+    {"key": "runs_in", "from": ["service"], "to": ["environment"], "directed": true}
+  ],
+  "ontology_source": "shared",
+  "nodes": [
+    {"key": "payments", "kind": "service", "name": "Payments", "aliases": ["paygw"], "source": "shared"},
+    {"key": "checkout", "kind": "service", "name": "Checkout", "source": "shared"},
+    {"key": "ledger", "kind": "service", "name": "Ledger", "source": "shared"},
+    {"key": "inventory", "kind": "service", "name": "Inventory", "source": "shared"},
+    {"key": "notifications", "kind": "service", "name": "Notifications", "aliases": ["notifier"], "source": "shared"},
+    {"key": "auth_gateway", "kind": "service", "name": "Auth Gateway", "aliases": ["authgw"], "source": "shared"},
+    {"key": "billing", "kind": "service", "name": "Billing", "source": "shared"},
+    {"key": "core_api", "kind": "service", "name": "Core API", "aliases": ["core"], "source": "shared"},
+    {"key": "nightjar", "kind": "service", "name": "Project Nightjar", "aliases": ["nightjar"], "source": "secret"},
+    {"key": "team_payments", "kind": "team", "name": "Payments Team", "source": "shared"},
+    {"key": "team_platform", "kind": "team", "name": "Platform Team", "aliases": ["platform"], "source": "shared"},
+    {"key": "team_growth", "kind": "team", "name": "Growth Team", "source": "shared"},
+    {"key": "team_sre", "kind": "team", "name": "SRE Team", "aliases": ["sre"], "source": "shared"},
+    {"key": "team_core", "kind": "team", "name": "Core Team", "aliases": ["core"], "source": "shared"},
+    {"key": "prod", "kind": "environment", "name": "Production", "aliases": ["prod"], "source": "shared"},
+    {"key": "staging", "kind": "environment", "name": "Staging", "aliases": ["stage"], "source": "shared"},
+    {"key": "dev", "kind": "environment", "name": "Development", "aliases": ["dev"], "source": "shared"},
+    {"key": "eu_west", "kind": "environment", "name": "EU West", "aliases": ["euw"], "source": "shared"}
+  ],
+  "descriptors": [
+    {"id": "agent-ops", "source": "shared", "capabilities": [
+      {"name": "ops", "actions": [
+        {"name": "restart_service", "requires_approval": true,
+         "input_schema": {"type": "object", "required": ["service", "environment"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "environment": {"type": "string"}, "mode": {"type": "string", "enum": ["graceful", "force"]}}}},
+        {"name": "scale_service",
+         "input_schema": {"type": "object", "required": ["service", "direction"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "direction": {"type": "string", "enum": ["up", "down"]}}}},
+        {"name": "flush_cache",
+         "input_schema": {"type": "object", "required": ["service"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "environment": {"type": "string"}}}}
+      ]},
+      {"name": "deploy", "actions": [
+        {"name": "rollback", "requires_approval": true,
+         "input_schema": {"type": "object", "required": ["service", "environment"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "environment": {"type": "string"}}}}
+      ]},
+      {"name": "oncall", "actions": [
+        {"name": "page_team",
+         "input_schema": {"type": "object", "required": ["team"], "additionalProperties": false,
+           "properties": {"team": {"type": "string"}}}}
+      ]},
+      {"name": "incidents", "actions": [
+        {"name": "open_incident",
+         "input_schema": {"type": "object", "required": ["service", "severity"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "severity": {"type": "string", "enum": ["sev1", "sev2", "sev3"]}}}}
+      ]}
+    ]},
+    {"id": "agent-observe", "source": "shared", "capabilities": [
+      {"name": "logs", "actions": [
+        {"name": "tail_logs",
+         "input_schema": {"type": "object", "required": ["service"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}, "environment": {"type": "string"}}}}
+      ]}
+    ]},
+    {"id": "agent-maint-a", "source": "shared", "capabilities": [
+      {"name": "maintenance", "actions": [
+        {"name": "drain_environment",
+         "input_schema": {"type": "object", "required": ["environment"], "additionalProperties": false,
+           "properties": {"environment": {"type": "string"}}}}
+      ]}
+    ]},
+    {"id": "agent-maint-b", "source": "shared", "capabilities": [
+      {"name": "maintenance", "actions": [
+        {"name": "drain_environment",
+         "input_schema": {"type": "object", "required": ["environment"], "additionalProperties": false,
+           "properties": {"environment": {"type": "string"}}}}
+      ]}
+    ]},
+    {"id": "agent-sec", "source": "secret", "capabilities": [
+      {"name": "secops", "actions": [
+        {"name": "rotate_credentials", "requires_approval": true,
+         "input_schema": {"type": "object", "required": ["service"], "additionalProperties": false,
+           "properties": {"service": {"type": "string"}}}}
+      ]}
+    ]}
+  ],
+  "profiles": [
+    {"id": "service-operation-risk", "revision": "r1", "name": "service operation risk", "source": "shared",
+     "comment": "Modelled on #421: the risk of one operation on one service.",
+     "slot_schema": {"type": "object", "required": ["service", "operation"], "additionalProperties": false,
+       "properties": {"service": {"type": "string"}, "operation": {"type": "string", "enum": ["restart", "rollback", "scale", "flush"]}}}},
+    {"id": "deploy-readiness", "revision": "r1", "name": "deploy readiness", "source": "shared",
+     "slot_schema": {"type": "object", "required": ["service", "environment"], "additionalProperties": false,
+       "properties": {"service": {"type": "string"}, "environment": {"type": "string"}}}},
+    {"id": "breach-exposure", "revision": "r1", "name": "breach exposure", "source": "secret",
+     "slot_schema": {"type": "object", "required": ["service"], "additionalProperties": false,
+       "properties": {"service": {"type": "string"}}}}
+  ]
+}

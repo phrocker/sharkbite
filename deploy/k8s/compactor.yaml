@@ -1,0 +1,110 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoal-compactor
+  labels: &labels
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: compactor
+spec:
+  clusterIP: None
+  selector: *labels
+  ports:
+    - {name: thrift, port: 9810, targetPort: thrift}
+    - {name: metrics, port: 9811, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: shoal-compactor
+spec:
+  serviceName: shoal-compactor
+  replicas: 2
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate: {partition: 0}
+  selector:
+    matchLabels: &selector
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: compactor
+  template:
+    metadata:
+      labels: *selector
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9811"
+    spec:
+      terminationGracePeriodSeconds: 55
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: shoal-compactor
+          image: ghcr.io/example/shoal:dev
+          command: ["/shoal-compactor"]
+          args:
+            - -listen=:9810
+            - -advertise=$(POD_IP):9810
+            - -metrics-address=:9811
+            - -zk=$(SHOAL_ZK)
+            - -instance=$(SHOAL_INSTANCE)
+            - -accumulo-version=$(SHOAL_ACCUMULO_VERSION)
+            - -hdfs-namenode=$(SHOAL_HDFS_NAMENODE)
+            - -state-file=/var/lib/shoal/compactor/completion.json
+            - -shutdown-timeout=30s
+            # Mount the shared TLS Secret and add -tls-cert/-tls-key and
+            # optionally -tls-client-ca to secure both listeners.
+          envFrom:
+            - configMapRef: {name: shoal-platform-config}
+          env:
+            - name: POD_IP
+              valueFrom: {fieldRef: {fieldPath: status.podIP}}
+            - name: SHOAL_PASSWORD
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-password}}
+            - name: ACCUMULO_INSTANCE_SECRET
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-instance-secret}}
+            - name: SHOAL_SYSTEM_TOKEN_BASE64
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-system-token-base64}}
+          ports:
+            - {name: thrift, containerPort: 9810}
+            - {name: metrics, containerPort: 9811}
+          startupProbe:
+            httpGet: {path: /startupz, port: metrics}
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: {path: /readyz, port: metrics}
+            periodSeconds: 3
+            failureThreshold: 1
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            periodSeconds: 10
+          resources:
+            requests: {cpu: 500m, memory: 1Gi}
+            limits: {cpu: "4", memory: 4Gi}
+          volumeMounts:
+            - {name: state, mountPath: /var/lib/shoal}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+  volumeClaimTemplates:
+    - metadata: {name: state}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests: {storage: 5Gi}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shoal-compactor
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: compactor

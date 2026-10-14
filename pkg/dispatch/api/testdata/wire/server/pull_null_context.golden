@@ -1,0 +1,8 @@
+POST /api/v1/fleet/actions/pull
+request content-type: application/json
+request body: "{\"context\":null,\"after\":\"Y3Vyc29y\",\"limit\":10}"
+provider calls: 0
+status: 400
+content-type: application/json; charset=utf-8
+shoal-commit-outcome: 
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: request ID is required\"}\n"

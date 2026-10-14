@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: repull (HTTP 502)
+kind: repull
+status: 502 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: repull(502) > unexpected_status(502)

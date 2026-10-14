@@ -1,0 +1,122 @@
+{{- if eq (include "shoal.tserverEnabled" .) "true" }}
+apiVersion: v1
+kind: Service
+metadata: {name: shoal-tserver}
+spec:
+  clusterIP: None
+  selector: {app.kubernetes.io/name: shoal, app.kubernetes.io/component: tserver}
+  ports:
+    - {name: thrift, port: {{ .Values.tserver.thriftPort }}, targetPort: thrift}
+    - {name: metrics, port: {{ .Values.tserver.metricsPort }}, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata: {name: shoal-tserver}
+spec:
+  serviceName: shoal-tserver
+  replicas: {{ .Values.tserver.replicas }}
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate: {partition: {{ .Values.tserver.updateStrategy.partition }}}
+  selector:
+    matchLabels: &labels {app.kubernetes.io/name: shoal, app.kubernetes.io/component: tserver}
+  template:
+    metadata:
+      labels: *labels
+      annotations: {prometheus.io/scrape: "true", prometheus.io/port: {{ .Values.tserver.metricsPort | quote }}}
+    spec:
+      terminationGracePeriodSeconds: {{ .Values.tserver.terminationGracePeriodSeconds }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: shoal-tserver
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/shoal-tserver"]
+          args:
+            - -listen=:{{ .Values.tserver.thriftPort }}
+            - -advertise=$(POD_NAME).shoal-tserver.$(POD_NAMESPACE).svc:{{ .Values.tserver.thriftPort }}
+            - -metrics-address=:{{ .Values.tserver.metricsPort }}
+            - -zk=$(SHOAL_ZK)
+            - -instance=$(SHOAL_INSTANCE)
+            - -accumulo-version=$(SHOAL_ACCUMULO_VERSION)
+            - -group={{ .Values.tserver.group }}
+            - -wal-root=/var/lib/shoal/wal
+            - -state-root=/var/lib/shoal/minc-state
+            - -drain-timeout={{ .Values.tserver.drainTimeout }}
+            {{- if .Values.tserver.enableIngest }}
+            - -enable-ingest
+            {{- end }}
+            {{- if .Values.tserver.tls.enabled }}
+            {{- if not .Values.tserver.tls.secretName }}{{ fail "tserver.tls.secretName is required when TLS is enabled" }}{{- end }}
+            - -tls-cert=/var/run/secrets/shoal/tls/tls.crt
+            - -tls-key=/var/run/secrets/shoal/tls/tls.key
+            {{- if .Values.tserver.tls.requireClientCert }}
+            - -tls-client-ca=/var/run/secrets/shoal/tls/ca.crt
+            {{- end }}
+            {{- end }}
+          envFrom: [{configMapRef: {name: shoal-platform-config}}]
+          env:
+            - {name: POD_NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}
+            - {name: POD_NAMESPACE, valueFrom: {fieldRef: {fieldPath: metadata.namespace}}}
+            - {name: SHOAL_PASSWORD, valueFrom: {secretKeyRef: {name: {{ .Values.tserver.credentialsSecretName }}, key: accumulo-password}}}
+            - {name: ACCUMULO_INSTANCE_SECRET, valueFrom: {secretKeyRef: {name: {{ .Values.tserver.credentialsSecretName }}, key: accumulo-instance-secret}}}
+            - {name: SHOAL_SYSTEM_TOKEN_BASE64, valueFrom: {secretKeyRef: {name: {{ .Values.tserver.credentialsSecretName }}, key: accumulo-system-token-base64}}}
+          ports:
+            - {name: thrift, containerPort: {{ .Values.tserver.thriftPort }}}
+            - {name: metrics, containerPort: {{ .Values.tserver.metricsPort }}}
+          startupProbe:
+            {{- if .Values.tserver.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /startupz, port: metrics{{ if .Values.tserver.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            {{- if .Values.tserver.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /readyz, port: metrics{{ if .Values.tserver.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+            periodSeconds: 3
+          livenessProbe:
+            {{- if .Values.tserver.tls.requireClientCert }}
+            tcpSocket: {port: metrics}
+            {{- else }}
+            httpGet: {path: /healthz, port: metrics{{ if .Values.tserver.tls.enabled }}, scheme: HTTPS{{ end }}}
+            {{- end }}
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/shoal}
+            {{- if .Values.tserver.tls.enabled }}
+            - {name: tls, mountPath: /var/run/secrets/shoal/tls, readOnly: true}
+            {{- end }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+      {{- if .Values.tserver.tls.enabled }}
+      volumes:
+        - {name: tls, secret: {secretName: {{ .Values.tserver.tls.secretName }}}}
+      {{- end }}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources: {requests: {storage: {{ .Values.tserver.walStorageSize }}}}
+{{- if .Values.tserver.podDisruptionBudget.enabled }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata: {name: shoal-tserver}
+spec:
+  maxUnavailable: {{ .Values.tserver.podDisruptionBudget.maxUnavailable }}
+  selector:
+    matchLabels: {app.kubernetes.io/name: shoal, app.kubernetes.io/component: tserver}
+{{- end }}
+{{- end }}

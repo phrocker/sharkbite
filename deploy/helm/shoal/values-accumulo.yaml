@@ -1,0 +1,8 @@
+mode: accumulo
+
+image:
+  repository: ghcr.io/YOUR_ORG/shoal
+  tag: TAG
+
+compactor:
+  hdfsNamenode: hdfs://namenode:8020

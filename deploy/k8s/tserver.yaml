@@ -1,0 +1,120 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: shoal-tserver
+  labels:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: tserver
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: shoal
+    app.kubernetes.io/component: tserver
+  ports:
+    - {name: thrift, port: 9997, targetPort: thrift}
+    - {name: metrics, port: 9998, targetPort: metrics}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: shoal-tserver
+spec:
+  serviceName: shoal-tserver
+  replicas: 2
+  podManagementPolicy: Parallel
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate: {partition: 0}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: tserver
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shoal
+        app.kubernetes.io/component: tserver
+    spec:
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: shoal-tserver
+          image: ghcr.io/example/shoal:dev
+          command: ["/shoal-tserver"]
+          args:
+            - -listen=:9997
+            - -advertise=$(POD_NAME).shoal-tserver.$(POD_NAMESPACE).svc:9997
+            - -metrics-address=:9998
+            - -zk=$(SHOAL_ZK)
+            - -instance=$(SHOAL_INSTANCE)
+            - -accumulo-version=$(SHOAL_ACCUMULO_VERSION)
+            - -user=$(SHOAL_METADATA_USER)
+            - -storage=$(SHOAL_STORAGE_SCHEME)
+            - -wal-root=/var/lib/shoal/wal
+            - -state-root=/var/lib/shoal/minc-state
+            - -drain-timeout=30s
+            - -enable-ingest
+            # Mount the shared TLS Secret and add -tls-cert/-tls-key and
+            # optionally -tls-client-ca to secure both listeners.
+          envFrom:
+            - configMapRef: {name: shoal-platform-config}
+          env:
+            - name: POD_NAME
+              valueFrom: {fieldRef: {fieldPath: metadata.name}}
+            - name: POD_NAMESPACE
+              valueFrom: {fieldRef: {fieldPath: metadata.namespace}}
+            - name: SHOAL_PASSWORD
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-password}}
+            - name: ACCUMULO_INSTANCE_SECRET
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-instance-secret}}
+            - name: SHOAL_SYSTEM_TOKEN_BASE64
+              valueFrom: {secretKeyRef: {name: shoal-object-storage-credentials, key: accumulo-system-token-base64}}
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /var/run/secrets/shoal/gcs/key.json
+          ports:
+            - {name: thrift, containerPort: 9997}
+            - {name: metrics, containerPort: 9998}
+          readinessProbe:
+            httpGet: {path: /readyz, port: metrics}
+            periodSeconds: 3
+          startupProbe:
+            httpGet: {path: /startupz, port: metrics}
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: {path: /healthz, port: metrics}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          volumeMounts:
+            - {name: data, mountPath: /var/lib/shoal}
+            - {name: object-storage-credentials, mountPath: /var/run/secrets/shoal/gcs, readOnly: true}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+      volumes:
+        - name: object-storage-credentials
+          secret: {secretName: shoal-object-storage-credentials, optional: true}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: shoal-tserver
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shoal
+      app.kubernetes.io/component: tserver

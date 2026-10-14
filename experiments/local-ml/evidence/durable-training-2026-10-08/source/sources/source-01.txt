@@ -1,0 +1,2 @@
+package example
+func example1(x int) int { return x / 3 }

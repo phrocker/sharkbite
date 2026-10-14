@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim
+error: dispatch claim: protocol: correlation ID is not unpadded base64url
+kind: protocol
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: protocol(0)

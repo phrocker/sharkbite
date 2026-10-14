@@ -1,0 +1,8 @@
+go 1.26.4
+
+use (
+	.
+	./extensions/effects-ssh
+	./extensions/example-collector
+	./wal-quorum-sidecar
+)

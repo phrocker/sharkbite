@@ -1,0 +1,6 @@
+# Drop a real-cluster capture here to lock parsers against ground truth.
+# Generate with:
+#   shoal-bootstrap -zk ... -password ... \
+#     -dump-root-scan -dump-out internal/metadata/testdata/root_scan_capture.json
+# The ground-truth tests in decode_ground_truth_test.go auto-skip when no
+# capture is present.

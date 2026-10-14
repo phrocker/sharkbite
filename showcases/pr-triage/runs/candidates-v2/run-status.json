@@ -1,0 +1,6 @@
+{
+  "prediction_files_complete": true,
+  "exit_status": 1,
+  "error": "AttributeError: Router.close does not exist; raised after all five prediction files were written.",
+  "correction": "Runner now calls Router.unload; corrected cleanup completed in validation-v2 run. Original predictions preserved unchanged."
+}

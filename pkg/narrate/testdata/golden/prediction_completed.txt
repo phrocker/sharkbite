@@ -1,0 +1,23 @@
+outcome decision.outcome.completed
+  Decision task source-priority v1 completed at 2026-10-08 12:00:01 UTC with 3 answers and no abstentions across 1 subject.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601 decision_request=decision:request:v1:dfce0b5559086cced6a7ee3bbfa7e6fb0ffe90990e5cbd0e51775403c624ca92 picture=decision:picture:v1:c3d0003fd3fda4dc4e1b9de7f484d8ea2756d45efec1282d0e2c416b16998194 predictor=decision:predictor:v1:dfd830e1cb5ad1e223250be0977e75d6f955c6fefc43c57286d6b095968ee24a
+  identifiers source-priority v1
+reason decision.answer.ordinal
+  For subject subject1, question priority, the predictor chose level high, 3 of 3, with a reported probability of 0.75.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 priority high
+reason decision.answer.choice
+  For subject subject1, question relevance, the predictor chose yes.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 relevance yes
+reason decision.answer.probability
+  For subject subject1, question risk, the predictor reported a probability of 0.73.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601 subject=subject1 evidence=evidence-anchor:201dfc0147b8fc3e13637619547ca21739ad1f1fa277371759250ed9237cd01f
+  identifiers subject1 risk
+history decision.history.requested
+  carol requested it at 2026-10-08 12:00:00 UTC under release release:1, with a deadline of 2026-10-08 12:01:00 UTC.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601 principal=carol release=release:1 correlation=call:1
+  identifiers carol release:1
+next decision.next.completed
+  Use these answers only to order inspection; they do not authorize excluding anything.
+  record=prediction:decision:prediction:v1:58aa6fe4529e0a96ca1599f2232ff6d8dd322083d19066f3c687c8d729b46601

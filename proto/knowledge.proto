@@ -1,0 +1,117 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+syntax = "proto3";
+
+package shoal.knowledge.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/phrocker/shoal-oss/internal/knowledgepb";
+
+// KnowledgeRetrieval exposes transport-neutral, evidence-addressable retrieval.
+service KnowledgeRetrieval {
+  rpc Retrieve(RetrieveRequest) returns (RetrieveResponse);
+}
+
+enum RetrievalMode {
+  RETRIEVAL_MODE_UNSPECIFIED = 0;
+  RETRIEVAL_MODE_LEXICAL = 1;
+  RETRIEVAL_MODE_VECTOR = 2;
+  RETRIEVAL_MODE_TREE = 3;
+  RETRIEVAL_MODE_GRAPH = 4;
+}
+
+message RetrievalScope {
+  repeated string document_ids = 1;
+  repeated string node_ids = 2;
+}
+
+message RetrieveRequest {
+  string text = 1;
+  uint32 top_k = 2;
+  repeated RetrievalMode modes = 3;
+  RetrievalScope scope = 4;
+  google.protobuf.Timestamp as_of = 5;
+  bool explain = 6;
+}
+
+message SourcePosition {
+  int64 offset = 1;
+  int32 page = 2;
+}
+
+message SourceRange {
+  SourcePosition start = 1;
+  SourcePosition end = 2;
+}
+
+message Citation {
+  string document_id = 1;
+  string revision_id = 2;
+  string section_id = 3;
+  string span_id = 4;
+  SourceRange range = 5;
+}
+
+message GraphNode {
+  string id = 1;
+  string kind = 2;
+  repeated string labels = 3;
+  map<string, string> properties = 4;
+}
+
+message GraphEdge {
+  string id = 1;
+  string from = 2;
+  string to = 3;
+  string type = 4;
+  double weight = 5;
+  map<string, string> properties = 6;
+}
+
+message GraphPath {
+  repeated GraphNode nodes = 1;
+  repeated GraphEdge edges = 2;
+}
+
+message Evidence {
+  Citation citation = 1;
+  string quote = 2;
+  GraphPath path = 3;
+  double score = 4;
+}
+
+message Explanation {
+  repeated RetrievalMode modes = 1;
+  string summary = 2;
+  map<string, double> scores = 3;
+}
+
+message RetrievalResult {
+  string id = 1;
+  double score = 2;
+  repeated Evidence evidence = 3;
+  Explanation explanation = 4;
+}
+
+message RetrieveResponse {
+  string request_id = 1;
+  repeated RetrievalResult results = 2;
+  string embedding_space_id = 3;
+  repeated string embedding_space_ids = 4;
+}

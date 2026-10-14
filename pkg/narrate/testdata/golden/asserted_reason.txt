@@ -1,0 +1,6 @@
+reason interaction.asserted_reason
+  alice asserted the reason code “atpl-apply”, naming the source “atpl:policy:v1:ab12”; Shoal records this but does not verify it.
+  record=interaction:session-1 principal=alice
+  quote caller by=alice
+  quote caller by=alice
+  identifiers alice

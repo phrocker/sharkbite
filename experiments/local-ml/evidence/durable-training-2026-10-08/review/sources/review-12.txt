@@ -1,0 +1,3 @@
+package example
+func example12(x int) int { return x + 12 }
+// original review claim: line=2

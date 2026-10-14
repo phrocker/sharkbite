@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "kind": "additional-adversarial-review-conformance",
+  "implementation_commit": "b203200",
+  "service_state_schema": 2,
+  "rows": 188,
+  "matches": 188,
+  "mismatches": 0,
+  "first_process_provider_calls": 188,
+  "restart_provider_calls": 0,
+  "identical_per_subject_records": true,
+  "simultaneous_cli_rejected": true,
+  "additional_findings_fixed": [
+    "separate engine handles could execute the same request twice",
+    "predictor runtime drift was not rejected before engine mutation"
+  ],
+  "fresh_full_review_actionable_findings": 0,
+  "go_command_race_and_vet_passed": true,
+  "all_full_review": true,
+  "optimization_enabled": false,
+  "first_report_sha256": "fa1693726dfc7155deb5f33f42e4d4ae611f5834fdb09303385fb073551e0ab6",
+  "restart_report_sha256": "8a67c54f3b7c2b623678a4894c2185a21f583332b58d1c7938b6930f2bc5006b"
+}

@@ -1,0 +1,150 @@
+{
+  "kind": "adjudicated-training-conformance",
+  "paid_inference_calls": 0,
+  "population_quality_claim": false,
+  "promotion_enabled": false,
+  "schema": 1,
+  "synthetic": true,
+  "tasks": [
+    {
+      "cohort_sha256": "0c652e7fc514b558604e54d5604dd372636d18b82ca91792e7c577c9d9f549b9",
+      "dataset_sha256": "a1b78e89ce0a37fe25ae81394a80ea254deaeb7d014debfa6b90e9e84852ca7f",
+      "eligible_train_rows": 8,
+      "final_inventory_window": {
+        "CompletedAt": "2026-10-08T14:10:25.87244583Z",
+        "FirstPassFinishedAt": "2026-10-08T14:10:25.871588743Z",
+        "SecondPassStartedAt": "2026-10-08T14:10:25.871588833Z",
+        "StartedAt": "2026-10-08T14:10:25.870625535Z"
+      },
+      "fit_seconds": [
+        0.5317717846482992,
+        0.551843096036464
+      ],
+      "initial_inventory_window": {
+        "CompletedAt": "2026-10-08T14:10:25.842669057Z",
+        "FirstPassFinishedAt": "2026-10-08T14:10:25.84134855Z",
+        "SecondPassStartedAt": "2026-10-08T14:10:25.84134865Z",
+        "StartedAt": "2026-10-08T14:10:25.840325107Z"
+      },
+      "inquiries": [
+        {
+          "label": "positive",
+          "model_sha256": "ea97c7c83845da901e1137e8d470cea480e8a9e1b1f2fdf9ab2a1af7e47f8653",
+          "prediction_id": "decision:prediction:v1:49f1713c2931af479af438219c6b0027809a4c4932790c7ebca00c59361348f8",
+          "provider_calls_this_process": 1,
+          "receipt_id": "receipt:7b1bcab2377e2d2050d8a6842435b7154e461e68613dc26a8d95fb6bb23a71c6",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:648b5dc1c30e4760d8fc8c58f27bc9b96bcce9051ef41e70ed61e94ba63e78a7",
+          "synthetic": true,
+          "task": "source",
+          "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e"
+        },
+        {
+          "label": "positive",
+          "model_sha256": "ea97c7c83845da901e1137e8d470cea480e8a9e1b1f2fdf9ab2a1af7e47f8653",
+          "prediction_id": "decision:prediction:v1:49f1713c2931af479af438219c6b0027809a4c4932790c7ebca00c59361348f8",
+          "provider_calls_this_process": 0,
+          "receipt_id": "receipt:7b1bcab2377e2d2050d8a6842435b7154e461e68613dc26a8d95fb6bb23a71c6",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:648b5dc1c30e4760d8fc8c58f27bc9b96bcce9051ef41e70ed61e94ba63e78a7",
+          "synthetic": true,
+          "task": "source",
+          "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e"
+        }
+      ],
+      "inventory_capture_sha256": "6e0ddb5e0ad435037f6255014fa93b1c7306dd47f6849d7bd100f4bde144cfe1",
+      "inventory_target_count": 16,
+      "inventory_unchanged_during_export": true,
+      "inventory_vector_id": "inventory-vector:7d6876007c13c4f23061773a0200d2dc604e4993b220236a1cb685739d1fe8d5",
+      "label_counts": {
+        "disputed": 1,
+        "unknown": 1,
+        "verified": 14
+      },
+      "manifest_sha256": "c67de79f7cc332fe87049a45dae39974237b17ffc0a0b7ae487bb8d2a4c88be1",
+      "model_sha256": "ea97c7c83845da901e1137e8d470cea480e8a9e1b1f2fdf9ab2a1af7e47f8653",
+      "prepare_seconds": 1.2315417909994721,
+      "repeat_model_identical": true,
+      "rows": 16,
+      "split_counts": {
+        "calibration": 2,
+        "test": 4,
+        "train": 8,
+        "validation": 2
+      },
+      "task": "source",
+      "task_id": "decision:task:v1:2a52332f6c4633d78f7357c15419a1e4ddebbab9a906f2a85a853babe81dc71e",
+      "training_receipt_sha256": "3a6cd2266ad145c238e3bd6c209aed299c884beb36e657044ec79fb281312d6f"
+    },
+    {
+      "cohort_sha256": "750e41cad5852071c7c4ad8a60205ac13a8c42ab8d61ec7f314d3fa2dbe3979a",
+      "dataset_sha256": "695bf4fc8ecfae14fb24238851776a32a9942069f41bb6750b96ef94095d82e1",
+      "eligible_train_rows": 8,
+      "final_inventory_window": {
+        "CompletedAt": "2026-10-08T14:10:28.236513757Z",
+        "FirstPassFinishedAt": "2026-10-08T14:10:28.235389844Z",
+        "SecondPassStartedAt": "2026-10-08T14:10:28.235389924Z",
+        "StartedAt": "2026-10-08T14:10:28.234516646Z"
+      },
+      "fit_seconds": [
+        0.5659498539753258,
+        0.5494108088314533
+      ],
+      "initial_inventory_window": {
+        "CompletedAt": "2026-10-08T14:10:28.209831478Z",
+        "FirstPassFinishedAt": "2026-10-08T14:10:28.208923545Z",
+        "SecondPassStartedAt": "2026-10-08T14:10:28.208923665Z",
+        "StartedAt": "2026-10-08T14:10:28.207476999Z"
+      },
+      "inquiries": [
+        {
+          "label": "positive",
+          "model_sha256": "39c6aa89a2e9534eef24003c0db8dd379282d524fa039134da2cdcdd1f47d551",
+          "prediction_id": "decision:prediction:v1:e361e0acc4cc7547dcce66f64ebb6386bddd7455ed81f957769ec4093cd523ca",
+          "provider_calls_this_process": 1,
+          "receipt_id": "receipt:338b614acfd2a89d5c4f67f3223b1a2b73b99246f4768e0adb749e8bdd00692a",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:7d9bc58ed46b2fb7becb7de7922dbd4722aa4f389af937f27479d50a6bccd3b6",
+          "synthetic": true,
+          "task": "review",
+          "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce"
+        },
+        {
+          "label": "positive",
+          "model_sha256": "39c6aa89a2e9534eef24003c0db8dd379282d524fa039134da2cdcdd1f47d551",
+          "prediction_id": "decision:prediction:v1:e361e0acc4cc7547dcce66f64ebb6386bddd7455ed81f957769ec4093cd523ca",
+          "provider_calls_this_process": 0,
+          "receipt_id": "receipt:338b614acfd2a89d5c4f67f3223b1a2b73b99246f4768e0adb749e8bdd00692a",
+          "replay_matched": true,
+          "request_id": "decision:request:v1:7d9bc58ed46b2fb7becb7de7922dbd4722aa4f389af937f27479d50a6bccd3b6",
+          "synthetic": true,
+          "task": "review",
+          "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce"
+        }
+      ],
+      "inventory_capture_sha256": "c46f86537ff4c14ed5141e5beeaf21d2dcb051287fe2828a8b5ffdb6634d8b3e",
+      "inventory_target_count": 16,
+      "inventory_unchanged_during_export": true,
+      "inventory_vector_id": "inventory-vector:39b3c83e8f62002e58ac951e7388173c4ce6fe88e15d5d6d6b24d6b819b03ad3",
+      "label_counts": {
+        "disputed": 1,
+        "unknown": 1,
+        "verified": 14
+      },
+      "manifest_sha256": "1a4140a78ae799594cbba3f8ab7dc45ed1659e91da450f64869c6c028e34fe9c",
+      "model_sha256": "39c6aa89a2e9534eef24003c0db8dd379282d524fa039134da2cdcdd1f47d551",
+      "prepare_seconds": 1.1849408820271492,
+      "repeat_model_identical": true,
+      "rows": 16,
+      "split_counts": {
+        "calibration": 2,
+        "test": 4,
+        "train": 8,
+        "validation": 2
+      },
+      "task": "review",
+      "task_id": "decision:task:v1:e8a984d701bd4ebc60ea3bb57f4cf84dca7f8e50c20f03875e05ad7e3d2699ce",
+      "training_receipt_sha256": "54dbd0d8dda5e04ee53ed9b3e65eff7bbcf93323db6ebdfc5f474e87e337266a"
+    }
+  ]
+}

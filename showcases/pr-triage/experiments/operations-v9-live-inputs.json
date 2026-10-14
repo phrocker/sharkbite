@@ -1,0 +1,8 @@
+{
+  "status": "unlabeled_live_increment",
+  "datasets": [
+    {
+      "manifest": "/tmp/shoal-operations-v9-live/manifest.json"
+    }
+  ]
+}

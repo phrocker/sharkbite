@@ -1,0 +1,18 @@
+outcome approval.outcome.expired
+  The request to run action close-ticket on agent agent-7 was approved but expired at 2026-10-08 13:00:00 UTC before it became work.
+  record=approval:act-1 approval_digest=1f58b9145b24d108d7ac38887338b3ea3229833b9c1e418250343f907bfd1047 agent=agent-7
+  identifiers close-ticket agent-7
+history approval.transition.requested
+  alice requested it at 2026-10-08 12:00:00 UTC under policy generation 9, with an action deadline of 2026-10-08 14:00:00 UTC.
+  record=approval:act-1 principal=alice request=req-1
+  identifiers alice
+history approval.transition.approved
+  bob approved it at 2026-10-08 12:10:00 UTC.
+  record=approval:act-1 principal=bob request=req-2
+  identifiers bob
+history approval.transition.expired_unused
+  Its window closed at 2026-10-08 13:00:00 UTC, after it was approved and before it became work.
+  record=approval:act-1
+next approval.next.final
+  Nothing further can happen to this request; a new request needs its own approval.
+  record=approval:act-1

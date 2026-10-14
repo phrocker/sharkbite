@@ -1,0 +1,234 @@
+name: Publish Python manylinux artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_to_pypi:
+        description: "Publish from the selected version tag after pypi environment approval"
+        required: true
+        default: false
+        type: boolean
+  push:
+    tags:
+      - "v*"
+  release:
+    types: [published]
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/python-manylinux-release.yml"
+      - "accumulo/**"
+      - "capi/**"
+      - "cmd/shoal-capi/**"
+      - "docs/python-release.md"
+      - "go.mod"
+      - "go.sum"
+      - "hdfs/**"
+      - "internal/**"
+      - "python/**"
+      - "rfile/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: python-manylinux-release-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  MANYLINUX_IMAGE: quay.io/pypa/manylinux_2_28_x86_64@sha256:0c87ccb5996dab6c3b7612ee4fda7b80c4ab3c44a86c2541e4a872afdf4f131b
+
+jobs:
+  build:
+    name: Build, reproduce, and smoke test
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          ref: ${{ github.sha }}
+
+      - name: Validate release tag
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PUBLISH_TO_PYPI: ${{ inputs.publish_to_pypi }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          version=$(python3 -c 'import tomllib; print(tomllib.load(open("python/pyproject.toml", "rb"))["project"]["version"])')
+          tag=""
+          case "$EVENT_NAME" in
+            push) tag="$GITHUB_REF_NAME" ;;
+            release) tag="$RELEASE_TAG" ;;
+            workflow_dispatch)
+              if [[ "$REF_TYPE" == "tag" ]]; then tag="$GITHUB_REF_NAME"; fi
+              ;;
+          esac
+          if [[ -n "$tag" && "$tag" != "v${version}" ]]; then
+            echo "::error::Tag ${tag} does not match shoal-sharkbite ${version}"
+            exit 1
+          fi
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$PUBLISH_TO_PYPI" == "true" && "$REF_TYPE" != "tag" ]]; then
+            echo "::error::Manual PyPI publication requires selecting the matching version tag"
+            exit 1
+          fi
+
+      - name: Build and verify twice in controlled manylinux
+        shell: bash
+        run: |
+          source_epoch=$(git show -s --format=%ct HEAD)
+          run_build() {
+            docker run --rm \
+              --env SOURCE_DATE_EPOCH="$source_epoch" \
+              --volume "$GITHUB_WORKSPACE:/io" \
+              --workdir /io \
+              "$MANYLINUX_IMAGE" \
+              bash python/scripts/build_manylinux.sh
+          }
+          run_build
+          mkdir .release-first
+          cp python/dist/* .release-first/
+          run_build
+          diff -u .release-first/SHA256SUMS python/dist/SHA256SUMS
+          diff -u .release-first/release-manifest.json python/dist/release-manifest.json
+          rm -rf .release-first
+
+      - name: Upload verified artifacts
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          path: |
+            python/dist/*.whl
+            python/dist/*.tar.gz
+            python/dist/SHA256SUMS
+            python/dist/release-manifest.json
+          if-no-files-found: error
+          retention-days: 30
+
+  attest:
+    name: Attest verified artifacts
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          path: dist
+
+      - name: Attest release artifacts
+        uses: actions/attest-build-provenance@43d14bc2b83dec42d39ecae14e916627a18bb661 # v3
+        with:
+          subject-path: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/SHA256SUMS
+            dist/release-manifest.json
+
+  github-release:
+    name: Publish GitHub release assets
+    if: github.event_name == 'release'
+    needs: [build, attest]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          path: dist
+
+      - name: Upload immutable release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY"
+
+  pypi-publish:
+    name: Publish shoal-sharkbite to PyPI
+    if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_to_pypi && github.ref_type == 'tag')
+    needs: [build, attest]
+    runs-on: ubuntu-24.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/shoal-sharkbite
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Download verified artifacts
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          path: dist
+
+      - name: Verify exact publish subjects
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'release' && github.event.release.tag_name || github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          dist = Path("dist")
+          manifest = json.loads((dist / "release-manifest.json").read_text())
+          artifacts = manifest["artifacts"]
+          expected = {item["filename"]: item for item in artifacts}
+          archives = sorted(
+              path for path in dist.iterdir()
+              if path.name.endswith((".whl", ".tar.gz"))
+          )
+          if len(archives) != 2 or {path.name for path in archives} != set(expected):
+              raise SystemExit("downloaded wheel/sdist set differs from release manifest")
+          for path in archives:
+              digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              item = expected[path.name]
+              if digest != item["sha256"] or path.stat().st_size != item["size"]:
+                  raise SystemExit(f"release artifact mismatch: {path.name}")
+          sums = {
+              name: digest
+              for digest, name in (
+                  line.split("  ", 1)
+                  for line in (dist / "SHA256SUMS").read_text().splitlines()
+              )
+          }
+          if sums != {name: item["sha256"] for name, item in expected.items()}:
+              raise SystemExit("SHA256SUMS differs from release manifest")
+          if manifest["source"] != {
+              "commit": os.environ["GITHUB_SHA"],
+              "dirty": False,
+              "source_date_epoch": manifest["source"]["source_date_epoch"],
+          }:
+              raise SystemExit("release manifest source does not match the event commit")
+          if manifest["package"]["name"] != "shoal-sharkbite":
+              raise SystemExit("unexpected PyPI project name")
+          if os.environ["RELEASE_TAG"] != f'v{manifest["package"]["version"]}':
+              raise SystemExit("release tag does not match package version")
+          if manifest["platform_tag"] != "manylinux_2_28_x86_64":
+              raise SystemExit("unexpected wheel platform")
+          publish = dist / "publish"
+          publish.mkdir()
+          for path in archives:
+              (publish / path.name).write_bytes(path.read_bytes())
+          PY
+
+      - name: Publish with PyPI Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # release/v1
+        with:
+          packages-dir: dist/publish/
+          print-hash: true

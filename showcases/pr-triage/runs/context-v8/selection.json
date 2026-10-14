@@ -1,0 +1,8 @@
+{
+  "model_id": "0178ed5e2ce1e0ee1182c0dbc891b6c7d8fa41060cde94a248484204f608fc27",
+  "inputs_id": "efd7325814d8372a21ed3d5cb64a687f51a126f02a6402c4251b2bf88cdac9c9",
+  "labels_inspected": false,
+  "threshold": 0.1454674086399588,
+  "purpose": "Frozen reserved evaluation; no training or threshold changes on results.",
+  "id": "0aff01091c30f1b1fd9f29e0efd35e1fe9d1e3018d6ba1d6dca929949774bfd4"
+}

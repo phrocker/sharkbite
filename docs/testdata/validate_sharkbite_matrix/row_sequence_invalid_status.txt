@@ -1,0 +1,2 @@
+# Status that is not one of the six accepted values
+SB-FIXTURE-101 Totally Covered
