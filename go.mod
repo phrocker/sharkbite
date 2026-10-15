@@ -2,7 +2,7 @@ module github.com/phrocker/shoal-oss
 
 go 1.25.0
 
-require github.com/apache/thrift v0.17.0
+require github.com/apache/thrift v0.24.0
 
 replace github.com/colinmarc/hdfs/v2 => github.com/phrocker/hdfs/v2 v2.4.1-0.20260818235907-f64187ce688a
 
