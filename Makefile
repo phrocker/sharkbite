@@ -19,7 +19,7 @@
 
 SHELL := /bin/bash
 
-THRIFT_VERSION        := 0.17.0
+THRIFT_VERSION        := 0.24.0
 THRIFT                ?= thrift
 THRIFT_IDL            := internal/thrift/idl
 THRIFT_OUT            := internal/thrift/gen

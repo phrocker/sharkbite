@@ -76,7 +76,7 @@ lambda-iterator path.
 
 ## Wire protocol
 
-Apache Thrift, generated with compiler **0.17.0** from the vendored Accumulo 4
+Apache Thrift, generated with compiler **0.24.0** from the vendored Accumulo 4
 IDL snapshot in `internal/thrift/idl`. The source and compiler revisions are
 documented there, `make thrift-check` enforces the compiler version, and
 `make thrift-verify` checks the internal generated bindings for drift.
