@@ -58,6 +58,12 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "shoal.fullname" . }}-config
+          # WAL and manifests remain on the PVC until phrocker/sharkbite#119 lands.
+          # env:
+          #   - name: SHOAL_BACKEND
+          #     value: "gcs"
+          #   - name: SHOAL_BACKEND_ROOT
+          #     value: "gs://my-bucket/prefix"
           ports:
             - name: grpc
               containerPort: {{ .Values.writeTier.grpcPort }}

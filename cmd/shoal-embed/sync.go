@@ -20,6 +20,7 @@ import (
 // time" path: a local agent keeps writing, and sync drips deltas to the cluster.
 func cmdSync(args []string) {
 	fs := flag.NewFlagSet("sync", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "source engine data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	dstBackendName := fs.String("dst-backend", "local", "destination backend: local | memory | gcs | s3 | azure | hdfs")
@@ -46,13 +47,13 @@ func cmdSync(args []string) {
 	}
 
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
-	eng, err := engine.Open(*dataDir, engine.Options{
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{
 		Logger: slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
 	})
 	if err != nil {
 		die("sync: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	prior, err := engine.LoadSyncState(state)
 	if err != nil {

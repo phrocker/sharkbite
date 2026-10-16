@@ -42,6 +42,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -120,6 +121,7 @@ Commands:
 // cmdInit creates a table with optional splits.
 func cmdInit(args []string) {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	splits := fs.String("splits", "", "comma-separated split points (e.g. 'entity:,event:,knowledge:')")
@@ -131,11 +133,11 @@ func cmdInit(args []string) {
 		die("init: --table is required")
 	}
 
-	eng, err := engine.Open(*dataDir, engine.Options{})
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{})
 	if err != nil {
 		die("init: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	opts := engine.TableOptions{}
 	switch *workload {
@@ -183,6 +185,7 @@ type EntryJSON struct {
 // cmdWrite reads JSON-line mutations from stdin and writes them.
 func cmdWrite(args []string) {
 	fs := flag.NewFlagSet("write", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	fs.Parse(args)
@@ -191,11 +194,11 @@ func cmdWrite(args []string) {
 		die("write: --table is required")
 	}
 
-	eng, err := engine.Open(*dataDir, engine.Options{})
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{})
 	if err != nil {
 		die("write: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	dec := json.NewDecoder(os.Stdin)
 	var count int
@@ -241,6 +244,7 @@ type CellJSON struct {
 // cmdScan scans a table and prints JSON lines.
 func cmdScan(args []string) {
 	fs := flag.NewFlagSet("scan", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	rowPrefix := fs.String("row-prefix", "", "filter by row prefix")
@@ -256,11 +260,11 @@ func cmdScan(args []string) {
 		die("scan: %v", err)
 	}
 
-	eng, err := engine.Open(*dataDir, engine.Options{})
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{})
 	if err != nil {
 		die("scan: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	r := iterrt.InfiniteRange()
 	if *rowPrefix != "" {
@@ -293,6 +297,7 @@ func cmdScan(args []string) {
 // cmdCompact runs compaction on all tablets.
 func cmdCompact(args []string) {
 	fs := flag.NewFlagSet("compact", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	format := fs.String("format", "", "rewrite immutable files as rfile or parquet")
@@ -302,11 +307,11 @@ func cmdCompact(args []string) {
 		die("compact: --table is required")
 	}
 
-	eng, err := engine.Open(*dataDir, engine.Options{})
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{})
 	if err != nil {
 		die("compact: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	if *format != "" {
 		fileFormat, err := engine.ParseStorageFormat(*format)
@@ -332,16 +337,17 @@ func cmdCompact(args []string) {
 // cmdStatus prints table and tablet statistics.
 func cmdStatus(args []string) {
 	fs := flag.NewFlagSet("status", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	fs.Parse(args)
 
-	eng, err := engine.Open(*dataDir, engine.Options{
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{
 		Logger: slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
 	})
 	if err != nil {
 		die("status: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	stats := eng.Stats()
 	if len(stats) == 0 {
@@ -402,6 +408,7 @@ func cmdStatus(args []string) {
 // (see deploy/README.md's "Current platform gaps" list).
 func cmdServe(args []string) {
 	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	port := fs.Int("port", 9876, "gRPC listen port (ignored when --address is non-empty)")
 	address := fs.String("address", "", "override gRPC bind host:port verbatim (e.g. 0.0.0.0:9876 or :9876); when set, --port is ignored")
@@ -429,6 +436,7 @@ func cmdServe(args []string) {
 
 	h, err := startServe(serveConfig{
 		DataDir:        *dataDir,
+		Backend:        *backend,
 		GRPCAddress:    grpcAddr,
 		MetricsAddress: metricsAddr,
 		TLS:            tlsCfg,

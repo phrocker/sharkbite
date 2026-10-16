@@ -45,6 +45,7 @@ import (
 // invocation yields a ready-to-use local memory engine with operability.
 func cmdUp(args []string) {
 	fs := flag.NewFlagSet("up", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "data directory")
 	port := fs.Int("port", 9876, "gRPC listen port (ignored when --address is non-empty)")
 	address := fs.String("address", "", "override gRPC bind host:port verbatim (e.g. 0.0.0.0:9876); when set, --port is ignored")
@@ -65,10 +66,11 @@ func cmdUp(args []string) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
-	eng, err := engine.Open(*dataDir, engine.Options{Logger: logger})
+	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{Logger: logger})
 	if err != nil {
 		die("up: %v", err)
 	}
+	defer closeEngine()
 
 	// Ensure the default table exists (idempotent: ignore AlreadyExists).
 	if !*noDefaultTable {
@@ -77,7 +79,7 @@ func cmdUp(args []string) {
 			opts.Splits = engine.PrefixSplit(strings.Split(*splits, ",")...)
 		}
 		if err := eng.CreateTable(*table, opts); err != nil && !strings.Contains(err.Error(), "already exists") {
-			eng.Close()
+			closeEngine()
 			die("up: provision table %q: %v", *table, err)
 		}
 	}
@@ -88,7 +90,7 @@ func cmdUp(args []string) {
 	}
 	lis, err := net.Listen("tcp", grpcAddr)
 	if err != nil {
-		eng.Close()
+		closeEngine()
 		die("up: grpc listen: %v", err)
 	}
 
@@ -100,7 +102,7 @@ func cmdUp(args []string) {
 	httpSrv := &http.Server{Addr: *metricsAddr, Handler: obsSrv.Handler()}
 	obsLis, err := net.Listen("tcp", *metricsAddr)
 	if err != nil {
-		eng.Close()
+		closeEngine()
 		die("up: metrics listen: %v", err)
 	}
 
@@ -127,7 +129,7 @@ func cmdUp(args []string) {
 	// RFiles as they land (flush/compaction) instead of via a separate daemon.
 	if *syncDstRoot != "" {
 		if *noDefaultTable {
-			eng.Close()
+			closeEngine()
 			die("up: --sync-dst-root requires a default table (remove --no-default-table)")
 		}
 		state := *syncState
@@ -168,7 +170,7 @@ func cmdUp(args []string) {
 		defer cancel()
 		_ = httpSrv.Shutdown(ctx)
 		srv.GracefulStop()
-		eng.Close()
+		closeEngine()
 	}()
 
 	if err := srv.Serve(lis); err != nil {
