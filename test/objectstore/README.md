@@ -56,3 +56,13 @@ Tests create and delete unique buckets/containers; no cloud credentials are need
   because the Go SDK can emit a newer API version than Azurite supports.
 
 Ordinary `go test ./internal/storage/...` does not start or need emulators.
+
+## Azure notes
+
+- Azure Blob metadata names must be valid C# identifiers. The backend's
+  staged-write tag is `shoal_write_id`; a hyphenated name is rejected by the
+  service and by Azurite with `InvalidMetadata`.
+- Azurite does not implement Put Blob From URL. The live test constructs the
+  backend with `azure.WithSyncCopyPromotion()`, which promotes with the
+  synchronous Copy Blob From URL call under the same conditions. That option is
+  for emulators only (256 MiB per-blob limit); production clients leave it off.

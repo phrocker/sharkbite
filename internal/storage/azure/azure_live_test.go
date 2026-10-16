@@ -41,7 +41,7 @@ func TestLiveObjectStore(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
-	backend, err := New(ctx)
+	backend, err := New(ctx, WithSyncCopyPromotion())
 	if err != nil {
 		t.Fatal(err)
 	}
