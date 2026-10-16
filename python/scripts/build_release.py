@@ -235,7 +235,7 @@ def main() -> None:
         )
     manifest = {
         "schema": 1,
-        "package": {"name": "shoal-sharkbite", "version": package_version()},
+        "package": {"name": "sharkbite", "version": package_version()},
         "shoal_abi": ".".join(map(str, abi_version())),
         "platform_tag": args.platform_tag,
         "source": {

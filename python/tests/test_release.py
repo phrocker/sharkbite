@@ -24,7 +24,7 @@ class ReleasePolicyTests(unittest.TestCase):
         self.assertIn("publish_to_pypi:", workflow)
         self.assertIn("default: false", workflow)
         self.assertIn("environment:\n      name: pypi", workflow)
-        self.assertIn("url: https://pypi.org/p/shoal-sharkbite", workflow)
+        self.assertIn("url: https://pypi.org/p/sharkbite", workflow)
         self.assertIn("id-token: write", workflow)
         self.assertIn("pypa/gh-action-pypi-publish@", workflow)
         self.assertIn("Verify exact publish subjects", workflow)
@@ -45,7 +45,7 @@ class ReleasePolicyTests(unittest.TestCase):
         project = tomllib.loads(
             (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
         )["project"]
-        self.assertEqual(project["name"], "shoal-sharkbite")
+        self.assertEqual(project["name"], "sharkbite")
         self.assertEqual(project["version"], sharkbite.__version__)
         self.assertEqual(project["requires-python"], ">=3.9")
 

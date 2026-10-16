@@ -1,9 +1,8 @@
 # Shoal Python binding
 
-This is an independently usable **incremental binding**, not a complete
-Sharkbite replacement and not a release under the reserved `sharkbite`
-distribution name. The distribution is named `shoal-sharkbite`; it installs
-the import-compatible modules `sharkbite` and `pysharkbite`.
+This is an independently usable **incremental binding** for the canonical
+`sharkbite` distribution. It installs the import-compatible modules `sharkbite`
+and `pysharkbite`, backed by the Shoal stable C ABI.
 The [normative scope ADR](../docs/sharkbite-client-scope.md) currently records
 394 required rows, 390 satisfied rows, and 4 explicit core gaps; optional
 Torch, pandas, embedded, historical C++, and deferred native macOS surfaces do
