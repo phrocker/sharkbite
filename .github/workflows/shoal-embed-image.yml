@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE_NAME: ghcr.io/phrocker/shoal-oss/shoal-embed
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/shoal-embed
 
 jobs:
   validate:

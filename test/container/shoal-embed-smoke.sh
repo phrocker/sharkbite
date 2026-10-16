@@ -25,6 +25,8 @@ test "$(docker image inspect "${IMAGE}" --format '{{json .Config.Entrypoint}}')"
 test "$(docker image inspect "${IMAGE}" --format '{{json .Config.Cmd}}')" = '["serve","--data=/var/lib/shoal","--address=0.0.0.0:9876","--metrics-address=0.0.0.0:9877"]'
 test "$(docker image inspect "${IMAGE}" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" = "${VERSION}"
 test "$(docker image inspect "${IMAGE}" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" = "${REVISION}"
+test "$(docker image inspect "${IMAGE}" --format '{{index .Config.Labels "org.opencontainers.image.source"}}')" = "https://github.com/phrocker/sharkbite"
+test "$(docker image inspect "${IMAGE}" --format '{{index .Config.Labels "org.opencontainers.image.documentation"}}')" = "https://github.com/phrocker/sharkbite/blob/main/docs/shoal-embed-container.md"
 
 proto_container="$(docker create "${IMAGE}")"
 container=""
