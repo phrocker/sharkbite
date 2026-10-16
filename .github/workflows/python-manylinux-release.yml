@@ -118,7 +118,6 @@ jobs:
       fail-fast: false
       matrix:
         python-version: ["3.9", "3.11", "3.13"]
-    container: python:${{ matrix.python-version }}-slim
     permissions:
       contents: read
     steps:
@@ -133,7 +132,14 @@ jobs:
           name: sharkbite-manylinux-${{ github.sha }}
           path: dist
       - name: Run fail-closed chaos matrix
-        run: python python/scripts/chaos_release.py --wheel "$(find dist -name '*.whl' -print -quit)"
+        shell: bash
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/io" \
+            --workdir /io \
+            "python:${{ matrix.python-version }}-slim" \
+            python python/scripts/chaos_release.py \
+            --wheel "$(find dist -name '*.whl' -print -quit)"
 
   attest:
     name: Attest verified artifacts
