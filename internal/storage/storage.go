@@ -104,6 +104,18 @@ type WritableBackend interface {
 	Create(ctx context.Context, path string) (Writer, error)
 }
 
+// ExclusiveCreator is a WritableBackend that can create an object only if
+// no object exists at path. The returned Writer commits on Close; if an
+// object appears at path between CreateExclusive and Close, Close must
+// return an error wrapping ErrExists and leave no object at path.
+type ExclusiveCreator interface {
+	WritableBackend
+	CreateExclusive(ctx context.Context, path string) (Writer, error)
+}
+
+// ErrExists reports an exclusive creation conflict.
+var ErrExists = errors.New("storage: object already exists")
+
 // Lister is a Backend that can enumerate object paths under a prefix.
 // Used for manifest discovery (which RFiles a tablet owns) on startup.
 // Local + Memory implement it. Cloud backends satisfy it via a list API.

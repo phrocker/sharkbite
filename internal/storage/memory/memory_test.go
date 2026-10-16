@@ -9,7 +9,14 @@ import (
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/storage"
+	"github.com/phrocker/shoal-oss/internal/storage/storagetest"
 )
+
+func TestExclusiveCreator(t *testing.T) {
+	storagetest.RunExclusiveCreator(t, func(t *testing.T) storage.ExclusiveCreator {
+		return New()
+	})
+}
 
 func TestMemory_PutOpenReadAt(t *testing.T) {
 	b := New()

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -1696,6 +1697,7 @@ func (o *fakeGCSArtifactOperations) remove(ctx context.Context, _ string, artifa
 }
 
 type fakeBucket struct {
+	mu                 sync.Mutex
 	objects            map[string]fakeObjectData
 	nextGen            int64
 	writerPlan         func(string) fakeWriterPlan
@@ -1804,6 +1806,8 @@ func (o *fakeObject) NewWriter(context.Context) objectWriter {
 }
 
 func (o *fakeObject) Attrs(ctx context.Context) (*cloudstorage.ObjectAttrs, error) {
+	o.bucket.mu.Lock()
+	defer o.bucket.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -1853,6 +1857,8 @@ func (o *fakeObject) CopierFrom(src objectHandle) objectCopier {
 }
 
 func (o *fakeObject) Delete(ctx context.Context) error {
+	o.bucket.mu.Lock()
+	defer o.bucket.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -1890,6 +1896,8 @@ type fakeObjectCopier struct {
 }
 
 func (c *fakeObjectCopier) Run(ctx context.Context) (*cloudstorage.ObjectAttrs, error) {
+	c.dst.bucket.mu.Lock()
+	defer c.dst.bucket.mu.Unlock()
 	if err := ctx.Err(); err != nil {
 		return nil, err
 	}
@@ -1940,6 +1948,8 @@ func (w *fakeObjectWriter) Write(p []byte) (int, error) {
 }
 
 func (w *fakeObjectWriter) Close() error {
+	w.bucket.mu.Lock()
+	defer w.bucket.mu.Unlock()
 	w.closeCalls++
 	if err := checkObjectConditions(w.bucket, w.name, w.conditions); err != nil {
 		return err

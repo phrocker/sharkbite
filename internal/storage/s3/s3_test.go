@@ -30,6 +30,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -61,6 +62,7 @@ type fakeS3Object struct {
 }
 
 type fakeS3WriteOperations struct {
+	mu                    sync.Mutex
 	objects               map[string]fakeS3Object
 	stageFailure          bool
 	stageResponseLost     bool
@@ -123,6 +125,8 @@ func newFakeS3WriteOperations() *fakeS3WriteOperations {
 func (f *fakeS3WriteOperations) head(
 	_ context.Context, _, key string,
 ) (s3ObjectState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.headFailures > 0 {
 		f.headFailures--
 		return s3ObjectState{}, context.DeadlineExceeded
@@ -144,6 +148,8 @@ func (f *fakeS3WriteOperations) head(
 func (f *fakeS3WriteOperations) putStage(
 	ctx context.Context, _, key string, data []byte, writeID string,
 ) (s3ObjectState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.stageFailure {
 		return s3ObjectState{}, errors.New("stage checksum failed")
 	}
@@ -172,6 +178,8 @@ func (f *fakeS3WriteOperations) promote(
 	targetExists bool,
 	target s3ObjectState,
 ) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.promoteCalls++
 	if f.mutateBeforePromote {
 		f.mutateBeforePromote = false
@@ -185,7 +193,7 @@ func (f *fakeS3WriteOperations) promote(
 	current, exists := f.objects[key]
 	if exists != targetExists ||
 		(exists && !equalStringPointers(current.state.etag, target.etag)) {
-		return errors.New("destination precondition failed")
+		return &smithy.GenericAPIError{Code: "PreconditionFailed", Message: "destination precondition failed"}
 	}
 	if err := ctx.Err(); err != nil {
 		return err
@@ -215,6 +223,8 @@ func (f *fakeS3WriteOperations) promote(
 func (f *fakeS3WriteOperations) deleteStage(
 	ctx context.Context, _, key string, _ s3ObjectState,
 ) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if ctx.Err() != nil {
 		f.cleanupCanceled = true
 		return ctx.Err()

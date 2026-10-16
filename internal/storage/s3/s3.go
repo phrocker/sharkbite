@@ -70,6 +70,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type s3Artifact struct {
 	key          string
@@ -187,6 +188,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // Create opens an S3 object writer. Close stages the bytes under an internal
 // key, then conditionally copies that exact object into the destination.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the object only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	bucket, key, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -201,6 +211,9 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		return nil, fmt.Errorf("s3: inspect destination s3://%s/%s: %w", bucket, key, err)
 	}
 	targetExists := err == nil
+	if exclusive && targetExists {
+		return nil, fmt.Errorf("%w: s3://%s/%s", shstorage.ErrExists, bucket, key)
+	}
 	if targetExists && target.etag == nil {
 		return nil, fmt.Errorf("s3: inspect destination s3://%s/%s: missing ETag", bucket, key)
 	}
@@ -216,6 +229,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		writeID:        uuid.NewString(),
 		ctx:            ctx,
 		targetExists:   targetExists,
+		exclusive:      exclusive,
 		target:         target,
 		cleanupTimeout: s3CleanupTimeout,
 	}, nil
@@ -791,6 +805,7 @@ type writer struct {
 	writeID                string
 	ctx                    context.Context //nolint:containedctx
 	targetExists           bool
+	exclusive              bool
 	target                 s3ObjectState
 	stage                  s3ObjectState
 	stageCreated           bool
@@ -850,14 +865,46 @@ func (w *writer) Close() error {
 			)
 		}
 	}
-	if err := w.ops.promote(
-		w.ctx, w.bucket, w.stageKey, w.key, w.stage, w.targetExists, w.target,
-	); err != nil {
+	for attempt := 0; ; attempt++ {
+		err := w.ops.promote(w.ctx, w.bucket, w.stageKey, w.key, w.stage, w.targetExists, w.target)
+		if err == nil {
+			break
+		}
 		verifyState, verifyErr := w.verifyDestination()
 		if verifyState == destinationVerificationCommitted {
 			w.closed = true
 			w.cleanupCommittedStageBestEffort()
 			return nil
+		}
+		if w.exclusive && isExclusiveConflict(err) {
+			// A conflict code alone does not prove the destination exists:
+			// 412 also fires when the stage's CopySourceIfMatch fails, and
+			// S3 documents 409 ConditionalRequestConflict as "retry". Only
+			// an observed destination may be reported as ErrExists.
+			present, presenceErr := w.destinationPresent()
+			switch {
+			case presenceErr != nil:
+				w.promotionIndeterminate = true
+				return errors.Join(
+					w.indeterminatePromotionError(),
+					fmt.Errorf("s3: promote s3://%s/%s to s3://%s/%s: %w",
+						w.bucket, w.stageKey, w.bucket, w.key, err),
+					presenceErr,
+				)
+			case present:
+				return errors.Join(
+					fmt.Errorf("%w: s3://%s/%s: %w", shstorage.ErrExists, w.bucket, w.key, err),
+					w.cleanupStage(),
+				)
+			case isConditionalRequestConflict(err) && attempt < exclusivePromoteRetries:
+				continue
+			default:
+				return errors.Join(
+					fmt.Errorf("s3: exclusive publish s3://%s/%s failed while the destination is absent: %w",
+						w.bucket, w.key, err),
+					w.cleanupStage(),
+				)
+			}
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
@@ -1091,6 +1138,35 @@ func isAmbiguousPromotionError(err error) bool {
 	}
 	text := strings.ToLower(err.Error())
 	return !strings.Contains(text, "precondition")
+}
+
+func isExclusiveConflict(err error) bool {
+	var apiErr smithy.APIError
+	return errors.As(err, &apiErr) &&
+		(apiErr.ErrorCode() == "PreconditionFailed" || apiErr.ErrorCode() == "ConditionalRequestConflict")
+}
+
+// exclusivePromoteRetries bounds how often an exclusive publish retries a
+// 409 ConditionalRequestConflict when the destination is verifiably absent.
+const exclusivePromoteRetries = 2
+
+func isConditionalRequestConflict(err error) bool {
+	var apiErr smithy.APIError
+	return errors.As(err, &apiErr) && apiErr.ErrorCode() == "ConditionalRequestConflict"
+}
+
+// destinationPresent reports whether any object exists at the destination,
+// regardless of who wrote it. An error means presence could not be decided.
+func (w *writer) destinationPresent() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.cleanupTimeout)
+	defer cancel()
+	if _, err := w.ops.head(ctx, w.bucket, w.key); err != nil {
+		if isNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("s3: verify destination s3://%s/%s: %w", w.bucket, w.key, err)
+	}
+	return true, nil
 }
 
 // isNotFound reports whether err is an S3 "key does not exist" error.

@@ -52,6 +52,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type gcsArtifact struct {
 	name       string
@@ -167,6 +168,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // destination on Close. An unsuccessful Close preserves any pre-existing
 // destination object.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the object only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	bucket, object, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -180,6 +190,12 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 	targetConditions, err := loadPromotionConditions(ctx, target)
 	if err != nil {
 		return nil, fmt.Errorf("gcs: inspect destination gs://%s/%s: %w", bucket, object, err)
+	}
+	if exclusive {
+		if !targetConditions.DoesNotExist {
+			return nil, fmt.Errorf("%w: gs://%s/%s", shstorage.ErrExists, bucket, object)
+		}
+		targetConditions = storage.Conditions{DoesNotExist: true}
 	}
 
 	tempObject, err := nextTemporaryObjectName(object)
@@ -199,6 +215,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		target:             target,
 		targetPath:         "gs://" + bucket + "/" + object,
 		targetConditions:   targetConditions,
+		exclusive:          exclusive,
 		temp:               temp,
 		tempPath:           "gs://" + bucket + "/" + tempObject,
 		tempCleanupTimeout: tempCleanupTimeout,
@@ -503,6 +520,7 @@ type writer struct {
 	target                 objectHandle
 	targetPath             string
 	targetConditions       storage.Conditions
+	exclusive              bool
 	temp                   objectHandle
 	tempPath               string
 	tempGeneration         int64
@@ -885,6 +903,24 @@ func (w *writer) promoteTempObject() error {
 		if verifyState == destinationVerificationCommitted {
 			return nil
 		}
+		if w.exclusive && isExclusiveConflict(err) {
+			// A conflict code alone does not prove the destination exists;
+			// only an observed destination may be reported as ErrExists.
+			present, presenceErr := w.destinationPresent()
+			switch {
+			case presenceErr != nil:
+				w.promotionIndeterminate = true
+				return errors.Join(
+					w.indeterminatePromotionError(),
+					fmt.Errorf("gcs: promote temporary object %s to %s: %w", w.tempPath, w.targetPath, err),
+					presenceErr,
+				)
+			case present:
+				return fmt.Errorf("%w: %s: %w", shstorage.ErrExists, w.targetPath, err)
+			default:
+				return fmt.Errorf("gcs: exclusive publish %s failed while the destination is absent: %w", w.targetPath, err)
+			}
+		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
 			return errors.Join(
@@ -896,6 +932,20 @@ func (w *writer) promoteTempObject() error {
 		return fmt.Errorf("gcs: promote temporary object %s to %s: %w", w.tempPath, w.targetPath, err)
 	}
 	return nil
+}
+
+// destinationPresent reports whether any object exists at the destination,
+// regardless of who wrote it. An error means presence could not be decided.
+func (w *writer) destinationPresent() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.tempCleanupTimeout)
+	defer cancel()
+	if _, err := w.target.Attrs(ctx); err != nil {
+		if errors.Is(err, storage.ErrObjectNotExist) {
+			return false, nil
+		}
+		return false, fmt.Errorf("gcs: verify destination %s: %w", w.targetPath, err)
+	}
+	return true, nil
 }
 
 func (w *writer) verifyDestination() (destinationVerificationState, error) {
@@ -1018,4 +1068,12 @@ func isAmbiguousPromotionError(err error) bool {
 	default:
 		return true
 	}
+}
+
+func isExclusiveConflict(err error) bool {
+	var httpErr *googleapi.Error
+	if errors.As(err, &httpErr) {
+		return httpErr.Code == http.StatusPreconditionFailed || httpErr.Code == http.StatusConflict
+	}
+	return status.Code(err) == codes.FailedPrecondition || status.Code(err) == codes.AlreadyExists
 }

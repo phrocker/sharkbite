@@ -91,6 +91,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type azureArtifact struct {
 	name         string
@@ -332,6 +333,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // hidden sibling blob name, then conditionally promotes that exact blob into
 // the destination.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the blob only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	cont, name, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -355,6 +365,9 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		return nil, fmt.Errorf("azure: inspect destination az://%s/%s: %w", cont, name, err)
 	}
 	targetExists := err == nil
+	if exclusive && targetExists {
+		return nil, fmt.Errorf("%w: az://%s/%s", shstorage.ErrExists, cont, name)
+	}
 	if targetExists && target.etag == nil {
 		return nil, fmt.Errorf("azure: inspect destination az://%s/%s: missing ETag", cont, name)
 	}
@@ -366,6 +379,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		writeID:        uuid.NewString(),
 		ctx:            ctx,
 		targetExists:   targetExists,
+		exclusive:      exclusive,
 		target:         target,
 		sourceProvider: b.sourceProvider,
 		cleanupTimeout: azureCleanupTimeout,
@@ -1111,6 +1125,7 @@ type writer struct {
 	writeID                string
 	ctx                    context.Context //nolint:containedctx
 	targetExists           bool
+	exclusive              bool
 	target                 azureObjectState
 	sourceProvider         azureCopySourceProvider
 	stage                  azureObjectState
@@ -1187,6 +1202,32 @@ func (w *writer) Close() error {
 			w.closed = true
 			w.cleanupCommittedStageBestEffort()
 			return nil
+		}
+		if w.exclusive && bloberror.HasCode(err, bloberror.ConditionNotMet, bloberror.BlobAlreadyExists) {
+			// A conflict code alone does not prove the destination exists;
+			// ConditionNotMet also fires for the stage's source condition.
+			present, presenceErr := w.destinationPresent()
+			switch {
+			case presenceErr != nil:
+				w.promotionIndeterminate = true
+				return errors.Join(
+					w.indeterminatePromotionError(),
+					fmt.Errorf("azure: promote az://%s/%s to az://%s/%s: %w",
+						w.container, w.stageName, w.container, w.name, err),
+					presenceErr,
+				)
+			case present:
+				return errors.Join(
+					fmt.Errorf("%w: az://%s/%s: %w", shstorage.ErrExists, w.container, w.name, err),
+					w.cleanupStage(),
+				)
+			default:
+				return errors.Join(
+					fmt.Errorf("azure: exclusive publish az://%s/%s failed while the destination is absent: %w",
+						w.container, w.name, err),
+					w.cleanupStage(),
+				)
+			}
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
@@ -1287,6 +1328,20 @@ func (w *writer) resolveIndeterminateClose() (bool, error) {
 	default:
 		return true, w.indeterminatePromotionError()
 	}
+}
+
+// destinationPresent reports whether any blob exists at the destination,
+// regardless of who wrote it. An error means presence could not be decided.
+func (w *writer) destinationPresent() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.cleanupTimeout)
+	defer cancel()
+	if _, err := w.ops.head(ctx, w.container, w.name); err != nil {
+		if isBlobNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("azure: verify destination az://%s/%s: %w", w.container, w.name, err)
+	}
+	return true, nil
 }
 
 func (w *writer) verifyDestination() (destinationVerificationState, error) {
