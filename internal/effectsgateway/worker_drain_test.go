@@ -545,6 +545,30 @@ func TestAStoppedWorkerSendsNothing(t *testing.T) {
 	}
 }
 
+// TestAKilledWorkerDrainsWithoutWriting: Kill writes nothing. Kill stores
+// killed and then cancels hard; Run can observe the first before the second,
+// reach the drain with every run already exited, and take the finished-work
+// case, which retries the unrecorded write for a held run. The same case is
+// reachable after the cancel when the run exited first, since the select
+// then chooses at random. Either way the write must not happen.
+func TestAKilledWorkerDrainsWithoutWriting(t *testing.T) {
+	h := newWorkerHarness(t, nil)
+	t.Cleanup(func() { _ = h.log.Close() })
+	route, _ := h.cfg.Routes.Lookup("charge")
+	run := &claimRun{action: Action{ID: []byte("a1"), ClaimFence: 1,
+		CorrelationID: []byte("trace-a1")}, route: route, attempted: true}
+	h.worker.runs[run] = struct{}{}
+	h.worker.killed.Store(true)
+	h.worker.drain()
+	if n := h.worker.InFlight(); n != 1 || h.log.Len() != 0 {
+		t.Fatalf("a killed worker wrote on its way out: %d held, %d entries", n, h.log.Len())
+	}
+	// The write is still abandon's, as a HardStop that follows would do.
+	if abandoned := h.worker.abandon(); abandoned != 1 || h.worker.InFlight() != 0 {
+		t.Fatalf("abandoned %d, %d held", abandoned, h.worker.InFlight())
+	}
+}
+
 // TestAnAttemptedRunLeavesRunsOnlyOnceSettled is the invariant on Worker.runs
 // directly: a run whose request reached the target and whose goroutine then
 // exits unsettled — here because the worker was killed mid-request — stays
