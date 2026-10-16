@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sharkbite"
-version = "1.4.0"
+version = "1.4.2"
 description = "Accumulo-compatible Python bindings"
 readme = "README.md"
 requires-python = ">=3.9"
