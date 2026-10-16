@@ -2,10 +2,27 @@
 
 Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
 
-Shoal remains the name of the underlying Go engine and its stable evidence, provenance, and decision contracts.
+Sharkbite ships three roles on one Go engine. The **embedded engine**
+(`shoal-embed`) is a standalone sorted key/value store with no ZooKeeper or
+Accumulo dependency. The **serving roles** (`shoal-tserver`, `shoal-compactor`)
+run as an independent cluster or alongside Accumulo in a hybrid deployment. The
+**Go client** talks to an existing Accumulo cluster with no JVM. Accumulo
+compatibility comes from reimplementing its core constructs in Go: the Thrift
+client protocol, RFile storage, iterators, tablet servers, and compactors.
+Sharkbite was previously a C++ Accumulo client; the Go rewrite keeps that client
+role and adds the engine and the decision platform on top of it. Shoal is the
+name of the underlying Go engine and its stable evidence, provenance, and
+decision contracts.
 
+The [PyPI release](https://pypi.org/project/sharkbite/) is the `sharkbite`
+distribution from version 1.3.0 onward. It installs the import-compatible
+`sharkbite` and `pysharkbite` modules for general Accumulo access, plus the
+`shoal` module for knowledge-graph values and retrieval. It is an incremental
+binding over the stable C ABI, not a complete replacement for the historical
+C++ client; the [Python guide](python/README.md) records its scope and
+installation steps.
 
-Shoal is an evidence and enforcement layer for AI systems. It keeps the chain
+Sharkbite is an evidence and enforcement layer for AI systems. It keeps the chain
 from **what was observed** to **what an agent may do** inspectable:
 
 - authorized retrieval returns exact evidence and provenance;
