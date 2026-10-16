@@ -25,6 +25,7 @@ import (
 	"errors"
 	"os"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -123,8 +124,30 @@ func TestLiveObjectStore(t *testing.T) {
 	if _, err := w.Write(want); err != nil {
 		t.Fatal(err)
 	}
+	// Write only buffers inside the SDK writer; the temp object is first
+	// created by Close. Create it directly under this writer's identity so
+	// Abort has something real to remove, then prove it is gone.
+	gw := w.(*writer)
+	tempName := strings.TrimPrefix(gw.tempPath, "gs://"+bucketName+"/")
+	tempWriter := bucket.Object(tempName).NewWriter(ctx)
+	tempWriter.Metadata = map[string]string{"shoal-write-id": gw.writeID}
+	if _, err := tempWriter.Write(want); err != nil {
+		t.Fatal(err)
+	}
+	if err := tempWriter.Close(); err != nil {
+		t.Fatal(err)
+	}
+	tempAttrs, err := bucket.Object(tempName).Attrs(ctx)
+	if err != nil {
+		t.Fatalf("temp missing before Abort: %v", err)
+	}
+	gw.tempGeneration = tempAttrs.Generation
+	gw.tempAttrs = tempAttrs
 	if err := w.(shstorage.Aborter).Abort(); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := bucket.Object(tempName).Attrs(ctx); err == nil {
+		t.Fatalf("temp %s survived Abort", tempName)
 	}
 	// Backend.List hides stages; inspect the server's raw namespace instead.
 	if object, err := bucket.Objects(ctx, &storage.Query{Prefix: "live/"}).Next(); err != iterator.Done {
@@ -145,6 +168,19 @@ func TestLiveObjectStore(t *testing.T) {
 	result, err := backend.CleanupStaleArtifacts(ctx, prefix, time.Now().Add(-time.Hour))
 	if err != nil || result.Examined != 1 || len(result.Removed) != 0 {
 		t.Fatalf("CleanupStaleArtifacts = %+v, %v", result, err)
+	}
+	artifacts, err := backend.artifactOps.list(ctx, bucketName, "live/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ownedSeen := false
+	for _, a := range artifacts {
+		if a.name == stage {
+			ownedSeen = a.owned
+		}
+	}
+	if !ownedSeen {
+		t.Fatalf("fresh stage %s not recognized as owned by artifact listing: %+v", stage, artifacts)
 	}
 	if _, err := bucket.Object(stage).Attrs(ctx); err != nil {
 		t.Fatalf("fresh stage removed: %v", err)

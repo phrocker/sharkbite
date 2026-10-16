@@ -120,8 +120,23 @@ func TestLiveObjectStore(t *testing.T) {
 	if _, err := w.Write(want); err != nil {
 		t.Fatal(err)
 	}
+	// Write only buffers; the stage is first uploaded by Close. Force the
+	// stage onto the server under this writer's identity so Abort has
+	// something real to remove, then prove it is gone.
+	sw := w.(*writer)
+	stageState, err := backend.ops.putStage(ctx, bucket, sw.stageKey, want, sw.writeID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	sw.rememberStage(stageState)
+	if _, err := backend.client.HeadObject(ctx, &s3sdk.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(sw.stageKey)}); err != nil {
+		t.Fatalf("stage missing before Abort: %v", err)
+	}
 	if err := w.(shstorage.Aborter).Abort(); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := backend.client.HeadObject(ctx, &s3sdk.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(sw.stageKey)}); err == nil {
+		t.Fatalf("stage %s survived Abort", sw.stageKey)
 	}
 	// Backend.List hides stages; inspect the server's raw namespace instead.
 	objects, err := backend.client.ListObjectsV2(ctx, &s3sdk.ListObjectsV2Input{
@@ -146,6 +161,25 @@ func TestLiveObjectStore(t *testing.T) {
 	}
 	if _, err := backend.client.HeadObject(ctx, &s3sdk.HeadObjectInput{Bucket: aws.String(bucket), Key: aws.String(stage)}); err != nil {
 		t.Fatalf("fresh stage removed: %v", err)
+	}
+	// Examined counts names alone and Removed is empty on every early exit,
+	// so prove the cleaner actually recognizes the stage as ours.
+	artifacts, err := backend.artifactOps.list(ctx, bucket, "live/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ownedSeen := false
+	for _, a := range artifacts {
+		if a.key != stage {
+			continue
+		}
+		if a, err = backend.artifactOps.inspect(ctx, bucket, a); err != nil {
+			t.Fatal(err)
+		}
+		ownedSeen = a.owned
+	}
+	if !ownedSeen {
+		t.Fatalf("fresh stage %s not recognized as owned by artifact inspection: %+v", stage, artifacts)
 	}
 	outside, err := backend.Open(ctx, root+"outside")
 	if err != nil {

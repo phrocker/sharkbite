@@ -109,8 +109,23 @@ func TestLiveObjectStore(t *testing.T) {
 	if _, err := w.Write(want); err != nil {
 		t.Fatal(err)
 	}
+	// Write only buffers; the stage is first uploaded by Close. Force the
+	// stage onto the server under this writer's identity so Abort has
+	// something real to remove, then prove it is gone.
+	aw := w.(*writer)
+	stageState, err := backend.ops.uploadStage(ctx, containerName, aw.stageName, want, aw.writeID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	aw.rememberStage(stageState)
+	if _, err := client.NewBlobClient(aw.stageName).GetProperties(ctx, nil); err != nil {
+		t.Fatalf("stage missing before Abort: %v", err)
+	}
 	if err := w.(shstorage.Aborter).Abort(); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := client.NewBlobClient(aw.stageName).GetProperties(ctx, nil); err == nil {
+		t.Fatalf("stage %s survived Abort", aw.stageName)
 	}
 	// Backend.List hides stages; inspect the server's raw namespace instead.
 	pager := client.NewListBlobsFlatPager(&container.ListBlobsFlatOptions{Prefix: to.Ptr("live/")})
@@ -136,6 +151,26 @@ func TestLiveObjectStore(t *testing.T) {
 	}
 	if _, err := client.NewBlobClient(stage).GetProperties(ctx, nil); err != nil {
 		t.Fatalf("fresh stage removed: %v", err)
+	}
+	// Examined counts names alone and Removed is empty on every early exit,
+	// so prove the cleaner actually recognizes the stage as ours via the
+	// renamed metadata key.
+	artifacts, err := backend.artifactOps.list(ctx, containerName, "live/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	ownedSeen := false
+	for _, a := range artifacts {
+		if a.name != stage {
+			continue
+		}
+		if a, err = backend.artifactOps.inspect(ctx, containerName, a); err != nil {
+			t.Fatal(err)
+		}
+		ownedSeen = a.owned
+	}
+	if !ownedSeen {
+		t.Fatalf("fresh stage %s not recognized as owned: %+v", stage, artifacts)
 	}
 	outside, err := backend.Open(ctx, root+"outside")
 	if err != nil {

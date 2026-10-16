@@ -1413,7 +1413,7 @@ func (w *writer) promotionSource() (azureCopySource, error) {
 
 // metadataValue looks up blob metadata case-insensitively because the service
 // returns metadata through response headers, which arrive canonicalized (for
-// example "Shoal-Write-Id" rather than writeIDMetadataKey).
+// example "Shoal_write_id" rather than the lower-case key).
 func metadataValue(metadata map[string]*string, key string) string {
 	if value, ok := metadata[key]; ok {
 		if value == nil {
