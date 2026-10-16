@@ -18,12 +18,28 @@ def run(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedPr
     return subprocess.run(args, text=True, capture_output=True, env=env)
 
 
-def expect_failure(label: str, *code: str, env: dict[str, str]) -> None:
-    result = run(env["PYTHON"], "-c", *code, env=env)
-    output = result.stdout + result.stderr
+def expect_failure(label: str, code: str, *, env: dict[str, str], message: str) -> None:
+    """Require the documented fail-closed refusal, not merely a nonzero exit.
+
+    A crash, a signal, or an unrelated exception would also exit nonzero; none
+    of those proves the loader refused for the injected reason, so each is a
+    gate failure.
+    """
+    result = run(env["PYTHON"], "-c", code, env=env)
+    output = (result.stdout + result.stderr).strip()
+    last = output.splitlines()[-1] if output else ""
+    if result.returncode < 0:
+        raise SystemExit(
+            f"chaos case {label} died from signal {-result.returncode}; a crash is not a fail-closed refusal"
+        )
     if result.returncode == 0:
         raise SystemExit(f"chaos case {label} unexpectedly succeeded")
-    print(f"PASS {label}: {output.strip().splitlines()[-1] if output.strip() else 'failed closed'}")
+    if not last.startswith("ImportError:") or message not in last:
+        raise SystemExit(
+            f"chaos case {label} failed for the wrong reason; expected ImportError containing "
+            f"{message!r}, got: {last or 'no diagnostic'}"
+        )
+    print(f"PASS {label}: {last}")
 
 
 def main() -> int:
@@ -79,26 +95,51 @@ def main() -> int:
         if native is None or not manifest.is_file():
             raise SystemExit("wheel has no bundled native library and manifest")
 
+        load = "from sharkbite import NativeAPI; NativeAPI()"
+
         relative_env = dict(base, SHOAL_LIBRARY="relative-shoal.so")
         expect_failure(
             "relative library override",
-            "from sharkbite._native import library_candidates; list(library_candidates())",
+            load,
             env=relative_env,
+            message="SHOAL_LIBRARY must be an absolute path",
         )
 
         original_manifest = manifest.read_bytes()
         manifest.write_text("{}", encoding="utf-8")
         try:
-            expect_failure("corrupt checksum manifest", "from sharkbite import NativeAPI; NativeAPI()", env=base)
+            expect_failure(
+                "corrupt checksum manifest",
+                load,
+                env=base,
+                message="bundled Shoal library manifest is missing or invalid",
+            )
         finally:
             manifest.write_bytes(original_manifest)
 
         original_native = native.read_bytes()
         native.write_bytes(original_native + b"chaos")
         try:
-            expect_failure("tampered native library", "from sharkbite import NativeAPI; NativeAPI()", env=base)
+            expect_failure(
+                "tampered native library",
+                load,
+                env=base,
+                message="bundled Shoal library checksum does not match its manifest",
+            )
         finally:
             native.write_bytes(original_native)
+
+        removed = native.with_name(native.name + ".removed")
+        native.rename(removed)
+        try:
+            expect_failure(
+                "removed native library",
+                load,
+                env=base,
+                message="unable to load the Shoal shared library",
+            )
+        finally:
+            removed.rename(native)
 
         for index in range(20):
             repeated = run(str(python), "-c", "import sharkbite, pysharkbite", env=base)

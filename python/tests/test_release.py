@@ -105,3 +105,45 @@ class ReleasePolicyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ChaosGateTests(unittest.TestCase):
+    """The chaos helper must accept only the documented ImportError."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        import sys
+
+        path = Path(__file__).parents[1] / "scripts" / "chaos_release.py"
+        spec = importlib.util.spec_from_file_location("chaos_release", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        cls.chaos = module
+        cls.env = dict(os.environ, PYTHON=sys.executable, PYTHONPATH="")
+
+    def expect(self, code, message="documented refusal"):
+        return self.chaos.expect_failure("case", code, env=self.env, message=message)
+
+    def test_documented_import_error_passes(self):
+        self.expect("raise ImportError('documented refusal: detail')")
+
+    def test_success_fails_the_gate(self):
+        with self.assertRaisesRegex(SystemExit, "unexpectedly succeeded"):
+            self.expect("pass")
+
+    def test_unrelated_exception_fails_the_gate(self):
+        with self.assertRaisesRegex(SystemExit, "wrong reason"):
+            self.expect("raise RuntimeError('documented refusal')")
+
+    def test_wrong_message_fails_the_gate(self):
+        with self.assertRaisesRegex(SystemExit, "wrong reason"):
+            self.expect("raise ImportError('something else')")
+
+    def test_signal_exit_fails_the_gate(self):
+        with self.assertRaisesRegex(SystemExit, "died from signal"):
+            self.expect("import os, signal; os.kill(os.getpid(), signal.SIGSEGV)")
+
+    def test_plain_nonzero_exit_fails_the_gate(self):
+        with self.assertRaisesRegex(SystemExit, "wrong reason"):
+            self.expect("raise SystemExit(3)")

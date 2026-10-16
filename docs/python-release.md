@@ -174,11 +174,14 @@ manylinux build, provenance checks, and container chaos matrix all pass:
 2. Run the release verification in clean containers for every supported Python
    version. Check import identity, ABI/capability discovery, checksums, and
    native mutation behavior.
-3. Inject failures in disposable containers: remove or corrupt the bundled
-   native library, alter its checksum manifest, set a relative library path,
-   preload an incompatible library, interrupt dependency resolution, restart
-   the interpreter repeatedly, and exercise concurrent scanner/writer cleanup.
-   Every injected failure must produce the documented fail-closed error.
+3. Inject failures in disposable containers with `chaos_release.py`: set a
+   relative `SHOAL_LIBRARY` path, corrupt the bundled checksum manifest, tamper
+   with the bundled native library, remove it, and restart the interpreter
+   twenty times. Every injected failure must produce the documented
+   `ImportError` for that injection; a crash, a signal exit, or an unrelated
+   exception fails the gate. Incompatible-library preloading, interrupted
+   dependency resolution, and concurrent scanner/writer cleanup are not part
+   of this gate.
 4. Publish the exact verified artifacts to PyPI through the protected `pypi`
    environment. Never rebuild between verification and publication.
 
