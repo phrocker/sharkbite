@@ -33,7 +33,10 @@ class ReleasePolicyTests(unittest.TestCase):
         self.assertNotRegex(workflow, r"(?m)^\s+password:")
 
     def test_import_names_share_version_and_public_api(self):
-        self.assertEqual(sharkbite.__version__, "1.3.0")
+        project = tomllib.loads(
+            (Path(__file__).parents[1] / "pyproject.toml").read_text(encoding="utf-8")
+        )["project"]
+        self.assertEqual(sharkbite.__version__, project["version"])
         self.assertEqual(pysharkbite.__version__, sharkbite.__version__)
         self.assertIs(pysharkbite.Connector, sharkbite.Connector)
         self.assertIn("__version__", sharkbite.__all__)
