@@ -14,6 +14,10 @@ objectStorage:
   createSecret: true
   gcsKeyJson: '{"type":"service_account","project_id":"REPLACE_ME"}'
 
+# To store the write tier's immutable tablet files on an object store, set
+# SHOAL_BACKEND (gcs | s3 | azure | hdfs) and SHOAL_BACKEND_ROOT (for example
+# gs://my-bucket/prefix) in the write-tier pod environment. WAL and table
+# manifests remain on the PVC until phrocker/sharkbite#119 lands.
 writeTier:
   # null selects the safe default for mode; an explicit boolean remains
   # available for compatibility with existing installations.

@@ -22,6 +22,7 @@ import (
 
 func cmdExport(args []string) {
 	fs := flag.NewFlagSet("export", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "source engine data directory")
 	tableName := fs.String("table", "", "table name (required)")
 	dstBackendName := fs.String("dst-backend", "local", "destination backend: local | memory | gcs | s3 | azure | hdfs")
@@ -47,13 +48,13 @@ func cmdExport(args []string) {
 	}
 	defer cleanup()
 
-	eng, err := engine.Open(*dataDir, engine.Options{
+	eng, closeEngine, err := backend.openEngine(ctx, *dataDir, engine.Options{
 		Logger: slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
 	})
 	if err != nil {
 		die("export: %v", err)
 	}
-	defer eng.Close()
+	defer closeEngine()
 
 	manifest, err := eng.ExportRFiles(ctx, *tableName, dst, engine.RFileExportOptions{
 		DestinationRoot:      *dstRoot,
@@ -78,8 +79,8 @@ func cmdExport(args []string) {
 
 func cmdImport(args []string) {
 	fs := flag.NewFlagSet("import", flag.ExitOnError)
+	backend := registerBackendFlags(fs)
 	dataDir := fs.String("data", defaultDataDir(), "destination engine data directory")
-	backendName := fs.String("backend", "local", "destination backend containing manifest/RFiles: local | memory | gcs | s3 | azure | hdfs")
 	manifestPath := fs.String("manifest", "", "manifest path on backend (required)")
 	timeout := fs.Duration("timeout", 10*time.Minute, "overall import timeout")
 	fs.Parse(args)
@@ -89,7 +90,7 @@ func cmdImport(args []string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
-	be, cleanup, err := openStorageBackend(ctx, *backendName, *manifestPath)
+	be, cleanup, err := backend.open(ctx, *manifestPath)
 	if err != nil {
 		die("import: %v", err)
 	}

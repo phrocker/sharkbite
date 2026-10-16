@@ -43,6 +43,7 @@ import (
 // scraping.
 type serveConfig struct {
 	DataDir string
+	Backend backendConfig
 
 	// GRPCAddress is the bind host:port for the gRPC data plane, e.g.
 	// "127.0.0.1:9876" (loopback-only, the CLI default) or "0.0.0.0:9876"
@@ -185,14 +186,14 @@ func startServe(cfg serveConfig) (*serveHandle, error) {
 		}
 	}
 
-	eng, err := engine.Open(cfg.DataDir, engine.Options{Logger: logger})
+	eng, closeEngine, err := cfg.Backend.openEngine(context.Background(), cfg.DataDir, engine.Options{Logger: logger})
 	if err != nil {
 		return nil, fmt.Errorf("open engine: %w", err)
 	}
 
 	grpcLis, err := net.Listen("tcp", cfg.GRPCAddress)
 	if err != nil {
-		_ = eng.Close()
+		_ = closeEngine()
 		return nil, fmt.Errorf("grpc listen: %w", err)
 	}
 
@@ -201,7 +202,7 @@ func startServe(cfg serveConfig) (*serveHandle, error) {
 		httpLis, err = net.Listen("tcp", cfg.MetricsAddress)
 		if err != nil {
 			_ = grpcLis.Close()
-			_ = eng.Close()
+			_ = closeEngine()
 			return nil, fmt.Errorf("metrics listen: %w", err)
 		}
 		if tlsConfig != nil {
@@ -276,7 +277,7 @@ func startServe(cfg serveConfig) (*serveHandle, error) {
 		httpLis:       httpLis,
 		logger:        logger,
 		inFlight:      inFlight,
-		closeEngine:   eng.Close,
+		closeEngine:   closeEngine,
 		httpServeDone: httpServeDone,
 	}, nil
 }
