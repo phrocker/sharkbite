@@ -84,6 +84,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type azureArtifact struct {
 	name         string
@@ -314,6 +315,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // hidden sibling blob name, then conditionally promotes that exact blob into
 // the destination.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the blob only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	cont, name, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -337,6 +347,9 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		return nil, fmt.Errorf("azure: inspect destination az://%s/%s: %w", cont, name, err)
 	}
 	targetExists := err == nil
+	if exclusive && targetExists {
+		return nil, fmt.Errorf("%w: az://%s/%s", shstorage.ErrExists, cont, name)
+	}
 	if targetExists && target.etag == nil {
 		return nil, fmt.Errorf("azure: inspect destination az://%s/%s: missing ETag", cont, name)
 	}
@@ -348,6 +361,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		writeID:        uuid.NewString(),
 		ctx:            ctx,
 		targetExists:   targetExists,
+		exclusive:      exclusive,
 		target:         target,
 		sourceProvider: b.sourceProvider,
 		cleanupTimeout: azureCleanupTimeout,
@@ -1068,6 +1082,7 @@ type writer struct {
 	writeID                string
 	ctx                    context.Context //nolint:containedctx
 	targetExists           bool
+	exclusive              bool
 	target                 azureObjectState
 	sourceProvider         azureCopySourceProvider
 	stage                  azureObjectState
@@ -1144,6 +1159,12 @@ func (w *writer) Close() error {
 			w.closed = true
 			w.cleanupCommittedStageBestEffort()
 			return nil
+		}
+		if w.exclusive && bloberror.HasCode(err, bloberror.ConditionNotMet, bloberror.BlobAlreadyExists) {
+			return errors.Join(
+				fmt.Errorf("%w: az://%s/%s: %w", shstorage.ErrExists, w.container, w.name, err),
+				w.cleanupStage(),
+			)
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true

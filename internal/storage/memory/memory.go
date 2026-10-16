@@ -108,14 +108,20 @@ func (b *Backend) Create(_ context.Context, path string) (storage.Writer, error)
 	return &writer{b: b, path: path, buf: &bytes.Buffer{}}, nil
 }
 
+// CreateExclusive creates path on Close only if it is still absent.
+func (b *Backend) CreateExclusive(_ context.Context, path string) (storage.Writer, error) {
+	return &writer{b: b, path: path, buf: &bytes.Buffer{}, exclusive: true}, nil
+}
+
 // writer is the memory-backend's Writer. Buffers writes; on Close
 // publishes the buffered bytes to b.objects[path].
 type writer struct {
-	b       *Backend
-	path    string
-	buf     *bytes.Buffer
-	closed  bool
-	aborted bool
+	b         *Backend
+	path      string
+	buf       *bytes.Buffer
+	closed    bool
+	aborted   bool
+	exclusive bool
 }
 
 func (w *writer) Write(p []byte) (int, error) {
@@ -133,6 +139,15 @@ func (w *writer) Close() error {
 		return nil
 	}
 	w.closed = true
+	if w.exclusive {
+		w.b.mu.Lock()
+		defer w.b.mu.Unlock()
+		if _, exists := w.b.objects[w.path]; exists {
+			return fmt.Errorf("%w: %s", storage.ErrExists, w.path)
+		}
+		w.b.objects[w.path] = bytes.Clone(w.buf.Bytes())
+		return nil
+	}
 	w.b.Put(w.path, w.buf.Bytes())
 	return nil
 }

@@ -52,6 +52,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type gcsArtifact struct {
 	name       string
@@ -167,6 +168,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // destination on Close. An unsuccessful Close preserves any pre-existing
 // destination object.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the object only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	bucket, object, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -180,6 +190,12 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 	targetConditions, err := loadPromotionConditions(ctx, target)
 	if err != nil {
 		return nil, fmt.Errorf("gcs: inspect destination gs://%s/%s: %w", bucket, object, err)
+	}
+	if exclusive {
+		if !targetConditions.DoesNotExist {
+			return nil, fmt.Errorf("%w: gs://%s/%s", shstorage.ErrExists, bucket, object)
+		}
+		targetConditions = storage.Conditions{DoesNotExist: true}
 	}
 
 	tempObject, err := nextTemporaryObjectName(object)
@@ -199,6 +215,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		target:             target,
 		targetPath:         "gs://" + bucket + "/" + object,
 		targetConditions:   targetConditions,
+		exclusive:          exclusive,
 		temp:               temp,
 		tempPath:           "gs://" + bucket + "/" + tempObject,
 		tempCleanupTimeout: tempCleanupTimeout,
@@ -503,6 +520,7 @@ type writer struct {
 	target                 objectHandle
 	targetPath             string
 	targetConditions       storage.Conditions
+	exclusive              bool
 	temp                   objectHandle
 	tempPath               string
 	tempGeneration         int64
@@ -885,6 +903,9 @@ func (w *writer) promoteTempObject() error {
 		if verifyState == destinationVerificationCommitted {
 			return nil
 		}
+		if w.exclusive && isExclusiveConflict(err) {
+			return fmt.Errorf("%w: %s: %w", shstorage.ErrExists, w.targetPath, err)
+		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
 			return errors.Join(
@@ -1018,4 +1039,12 @@ func isAmbiguousPromotionError(err error) bool {
 	default:
 		return true
 	}
+}
+
+func isExclusiveConflict(err error) bool {
+	var httpErr *googleapi.Error
+	if errors.As(err, &httpErr) {
+		return httpErr.Code == http.StatusPreconditionFailed || httpErr.Code == http.StatusConflict
+	}
+	return status.Code(err) == codes.FailedPrecondition || status.Code(err) == codes.AlreadyExists
 }

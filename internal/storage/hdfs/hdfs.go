@@ -317,12 +317,28 @@ func (b *Backend) Open(ctx context.Context, objectPath string) (storage.File, er
 
 // Create creates or replaces path. Parent directories are created as needed.
 func (b *Backend) Create(ctx context.Context, objectPath string) (storage.Writer, error) {
+	return b.create(ctx, objectPath, false)
+}
+
+// CreateExclusive stages a new file and publishes it only if path is absent.
+// Custom clients must implement RenameNoOverwriteContext with atomic semantics.
+func (b *Backend) CreateExclusive(ctx context.Context, objectPath string) (storage.Writer, error) {
+	return b.create(ctx, objectPath, true)
+}
+
+func (b *Backend) create(ctx context.Context, objectPath string, exclusive bool) (storage.Writer, error) {
 	if err := contextOrBackground(ctx).Err(); err != nil {
 		return nil, err
 	}
 	lease, err := b.newOperation(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if exclusive {
+		if _, ok := lease.client.(noOverwriteRenamer); !ok {
+			_ = lease.release()
+			return nil, fmt.Errorf("hdfs: atomic no-overwrite rename unavailable: %w", errors.ErrUnsupported)
+		}
 	}
 	resolved, _, err := b.resolve(objectPath)
 	if err != nil {
@@ -366,6 +382,7 @@ func (b *Backend) Create(ctx context.Context, objectPath string) (storage.Writer
 		temp:                tempPath,
 		target:              resolved,
 		digest:              sha256.New(),
+		exclusive:           exclusive,
 	}
 	if err := b.registerHandle(w.shutdown, func(done func()) { w.complete = done }); err != nil {
 		_ = w.shutdown()
@@ -1151,6 +1168,10 @@ type contextRenamer interface {
 	RenameContext(context.Context, string, string) error
 }
 
+type noOverwriteRenamer interface {
+	RenameNoOverwriteContext(context.Context, string, string) error
+}
+
 type statter interface {
 	Stat(string) (os.FileInfo, error)
 }
@@ -1382,6 +1403,7 @@ type replaceWriter struct {
 	ctx                 context.Context
 	temp                string
 	target              string
+	exclusive           bool
 	closed              bool
 	abortRequested      bool
 	aborted             bool
@@ -1535,7 +1557,13 @@ func (w *replaceWriter) Close() (retErr error) {
 		)
 	}
 
-	if err := w.commitReplacement(); err != nil {
+	var commitErr error
+	if w.exclusive {
+		commitErr = w.commitExclusive()
+	} else {
+		commitErr = w.commitReplacement()
+	}
+	if err := commitErr; err != nil {
 		if storage.IsCommittedWriteError(err) {
 			w.closed = true
 		}
@@ -1543,6 +1571,23 @@ func (w *replaceWriter) Close() (retErr error) {
 	}
 	w.closed = true
 	return nil
+}
+
+func (w *replaceWriter) commitExclusive() error {
+	err := w.client.(noOverwriteRenamer).RenameNoOverwriteContext(contextOrBackground(w.ctx), w.temp, w.target)
+	if err == nil {
+		w.state = replacementCommitted
+		return nil
+	}
+	if isAlreadyExists(err) {
+		err = errors.Join(storage.ErrExists, err)
+	}
+	// A failed exclusive publish never authorizes deletion of the destination,
+	// even if it has the same bytes as this writer.
+	return errors.Join(
+		fmt.Errorf("hdfs: exclusively publish %s: %w", w.target, err),
+		withCleanupContext(w.removeTemp),
+	)
 }
 
 func (w *replaceWriter) commitReplacement() error {

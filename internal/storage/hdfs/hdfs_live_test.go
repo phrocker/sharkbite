@@ -17,7 +17,26 @@ import (
 	"github.com/phrocker/shoal-oss/internal/rfile/bcfile/block"
 	"github.com/phrocker/shoal-oss/internal/storage"
 	hdfsstorage "github.com/phrocker/shoal-oss/internal/storage/hdfs"
+	"github.com/phrocker/shoal-oss/internal/storage/storagetest"
 )
+
+func TestLiveExclusiveCreator(t *testing.T) {
+	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
+		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
+	}
+	storagetest.RunExclusiveCreator(t, func(t *testing.T) storage.ExclusiveCreator {
+		backend, err := hdfsstorage.New("127.0.0.1:8020")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() {
+			if err := backend.Close(); err != nil {
+				t.Errorf("Close backend: %v", err)
+			}
+		})
+		return backend
+	}, "/tmp/shoal-integration/"+uuid.NewString())
+}
 
 func TestLiveBackendAndRFileRoundTrip(t *testing.T) {
 	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {

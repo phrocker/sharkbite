@@ -31,6 +31,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 	"unicode/utf8"
@@ -81,6 +82,7 @@ func (o *fakeAzureArtifactOperations) remove(ctx context.Context, _ string, arti
 }
 
 type fakeAzureWriteOperations struct {
+	mu                    sync.Mutex
 	objects               map[string]fakeAzureObject
 	stageFailure          bool
 	stageResponseLost     bool
@@ -114,6 +116,8 @@ func azureNotFoundError() error {
 func (f *fakeAzureWriteOperations) head(
 	_ context.Context, _, name string,
 ) (azureObjectState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.headCalls++
 	if f.headFailures > 0 {
 		f.headFailures--
@@ -139,6 +143,8 @@ func (f *fakeAzureWriteOperations) uploadStage(
 	data []byte,
 	writeID string,
 ) (azureObjectState, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if f.stageFailure {
 		return azureObjectState{}, errors.New("stage checksum failed")
 	}
@@ -172,6 +178,8 @@ func (f *fakeAzureWriteOperations) promote(
 	targetExists bool,
 	target azureObjectState,
 ) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.promoteCalls++
 	f.lastPromoteSource = source
 	f.lastPromoteWriteID = writeID
@@ -187,7 +195,7 @@ func (f *fakeAzureWriteOperations) promote(
 	current, exists := f.objects[name]
 	if exists != targetExists ||
 		(exists && !equalETags(current.state.etag, target.etag)) {
-		return errors.New("destination precondition failed")
+		return &azcore.ResponseError{ErrorCode: string(bloberror.ConditionNotMet)}
 	}
 	if err := ctx.Err(); err != nil {
 		return err
@@ -223,6 +231,8 @@ func (f *fakeAzureWriteOperations) promote(
 func (f *fakeAzureWriteOperations) deleteStage(
 	ctx context.Context, _, name string, stage azureObjectState,
 ) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.lastDeletedStage = stage
 	if ctx.Err() != nil {
 		f.cleanupCanceled = true

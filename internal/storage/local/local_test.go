@@ -10,7 +10,24 @@ import (
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/storage"
+	"github.com/phrocker/shoal-oss/internal/storage/storagetest"
 )
+
+func TestExclusiveCreator(t *testing.T) {
+	dir := t.TempDir()
+	storagetest.RunExclusiveCreator(t, func(t *testing.T) storage.ExclusiveCreator {
+		return New()
+	}, filepath.ToSlash(dir))
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, entry := range entries {
+		if isReplacementArtifactName(entry.Name()) {
+			t.Errorf("staging artifact left behind: %s", entry.Name())
+		}
+	}
+}
 
 func writeFixture(t *testing.T, dir string, name string, body []byte) string {
 	t.Helper()

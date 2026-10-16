@@ -72,6 +72,15 @@ func (b *Backend) Open(_ context.Context, path string) (storage.File, error) {
 // they don't already exist — matches "mkdir -p" behavior so callers don't
 // have to pre-create the path tree.
 func (b *Backend) Create(_ context.Context, path string) (storage.Writer, error) {
+	return b.create(path, false)
+}
+
+// CreateExclusive stages a file and publishes it only if path is still absent.
+func (b *Backend) CreateExclusive(_ context.Context, path string) (storage.Writer, error) {
+	return b.create(path, true)
+}
+
+func (b *Backend) create(path string, exclusive bool) (storage.Writer, error) {
 	if isReplacementArtifactName(filepath.Base(path)) {
 		return nil, fmt.Errorf("local: destination %s uses a reserved internal namespace", path)
 	}
@@ -82,6 +91,9 @@ func (b *Backend) Create(_ context.Context, path string) (storage.Writer, error)
 		}
 	}
 	info, err := os.Lstat(path)
+	if exclusive && err == nil {
+		return nil, fmt.Errorf("%w: %s", storage.ErrExists, path)
+	}
 	if err == nil && info.Mode()&os.ModeSymlink != 0 {
 		return nil, fmt.Errorf("local: symlink destination %s is not supported for atomic replacement", path)
 	}
@@ -94,14 +106,17 @@ func (b *Backend) Create(_ context.Context, path string) (storage.Writer, error)
 	if err != nil {
 		return nil, fmt.Errorf("local: create temporary file for %s: %w", target, err)
 	}
-	if _, err := preserveExistingMetadata(ops, f.Name(), target); err != nil {
-		return nil, errors.Join(err, cleanupTemporaryCreateFile(f, ops))
+	if !exclusive {
+		if _, err := preserveExistingMetadata(ops, f.Name(), target); err != nil {
+			return nil, errors.Join(err, cleanupTemporaryCreateFile(f, ops))
+		}
 	}
 	return &writer{
-		file:   f,
-		temp:   f.Name(),
-		target: target,
-		ops:    ops,
+		file:      f,
+		temp:      f.Name(),
+		target:    target,
+		ops:       ops,
+		exclusive: exclusive,
 	}, nil
 }
 
@@ -247,6 +262,7 @@ type writer struct {
 	aborted        bool
 	fileClosed     bool
 	tempDiscarded  bool
+	exclusive      bool
 	state          replacementState
 }
 
@@ -410,6 +426,16 @@ func isLowerHexReplacementToken(token string) bool {
 }
 
 func (w *writer) publishReplacement(hadOld bool) (string, error) {
+	if w.exclusive {
+		if err := os.Link(w.temp, w.target); err != nil {
+			if errors.Is(err, fs.ErrExist) {
+				err = errors.Join(storage.ErrExists, err)
+			}
+			w.tempDiscarded = true
+			return "", errors.Join(err, w.ops.Remove(w.temp))
+		}
+		return "", nil
+	}
 	if !hadOld {
 		return "", w.ops.AtomicReplace(w.temp, w.target, "", false)
 	}
@@ -485,9 +511,13 @@ func (w *writer) Close() error {
 }
 
 func (w *writer) commitReplacement() error {
-	hadOld, err := preserveExistingMetadata(w.ops, w.temp, w.target)
-	if err != nil {
-		return err
+	var hadOld bool
+	if !w.exclusive {
+		var err error
+		hadOld, err = preserveExistingMetadata(w.ops, w.temp, w.target)
+		if err != nil {
+			return err
+		}
 	}
 	if err := syncReplacementPath(w.ops, w.temp); err != nil {
 		return fmt.Errorf("local: sync replacement file %s: %w", w.temp, err)
@@ -503,6 +533,12 @@ func (w *writer) commitReplacement() error {
 		return publishErr
 	}
 	w.state = replacementPublished
+	if w.exclusive {
+		if err := w.ops.Remove(w.temp); err != nil {
+			w.state = replacementCommitted
+			return storage.MarkCommittedWrite(fmt.Errorf("local: remove published temporary file %s: %w", w.temp, err))
+		}
+	}
 	if err := syncReplacementParent(w.ops, w.target); err != nil {
 		w.state = replacementCommitted
 		return storage.MarkCommittedWrite(

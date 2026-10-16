@@ -70,6 +70,7 @@ type Backend struct {
 }
 
 var _ shstorage.Remover = (*Backend)(nil)
+var _ shstorage.ExclusiveCreator = (*Backend)(nil)
 
 type s3Artifact struct {
 	key          string
@@ -187,6 +188,15 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 // Create opens an S3 object writer. Close stages the bytes under an internal
 // key, then conditionally copies that exact object into the destination.
 func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, false)
+}
+
+// CreateExclusive publishes the object only if its destination does not exist.
+func (b *Backend) CreateExclusive(ctx context.Context, path string) (shstorage.Writer, error) {
+	return b.create(ctx, path, true)
+}
+
+func (b *Backend) create(ctx context.Context, path string, exclusive bool) (shstorage.Writer, error) {
 	bucket, key, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -201,6 +211,9 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		return nil, fmt.Errorf("s3: inspect destination s3://%s/%s: %w", bucket, key, err)
 	}
 	targetExists := err == nil
+	if exclusive && targetExists {
+		return nil, fmt.Errorf("%w: s3://%s/%s", shstorage.ErrExists, bucket, key)
+	}
 	if targetExists && target.etag == nil {
 		return nil, fmt.Errorf("s3: inspect destination s3://%s/%s: missing ETag", bucket, key)
 	}
@@ -216,6 +229,7 @@ func (b *Backend) Create(ctx context.Context, path string) (shstorage.Writer, er
 		writeID:        uuid.NewString(),
 		ctx:            ctx,
 		targetExists:   targetExists,
+		exclusive:      exclusive,
 		target:         target,
 		cleanupTimeout: s3CleanupTimeout,
 	}, nil
@@ -791,6 +805,7 @@ type writer struct {
 	writeID                string
 	ctx                    context.Context //nolint:containedctx
 	targetExists           bool
+	exclusive              bool
 	target                 s3ObjectState
 	stage                  s3ObjectState
 	stageCreated           bool
@@ -858,6 +873,12 @@ func (w *writer) Close() error {
 			w.closed = true
 			w.cleanupCommittedStageBestEffort()
 			return nil
+		}
+		if w.exclusive && isExclusiveConflict(err) {
+			return errors.Join(
+				fmt.Errorf("%w: s3://%s/%s: %w", shstorage.ErrExists, w.bucket, w.key, err),
+				w.cleanupStage(),
+			)
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
@@ -1091,6 +1112,12 @@ func isAmbiguousPromotionError(err error) bool {
 	}
 	text := strings.ToLower(err.Error())
 	return !strings.Contains(text, "precondition")
+}
+
+func isExclusiveConflict(err error) bool {
+	var apiErr smithy.APIError
+	return errors.As(err, &apiErr) &&
+		(apiErr.ErrorCode() == "PreconditionFailed" || apiErr.ErrorCode() == "ConditionalRequestConflict")
 }
 
 // isNotFound reports whether err is an S3 "key does not exist" error.
