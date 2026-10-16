@@ -160,7 +160,6 @@ func TestEngineCommandsHonorBackendRoot(t *testing.T) {
 	}
 }
 
-
 func TestServeHonorsBackendRoot(t *testing.T) {
 	base := t.TempDir()
 	h, err := startServe(serveConfig{

@@ -75,7 +75,7 @@ func NewRooted(inner Backend, localDir, root string) (RootedBackend, error) {
 }
 
 func (c *rootedCore) InnerBackend() Backend { return c.inner }
-func (c *rootedCore) BackendRoot() string  { return c.root }
+func (c *rootedCore) BackendRoot() string   { return c.root }
 
 // rel returns the slash-separated path of p relative to localDir and whether
 // p lies inside it.
