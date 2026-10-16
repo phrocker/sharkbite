@@ -123,6 +123,20 @@ type Options struct {
 	// keeps each tablet's WAL local while flushing RFiles elsewhere — the
 	// basis for a locally-resident, cloud-durable subgraph.
 	Backend storage.Backend
+
+	// BackendRoot, when set, stores every object the engine derives under
+	// its data directory at this prefix on Backend instead of at the
+	// directory's own path. For example dir /var/lib/shoal with
+	// BackendRoot s3://bucket/shoal places <dir>/graph/t-0000/0001.rf at
+	// s3://bucket/shoal/graph/t-0000/0001.rf. The WAL and table manifest
+	// stay on local disk. Requires Backend; see storage.NewRooted.
+	//
+	// The root is recorded in each table's manifest when the table is
+	// created, and opening a table under a different root (including a
+	// table created with no root) is an error rather than an empty table.
+	// Export manifests still spell paths in data-directory form; an
+	// importer with a BackendRoot resolves them through its own root.
+	BackendRoot string
 }
 
 // Open opens or creates an engine rooted at dir.
@@ -135,7 +149,17 @@ func Open(dir string, opts Options) (*Engine, error) {
 	}
 	backend := opts.Backend
 	if backend == nil {
+		if opts.BackendRoot != "" {
+			return nil, fmt.Errorf("engine: BackendRoot %q requires Backend", opts.BackendRoot)
+		}
 		backend = local.New()
+	}
+	if opts.BackendRoot != "" {
+		rooted, err := storage.NewRooted(backend, dir, opts.BackendRoot)
+		if err != nil {
+			return nil, fmt.Errorf("engine: backend root: %w", err)
+		}
+		backend = rooted
 	}
 	var rfCache *tablet.Cache
 	if opts.CacheBytes >= 0 {
