@@ -76,6 +76,10 @@ func (b *Backend) Create(_ context.Context, path string) (storage.Writer, error)
 }
 
 // CreateExclusive stages a file and publishes it only if path is still absent.
+// CreateExclusive publishes with a hard link from the staged temporary file
+// to path, which fails atomically with ErrExists when path already exists.
+// It requires a filesystem that supports hard links; exFAT and some NFS or
+// FUSE mounts do not, and return an error other than ErrExists.
 func (b *Backend) CreateExclusive(_ context.Context, path string) (storage.Writer, error) {
 	return b.create(path, true)
 }
