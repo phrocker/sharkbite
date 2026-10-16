@@ -1,9 +1,8 @@
 # Shoal Python binding
 
-This is an independently usable **incremental binding**, not a complete
-Sharkbite replacement and not a release under the reserved `sharkbite`
-distribution name. The distribution is named `shoal-sharkbite`; it installs
-the import-compatible modules `sharkbite` and `pysharkbite`.
+This is an independently usable **incremental binding** for the canonical
+`sharkbite` distribution. It installs the import-compatible modules `sharkbite`
+and `pysharkbite`, backed by the Shoal stable C ABI.
 The [normative scope ADR](../docs/sharkbite-client-scope.md) currently records
 394 required rows, 390 satisfied rows, and 4 explicit core gaps; optional
 Torch, pandas, embedded, historical C++, and deferred native macOS surfaces do
@@ -83,7 +82,7 @@ or generated Thrift exceptions, and scopes transport pools per connector.
 `getResultSet()`; each synchronous or asynchronous iteration opens a fresh
 cursor, and scanner/result context managers close blocked work safely.
 Live-cluster server timeout/consistency and retry parity remain tracked by
-[issue #74](https://github.com/phrocker/shoal-oss/issues/74); unit and compiled
+[issue #74](https://github.com/phrocker/sharkbite/issues/74); unit and compiled
 ABI tests do not claim that external evidence.
 
 ```python
@@ -120,6 +119,6 @@ Online compaction, legacy chunked iterators, and other surfaces without an
 equivalent stable C ABI remain explicit `NotImplementedError` paths.
 
 See the repository's
-[release policy](https://github.com/phrocker/shoal-oss/blob/main/docs/python-release.md)
+[release policy](https://github.com/phrocker/sharkbite/blob/main/docs/python-release.md)
 for platform status, reproducible build commands, artifact verification,
 checksums, and signing.

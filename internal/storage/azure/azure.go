@@ -75,6 +75,13 @@ import (
 
 // Backend opens Azure blobs via a shared *service.Client. Safe for concurrent
 // Open and concurrent ReadAt across many Files.
+// writeIDMetadataKey tags staged blobs with the writer that created them so
+// cleanup only removes stages this process owns. Azure Blob metadata names
+// must be valid C# identifiers: letters, digits, and underscores only. A
+// hyphenated name is rejected by the service and by Azurite with
+// InvalidMetadata, so this key must never contain '-'.
+const writeIDMetadataKey = "shoal_write_id"
+
 type Backend struct {
 	svc                    *service.Client
 	ops                    azureWriteOperations
@@ -108,6 +115,17 @@ type config struct {
 	account                     string
 	serviceURL                  string
 	sourceAuthorizationProvider SourceAuthorizationProvider
+	syncCopyPromotion           bool
+}
+
+// WithSyncCopyPromotion promotes staged blobs with the synchronous Copy Blob
+// From URL API instead of Put Blob From URL. Both calls carry the same
+// destination and source conditions, so publication semantics are unchanged,
+// but the synchronous copy is limited to 256 MiB per blob. It exists for
+// emulators such as Azurite that do not implement Put Blob From URL; do not
+// enable it against a production account.
+func WithSyncCopyPromotion() Option {
+	return func(c *config) { c.syncCopyPromotion = true }
 }
 
 // WithServiceClient supplies a pre-built service client. If set, New ignores
@@ -201,7 +219,7 @@ func New(_ context.Context, opts ...Option) (*Backend, error) {
 		base := rawAzureCopySourceProvider{svc: c.svc}
 		return &Backend{
 			svc:                    c.svc,
-			ops:                    sdkAzureWriteOperations{svc: c.svc},
+			ops:                    sdkAzureWriteOperations{svc: c.svc, syncCopy: c.syncCopyPromotion},
 			artifactOps:            sdkAzureArtifactOperations{svc: c.svc},
 			sourceProvider:         configuredOrAutomaticSourceProvider(base, sourceProviderFromServiceClient(c.svc), c.sourceAuthorizationProvider, true),
 			validateSourceOnCreate: true,
@@ -219,7 +237,7 @@ func New(_ context.Context, opts ...Option) (*Backend, error) {
 		}
 		return &Backend{
 			svc:         svc,
-			ops:         sdkAzureWriteOperations{svc: svc},
+			ops:         sdkAzureWriteOperations{svc: svc, syncCopy: c.syncCopyPromotion},
 			artifactOps: sdkAzureArtifactOperations{svc: svc},
 			sourceProvider: configuredOrAutomaticSourceProvider(
 				rawAzureCopySourceProvider{svc: svc},
@@ -251,7 +269,7 @@ func New(_ context.Context, opts ...Option) (*Backend, error) {
 	}
 	return &Backend{
 		svc:         svc,
-		ops:         sdkAzureWriteOperations{svc: svc},
+		ops:         sdkAzureWriteOperations{svc: svc, syncCopy: c.syncCopyPromotion},
 		artifactOps: sdkAzureArtifactOperations{svc: svc},
 		sourceProvider: configuredOrAutomaticSourceProvider(
 			rawAzureCopySourceProvider{svc: svc},
@@ -838,7 +856,8 @@ type azureWriteOperations interface {
 }
 
 type sdkAzureWriteOperations struct {
-	svc *service.Client
+	svc      *service.Client
+	syncCopy bool
 }
 
 type sdkAzureArtifactOperations struct {
@@ -867,7 +886,7 @@ func (o sdkAzureArtifactOperations) list(ctx context.Context, containerName, pre
 				name:      *item.Name,
 				versionID: item.VersionID,
 				etag:      item.Properties.ETag,
-				owned:     metadataValue(item.Metadata, "shoal-write-id") != "",
+				owned:     metadataValue(item.Metadata, writeIDMetadataKey) != "",
 			}
 			if item.Properties.LastModified != nil {
 				artifact.lastModified = *item.Properties.LastModified
@@ -904,7 +923,7 @@ func (o sdkAzureArtifactOperations) inspect(ctx context.Context, containerName s
 	if out.LastModified != nil {
 		artifact.lastModified = *out.LastModified
 	}
-	artifact.owned = metadataValue(out.Metadata, "shoal-write-id") != ""
+	artifact.owned = metadataValue(out.Metadata, writeIDMetadataKey) != ""
 	return artifact, nil
 }
 
@@ -939,7 +958,7 @@ func (o sdkAzureWriteOperations) uploadStage(
 		ctx,
 		data,
 		&blockblob.UploadBufferOptions{
-			Metadata: map[string]*string{"shoal-write-id": to.Ptr(writeID)},
+			Metadata: map[string]*string{writeIDMetadataKey: to.Ptr(writeID)},
 			AccessConditions: &blob.AccessConditions{
 				ModifiedAccessConditions: &blob.ModifiedAccessConditions{IfNoneMatch: to.Ptr(azcore.ETagAny)},
 			},
@@ -952,7 +971,7 @@ func (o sdkAzureWriteOperations) uploadStage(
 		etag:      out.ETag,
 		versionID: out.VersionID,
 		size:      int64(len(data)),
-		metadata:  map[string]*string{"shoal-write-id": to.Ptr(writeID)},
+		metadata:  map[string]*string{writeIDMetadataKey: to.Ptr(writeID)},
 	}, nil
 }
 
@@ -966,9 +985,13 @@ func (o sdkAzureWriteOperations) promote(
 	target azureObjectState,
 ) error {
 	bb := o.svc.NewContainerClient(containerName).NewBlockBlobClient(name)
+	var promoter azureBlobPromoter = sdkAzureBlobPromoter{client: bb}
+	if o.syncCopy {
+		promoter = sdkAzureSyncCopyPromoter{client: bb}
+	}
 	return promoteStagedBlob(
 		ctx,
-		sdkAzureBlobPromoter{client: bb},
+		promoter,
 		source,
 		stage,
 		targetExists,
@@ -990,6 +1013,26 @@ func (p sdkAzureBlobPromoter) UploadBlobFromURL(
 	options *blockblob.UploadBlobFromURLOptions,
 ) error {
 	_, err := p.client.UploadBlobFromURL(ctx, source, options)
+	return err
+}
+
+// sdkAzureSyncCopyPromoter implements the same conditional promotion with the
+// synchronous Copy Blob From URL API. See WithSyncCopyPromotion.
+type sdkAzureSyncCopyPromoter struct {
+	client *blockblob.Client
+}
+
+func (p sdkAzureSyncCopyPromoter) UploadBlobFromURL(
+	ctx context.Context,
+	source string,
+	options *blockblob.UploadBlobFromURLOptions,
+) error {
+	_, err := p.client.CopyFromURL(ctx, source, &blob.CopyFromURLOptions{
+		CopySourceAuthorization:        options.CopySourceAuthorization,
+		Metadata:                       options.Metadata,
+		SourceModifiedAccessConditions: options.SourceModifiedAccessConditions,
+		BlobAccessConditions:           options.AccessConditions,
+	})
 	return err
 }
 
@@ -1260,7 +1303,7 @@ func (w *writer) verifyDestination() (destinationVerificationState, error) {
 		return destinationVerificationIndeterminate, fmt.Errorf("azure: verify destination az://%s/%s: %w", w.container, w.name, err)
 	}
 	if state.size == int64(w.buf.Len()) &&
-		metadataValue(state.metadata, "shoal-write-id") == w.writeID {
+		metadataValue(state.metadata, writeIDMetadataKey) == w.writeID {
 		return destinationVerificationCommitted, nil
 	}
 	if w.targetExists && equalETags(state.etag, w.target.etag) {
@@ -1333,7 +1376,7 @@ func (w *writer) lookupOwnedStageForCleanup() (bool, error) {
 
 func (w *writer) rememberStage(state azureObjectState) {
 	w.stage = state
-	w.stageOwned = metadataValue(state.metadata, "shoal-write-id") == w.writeID
+	w.stageOwned = metadataValue(state.metadata, writeIDMetadataKey) == w.writeID
 	w.stageCreated = w.stageOwned && state.size == int64(w.buf.Len())
 }
 
@@ -1370,7 +1413,7 @@ func (w *writer) promotionSource() (azureCopySource, error) {
 
 // metadataValue looks up blob metadata case-insensitively because the service
 // returns metadata through response headers, which arrive canonicalized (for
-// example "Shoal-Write-Id" rather than "shoal-write-id").
+// example "Shoal_write_id" rather than the lower-case key).
 func metadataValue(metadata map[string]*string, key string) string {
 	if value, ok := metadata[key]; ok {
 		if value == nil {

@@ -1,6 +1,6 @@
 # Python distribution and release artifacts
 
-Shoal publishes the Python distribution as **`shoal-sharkbite`**. It provides
+Shoal publishes the Python distribution as **`sharkbite`**. It provides
 both compatibility import names:
 
 ```python
@@ -10,10 +10,10 @@ import pysharkbite
 assert pysharkbite.Client is sharkbite.Client
 ```
 
-In the coordinated release model, the separately maintained **`sharkbite`**
-PyPI project is published as a thin compatibility distribution. It depends on
-`shoal-sharkbite`; it does not own either import package or any native
-artifact.
+The `sharkbite` PyPI project is the canonical distribution. It owns the
+import packages, native artifacts, ABI checks, and release provenance. The
+existing pre-1.3 releases remain immutable; `1.3.0` is the migration point to
+the Shoal-backed implementation.
 
 The distribution version is independent of the native ABI version. Release
 `1.3.0` requires Shoal ABI `1.19.0` or newer within ABI major 1. The package is
@@ -105,15 +105,15 @@ To validate the current `main` revision without publishing:
 
 1. Open **Actions → Publish Python manylinux artifacts → Run workflow**.
 2. Select `main` and run the workflow.
-3. Download `shoal-sharkbite-manylinux-<commit>` and verify it locally with
+3. Download `sharkbite-manylinux-<commit>` and verify it locally with
    `sha256sum --check SHA256SUMS`.
 4. Verify provenance with
-   `gh attestation verify <artifact> --repo phrocker/shoal-oss`.
+   `gh attestation verify <artifact> --repo phrocker/sharkbite`.
 
 Publication is deliberately release-bound. Publishing a GitHub release for
 `vMAJOR.MINOR.PATCH` automatically builds and uploads the wheel, sdist,
 manifest, and checksums to the GitHub release, then publishes the exact
-previously built wheel and sdist to the **`shoal-sharkbite`** PyPI project.
+previously built wheel and sdist to the **`sharkbite`** PyPI project.
 The tag must exactly match the version in `python/pyproject.toml`. Tag pushes
 alone build and validate but do not publish.
 
@@ -141,11 +141,10 @@ permissions they require.
 
 ### One-time PyPI and GitHub configuration
 
-The distribution/project name is **`shoal-sharkbite`**. It owns and installs
-the `sharkbite` and `pysharkbite` import packages, but it does not claim or
-publish to the existing `sharkbite` PyPI project. That project is controlled
-and released from the separate Sharkbite repository. The Shoal maintainers
-must own or maintain `shoal-sharkbite` on PyPI.
+The distribution/project name is **`sharkbite`**. It owns and installs the
+`sharkbite`, `pysharkbite`, and `shoal` import packages, package data, native
+library, and release metadata. The PyPI project is maintained by the Sharkbite
+maintainers.
 
 Configure the publisher once:
 
@@ -153,13 +152,11 @@ Configure the publisher once:
    exactly `pypi`. Require designated maintainer approval, restrict deployment
    branches/tags to protected `v*` release tags, and prevent unreviewed
    environment bypass according to repository policy. Store no PyPI secret.
-2. In the `shoal-sharkbite` PyPI project's **Publishing** settings, add a
-   GitHub trusted publisher with owner `phrocker`, repository `shoal-oss`,
+2. In the `sharkbite` PyPI project's **Publishing** settings, add a
+   GitHub trusted publisher with owner `phrocker`, repository `sharkbite`,
    workflow `python-manylinux-release.yml`, and environment `pypi`.
-3. If the PyPI project does not yet exist, create a pending trusted publisher
-   for the same `shoal-sharkbite` project and identity, then let the first
-   intentional approved release create it. Ensure the organization project
-   owners and maintainers are recorded in PyPI after creation.
+3. Confirm that the PyPI project owner and the repository owner are the same
+   release authority before enabling publication.
 
 Trusted Publisher values are identity-sensitive; changing the repository,
 workflow filename, or environment requires updating PyPI before the next
@@ -167,46 +164,36 @@ release. Validation runs must not be used to test public publication. Build,
 install, import, and native ABI evidence is proved in the separate read-only
 build job and can run without PyPI configuration.
 
-### Coordinated `shoal-sharkbite` and `sharkbite` releases
+### Release and chaos gate
 
-Use one PEP 440 version that is new and valid for both PyPI projects. Release
-the implementation before the compatibility distribution:
+Use one new PEP 440 version. A release is publishable only after the controlled
+manylinux build, provenance checks, and container chaos matrix all pass:
 
-1. Publish `shoal-sharkbite==VERSION` from this repository through the
-   approved release workflow.
-2. Wait for PyPI to serve that exact version. In a clean environment, install
-   `shoal-sharkbite==VERSION` with dependencies disabled, verify its published
-   hashes and provenance against the release manifest, import both
-   `sharkbite` and `pysharkbite`, and run the native ABI/capability smoke test.
-3. Only after those checks pass, publish `sharkbite==VERSION` from the separate
-   Sharkbite repository. That distribution must depend on exactly
-   `shoal-sharkbite==VERSION`.
-4. In another clean environment, install `sharkbite==VERSION`, run
-   `pip check`, import both compatibility names, and confirm the installed
-   native library and import files came from `shoal-sharkbite==VERSION`.
+1. Build and attest the wheel and source distribution from the matching `vVERSION`
+   tag.
+2. Run the release verification in clean containers for every supported Python
+   version. Check import identity, ABI/capability discovery, checksums, and
+   native mutation behavior.
+3. Inject failures in disposable containers with `chaos_release.py`: set a
+   relative `SHOAL_LIBRARY` path, corrupt the bundled checksum manifest, tamper
+   with the bundled native library, remove it, and restart the interpreter
+   twenty times. Every injected failure must produce the documented
+   `ImportError` for that injection; a crash, a signal exit, or an unrelated
+   exception fails the gate. Incompatible-library preloading, interrupted
+   dependency resolution, and concurrent scanner/writer cleanup are not part
+   of this gate.
+4. Publish the exact verified artifacts to PyPI through the protected `pypi`
+   environment. Never rebuild between verification and publication.
 
-The ownership boundary is strict:
-
-- `shoal-sharkbite` owns the `sharkbite/` and `pysharkbite/` import trees,
-  package data, type information, bundled native library, and native checksum
-  manifest.
-- The thin `sharkbite` distribution owns only its generated
-  `sharkbite-VERSION.dist-info/` metadata. Its wheel must contain no Python
-  package, module, namespace, script, package data, or native library.
-- Before publishing the thin wheel, inspect its archive and installation
-  record to prove that no path overlaps a path installed by
-  `shoal-sharkbite`.
-
-If the implementation publication or verification fails, do not publish the
-thin distribution. PyPI artifacts are immutable: correct a failed coordinated
-release with a new version rather than attempting to replace either project's
-files.
+The `sharkbite` wheel owns all import roots and native artifacts. No second
+package may install overlapping `sharkbite/`, `pysharkbite/`, or `shoal/` paths.
+PyPI artifacts are immutable; correct a failed release with a new version.
 
 `verify_release.py` validates both archives and manifests, then installs the
 wheel into a fresh project-local virtual environment with `--no-index` and
 with the Go toolchain absent from `PATH`. It also builds the source-only sdist
 into an unbundled `py3-none-any` wheel and installs that in a second clean
-environment. Both paths verify that the installed `shoal-sharkbite`
+environment. Both paths verify that the installed `sharkbite`
 distribution owns the `sharkbite` and `pysharkbite` import roots, that their
 complete implemented public exports have object identity, load a trusted
 native library, check ABI/capabilities, and execute a native mutation smoke

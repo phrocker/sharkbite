@@ -19,7 +19,7 @@
 
 SHELL := /bin/bash
 
-THRIFT_VERSION        := 0.17.0
+THRIFT_VERSION        := 0.24.0
 THRIFT                ?= thrift
 THRIFT_IDL            := internal/thrift/idl
 THRIFT_OUT            := internal/thrift/gen
@@ -327,6 +327,25 @@ test-hdfs:
 		HADOOP_USER_NAME=shoal \
 		SHOAL_HDFS_INTEGRATION=1 \
 		go test -tags=integration -count=1 -v ./internal/storage/hdfs
+
+.PHONY: test-objectstore
+test-objectstore:
+	@set -e; \
+		cleanup() { status=$$?; if [ $$status -ne 0 ]; then docker compose -f test/objectstore/docker-compose.yml logs --no-color || true; fi; docker compose -f test/objectstore/docker-compose.yml down -v || true; exit $$status; }; \
+		trap cleanup EXIT; \
+		docker compose -f test/objectstore/docker-compose.yml up -d; \
+		bash test/objectstore/wait.sh; \
+		SHOAL_S3_INTEGRATION=1 \
+		AWS_ENDPOINT_URL=http://127.0.0.1:9000 \
+		AWS_ACCESS_KEY_ID=shoaladmin \
+		AWS_SECRET_ACCESS_KEY=shoal-emulator-only \
+		AWS_REGION=us-east-1 \
+		SHOAL_S3_PATH_STYLE=1 \
+		SHOAL_GCS_INTEGRATION=1 \
+		STORAGE_EMULATOR_HOST=http://127.0.0.1:4443 \
+		SHOAL_AZURE_INTEGRATION=1 \
+		AZURE_STORAGE_CONNECTION_STRING='DefaultEndpointsProtocol=http;AccountName=shoal;AccountKey=c2hvYWwtZW11bGF0b3Itb25seS1ub3QtYS1zZWNyZXQ=;BlobEndpoint=http://127.0.0.1:10000/shoal;' \
+		go test -tags=integration -count=1 -timeout=5m -v ./internal/storage/s3 ./internal/storage/gcs ./internal/storage/azure
 
 .PHONY: test-accumulo-static
 test-accumulo-static:

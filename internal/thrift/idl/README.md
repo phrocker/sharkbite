@@ -5,8 +5,9 @@ revision `1a716b2c1bb5762ead4b46d2bc4f53e13873b314`:
 
 <https://github.com/apache/accumulo/tree/1a716b2c1bb5762ead4b46d2bc4f53e13873b314/core/src/main/thrift>
 
-That revision identifies itself as `4.0.0-SNAPSHOT` and pins
-`version.thrift` to `0.17.0`. Its IDLs match the Accumulo 4 RPC surface shoal
+That revision identifies itself as `4.0.0-SNAPSHOT` and originally pinned
+`version.thrift` to `0.17.0`. Sharkbite keeps those IDLs as its Accumulo 4 RPC surface and generates Go bindings with the
+`0.24.0` compiler/runtime line used by current Accumulo 4.x releases. The IDLs match the Accumulo 4 RPC surface Shoal
 currently implements. Shoal vendors only the transitive closure required by
 its tablet scan/ingest/management and compaction coordinator surfaces:
 
@@ -23,7 +24,7 @@ The IDLs retain their Apache Software Foundation license headers. `NOTICE` is
 the corresponding Accumulo notice from the pinned revision. The repository
 root `LICENSE` contains the Apache License 2.0.
 
-Regenerate the internal Go bindings with Apache Thrift 0.17.0:
+Regenerate the internal Go bindings with Apache Thrift 0.24.0:
 
 ```sh
 make thrift-gen

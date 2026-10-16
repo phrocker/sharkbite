@@ -153,7 +153,7 @@ func (f *fakeAzureWriteOperations) uploadStage(
 		etag:      &etag,
 		versionID: &versionID,
 		size:      int64(len(data)),
-		metadata:  map[string]*string{"shoal-write-id": &id},
+		metadata:  map[string]*string{"shoal_write_id": &id},
 	}
 	f.objects[name] = fakeAzureObject{state: state, data: string(data)}
 	if f.stageResponseLost {
@@ -1044,7 +1044,7 @@ func TestPromoteStagedBlobUsesSingleConditionalUploadForLargeSources(t *testing.
 		azureObjectState{
 			etag:     &stageETag,
 			size:     int64(2*(100<<20) + 1),
-			metadata: map[string]*string{"shoal-write-id": &writeID},
+			metadata: map[string]*string{"shoal_write_id": &writeID},
 		},
 		true,
 		azureObjectState{etag: &targetETag},
@@ -1071,8 +1071,8 @@ func TestPromoteStagedBlobUsesSingleConditionalUploadForLargeSources(t *testing.
 	if call.copySourceBlobProperties == nil || *call.copySourceBlobProperties {
 		t.Fatalf("CopySourceBlobProperties = %v, want false", call.copySourceBlobProperties)
 	}
-	if got := metadataValue(call.metadata, "shoal-write-id"); got != writeID {
-		t.Fatalf("metadata shoal-write-id = %q, want %q", got, writeID)
+	if got := metadataValue(call.metadata, "shoal_write_id"); got != writeID {
+		t.Fatalf("metadata shoal_write_id = %q, want %q", got, writeID)
 	}
 }
 
@@ -1303,7 +1303,7 @@ func TestWriter_IndeterminatePromotionDoesNotOverwriteCompetingWriter(t *testing
 		state: azureObjectState{
 			etag:     &intruderETag,
 			size:     int64(len("intruder")),
-			metadata: map[string]*string{"shoal-write-id": &intruderID},
+			metadata: map[string]*string{"shoal_write_id": &intruderID},
 		},
 		data: "intruder",
 	}
@@ -1558,7 +1558,7 @@ func TestWriter_AbortTreatsUnownedStageAsAlreadyCleanAfterAmbiguousUpload(t *tes
 		state: azureObjectState{
 			etag:     &etag,
 			size:     int64(len("intruder")),
-			metadata: map[string]*string{"shoal-write-id": &id},
+			metadata: map[string]*string{"shoal_write_id": &id},
 		},
 		data: "intruder",
 	}
@@ -1708,21 +1708,21 @@ func TestRoundtripAgainstRealAccount(t *testing.T) {
 
 // TestMetadataValueMatchesCanonicalHeaderKeys guards against exact-key lookups:
 // the SDK derives blob metadata from response headers, which arrive with
-// canonicalized names such as "Shoal-Write-Id".
+// canonicalized names such as "Shoal_write_id".
 func TestMetadataValueMatchesCanonicalHeaderKeys(t *testing.T) {
 	id := "write-id"
-	canonical := map[string]*string{"Shoal-Write-Id": &id}
-	if got := metadataValue(canonical, "shoal-write-id"); got != id {
+	canonical := map[string]*string{"Shoal_write_id": &id}
+	if got := metadataValue(canonical, "shoal_write_id"); got != id {
 		t.Fatalf("metadataValue(canonical) = %q, want %q", got, id)
 	}
-	lower := map[string]*string{"shoal-write-id": &id}
-	if got := metadataValue(lower, "shoal-write-id"); got != id {
+	lower := map[string]*string{"shoal_write_id": &id}
+	if got := metadataValue(lower, "shoal_write_id"); got != id {
 		t.Fatalf("metadataValue(lower) = %q, want %q", got, id)
 	}
-	if got := metadataValue(map[string]*string{"other": &id}, "shoal-write-id"); got != "" {
+	if got := metadataValue(map[string]*string{"other": &id}, "shoal_write_id"); got != "" {
 		t.Fatalf("metadataValue(missing) = %q, want empty", got)
 	}
-	if got := metadataValue(map[string]*string{"Shoal-Write-Id": nil}, "shoal-write-id"); got != "" {
+	if got := metadataValue(map[string]*string{"Shoal_write_id": nil}, "shoal_write_id"); got != "" {
 		t.Fatalf("metadataValue(nil value) = %q, want empty", got)
 	}
 }
@@ -1749,7 +1749,7 @@ func TestWriter_AbortRemovesOwnedStageWithCanonicalMetadataKey(t *testing.T) {
 		state: azureObjectState{
 			etag:     &etag,
 			size:     int64(len("new")),
-			metadata: map[string]*string{"Shoal-Write-Id": &id},
+			metadata: map[string]*string{"Shoal_write_id": &id},
 		},
 		data: "new",
 	}

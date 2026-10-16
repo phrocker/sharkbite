@@ -165,13 +165,13 @@ import shoal
 from shoal.document import Document
 from sharkbite import Mutation, NativeAPI
 assert shutil.which("go") is None
-distribution = importlib.metadata.distribution("shoal-sharkbite")
-assert distribution.metadata["Name"] == "shoal-sharkbite"
+distribution = importlib.metadata.distribution("sharkbite")
+assert distribution.metadata["Name"] == "sharkbite"
 assert distribution.version == sharkbite.__version__
 owners = importlib.metadata.packages_distributions()
-assert "shoal-sharkbite" in owners["sharkbite"]
-assert "shoal-sharkbite" in owners["pysharkbite"]
-assert "shoal-sharkbite" in owners["shoal"]
+assert "sharkbite" in owners["sharkbite"]
+assert "sharkbite" in owners["pysharkbite"]
+assert "sharkbite" in owners["shoal"]
 assert importlib.util.find_spec("sharkbite").origin == sharkbite.__file__
 assert importlib.util.find_spec("pysharkbite").origin == pysharkbite.__file__
 assert importlib.util.find_spec("shoal").origin == shoal.__file__
@@ -265,8 +265,8 @@ import shoal
 from shoal.document import Document
 from sharkbite import Mutation, NativeAPI
 assert shutil.which("go") is None
-distribution = importlib.metadata.distribution("shoal-sharkbite")
-assert distribution.metadata["Name"] == "shoal-sharkbite"
+distribution = importlib.metadata.distribution("sharkbite")
+assert distribution.metadata["Name"] == "sharkbite"
 assert distribution.version == sharkbite.__version__
 assert pysharkbite.__all__ == sharkbite.__all__
 assert Document.__module__ == "shoal.document"
