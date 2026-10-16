@@ -1,59 +1,44 @@
-# Shoal Python binding
+# Sharkbite Python client
 
-This is an independently usable **incremental binding** for the canonical
-`sharkbite` distribution. It installs the import-compatible modules `sharkbite`
-and `pysharkbite`, backed by the Shoal stable C ABI.
-The [normative scope ADR](../docs/sharkbite-client-scope.md) currently records
-394 required rows, 390 satisfied rows, and 4 explicit core gaps; optional
-Torch, pandas, embedded, historical C++, and deferred native macOS surfaces do
-not block this package.
+Sharkbite is a Python client for Accumulo-compatible storage, backed by the
+Shoal stable C ABI. The package keeps the established import names:
 
-Supported now:
+```python
+import sharkbite
+import pysharkbite
 
-- deterministic Shoal shared-library discovery and ABI/capability negotiation;
-- stable status-to-exception mapping, including Sharkbite `ClientException`;
-- owned handle/result cleanup and idempotent context-manager close;
-- `Connector`, `Client`, `Scanner`, `BatchScanner`, restartable sync/async
-  `Results`, `Key`, and bounded scans through the streaming C ABI;
-- binary-safe `Mutation` and `BatchWriter` APIs with deterministic
-  flush/close and structured write-failure status mapping;
-- table, namespace, and security administration through both direct
-  connector helpers and Sharkbite-shaped `tableOps`, `namespaceOps`, and
-  `securityOps` objects;
-- context-managed HDFS clients and typed/raw streams, using Hadoop
-  configuration rather than accepting credentials in Python;
-- context-managed RFile sequential readers/writers, including named locality
-  groups.
-
-Unsupported legacy entry points are present only where useful for discovery and
-raise `NotImplementedError` with a stable message. They never fabricate data.
-
-Python loads Shoal with `ctypes.CDLL`, so blocking native calls release the GIL;
-Python result copying and exception construction run only after the GIL is
-reacquired. The native handle concurrency rules still apply: supported shared
-operations may run from multiple Python threads, while close/free must not race
-with arbitrary use of the same wrapper.
-
-On Unix, inherited native state is intentionally unusable after `fork()`.
-Every bound native function and `NativeAPI` construction checks the process
-before entering Go and raises `ForkSafetyError` in a fork child. Do not close,
-free, or otherwise reuse inherited objects there. Use `subprocess`, the
-`spawn`/`forkserver` multiprocessing start methods, or immediate `exec()` and
-construct fresh Shoal objects in the new interpreter. The parent process and
-fresh exec-created subprocesses remain supported.
-
-## Install and load
-
-```text
-python -m pip install ./python
-set SHOAL_LIBRARY=C:\path\to\shoal.dll
+assert pysharkbite.Client is sharkbite.Client
 ```
 
-On Linux/macOS set `SHOAL_LIBRARY` to `libshoal.so`/`libshoal.dylib`.
-Platform wheels load their checksum-verified private `.libs` library. Source
-installs require an explicit absolute `SHOAL_LIBRARY` path. System loader
-search is disabled unless `SHOAL_ALLOW_SYSTEM_LIBRARY=1`; the current working
-directory and repository build paths are never searched implicitly.
+## Install
+
+For supported Linux x86-64 systems, install the published wheel:
+
+```bash
+python -m pip install sharkbite
+```
+
+That wheel includes the verified Shoal native library. You do **not** need to
+build Shoal separately.
+
+Source installs and platforms without a published native wheel use an existing
+Shoal shared library. Give its absolute path explicitly:
+
+```bash
+python -m pip install sharkbite          # or: python -m pip install ./python
+export SHOAL_LIBRARY=/opt/shoal/libshoal.so
+```
+
+On Windows, use an absolute path to `shoal.dll`; on macOS, use an absolute path
+to `libshoal.dylib`. System-library discovery is disabled unless you explicitly
+set `SHOAL_ALLOW_SYSTEM_LIBRARY=1`. The loader never searches the current
+working directory or repository build directories.
+
+The loader verifies the bundled library checksum, checks ABI major version 1,
+checks the minimum supported ABI version, and resolves capabilities before an
+operation is allowed.
+
+## Quick example
 
 ```python
 from sharkbite import Client
@@ -64,61 +49,48 @@ with Client("accumulo", "zk1:2181", "root", "secret", table="events") as client:
             print(key.row, value)
 ```
 
-The library must expose ABI major 1. APIs check their exact capability set:
-5/21/22 for scans, 6/7/8 for writes, and 9/10/11/12/19 for administration.
-Storage uses capabilities 16 (RFile), 27 (HDFS), and 28 (named locality
-groups). Capability 29 adds the exact buffered-writer queue accessor and
-process-wide logging control.
+## What is included
 
-`ScannerOptions.HedgedReads`, `ScannerOptions.RFileScanOnly`, and
-`PythonIterator` remain import-compatible but raise stable `NotImplementedError`
-messages when applied. These are approved divergences: use normal RPC scans,
-`RFileOperations` for explicit RFile access, and Shoal's Go iterator runtime.
-Shoal accepts Accumulo 4 configurations only, never exposes password read-back
-or generated Thrift exceptions, and scopes transport pools per connector.
+The current binding provides:
 
-`tableOps(name).createScanner(auths=(), threads=10)` returns a deferred
-`BatchScanner`. Add copied ranges with `addRange`/`withRange`, then call
-`getResultSet()`; each synchronous or asynchronous iteration opens a fresh
-cursor, and scanner/result context managers close blocked work safely.
-Live-cluster server timeout/consistency and retry parity remain tracked by
-[issue #74](https://github.com/phrocker/sharkbite/issues/74); unit and compiled
-ABI tests do not claim that external evidence.
+- deterministic native-library discovery and ABI/capability negotiation;
+- stable status-to-exception mapping, including `ClientException`;
+- owned handles and results with idempotent context-manager cleanup;
+- `Connector`, `Client`, `Scanner`, `BatchScanner`, synchronous and
+  asynchronous results, `Key`, and bounded scans;
+- binary-safe `Mutation` and `BatchWriter` operations with structured failure
+  reporting;
+- table, namespace, and security administration through connector helpers and
+  `tableOps`, `namespaceOps`, and `securityOps`;
+- context-managed HDFS clients and typed or raw streams;
+- context-managed RFile readers and writers, including named locality groups.
 
-```python
-from sharkbite import Hdfs, Key, KeyValue, RFileOperations
+The package accepts Accumulo 4 configurations. It does not expose generated
+Thrift exceptions or password read-back. Transport pools are scoped per
+connector.
 
-with Hdfs("namenode", 8020) as hdfs:
-    with hdfs.write("/tmp/value") as out:
-        out.writeString("hello")
-    with hdfs.read("/tmp/value") as source:
-        assert source.readString() == "hello"
+## Concurrency and process safety
 
-with RFileOperations.openForWrite("example.rf") as writer:
-    writer.append(KeyValue(Key(b"z", b"default", b"", b"", 1), b"d"))
-    writer.addLocalityGroup("named")
-    writer.append(KeyValue(Key(b"a", b"named", b"", b"", 1), b"n"))
-```
+Blocking native calls release the Python GIL. Shared operations may run from
+multiple Python threads, but closing or freeing a wrapper must not race with
+use of that wrapper.
 
-```python
-from sharkbite import Connector, Mutation, TablePermissions
+A fork child cannot reuse inherited native state. In a fork child, construct
+fresh objects after `exec()`, or use the `spawn` or `forkserver` multiprocessing
+start method. The parent process and a fresh exec-created child remain
+supported.
 
-with Connector("accumulo", "zk1:2181", "root", "secret") as connector:
-    table = connector.tableOps("events")
-    table.create(recreate=True)
-    with table.createWriter([], 4) as writer:
-        with Mutation(b"row", _api=connector._api) as mutation:
-            mutation.put(b"cf", b"cq", b"A", 7, b"value")
-            writer.addMutation(mutation)
-    connector.securityOps().grant_table_permission(
-        "analyst", "events", TablePermissions.READ
-    )
-```
+## Compatibility boundaries
+
+Some historical entry points remain importable for discovery but raise
+`NotImplementedError` with a stable message. This includes hedged reads,
+RFile-only scanner mode, and Python iterators; use normal RPC scans,
+`RFileOperations`, and Shoal's Go iterator runtime instead.
 
 Online compaction, legacy chunked iterators, and other surfaces without an
-equivalent stable C ABI remain explicit `NotImplementedError` paths.
+equivalent stable C ABI remain outside the binding. Live-cluster timeout,
+consistency, and retry parity are tracked in [issue #74](https://github.com/phrocker/sharkbite/issues/74).
 
-See the repository's
-[release policy](https://github.com/phrocker/sharkbite/blob/main/docs/python-release.md)
-for platform status, reproducible build commands, artifact verification,
-checksums, and signing.
+See the [release policy](https://github.com/phrocker/sharkbite/blob/main/docs/python-release.md)
+for supported platforms, reproducible builds, artifact verification, checksums,
+attestations, and the pre-release container chaos gate.
