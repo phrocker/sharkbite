@@ -1,11 +1,12 @@
 # Sharkbite
 
-Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
+Sharkbite is an operational decision platform powered by the a Key/Value Stored named Apache Accumulo. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
 
-Shoal remains the name of the underlying Go engine and its stable evidence, provenance, and decision contracts.
+Sharkbite contains the same constructs as Apache Accumulo, written in Go. It can act as an independent or hybrid cluster and, as a result, be a client. Hence why sharkbite, previously written in C++, was changed to be a Go client in addition to operational decision platform.
 
+The pypi release contains the client code to support Graph operations in addition to general Accumulo access; however, 
 
-Shoal is an evidence and enforcement layer for AI systems. It keeps the chain
+Sharkbite is an evidence and enforcement layer for AI systems. It keeps the chain
 from **what was observed** to **what an agent may do** inspectable:
 
 - authorized retrieval returns exact evidence and provenance;
