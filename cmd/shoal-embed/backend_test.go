@@ -3,18 +3,12 @@ package main
 import (
 	"context"
 	"flag"
-	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
-
-	"github.com/phrocker/shoal-oss/internal/cclient"
-	"github.com/phrocker/shoal-oss/internal/engine"
-	"github.com/phrocker/shoal-oss/internal/iterrt"
-	"github.com/phrocker/shoal-oss/internal/storage"
 )
 
 func TestBackendFlags(t *testing.T) {
@@ -121,107 +115,6 @@ func TestEngineCommandsAcceptMemoryBackend(t *testing.T) {
 	}
 }
 
-func TestWriteBackendPlacement(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		env       string
-		flags     []string
-		wantFiles bool
-	}{
-		{name: "default local", wantFiles: true},
-		{name: "memory flag", flags: []string{"-backend", "memory"}},
-		{name: "memory environment", env: "memory"},
-		{name: "local flag overrides environment", env: "memory", flags: []string{"-backend", "local"}, wantFiles: true},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			t.Setenv("SHOAL_BACKEND", tc.env)
-			t.Setenv("SHOAL_BACKEND_ROOT", "")
-			for _, format := range []string{"rfile", "parquet"} {
-				t.Run(format, func(t *testing.T) {
-					dir := t.TempDir()
-					cmdInit(append([]string{"-data", dir, "-table", "graph", "-format", format}, tc.flags...))
-					cmd := backendCommand(t, append([]string{"write", "-data", dir, "-table", "graph"}, tc.flags...)...)
-					cmd.Stdin = strings.NewReader("{\"row\":\"row\",\"entries\":[{\"cf\":\"cf\",\"cq\":\"cq\",\"value\":\"value\"}]}\n")
-					if out, err := cmd.CombinedOutput(); err != nil {
-						t.Fatalf("%v: %s", err, out)
-					}
-					var immutable, wal, tableManifest, tabletManifest bool
-					err := filepath.WalkDir(dir, func(path string, entry fs.DirEntry, err error) error {
-						if err != nil {
-							return err
-						}
-						immutable = immutable || storage.ImmutableFormatForPath(path) != ""
-						wal = wal || entry.Name() == "wal.log"
-						tableManifest = tableManifest || entry.Name() == "table.json"
-						tabletManifest = tabletManifest || entry.Name() == "files.json"
-						return nil
-					})
-					if err != nil {
-						t.Fatal(err)
-					}
-					if immutable != tc.wantFiles || !wal || !tableManifest || !tabletManifest {
-						t.Fatalf("immutable=%v (want %v), WAL=%v, table manifest=%v, tablet manifest=%v", immutable, tc.wantFiles, wal, tableManifest, tabletManifest)
-					}
-				})
-			}
-		})
-	}
-}
-
-func TestBackendRootFlushAndReopen(t *testing.T) {
-	ctx := context.Background()
-	dir := t.TempDir()
-	cfg := backendConfig{Name: "memory", Root: "gs://bucket/prefix"}
-	be, cleanup, err := cfg.open(ctx, dir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-	eng, err := engine.Open(dir, engine.Options{Backend: be})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer eng.Close()
-	if err := eng.CreateTable("graph", engine.TableOptions{}); err != nil {
-		t.Fatal(err)
-	}
-	mutation, err := cclient.NewMutation([]byte("row"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	mutation.Put([]byte("cf"), []byte("cq"), nil, 1, []byte("value"))
-	if err := eng.Write("graph", []*cclient.Mutation{mutation}); err != nil {
-		t.Fatal(err)
-	}
-	if err := eng.Flush("graph"); err != nil {
-		t.Fatal(err)
-	}
-	adapter := be.(*engineBackend)
-	keys, err := adapter.backend.(storage.Lister).List(ctx, cfg.Root+"/graph/t-0000")
-	if err != nil || len(keys) != 1 || !strings.HasSuffix(keys[0], ".rf") {
-		t.Fatalf("rooted objects = %v, error = %v", keys, err)
-	}
-	if err := eng.Close(); err != nil {
-		t.Fatal(err)
-	}
-	reopened, err := engine.Open(dir, engine.Options{Backend: be})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer reopened.Close()
-	scan, err := reopened.Scan("graph", iterrt.InfiniteRange(), engine.ScanOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer scan.Close()
-	if !scan.Next() || string(scan.Value()) != "value" {
-		t.Fatal("flushed value not readable after reopen")
-	}
-	if err := reopened.Compact("graph", nil); err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestServeMemoryBackend(t *testing.T) {
 	h, err := startServe(serveConfig{
 		DataDir: t.TempDir(), GRPCAddress: "127.0.0.1:0",
@@ -232,94 +125,5 @@ func TestServeMemoryBackend(t *testing.T) {
 	}
 	if err := h.Stop(context.Background()); err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestBackendExternalPaths(t *testing.T) {
-	ctx := context.Background()
-	be, cleanup, err := (backendConfig{Name: "memory", Root: "gs://bucket/prefix"}).open(ctx, ".")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer cleanup()
-	adapter := be.(*engineBackend)
-	for _, path := range []string{"gs://imports/manifest.json", "gs://imports/table/t-0000/F1.rf", "hdfs:/imports/F2.rf"} {
-		if err := storage.WriteAll(ctx, adapter.backend, path, []byte("source")); err != nil {
-			t.Fatal(err)
-		}
-		data, err := storage.ReadAll(ctx, be, path)
-		if err != nil || string(data) != "source" {
-			t.Fatalf("external path %s: data=%q, error=%v", path, data, err)
-		}
-	}
-
-}
-
-func TestBackendImportOutsideRoot(t *testing.T) {
-	ctx := context.Background()
-	for _, format := range []string{"rfile", "parquet"} {
-		t.Run(format, func(t *testing.T) {
-			dir := t.TempDir()
-			be, cleanup, err := (backendConfig{Name: "memory", Root: "gs://bucket/engine"}).open(ctx, dir)
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer cleanup()
-			producer, err := engine.Open(t.TempDir(), engine.Options{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer producer.Close()
-			fileFormat, err := engine.ParseStorageFormat(format)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if err := producer.CreateTable("graph", engine.TableOptions{FileFormat: fileFormat}); err != nil {
-				t.Fatal(err)
-			}
-			mutation, err := cclient.NewMutation([]byte("row"))
-			if err != nil {
-				t.Fatal(err)
-			}
-			mutation.Put([]byte("cf"), []byte("cq"), nil, 1, []byte("value"))
-			if err := producer.Write("graph", []*cclient.Mutation{mutation}); err != nil {
-				t.Fatal(err)
-			}
-			raw := be.(*engineBackend).backend
-			manifest, err := producer.ExportRFiles(ctx, "graph", raw, engine.RFileExportOptions{DestinationRoot: "gs://bucket/incoming"})
-			if err != nil {
-				t.Fatal(err)
-			}
-			destination, err := engine.Open(dir, engine.Options{Backend: be})
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer destination.Close()
-			for range 2 {
-				if err := importBackendManifest(ctx, destination, be, manifest); err != nil {
-					t.Fatal(err)
-				}
-			}
-			if err := destination.Close(); err != nil {
-				t.Fatal(err)
-			}
-			reopened, err := engine.Open(dir, engine.Options{Backend: be})
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer reopened.Close()
-			scan, err := reopened.Scan("graph", iterrt.InfiniteRange(), engine.ScanOptions{})
-			if err != nil {
-				t.Fatal(err)
-			}
-			defer scan.Close()
-			if !scan.Next() || string(scan.Value()) != "value" {
-				t.Fatal("imported value missing after reopen")
-			}
-			keys, err := raw.(storage.Lister).List(ctx, "gs://bucket/engine/graph/t-0000")
-			if err != nil || len(keys) != 1 || !strings.Contains(keys[0], ".shoal-import-") {
-				t.Fatalf("rooted import objects = %v, error = %v", keys, err)
-			}
-		})
 	}
 }

@@ -2,14 +2,11 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -93,16 +90,12 @@ func cmdImport(args []string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
-	be, cleanup, err := backend.open(ctx, *dataDir)
+	be, cleanup, err := backend.open(ctx)
 	if err != nil {
 		die("import: %v", err)
 	}
 	defer cleanup()
-	source := be
-	if rooted, ok := be.(*engineBackend); ok {
-		source = rooted.backend
-	}
-	data, err := storage.ReadAll(ctx, source, *manifestPath)
+	data, err := storage.ReadAll(ctx, be, *manifestPath)
 	if err != nil {
 		die("import: read manifest: %v", err)
 	}
@@ -115,47 +108,10 @@ func cmdImport(args []string) {
 		die("import: %v", err)
 	}
 	defer eng.Close()
-	if err := importBackendManifest(ctx, eng, be, &manifest); err != nil {
+	if err := eng.ImportRFileManifest(ctx, &manifest); err != nil {
 		die("import: %v", err)
 	}
 	fmt.Printf("imported table %q with %d RFile(s)\n", manifest.SourceTable, len(manifest.RFiles))
-}
-
-func importBackendManifest(ctx context.Context, eng *engine.Engine, be storage.Backend, source *engine.RFileExportManifest) (err error) {
-	rooted, ok := be.(*engineBackend)
-	if !ok || source == nil {
-		return eng.ImportRFileManifest(ctx, source)
-	}
-	name := source.SourceTable
-	if name == "" || name == "." || name == ".." || filepath.IsAbs(name) ||
-		filepath.VolumeName(name) != "" || strings.ContainsAny(name, `/\`) {
-		return fmt.Errorf("invalid imported table name %q", name)
-	}
-	manifest := *source
-	manifest.RFiles = append([]engine.RFileExportFile(nil), source.RFiles...)
-	var copies []string
-	defer func() {
-		cleanupCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer cancel()
-		for _, path := range copies {
-			err = errors.Join(err, rooted.Remove(cleanupCtx, path))
-		}
-	}()
-	// Engine import stages beside each source. Put temporary source copies in
-	// the destination tablet so its verified files land under the selected root.
-	for i, file := range manifest.RFiles {
-		if storage.ImmutableFormatForPath(file.DestinationPath) == "" {
-			return fmt.Errorf("unsupported import file %q", file.DestinationPath)
-		}
-		path := filepath.Join(rooted.dataDir, name, fmt.Sprintf("t-%04d", file.TabletIndex),
-			".shoal-copy-"+rand.Text()+filepath.Ext(file.DestinationPath))
-		copies = append(copies, path)
-		if _, err := storage.Copy(ctx, rooted.backend, file.DestinationPath, rooted, path); err != nil {
-			return err
-		}
-		manifest.RFiles[i].DestinationPath = path
-	}
-	return eng.ImportRFileManifest(ctx, &manifest)
 }
 
 func openStorageBackend(ctx context.Context, name, pathHint string) (storage.Backend, func(), error) {
