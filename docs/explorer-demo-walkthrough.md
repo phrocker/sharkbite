@@ -398,8 +398,8 @@ this step lists documents rather than retrieving evidence.
 ## 11. Where the gateways fit
 
 Steps 1 to 10 are the evidence side: ingest, cite, ask, relate, serve. The
-enforcement side is three separate binaries, described in `docs/gateways.md`,
-and none of them is needed for this demo:
+LLM and effects gateways are the separate enforcement binaries described in
+`docs/gateways.md`; the session gateway is proposed, and none is needed for this demo:
 
 - The **LLM gateway** (`cmd/shoal-llm-gateway`) is an OpenAI-compatible
   endpoint that asks Shoal for admission before every model call. An existing
