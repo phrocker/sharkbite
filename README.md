@@ -1,6 +1,6 @@
 # Sharkbite
 
-Sharkbite is an operational decision platform powered by the a Key/Value Stored named Apache Accumulo. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
+Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
 
 Sharkbite contains the same constructs as Apache Accumulo, written in Go. It can act as an independent or hybrid cluster and, as a result, be a client. Hence why sharkbite, previously written in C++, was changed to be a Go client in addition to operational decision platform.
 
