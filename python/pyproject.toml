@@ -21,9 +21,9 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/phrocker/shoal-oss"
-Issues = "https://github.com/phrocker/shoal-oss/issues"
-Source = "https://github.com/phrocker/shoal-oss"
+Homepage = "https://github.com/phrocker/sharkbite"
+Issues = "https://github.com/phrocker/sharkbite/issues"
+Source = "https://github.com/phrocker/sharkbite"
 
 [tool.setuptools.packages.find]
 where = ["src"]

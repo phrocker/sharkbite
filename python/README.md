@@ -82,7 +82,7 @@ or generated Thrift exceptions, and scopes transport pools per connector.
 `getResultSet()`; each synchronous or asynchronous iteration opens a fresh
 cursor, and scanner/result context managers close blocked work safely.
 Live-cluster server timeout/consistency and retry parity remain tracked by
-[issue #74](https://github.com/phrocker/shoal-oss/issues/74); unit and compiled
+[issue #74](https://github.com/phrocker/sharkbite/issues/74); unit and compiled
 ABI tests do not claim that external evidence.
 
 ```python
@@ -119,6 +119,6 @@ Online compaction, legacy chunked iterators, and other surfaces without an
 equivalent stable C ABI remain explicit `NotImplementedError` paths.
 
 See the repository's
-[release policy](https://github.com/phrocker/shoal-oss/blob/main/docs/python-release.md)
+[release policy](https://github.com/phrocker/sharkbite/blob/main/docs/python-release.md)
 for platform status, reproducible build commands, artifact verification,
 checksums, and signing.
