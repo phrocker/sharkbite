@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#081014">
-  <meta name="description" content="Sharkbite is an operational decision platform on the Shoal engine: authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls.">
+  <meta name="description" content="Sharkbite is an operational decision platform on the Shoal engine: authorized evidence, local models, fail-closed execution controls, and an embedded sorted key/value store that runs on local disk or object storage.">
   <title>Sharkbite — Evidence that can act</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,7 @@
   <header class="nav shell">
     <a class="brand" href="#top" aria-label="Sharkbite home"><span class="brand-mark">⌁</span><span>sharkbite</span></a>
     <nav aria-label="Main navigation">
-      <a href="#how">How it works</a><a href="#stack">The stack</a><a href="#engine">Engine &amp; client</a><a href="#why">Why Sharkbite</a>
+      <a href="#how">How it works</a><a href="#stack">The stack</a><a href="#engine">The engine</a><a href="#why">Why Sharkbite</a>
     </nav>
     <a class="nav-cta" href="https://github.com/phrocker/sharkbite" target="_blank" rel="noreferrer">View on GitHub <span>↗</span></a>
   </header>
@@ -26,7 +26,7 @@
       <div class="hero-copy">
         <div class="eyebrow"><span class="pulse"></span> OPERATIONAL DECISIONS, GROUNDED</div>
         <h1>Give every decision<br><em>something to stand on.</em></h1>
-        <p class="lede">Sharkbite connects authorized evidence, Accumulo-compatible storage, local models, and execution controls so systems can explain what they know—and stop when they don't. Built on the Shoal engine, in Go.</p>
+        <p class="lede">Sharkbite connects authorized evidence, local models, and execution controls so systems can explain what they know—and stop when they don't. One Go engine, embedded or clustered, on your disk or your object store.</p>
         <div class="hero-actions"><a class="button primary" href="#how">See the system <span>↓</span></a><a class="text-link" href="https://github.com/phrocker/sharkbite" target="_blank" rel="noreferrer">Read the source <span>↗</span></a></div>
       </div>
       <div class="hero-art" aria-label="A diagram showing evidence flowing through a decision boundary into a permitted action">
@@ -39,7 +39,7 @@
       </div>
     </section>
 
-    <section class="ticker" aria-label="Capabilities"><div class="ticker-inner"><span>LOCAL MODELS</span><i>✦</i><span>ACCUMULO-COMPATIBLE</span><i>✦</i><span>PROVENANCE</span><i>✦</i><span>FAIL-CLOSED</span><i>✦</i><span>LOCAL MODELS</span><i>✦</i><span>ACCUMULO-COMPATIBLE</span><i>✦</i><span>PROVENANCE</span></div></section>
+    <section class="ticker" aria-label="Capabilities"><div class="ticker-inner"><span>LOCAL MODELS</span><i>✦</i><span>EMBEDDED ENGINE</span><i>✦</i><span>PROVENANCE</span><i>✦</i><span>FAIL-CLOSED</span><i>✦</i><span>OBJECT STORAGE</span><i>✦</i><span>LOCAL MODELS</span><i>✦</i><span>EMBEDDED ENGINE</span><i>✦</i><span>PROVENANCE</span></div></section>
 
     <section id="how" class="section shell">
       <div class="section-intro"><div class="eyebrow">01 / THE LOOP</div><h2>From raw signals<br>to <em>safe movement.</em></h2><p>Sharkbite makes the path from observation to action explicit. Each step is bounded, inspectable, and durable.</p></div>
@@ -50,18 +50,18 @@
       </div>
     </section>
 
-    <section id="stack" class="stack-section"><div class="shell stack-grid"><div><div class="eyebrow">02 / THE STACK</div><h2>Built for the messy<br>middle of <em>operations.</em></h2><p class="stack-lede">A decision layer for teams that have data everywhere and certainty nowhere.</p><a class="button outline" href="https://github.com/phrocker/sharkbite" target="_blank" rel="noreferrer">Explore the repository <span>↗</span></a></div><div class="stack-list"><div class="stack-row"><span class="stack-index">A</span><div><strong>Authorized knowledge</strong><p>Documents, graphs, and ontologies over sorted key/value tablets stored as RFiles or Parquet, on local disk, S3, GCS, Azure Blob, or HDFS.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">B</span><div><strong>Local intelligence</strong><p>Provider-neutral inference with a deterministic offline default, Ollama, or any OpenAI-compatible endpoint. Local decisions run shadow-only today, with cohort exports and evaluation records.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">C</span><div><strong>Durable proof</strong><p>Snapshots, citations, receipts, outcomes, adjudications, and an operational record that survives the moment.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">D</span><div><strong>Bounded execution</strong><p>Declared effects, host policy, leases, and fail-closed controls for agents and services.</p></div><span class="row-arrow">↗</span></div></div></div></section>
+    <section id="stack" class="stack-section"><div class="shell stack-grid"><div><div class="eyebrow">02 / THE STACK</div><h2>Built for the messy<br>middle of <em>operations.</em></h2><p class="stack-lede">A decision layer for teams that have data everywhere and certainty nowhere.</p><a class="button outline" href="https://github.com/phrocker/sharkbite" target="_blank" rel="noreferrer">Explore the repository <span>↗</span></a></div><div class="stack-list"><div class="stack-row"><span class="stack-index">A</span><div><strong>Authorized knowledge</strong><p>Documents, graphs, vectors, and ontologies over sorted key/value tablets, stored as RFile or Parquet on local disk, S3, GCS, Azure Blob, or HDFS.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">B</span><div><strong>Local intelligence</strong><p>Provider-neutral inference with a deterministic offline default, Ollama, or any OpenAI-compatible endpoint. Local decisions run shadow-only today, with cohort exports and evaluation records.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">C</span><div><strong>Durable proof</strong><p>Snapshots, citations, receipts, outcomes, adjudications, and an operational record that survives the moment.</p></div><span class="row-arrow">↗</span></div><div class="stack-row"><span class="stack-index">D</span><div><strong>Bounded execution</strong><p>Declared effects, host policy, leases, and fail-closed controls for agents and services.</p></div><span class="row-arrow">↗</span></div></div></div></section>
 
-    <section id="engine" class="section shell"><div class="section-intro"><div class="eyebrow">03 / THE ENGINE</div><h2>Still the Accumulo client.<br>Now also <em>the engine.</em></h2><p>Sharkbite began as a native Accumulo client. The Shoal engine underneath it reads and writes byte-compatible RFiles, runs standalone with no ZooKeeper, and keeps the Go, C, and Python client surfaces.</p></div>
+    <section id="engine" class="section shell"><div class="section-intro"><div class="eyebrow">03 / THE ENGINE</div><h2>One engine.<br>Embedded or <em>clustered.</em></h2><p>Sharkbite stores its own data. The Shoal engine is a sorted key/value store with a WAL, flush, and compaction. It runs in-process with no cluster, or as serving roles when you need them, with RFile or Parquet tablets on local disk or object storage.</p></div>
       <div class="engine-grid">
-        <article class="engine-card"><h3>Embedded sorted key/value</h3><p><code>shoal-embed</code> is a standalone engine with a WAL, memtable, splits, flush, and compaction. RFile or Parquet tablets. No cluster required.</p><pre class="code">go run ./cmd/shoal-embed init \
+        <article class="engine-card"><h3>Embedded, zero dependencies</h3><p><code>shoal-embed</code> runs standalone. No ZooKeeper, no coordinator, no external process. Splits, flush, and compaction are built in. Point it at a directory or a bucket.</p><pre class="code">go run ./cmd/shoal-embed init \
   --table graph --data ~/.shoal/data
 go run ./cmd/shoal-embed write \
   --table graph --data ~/.shoal/data &lt; mutations.jsonl</pre></article>
-        <article class="engine-card"><h3>Accumulo 4 client, three languages</h3><p>A Go client, a stable C ABI with capability negotiation, and the <code>shoal-sharkbite</code> Python distribution, which installs the familiar <code>sharkbite</code> and <code>pysharkbite</code> imports.</p><pre class="code">python -m pip install ./python
+        <article class="engine-card"><h3>Query the shape of your data</h3><p>ShoalQL with predicates, ranges, ordering, and aggregation. Graph traversal and latent-edge discovery. Document and term-index predicates. Exact vector search, with a distributed IVF-PQ index for scale. One <code>EXPLAIN</code> shows the plan.</p></article>
+        <article class="engine-card"><h3>Already on Accumulo? Bring it along.</h3><p>Byte-compatible RFiles, an Accumulo 4 client in Go, a stable C ABI, and the <code>shoal-sharkbite</code> Python distribution with the <code>sharkbite</code> and <code>pysharkbite</code> imports. Scan server, tablet server, and compactor roles speak Accumulo-native protocols. Status per role is in <a href="https://github.com/phrocker/sharkbite/blob/main/FEATURES.md" target="_blank" rel="noreferrer">FEATURES.md</a>.</p><pre class="code">python -m pip install ./python
 
 from sharkbite import Client</pre></article>
-        <article class="engine-card"><h3>Cluster roles, when you need them</h3><p>Read-optimized scan server, tablet server, and compactor roles speak Accumulo-native protocols, with fenced WAL authority and offline major compaction. Validation status for each role is tracked in <a href="https://github.com/phrocker/sharkbite/blob/main/FEATURES.md" target="_blank" rel="noreferrer">FEATURES.md</a>.</p></article>
       </div>
     </section>
 
