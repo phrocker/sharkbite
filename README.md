@@ -2,9 +2,23 @@
 
 Sharkbite is an operational decision platform powered by the Shoal engine. It connects authorized evidence, Accumulo-compatible storage, local models, and fail-closed execution controls so teams can inspect and act on measurable decisions.
 
-Sharkbite contains the same constructs as Apache Accumulo, written in Go. It can act as an independent or hybrid cluster and, as a result, be a client. Hence why sharkbite, previously written in C++, was changed to be a Go client in addition to operational decision platform.
+Sharkbite reimplements Apache Accumulo's core constructs in Go: the Thrift client
+protocol, RFile storage, iterators, tablet servers, and compactors. Those pieces
+fill three distinct roles. The **Go client** talks to an existing Accumulo cluster
+with no JVM. The **embedded engine** (`shoal-embed`) is a standalone sorted
+key/value store with no ZooKeeper or Accumulo dependency. The **serving roles**
+(`shoal-tserver`, `shoal-compactor`) run as an independent cluster or alongside
+Accumulo in a hybrid deployment. Sharkbite was previously a C++ Accumulo client;
+the Go rewrite keeps that client role and adds the engine and the decision
+platform on top of it. Shoal is the name of the underlying Go engine and its
+stable evidence, provenance, and decision contracts.
 
-The pypi release contains the client code to support Graph operations in addition to general Accumulo access; however, 
+The [PyPI release](https://pypi.org/project/shoal-sharkbite/) is the
+distribution `shoal-sharkbite`. It installs the import-compatible `sharkbite` and
+`pysharkbite` modules for general Accumulo access, plus the `shoal` module for
+knowledge-graph values and retrieval. It is an incremental binding over the
+stable C ABI, not a complete replacement for the historical C++ client; the
+[Python guide](python/README.md) records its scope and installation steps.
 
 Sharkbite is an evidence and enforcement layer for AI systems. It keeps the chain
 from **what was observed** to **what an agent may do** inspectable:
