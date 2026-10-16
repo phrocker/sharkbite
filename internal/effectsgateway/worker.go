@@ -532,8 +532,11 @@ func (w *Worker) drain() int {
 	case <-done:
 		// Every run has finished, but one whose report could not be written
 		// is still held (the invariant on runs): retry its entry now, once,
-		// rather than return as if nothing were left only in memory.
-		if w.unaccounted() > 0 {
+		// rather than return as if nothing were left only in memory. Not
+		// after a kill, which writes nothing: a kill cancels hard, so this
+		// case and the hard case are both ready and the select may land
+		// here. (A HardStop also sets killed, and has already abandoned.)
+		if !w.killed.Load() && w.unaccounted() > 0 {
 			w.abandon()
 		}
 	case <-w.clock.After(DrainBound(w.cfg.OperationTimeout, w.cfg.PlaneTimeout)):
