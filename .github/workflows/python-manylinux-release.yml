@@ -70,7 +70,7 @@ jobs:
               ;;
           esac
           if [[ -n "$tag" && "$tag" != "v${version}" ]]; then
-            echo "::error::Tag ${tag} does not match shoal-sharkbite ${version}"
+            echo "::error::Tag ${tag} does not match sharkbite ${version}"
             exit 1
           fi
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$PUBLISH_TO_PYPI" == "true" && "$REF_TYPE" != "tag" ]]; then
@@ -101,7 +101,7 @@ jobs:
       - name: Upload verified artifacts
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
-          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          name: sharkbite-manylinux-${{ github.sha }}
           path: |
             python/dist/*.whl
             python/dist/*.tar.gz
@@ -110,10 +110,41 @@ jobs:
           if-no-files-found: error
           retention-days: 30
 
+  chaos:
+    name: Container chaos (${{ matrix.python-version }})
+    needs: build
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout release source
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+      - name: Download verified wheel
+        uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
+        with:
+          name: sharkbite-manylinux-${{ github.sha }}
+          path: dist
+      - name: Run fail-closed chaos matrix
+        shell: bash
+        run: |
+          docker run --rm \
+            --volume "$GITHUB_WORKSPACE:/io" \
+            --workdir /io \
+            "python:${{ matrix.python-version }}-slim" \
+            python python/scripts/chaos_release.py \
+            --wheel "$(find dist -name '*.whl' -print -quit)"
+
   attest:
     name: Attest verified artifacts
     if: github.event_name != 'pull_request'
-    needs: build
+    needs: [build, chaos]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
@@ -123,7 +154,7 @@ jobs:
       - name: Download verified artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
-          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          name: sharkbite-manylinux-${{ github.sha }}
           path: dist
 
       - name: Attest release artifacts
@@ -146,7 +177,7 @@ jobs:
       - name: Download verified artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
-          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          name: sharkbite-manylinux-${{ github.sha }}
           path: dist
 
       - name: Upload immutable release assets
@@ -157,13 +188,13 @@ jobs:
         run: gh release upload "$RELEASE_TAG" dist/* --repo "$GITHUB_REPOSITORY"
 
   pypi-publish:
-    name: Publish shoal-sharkbite to PyPI
+    name: Publish sharkbite to PyPI
     if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.publish_to_pypi && github.ref_type == 'tag')
     needs: [build, attest]
     runs-on: ubuntu-24.04
     environment:
       name: pypi
-      url: https://pypi.org/p/shoal-sharkbite
+      url: https://pypi.org/p/sharkbite
     permissions:
       contents: read
       id-token: write
@@ -171,7 +202,7 @@ jobs:
       - name: Download verified artifacts
         uses: actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53 # v6
         with:
-          name: shoal-sharkbite-manylinux-${{ github.sha }}
+          name: sharkbite-manylinux-${{ github.sha }}
           path: dist
 
       - name: Verify exact publish subjects
@@ -215,7 +246,7 @@ jobs:
               "source_date_epoch": manifest["source"]["source_date_epoch"],
           }:
               raise SystemExit("release manifest source does not match the event commit")
-          if manifest["package"]["name"] != "shoal-sharkbite":
+          if manifest["package"]["name"] != "sharkbite":
               raise SystemExit("unexpected PyPI project name")
           if os.environ["RELEASE_TAG"] != f'v{manifest["package"]["version"]}':
               raise SystemExit("release tag does not match package version")
