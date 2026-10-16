@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/storage"
+	"github.com/phrocker/shoal-oss/internal/storage/local"
 	"github.com/phrocker/shoal-oss/internal/storage/memory"
 )
 
@@ -31,11 +32,11 @@ func TestRooted_MapsPathsUnderLocalDir(t *testing.T) {
 	if err != nil || string(data) != "rf" {
 		t.Fatalf("ReadAll = %q, %v", data, err)
 	}
-	keys, err := r.List(ctx, filepath.Join(dir, "graph", "t-0000"))
+	keys, err := r.(storage.Lister).List(ctx, filepath.Join(dir, "graph", "t-0000"))
 	if err != nil || len(keys) != 1 || keys[0] != p {
 		t.Fatalf("List = %v, %v; want [%s]", keys, err, p)
 	}
-	if err := r.Remove(ctx, p); err != nil {
+	if err := r.(storage.Remover).Remove(ctx, p); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := r.Open(ctx, p); !errors.Is(err, storage.ErrNotFound) {
@@ -81,7 +82,7 @@ func TestRooted_ListMapsSchemeQualifiedKeysBack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	keys, err := r.List(context.Background(), filepath.Join(dir, "graph", "t-0000"))
+	keys, err := r.(storage.Lister).List(context.Background(), filepath.Join(dir, "graph", "t-0000"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,10 +100,61 @@ func TestRooted_Validation(t *testing.T) {
 	if _, err := storage.NewRooted(nil, t.TempDir(), "b/p"); err == nil {
 		t.Fatal("nil inner accepted")
 	}
-	if _, err := storage.NewRooted(memory.New(), "", "b/p"); err == nil {
-		t.Fatal("empty localDir accepted")
-	}
 	if _, err := storage.NewRooted(memory.New(), t.TempDir(), "s3://"); err == nil {
 		t.Fatal("empty root accepted")
+	}
+	if _, err := storage.NewRooted(memory.New(), ".", "b/p"); err != nil {
+		t.Fatalf("relative data directory rejected: %v", err)
+	}
+	dir := t.TempDir()
+	if _, err := storage.NewRooted(local.New(), dir, filepath.Join(dir, "objects")); err == nil {
+		t.Fatal("local root inside the data directory accepted; the engine would open it as a table")
+	}
+	if _, err := storage.NewRooted(local.New(), dir, filepath.Join(filepath.Dir(dir), "objects")); err != nil {
+		t.Fatalf("local root beside the data directory rejected: %v", err)
+	}
+}
+
+// openOnly has no optional capabilities, like a read-through cache.
+type openOnly struct{ inner storage.Backend }
+
+func (o openOnly) Open(ctx context.Context, p string) (storage.File, error) {
+	return o.inner.Open(ctx, p)
+}
+
+func TestRooted_MirrorsInnerCapabilities(t *testing.T) {
+	dir := t.TempDir()
+	ro, err := storage.NewRooted(openOnly{memory.New()}, dir, "b/p")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := ro.(storage.WritableBackend); ok {
+		t.Fatal("open-only inner reported as writable")
+	}
+	if _, ok := ro.(storage.Lister); ok {
+		t.Fatal("open-only inner reported as a Lister")
+	}
+	if _, ok := ro.(storage.Remover); ok {
+		t.Fatal("open-only inner reported as a Remover")
+	}
+	if _, ok := ro.(storage.ArtifactCleaner); ok {
+		t.Fatal("open-only inner reported as an ArtifactCleaner")
+	}
+	full, err := storage.NewRooted(local.New(), dir, filepath.Join(filepath.Dir(dir), "objects"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, ok := range map[string]bool{
+		"WritableBackend": func() bool { _, ok := full.(storage.WritableBackend); return ok }(),
+		"Lister":          func() bool { _, ok := full.(storage.Lister); return ok }(),
+		"Remover":         func() bool { _, ok := full.(storage.Remover); return ok }(),
+		"ArtifactCleaner": func() bool { _, ok := full.(storage.ArtifactCleaner); return ok }(),
+	} {
+		if !ok {
+			t.Fatalf("local inner lost %s through the rooted wrapper", name)
+		}
+	}
+	if storage.BackendRootOf(full) != filepath.Join(filepath.Dir(dir), "objects") || storage.BackendRootOf(memory.New()) != "" {
+		t.Fatal("BackendRootOf mismatch")
 	}
 }

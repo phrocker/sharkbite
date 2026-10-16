@@ -129,7 +129,13 @@ type Options struct {
 	// directory's own path. For example dir /var/lib/shoal with
 	// BackendRoot s3://bucket/shoal places <dir>/graph/t-0000/0001.rf at
 	// s3://bucket/shoal/graph/t-0000/0001.rf. The WAL and table manifest
-	// stay on local disk. Requires Backend; see storage.Rooted.
+	// stay on local disk. Requires Backend; see storage.NewRooted.
+	//
+	// The root is recorded in each table's manifest when the table is
+	// created, and opening a table under a different root (including a
+	// table created with no root) is an error rather than an empty table.
+	// Export manifests still spell paths in data-directory form; an
+	// importer with a BackendRoot resolves them through its own root.
 	BackendRoot string
 }
 

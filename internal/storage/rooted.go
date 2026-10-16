@@ -9,9 +9,25 @@ import (
 	"time"
 )
 
-// Rooted maps object paths that an engine derives under its local data
+// RootedBackend is returned by NewRooted. Its dynamic type carries exactly
+// the optional capabilities (WritableBackend, Lister, Remover,
+// ArtifactCleaner) that the inner backend has, so callers that probe for a
+// capability with a type assertion see the same answer they would get from
+// the inner backend.
+type RootedBackend interface {
+	Backend
+	InnerBackend() Backend
+	// BackendRoot returns the prefix objects are stored under.
+	BackendRoot() string
+	// ToInner returns the inner-backend path for a data-directory path.
+	ToInner(string) string
+	// FromInner returns the data-directory spelling of an inner key.
+	FromInner(string) string
+}
+
+// rootedCore maps object paths that an engine derives under its local data
 // directory onto a prefix in another backend. The engine and tablets keep
-// spelling paths as <dataDir>/<table>/<tablet>/<file>; a Rooted backend
+// spelling paths as <dataDir>/<table>/<tablet>/<file>; the rooted backend
 // stores and lists them at <root>/<table>/<tablet>/<file> on the inner
 // backend, so a bucket prefix does not have to mirror a host directory
 // layout. Paths outside dataDir, and paths that carry an explicit backend
@@ -19,30 +35,24 @@ import (
 //
 // Keys returned by List and CleanupStaleArtifacts are mapped back into the
 // dataDir spelling so callers can hand them straight to Open or Remove.
-type Rooted struct {
+type rootedCore struct {
 	inner    Backend
 	localDir string
 	root     string
 }
 
-var (
-	_ Backend         = (*Rooted)(nil)
-	_ WritableBackend = (*Rooted)(nil)
-	_ Lister          = (*Rooted)(nil)
-	_ Remover         = (*Rooted)(nil)
-	_ ArtifactCleaner = (*Rooted)(nil)
-)
-
 // NewRooted wraps inner so paths under localDir are stored under root.
 // root keeps any backend scheme it is given (for example s3://bucket/prefix)
-// and loses any trailing separators.
-func NewRooted(inner Backend, localDir, root string) (*Rooted, error) {
+// and loses any trailing separators. When inner uses local-filesystem path
+// semantics, root must not lie inside localDir: the engine treats every
+// subdirectory of its data directory as a table.
+func NewRooted(inner Backend, localDir, root string) (RootedBackend, error) {
 	if inner == nil {
 		return nil, errors.New("storage: rooted backend requires an inner backend")
 	}
 	localDir = filepath.Clean(localDir)
-	if localDir == "" || localDir == "." {
-		return nil, fmt.Errorf("storage: rooted backend requires a local directory, got %q", localDir)
+	if localDir == "" {
+		return nil, errors.New("storage: rooted backend requires a local directory")
 	}
 	scheme := backendURLRootRe.FindString(root)
 	rest := strings.TrimRight(strings.TrimPrefix(root, scheme), "/\\")
@@ -50,23 +60,30 @@ func NewRooted(inner Backend, localDir, root string) (*Rooted, error) {
 		return nil, fmt.Errorf("storage: rooted backend requires a non-empty root, got %q", root)
 	}
 	root = scheme + rest
-	return &Rooted{inner: inner, localDir: localDir, root: root}, nil
+	if scheme == "" && UsesLocalPathSemantics(inner) {
+		if rel, err := filepath.Rel(localDir, filepath.Clean(root)); err == nil &&
+			rel != ".." && !strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return nil, fmt.Errorf("storage: rooted backend root %q lies inside data directory %q", root, localDir)
+		}
+	}
+	core := &rootedCore{inner: inner, localDir: localDir, root: root}
+	_, canCreate := inner.(WritableBackend)
+	_, canList := inner.(Lister)
+	_, canRemove := inner.(Remover)
+	_, canClean := inner.(ArtifactCleaner)
+	return assembleRooted(core, canCreate, canList, canRemove, canClean), nil
 }
 
-// InnerBackend exposes the wrapped backend so scheme and path-join helpers
-// see the real store.
-func (r *Rooted) InnerBackend() Backend { return r.inner }
-
-// Root returns the prefix objects are stored under.
-func (r *Rooted) Root() string { return r.root }
+func (c *rootedCore) InnerBackend() Backend { return c.inner }
+func (c *rootedCore) BackendRoot() string  { return c.root }
 
 // rel returns the slash-separated path of p relative to localDir and whether
 // p lies inside it.
-func (r *Rooted) rel(p string) (string, bool) {
-	if ExplicitPathScheme(r.inner, p) != "" {
+func (c *rootedCore) rel(p string) (string, bool) {
+	if ExplicitPathScheme(c.inner, p) != "" {
 		return "", false
 	}
-	rel, err := filepath.Rel(r.localDir, filepath.Clean(p))
+	rel, err := filepath.Rel(c.localDir, filepath.Clean(p))
 	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
 		return "", false
 	}
@@ -76,32 +93,30 @@ func (r *Rooted) rel(p string) (string, bool) {
 	return filepath.ToSlash(rel), true
 }
 
-// ToInner returns the inner-backend path for p.
-func (r *Rooted) ToInner(p string) string {
-	rel, ok := r.rel(p)
+func (c *rootedCore) ToInner(p string) string {
+	rel, ok := c.rel(p)
 	if !ok {
 		return p
 	}
 	if rel == "" {
-		return r.root
+		return c.root
 	}
-	return r.root + "/" + rel
+	return c.root + "/" + rel
 }
 
-// FromInner returns the dataDir spelling of an inner-backend key, or key
-// unchanged when it is not under root. Backends may return keys with a
-// scheme the caller did not use (s3://bucket/key for a bucket/key prefix),
-// so comparison ignores scheme and leading separators.
-func (r *Rooted) FromInner(key string) string {
-	base := stripSchemeAndSlashes(r.root)
+// FromInner ignores scheme and leading separators when comparing, because
+// backends may return keys with a scheme the caller did not use
+// (s3://bucket/key for a bucket/key prefix).
+func (c *rootedCore) FromInner(key string) string {
+	base := stripSchemeAndSlashes(c.root)
 	k := stripSchemeAndSlashes(key)
 	if k == base {
-		return r.localDir
+		return c.localDir
 	}
 	if !strings.HasPrefix(k, base+"/") {
 		return key
 	}
-	return filepath.Join(r.localDir, filepath.FromSlash(strings.TrimPrefix(k, base+"/")))
+	return filepath.Join(c.localDir, filepath.FromSlash(strings.TrimPrefix(k, base+"/")))
 }
 
 func stripSchemeAndSlashes(p string) string {
@@ -109,53 +124,157 @@ func stripSchemeAndSlashes(p string) string {
 	return strings.Trim(filepath.ToSlash(p), "/")
 }
 
-func (r *Rooted) Open(ctx context.Context, p string) (File, error) {
-	return r.inner.Open(ctx, r.ToInner(p))
+func (c *rootedCore) Open(ctx context.Context, p string) (File, error) {
+	return c.inner.Open(ctx, c.ToInner(p))
 }
 
-func (r *Rooted) Create(ctx context.Context, p string) (Writer, error) {
-	w, ok := r.inner.(WritableBackend)
-	if !ok {
-		return nil, ErrReadOnly
-	}
-	return w.Create(ctx, r.ToInner(p))
+// Capability mixins. Each is embedded only when the inner backend has the
+// capability, so the assembled type's method set mirrors the inner's.
+
+type rootedCreate struct{ c *rootedCore }
+
+func (m rootedCreate) Create(ctx context.Context, p string) (Writer, error) {
+	return m.c.inner.(WritableBackend).Create(ctx, m.c.ToInner(p))
 }
 
-func (r *Rooted) Remove(ctx context.Context, p string) error {
-	rm, ok := r.inner.(Remover)
-	if !ok {
-		return ErrRemoverUnsupported
-	}
-	return rm.Remove(ctx, r.ToInner(p))
-}
+type rootedList struct{ c *rootedCore }
 
-func (r *Rooted) List(ctx context.Context, prefix string) ([]string, error) {
-	l, ok := r.inner.(Lister)
-	if !ok {
-		return nil, fmt.Errorf("storage: rooted backend: inner %T does not support List", r.inner)
-	}
-	keys, err := l.List(ctx, r.ToInner(prefix))
+func (m rootedList) List(ctx context.Context, prefix string) ([]string, error) {
+	keys, err := m.c.inner.(Lister).List(ctx, m.c.ToInner(prefix))
 	if err != nil {
 		return nil, err
 	}
 	out := make([]string, len(keys))
 	for i, k := range keys {
-		out[i] = r.FromInner(k)
+		out[i] = m.c.FromInner(k)
 	}
 	return out, nil
 }
 
-func (r *Rooted) CleanupStaleArtifacts(ctx context.Context, prefix string, cutoff time.Time) (ArtifactCleanupResult, error) {
-	c, ok := r.inner.(ArtifactCleaner)
-	if !ok {
-		return ArtifactCleanupResult{}, ErrArtifactCleanerUnsupported
-	}
-	res, err := c.CleanupStaleArtifacts(ctx, r.ToInner(prefix), cutoff)
+type rootedRemove struct{ c *rootedCore }
+
+func (m rootedRemove) Remove(ctx context.Context, p string) error {
+	return m.c.inner.(Remover).Remove(ctx, m.c.ToInner(p))
+}
+
+type rootedClean struct{ c *rootedCore }
+
+func (m rootedClean) CleanupStaleArtifacts(ctx context.Context, prefix string, cutoff time.Time) (ArtifactCleanupResult, error) {
+	res, err := m.c.inner.(ArtifactCleaner).CleanupStaleArtifacts(ctx, m.c.ToInner(prefix), cutoff)
 	for i, k := range res.Removed {
-		res.Removed[i] = r.FromInner(k)
+		res.Removed[i] = m.c.FromInner(k)
 	}
 	for i, k := range res.Recoverable {
-		res.Recoverable[i] = r.FromInner(k)
+		res.Recoverable[i] = m.c.FromInner(k)
 	}
 	return res, err
+}
+
+func assembleRooted(c *rootedCore, create, list, remove, clean bool) RootedBackend {
+	cr, li, rm, cl := rootedCreate{c}, rootedList{c}, rootedRemove{c}, rootedClean{c}
+	switch {
+	case create && list && remove && clean:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedList
+			rootedRemove
+			rootedClean
+		}{c, cr, li, rm, cl}
+	case create && list && remove:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedList
+			rootedRemove
+		}{c, cr, li, rm}
+	case create && list && clean:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedList
+			rootedClean
+		}{c, cr, li, cl}
+	case create && remove && clean:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedRemove
+			rootedClean
+		}{c, cr, rm, cl}
+	case list && remove && clean:
+		return struct {
+			*rootedCore
+			rootedList
+			rootedRemove
+			rootedClean
+		}{c, li, rm, cl}
+	case create && list:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedList
+		}{c, cr, li}
+	case create && remove:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedRemove
+		}{c, cr, rm}
+	case create && clean:
+		return struct {
+			*rootedCore
+			rootedCreate
+			rootedClean
+		}{c, cr, cl}
+	case list && remove:
+		return struct {
+			*rootedCore
+			rootedList
+			rootedRemove
+		}{c, li, rm}
+	case list && clean:
+		return struct {
+			*rootedCore
+			rootedList
+			rootedClean
+		}{c, li, cl}
+	case remove && clean:
+		return struct {
+			*rootedCore
+			rootedRemove
+			rootedClean
+		}{c, rm, cl}
+	case create:
+		return struct {
+			*rootedCore
+			rootedCreate
+		}{c, cr}
+	case list:
+		return struct {
+			*rootedCore
+			rootedList
+		}{c, li}
+	case remove:
+		return struct {
+			*rootedCore
+			rootedRemove
+		}{c, rm}
+	case clean:
+		return struct {
+			*rootedCore
+			rootedClean
+		}{c, cl}
+	default:
+		return c
+	}
+}
+
+// BackendRootOf returns the root a RootedBackend stores under, or "" for any
+// other backend.
+func BackendRootOf(b Backend) string {
+	if r, ok := b.(RootedBackend); ok {
+		return r.BackendRoot()
+	}
+	return ""
 }
