@@ -90,7 +90,7 @@ func cmdImport(args []string) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
-	be, cleanup, err := backend.open(ctx)
+	be, cleanup, err := backend.open(ctx, *manifestPath)
 	if err != nil {
 		die("import: %v", err)
 	}
