@@ -80,7 +80,7 @@ func TestExclusiveCreator(t *testing.T) {
 	})
 }
 
-func TestExclusiveCreatorConflictCleansStageWhenVerificationFails(t *testing.T) {
+func TestExclusiveCreatorConflictWithUnverifiableDestinationIsIndeterminate(t *testing.T) {
 	ops := newFakeAzureWriteOperations()
 	b := &Backend{ops: ops, sourceProvider: staticAzureCopySourceProvider{}}
 	w, err := b.CreateExclusive(context.Background(), "container/dir/target")
@@ -91,11 +91,36 @@ func TestExclusiveCreatorConflictCleansStageWhenVerificationFails(t *testing.T) 
 		t.Fatal(err)
 	}
 	ops.promoteFailure = &azcore.ResponseError{ErrorCode: string(bloberror.ConditionNotMet)}
-	ops.headErrs["dir/target"] = []error{context.DeadlineExceeded}
-	if err := w.Close(); !errors.Is(err, storage.ErrExists) {
-		t.Fatalf("Close = %v, want ErrExists", err)
+	// verifyDestination and destinationPresent each head once.
+	ops.headErrs["dir/target"] = []error{context.DeadlineExceeded, context.DeadlineExceeded}
+	err = w.Close()
+	if err == nil || errors.Is(err, storage.ErrExists) {
+		t.Fatalf("Close = %v, want an indeterminate error that is not ErrExists", err)
+	}
+	if !w.(*writer).promotionIndeterminate {
+		t.Fatal("promotion not marked indeterminate")
+	}
+	if _, ok := ops.objects["dir/target"]; ok {
+		t.Fatal("destination written despite conflict")
+	}
+}
+
+func TestExclusiveCreatorConditionNotMetWithAbsentDestinationIsNotErrExists(t *testing.T) {
+	ops := newFakeAzureWriteOperations()
+	b := &Backend{ops: ops, sourceProvider: staticAzureCopySourceProvider{}}
+	w, err := b.CreateExclusive(context.Background(), "container/dir/target")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write([]byte("loser")); err != nil {
+		t.Fatal(err)
+	}
+	ops.promoteFailure = &azcore.ResponseError{ErrorCode: string(bloberror.ConditionNotMet)}
+	err = w.Close()
+	if err == nil || errors.Is(err, storage.ErrExists) {
+		t.Fatalf("Close = %v, want a non-ErrExists publish error", err)
 	}
 	if len(ops.objects) != 0 {
-		t.Fatalf("objects left after conflict: %v", ops.objects)
+		t.Fatalf("objects left after failed publish: %v", ops.objects)
 	}
 }

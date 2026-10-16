@@ -904,7 +904,22 @@ func (w *writer) promoteTempObject() error {
 			return nil
 		}
 		if w.exclusive && isExclusiveConflict(err) {
-			return fmt.Errorf("%w: %s: %w", shstorage.ErrExists, w.targetPath, err)
+			// A conflict code alone does not prove the destination exists;
+			// only an observed destination may be reported as ErrExists.
+			present, presenceErr := w.destinationPresent()
+			switch {
+			case presenceErr != nil:
+				w.promotionIndeterminate = true
+				return errors.Join(
+					w.indeterminatePromotionError(),
+					fmt.Errorf("gcs: promote temporary object %s to %s: %w", w.tempPath, w.targetPath, err),
+					presenceErr,
+				)
+			case present:
+				return fmt.Errorf("%w: %s: %w", shstorage.ErrExists, w.targetPath, err)
+			default:
+				return fmt.Errorf("gcs: exclusive publish %s failed while the destination is absent: %w", w.targetPath, err)
+			}
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
@@ -917,6 +932,20 @@ func (w *writer) promoteTempObject() error {
 		return fmt.Errorf("gcs: promote temporary object %s to %s: %w", w.tempPath, w.targetPath, err)
 	}
 	return nil
+}
+
+// destinationPresent reports whether any object exists at the destination,
+// regardless of who wrote it. An error means presence could not be decided.
+func (w *writer) destinationPresent() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.tempCleanupTimeout)
+	defer cancel()
+	if _, err := w.target.Attrs(ctx); err != nil {
+		if errors.Is(err, storage.ErrObjectNotExist) {
+			return false, nil
+		}
+		return false, fmt.Errorf("gcs: verify destination %s: %w", w.targetPath, err)
+	}
+	return true, nil
 }
 
 func (w *writer) verifyDestination() (destinationVerificationState, error) {

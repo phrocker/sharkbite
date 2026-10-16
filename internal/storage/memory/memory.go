@@ -138,16 +138,19 @@ func (w *writer) Close() error {
 	if w.closed {
 		return nil
 	}
-	w.closed = true
 	if w.exclusive {
 		w.b.mu.Lock()
 		defer w.b.mu.Unlock()
 		if _, exists := w.b.objects[w.path]; exists {
+			// Leave the writer open so a repeated Close reports the
+			// conflict again instead of success, and Abort still works.
 			return fmt.Errorf("%w: %s", storage.ErrExists, w.path)
 		}
 		w.b.objects[w.path] = bytes.Clone(w.buf.Bytes())
+		w.closed = true
 		return nil
 	}
+	w.closed = true
 	w.b.Put(w.path, w.buf.Bytes())
 	return nil
 }

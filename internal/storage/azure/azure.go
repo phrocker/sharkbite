@@ -1161,10 +1161,30 @@ func (w *writer) Close() error {
 			return nil
 		}
 		if w.exclusive && bloberror.HasCode(err, bloberror.ConditionNotMet, bloberror.BlobAlreadyExists) {
-			return errors.Join(
-				fmt.Errorf("%w: az://%s/%s: %w", shstorage.ErrExists, w.container, w.name, err),
-				w.cleanupStage(),
-			)
+			// A conflict code alone does not prove the destination exists;
+			// ConditionNotMet also fires for the stage's source condition.
+			present, presenceErr := w.destinationPresent()
+			switch {
+			case presenceErr != nil:
+				w.promotionIndeterminate = true
+				return errors.Join(
+					w.indeterminatePromotionError(),
+					fmt.Errorf("azure: promote az://%s/%s to az://%s/%s: %w",
+						w.container, w.stageName, w.container, w.name, err),
+					presenceErr,
+				)
+			case present:
+				return errors.Join(
+					fmt.Errorf("%w: az://%s/%s: %w", shstorage.ErrExists, w.container, w.name, err),
+					w.cleanupStage(),
+				)
+			default:
+				return errors.Join(
+					fmt.Errorf("azure: exclusive publish az://%s/%s failed while the destination is absent: %w",
+						w.container, w.name, err),
+					w.cleanupStage(),
+				)
+			}
 		}
 		if isAmbiguousPromotionError(err) {
 			w.promotionIndeterminate = true
@@ -1265,6 +1285,20 @@ func (w *writer) resolveIndeterminateClose() (bool, error) {
 	default:
 		return true, w.indeterminatePromotionError()
 	}
+}
+
+// destinationPresent reports whether any blob exists at the destination,
+// regardless of who wrote it. An error means presence could not be decided.
+func (w *writer) destinationPresent() (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), w.cleanupTimeout)
+	defer cancel()
+	if _, err := w.ops.head(ctx, w.container, w.name); err != nil {
+		if isBlobNotFound(err) {
+			return false, nil
+		}
+		return false, fmt.Errorf("azure: verify destination az://%s/%s: %w", w.container, w.name, err)
+	}
+	return true, nil
 }
 
 func (w *writer) verifyDestination() (destinationVerificationState, error) {

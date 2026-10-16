@@ -79,7 +79,7 @@ func TestExclusiveCreator(t *testing.T) {
 	})
 }
 
-func TestExclusiveCreatorConflictCleansStageWhenVerificationFails(t *testing.T) {
+func TestExclusiveCreatorConflictWithUnverifiableDestinationIsIndeterminate(t *testing.T) {
 	b, bucket := newFakeBackend()
 	w, err := b.CreateExclusive(context.Background(), "bucket/dir/target")
 	if err != nil {
@@ -91,11 +91,37 @@ func TestExclusiveCreatorConflictCleansStageWhenVerificationFails(t *testing.T) 
 	bucket.copyHook = func(context.Context, *fakeObject, *fakeObject) error {
 		return &googleapi.Error{Code: http.StatusPreconditionFailed}
 	}
-	bucket.attrsErrs["dir/target"] = []error{context.DeadlineExceeded}
-	if err := w.Close(); !errors.Is(err, storage.ErrExists) {
-		t.Fatalf("Close = %v, want ErrExists", err)
+	// verifyDestination and destinationPresent each read attrs once.
+	bucket.attrsErrs["dir/target"] = []error{context.DeadlineExceeded, context.DeadlineExceeded}
+	err = w.Close()
+	if err == nil || errors.Is(err, storage.ErrExists) {
+		t.Fatalf("Close = %v, want an indeterminate error that is not ErrExists", err)
+	}
+	if !w.(*writer).promotionIndeterminate {
+		t.Fatal("promotion not marked indeterminate")
+	}
+	if _, ok := bucket.objects["dir/target"]; ok {
+		t.Fatal("destination written despite conflict")
+	}
+}
+
+func TestExclusiveCreatorPreconditionFailedWithAbsentDestinationIsNotErrExists(t *testing.T) {
+	b, bucket := newFakeBackend()
+	w, err := b.CreateExclusive(context.Background(), "bucket/dir/target")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write([]byte("loser")); err != nil {
+		t.Fatal(err)
+	}
+	bucket.copyHook = func(context.Context, *fakeObject, *fakeObject) error {
+		return &googleapi.Error{Code: http.StatusPreconditionFailed}
+	}
+	err = w.Close()
+	if err == nil || errors.Is(err, storage.ErrExists) {
+		t.Fatalf("Close = %v, want a non-ErrExists publish error", err)
 	}
 	if len(bucket.objects) != 0 {
-		t.Fatalf("objects left after conflict: %v", bucket.objects)
+		t.Fatalf("objects left after failed publish: %v", bucket.objects)
 	}
 }
