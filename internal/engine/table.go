@@ -134,6 +134,7 @@ type table struct {
 	format               tablet.FileFormat
 	targetEmbeddingSpace string
 	defaultEmbedding     embeddingspace.FileState
+	backendRoot          string
 	formatMu             sync.RWMutex
 }
 
@@ -145,6 +146,11 @@ type tableManifest struct {
 	FileFormat           tablet.FileFormat        `json:"file_format"`
 	TargetEmbeddingSpace string                   `json:"target_embedding_space,omitempty"`
 	DefaultEmbedding     embeddingspace.FileState `json:"default_embedding,omitempty"`
+	// BackendRoot records the storage.Rooted prefix the table's immutable
+	// files were written under, or "" when they live at the data
+	// directory's own path. Opening with a different root is refused:
+	// discovery would otherwise find nothing and silently fork the table.
+	BackendRoot string `json:"backend_root,omitempty"`
 }
 
 // createTable creates a new table on disk with the configured splits. notify,
@@ -208,6 +214,7 @@ func createTable(dir, name string, opts TableOptions, logger *slog.Logger, rfCac
 		FileFormat:           format,
 		TargetEmbeddingSpace: opts.TargetEmbeddingSpace,
 		DefaultEmbedding:     opts.DefaultEmbedding,
+		BackendRoot:          storage.BackendRootOf(opts.TabletOptions.Backend),
 	}); err != nil {
 		return nil, err
 	}
@@ -247,6 +254,7 @@ func createTable(dir, name string, opts TableOptions, logger *slog.Logger, rfCac
 		format:               format,
 		targetEmbeddingSpace: opts.TargetEmbeddingSpace,
 		defaultEmbedding:     opts.DefaultEmbedding,
+		backendRoot:          storage.BackendRootOf(opts.TabletOptions.Backend),
 	}, nil
 }
 
@@ -290,6 +298,7 @@ func (t *table) setTargetEmbedding(identity string) error {
 		FileFormat:           t.format,
 		TargetEmbeddingSpace: identity,
 		DefaultEmbedding:     t.defaultEmbedding,
+		BackendRoot:          t.backendRoot,
 	}
 	if err := writeTableManifest(t.dir, manifest); err != nil {
 		return err
@@ -305,6 +314,10 @@ func openTable(dir, name string, logger *slog.Logger, rfCache *tablet.Cache, wal
 	manifest, err := readTableManifest(dir)
 	if err != nil {
 		return nil, err
+	}
+	if want := storage.BackendRootOf(backend); manifest.BackendRoot != want {
+		return nil, fmt.Errorf("table: %s stores its files under backend root %q but the engine is configured with %q",
+			name, manifest.BackendRoot, want)
 	}
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -363,6 +376,7 @@ func openTable(dir, name string, logger *slog.Logger, rfCache *tablet.Cache, wal
 		format:               manifest.FileFormat,
 		targetEmbeddingSpace: manifest.TargetEmbeddingSpace,
 		defaultEmbedding:     manifest.DefaultEmbedding,
+		backendRoot:          manifest.BackendRoot,
 	}, nil
 }
 
