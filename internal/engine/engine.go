@@ -45,6 +45,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -175,13 +176,15 @@ func Open(dir string, opts Options) (*Engine, error) {
 		backend:         backend,
 	}
 
-	// Discover existing tables (each subdirectory is a table)
+	// Discover existing tables (each subdirectory is a table). Dot-prefixed
+	// directories are tool state (for example shoal-embed sync's .sync) and
+	// are never tables; CreateTable rejects such names.
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, fmt.Errorf("engine: readdir %s: %w", dir, err)
 	}
 	for _, e := range entries {
-		if e.IsDir() {
+		if e.IsDir() && !strings.HasPrefix(e.Name(), ".") {
 			tbl, err := openTable(filepath.Join(dir, e.Name()), e.Name(), opts.Logger, eng.cache, eng.walSyncMode, eng.walSyncInterval, eng.backend, eng.publishRFile)
 			if err != nil {
 				eng.Close()
@@ -196,6 +199,9 @@ func Open(dir string, opts Options) (*Engine, error) {
 // CreateTable creates a new table with the given split policy. If splits
 // is nil, the table has a single tablet covering the entire key space.
 func (e *Engine) CreateTable(name string, opts TableOptions) error {
+	if name == "" || strings.HasPrefix(name, ".") || strings.ContainsAny(name, `/\`) {
+		return fmt.Errorf("engine: invalid table name %q", name)
+	}
 	e.mu.Lock()
 	defer e.mu.Unlock()
 

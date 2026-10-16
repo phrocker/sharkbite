@@ -3,6 +3,8 @@ package engine_test
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -136,6 +138,26 @@ func TestEngine_BackendRoot_OpenOnlyInnerStillCreatesTables(t *testing.T) {
 	defer eng.Close()
 	if err := eng.CreateTable("graph", engine.TableOptions{}); err != nil {
 		t.Fatalf("CreateTable through an open-only rooted backend: %v", err)
+	}
+}
+
+func TestEngine_DotDirectoriesAreNotTables(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(dir, ".sync"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	eng, err := engine.Open(dir, engine.Options{Backend: memory.New(), BackendRoot: "bucket/x"})
+	if err != nil {
+		t.Fatalf("a dot-prefixed state directory was opened as a table: %v", err)
+	}
+	defer eng.Close()
+	for _, name := range eng.TableNames() {
+		if name == ".sync" {
+			t.Fatal(".sync listed as a table")
+		}
+	}
+	if err := eng.CreateTable(".hidden", engine.TableOptions{}); err == nil {
+		t.Fatal("dot-prefixed table name accepted; it would be invisible on reopen")
 	}
 }
 
