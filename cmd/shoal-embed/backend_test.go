@@ -252,4 +252,74 @@ func TestBackendExternalPaths(t *testing.T) {
 			t.Fatalf("external path %s: data=%q, error=%v", path, data, err)
 		}
 	}
+
+}
+
+func TestBackendImportOutsideRoot(t *testing.T) {
+	ctx := context.Background()
+	for _, format := range []string{"rfile", "parquet"} {
+		t.Run(format, func(t *testing.T) {
+			dir := t.TempDir()
+			be, cleanup, err := (backendConfig{Name: "memory", Root: "gs://bucket/engine"}).open(ctx, dir)
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer cleanup()
+			producer, err := engine.Open(t.TempDir(), engine.Options{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer producer.Close()
+			fileFormat, err := engine.ParseStorageFormat(format)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := producer.CreateTable("graph", engine.TableOptions{FileFormat: fileFormat}); err != nil {
+				t.Fatal(err)
+			}
+			mutation, err := cclient.NewMutation([]byte("row"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			mutation.Put([]byte("cf"), []byte("cq"), nil, 1, []byte("value"))
+			if err := producer.Write("graph", []*cclient.Mutation{mutation}); err != nil {
+				t.Fatal(err)
+			}
+			raw := be.(*engineBackend).backend
+			manifest, err := producer.ExportRFiles(ctx, "graph", raw, engine.RFileExportOptions{DestinationRoot: "gs://bucket/incoming"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			destination, err := engine.Open(dir, engine.Options{Backend: be})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer destination.Close()
+			for range 2 {
+				if err := importBackendManifest(ctx, destination, be, manifest); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := destination.Close(); err != nil {
+				t.Fatal(err)
+			}
+			reopened, err := engine.Open(dir, engine.Options{Backend: be})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer reopened.Close()
+			scan, err := reopened.Scan("graph", iterrt.InfiniteRange(), engine.ScanOptions{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer scan.Close()
+			if !scan.Next() || string(scan.Value()) != "value" {
+				t.Fatal("imported value missing after reopen")
+			}
+			keys, err := raw.(storage.Lister).List(ctx, "gs://bucket/engine/graph/t-0000")
+			if err != nil || len(keys) != 1 || !strings.Contains(keys[0], ".shoal-import-") {
+				t.Fatalf("rooted import objects = %v, error = %v", keys, err)
+			}
+		})
+	}
 }
