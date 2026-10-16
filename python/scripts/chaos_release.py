@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import argparse
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -59,6 +58,17 @@ def main() -> int:
             print(smoke.stderr, end="", file=sys.stderr)
             return smoke.returncode
         print("PASS clean install/import")
+        native_smoke = run(
+            str(python),
+            "-c",
+            "from sharkbite import NativeAPI; api = NativeAPI(); print(api.info.version)",
+            env=base,
+        )
+        if native_smoke.returncode:
+            print(native_smoke.stdout, end="")
+            print(native_smoke.stderr, end="", file=sys.stderr)
+            return native_smoke.returncode
+        print(f"PASS clean native load: {native_smoke.stdout.strip()}")
 
         package = Path(
             run(str(python), "-c", "import pathlib, sharkbite; print(pathlib.Path(sharkbite.__file__).parent)", env=base).stdout.strip()
