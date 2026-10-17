@@ -424,9 +424,12 @@ func pathEvidenceReference(
 
 // neighborhoodEvidenceReferences records a neighborhood one edge at a time.
 // A neighborhood is not a path and an anchor is one, so each edge with its
-// two endpoints is its own anchor. Nodes without an edge are observed by ID
-// only. An edge whose endpoint the neighborhood does not carry cannot be
-// anchored exactly and is refused rather than recorded loosely.
+// two endpoints is its own anchor. A node no edge reaches, such as a second
+// seed with no neighbors, is a single-node anchor of its own, so the
+// evidence covers every node the tool retrieved. A neighborhood with no
+// edges is observed by node ID only. An edge whose endpoint the
+// neighborhood does not carry cannot be anchored exactly and is refused
+// rather than recorded loosely.
 func neighborhoodEvidenceReferences(
 	nodes []graph.Node,
 	edges []graph.Edge,
@@ -444,6 +447,7 @@ func neighborhoodEvidenceReferences(
 		return nil, err
 	}
 	references := make([]interaction.EvidenceReference, 0, len(edges))
+	reached := make(map[shoal.ID]struct{}, len(nodes))
 	for _, edge := range edges {
 		from, fromOK := byID[edge.From]
 		to, toOK := byID[edge.To]
@@ -456,6 +460,19 @@ func neighborhoodEvidenceReferences(
 			Nodes: []graph.Node{from, to},
 			Edges: []graph.Edge{edge},
 		}, byEdge)
+		if err != nil {
+			return nil, err
+		}
+		references = append(references, reference)
+		reached[edge.From] = struct{}{}
+		reached[edge.To] = struct{}{}
+	}
+	for _, node := range nodes {
+		if _, ok := reached[node.ID]; ok {
+			continue
+		}
+		reference, err := graphPathReference(
+			graph.Path{Nodes: []graph.Node{node}}, nil)
 		if err != nil {
 			return nil, err
 		}
@@ -605,31 +622,41 @@ func canonicalToolObservation(
 	return value, nil
 }
 
+// canonicalObservedEvidence sorts the evidence by anchor. An anchor's ID is
+// derived from its content, so the same anchor observed twice, as when two
+// evidence paths of one result cite the same bytes, is one reference and is
+// kept once, as the interaction recorder keeps it. Two references under one
+// anchor that disagree are refused.
 func canonicalObservedEvidence(
 	values []interaction.EvidenceReference,
 ) ([]interaction.EvidenceReference, error) {
 	if len(values) == 0 {
 		return nil, nil
 	}
-	result := make([]interaction.EvidenceReference, len(values))
-	for index, value := range values {
+	byAnchor := make(map[shoal.ID]interaction.EvidenceReference, len(values))
+	for _, value := range values {
 		canonical, err := value.Canonical()
 		if err != nil {
 			return nil, err
 		}
-		result[index] = canonical
+		if existing, duplicate := byAnchor[canonical.AnchorID]; duplicate {
+			if !reflect.DeepEqual(existing, canonical) {
+				return nil, shoal.NewError(
+					shoal.ErrorInvalidArgument,
+					"tool observation evidence anchor has conflicting references",
+				)
+			}
+			continue
+		}
+		byAnchor[canonical.AnchorID] = canonical
+	}
+	result := make([]interaction.EvidenceReference, 0, len(byAnchor))
+	for _, value := range byAnchor {
+		result = append(result, value)
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return shoal.CompareID(result[i].AnchorID, result[j].AnchorID) < 0
 	})
-	for index := 1; index < len(result); index++ {
-		if result[index-1].AnchorID == result[index].AnchorID {
-			return nil, shoal.NewError(
-				shoal.ErrorInvalidArgument,
-				"tool observation contains duplicate evidence anchors",
-			)
-		}
-	}
 	return result, nil
 }
 

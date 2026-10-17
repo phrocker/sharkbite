@@ -31,24 +31,39 @@ import (
 // edge an extracted assertion materialized.
 const AssertionEdgeIDMetadata = "shoal.graph.edge_id"
 
+// EdgeAssertionIDProperty is the graph edge property that names the
+// assertion an edge materialized when the assertion's own metadata does not
+// name the edge.
+const EdgeAssertionIDProperty = "ontology.assertion.id"
+
 // AssertionReferencesByEdge maps each edge that one of the given authoritative
 // assertions materialized to the references a graph anchor over that edge
 // must carry. The Explorer's recorder refuses a graph anchor that omits the
 // assertion behind an asserted edge, so a recorder that was shown the
 // assertions alongside the edges cites them through this map.
 //
-// An assertion is bound to an edge by its AssertionEdgeIDMetadata, or by
-// sharing the edge's identity; either way its subject, predicate, object
-// reference, and confidence must reproduce the edge exactly. A derived
-// assertion is not source evidence and is refused, as is an assertion that
-// matches none of the edges.
+// An assertion is bound to an edge exactly as the Explorer's recorder binds
+// them when it validates a recording: by naming the edge in its
+// AssertionEdgeIDMetadata, by the edge naming it in EdgeAssertionIDProperty,
+// or by sharing the edge's identity while its subject, predicate, object
+// reference, and confidence reproduce the edge. The metadata binding alone
+// is authoritative: an extracted relation's edge carries its relationship's
+// key as its type and a canonical weight, while the relationship ID and the
+// extraction's confidence stay on the assertion. A derived assertion is not
+// source evidence and is refused, as is an assertion bound to none of the
+// edges.
 func AssertionReferencesByEdge(
 	assertions []ontology.Assertion,
 	edges []graph.Edge,
 ) (map[shoal.ID][]interaction.AssertionReference, error) {
 	byID := make(map[shoal.ID]graph.Edge, len(edges))
+	namedBy := make(map[shoal.ID][]shoal.ID)
 	for _, edge := range edges {
 		byID[edge.ID] = edge
+		if assertionID := shoal.ID(
+			edge.Properties[EdgeAssertionIDProperty]); assertionID != "" {
+			namedBy[assertionID] = append(namedBy[assertionID], edge.ID)
+		}
 	}
 	result := make(map[shoal.ID][]interaction.AssertionReference)
 	for _, assertion := range assertions {
@@ -62,19 +77,15 @@ func AssertionReferencesByEdge(
 		matched := make(map[shoal.ID]struct{})
 		if edgeID := shoal.ID(
 			assertion.Metadata()[AssertionEdgeIDMetadata]); edgeID != "" {
-			if edge, ok := byID[edgeID]; ok {
-				if !assertionMatchesEdge(assertion, edge) {
-					return nil, invalid(
-						"graph assertion does not match its authoritative edge")
-				}
+			if _, ok := byID[edgeID]; ok {
 				matched[edgeID] = struct{}{}
 			}
 		}
-		if edge, ok := byID[assertion.ID()]; ok {
-			if !assertionMatchesEdge(assertion, edge) {
-				return nil, invalid(
-					"graph assertion does not match its authoritative edge")
-			}
+		for _, edgeID := range namedBy[assertion.ID()] {
+			matched[edgeID] = struct{}{}
+		}
+		if edge, ok := byID[assertion.ID()]; ok &&
+			assertionReproducesEdge(assertion, edge) {
 			matched[assertion.ID()] = struct{}{}
 		}
 		if len(matched) == 0 {
@@ -106,7 +117,9 @@ func AssertionReferencesByEdge(
 	return result, nil
 }
 
-func assertionMatchesEdge(assertion ontology.Assertion, edge graph.Edge) bool {
+// assertionReproducesEdge is the identity binding: an assertion whose ID is
+// the edge's is its edge only when it reproduces the edge field for field.
+func assertionReproducesEdge(assertion ontology.Assertion, edge graph.Edge) bool {
 	target, ok := assertion.Object().ReferenceValue()
 	return ok &&
 		edge.From == assertion.Subject() &&

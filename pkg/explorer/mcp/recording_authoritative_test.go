@@ -30,6 +30,7 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 	"github.com/phrocker/shoal-oss/pkg/graph"
 	"github.com/phrocker/shoal-oss/pkg/interaction"
+	"github.com/phrocker/shoal-oss/pkg/ontology"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -178,4 +179,182 @@ func TestReadToolsRecordAuthoritativeEvidenceAgainstTheExplorer(t *testing.T) {
 		t.Fatalf("recorded evidence: %d citations of the guide, %d retrieval paths, %d anchors on the edge; want >0, >0, 2",
 			documents, paths, edges)
 	}
+}
+
+// TestNeighborhoodRecordsExtractedRelationsAgainstTheExplorer: an extracted
+// relation's edge carries the relationship's key as its type and a canonical
+// weight, while the relationship ID and the extraction's confidence stay on
+// its assertion. The Explorer binds the two through the assertion's edge
+// metadata alone. A recorder that compares them field for field refuses
+// every extracted relation the Explorer serves, and the neighborhood is
+// withheld. The recorded anchor over such an edge must cite its assertion.
+func TestNeighborhoodRecordsExtractedRelationsAgainstTheExplorer(t *testing.T) {
+	corpus, err := explorer.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = corpus.Close() })
+	if err := corpus.EnsureInteractionSink(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	authority := auth.NewAuthority()
+	generations := httpGenerationReader{domain: []byte("domain"), generation: 1}
+	selector, err := authorized.NewStaticPolicySelector([]byte("source"), []byte("policy"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := authorized.NewClient(authorized.Config{
+		Base: corpus, InteractionWriter: corpus, InteractionReader: corpus,
+		SnapshotValidator: corpus,
+		Resolver:          authority.Resolver(), PolicySelector: selector,
+		PolicyStore: authorized.NewMemoryPolicyStore(), GenerationReader: generations,
+		Clock: time.Now,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	expires := time.Now().Add(time.Hour)
+	requests := 0
+	alice := func() auth.Decision {
+		requests++
+		return httpScopedDecision(t, "alice", shoal.ID(fmt.Sprintf("alice-%d", requests)),
+			expires, []byte("source"), []byte("policy"))
+	}
+	bound := func() context.Context {
+		ctx, err := authority.Binder().Bind(context.Background(), alice())
+		if err != nil {
+			t.Fatal(err)
+		}
+		return ctx
+	}
+	skill, err := client.Ingest(bound(), explorer.Source{
+		URI: "file:///skills/SKILL.md", MediaType: explorer.MediaTypeMarkdown,
+		Content: "# Release Skill\n\nTools:\n- release-cli\n\nCapabilities:\n- Canary promotion\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	extracted, err := client.ExtractDocument(bound(), explorer.ExtractionRequest{
+		DocumentID: skill.Document.ID, RevisionID: skill.Revision.ID,
+		Version: skillsOntologyVersion(t),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if extracted.RelationCount == 0 {
+		t.Fatalf("extraction materialized no relations: %+v", extracted)
+	}
+
+	service, err := webapi.NewEmbeddedService(client)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server, err := NewServer(Config{
+		Service: service, Authority: authority,
+		Decisions: DecisionProviderFunc(func(context.Context) (auth.Decision, error) {
+			return alice(), nil
+		}),
+		InteractionSink: client, Snapshots: client,
+		requestIDFactory: sequentialRequestIDs(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	makeReady(t, server)
+	arguments := `{"node_ids":["` +
+		base64.RawURLEncoding.EncodeToString([]byte(skill.Document.ID)) +
+		`"],"depth":2}`
+	result := decodeToolResult(t, callToolRequest(t, server, ToolNeighborhood, arguments))
+	if result.IsError {
+		t.Fatalf("neighborhood over extracted relations was withheld: %s",
+			result.StructuredContent)
+	}
+
+	records, err := corpus.InteractionRecords(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	relations := make(map[shoal.ID]struct{}, len(extracted.RelationshipEdgeIDs))
+	for _, id := range extracted.RelationshipEdgeIDs {
+		relations[id] = struct{}{}
+	}
+	asserted := 0
+	for _, record := range records {
+		for _, turn := range record.Session.Turns {
+			if turn.ToolCall == nil {
+				continue
+			}
+			for _, evidence := range turn.ToolCall.RetrievedEvidence {
+				if evidence.Kind != interaction.EvidenceGraph ||
+					len(evidence.EdgeIDs) != 1 {
+					continue
+				}
+				if _, ok := relations[evidence.EdgeIDs[0]]; !ok {
+					continue
+				}
+				if len(evidence.Assertions) != 1 ||
+					evidence.Assertions[0].EdgeID != evidence.EdgeIDs[0] {
+					t.Fatalf("extracted relation recorded without its assertion: %+v", evidence)
+				}
+				asserted++
+			}
+		}
+	}
+	if asserted == 0 {
+		t.Fatalf("no anchor over an extracted relation was recorded; relations %v",
+			extracted.RelationshipEdgeIDs)
+	}
+}
+
+// skillsOntologyVersion is the small agent-skills ontology the Explorer's
+// deterministic extractor materializes from a SKILL.md document.
+func skillsOntologyVersion(t *testing.T) ontology.OntologyVersion {
+	t.Helper()
+	name, err := ontology.NewPropertyDefinition(
+		"name", "Name", "Human-readable name", ontology.ValueString, nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	skill, err := ontology.NewConceptDefinition(
+		"skill", "Skill", "Agent skill", []shoal.ID{name.ID()}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tool, err := ontology.NewConceptDefinition(
+		"tool", "Tool", "Usable tool", []shoal.ID{name.ID()}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	capability, err := ontology.NewConceptDefinition(
+		"capability", "Capability", "Provided feature", []shoal.ID{name.ID()}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providesTool, err := ontology.NewRelationshipDefinition(
+		"provides_tool", "Provides tool", "Skill provides tool",
+		[]shoal.ID{skill.ID()}, []shoal.ID{tool.ID()}, nil, true, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	providesCapability, err := ontology.NewRelationshipDefinition(
+		"provides_capability", "Provides capability", "Skill provides capability",
+		[]shoal.ID{skill.ID()}, []shoal.ID{capability.ID()}, nil, true, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	schema, err := ontology.NewOntologySchema(
+		"agent-skills-mcp", "Agent Skills MCP", "Skill ontology for MCP recording tests", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	version, err := ontology.NewOntologyVersion(
+		schema, "v1", time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
+		[]ontology.ConceptDefinition{skill, tool, capability},
+		[]ontology.RelationshipDefinition{providesTool, providesCapability},
+		[]ontology.PropertyDefinition{name}, nil,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return version
 }
