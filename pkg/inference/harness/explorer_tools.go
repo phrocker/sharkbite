@@ -22,7 +22,6 @@ package harness
 import (
 	"context"
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -930,72 +929,13 @@ func graphAssertionsByEdge(
 	assertions []ontology.Assertion,
 	edges map[shoal.ID]graph.Edge,
 ) (map[shoal.ID][]interaction.AssertionReference, error) {
-	const assertionEdgeIDProperty = "shoal.graph.edge_id"
-	result := make(map[shoal.ID][]interaction.AssertionReference)
-	for _, assertion := range assertions {
-		if err := assertion.Validate(); err != nil {
-			return nil, err
-		}
-		if assertion.Origin() == ontology.AssertionDerived {
-			return nil, invalid(
-				"derived assertion cannot be used as source graph evidence")
-		}
-		matched := make(map[shoal.ID]struct{})
-		if edgeID := shoal.ID(
-			assertion.Metadata()[assertionEdgeIDProperty]); edgeID != "" {
-			if edge, ok := edges[edgeID]; ok {
-				if !graphAssertionMatchesEdge(assertion, edge) {
-					return nil, invalid(
-						"graph assertion does not match its authoritative edge")
-				}
-				matched[edgeID] = struct{}{}
-			}
-		}
-		if edge, ok := edges[assertion.ID()]; ok {
-			if !graphAssertionMatchesEdge(assertion, edge) {
-				return nil, invalid(
-					"graph assertion does not match its authoritative edge")
-			}
-			matched[assertion.ID()] = struct{}{}
-		}
-		if len(matched) == 0 {
-			return nil, invalid(
-				"graph assertion has no authoritative neighborhood edge")
-		}
-		for edgeID := range matched {
-			result[edgeID] = append(
-				result[edgeID],
-				interaction.AssertionReference{
-					AssertionID: assertion.ID(),
-					EdgeID:      edgeID,
-					Origin:      assertion.Origin(),
-				},
-			)
-		}
+	list := make([]graph.Edge, 0, len(edges))
+	for _, edge := range edges {
+		list = append(list, edge)
 	}
-	for edgeID := range result {
-		sort.Slice(result[edgeID], func(i, j int) bool {
-			if compared := shoal.CompareID(
-				result[edgeID][i].AssertionID,
-				result[edgeID][j].AssertionID,
-			); compared != 0 {
-				return compared < 0
-			}
-			return result[edgeID][i].Origin < result[edgeID][j].Origin
-		})
+	result, err := inference.AssertionReferencesByEdge(assertions, list)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrInvalid, err)
 	}
 	return result, nil
-}
-
-func graphAssertionMatchesEdge(
-	assertion ontology.Assertion,
-	edge graph.Edge,
-) bool {
-	target, ok := assertion.Object().ReferenceValue()
-	return ok &&
-		edge.From == assertion.Subject() &&
-		edge.To == target &&
-		edge.Type == string(assertion.Predicate()) &&
-		math.Float64bits(float64(edge.Weight)) ==
-			math.Float64bits(float64(assertion.Confidence()))
 }
