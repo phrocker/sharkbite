@@ -6,6 +6,7 @@ fresh output with committed files and is used in CI.
 
 from __future__ import annotations
 
+import ast
 import argparse
 from importlib import metadata
 from pathlib import Path
@@ -14,6 +15,7 @@ import sys
 import tempfile
 
 from grpc_tools import protoc
+from google.protobuf import descriptor_pb2
 
 
 ROOT = Path(__file__).resolve().parents[3]
@@ -43,17 +45,29 @@ def generate(check: bool) -> None:
         grpc_stub.write_text(source.replace(absolute_import, "from . import embed_pb2 as embed__pb2"))
         pb_stub = out / "embed_pb2.py"
         pb_source = pb_stub.read_text()
-        default_symbols = "_sym_db = _symbol_database.Default()"
-        default_pool = "_descriptor_pool.Default().AddSerializedFile("
-        if pb_source.count(default_symbols) != 1 or pb_source.count(default_pool) != 1:
+        prefix = "DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile("
+        descriptor_lines = [line for line in pb_source.splitlines() if line.startswith(prefix)]
+        if len(descriptor_lines) != 1 or not descriptor_lines[0].endswith(")"):
             raise SystemExit("generated protobuf registry setup changed; inspect generator output")
-        # Consumers may still import older hand-generated embed_pb2 modules.
-        # Keep this wheel's descriptor and symbols out of the process-wide pool.
-        pb_source = pb_source.replace(
-            default_symbols,
-            "_sym_db = _symbol_database.SymbolDatabase(pool=_descriptor_pool.DescriptorPool())",
-        ).replace(default_pool, "_sym_db.pool.AddSerializedFile(")
-        pb_stub.write_text(pb_source)
+        descriptor_line = descriptor_lines[0]
+        serialized = descriptor_line[len(prefix):-1]
+        dependencies = descriptor_pb2.FileDescriptorProto.FromString(
+            ast.literal_eval(serialized)
+        ).dependency
+        if dependencies:
+            raise SystemExit("private protobuf fallback needs dependency support: " + ", ".join(dependencies))
+        # Keep the normal registry available to dependent protos and reflection.
+        # A process that loaded a different embed.proto first can still use this
+        # wheel's messages through a private pool instead of failing at import.
+        replacement = (
+            f"_SERIALIZED_DESCRIPTOR = {serialized}\n"
+            "try:\n"
+            "    DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(_SERIALIZED_DESCRIPTOR)\n"
+            "except TypeError:\n"
+            "    _sym_db = _symbol_database.SymbolDatabase(pool=_descriptor_pool.DescriptorPool())\n"
+            "    DESCRIPTOR = _sym_db.pool.AddSerializedFile(_SERIALIZED_DESCRIPTOR)"
+        )
+        pb_stub.write_text(pb_source.replace(descriptor_line, replacement))
         shutil.copyfile(PROTO, out / "embed.proto")
         for generated, committed in (
             (out / "embed_pb2.py", PACKAGE / "embed_pb2.py"),
