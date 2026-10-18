@@ -246,6 +246,11 @@ class ClientTest(unittest.TestCase):
         self.assertNotIn("ScanV2", self.server.calls)
         request.as_of = 0
         self.assertEqual(len(list(self.client.scan(request))), 1)
+        request.as_of = 15
+        request.vector_search.projection.mode = pb.VECTOR_PROJECTION_FULL_ROW
+        with self.assertRaisesRegex(IncompatibleServer, "safety.scan_v2.vector_as_of"):
+            self.client.scan(request)
+        self.assertNotIn("ScanV3", self.server.calls)
 
     def test_individual_missing_safety_feature_refuses_effect(self):
         self.server.features = tuple(

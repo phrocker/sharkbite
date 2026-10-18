@@ -165,11 +165,15 @@ func TestVectorProjectionSplitTableAndDeletedEmbedding(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	const identity = "test:model:v1:1:normalized"
-	if _, err := client.CreateTableV2(ctx, &embedpb.CreateTableRequest{
+	created, err := client.CreateTableV2(ctx, &embedpb.CreateTableRequest{
 		Table: "split_vectors", Splits: []string{"m"},
 		DefaultEmbedding: "has_embeddings:" + identity,
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatal(err)
+	}
+	if created.Tablets != 2 {
+		t.Fatalf("created %d tablets, want 2", created.Tablets)
 	}
 	if _, err := client.Write(ctx, &embedpb.WriteRequest{
 		Table: "split_vectors", Mutations: []*embedpb.Mutation{
@@ -204,8 +208,22 @@ func TestVectorProjectionSplitTableAndDeletedEmbedding(t *testing.T) {
 		t.Fatal(err)
 	}
 	hits = collectProjected(t, stream)
-	if len(hits) != 2 || string(hits[0].ScoredCell.Row) != "a" || len(hits[0].RowCells) != 1 {
+	if len(hits) != 2 || string(hits[0].ScoredCell.Row) != "a" || len(hits[0].RowCells) != 1 ||
+		string(hits[1].ScoredCell.Row) != "z" || len(hits[1].RowCells) != 2 {
 		t.Fatalf("as-of projection = %+v, want pre-delete a row", hits)
+	}
+	request.VectorSearch.Projection = nil
+	legacy, err := client.ScanV2(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := legacy.Recv()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(response.Cells) != 2 || string(response.Cells[0].Row) != "a" ||
+		string(response.Cells[1].Row) != "z" {
+		t.Fatalf("ScanV2 vector as-of cells = %+v", response.Cells)
 	}
 }
 
