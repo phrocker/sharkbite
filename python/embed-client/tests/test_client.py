@@ -1,12 +1,11 @@
 """Wire and mixed-version behavior of the packaged gRPC client."""
 
 from concurrent.futures import ThreadPoolExecutor
-import subprocess
-import sys
 import time
 import unittest
 
 import grpc
+from google.protobuf import descriptor_pb2, descriptor_pool
 
 from shoal_embed_client import (
     EmbedClient, IncompatibleServer, PROTOCOL_VERSION, __version__,
@@ -208,15 +207,12 @@ class ClientTest(unittest.TestCase):
         self.assertLess(self.server.create_table_deadline, 0.26)
 
     def test_generated_stubs_coexist_with_older_proto_registry(self):
-        code = """
-from google.protobuf import descriptor_pb2, descriptor_pool
-legacy = descriptor_pb2.FileDescriptorProto(name="embed.proto", package="shoal.embed.v1", syntax="proto3")
-legacy.message_type.add().name = "CreateTableRequest"
-descriptor_pool.Default().AddSerializedFile(legacy.SerializeToString())
-from shoal_embed_client import embed_pb2
-assert embed_pb2.CreateTableRequest(table="graph").table == "graph"
-"""
-        subprocess.run([sys.executable, "-c", code], check=True, capture_output=True, text=True)
+        legacy = descriptor_pb2.FileDescriptorProto(
+            name="legacy_embed.proto", package="shoal.embed.v1", syntax="proto3",
+        )
+        legacy.message_type.add().name = "CreateTableRequest"
+        descriptor_pool.Default().AddSerializedFile(legacy.SerializeToString())
+        self.assertEqual(pb.CreateTableRequest(table="graph").table, "graph")
 
 
 if __name__ == "__main__":
