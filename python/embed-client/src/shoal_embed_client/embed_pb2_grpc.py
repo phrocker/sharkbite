@@ -66,6 +66,11 @@ class ShoalEmbedStub(object):
                 request_serializer=embed__pb2.ScanRequest.SerializeToString,
                 response_deserializer=embed__pb2.ScanResponse.FromString,
                 _registered_method=True)
+        self.ScanV3 = channel.unary_stream(
+                '/shoal.embed.v1.ShoalEmbed/ScanV3',
+                request_serializer=embed__pb2.ScanRequest.SerializeToString,
+                response_deserializer=embed__pb2.ScanResponse.FromString,
+                _registered_method=True)
         self.Flush = channel.unary_unary(
                 '/shoal.embed.v1.ShoalEmbed/Flush',
                 request_serializer=embed__pb2.FlushRequest.SerializeToString,
@@ -137,6 +142,15 @@ class ShoalEmbedServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ScanV3(self, request, context):
+        """ScanV3 preserves ScanV2 semantics and adds opt-in projected vector hits.
+        A distinct RPC makes older replicas fail closed instead of ignoring the
+        projection field and returning only scored embedding cells.
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
     def Flush(self, request, context):
         """Flush forces memtables to RFiles for a table.
         """
@@ -188,6 +202,11 @@ def add_ShoalEmbedServicer_to_server(servicer, server):
             ),
             'ScanV2': grpc.unary_stream_rpc_method_handler(
                     servicer.ScanV2,
+                    request_deserializer=embed__pb2.ScanRequest.FromString,
+                    response_serializer=embed__pb2.ScanResponse.SerializeToString,
+            ),
+            'ScanV3': grpc.unary_stream_rpc_method_handler(
+                    servicer.ScanV3,
                     request_deserializer=embed__pb2.ScanRequest.FromString,
                     response_serializer=embed__pb2.ScanResponse.SerializeToString,
             ),
@@ -369,6 +388,33 @@ class ShoalEmbed(object):
             request,
             target,
             '/shoal.embed.v1.ShoalEmbed/ScanV2',
+            embed__pb2.ScanRequest.SerializeToString,
+            embed__pb2.ScanResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ScanV3(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_stream(
+            request,
+            target,
+            '/shoal.embed.v1.ShoalEmbed/ScanV3',
             embed__pb2.ScanRequest.SerializeToString,
             embed__pb2.ScanResponse.FromString,
             options,

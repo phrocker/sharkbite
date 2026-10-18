@@ -41,12 +41,14 @@ var embedFeatures = []string{
 	"rpc.flush",
 	"rpc.scan",
 	"rpc.scan_v2",
+	"rpc.scan_v3",
 	"rpc.status",
 	"rpc.write",
 	"safety.conditional_write.conditions",
 	"safety.create_table_v2.default_embedding",
 	"safety.scan_v2.vector_identity",
 	"safety.scan_v2.vector_search",
+	"safety.scan_v3.projection",
 }
 
 func embedBuildIdentity() (string, string, string, string) {
