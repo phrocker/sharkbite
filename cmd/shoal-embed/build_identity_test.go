@@ -37,12 +37,15 @@ func TestEmbedStatusBuildIdentityAndCapabilities(t *testing.T) {
 
 	got := embedStatusIdentity()
 	if got.BuildVersion == "" || got.BuildCommit != buildCommit ||
-		got.SourceDate != sourceDate || got.ProtocolVersion != embedProtocolVersion {
+		got.SourceDate != sourceDate || got.ProtocolVersion != embedProtocolVersion ||
+		(got.SourceModified != "true" && got.SourceModified != "false" &&
+			got.SourceModified != "unknown") {
 		t.Fatalf("incomplete build identity: %+v", got)
 	}
 	if !slices.IsSorted(got.Features) ||
 		!slices.Contains(got.Features, "rpc.scan_v2") ||
 		!slices.Contains(got.Features, "safety.scan_v2.vector_identity") ||
+		!slices.Contains(got.Features, "safety.scan_v2.vector_search") ||
 		!slices.Contains(got.Features, "rpc.conditional_write") ||
 		!slices.Contains(got.Features, "safety.create_table_v2.default_embedding") {
 		t.Fatalf("incomplete or unsorted capabilities: %v", got.Features)
@@ -110,7 +113,7 @@ func TestEmbedStatusOldAndNewWireCompatibility(t *testing.T) {
 	}
 	if !reflect.DeepEqual(fromOld.Tables, []string{"graph"}) ||
 		len(fromOld.Features) != 0 || fromOld.ProtocolVersion != "" {
-		t.Fatalf("old server must advertise no capabilities: %+v", fromOld)
+		t.Fatalf("old server must advertise no capabilities: %+v", &fromOld)
 	}
 
 	newResponse := embedStatusIdentity()

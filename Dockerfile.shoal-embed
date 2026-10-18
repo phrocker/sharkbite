@@ -17,6 +17,7 @@ ARG TARGETOS=linux
 ARG TARGETARCH
 ARG VERSION=dev
 ARG REVISION=unknown
+ARG SOURCE_DATE
 ENV CGO_ENABLED=0 \
     GOOS=${TARGETOS} \
     GOARCH=${TARGETARCH} \
@@ -24,7 +25,7 @@ ENV CGO_ENABLED=0 \
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath \
-      -ldflags="-s -w -buildid= -X main.version=${VERSION} -X main.buildCommit=${REVISION} -X main.sourceDate=${CREATED}" \
+      -ldflags="-s -w -buildid= -X main.version=${VERSION} -X main.buildCommit=${REVISION} -X main.sourceDate=${SOURCE_DATE}" \
       -o /out/shoal-embed ./cmd/shoal-embed \
  && mkdir -p /out/data
 

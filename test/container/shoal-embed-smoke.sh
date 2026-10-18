@@ -11,12 +11,14 @@ IMAGE="${IMAGE:-shoal-embed:smoke}"
 VERSION="${VERSION:-smoke}"
 REVISION="${REVISION:-$(git rev-parse HEAD)}"
 CREATED="${CREATED:-$(git show -s --format=%cI HEAD)}"
+SOURCE_DATE="${SOURCE_DATE:-$(git show -s --format=%cI HEAD)}"
 
 docker build \
   --file Dockerfile.shoal-embed \
   --build-arg "VERSION=${VERSION}" \
   --build-arg "REVISION=${REVISION}" \
   --build-arg "CREATED=${CREATED}" \
+  --build-arg "SOURCE_DATE=${SOURCE_DATE}" \
   --tag "${IMAGE}" \
   .
 

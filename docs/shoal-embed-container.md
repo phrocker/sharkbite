@@ -43,16 +43,34 @@ Call `Status` before using a capability that an older server might lack. Its
 `build_version`, `build_commit`, `source_date`, and `source_modified` identify
 the running binary; `protocol_version` is `shoal.embed.v1`. The `features`
 list is sorted and uses exact identifiers. For example, vector searches need
-both `rpc.scan_v2` and `safety.scan_v2.vector_identity`, and conditional
-writes need `rpc.conditional_write` and
+`rpc.scan_v2`, `safety.scan_v2.vector_identity`, and
+`safety.scan_v2.vector_search`. Conditional writes need `rpc.conditional_write` and
 `safety.conditional_write.conditions`. A client must treat a missing field or
 feature as unsupported. Older servers return the original two Status fields,
 so this rule makes mixed-version clients fail closed. Older protobuf clients
 can still read the table fields and ignore the new fields.
 
-The image passes its OCI revision and source timestamp into the binary. A
-local Go build reads the same values from VCS build metadata when available;
-`build_commit` is `unknown` when neither source provides a revision.
+For a vector request, a client using stubs generated from this proto can
+preflight with a useful error:
+
+```python
+required = {
+    "rpc.scan_v2",
+    "safety.scan_v2.vector_identity",
+    "safety.scan_v2.vector_search",
+}
+missing = required.difference(status.features)
+if missing:
+    raise RuntimeError(
+        f"ShoalEmbed {status.build_version or 'older build'} lacks "
+        f"{', '.join(sorted(missing))}"
+    )
+```
+
+The image passes its revision and source commit date into the binary, separately
+from the OCI image creation time. A local Go build reads the same values from
+VCS build metadata when available. `build_commit` is `unknown` when neither
+source provides a revision.
 `source_modified` is `unknown` when the build has no VCS state, as in the
 container build, rather than claiming its input tree was clean.
 
@@ -66,7 +84,7 @@ make container-build
 make container-smoke
 ```
 
-Override `IMAGE`, `VERSION`, `REVISION`, or `CREATED` when reproducing a
+Override `IMAGE`, `VERSION`, `REVISION`, `CREATED`, or `SOURCE_DATE` when reproducing a
 release build. The smoke test verifies the non-root runtime configuration,
 OCI metadata, embedded proto, version, and default readiness endpoint.
 
