@@ -450,7 +450,17 @@ func TestDispatchFailsClosedBeforeEffectAndOnRevokedLease(t *testing.T) {
 		Store: store, Registry: registry, Resolver: authority.Resolver(),
 		Recorder: recorder, Events: dispatchEvents{}, Clock: func() time.Time { return now },
 	})
-	decision := dispatchDecision(t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke)
+	decision, err := auth.NewDecision(auth.DecisionConfig{
+		Subject: "owner", Actor: "actor", AuthorizationDomain: []byte("domain"),
+		AllowedOperations:  []auth.Operation{auth.OperationDispatch, auth.OperationInvoke},
+		PermittedSourceIDs: [][]byte{[]byte("source")},
+		PermittedPolicyIDs: [][]byte{[]byte("policy")}, PolicyGeneration: 1,
+		AuthenticationExpires: now.Add(30 * time.Second),
+		RequestID:             "request", CorrelationID: "correlation",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := bindDecision(t, authority, decision)
 	queued, err := service.Enqueue(ctx, dispatchEnqueue(now, "request"))
 	if err != nil {
@@ -481,6 +491,30 @@ func TestDispatchFailsClosedBeforeEffectAndOnRevokedLease(t *testing.T) {
 	}
 	if executor.calls != 0 {
 		t.Fatalf("recording failure executor calls = %d", executor.calls)
+	}
+	recorder.failPhase = ""
+	recorder.advance = func() {
+		updated := registryStore.records["agent"]
+		updated.Descriptor.RevokedAt = now
+		registryStore.records["agent"] = updated
+	}
+	if _, err := service.ExecuteClaim(ctx, claimed); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("revocation during audit = %v", err)
+	}
+	stored, err := store.GetAction(ctx, claimed.ID)
+	if err != nil || len(stored.ExecutionAttemptID) != 0 || executor.calls != 0 {
+		t.Fatalf("revoked audit stored = %#v, %v; executor calls = %d", stored, err, executor.calls)
+	}
+	updated := registryStore.records["agent"]
+	updated.Descriptor.RevokedAt = time.Time{}
+	registryStore.records["agent"] = updated
+	recorder.advance = func() { now = now.Add(31 * time.Second) }
+	if _, err := service.ExecuteClaim(ctx, claimed); err == nil {
+		t.Fatal("execution continued after authorization expired during audit")
+	}
+	stored, err = store.GetAction(ctx, claimed.ID)
+	if err != nil || len(stored.ExecutionAttemptID) != 0 || executor.calls != 0 {
+		t.Fatalf("expired audit stored = %#v, %v; executor calls = %d", stored, err, executor.calls)
 	}
 }
 

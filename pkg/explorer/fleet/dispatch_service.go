@@ -958,6 +958,11 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 	if admissionOperation == "" {
 		admissionOperation = auth.OperationInvoke
 	}
+	if err := s.recorder.RecordAction(ctx, ActionAudit{Phase: "effect_admission", Operation: admissionOperation, Record: current}); err != nil {
+		return ActionRecord{}, errors.Join(ErrRecordingUnavailable, err)
+	}
+	// Recording may block while the caller's authority or the registry changes.
+	// Resolve both again after the audit, before committing an attempt.
 	invocationDecision, err := s.resolver.Resolve(ctx)
 	if err != nil {
 		return ActionRecord{}, err
@@ -1002,11 +1007,8 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 	if len(current.ExecutionAttemptID) != 0 {
 		return ActionRecord{}, ErrExecutionAmbiguous
 	}
-	if err := s.recorder.RecordAction(ctx, ActionAudit{Phase: "effect_admission", Operation: admissionOperation, Record: current}); err != nil {
-		return ActionRecord{}, errors.Join(ErrRecordingUnavailable, err)
-	}
-	// The recorder may take time or change the test clock. The lease and
-	// deadline must still be live when admission is persisted.
+	// The audit may take time or change the test clock. The lease and deadline
+	// must still be live when admission is persisted.
 	executionNow = s.clock().UTC()
 	if !executionNow.Before(current.ClaimLeaseUntil) || !executionNow.Before(current.Deadline) {
 		return ActionRecord{}, ErrClaimLost
