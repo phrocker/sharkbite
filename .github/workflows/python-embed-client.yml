@@ -119,7 +119,8 @@ jobs:
           python -m venv "$RUNNER_TEMP/embed-sdist-venv"
           "$RUNNER_TEMP/embed-sdist-venv/bin/python" -m pip install dist/*.tar.gz
       - name: Verify source distribution install
-        run: "$RUNNER_TEMP/embed-sdist-venv/bin/python" -m unittest discover -s python/embed-client/tests -v
+        run: |
+          "$RUNNER_TEMP/embed-sdist-venv/bin/python" -m unittest discover -s python/embed-client/tests -v
 
   pypi-publish:
     name: Publish shoal-embed-client to PyPI
