@@ -180,6 +180,13 @@ class ClientTest(unittest.TestCase):
         self.assertNotIn("ScanV2", self.server.calls)
         self.assertEqual(len(list(self.client.scan(pb.ScanRequest(table="graph")))), 1)
 
+    def test_targeted_compaction_is_refused_without_versioned_rpc(self):
+        with self.assertRaisesRegex(IncompatibleServer, "lacks a versioned RPC"):
+            self.client.compact(pb.CompactRequest(
+                table="graph", file_format=pb.TABLE_FILE_FORMAT_PARQUET,
+            ))
+        self.assertNotIn("Compact", self.server.calls)
+
     def test_other_protocol_refuses_even_plain_operations(self):
         self.server.protocol = "shoal.embed.v2"
         with self.assertRaisesRegex(IncompatibleServer, "protocol"):

@@ -125,4 +125,9 @@ class EmbedClient:
         return self._unary("Flush", request, (), **rpc_options)
 
     def compact(self, request: embed_pb2.CompactRequest, **rpc_options):
+        if request.workload or request.file_format:
+            raise IncompatibleServer(
+                "Compact target workload/file format lacks a versioned RPC; "
+                "an older replica could silently ignore those fields"
+            )
         return self._unary("Compact", request, (), **rpc_options)

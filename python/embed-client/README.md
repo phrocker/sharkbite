@@ -51,6 +51,12 @@ that selects an older replica after Status returns `UNIMPLEMENTED`; the client
 reports that as `IncompatibleServer`. Status is checked on every operation,
 so a cached capability list cannot outlive a deployment change.
 
+Targeted compaction (`CompactRequest.workload` or `file_format`) has no
+versioned RPC. `EmbedClient.compact` refuses those options because a mixed
+fleet could silently ignore them. Plain compaction remains available; direct
+use of the generated stub for targeted compaction requires the caller to
+enforce a homogeneous server deployment.
+
 New fields and unknown feature identifiers from a later `shoal.embed.v1`
 server are ignored; clients require exact identifiers for the behavior they
 use. A server that advertises another protocol version is rejected. Server
