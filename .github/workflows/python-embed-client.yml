@@ -72,7 +72,7 @@ jobs:
           python python/embed-client/scripts/generate.py --check
       - name: Build wheel and source distribution
         run: |
-          python -m pip install build==1.2.2 setuptools==77.0.3 wheel==0.46.2
+          python -m pip install build==1.2.2 setuptools==82.0.1 wheel==0.46.2
           python -m build --no-isolation python/embed-client
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
@@ -114,6 +114,12 @@ jobs:
           assert embed_pb2.StatusResponse and embed_pb2_grpc.ShoalEmbedStub
           PY
           python -m unittest discover -s python/embed-client/tests -v
+      - name: Install source distribution in a clean environment
+        run: |
+          python -m venv "$RUNNER_TEMP/embed-sdist-venv"
+          "$RUNNER_TEMP/embed-sdist-venv/bin/python" -m pip install dist/*.tar.gz
+      - name: Verify source distribution install
+        run: "$RUNNER_TEMP/embed-sdist-venv/bin/python" -m unittest discover -s python/embed-client/tests -v
 
   pypi-publish:
     name: Publish shoal-embed-client to PyPI
