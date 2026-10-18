@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -101,16 +102,227 @@ func TestDispatchInvokeFreshAuthorizationAndAmbiguousRecording(t *testing.T) {
 	recorder.failPhase = ""
 	retryDecision := dispatchDecision(t, "owner", "actor", "retry", auth.OperationDispatch, auth.OperationInvoke)
 	retryCtx := bindDecision(t, authority, retryDecision)
-	completed, err := service.Invoke(retryCtx, InvokeRequest{
+	_, err = service.Invoke(retryCtx, InvokeRequest{
 		Enqueue: dispatchEnqueue(now, "retry"), ClaimID: []byte("claim"), Lease: time.Minute,
 	})
-	if err != nil || completed.State != DispatchSucceeded {
-		t.Fatalf("retry = %#v, %v", completed, err)
+	if !errors.Is(err, ErrExecutionAmbiguous) {
+		t.Fatalf("retry = %v, want ambiguous execution", err)
 	}
-	if len(executor.keys) != 2 ||
-		string(executor.keys[0]) != string(executor.keys[1]) ||
+	if len(executor.keys) != 1 ||
 		string(executor.keys[0]) != string(stored.ExecutorKey) {
 		t.Fatalf("executor key was not stable: %#v", executor.keys)
+	}
+	now = now.Add(2 * time.Minute)
+	if _, err := service.Cancel(retryCtx, CancelRequest{
+		ID: stored.ID, ExpectedVersion: stored.Version,
+		MutationKey: []byte("cancel"), Context: dispatchContext(now, "retry"),
+	}); !errors.Is(err, ErrExecutionAmbiguous) {
+		t.Fatalf("cancel after lapsed admitted execution = %v", err)
+	}
+	page, err := service.Pull(retryCtx, PullActionsRequest{
+		Limit: 10, Context: dispatchContext(now, "retry"),
+	})
+	if err != nil || len(page.Actions) != 0 {
+		t.Fatalf("pull after lapsed admitted execution = %#v, %v", page, err)
+	}
+}
+
+func TestDispatchConcurrentInvokeAdmitsOneExecutor(t *testing.T) {
+	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
+	authority, _ := auth.NewAuthorityWithClock(func() time.Time { return now })
+	registryStore := newMemoryStore()
+	executor := &blockingDispatchExecutor{
+		started: make(chan struct{}), release: make(chan struct{}),
+	}
+	registry, err := NewService(Config{
+		Store: registryStore, Resolver: authority.Resolver(), Recorder: &memoryRecorder{},
+		Snapshots: fixedSnapshot{now}, Executors: executorMap{"exec": executor},
+		Clock: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registryStore.records["agent"] = Stored{Descriptor: dispatchDescriptor(now)}
+	store := newMemoryDispatchStore()
+	service, err := NewDispatchService(DispatchConfig{
+		Store: store, Registry: registry, Resolver: authority.Resolver(),
+		Recorder: silentDispatchRecorder{}, Events: dispatchEvents{},
+		Clock: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	peer, err := NewDispatchService(DispatchConfig{
+		Store: store, Registry: registry, Resolver: authority.Resolver(),
+		Recorder: silentDispatchRecorder{}, Events: dispatchEvents{},
+		Clock: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decision := dispatchDecision(t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke)
+	ctx := bindDecision(t, authority, decision)
+	request := InvokeRequest{Enqueue: dispatchEnqueue(now, "request"), ClaimID: []byte("claim"), Lease: time.Minute}
+	type outcome struct {
+		record ActionRecord
+		err    error
+	}
+	first := make(chan outcome, 1)
+	go func() {
+		record, invokeErr := service.Invoke(ctx, request)
+		first <- outcome{record, invokeErr}
+	}()
+	select {
+	case <-executor.started:
+	case <-time.After(5 * time.Second):
+		close(executor.release)
+		t.Fatal("first invocation never reached executor")
+	}
+	second := make(chan outcome, 1)
+	go func() {
+		record, invokeErr := peer.Invoke(ctx, request)
+		second <- outcome{record, invokeErr}
+	}()
+	select {
+	case got := <-second:
+		if !errors.Is(got.err, ErrExecutionAmbiguous) {
+			close(executor.release)
+			t.Fatalf("concurrent invocation = %#v, %v", got.record, got.err)
+		}
+	case <-time.After(5 * time.Second):
+		close(executor.release)
+		t.Fatal("second invocation waited inside executor")
+	}
+	close(executor.release)
+	got := <-first
+	if got.err != nil || got.record.State != DispatchSucceeded || executor.calls.Load() != 1 {
+		t.Fatalf("first invocation = %#v, %v; executor calls = %d", got.record, got.err, executor.calls.Load())
+	}
+}
+
+func TestDispatchSimultaneousExecutionAdmissionUsesStoreCAS(t *testing.T) {
+	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
+	authority, _ := auth.NewAuthorityWithClock(func() time.Time { return now })
+	registryStore := newMemoryStore()
+	executor := &dispatchExecutor{result: ExecutionResult{Output: json.RawMessage(`{"ok":true}`)}}
+	registry, err := NewService(Config{
+		Store: registryStore, Resolver: authority.Resolver(), Recorder: &memoryRecorder{},
+		Snapshots: fixedSnapshot{now}, Executors: executorMap{"exec": executor},
+		Clock: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registryStore.records["agent"] = Stored{Descriptor: dispatchDescriptor(now)}
+	store := &admissionBarrierStore{
+		ActionTransitionStore: newMemoryDispatchStore(), both: make(chan struct{}),
+	}
+	newService := func() *DispatchService {
+		t.Helper()
+		service, serviceErr := NewDispatchService(DispatchConfig{
+			Store: store, Registry: registry, Resolver: authority.Resolver(),
+			Recorder: silentDispatchRecorder{}, Events: dispatchEvents{},
+			Clock: func() time.Time { return now },
+		})
+		if serviceErr != nil {
+			t.Fatal(serviceErr)
+		}
+		return service
+	}
+	firstService, secondService := newService(), newService()
+	decision := dispatchDecision(t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke)
+	ctx := bindDecision(t, authority, decision)
+	queued, err := firstService.Enqueue(ctx, dispatchEnqueue(now, "request"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	claimed, err := firstService.Claim(ctx, ClaimRequest{
+		ID: queued.ID, ExpectedVersion: queued.Version,
+		ClaimID: []byte("claim"), Lease: time.Minute,
+		Context: dispatchContext(now, "request"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	type outcome struct {
+		record ActionRecord
+		err    error
+	}
+	results := make(chan outcome, 2)
+	run := func(service *DispatchService) {
+		record, executionErr := service.ExecuteClaim(ctx, claimed)
+		results <- outcome{record, executionErr}
+	}
+	go run(firstService)
+	go run(secondService)
+	var succeeded, ambiguous int
+	for range 2 {
+		select {
+		case got := <-results:
+			if got.err == nil && got.record.State == DispatchSucceeded {
+				succeeded++
+			} else if errors.Is(got.err, ErrExecutionAmbiguous) {
+				ambiguous++
+			} else {
+				t.Fatalf("unexpected concurrent execution = %#v, %v", got.record, got.err)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatal("execution admission race did not complete")
+		}
+	}
+	if succeeded != 1 || ambiguous != 1 || executor.calls != 1 || store.arrivals.Load() != 2 {
+		t.Fatalf("succeeded=%d ambiguous=%d executor calls=%d CAS arrivals=%d",
+			succeeded, ambiguous, executor.calls, store.arrivals.Load())
+	}
+}
+
+func TestDispatchStoreAdmissionThatOutlivesLeaseDoesNotExecute(t *testing.T) {
+	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
+	clock := now
+	authority, _ := auth.NewAuthorityWithClock(func() time.Time { return clock })
+	registryStore := newMemoryStore()
+	executor := &dispatchExecutor{result: ExecutionResult{Output: json.RawMessage(`{"ok":true}`)}}
+	registry, err := NewService(Config{
+		Store: registryStore, Resolver: authority.Resolver(), Recorder: &memoryRecorder{},
+		Snapshots: fixedSnapshot{now}, Executors: executorMap{"exec": executor},
+		Clock: func() time.Time { return clock },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	registryStore.records["agent"] = Stored{Descriptor: dispatchDescriptor(now)}
+	store := &advancingAdmissionStore{
+		ActionTransitionStore: newMemoryDispatchStore(),
+		advance:               func() { clock = clock.Add(2 * time.Minute) },
+	}
+	service, err := NewDispatchService(DispatchConfig{
+		Store: store, Registry: registry, Resolver: authority.Resolver(),
+		Recorder: silentDispatchRecorder{}, Events: dispatchEvents{},
+		Clock: func() time.Time { return clock },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	decision := dispatchDecision(t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke)
+	ctx := bindDecision(t, authority, decision)
+	queued, err := service.Enqueue(ctx, dispatchEnqueue(now, "request"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	claimed, err := service.Claim(ctx, ClaimRequest{
+		ID: queued.ID, ExpectedVersion: queued.Version,
+		ClaimID: []byte("claim"), Lease: time.Minute,
+		Context: dispatchContext(now, "request"),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := service.ExecuteClaim(ctx, claimed); !errors.Is(err, ErrExecutionAmbiguous) {
+		t.Fatalf("execution after slow admission = %v", err)
+	}
+	stored, err := store.GetAction(ctx, claimed.ID)
+	if err != nil || len(stored.ExecutionAttemptID) != 16 || executor.calls != 0 {
+		t.Fatalf("stored = %#v, %v; executor calls = %d", stored, err, executor.calls)
 	}
 }
 
@@ -238,7 +450,17 @@ func TestDispatchFailsClosedBeforeEffectAndOnRevokedLease(t *testing.T) {
 		Store: store, Registry: registry, Resolver: authority.Resolver(),
 		Recorder: recorder, Events: dispatchEvents{}, Clock: func() time.Time { return now },
 	})
-	decision := dispatchDecision(t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke)
+	decision, err := auth.NewDecision(auth.DecisionConfig{
+		Subject: "owner", Actor: "actor", AuthorizationDomain: []byte("domain"),
+		AllowedOperations:  []auth.Operation{auth.OperationDispatch, auth.OperationInvoke},
+		PermittedSourceIDs: [][]byte{[]byte("source")},
+		PermittedPolicyIDs: [][]byte{[]byte("policy")}, PolicyGeneration: 1,
+		AuthenticationExpires: now.Add(30 * time.Second),
+		RequestID:             "request", CorrelationID: "correlation",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 	ctx := bindDecision(t, authority, decision)
 	queued, err := service.Enqueue(ctx, dispatchEnqueue(now, "request"))
 	if err != nil {
@@ -269,6 +491,30 @@ func TestDispatchFailsClosedBeforeEffectAndOnRevokedLease(t *testing.T) {
 	}
 	if executor.calls != 0 {
 		t.Fatalf("recording failure executor calls = %d", executor.calls)
+	}
+	recorder.failPhase = ""
+	recorder.advance = func() {
+		updated := registryStore.records["agent"]
+		updated.Descriptor.RevokedAt = now
+		registryStore.records["agent"] = updated
+	}
+	if _, err := service.ExecuteClaim(ctx, claimed); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("revocation during audit = %v", err)
+	}
+	stored, err := store.GetAction(ctx, claimed.ID)
+	if err != nil || len(stored.ExecutionAttemptID) != 0 || executor.calls != 0 {
+		t.Fatalf("revoked audit stored = %#v, %v; executor calls = %d", stored, err, executor.calls)
+	}
+	updated := registryStore.records["agent"]
+	updated.Descriptor.RevokedAt = time.Time{}
+	registryStore.records["agent"] = updated
+	recorder.advance = func() { now = now.Add(31 * time.Second) }
+	if _, err := service.ExecuteClaim(ctx, claimed); err == nil {
+		t.Fatal("execution continued after authorization expired during audit")
+	}
+	stored, err = store.GetAction(ctx, claimed.ID)
+	if err != nil || len(stored.ExecutionAttemptID) != 0 || executor.calls != 0 {
+		t.Fatalf("expired audit stored = %#v, %v; executor calls = %d", stored, err, executor.calls)
 	}
 }
 
@@ -1326,19 +1572,22 @@ func TestDispatchRestartPreservesStoredExecutorKeyAcrossAmbiguousRetry(t *testin
 	if !errors.Is(err, ErrExecutionAmbiguous) {
 		t.Fatalf("first post-restart execution = %v", err)
 	}
-	completed, err := newService(&dispatchRecorder{}).Invoke(
+	_, err = newService(&dispatchRecorder{}).Invoke(
 		ctx,
 		InvokeRequest{
 			Enqueue: request, ClaimID: []byte("claim"), Lease: time.Minute,
 		},
 	)
-	if err != nil || completed.State != DispatchSucceeded {
-		t.Fatalf("ambiguous retry = %#v, %v", completed, err)
+	if !errors.Is(err, ErrExecutionAmbiguous) {
+		t.Fatalf("ambiguous retry = %v", err)
 	}
-	if len(executor.keys) != 2 ||
+	stored, err = store.GetAction(ctx, request.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(executor.keys) != 1 ||
 		!bytes.Equal(executor.keys[0], legacyKey) ||
-		!bytes.Equal(executor.keys[1], legacyKey) ||
-		!bytes.Equal(completed.ExecutorKey, legacyKey) {
+		!bytes.Equal(stored.ExecutorKey, legacyKey) {
 		t.Fatalf(
 			"stored executor key rerolled across restart/retry: %#v",
 			executor.keys,
@@ -1448,6 +1697,57 @@ type dispatchExecutor struct {
 	result      ExecutionResult
 	err         error
 	advance     func()
+}
+
+type blockingDispatchExecutor struct {
+	started chan struct{}
+	release chan struct{}
+	calls   atomic.Int32
+	once    sync.Once
+}
+
+type admissionBarrierStore struct {
+	ActionTransitionStore
+	both     chan struct{}
+	arrivals atomic.Int32
+}
+
+type advancingAdmissionStore struct {
+	ActionTransitionStore
+	advance func()
+}
+
+func (s *advancingAdmissionStore) ApplyAction(ctx context.Context, mutation DispatchMutation) (ActionRecord, error) {
+	record, err := s.ActionTransitionStore.ApplyAction(ctx, mutation)
+	if err == nil && len(mutation.Record.ExecutionAttemptID) != 0 && mutation.TransitionKind == "" {
+		s.advance()
+	}
+	return record, err
+}
+
+func (s *admissionBarrierStore) ApplyAction(ctx context.Context, mutation DispatchMutation) (ActionRecord, error) {
+	if len(mutation.Record.ExecutionAttemptID) != 0 && mutation.TransitionKind == "" {
+		if s.arrivals.Add(1) == 2 {
+			close(s.both)
+		}
+		select {
+		case <-s.both:
+		case <-ctx.Done():
+			return ActionRecord{}, ctx.Err()
+		}
+	}
+	return s.ActionTransitionStore.ApplyAction(ctx, mutation)
+}
+
+type silentDispatchRecorder struct{}
+
+func (silentDispatchRecorder) RecordAction(context.Context, ActionAudit) error { return nil }
+
+func (e *blockingDispatchExecutor) Execute(_ context.Context, _ Invocation) (ExecutionResult, error) {
+	e.calls.Add(1)
+	e.once.Do(func() { close(e.started) })
+	<-e.release
+	return ExecutionResult{Output: json.RawMessage(`{"ok":true}`)}, nil
 }
 
 func (e *dispatchExecutor) Execute(_ context.Context, invocation Invocation) (ExecutionResult, error) {

@@ -893,6 +893,14 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 			shoal.ErrorInternal,
 			"fleet action possible effect may not be withdrawn")
 	}
+	// An admitted in-process effect cannot be withdrawn or replaced. A lost
+	// response or expired claim does not establish that it never happened.
+	if len(current.ExecutionAttemptID) != 0 &&
+		(!bytes.Equal(current.ExecutionAttemptID, next.ExecutionAttemptID) ||
+			!current.ExecutionAdmittedAt.Equal(next.ExecutionAdmittedAt)) {
+		return shoal.NewError(shoal.ErrorInternal,
+			"fleet action execution admission is written once")
+	}
 
 	// Write-once, a third class alongside immutable and monotonic.
 	//
