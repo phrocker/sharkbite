@@ -1,4 +1,4 @@
 # Generator and its matching runtimes; update together with checked-in stubs.
 grpcio-tools==1.74.0
 grpcio==1.74.0
-protobuf==6.31.1
+protobuf==6.33.5
