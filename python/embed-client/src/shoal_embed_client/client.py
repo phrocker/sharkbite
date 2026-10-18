@@ -46,6 +46,8 @@ class EmbedClient:
             raise IncompatibleServer(
                 f"ShoalEmbed {identity} lacks required capabilities: {', '.join(missing)}"
             )
+        if features and not status.protocol_version:
+            raise IncompatibleServer("ShoalEmbed protocol is unspecified; cannot verify capabilities")
         return status
 
     def _unary(self, name: str, request, features: tuple[str, ...], **rpc_options):

@@ -172,6 +172,14 @@ class ClientTest(unittest.TestCase):
             self.client.write(conditional)
         self.assertNotIn("ConditionalWrite", self.server.calls)
 
+    def test_capabilities_without_protocol_do_not_authorize_safety_calls(self):
+        self.server.protocol = ""
+        vector = pb.ScanRequest(table="graph", vector_search=pb.VectorSearch(query=b"1234"))
+        with self.assertRaisesRegex(IncompatibleServer, "unspecified"):
+            self.client.scan(vector)
+        self.assertNotIn("ScanV2", self.server.calls)
+        self.assertEqual(len(list(self.client.scan(pb.ScanRequest(table="graph")))), 1)
+
     def test_other_protocol_refuses_even_plain_operations(self):
         self.server.protocol = "shoal.embed.v2"
         with self.assertRaisesRegex(IncompatibleServer, "protocol"):

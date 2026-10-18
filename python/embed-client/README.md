@@ -33,6 +33,7 @@ preflight and vector scan.
 | Older v1, no Status feature fields | Allowed after Status | Refused with a named missing capability |
 | v1 with required features | Allowed | Uses `CreateTableV2`, `ConditionalWrite`, or `ScanV2` |
 | v1 missing a required feature | Allowed | Refused before the effect-bearing call |
+| Features advertised without protocol version | Allowed | Refused: protocol cannot be verified |
 | Explicit different protocol version | Refused after Status | Refused after Status |
 
 For vector search, the client requires `rpc.scan_v2`,
