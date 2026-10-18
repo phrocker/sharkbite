@@ -540,6 +540,12 @@ type ActionRecord struct {
 	ClaimFence         uint64
 	ClaimLease         time.Duration
 	ClaimLeaseUntil    time.Time
+	// ExecutionAttemptID identifies the one in-process invocation admitted to
+	// execute this action. It is written before entering the executor and is
+	// retained across a lost lease: a crash after admission cannot prove that
+	// the effect was never sent, so a later claim must not execute it again.
+	ExecutionAttemptID  []byte
+	ExecutionAdmittedAt time.Time
 	// ClaimAttestationID is the verified executor attestation the current
 	// claim (or its latest extension) was granted under, when the action
 	// requires attestation (#446). Empty otherwise.
@@ -1414,6 +1420,18 @@ func (r ActionRecord) Validate() error {
 		return shoal.NewError(
 			shoal.ErrorInvalidArgument, "action claim lease lacks a claim ID")
 	}
+	if len(r.ExecutionAttemptID) != 0 || !r.ExecutionAdmittedAt.IsZero() {
+		if len(r.ExecutionAttemptID) != 16 || r.ExecutionAdmittedAt.IsZero() ||
+			r.ExecutionAdmittedAt.Location() != time.UTC ||
+			r.ExecutionAdmittedAt.Before(r.CreatedAt) ||
+			r.ExecutionAdmittedAt.After(r.UpdatedAt) ||
+			len(r.ClaimID) == 0 || r.ClaimFence == 0 ||
+			!r.ExecutionAdmittedAt.Before(r.ClaimLeaseUntil) ||
+			!r.ExecutionAdmittedAt.Before(r.Deadline) ||
+			(r.State != DispatchClaimed && r.State != DispatchSucceeded && r.State != DispatchFailed) {
+			return shoal.NewError(shoal.ErrorInvalidArgument, "action execution admission is invalid")
+		}
+	}
 	// A volume means one thing — how much of an irreversible egress happened
 	// before a failure — so it is only coherent on a failed record (#427).
 	// Permitting it elsewhere would make it a number attached to work that
@@ -1832,6 +1850,7 @@ func cloneActionRecord(input ActionRecord) ActionRecord {
 	result.OnBehalfOf = append([]shoal.ID(nil), input.OnBehalfOf...)
 	result.AuthorizedOperations = append([]auth.Operation(nil), input.AuthorizedOperations...)
 	result.ClaimID = append([]byte(nil), input.ClaimID...)
+	result.ExecutionAttemptID = append([]byte(nil), input.ExecutionAttemptID...)
 	result.ClaimantOnBehalfOf = append(
 		[]shoal.ID(nil), input.ClaimantOnBehalfOf...)
 	result.ClaimHistory = make([]ClaimHolder, len(input.ClaimHistory))

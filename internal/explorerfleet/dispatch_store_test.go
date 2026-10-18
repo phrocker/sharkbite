@@ -399,7 +399,8 @@ func TestDispatchDurableRestartPreservesStoredExecutorKeyAfterAmbiguousEffect(
 	claimed, err := store.GetAction(ctx, request.ID)
 	if err != nil || claimed.State != fleet.DispatchClaimed ||
 		!bytes.Equal(claimed.ExecutorKey, legacyKey) ||
-		claimed.Version != withLegacyKey.Version+1 {
+		claimed.Version != withLegacyKey.Version+2 ||
+		len(claimed.ExecutionAttemptID) != 16 {
 		t.Fatalf("ambiguous durable state = %#v, %v", claimed, err)
 	}
 	if err := runtime.Close(); err != nil {
@@ -410,22 +411,29 @@ func TestDispatchDurableRestartPreservesStoredExecutorKeyAfterAmbiguousEffect(
 	_, dispatch = composeIntegratedServicesWithRecorder(
 		t, runtime, authority, executor, integratedActionRecorder{}, now,
 	)
-	completed, err := dispatch.Invoke(ctx, fleet.InvokeRequest{
+	store, err = NewDispatchStore(runtime, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = dispatch.Invoke(ctx, fleet.InvokeRequest{
 		Enqueue: request, ClaimID: []byte("claim"), Lease: time.Minute,
 	})
+	if !errors.Is(err, fleet.ErrExecutionAmbiguous) {
+		t.Fatalf("retry after restart = %v", err)
+	}
+	retained, err := store.GetAction(ctx, request.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	calls, effects, keys := executor.snapshot()
-	if completed.State != fleet.DispatchSucceeded ||
-		completed.Version != claimed.Version+1 ||
-		!bytes.Equal(completed.ExecutorKey, legacyKey) ||
-		calls != 2 || effects != 1 || len(keys) != 2 ||
-		!bytes.Equal(keys[0], legacyKey) ||
-		!bytes.Equal(keys[1], legacyKey) {
+	if retained.State != fleet.DispatchClaimed ||
+		retained.Version != claimed.Version ||
+		!bytes.Equal(retained.ExecutorKey, legacyKey) ||
+		calls != 1 || effects != 1 || len(keys) != 1 ||
+		!bytes.Equal(keys[0], legacyKey) {
 		t.Fatalf(
-			"recovered action=%#v calls=%d effects=%d keys=%x",
-			completed, calls, effects, keys,
+			"retained action=%#v calls=%d effects=%d keys=%x",
+			retained, calls, effects, keys,
 		)
 	}
 }
@@ -1139,6 +1147,21 @@ func TestDispatchStoreEnforcesMonotonicFenceAndEffect(t *testing.T) {
 				r.Effected = fleet.EffectedVolume{Bytes: 1}
 			},
 		},
+		{
+			name:    "an execution admission may not be replaced",
+			prepare: seedExecutionAdmission,
+			rewrite: func(r *fleet.ActionRecord) {
+				r.ExecutionAttemptID = bytes.Repeat([]byte{2}, 16)
+			},
+		},
+		{
+			name:    "an execution admission may not be withdrawn",
+			prepare: seedExecutionAdmission,
+			rewrite: func(r *fleet.ActionRecord) {
+				r.ExecutionAttemptID = nil
+				r.ExecutionAdmittedAt = time.Time{}
+			},
+		},
 	} {
 		t.Run(probe.name, func(t *testing.T) {
 			directory := t.TempDir()
@@ -1177,6 +1200,23 @@ func TestDispatchStoreEnforcesMonotonicFenceAndEffect(t *testing.T) {
 			}
 		})
 	}
+}
+
+func seedExecutionAdmission(r *fleet.ActionRecord) {
+	now := r.CreatedAt
+	r.State = fleet.DispatchClaimed
+	r.ClaimID = []byte("claim")
+	r.ClaimFence = 1
+	r.ClaimLease = time.Minute
+	r.ClaimLeaseUntil = now.Add(time.Minute)
+	r.ClaimantSubject = r.Subject
+	r.ClaimantActor = r.Actor
+	r.ClaimantClientID = r.ClientID
+	r.TransitionOperation = auth.OperationInvoke
+	r.ExecutionPolicyGeneration = 1
+	r.ExecutionExpiresAt = now.Add(time.Hour)
+	r.ExecutionAttemptID = bytes.Repeat([]byte{1}, 16)
+	r.ExecutionAdmittedAt = now
 }
 
 // testActionReason builds a Reason whose digest is real, because
