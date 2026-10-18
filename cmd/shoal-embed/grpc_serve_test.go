@@ -60,6 +60,10 @@ func TestEmbedServer_CreateTableDefaultsAndStatus(t *testing.T) {
 	if len(st.Tables) != 1 || st.Tables[0] != "graph" {
 		t.Fatalf("Status tables = %v, want [graph]", st.Tables)
 	}
+	if st.BuildVersion == "" || st.BuildCommit == "" ||
+		st.ProtocolVersion != embedProtocolVersion || len(st.Features) == 0 {
+		t.Fatalf("Status omits build identity or capabilities: %+v", st)
+	}
 	if len(st.TableStatuses) != 1 {
 		t.Fatalf("Status table_statuses len = %d, want 1", len(st.TableStatuses))
 	}

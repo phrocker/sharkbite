@@ -39,6 +39,23 @@ The publication workflow removes the leading `v` from image tags: source tag
 `v1.2.3` publishes image tag `1.2.3`. Use the same semantic version in both
 places.
 
+Call `Status` before using a capability that an older server might lack. Its
+`build_version`, `build_commit`, `source_date`, and `source_modified` identify
+the running binary; `protocol_version` is `shoal.embed.v1`. The `features`
+list is sorted and uses exact identifiers. For example, vector searches need
+both `rpc.scan_v2` and `safety.scan_v2.vector_identity`, and conditional
+writes need `rpc.conditional_write` and
+`safety.conditional_write.conditions`. A client must treat a missing field or
+feature as unsupported. Older servers return the original two Status fields,
+so this rule makes mixed-version clients fail closed. Older protobuf clients
+can still read the table fields and ignore the new fields.
+
+The image passes its OCI revision and source timestamp into the binary. A
+local Go build reads the same values from VCS build metadata when available;
+`build_commit` is `unknown` when neither source provides a revision.
+`source_modified` is `unknown` when the build has no VCS state, as in the
+container build, rather than claiming its input tree was clean.
+
 ## Reproducible local build and smoke test
 
 The build pins both base images by digest and records the version, revision,
