@@ -58,7 +58,7 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Hold the first claim at the HTTP boundary until both processes arrive.
-	// This tests a true competing read of the same queued version.
+	// This starts competing claim attempts from the same queued version.
 	var mu sync.Mutex
 	arrived := 0
 	release := make(chan struct{})
@@ -126,7 +126,7 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 			switch {
 			case item.result.State == api.DispatchClaimed && item.result.Fence == 1 && item.result.Replay:
 				claimed++
-			case item.result.Kind == api.KindNotFound || item.result.Kind == api.KindConflict:
+			case item.result.Kind == api.KindConflict:
 				refused++
 			default:
 				t.Fatalf("unexpected claim result: %+v", item.result)
