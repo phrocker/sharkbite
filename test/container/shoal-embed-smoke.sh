@@ -50,11 +50,14 @@ rm -rf "${proto_copy}"
 
 test "$(docker run --rm --entrypoint /usr/local/bin/shoal-embed "${IMAGE}" version)" = "shoal-embed ${VERSION}"
 
-container="$(docker run --detach --publish 127.0.0.1::9877 "${IMAGE}")"
+container="$(docker run --detach --publish 127.0.0.1::9876 --publish 127.0.0.1::9877 "${IMAGE}")"
 host_port="$(docker port "${container}" 9877/tcp | awk -F: 'NR == 1 { print $NF }')"
+grpc_port="$(docker port "${container}" 9876/tcp | awk -F: 'NR == 1 { print $NF }')"
 for _ in $(seq 1 30); do
   if curl --fail --silent "http://127.0.0.1:${host_port}/readyz" >/dev/null \
     && curl --fail --silent "http://127.0.0.1:${host_port}/healthz" >/dev/null; then
+    GOWORK=off go run ./test/container/embed_status_probe.go \
+      "127.0.0.1:${grpc_port}" "${VERSION}" "${REVISION}" "${SOURCE_DATE}"
     echo "shoal-embed container smoke test passed (${IMAGE})"
     exit 0
   fi
