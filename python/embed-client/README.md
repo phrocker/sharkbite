@@ -25,6 +25,9 @@ with your deployment's CA and authentication credential; the client never
 creates an insecure channel for you. See
 [`examples/secure_client.py`](examples/secure_client.py) for a runnable Status
 preflight and vector scan.
+The generated messages use a private protobuf descriptor pool so they can be
+imported alongside older hand-generated ShoalEmbed stubs in one process.
+An operation's `timeout` covers both the Status preflight and the requested RPC.
 
 ## Compatibility
 

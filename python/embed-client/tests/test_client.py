@@ -1,6 +1,9 @@
 """Wire and mixed-version behavior of the packaged gRPC client."""
 
 from concurrent.futures import ThreadPoolExecutor
+import subprocess
+import sys
+import time
 import unittest
 
 import grpc
@@ -26,9 +29,13 @@ class Server(rpc.ShoalEmbedServicer):
         self.calls = []
         self.reject_scan_v2 = False
         self.reject_conditional_write = False
+        self.status_delay = 0
+        self.create_table_deadline = None
 
     def Status(self, request, context):
         self.calls.append("Status")
+        if self.status_delay:
+            time.sleep(self.status_delay)
         return pb.StatusResponse(
             tables=["graph"], build_version="1.4.4", protocol_version=self.protocol,
             features=self.features,
@@ -56,6 +63,7 @@ class Server(rpc.ShoalEmbedServicer):
 
     def CreateTable(self, request, context):
         self.calls.append("CreateTable")
+        self.create_table_deadline = context.time_remaining()
         return pb.CreateTableResponse(table=request.table)
 
     def CreateTableV2(self, request, context):
@@ -192,6 +200,23 @@ class ClientTest(unittest.TestCase):
         with self.assertRaisesRegex(IncompatibleServer, "protocol"):
             list(self.client.scan(pb.ScanRequest(table="graph")))
         self.assertNotIn("Scan", self.server.calls)
+
+    def test_timeout_covers_status_and_operation(self):
+        self.server.status_delay = 0.1
+        self.client.create_table(pb.CreateTableRequest(table="graph"), timeout=0.3)
+        self.assertIsNotNone(self.server.create_table_deadline)
+        self.assertLess(self.server.create_table_deadline, 0.26)
+
+    def test_generated_stubs_coexist_with_older_proto_registry(self):
+        code = """
+from google.protobuf import descriptor_pb2, descriptor_pool
+legacy = descriptor_pb2.FileDescriptorProto(name="embed.proto", package="shoal.embed.v1", syntax="proto3")
+legacy.message_type.add().name = "CreateTableRequest"
+descriptor_pool.Default().AddSerializedFile(legacy.SerializeToString())
+from shoal_embed_client import embed_pb2
+assert embed_pb2.CreateTableRequest(table="graph").table == "graph"
+"""
+        subprocess.run([sys.executable, "-c", code], check=True, capture_output=True, text=True)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import grpc
+from time import monotonic
 
 from . import embed_pb2, embed_pb2_grpc
 from ._version import PROTOCOL_VERSION
@@ -51,7 +52,9 @@ class EmbedClient:
         return status
 
     def _unary(self, name: str, request, features: tuple[str, ...], **rpc_options):
+        started = monotonic()
         self.require_features(*features, **rpc_options)
+        rpc_options = self._remaining_options(rpc_options, started)
         try:
             return getattr(self._stub, name)(request, **rpc_options)
         except grpc.RpcError as error:
@@ -62,7 +65,9 @@ class EmbedClient:
             raise
 
     def _stream(self, name: str, request, features: tuple[str, ...], **rpc_options):
+        started = monotonic()
         self.require_features(*features, **rpc_options)
+        rpc_options = self._remaining_options(rpc_options, started)
         try:
             responses = getattr(self._stub, name)(request, **rpc_options)
         except grpc.RpcError as error:
@@ -83,6 +88,12 @@ class EmbedClient:
                 raise
 
         return checked_responses()
+
+    @staticmethod
+    def _remaining_options(rpc_options, started):
+        if rpc_options.get("timeout") is None:
+            return rpc_options
+        return {**rpc_options, "timeout": max(0, rpc_options["timeout"] - (monotonic() - started))}
 
     def create_table(self, request: embed_pb2.CreateTableRequest, **rpc_options):
         if request.default_embedding or request.workload or request.file_format:

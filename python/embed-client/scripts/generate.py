@@ -41,6 +41,19 @@ def generate(check: bool) -> None:
         if source.count(absolute_import) != 1:
             raise SystemExit("generated gRPC stub import changed; inspect generator output")
         grpc_stub.write_text(source.replace(absolute_import, "from . import embed_pb2 as embed__pb2"))
+        pb_stub = out / "embed_pb2.py"
+        pb_source = pb_stub.read_text()
+        default_symbols = "_sym_db = _symbol_database.Default()"
+        default_pool = "_descriptor_pool.Default().AddSerializedFile("
+        if pb_source.count(default_symbols) != 1 or pb_source.count(default_pool) != 1:
+            raise SystemExit("generated protobuf registry setup changed; inspect generator output")
+        # Consumers may still import older hand-generated embed_pb2 modules.
+        # Keep this wheel's descriptor and symbols out of the process-wide pool.
+        pb_source = pb_source.replace(
+            default_symbols,
+            "_sym_db = _symbol_database.SymbolDatabase(pool=_descriptor_pool.DescriptorPool())",
+        ).replace(default_pool, "_sym_db.pool.AddSerializedFile(")
+        pb_stub.write_text(pb_source)
         shutil.copyfile(PROTO, out / "embed.proto")
         for generated, committed in (
             (out / "embed_pb2.py", PACKAGE / "embed_pb2.py"),
