@@ -42,6 +42,8 @@ An operation's `timeout` covers both the Status preflight and the requested RPC.
 
 For vector search, the client requires `rpc.scan_v2`,
 `safety.scan_v2.vector_identity`, and `safety.scan_v2.vector_search`. For
+vector search with `as_of`, it also requires `safety.scan_v2.vector_as_of` so
+an older replica cannot silently ignore the time bound. For
 conditional writes it requires `rpc.conditional_write` and
 `safety.conditional_write.conditions`; for an embedded table default it
 requires `rpc.create_table_v2` and
@@ -60,6 +62,46 @@ versioned RPC. `EmbedClient.compact` refuses those options because a mixed
 fleet could silently ignore them. Plain compaction remains available; direct
 use of the generated stub for targeted compaction requires the caller to
 enforce a homogeneous server deployment.
+
+### Projected vector hits
+
+Set `VectorSearch.projection` and call `EmbedClient.scan` to receive
+`ScanResponse.vector_hits`. The client requires `rpc.scan_v3` and
+`safety.scan_v3.projection`, then uses `ScanV3`; an older replica cannot silently
+return scored cells instead. With projection unset, `ScanV2` still returns the
+original `ScanResponse.cells` shape.
+
+```python
+request = embed_pb2.ScanRequest(
+    table="graph",
+    vector_search=embed_pb2.VectorSearch(
+        query=bytes.fromhex("3f800000"),
+        embedding_space="model-v1",
+        embedding_cf=b"vec",
+    ),
+)
+request.vector_search.projection.mode = embed_pb2.VECTOR_PROJECTION_COLUMN_FAMILIES
+request.vector_search.projection.column_families.append(b"meta")
+for response in client.scan(request, timeout=30):
+    for hit in response.vector_hits:
+        score_cell = hit.scored_cell  # value is a big-endian float32 score
+        print(score_cell.row, hit.embedding_space, hit.row_cells)
+```
+
+`VECTOR_PROJECTION_FULL_ROW` returns all cells of each hit's row;
+`VECTOR_PROJECTION_SCORED_CELL_ONLY` returns only the scored cell in the hit
+envelope. `top_k` counts embedding cells, so several hits may share a row.
+Hits keep score-descending order with cell-key tie breaking; projected row
+cells retain key order and their original values. `limit` caps hits, and
+`batch_size` does not change the one-hit-per-response projection framing.
+
+The server caps projected searches at 100 hits, 32 named families, 256 cells
+per row, 1 MiB per hit, and 8 MiB total. An exceeded limit fails with
+`RESOURCE_EXHAUSTED` before any hit is sent. `as_of` applies to both ranking
+and projected row reads; it is a timestamp ceiling, not a transactionally
+isolated snapshot against concurrent writes. Row expansion uses the same
+service-level visibility context as the scored scan; ShoalEmbed currently
+does not accept per-request Accumulo authorizations.
 
 New fields and unknown feature identifiers from a later `shoal.embed.v1`
 server are ignored; clients require exact identifiers for the behavior they

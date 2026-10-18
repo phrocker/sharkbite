@@ -303,6 +303,8 @@ func (e *Engine) ConditionalWrite(table string, mutations []ConditionalMutation)
 
 // ScanOptions configures a scan.
 type ScanOptions struct {
+	// Context cancels batched row lookups. Nil uses background context.
+	Context context.Context
 	// Stack is the iterator stack applied above the merge. Empty means
 	// no filtering — raw cells are returned.
 	Stack []iterrt.IterSpec

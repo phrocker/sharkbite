@@ -15,10 +15,12 @@ from shoal_embed_client import (
 
 
 FEATURES = (
-    "rpc.conditional_write", "rpc.create_table_v2", "rpc.scan_v2",
+    "rpc.conditional_write", "rpc.create_table_v2", "rpc.scan_v2", "rpc.scan_v3",
     "safety.conditional_write.conditions",
     "safety.create_table_v2.default_embedding",
     "safety.scan_v2.vector_identity", "safety.scan_v2.vector_search",
+    "safety.scan_v2.vector_as_of",
+    "safety.scan_v3.projection",
 )
 
 
@@ -28,6 +30,7 @@ class Server(rpc.ShoalEmbedServicer):
         self.protocol = protocol
         self.calls = []
         self.reject_scan_v2 = False
+        self.reject_scan_v3 = False
         self.reject_conditional_write = False
         self.status_delay = 0
         self.create_table_deadline = None
@@ -50,6 +53,16 @@ class Server(rpc.ShoalEmbedServicer):
         if self.reject_scan_v2:
             context.abort(grpc.StatusCode.UNIMPLEMENTED, "old replica")
         yield pb.ScanResponse(cells=[pb.Cell(row=b"vector")])
+
+    def ScanV3(self, request, context):
+        self.calls.append("ScanV3")
+        if self.reject_scan_v3:
+            context.abort(grpc.StatusCode.UNIMPLEMENTED, "old replica")
+        yield pb.ScanResponse(vector_hits=[pb.VectorHit(
+            scored_cell=pb.Cell(row=b"vector", value=b"\x3f\x80\x00\x00"),
+            row_cells=[pb.Cell(row=b"vector", column_family=b"meta", value=b"metadata")],
+            embedding_space=request.vector_search.embedding_space,
+        )])
 
     def Write(self, request, context):
         self.calls.append("Write")
@@ -139,11 +152,12 @@ class ClientTest(unittest.TestCase):
         self.client.write(pb.WriteRequest(table="graph"))
         list(self.client.scan(pb.ScanRequest(table="graph")))
         list(self.client.scan_v2(pb.ScanRequest(table="graph")))
+        list(self.client.scan_v3(pb.ScanRequest(table="graph")))
         self.client.conditional_write(pb.WriteRequest(table="graph"))
         self.client.create_table_v2(pb.CreateTableRequest(table="graph"))
         self.client.flush(pb.FlushRequest(table="graph"))
         self.client.compact(pb.CompactRequest(table="graph"))
-        self.assertTrue({"CreateTable", "Write", "Scan", "ScanV2", "ConditionalWrite",
+        self.assertTrue({"CreateTable", "Write", "Scan", "ScanV2", "ScanV3", "ConditionalWrite",
                          "CreateTableV2", "Flush", "Compact"}.issubset(self.server.calls))
 
     def test_old_status_allows_plain_scan_but_refuses_safety_calls(self):
@@ -205,6 +219,38 @@ class ClientTest(unittest.TestCase):
         with self.assertRaisesRegex(IncompatibleServer, "ConditionalWrite"):
             self.client.write(conditional)
         self.assertNotIn("Write", self.server.calls)
+
+    def test_projection_routes_to_v3_and_old_replicas_fail_closed(self):
+        request = pb.ScanRequest(table="graph", vector_search=pb.VectorSearch(
+            query=b"1234", embedding_space="model-v1",
+            projection=pb.VectorProjection(mode=pb.VECTOR_PROJECTION_FULL_ROW),
+        ))
+        hit = list(self.client.scan(request))[0].vector_hits[0]
+        self.assertEqual(hit.scored_cell.row, b"vector")
+        self.assertEqual(hit.row_cells[0].value, b"metadata")
+        self.assertEqual(hit.embedding_space, "model-v1")
+        self.assertNotIn("ScanV2", self.server.calls)
+        self.server.reject_scan_v3 = True
+        with self.assertRaisesRegex(IncompatibleServer, "ScanV3"):
+            list(self.client.scan(request))
+        self.server.reject_scan_v3 = False
+        self.server.features = tuple(f for f in FEATURES if f != "rpc.scan_v3")
+        with self.assertRaisesRegex(IncompatibleServer, "rpc.scan_v3"):
+            self.client.scan(request)
+
+    def test_vector_as_of_requires_new_capability_on_mixed_versions(self):
+        self.server.features = tuple(f for f in FEATURES if f != "safety.scan_v2.vector_as_of")
+        request = pb.ScanRequest(table="graph", as_of=15, vector_search=pb.VectorSearch(query=b"1234"))
+        with self.assertRaisesRegex(IncompatibleServer, "safety.scan_v2.vector_as_of"):
+            self.client.scan(request)
+        self.assertNotIn("ScanV2", self.server.calls)
+        request.as_of = 0
+        self.assertEqual(len(list(self.client.scan(request))), 1)
+        request.as_of = 15
+        request.vector_search.projection.mode = pb.VECTOR_PROJECTION_FULL_ROW
+        with self.assertRaisesRegex(IncompatibleServer, "safety.scan_v2.vector_as_of"):
+            self.client.scan(request)
+        self.assertNotIn("ScanV3", self.server.calls)
 
     def test_individual_missing_safety_feature_refuses_effect(self):
         self.server.features = tuple(

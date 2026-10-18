@@ -189,6 +189,55 @@ func (MutationStatus) EnumDescriptor() ([]byte, []int) {
 	return file_proto_embed_proto_rawDescGZIP(), []int{2}
 }
 
+type VectorProjectionMode int32
+
+const (
+	VectorProjectionMode_VECTOR_PROJECTION_SCORED_CELL_ONLY VectorProjectionMode = 0
+	VectorProjectionMode_VECTOR_PROJECTION_FULL_ROW         VectorProjectionMode = 1
+	VectorProjectionMode_VECTOR_PROJECTION_COLUMN_FAMILIES  VectorProjectionMode = 2
+)
+
+// Enum value maps for VectorProjectionMode.
+var (
+	VectorProjectionMode_name = map[int32]string{
+		0: "VECTOR_PROJECTION_SCORED_CELL_ONLY",
+		1: "VECTOR_PROJECTION_FULL_ROW",
+		2: "VECTOR_PROJECTION_COLUMN_FAMILIES",
+	}
+	VectorProjectionMode_value = map[string]int32{
+		"VECTOR_PROJECTION_SCORED_CELL_ONLY": 0,
+		"VECTOR_PROJECTION_FULL_ROW":         1,
+		"VECTOR_PROJECTION_COLUMN_FAMILIES":  2,
+	}
+)
+
+func (x VectorProjectionMode) Enum() *VectorProjectionMode {
+	p := new(VectorProjectionMode)
+	*p = x
+	return p
+}
+
+func (x VectorProjectionMode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (VectorProjectionMode) Descriptor() protoreflect.EnumDescriptor {
+	return file_proto_embed_proto_enumTypes[3].Descriptor()
+}
+
+func (VectorProjectionMode) Type() protoreflect.EnumType {
+	return &file_proto_embed_proto_enumTypes[3]
+}
+
+func (x VectorProjectionMode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use VectorProjectionMode.Descriptor instead.
+func (VectorProjectionMode) EnumDescriptor() ([]byte, []int) {
+	return file_proto_embed_proto_rawDescGZIP(), []int{3}
+}
+
 type CreateTableRequest struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Table  string                 `protobuf:"bytes,1,opt,name=table,proto3" json:"table,omitempty"`
@@ -1161,8 +1210,11 @@ type VectorSearch struct {
 	// Stable provider/model/version/dimension/normalization identity of query.
 	// Required for identity-safe raw-vector comparison.
 	EmbeddingSpace string `protobuf:"bytes,7,opt,name=embedding_space,json=embeddingSpace,proto3" json:"embedding_space,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// Unset preserves scored-cell-only ScanV2 behavior. When set, clients must
+	// use ScanV3, even when mode is SCORED_CELL_ONLY.
+	Projection    *VectorProjection `protobuf:"bytes,8,opt,name=projection,proto3" json:"projection,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *VectorSearch) Reset() {
@@ -1244,6 +1296,69 @@ func (x *VectorSearch) GetEmbeddingSpace() string {
 	return ""
 }
 
+func (x *VectorSearch) GetProjection() *VectorProjection {
+	if x != nil {
+		return x.Projection
+	}
+	return nil
+}
+
+type VectorProjection struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Mode  VectorProjectionMode   `protobuf:"varint,1,opt,name=mode,proto3,enum=shoal.embed.v1.VectorProjectionMode" json:"mode,omitempty"`
+	// Required only for COLUMN_FAMILIES; exact binary family names. At most 32
+	// unique names of at most 256 bytes each. Projection caps top_k at 100,
+	// each row at 256 cells, each hit at 1 MiB, and the response at 8 MiB.
+	// A limit breach fails before any hit is streamed.
+	ColumnFamilies [][]byte `protobuf:"bytes,2,rep,name=column_families,json=columnFamilies,proto3" json:"column_families,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VectorProjection) Reset() {
+	*x = VectorProjection{}
+	mi := &file_proto_embed_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VectorProjection) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VectorProjection) ProtoMessage() {}
+
+func (x *VectorProjection) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_embed_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VectorProjection.ProtoReflect.Descriptor instead.
+func (*VectorProjection) Descriptor() ([]byte, []int) {
+	return file_proto_embed_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *VectorProjection) GetMode() VectorProjectionMode {
+	if x != nil {
+		return x.Mode
+	}
+	return VectorProjectionMode_VECTOR_PROJECTION_SCORED_CELL_ONLY
+}
+
+func (x *VectorProjection) GetColumnFamilies() [][]byte {
+	if x != nil {
+		return x.ColumnFamilies
+	}
+	return nil
+}
+
 // ScoreFilter configures the read-time scoring pushdown iterator. A consumer
 // stores score inputs as ordinary cells: vectors, timestamps, or feature
 // values in a reserved column family. ScoreFilter moves the "stream cells,
@@ -1281,7 +1396,7 @@ type ScoreFilter struct {
 
 func (x *ScoreFilter) Reset() {
 	*x = ScoreFilter{}
-	mi := &file_proto_embed_proto_msgTypes[12]
+	mi := &file_proto_embed_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1293,7 +1408,7 @@ func (x *ScoreFilter) String() string {
 func (*ScoreFilter) ProtoMessage() {}
 
 func (x *ScoreFilter) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[12]
+	mi := &file_proto_embed_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1306,7 +1421,7 @@ func (x *ScoreFilter) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScoreFilter.ProtoReflect.Descriptor instead.
 func (*ScoreFilter) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{12}
+	return file_proto_embed_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ScoreFilter) GetScoreCf() []byte {
@@ -1413,7 +1528,7 @@ type EdgeExpand struct {
 
 func (x *EdgeExpand) Reset() {
 	*x = EdgeExpand{}
-	mi := &file_proto_embed_proto_msgTypes[13]
+	mi := &file_proto_embed_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1425,7 +1540,7 @@ func (x *EdgeExpand) String() string {
 func (*EdgeExpand) ProtoMessage() {}
 
 func (x *EdgeExpand) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[13]
+	mi := &file_proto_embed_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1438,7 +1553,7 @@ func (x *EdgeExpand) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EdgeExpand.ProtoReflect.Descriptor instead.
 func (*EdgeExpand) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{13}
+	return file_proto_embed_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *EdgeExpand) GetAnchorRows() [][]byte {
@@ -1537,7 +1652,7 @@ type EdgeWeight struct {
 
 func (x *EdgeWeight) Reset() {
 	*x = EdgeWeight{}
-	mi := &file_proto_embed_proto_msgTypes[14]
+	mi := &file_proto_embed_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1549,7 +1664,7 @@ func (x *EdgeWeight) String() string {
 func (*EdgeWeight) ProtoMessage() {}
 
 func (x *EdgeWeight) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[14]
+	mi := &file_proto_embed_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1562,7 +1677,7 @@ func (x *EdgeWeight) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EdgeWeight.ProtoReflect.Descriptor instead.
 func (*EdgeWeight) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{14}
+	return file_proto_embed_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *EdgeWeight) GetRelationship() string {
@@ -1593,7 +1708,7 @@ type Cell struct {
 
 func (x *Cell) Reset() {
 	*x = Cell{}
-	mi := &file_proto_embed_proto_msgTypes[15]
+	mi := &file_proto_embed_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1605,7 +1720,7 @@ func (x *Cell) String() string {
 func (*Cell) ProtoMessage() {}
 
 func (x *Cell) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[15]
+	mi := &file_proto_embed_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1618,7 +1733,7 @@ func (x *Cell) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Cell.ProtoReflect.Descriptor instead.
 func (*Cell) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{15}
+	return file_proto_embed_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *Cell) GetRow() []byte {
@@ -1663,16 +1778,83 @@ func (x *Cell) GetValue() []byte {
 	return nil
 }
 
+// Each hit corresponds to one scored embedding cell, so multiple hits may
+// share a row. scored_cell.value is the big-endian float32 score; row_cells
+// contain original cell values in key order. Hits are score-descending, with
+// ties broken by scored cell key. embedding_space is the query identity.
+type VectorHit struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ScoredCell     *Cell                  `protobuf:"bytes,1,opt,name=scored_cell,json=scoredCell,proto3" json:"scored_cell,omitempty"`
+	RowCells       []*Cell                `protobuf:"bytes,2,rep,name=row_cells,json=rowCells,proto3" json:"row_cells,omitempty"`
+	EmbeddingSpace string                 `protobuf:"bytes,3,opt,name=embedding_space,json=embeddingSpace,proto3" json:"embedding_space,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *VectorHit) Reset() {
+	*x = VectorHit{}
+	mi := &file_proto_embed_proto_msgTypes[17]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VectorHit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VectorHit) ProtoMessage() {}
+
+func (x *VectorHit) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_embed_proto_msgTypes[17]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VectorHit.ProtoReflect.Descriptor instead.
+func (*VectorHit) Descriptor() ([]byte, []int) {
+	return file_proto_embed_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *VectorHit) GetScoredCell() *Cell {
+	if x != nil {
+		return x.ScoredCell
+	}
+	return nil
+}
+
+func (x *VectorHit) GetRowCells() []*Cell {
+	if x != nil {
+		return x.RowCells
+	}
+	return nil
+}
+
+func (x *VectorHit) GetEmbeddingSpace() string {
+	if x != nil {
+		return x.EmbeddingSpace
+	}
+	return ""
+}
+
 type ScanResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Cells         []*Cell                `protobuf:"bytes,1,rep,name=cells,proto3" json:"cells,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Cells []*Cell                `protobuf:"bytes,1,rep,name=cells,proto3" json:"cells,omitempty"`
+	// Populated only for explicit ScanV3 vector projection. The old cells field
+	// remains byte-for-byte unchanged when projection is unset.
+	VectorHits    []*VectorHit `protobuf:"bytes,2,rep,name=vector_hits,json=vectorHits,proto3" json:"vector_hits,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ScanResponse) Reset() {
 	*x = ScanResponse{}
-	mi := &file_proto_embed_proto_msgTypes[16]
+	mi := &file_proto_embed_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1684,7 +1866,7 @@ func (x *ScanResponse) String() string {
 func (*ScanResponse) ProtoMessage() {}
 
 func (x *ScanResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[16]
+	mi := &file_proto_embed_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1697,12 +1879,19 @@ func (x *ScanResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ScanResponse.ProtoReflect.Descriptor instead.
 func (*ScanResponse) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{16}
+	return file_proto_embed_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *ScanResponse) GetCells() []*Cell {
 	if x != nil {
 		return x.Cells
+	}
+	return nil
+}
+
+func (x *ScanResponse) GetVectorHits() []*VectorHit {
+	if x != nil {
+		return x.VectorHits
 	}
 	return nil
 }
@@ -1716,7 +1905,7 @@ type FlushRequest struct {
 
 func (x *FlushRequest) Reset() {
 	*x = FlushRequest{}
-	mi := &file_proto_embed_proto_msgTypes[17]
+	mi := &file_proto_embed_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1728,7 +1917,7 @@ func (x *FlushRequest) String() string {
 func (*FlushRequest) ProtoMessage() {}
 
 func (x *FlushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[17]
+	mi := &file_proto_embed_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1741,7 +1930,7 @@ func (x *FlushRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlushRequest.ProtoReflect.Descriptor instead.
 func (*FlushRequest) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{17}
+	return file_proto_embed_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *FlushRequest) GetTable() string {
@@ -1759,7 +1948,7 @@ type FlushResponse struct {
 
 func (x *FlushResponse) Reset() {
 	*x = FlushResponse{}
-	mi := &file_proto_embed_proto_msgTypes[18]
+	mi := &file_proto_embed_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1771,7 +1960,7 @@ func (x *FlushResponse) String() string {
 func (*FlushResponse) ProtoMessage() {}
 
 func (x *FlushResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[18]
+	mi := &file_proto_embed_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1784,7 +1973,7 @@ func (x *FlushResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FlushResponse.ProtoReflect.Descriptor instead.
 func (*FlushResponse) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{18}
+	return file_proto_embed_proto_rawDescGZIP(), []int{20}
 }
 
 type CompactRequest struct {
@@ -1803,7 +1992,7 @@ type CompactRequest struct {
 
 func (x *CompactRequest) Reset() {
 	*x = CompactRequest{}
-	mi := &file_proto_embed_proto_msgTypes[19]
+	mi := &file_proto_embed_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1815,7 +2004,7 @@ func (x *CompactRequest) String() string {
 func (*CompactRequest) ProtoMessage() {}
 
 func (x *CompactRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[19]
+	mi := &file_proto_embed_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1828,7 +2017,7 @@ func (x *CompactRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompactRequest.ProtoReflect.Descriptor instead.
 func (*CompactRequest) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{19}
+	return file_proto_embed_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *CompactRequest) GetTable() string {
@@ -1863,7 +2052,7 @@ type CompactResponse struct {
 
 func (x *CompactResponse) Reset() {
 	*x = CompactResponse{}
-	mi := &file_proto_embed_proto_msgTypes[20]
+	mi := &file_proto_embed_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1875,7 +2064,7 @@ func (x *CompactResponse) String() string {
 func (*CompactResponse) ProtoMessage() {}
 
 func (x *CompactResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[20]
+	mi := &file_proto_embed_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1888,7 +2077,7 @@ func (x *CompactResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CompactResponse.ProtoReflect.Descriptor instead.
 func (*CompactResponse) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{20}
+	return file_proto_embed_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *CompactResponse) GetTable() string {
@@ -1920,7 +2109,7 @@ type StatusRequest struct {
 
 func (x *StatusRequest) Reset() {
 	*x = StatusRequest{}
-	mi := &file_proto_embed_proto_msgTypes[21]
+	mi := &file_proto_embed_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1932,7 +2121,7 @@ func (x *StatusRequest) String() string {
 func (*StatusRequest) ProtoMessage() {}
 
 func (x *StatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[21]
+	mi := &file_proto_embed_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1945,7 +2134,7 @@ func (x *StatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusRequest.ProtoReflect.Descriptor instead.
 func (*StatusRequest) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{21}
+	return file_proto_embed_proto_rawDescGZIP(), []int{23}
 }
 
 type TableStatus struct {
@@ -1961,7 +2150,7 @@ type TableStatus struct {
 
 func (x *TableStatus) Reset() {
 	*x = TableStatus{}
-	mi := &file_proto_embed_proto_msgTypes[22]
+	mi := &file_proto_embed_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1973,7 +2162,7 @@ func (x *TableStatus) String() string {
 func (*TableStatus) ProtoMessage() {}
 
 func (x *TableStatus) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[22]
+	mi := &file_proto_embed_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1986,7 +2175,7 @@ func (x *TableStatus) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TableStatus.ProtoReflect.Descriptor instead.
 func (*TableStatus) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{22}
+	return file_proto_embed_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *TableStatus) GetTable() string {
@@ -2046,7 +2235,7 @@ type StatusResponse struct {
 
 func (x *StatusResponse) Reset() {
 	*x = StatusResponse{}
-	mi := &file_proto_embed_proto_msgTypes[23]
+	mi := &file_proto_embed_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2058,7 +2247,7 @@ func (x *StatusResponse) String() string {
 func (*StatusResponse) ProtoMessage() {}
 
 func (x *StatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_proto_embed_proto_msgTypes[23]
+	mi := &file_proto_embed_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2071,7 +2260,7 @@ func (x *StatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusResponse.ProtoReflect.Descriptor instead.
 func (*StatusResponse) Descriptor() ([]byte, []int) {
-	return file_proto_embed_proto_rawDescGZIP(), []int{23}
+	return file_proto_embed_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *StatusResponse) GetTables() []string {
@@ -2213,7 +2402,7 @@ const file_proto_embed_proto_rawDesc = "" +
 	"\x05upper\x18\x03 \x01(\x01R\x05upper\x12\x1b\n" +
 	"\tupper_set\x18\x04 \x01(\bR\bupperSet\x12'\n" +
 	"\x0flower_inclusive\x18\x05 \x01(\bR\x0elowerInclusive\x12'\n" +
-	"\x0fupper_inclusive\x18\x06 \x01(\bR\x0eupperInclusive\"\xde\x01\n" +
+	"\x0fupper_inclusive\x18\x06 \x01(\bR\x0eupperInclusive\"\xa0\x02\n" +
 	"\fVectorSearch\x12\x14\n" +
 	"\x05query\x18\x01 \x01(\fR\x05query\x12\x13\n" +
 	"\x05top_k\x18\x02 \x01(\x05R\x04topK\x12!\n" +
@@ -2221,7 +2410,13 @@ const file_proto_embed_proto_rawDesc = "" +
 	"\x06metric\x18\x04 \x01(\tR\x06metric\x12\x1b\n" +
 	"\tmin_score\x18\x05 \x01(\x02R\bminScore\x12\"\n" +
 	"\rmin_score_set\x18\x06 \x01(\bR\vminScoreSet\x12'\n" +
-	"\x0fembedding_space\x18\a \x01(\tR\x0eembeddingSpace\"\xd5\x01\n" +
+	"\x0fembedding_space\x18\a \x01(\tR\x0eembeddingSpace\x12@\n" +
+	"\n" +
+	"projection\x18\b \x01(\v2 .shoal.embed.v1.VectorProjectionR\n" +
+	"projection\"u\n" +
+	"\x10VectorProjection\x128\n" +
+	"\x04mode\x18\x01 \x01(\x0e2$.shoal.embed.v1.VectorProjectionModeR\x04mode\x12'\n" +
+	"\x0fcolumn_families\x18\x02 \x03(\fR\x0ecolumnFamilies\"\xd5\x01\n" +
 	"\vScoreFilter\x12\x19\n" +
 	"\bscore_cf\x18\x01 \x01(\fR\ascoreCf\x12\x16\n" +
 	"\x06method\x18\x02 \x01(\tR\x06method\x12\x14\n" +
@@ -2259,9 +2454,16 @@ const file_proto_embed_proto_rawDesc = "" +
 	"\x10column_qualifier\x18\x03 \x01(\fR\x0fcolumnQualifier\x12+\n" +
 	"\x11column_visibility\x18\x04 \x01(\fR\x10columnVisibility\x12\x1c\n" +
 	"\ttimestamp\x18\x05 \x01(\x03R\ttimestamp\x12\x14\n" +
-	"\x05value\x18\x06 \x01(\fR\x05value\":\n" +
+	"\x05value\x18\x06 \x01(\fR\x05value\"\x9e\x01\n" +
+	"\tVectorHit\x125\n" +
+	"\vscored_cell\x18\x01 \x01(\v2\x14.shoal.embed.v1.CellR\n" +
+	"scoredCell\x121\n" +
+	"\trow_cells\x18\x02 \x03(\v2\x14.shoal.embed.v1.CellR\browCells\x12'\n" +
+	"\x0fembedding_space\x18\x03 \x01(\tR\x0eembeddingSpace\"v\n" +
 	"\fScanResponse\x12*\n" +
-	"\x05cells\x18\x01 \x03(\v2\x14.shoal.embed.v1.CellR\x05cells\"$\n" +
+	"\x05cells\x18\x01 \x03(\v2\x14.shoal.embed.v1.CellR\x05cells\x12:\n" +
+	"\vvector_hits\x18\x02 \x03(\v2\x19.shoal.embed.v1.VectorHitR\n" +
+	"vectorHits\"$\n" +
 	"\fFlushRequest\x12\x14\n" +
 	"\x05table\x18\x01 \x01(\tR\x05table\"\x0f\n" +
 	"\rFlushResponse\"\xa3\x01\n" +
@@ -2304,7 +2506,11 @@ const file_proto_embed_proto_rawDesc = "" +
 	"\x0eMutationStatus\x12\x1f\n" +
 	"\x1bMUTATION_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18MUTATION_STATUS_ACCEPTED\x10\x01\x12\x1c\n" +
-	"\x18MUTATION_STATUS_REJECTED\x10\x022\xbc\x05\n" +
+	"\x18MUTATION_STATUS_REJECTED\x10\x02*\x85\x01\n" +
+	"\x14VectorProjectionMode\x12&\n" +
+	"\"VECTOR_PROJECTION_SCORED_CELL_ONLY\x10\x00\x12\x1e\n" +
+	"\x1aVECTOR_PROJECTION_FULL_ROW\x10\x01\x12%\n" +
+	"!VECTOR_PROJECTION_COLUMN_FAMILIES\x10\x022\x83\x06\n" +
 	"\n" +
 	"ShoalEmbed\x12V\n" +
 	"\vCreateTable\x12\".shoal.embed.v1.CreateTableRequest\x1a#.shoal.embed.v1.CreateTableResponse\x12X\n" +
@@ -2312,7 +2518,8 @@ const file_proto_embed_proto_rawDesc = "" +
 	"\x05Write\x12\x1c.shoal.embed.v1.WriteRequest\x1a\x1d.shoal.embed.v1.WriteResponse\x12O\n" +
 	"\x10ConditionalWrite\x12\x1c.shoal.embed.v1.WriteRequest\x1a\x1d.shoal.embed.v1.WriteResponse\x12C\n" +
 	"\x04Scan\x12\x1b.shoal.embed.v1.ScanRequest\x1a\x1c.shoal.embed.v1.ScanResponse0\x01\x12E\n" +
-	"\x06ScanV2\x12\x1b.shoal.embed.v1.ScanRequest\x1a\x1c.shoal.embed.v1.ScanResponse0\x01\x12D\n" +
+	"\x06ScanV2\x12\x1b.shoal.embed.v1.ScanRequest\x1a\x1c.shoal.embed.v1.ScanResponse0\x01\x12E\n" +
+	"\x06ScanV3\x12\x1b.shoal.embed.v1.ScanRequest\x1a\x1c.shoal.embed.v1.ScanResponse0\x01\x12D\n" +
 	"\x05Flush\x12\x1c.shoal.embed.v1.FlushRequest\x1a\x1d.shoal.embed.v1.FlushResponse\x12J\n" +
 	"\aCompact\x12\x1e.shoal.embed.v1.CompactRequest\x1a\x1f.shoal.embed.v1.CompactResponse\x12G\n" +
 	"\x06Status\x12\x1d.shoal.embed.v1.StatusRequest\x1a\x1e.shoal.embed.v1.StatusResponseB0Z.github.com/phrocker/shoal-oss/internal/embedpbb\x06proto3"
@@ -2329,84 +2536,94 @@ func file_proto_embed_proto_rawDescGZIP() []byte {
 	return file_proto_embed_proto_rawDescData
 }
 
-var file_proto_embed_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_proto_embed_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_proto_embed_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_proto_embed_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_proto_embed_proto_goTypes = []any{
 	(TableWorkload)(0),          // 0: shoal.embed.v1.TableWorkload
 	(TableFileFormat)(0),        // 1: shoal.embed.v1.TableFileFormat
 	(MutationStatus)(0),         // 2: shoal.embed.v1.MutationStatus
-	(*CreateTableRequest)(nil),  // 3: shoal.embed.v1.CreateTableRequest
-	(*CreateTableResponse)(nil), // 4: shoal.embed.v1.CreateTableResponse
-	(*Mutation)(nil),            // 5: shoal.embed.v1.Mutation
-	(*Entry)(nil),               // 6: shoal.embed.v1.Entry
-	(*Condition)(nil),           // 7: shoal.embed.v1.Condition
-	(*WriteRequest)(nil),        // 8: shoal.embed.v1.WriteRequest
-	(*MutationResult)(nil),      // 9: shoal.embed.v1.MutationResult
-	(*WriteResponse)(nil),       // 10: shoal.embed.v1.WriteResponse
-	(*ScanRequest)(nil),         // 11: shoal.embed.v1.ScanRequest
-	(*TermFilter)(nil),          // 12: shoal.embed.v1.TermFilter
-	(*NumericRange)(nil),        // 13: shoal.embed.v1.NumericRange
-	(*VectorSearch)(nil),        // 14: shoal.embed.v1.VectorSearch
-	(*ScoreFilter)(nil),         // 15: shoal.embed.v1.ScoreFilter
-	(*EdgeExpand)(nil),          // 16: shoal.embed.v1.EdgeExpand
-	(*EdgeWeight)(nil),          // 17: shoal.embed.v1.EdgeWeight
-	(*Cell)(nil),                // 18: shoal.embed.v1.Cell
-	(*ScanResponse)(nil),        // 19: shoal.embed.v1.ScanResponse
-	(*FlushRequest)(nil),        // 20: shoal.embed.v1.FlushRequest
-	(*FlushResponse)(nil),       // 21: shoal.embed.v1.FlushResponse
-	(*CompactRequest)(nil),      // 22: shoal.embed.v1.CompactRequest
-	(*CompactResponse)(nil),     // 23: shoal.embed.v1.CompactResponse
-	(*StatusRequest)(nil),       // 24: shoal.embed.v1.StatusRequest
-	(*TableStatus)(nil),         // 25: shoal.embed.v1.TableStatus
-	(*StatusResponse)(nil),      // 26: shoal.embed.v1.StatusResponse
+	(VectorProjectionMode)(0),   // 3: shoal.embed.v1.VectorProjectionMode
+	(*CreateTableRequest)(nil),  // 4: shoal.embed.v1.CreateTableRequest
+	(*CreateTableResponse)(nil), // 5: shoal.embed.v1.CreateTableResponse
+	(*Mutation)(nil),            // 6: shoal.embed.v1.Mutation
+	(*Entry)(nil),               // 7: shoal.embed.v1.Entry
+	(*Condition)(nil),           // 8: shoal.embed.v1.Condition
+	(*WriteRequest)(nil),        // 9: shoal.embed.v1.WriteRequest
+	(*MutationResult)(nil),      // 10: shoal.embed.v1.MutationResult
+	(*WriteResponse)(nil),       // 11: shoal.embed.v1.WriteResponse
+	(*ScanRequest)(nil),         // 12: shoal.embed.v1.ScanRequest
+	(*TermFilter)(nil),          // 13: shoal.embed.v1.TermFilter
+	(*NumericRange)(nil),        // 14: shoal.embed.v1.NumericRange
+	(*VectorSearch)(nil),        // 15: shoal.embed.v1.VectorSearch
+	(*VectorProjection)(nil),    // 16: shoal.embed.v1.VectorProjection
+	(*ScoreFilter)(nil),         // 17: shoal.embed.v1.ScoreFilter
+	(*EdgeExpand)(nil),          // 18: shoal.embed.v1.EdgeExpand
+	(*EdgeWeight)(nil),          // 19: shoal.embed.v1.EdgeWeight
+	(*Cell)(nil),                // 20: shoal.embed.v1.Cell
+	(*VectorHit)(nil),           // 21: shoal.embed.v1.VectorHit
+	(*ScanResponse)(nil),        // 22: shoal.embed.v1.ScanResponse
+	(*FlushRequest)(nil),        // 23: shoal.embed.v1.FlushRequest
+	(*FlushResponse)(nil),       // 24: shoal.embed.v1.FlushResponse
+	(*CompactRequest)(nil),      // 25: shoal.embed.v1.CompactRequest
+	(*CompactResponse)(nil),     // 26: shoal.embed.v1.CompactResponse
+	(*StatusRequest)(nil),       // 27: shoal.embed.v1.StatusRequest
+	(*TableStatus)(nil),         // 28: shoal.embed.v1.TableStatus
+	(*StatusResponse)(nil),      // 29: shoal.embed.v1.StatusResponse
 }
 var file_proto_embed_proto_depIdxs = []int32{
 	0,  // 0: shoal.embed.v1.CreateTableRequest.workload:type_name -> shoal.embed.v1.TableWorkload
 	1,  // 1: shoal.embed.v1.CreateTableRequest.file_format:type_name -> shoal.embed.v1.TableFileFormat
 	0,  // 2: shoal.embed.v1.CreateTableResponse.workload:type_name -> shoal.embed.v1.TableWorkload
 	1,  // 3: shoal.embed.v1.CreateTableResponse.file_format:type_name -> shoal.embed.v1.TableFileFormat
-	6,  // 4: shoal.embed.v1.Mutation.entries:type_name -> shoal.embed.v1.Entry
-	7,  // 5: shoal.embed.v1.Mutation.conditions:type_name -> shoal.embed.v1.Condition
-	5,  // 6: shoal.embed.v1.WriteRequest.mutations:type_name -> shoal.embed.v1.Mutation
+	7,  // 4: shoal.embed.v1.Mutation.entries:type_name -> shoal.embed.v1.Entry
+	8,  // 5: shoal.embed.v1.Mutation.conditions:type_name -> shoal.embed.v1.Condition
+	6,  // 6: shoal.embed.v1.WriteRequest.mutations:type_name -> shoal.embed.v1.Mutation
 	2,  // 7: shoal.embed.v1.MutationResult.status:type_name -> shoal.embed.v1.MutationStatus
-	9,  // 8: shoal.embed.v1.WriteResponse.results:type_name -> shoal.embed.v1.MutationResult
-	12, // 9: shoal.embed.v1.ScanRequest.term_filter:type_name -> shoal.embed.v1.TermFilter
-	14, // 10: shoal.embed.v1.ScanRequest.vector_search:type_name -> shoal.embed.v1.VectorSearch
-	16, // 11: shoal.embed.v1.ScanRequest.edge_expand:type_name -> shoal.embed.v1.EdgeExpand
-	15, // 12: shoal.embed.v1.ScanRequest.score_filter:type_name -> shoal.embed.v1.ScoreFilter
-	13, // 13: shoal.embed.v1.TermFilter.numeric_range:type_name -> shoal.embed.v1.NumericRange
-	17, // 14: shoal.embed.v1.EdgeExpand.edge_weights:type_name -> shoal.embed.v1.EdgeWeight
-	18, // 15: shoal.embed.v1.ScanResponse.cells:type_name -> shoal.embed.v1.Cell
-	0,  // 16: shoal.embed.v1.CompactRequest.workload:type_name -> shoal.embed.v1.TableWorkload
-	1,  // 17: shoal.embed.v1.CompactRequest.file_format:type_name -> shoal.embed.v1.TableFileFormat
-	0,  // 18: shoal.embed.v1.CompactResponse.workload:type_name -> shoal.embed.v1.TableWorkload
-	1,  // 19: shoal.embed.v1.CompactResponse.file_format:type_name -> shoal.embed.v1.TableFileFormat
-	0,  // 20: shoal.embed.v1.TableStatus.workload:type_name -> shoal.embed.v1.TableWorkload
-	1,  // 21: shoal.embed.v1.TableStatus.file_format:type_name -> shoal.embed.v1.TableFileFormat
-	25, // 22: shoal.embed.v1.StatusResponse.table_statuses:type_name -> shoal.embed.v1.TableStatus
-	3,  // 23: shoal.embed.v1.ShoalEmbed.CreateTable:input_type -> shoal.embed.v1.CreateTableRequest
-	3,  // 24: shoal.embed.v1.ShoalEmbed.CreateTableV2:input_type -> shoal.embed.v1.CreateTableRequest
-	8,  // 25: shoal.embed.v1.ShoalEmbed.Write:input_type -> shoal.embed.v1.WriteRequest
-	8,  // 26: shoal.embed.v1.ShoalEmbed.ConditionalWrite:input_type -> shoal.embed.v1.WriteRequest
-	11, // 27: shoal.embed.v1.ShoalEmbed.Scan:input_type -> shoal.embed.v1.ScanRequest
-	11, // 28: shoal.embed.v1.ShoalEmbed.ScanV2:input_type -> shoal.embed.v1.ScanRequest
-	20, // 29: shoal.embed.v1.ShoalEmbed.Flush:input_type -> shoal.embed.v1.FlushRequest
-	22, // 30: shoal.embed.v1.ShoalEmbed.Compact:input_type -> shoal.embed.v1.CompactRequest
-	24, // 31: shoal.embed.v1.ShoalEmbed.Status:input_type -> shoal.embed.v1.StatusRequest
-	4,  // 32: shoal.embed.v1.ShoalEmbed.CreateTable:output_type -> shoal.embed.v1.CreateTableResponse
-	4,  // 33: shoal.embed.v1.ShoalEmbed.CreateTableV2:output_type -> shoal.embed.v1.CreateTableResponse
-	10, // 34: shoal.embed.v1.ShoalEmbed.Write:output_type -> shoal.embed.v1.WriteResponse
-	10, // 35: shoal.embed.v1.ShoalEmbed.ConditionalWrite:output_type -> shoal.embed.v1.WriteResponse
-	19, // 36: shoal.embed.v1.ShoalEmbed.Scan:output_type -> shoal.embed.v1.ScanResponse
-	19, // 37: shoal.embed.v1.ShoalEmbed.ScanV2:output_type -> shoal.embed.v1.ScanResponse
-	21, // 38: shoal.embed.v1.ShoalEmbed.Flush:output_type -> shoal.embed.v1.FlushResponse
-	23, // 39: shoal.embed.v1.ShoalEmbed.Compact:output_type -> shoal.embed.v1.CompactResponse
-	26, // 40: shoal.embed.v1.ShoalEmbed.Status:output_type -> shoal.embed.v1.StatusResponse
-	32, // [32:41] is the sub-list for method output_type
-	23, // [23:32] is the sub-list for method input_type
-	23, // [23:23] is the sub-list for extension type_name
-	23, // [23:23] is the sub-list for extension extendee
-	0,  // [0:23] is the sub-list for field type_name
+	10, // 8: shoal.embed.v1.WriteResponse.results:type_name -> shoal.embed.v1.MutationResult
+	13, // 9: shoal.embed.v1.ScanRequest.term_filter:type_name -> shoal.embed.v1.TermFilter
+	15, // 10: shoal.embed.v1.ScanRequest.vector_search:type_name -> shoal.embed.v1.VectorSearch
+	18, // 11: shoal.embed.v1.ScanRequest.edge_expand:type_name -> shoal.embed.v1.EdgeExpand
+	17, // 12: shoal.embed.v1.ScanRequest.score_filter:type_name -> shoal.embed.v1.ScoreFilter
+	14, // 13: shoal.embed.v1.TermFilter.numeric_range:type_name -> shoal.embed.v1.NumericRange
+	16, // 14: shoal.embed.v1.VectorSearch.projection:type_name -> shoal.embed.v1.VectorProjection
+	3,  // 15: shoal.embed.v1.VectorProjection.mode:type_name -> shoal.embed.v1.VectorProjectionMode
+	19, // 16: shoal.embed.v1.EdgeExpand.edge_weights:type_name -> shoal.embed.v1.EdgeWeight
+	20, // 17: shoal.embed.v1.VectorHit.scored_cell:type_name -> shoal.embed.v1.Cell
+	20, // 18: shoal.embed.v1.VectorHit.row_cells:type_name -> shoal.embed.v1.Cell
+	20, // 19: shoal.embed.v1.ScanResponse.cells:type_name -> shoal.embed.v1.Cell
+	21, // 20: shoal.embed.v1.ScanResponse.vector_hits:type_name -> shoal.embed.v1.VectorHit
+	0,  // 21: shoal.embed.v1.CompactRequest.workload:type_name -> shoal.embed.v1.TableWorkload
+	1,  // 22: shoal.embed.v1.CompactRequest.file_format:type_name -> shoal.embed.v1.TableFileFormat
+	0,  // 23: shoal.embed.v1.CompactResponse.workload:type_name -> shoal.embed.v1.TableWorkload
+	1,  // 24: shoal.embed.v1.CompactResponse.file_format:type_name -> shoal.embed.v1.TableFileFormat
+	0,  // 25: shoal.embed.v1.TableStatus.workload:type_name -> shoal.embed.v1.TableWorkload
+	1,  // 26: shoal.embed.v1.TableStatus.file_format:type_name -> shoal.embed.v1.TableFileFormat
+	28, // 27: shoal.embed.v1.StatusResponse.table_statuses:type_name -> shoal.embed.v1.TableStatus
+	4,  // 28: shoal.embed.v1.ShoalEmbed.CreateTable:input_type -> shoal.embed.v1.CreateTableRequest
+	4,  // 29: shoal.embed.v1.ShoalEmbed.CreateTableV2:input_type -> shoal.embed.v1.CreateTableRequest
+	9,  // 30: shoal.embed.v1.ShoalEmbed.Write:input_type -> shoal.embed.v1.WriteRequest
+	9,  // 31: shoal.embed.v1.ShoalEmbed.ConditionalWrite:input_type -> shoal.embed.v1.WriteRequest
+	12, // 32: shoal.embed.v1.ShoalEmbed.Scan:input_type -> shoal.embed.v1.ScanRequest
+	12, // 33: shoal.embed.v1.ShoalEmbed.ScanV2:input_type -> shoal.embed.v1.ScanRequest
+	12, // 34: shoal.embed.v1.ShoalEmbed.ScanV3:input_type -> shoal.embed.v1.ScanRequest
+	23, // 35: shoal.embed.v1.ShoalEmbed.Flush:input_type -> shoal.embed.v1.FlushRequest
+	25, // 36: shoal.embed.v1.ShoalEmbed.Compact:input_type -> shoal.embed.v1.CompactRequest
+	27, // 37: shoal.embed.v1.ShoalEmbed.Status:input_type -> shoal.embed.v1.StatusRequest
+	5,  // 38: shoal.embed.v1.ShoalEmbed.CreateTable:output_type -> shoal.embed.v1.CreateTableResponse
+	5,  // 39: shoal.embed.v1.ShoalEmbed.CreateTableV2:output_type -> shoal.embed.v1.CreateTableResponse
+	11, // 40: shoal.embed.v1.ShoalEmbed.Write:output_type -> shoal.embed.v1.WriteResponse
+	11, // 41: shoal.embed.v1.ShoalEmbed.ConditionalWrite:output_type -> shoal.embed.v1.WriteResponse
+	22, // 42: shoal.embed.v1.ShoalEmbed.Scan:output_type -> shoal.embed.v1.ScanResponse
+	22, // 43: shoal.embed.v1.ShoalEmbed.ScanV2:output_type -> shoal.embed.v1.ScanResponse
+	22, // 44: shoal.embed.v1.ShoalEmbed.ScanV3:output_type -> shoal.embed.v1.ScanResponse
+	24, // 45: shoal.embed.v1.ShoalEmbed.Flush:output_type -> shoal.embed.v1.FlushResponse
+	26, // 46: shoal.embed.v1.ShoalEmbed.Compact:output_type -> shoal.embed.v1.CompactResponse
+	29, // 47: shoal.embed.v1.ShoalEmbed.Status:output_type -> shoal.embed.v1.StatusResponse
+	38, // [38:48] is the sub-list for method output_type
+	28, // [28:38] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_proto_embed_proto_init() }
@@ -2423,8 +2640,8 @@ func file_proto_embed_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_embed_proto_rawDesc), len(file_proto_embed_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   24,
+			NumEnums:      4,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

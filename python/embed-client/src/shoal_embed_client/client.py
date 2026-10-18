@@ -120,6 +120,8 @@ class EmbedClient:
         )
 
     def scan(self, request: embed_pb2.ScanRequest, **rpc_options):
+        if request.HasField("vector_search") and request.vector_search.HasField("projection"):
+            return self.scan_v3(request, **rpc_options)
         if (request.HasField("term_filter") or request.HasField("vector_search") or
                 request.HasField("edge_expand") or request.HasField("score_filter") or
                 request.as_of):
@@ -127,10 +129,24 @@ class EmbedClient:
         return self._stream("Scan", request, (), **rpc_options)
 
     def scan_v2(self, request: embed_pb2.ScanRequest, **rpc_options):
+        if request.HasField("vector_search") and request.vector_search.HasField("projection"):
+            return self.scan_v3(request, **rpc_options)
         features = ["rpc.scan_v2"]
         if request.HasField("vector_search"):
             features.extend(("safety.scan_v2.vector_identity", "safety.scan_v2.vector_search"))
+            if request.as_of:
+                features.append("safety.scan_v2.vector_as_of")
         return self._stream("ScanV2", request, tuple(features), **rpc_options)
+
+    def scan_v3(self, request: embed_pb2.ScanRequest, **rpc_options):
+        features = ["rpc.scan_v3"]
+        if request.HasField("vector_search"):
+            features.extend(("safety.scan_v2.vector_identity", "safety.scan_v2.vector_search"))
+            if request.as_of:
+                features.append("safety.scan_v2.vector_as_of")
+            if request.vector_search.HasField("projection"):
+                features.append("safety.scan_v3.projection")
+        return self._stream("ScanV3", request, tuple(features), **rpc_options)
 
     def flush(self, request: embed_pb2.FlushRequest, **rpc_options):
         return self._unary("Flush", request, (), **rpc_options)

@@ -348,6 +348,19 @@ func (s *embedServer) ScanV2(
 	req *embedpb.ScanRequest,
 	stream embedpb.ShoalEmbed_ScanV2Server,
 ) error {
+	if req.VectorSearch != nil && req.VectorSearch.Projection != nil {
+		return status.Error(codes.FailedPrecondition, "vector projection requires ScanV3")
+	}
+	return s.scan(req, stream)
+}
+
+func (s *embedServer) ScanV3(
+	req *embedpb.ScanRequest,
+	stream embedpb.ShoalEmbed_ScanV3Server,
+) error {
+	if req.VectorSearch != nil && req.VectorSearch.Projection != nil {
+		return s.scanProjectedVector(req, stream)
+	}
 	return s.scan(req, stream)
 }
 

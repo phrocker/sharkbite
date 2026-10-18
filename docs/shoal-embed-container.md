@@ -57,6 +57,13 @@ feature as unsupported. Older servers return the original two Status fields,
 so this rule makes mixed-version clients fail closed. Older protobuf clients
 can still read the table fields and ignore the new fields.
 
+Opt-in vector projection uses `ScanV3` and additionally requires
+`rpc.scan_v3` and `safety.scan_v3.projection`. It returns explicit
+`vector_hits` envelopes with the scored embedding cell, original row cells,
+and embedding-space identity. Leaving projection unset preserves the old
+`ScanV2` scored-cell response. The Python client handles this negotiation;
+other generated clients must route projection requests to `ScanV3`.
+
 For a vector request, a client using stubs generated from this proto can
 preflight with a useful error:
 
