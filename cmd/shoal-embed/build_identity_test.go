@@ -46,6 +46,7 @@ func TestEmbedStatusBuildIdentityAndCapabilities(t *testing.T) {
 		!slices.Contains(got.Features, "rpc.scan_v2") ||
 		!slices.Contains(got.Features, "rpc.scan_v3") ||
 		!slices.Contains(got.Features, "safety.scan_v2.vector_identity") ||
+		!slices.Contains(got.Features, "safety.scan_v2.vector_as_of") ||
 		!slices.Contains(got.Features, "safety.scan_v2.vector_search") ||
 		!slices.Contains(got.Features, "safety.scan_v3.projection") ||
 		!slices.Contains(got.Features, "rpc.conditional_write") ||

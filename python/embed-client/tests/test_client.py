@@ -19,6 +19,7 @@ FEATURES = (
     "safety.conditional_write.conditions",
     "safety.create_table_v2.default_embedding",
     "safety.scan_v2.vector_identity", "safety.scan_v2.vector_search",
+    "safety.scan_v2.vector_as_of",
     "safety.scan_v3.projection",
 )
 
@@ -236,6 +237,15 @@ class ClientTest(unittest.TestCase):
         self.server.features = tuple(f for f in FEATURES if f != "rpc.scan_v3")
         with self.assertRaisesRegex(IncompatibleServer, "rpc.scan_v3"):
             self.client.scan(request)
+
+    def test_vector_as_of_requires_new_capability_on_mixed_versions(self):
+        self.server.features = tuple(f for f in FEATURES if f != "safety.scan_v2.vector_as_of")
+        request = pb.ScanRequest(table="graph", as_of=15, vector_search=pb.VectorSearch(query=b"1234"))
+        with self.assertRaisesRegex(IncompatibleServer, "safety.scan_v2.vector_as_of"):
+            self.client.scan(request)
+        self.assertNotIn("ScanV2", self.server.calls)
+        request.as_of = 0
+        self.assertEqual(len(list(self.client.scan(request))), 1)
 
     def test_individual_missing_safety_feature_refuses_effect(self):
         self.server.features = tuple(

@@ -47,6 +47,7 @@ var embedFeatures = []string{
 	"safety.conditional_write.conditions",
 	"safety.create_table_v2.default_embedding",
 	"safety.scan_v2.vector_identity",
+	"safety.scan_v2.vector_as_of",
 	"safety.scan_v2.vector_search",
 	"safety.scan_v3.projection",
 }

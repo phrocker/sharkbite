@@ -42,6 +42,8 @@ An operation's `timeout` covers both the Status preflight and the requested RPC.
 
 For vector search, the client requires `rpc.scan_v2`,
 `safety.scan_v2.vector_identity`, and `safety.scan_v2.vector_search`. For
+vector search with `as_of`, it also requires `safety.scan_v2.vector_as_of` so
+an older replica cannot silently ignore the time bound. For
 conditional writes it requires `rpc.conditional_write` and
 `safety.conditional_write.conditions`; for an embedded table default it
 requires `rpc.create_table_v2` and

@@ -154,6 +154,61 @@ func TestVectorProjectionWireModesAndAsOf(t *testing.T) {
 	}
 }
 
+func TestVectorProjectionSplitTableAndDeletedEmbedding(t *testing.T) {
+	h := startTestServe(t)
+	conn, err := grpc.NewClient(h.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+	client := embedpb.NewShoalEmbedClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	const identity = "test:model:v1:1:normalized"
+	if _, err := client.CreateTableV2(ctx, &embedpb.CreateTableRequest{
+		Table: "split_vectors", Splits: []string{"m"},
+		DefaultEmbedding: "has_embeddings:" + identity,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Write(ctx, &embedpb.WriteRequest{
+		Table: "split_vectors", Mutations: []*embedpb.Mutation{
+			{Row: []byte("a"), Entries: []*embedpb.Entry{
+				{ColumnFamily: []byte("vec"), Timestamp: 10, Value: agentmem.PackVector([]float32{1})},
+				{ColumnFamily: []byte("vec"), Timestamp: 30, Delete: true},
+			}},
+			{Row: []byte("z"), Entries: []*embedpb.Entry{
+				{ColumnFamily: []byte("vec"), Timestamp: 10, Value: agentmem.PackVector([]float32{0.5})},
+				{ColumnFamily: []byte("meta"), Timestamp: 10, Value: []byte("right tablet")},
+			}},
+		},
+	}); err != nil {
+		t.Fatal(err)
+	}
+	request := &embedpb.ScanRequest{Table: "split_vectors", VectorSearch: &embedpb.VectorSearch{
+		Query: agentmem.PackVector([]float32{1}), Metric: "dot", TopK: 2,
+		EmbeddingCf: []byte("vec"), EmbeddingSpace: identity,
+		Projection: &embedpb.VectorProjection{Mode: embedpb.VectorProjectionMode_VECTOR_PROJECTION_FULL_ROW},
+	}}
+	stream, err := client.ScanV3(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hits := collectProjected(t, stream)
+	if len(hits) != 1 || string(hits[0].ScoredCell.Row) != "z" || len(hits[0].RowCells) != 2 {
+		t.Fatalf("split/deleted projection = %+v, want live z row", hits)
+	}
+	request.AsOf = 15
+	stream, err = client.ScanV3(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hits = collectProjected(t, stream)
+	if len(hits) != 2 || string(hits[0].ScoredCell.Row) != "a" || len(hits[0].RowCells) != 1 {
+		t.Fatalf("as-of projection = %+v, want pre-delete a row", hits)
+	}
+}
+
 func TestVectorProjectionDuplicateRowsAndBounds(t *testing.T) {
 	h := startTestServe(t)
 	conn, err := grpc.NewClient(h.GRPCAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))

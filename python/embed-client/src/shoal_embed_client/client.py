@@ -134,12 +134,16 @@ class EmbedClient:
         features = ["rpc.scan_v2"]
         if request.HasField("vector_search"):
             features.extend(("safety.scan_v2.vector_identity", "safety.scan_v2.vector_search"))
+            if request.as_of:
+                features.append("safety.scan_v2.vector_as_of")
         return self._stream("ScanV2", request, tuple(features), **rpc_options)
 
     def scan_v3(self, request: embed_pb2.ScanRequest, **rpc_options):
         features = ["rpc.scan_v3"]
         if request.HasField("vector_search"):
             features.extend(("safety.scan_v2.vector_identity", "safety.scan_v2.vector_search"))
+            if request.as_of:
+                features.append("safety.scan_v2.vector_as_of")
             if request.vector_search.HasField("projection"):
                 features.append("safety.scan_v3.projection")
         return self._stream("ScanV3", request, tuple(features), **rpc_options)
