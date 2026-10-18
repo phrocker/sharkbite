@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==77.0.3", "wheel==0.46.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shoal-embed-client"
+version = "1.4.4"
+description = "Versioned Python gRPC client for Sharkbite ShoalEmbed"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Sharkbite contributors"}]
+dependencies = [
+  "grpcio>=1.74.0,<2",
+  "protobuf>=6.31.1,<7",
+]
+
+[project.urls]
+Homepage = "https://github.com/phrocker/sharkbite"
+Issues = "https://github.com/phrocker/sharkbite/issues"
+Source = "https://github.com/phrocker/sharkbite"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+shoal_embed_client = ["py.typed", "_proto/embed.proto"]

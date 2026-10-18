@@ -23,8 +23,15 @@ arguments after the image name to override the default command.
 
 ## gRPC clients and the protocol definition
 
-Non-Go consumers only need the version-matched `embed.proto`. It is included
-in every image at `/usr/share/shoal/proto/embed.proto`:
+Python consumers can install the separate `shoal-embed-client` wheel at the
+same release version as the server image. Its `EmbedClient` checks the server's
+protocol and required capabilities before a request; see
+[`python/embed-client/README.md`](../python/embed-client/README.md) for the
+compatibility matrix and authenticated TLS example.
+
+Other non-Go consumers can generate their own bindings from the
+version-matched `embed.proto`. It is included in every image at
+`/usr/share/shoal/proto/embed.proto`:
 
 ```bash
 id=$(docker create ghcr.io/phrocker/sharkbite/shoal-embed:1.2.3)
