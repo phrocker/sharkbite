@@ -435,4 +435,16 @@ message TableStatus {
 message StatusResponse {
   repeated string tables = 1;
   repeated TableStatus table_statuses = 2;
+  // Empty on older servers. Clients requiring a feature must treat an absent
+  // feature as unsupported, including when this entire field is absent.
+  string build_version = 3;
+  string build_commit = 4;
+  // RFC 3339 timestamp of the source commit, when VCS build metadata exists.
+  string source_date = 5;
+  // "true", "false", or "unknown" when VCS state was not available.
+  string source_modified = 6;
+  string protocol_version = 7;
+  // Sorted, exact capability identifiers. Unknown identifiers can be ignored;
+  // a client must require the identifiers it needs before using a feature.
+  repeated string features = 8;
 }

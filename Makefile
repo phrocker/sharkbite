@@ -30,6 +30,7 @@ EFFECTS_SSH_IMAGE     ?= shoal-effects-ssh:dev
 VERSION               ?= dev
 REVISION              ?= $(shell git rev-parse HEAD)
 CREATED               ?= $(shell git show -s --format=%cI HEAD)
+SOURCE_DATE           ?= $(shell git show -s --format=%cI HEAD)
 
 GOOS := $(shell go env GOOS)
 ifeq ($(GOOS),windows)
@@ -218,12 +219,13 @@ container-build:
 	  --build-arg VERSION=$(VERSION) \
 	  --build-arg REVISION=$(REVISION) \
 	  --build-arg CREATED=$(CREATED) \
+	  --build-arg SOURCE_DATE=$(SOURCE_DATE) \
 	  --tag $(IMAGE) \
 	  .
 
 .PHONY: container-smoke
 container-smoke:
-	IMAGE=$(IMAGE) VERSION=$(VERSION) REVISION=$(REVISION) CREATED=$(CREATED) \
+	IMAGE=$(IMAGE) VERSION=$(VERSION) REVISION=$(REVISION) CREATED=$(CREATED) SOURCE_DATE=$(SOURCE_DATE) \
 	  bash test/container/shoal-embed-smoke.sh
 
 # The effects gateway image (#391), which the chart's effectsGateways entries run.
