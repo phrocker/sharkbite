@@ -102,10 +102,11 @@ func NewClient(c Config) (*Client, error) {
 type ErrorKind string
 
 const (
-	// KindNotFound (404): on claim, re-pull — the loser of a claim race is
-	// told not-found deliberately, to avoid an existence oracle.
+	// KindNotFound (404): on claim, re-pull. An absent or concealed action is
+	// answered the same way, so the route does not disclose its existence.
 	KindNotFound ErrorKind = "not_found"
-	// KindConflict (409): the version or claim moved.
+	// KindConflict (409): the version or claim moved. An authorized worker
+	// losing a claim race against an action it could observe must re-pull.
 	KindConflict ErrorKind = "conflict"
 	// KindIndeterminate: the mutation may have committed (503 with
 	// Shoal-Commit-Outcome: indeterminate, or a resend that could not confirm
