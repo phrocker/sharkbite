@@ -62,6 +62,7 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
            commit: str, go_version: str, runner_image: str, run_id: str,
            run_attempt: str,
            manifest: Path) -> bool:
+    started: Counter[tuple[str, str]] = Counter()
     passed: Counter[tuple[str, str]] = Counter()
     failed: Counter[tuple[str, str]] = Counter()
     parse_errors = 0
@@ -79,7 +80,9 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
         if not isinstance(name, str) or not isinstance(package, str):
             continue
         key = (package, name)
-        if event.get("Action") == "pass":
+        if event.get("Action") == "run":
+            started[key] += 1
+        elif event.get("Action") == "pass":
             passed[key] += 1
         elif event.get("Action") == "fail":
             failed[key] += 1
@@ -88,10 +91,10 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
     good = exit_code == 0 and parse_errors == 0
     for case in CASES:
         key = ("github.com/phrocker/shoal-oss/" + case["package"], case["test"])
-        pass_count, fail_count = passed[key], failed[key]
-        case_good = pass_count == repeats and fail_count == 0
+        run_count, pass_count, fail_count = started[key], passed[key], failed[key]
+        case_good = run_count == repeats and pass_count == repeats and fail_count == 0
         good = good and case_good
-        observations.append({**case, "passes": pass_count, "failures": fail_count,
+        observations.append({**case, "runs": run_count, "passes": pass_count, "failures": fail_count,
                              "outcome": "pass" if case_good else "fail"})
 
     result = {

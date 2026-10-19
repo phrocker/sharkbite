@@ -19,10 +19,10 @@ class EvidenceTest(unittest.TestCase):
             manifest = root / "manifest.json"
             stderr.write_text("", encoding="utf-8")
             lines = [json.dumps({
-                "Action": "pass",
+                "Action": action,
                 "Package": "github.com/phrocker/shoal-oss/" + case["package"],
                 "Test": case["test"],
-            }) for case in evidence.CASES]
+            }) for case in evidence.CASES for action in ("run", "pass")]
 
             events.write_text("\n".join(lines) + "\n", encoding="utf-8")
             self.assertTrue(self.verify(events, stderr, manifest))
@@ -35,6 +35,10 @@ class EvidenceTest(unittest.TestCase):
             events.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
             self.assertFalse(self.verify(events, stderr, manifest))
             self.assertEqual(json.loads(manifest.read_text())["observed_outcome"], "fail")
+
+            events.write_text("\n".join(lines[1::2]) + "\n", encoding="utf-8")
+            self.assertFalse(self.verify(events, stderr, manifest))
+            self.assertEqual(json.loads(manifest.read_text())["cases"][0]["runs"], 0)
 
             events.write_text("\n".join(lines) + "\n{truncated\n", encoding="utf-8")
             self.assertFalse(self.verify(events, stderr, manifest))
