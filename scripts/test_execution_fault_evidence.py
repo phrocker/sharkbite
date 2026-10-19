@@ -81,6 +81,13 @@ class EvidenceTest(unittest.TestCase):
                 "Output": "gateway_claim_child_mode=container\n",
             })
             events.write_text(line + "\n" + marker + "\n", encoding="utf-8")
+            self.assertFalse(evidence.verify(*args, suite="container", image_ref=image))
+            start = json.dumps({
+                "Action": "run",
+                "Package": "github.com/phrocker/shoal-oss/" + case["package"],
+                "Test": case["test"],
+            })
+            events.write_text(start + "\n" + marker + "\n" + line + "\n", encoding="utf-8")
             self.assertTrue(evidence.verify(*args, suite="container", image_ref=image))
             result = json.loads(manifest.read_text())
             self.assertEqual(result["deployment_mode"], "standalone_two_gateway_containers")
