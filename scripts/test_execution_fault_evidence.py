@@ -27,6 +27,10 @@ class EvidenceTest(unittest.TestCase):
             events.write_text("\n".join(lines) + "\n", encoding="utf-8")
             self.assertTrue(self.verify(events, stderr, manifest))
             self.assertEqual(json.loads(manifest.read_text())["observed_outcome"], "pass")
+            self.assertEqual(
+                json.loads(manifest.read_text())["seed_scope"],
+                "Go test shuffle; concurrent process scheduling is nondeterministic",
+            )
 
             events.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
             self.assertFalse(self.verify(events, stderr, manifest))
