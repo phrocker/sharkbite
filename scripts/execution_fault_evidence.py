@@ -132,6 +132,8 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
         "runner_image": runner_image,
         "image_digests": ({"gateway_test_runtime": "sha256:" + image_match.group(1)}
                           if suite == "container" and image_match else {}),
+        "image_verified": (None if suite == "standalone"
+                           else image_match is not None and image_verified),
         "expected_invariant": "every selected case passes exactly the requested repeat count",
         "observed_outcome": "pass" if good else "fail",
         "go_exit_code": exit_code,

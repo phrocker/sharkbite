@@ -77,12 +77,14 @@ class EvidenceTest(unittest.TestCase):
             result = json.loads(manifest.read_text())
             self.assertEqual(result["deployment_mode"], "standalone_two_gateway_containers")
             self.assertEqual(result["image_digests"], {"gateway_test_runtime": "sha256:" + "a" * 64})
+            self.assertTrue(result["image_verified"])
             self.assertEqual(set(result["artifact_sha256"]), {
                 "events.jsonl", "stderr.log", "image-pull.log", "image-digest.txt",
                 "image-pull-exit.txt", "exit-code.txt",
             })
             (root / "image-digest.txt").write_text("wrong\n", encoding="utf-8")
             self.assertFalse(evidence.verify(*args, suite="container", image_ref=image))
+            self.assertFalse(json.loads(manifest.read_text())["image_verified"])
             (root / "image-digest.txt").write_text(image + "\n", encoding="utf-8")
             self.assertFalse(evidence.verify(events, stderr, 0, 2, 1729341212,
                                              "a" * 40, "go1.25.0", "local-runner",
