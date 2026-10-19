@@ -40,6 +40,9 @@ jobs:
           go-version-file: go.mod
           cache: true
 
+      - name: Validate pinned Accumulo conformance harness
+        run: make test-accumulo-static
+
       - name: Install Apache Thrift 0.24.0
         run: |
           sudo apt-get update
