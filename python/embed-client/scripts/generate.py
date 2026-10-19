@@ -21,7 +21,7 @@ from google.protobuf import descriptor_pb2
 ROOT = Path(__file__).resolve().parents[3]
 PACKAGE = ROOT / "python/embed-client/src/shoal_embed_client"
 PROTO = ROOT / "proto/embed.proto"
-PINNED = {"grpcio-tools": "1.74.0", "grpcio": "1.74.0", "protobuf": "6.31.1"}
+PINNED = {"grpcio-tools": "1.74.0", "grpcio": "1.74.0", "protobuf": "6.33.5"}
 
 
 def generate(check: bool) -> None:

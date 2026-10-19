@@ -16,7 +16,7 @@ from shoal_embed_client import EmbedClient, PROTOCOL_VERSION, __version__, embed
 
 `__version__` follows the Sharkbite release tag (`1.4.4` for this source
 version); `PROTOCOL_VERSION` is `shoal.embed.v1`. The wheel declares
-`grpcio>=1.74.0,<2` and `protobuf>=6.31.1,<7` as runtime dependencies.
+`grpcio>=1.74.0,<2` and `protobuf>=6.33.5,<7` as runtime dependencies.
 Generated modules are also available as `embed_pb2` and `embed_pb2_grpc`, but
 direct use of their raw stub skips the negotiation safeguards below.
 
