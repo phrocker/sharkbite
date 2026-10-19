@@ -68,6 +68,7 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
     started: Counter[tuple[str, str]] = Counter()
     passed: Counter[tuple[str, str]] = Counter()
     failed: Counter[tuple[str, str]] = Counter()
+    container_modes: Counter[tuple[str, str]] = Counter()
     parse_errors = 0
     for line in events.read_text(encoding="utf-8", errors="replace").splitlines():
         try:
@@ -89,6 +90,10 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
             passed[key] += 1
         elif event.get("Action") == "fail":
             failed[key] += 1
+        elif (event.get("Action") == "output" and
+              isinstance(event.get("Output"), str) and
+              "gateway_claim_child_mode=container" in event["Output"]):
+            container_modes[key] += 1
 
     observations = []
     image_match = IMAGE_REF.fullmatch(image_ref)
@@ -112,9 +117,12 @@ def verify(events: Path, stderr: Path, exit_code: int, repeats: int, seed: int,
     for case in SUITES[suite]:
         key = ("github.com/phrocker/shoal-oss/" + case["package"], case["test"])
         run_count, pass_count, fail_count = started[key], passed[key], failed[key]
-        case_good = run_count == repeats and pass_count == repeats and fail_count == 0
+        mode_count = container_modes[key]
+        case_good = (run_count == repeats and pass_count == repeats and fail_count == 0 and
+                     (suite != "container" or mode_count == repeats))
         good = good and case_good
-        observations.append({**case, "runs": run_count, "passes": pass_count, "failures": fail_count,
+        observations.append({**case, "runs": run_count, "passes": pass_count,
+                             "failures": fail_count, "container_mode_markers": mode_count,
                              "outcome": "pass" if case_good else "fail"})
 
     result = {

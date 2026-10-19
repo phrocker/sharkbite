@@ -91,7 +91,10 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 	containerImage := os.Getenv("SHOAL_TEST_GATEWAY_CONTAINER_IMAGE")
 	childTimeout := 10 * time.Second
 	if containerImage != "" {
+		t.Log("gateway_claim_child_mode=container")
 		childTimeout = 45 * time.Second
+	} else {
+		t.Log("gateway_claim_child_mode=host")
 	}
 	childCtx, cancelChildren := context.WithTimeout(ctx, childTimeout)
 	defer cancelChildren()

@@ -73,11 +73,20 @@ class EvidenceTest(unittest.TestCase):
             (root / "image-digest.txt").write_text(image + "\n", encoding="utf-8")
             (root / "image-pull-exit.txt").write_text("0\n", encoding="utf-8")
             (root / "exit-code.txt").write_text("0\n", encoding="utf-8")
+            self.assertFalse(evidence.verify(*args, suite="container", image_ref=image))
+            marker = json.dumps({
+                "Action": "output",
+                "Package": "github.com/phrocker/shoal-oss/" + case["package"],
+                "Test": case["test"],
+                "Output": "gateway_claim_child_mode=container\n",
+            })
+            events.write_text(line + "\n" + marker + "\n", encoding="utf-8")
             self.assertTrue(evidence.verify(*args, suite="container", image_ref=image))
             result = json.loads(manifest.read_text())
             self.assertEqual(result["deployment_mode"], "standalone_two_gateway_containers")
             self.assertEqual(result["image_digests"], {"gateway_test_runtime": "sha256:" + "a" * 64})
             self.assertTrue(result["image_verified"])
+            self.assertEqual(result["cases"][0]["container_mode_markers"], 1)
             self.assertEqual(set(result["artifact_sha256"]), {
                 "events.jsonl", "stderr.log", "image-pull.log", "image-digest.txt",
                 "image-pull-exit.txt", "exit-code.txt",
