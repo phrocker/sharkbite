@@ -13,6 +13,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -31,8 +32,10 @@ type processClaimResult struct {
 }
 
 // TestDispatchGatewayClaimAcrossProcesses exercises the worker-facing API
-// from two independent processes. Only the server holds the embedded-primary
-// directory lock; gateway replicas share its durable action record over HTTP.
+// from two independent processes. With SHOAL_TEST_GATEWAY_CONTAINER_IMAGE set,
+// those processes run in separate containers against the same host HTTP server.
+// Only the server holds the embedded-primary directory lock; gateway replicas
+// share its durable action record over HTTP. This does not model two servers.
 func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
 	runtime := openFleetDispatchRuntime(t, t.TempDir())
@@ -85,7 +88,12 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 		handler.ServeHTTP(w, r.WithContext(bound))
 	}))
 	defer server.Close()
-	childCtx, cancelChildren := context.WithTimeout(ctx, 10*time.Second)
+	containerImage := os.Getenv("SHOAL_TEST_GATEWAY_CONTAINER_IMAGE")
+	childTimeout := 10 * time.Second
+	if containerImage != "" {
+		childTimeout = 45 * time.Second
+	}
+	childCtx, cancelChildren := context.WithTimeout(ctx, childTimeout)
 	defer cancelChildren()
 
 	type outcome struct {
@@ -93,16 +101,39 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 		err    error
 	}
 	results := make(chan outcome, 2)
+	var testBinary string
+	if containerImage != "" {
+		testBinary, err = filepath.Abs(os.Args[0])
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 	for _, id := range []string{"gateway-a", "gateway-b"} {
 		id := id
 		go func() {
-			child := exec.CommandContext(childCtx, os.Args[0], "-test.run=^TestDispatchGatewayClaimChild$")
-			child.Env = append(os.Environ(),
+			childEnv := []string{
 				"SHOAL_TEST_GATEWAY_CHILD=1",
-				"SHOAL_TEST_GATEWAY_URL="+server.URL,
-				"SHOAL_TEST_GATEWAY_ID="+id,
-				"SHOAL_TEST_GATEWAY_ACTION="+base64.RawURLEncoding.EncodeToString(queued.ID),
-			)
+				"SHOAL_TEST_GATEWAY_URL=" + server.URL,
+				"SHOAL_TEST_GATEWAY_ID=" + id,
+				"SHOAL_TEST_GATEWAY_ACTION=" + base64.RawURLEncoding.EncodeToString(queued.ID),
+			}
+			var child *exec.Cmd
+			if containerImage == "" {
+				child = exec.CommandContext(childCtx, os.Args[0], "-test.run=^TestDispatchGatewayClaimChild$")
+				child.Env = append(os.Environ(), childEnv...)
+			} else {
+				args := []string{
+					"run", "--rm", "--pull=never", "--network=host", "--read-only",
+					"--cap-drop=ALL", "--security-opt=no-new-privileges",
+					"--user=65532:65532", "--tmpfs=/tmp:rw,nosuid,nodev,size=16m",
+					"--mount=type=bind,source=" + testBinary + ",target=/usr/local/bin/fleet.test,readonly",
+				}
+				for _, entry := range childEnv {
+					args = append(args, "--env="+entry)
+				}
+				args = append(args, containerImage, "/usr/local/bin/fleet.test", "-test.run=^TestDispatchGatewayClaimChild$")
+				child = exec.CommandContext(childCtx, "docker", args...)
+			}
 			output, runErr := child.CombinedOutput()
 			if runErr != nil {
 				results <- outcome{err: errors.New(string(output) + ": " + runErr.Error())}
@@ -131,7 +162,7 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 			default:
 				t.Fatalf("unexpected claim result: %+v", item.result)
 			}
-		case <-time.After(10 * time.Second):
+		case <-time.After(childTimeout):
 			t.Fatal("gateway claim processes did not finish")
 		}
 	}
