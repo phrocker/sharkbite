@@ -28,6 +28,20 @@ points at a prior complete release and requires a bound approval. Neither
 function authenticates the caller or enables live traffic by itself; a service
 must enforce those boundaries around the records.
 
+Artifacts are weights bundles. `bundle_manifest` builds the ordered manifest
+(path, role, size, SHA-256 per file; exactly one `weights` role) and
+`bundle_digest` is its identity; `candidate_artifact` binds a manifest to a
+candidate and evaluation, and `promote_candidate` refuses an artifact whose
+files do not hash to its recorded bundle digest or whose weights file is not
+the candidate's model digest. Releases carry `bundle_digest`,
+`dataset_manifest_sha256`, `training_manifest_sha256` and `task_ids`;
+rollback restores the prior release's exact bundle digest. `compare_bundles`
+names the files that diverge between two trainer runs. `withdraw_source`
+emits a sealed eligibility record for a release whose dataset manifest
+included a withdrawn source; it claims no unlearning. The Go counterpart,
+`internal/weightsbundle`, seals every one of these records identically
+(`testdata/python-chain.json` there is generated from this module).
+
 `poisoning.py` runs a versioned deterministic attack corpus covering duplicate
 flooding, prediction-as-label injection, held-out overlap, failed evaluation,
 artifact substitution, unauthorized promotion, an unlisted assessor, replayed
