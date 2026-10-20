@@ -1,0 +1,175 @@
+# Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
+import copy
+import hashlib
+import json
+import os
+import platform
+import tempfile
+import unittest
+from pathlib import Path
+
+import authorized_manifest as admission
+import dataset
+import distill
+import weights_bundle
+
+
+def export_fixture(cohort='cohort-1', task='synthetic-task', policy='policy'):
+    rows = []
+    for i, (split, label, x) in enumerate([("train", "no", -2), ("train", "yes", 2), ("train", "no", -3), ("calibration", "no", 100)]):
+        rows.append({"id": f"row-{i}", "family": f"family-{i}", "content_sha256": hashlib.sha256(str(i).encode()).hexdigest(),
+                     "source_revision": "synthetic-v1", "observed_at": "2026-01-01T00:00:00Z", "received_at": "2026-01-01T00:00:00Z",
+                     "label_received_at": "2026-01-01T00:00:00Z", "label_status": "verified", "training_allowed": True,
+                     "split": split, "features": [x, 1], "label": label})
+    data = {"schema": 1, "kind": "numeric-training-dataset", "task_id": task, "question_id": "synthetic-question",
+            "feature_schema_id": "numeric-v1", "labels": ["no", "yes"], "cutoff": "2026-01-02T00:00:00Z",
+            "provenance": "trusted-export", "rows": rows}
+    manifest_rows = []
+    for index, row in enumerate(rows):
+        receipt = 'adjudication-receipt:' + hashlib.sha256(str(index).encode()).hexdigest()
+        source = {'ArtifactID': 'artifact', 'ID': 'source', 'RevisionID': 'revision', 'Digest': row['content_sha256'], 'OriginID': 'origin',
+                  'AuthorityPolicyID': 'authority', 'AttestationID': '', 'Role': 'observation', 'Control': 'candidate_controlled',
+                  'ObservedAt': row['observed_at'], 'ReceivedAt': row['received_at']}
+        manifest_rows.append({'id': row['id'], 'request_id': 'request', 'prediction_id': 'prediction', 'picture_id': 'picture',
+                              'target_id': f'target-{index}', 'selected_receipt_id': receipt, 'selected_version': 1,
+                              'selected_basis_id': 'basis', 'selected_label_received_at': row['label_received_at'],
+                              'current_head_id': receipt, 'current_head_version': 1, 'inventory_id': 'target-inventory',
+                              'sources': [source], 'family_ids': [row['family']], 'feature_sha256': admission.feature_digest(row['features']),
+                              'input_digest': 'a' * 64, 'split': row['split'], 'inclusion_probability': None,
+                              'exclusion_reasons': [] if row['split'] == 'train' else ['split:' + row['split']]})
+    raw = dataset.canonical_bytes(data)
+    manifest = {'schema': 1, 'kind': 'authorized-numeric-training-export', 'cohort_id': cohort, 'cohort_sha256': 'b' * 64,
+                'authority_revision_id': 'authority-revision', 'inventory_id': 'cohort-inventory', 'task_id': task,
+                'question_id': 'synthetic-question', 'label_policy_id': policy, 'training_purpose_id': 'purpose',
+                'feature_schema_id': 'numeric-v1', 'feature_builder_id': 'builder', 'cutoff': data['cutoff'], 'created_at': data['cutoff'],
+                'provenance_mode': 'reconstructed', 'split_policy_id': 'split-policy', 'sampling_policy_id': 'sample-policy',
+                'checkpoint_overlap': 'unknown', 'dataset_sha256': hashlib.sha256(raw).hexdigest(), 'dataset_bytes': len(raw), 'rows': manifest_rows}
+    return raw, dataset.canonical_bytes(manifest)
+
+
+def identity(provider, model, egress):
+    return dict(provider=provider, model=model, version='v1', cache_identity=f'{provider}:{model}:v1', egress=egress)
+
+
+def manifest_fixture(export_sha256, held_out=()):
+    rule = dict(metric='dev_recall', direction='maximize', minimum=0.5, maximum=None)
+    m = lambda v: [dict(metric='dev_recall', value=v, split='development', evidence_id='evidence:dev_recall')]
+    return dict(schema=1, kind='distillation-manifest', training_manifest_sha256='1' * 64,
+                teacher=dict(role='teacher', chosen='teacher-a', rule=rule, rejected=[dict(alias='teacher-b', reason='lower development recall')],
+                             eligible=[dict(alias='teacher-a', identity=identity('local', 'big-a', 'loopback'), measurements=m(0.9)),
+                                       dict(alias='teacher-b', identity=identity('hosted', 'big-b', 'off_host'), measurements=m(0.8))]),
+                base=dict(role='base', chosen='base-small', rule=rule, rejected=[],
+                          eligible=[dict(alias='base-small', identity=identity('local', 'small', 'loopback'), measurements=m(0.6))]),
+                teacher_egress_at_generation='loopback',
+                data=dict(tasks=[dict(task_id='synthetic-task', cohort_ids=['cohort-1'], label_policy_ids=['policy'])],
+                          evidence_families=['code'], prompt_version='prompt:1', generation_parameters=dict(epochs=3),
+                          held_out_example_ids=sorted(held_out)),
+                exports=[dict(cohort_id='cohort-1', manifest_sha256=export_sha256)])
+
+
+class DistillTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        data, manifest = export_fixture()
+        (self.root / 'dataset.json').write_bytes(data)
+        (self.root / 'export-manifest.json').write_bytes(manifest)
+        self.export_sha = hashlib.sha256(manifest).hexdigest()
+        self.exports = {'cohort-1': (str(self.root / 'dataset.json'), str(self.root / 'export-manifest.json'))}
+        self.executor = dict(id='worker-1', attestation_id='attest:1', host='test')
+
+    def write_manifest(self, manifest, name='manifest.json', canonical=True):
+        raw = distill.canonical(manifest).encode() if canonical else json.dumps(manifest, indent=1).encode()
+        (self.root / name).write_bytes(raw)
+        return str(self.root / name), hashlib.sha256(raw).hexdigest()
+
+    def run_job(self, manifest=None, out='out', **kw):
+        path, pin = self.write_manifest(manifest or manifest_fixture(self.export_sha))
+        return distill.distill(path, pin, self.exports, self.root / out, executor=self.executor, **kw)
+
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_job_emits_verified_bundle_receipt_and_predictions_deterministically(self):
+        first = self.run_job(out='first')
+        second = self.run_job(out='second')
+        self.assertEqual(first['bundle_digest'], second['bundle_digest'])
+        self.assertEqual(sorted(os.listdir(self.root / 'first')), ['bundle', 'distillation-receipt.json', 'teacher-predictions.json'])
+        bundle, digest = weights_bundle.verify(self.root / 'first' / 'bundle')
+        self.assertEqual(digest, first['bundle_digest'])
+        self.assertEqual({f['role'] for f in bundle['files']}, {'weights', 'runtime'})
+        self.assertEqual((self.root / 'first/bundle/model.json').read_bytes(), (self.root / 'second/bundle/model.json').read_bytes())
+        receipt = json.loads((self.root / 'first/distillation-receipt.json').read_bytes())
+        self.assertEqual(receipt, first)
+        self.assertTrue(receipt['candidate_only']); self.assertFalse(receipt['improvement_claimed'])
+        self.assertEqual(receipt['status'], 'completed'); self.assertEqual(receipt['deviations'], [])
+        self.assertEqual(receipt['requested_cohorts'], receipt['actual_cohorts'], ['cohort-1'])
+        self.assertEqual(receipt['trained_example_count'], 3)
+        self.assertNotIn('recall', json.dumps(receipt))
+        predictions = json.loads((self.root / 'first/teacher-predictions.json').read_bytes())
+        self.assertEqual(receipt['teacher_predictions_id'], distill.digest(predictions))
+        self.assertTrue(all(p['kind'] == 'prediction' for p in predictions['predictions']))
+        self.assertEqual(predictions['teacher_egress'], 'loopback')
+        model = json.loads((self.root / 'first/bundle/model.json').read_bytes())
+        self.assertEqual(model['distillation_manifest_pin'], receipt['manifest_pin'])
+        self.assertEqual(model['teacher'], 'teacher-a')
+        with self.assertRaises(FileExistsError):
+            self.run_job(out='first')
+
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_changed_selection_changes_pin_and_bundle_lineage(self):
+        first = self.run_job(out='a')
+        changed = manifest_fixture(self.export_sha)
+        changed['data']['prompt_version'] = 'prompt:2'
+        second = self.run_job(changed, out='b')
+        self.assertNotEqual(first['manifest_pin'], second['manifest_pin'])
+        self.assertNotEqual(first['bundle_digest'], second['bundle_digest'])
+
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_actual_parameters_deviation_is_recorded(self):
+        receipt = self.run_job(parameters=dict(epochs=5))
+        self.assertEqual(receipt['actual_parameters'], dict(epochs=5))
+        self.assertEqual(receipt['deviations'], ['epochs: requested 3, actual 5'])
+
+    def test_refusals_happen_before_training(self):
+        good = manifest_fixture(self.export_sha)
+        path, pin = self.write_manifest(good)
+        with self.assertRaisesRegex(distill.Refused, 'pin does not match'):
+            distill.distill(path, '0' * 64, self.exports, self.root / 'x', executor=self.executor)
+        path, pin = self.write_manifest(good, 'loose.json', canonical=False)
+        with self.assertRaisesRegex(distill.Refused, 'canonical'):
+            distill.distill(path, pin, self.exports, self.root / 'x', executor=self.executor)
+        cases = {
+            'teacher outside eligible': (lambda m: m['teacher'].update(chosen='teacher-z'), 'not in the eligible set'),
+            'teacher fails rule': (lambda m: m['teacher']['eligible'][0]['measurements'][0].update(value=0.1), 'does not satisfy the recorded rule'),
+            'held-out evidence selected': (lambda m: m['base']['eligible'][0]['measurements'][0].update(split='held_out'), 'non-development evidence'),
+            'declared egress': (lambda m: m.update(teacher_egress_at_generation='off_host'), 'not the resolved posture'),
+            'unadmitted cohort': (lambda m: m['exports'].__setitem__(0, dict(cohort_id='cohort-9', manifest_sha256=self.export_sha)), 'admitted cohorts'),
+            're-pinned export': (lambda m: m['exports'][0].update(manifest_sha256='c' * 64), 'SHA-256 mismatch'),
+            'cohort not admitted for task': (lambda m: m['data']['tasks'][0].update(cohort_ids=['cohort-2']), 'not admitted'),
+            'label policy not admitted': (lambda m: m['data']['tasks'][0].update(label_policy_ids=['other']), 'label policy'),
+            'task outside selection': (lambda m: m['data']['tasks'][0].update(task_id='other-task'), 'outside the selection'),
+            'held-out leak': (lambda m: m['data'].update(held_out_example_ids=['row-1']), 'contains held-out example'),
+        }
+        for name, (mutate, want) in cases.items():
+            with self.subTest(name):
+                manifest = copy.deepcopy(good)
+                mutate(manifest)
+                path, pin = self.write_manifest(manifest, name.replace(' ', '-') + '.json')
+                with self.assertRaisesRegex(ValueError, want):
+                    distill.distill(path, pin, self.exports, self.root / 'never', executor=self.executor)
+                self.assertFalse((self.root / 'never').exists())
+        self.assertFalse([p for p in self.root.iterdir() if p.name.startswith('.distill-staging-')])
+
+    def test_teacher_outputs_are_predictions_only(self):
+        manifest = dict(manifest_fixture(self.export_sha), _pin='p' * 64)
+        with self.assertRaisesRegex(distill.Refused, 'teacher outputs are predictions'):
+            distill.record_predictions(manifest, [dict(example_id='row-0', kind='reviewer_assessment', teacher='teacher-a', output={})])
+        with self.assertRaisesRegex(distill.Refused, 'not the chosen teacher'):
+            distill.record_predictions(manifest, [dict(example_id='row-0', kind='prediction', teacher='teacher-b', output={})])
+        manifest['data']['held_out_example_ids'] = ['row-0']
+        with self.assertRaisesRegex(distill.Refused, 'held-out'):
+            distill.record_predictions(manifest, [dict(example_id='row-0', kind='prediction', teacher='teacher-a', output={})])
+
+
+if __name__ == '__main__':
+    unittest.main()

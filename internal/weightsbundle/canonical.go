@@ -507,3 +507,18 @@ func isTrue(v any) bool {
 	b, ok := v.(bool)
 	return ok && b
 }
+
+// StrictUnmarshal decodes raw into v rejecting duplicate keys, unknown
+// fields, trailing data, and oversized input.
+func StrictUnmarshal(raw []byte, v any) error {
+	if int64(len(raw)) > MaxRecordBytes {
+		return errors.New("record exceeds bound")
+	}
+	if !utf8.Valid(raw) {
+		return errors.New("record is not valid UTF-8")
+	}
+	if err := rejectDuplicateKeys(raw); err != nil {
+		return err
+	}
+	return strictDecode(raw, v)
+}
