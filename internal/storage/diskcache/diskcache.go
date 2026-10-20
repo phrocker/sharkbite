@@ -14,6 +14,8 @@
 // It is backend-agnostic: because it wraps any storage.Backend by
 // composition, the same cache tier works over GCS, S3, Azure Blob, or local
 // storage.
+// It deliberately does not implement storage.SnapshotOpener: path-keyed cache
+// hits cannot attest the current remote object version after replacement.
 package diskcache
 
 import (

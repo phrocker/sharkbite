@@ -157,7 +157,10 @@ func (s conflictAfterWriteStore) ApplyAction(
 func TestApprovalMaterializeRereadsOnAnyConflict(t *testing.T) {
 	now := time.Unix(1_800_000_000, 0).UTC()
 	store := conflictAfterWriteStore{memoryDispatchStore: newMemoryDispatchStore()}
-	approval := decided(validApprovalRecord(t), ApprovalApproved, ApprovalVerdictApprove)
+	approval := validApprovalRecord(t)
+	approval.Request.NotBefore = approval.Request.CreatedAt.Add(10 * time.Minute)
+	approval.RequestDigest = ApprovalRequestDigest(approval.Request)
+	approval = decided(approval, ApprovalApproved, ApprovalVerdictApprove)
 	approval.Version++
 	approval.State = ApprovalEnqueued
 	approval.MaterializedAt = approval.DecidedAt.Add(time.Second)
@@ -176,7 +179,8 @@ func TestApprovalMaterializeRereadsOnAnyConflict(t *testing.T) {
 	if err != nil {
 		t.Fatalf("materialize over a conflict for work that exists = %v", err)
 	}
-	if !isMaterializationOf(action, approval) || action.Version != 1 {
+	if !isMaterializationOf(action, approval) || action.Version != 1 ||
+		!action.NotBefore.Equal(approval.Request.NotBefore) {
 		t.Fatalf("materialized = %+v", action)
 	}
 }

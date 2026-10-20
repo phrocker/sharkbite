@@ -42,6 +42,9 @@ func newExecutorWorld(t *testing.T) *executorWorld {
 	return newExecutorWorldWithExternalEffects(t, false)
 }
 
+// The effects-gateway worker tests register the action with the external
+// effect its route declares. Other executor tests retain their zero-effect
+// descriptor so their existing authorization contract stays explicit.
 func newExecutorWorldWithExternalEffects(t *testing.T, externalEffects bool) *executorWorld {
 	t.Helper()
 	executorIssuer := newFakeOIDCIssuer(t)
@@ -96,6 +99,10 @@ func (w *executorWorld) declaredCapabilities() []fleet.Capability {
 	if w.externalEffects {
 		for i := range capabilities {
 			for j := range capabilities[i].Actions {
+				// An external executor ref has no effect floor, but it
+				// refuses an action that declares nothing while it can
+				// reach outside Shoal. This fixture's route exercises
+				// status; deploy is approval-gated and never dispatched.
 				capabilities[i].Actions[j].Effects = fleet.Effects{fleet.EffectMutatesExternal}
 			}
 		}

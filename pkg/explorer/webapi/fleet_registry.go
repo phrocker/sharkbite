@@ -81,7 +81,7 @@ func mountFleetRegistry(mux *http.ServeMux, provider FleetRegistryProvider) {
 			writeError(writer, err)
 			return
 		}
-		writeResponse(writer, http.StatusCreated, encodeFleetDescriptor(descriptor))
+		writeResponse(writer, http.StatusCreated, EncodeFleetDescriptor(descriptor))
 	})
 	mux.HandleFunc("POST /api/v1/fleet/agents/{agent}/heartbeat", func(writer http.ResponseWriter, request *http.Request) {
 		id, err := decodeID(request.PathValue("agent"))
@@ -104,7 +104,7 @@ func mountFleetRegistry(mux *http.ServeMux, provider FleetRegistryProvider) {
 			writeError(writer, err)
 			return
 		}
-		writeResponse(writer, http.StatusOK, encodeFleetDescriptor(descriptor))
+		writeResponse(writer, http.StatusOK, EncodeFleetDescriptor(descriptor))
 	})
 	mux.HandleFunc("POST /api/v1/fleet/agents/{agent}/revoke", func(writer http.ResponseWriter, request *http.Request) {
 		id, err := decodeID(request.PathValue("agent"))
@@ -127,7 +127,7 @@ func mountFleetRegistry(mux *http.ServeMux, provider FleetRegistryProvider) {
 			writeError(writer, err)
 			return
 		}
-		writeResponse(writer, http.StatusOK, encodeFleetDescriptor(descriptor))
+		writeResponse(writer, http.StatusOK, EncodeFleetDescriptor(descriptor))
 	})
 	mux.HandleFunc("POST /api/v1/fleet/agents/{agent}/resolve", func(writer http.ResponseWriter, request *http.Request) {
 		id, err := decodeID(request.PathValue("agent"))
@@ -152,7 +152,7 @@ func mountFleetRegistry(mux *http.ServeMux, provider FleetRegistryProvider) {
 			writeError(writer, err)
 			return
 		}
-		writeResponse(writer, http.StatusOK, encodeFleetDescriptor(resolved.Descriptor))
+		writeResponse(writer, http.StatusOK, EncodeFleetDescriptor(resolved.Descriptor))
 	})
 	mux.HandleFunc("POST /api/v1/fleet/agents/resolve", func(writer http.ResponseWriter, request *http.Request) {
 		var input fleetListWire
@@ -176,13 +176,13 @@ func mountFleetRegistry(mux *http.ServeMux, provider FleetRegistryProvider) {
 			writeError(writer, err)
 			return
 		}
-		response := make([]fleetDescriptorWire, len(page.Descriptors))
+		response := make([]FleetDescriptor, len(page.Descriptors))
 		for i := range page.Descriptors {
-			response[i] = encodeFleetDescriptor(page.Descriptors[i])
+			response[i] = EncodeFleetDescriptor(page.Descriptors[i])
 		}
 		writeResponse(writer, http.StatusOK, struct {
-			Agents []fleetDescriptorWire `json:"agents"`
-			Next   []byte                `json:"next,omitempty"`
+			Agents []FleetDescriptor `json:"agents"`
+			Next   []byte            `json:"next,omitempty"`
 		}{Agents: response, Next: page.Next})
 	})
 }
@@ -233,7 +233,9 @@ type fleetListWire struct {
 	Limit     int                     `json:"limit"`
 }
 
-type fleetDescriptorWire struct {
+// FleetDescriptor is the public registry projection shared by HTTP and MCP.
+// It contains declarative capabilities, never the resolved host executor.
+type FleetDescriptor struct {
 	ID                  string             `json:"id"`
 	Generation          int64              `json:"generation"`
 	Subject             string             `json:"subject"`
@@ -324,8 +326,10 @@ func (w fleetRequestContextWire) decode() (fleet.RequestContext, error) {
 	}, nil
 }
 
-func encodeFleetDescriptor(descriptor fleet.Descriptor) fleetDescriptorWire {
-	return fleetDescriptorWire{
+// EncodeFleetDescriptor projects one authorized registry descriptor onto the
+// public HTTP/MCP shape. Authorization remains the caller's responsibility.
+func EncodeFleetDescriptor(descriptor fleet.Descriptor) FleetDescriptor {
+	return FleetDescriptor{
 		ID: encodeFleetID(descriptor.ID), Generation: descriptor.Generation,
 		Subject: encodeFleetID(descriptor.Subject), Actor: encodeFleetID(descriptor.Actor),
 		ParentID:            encodeFleetID(descriptor.ParentID),

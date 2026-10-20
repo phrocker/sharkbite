@@ -248,6 +248,12 @@ func (s *DispatchService) queuedRecordBinding(
 	if request.Context.Deadline.Sub(now) > MaxActionDeadline {
 		return ActionRecord{}, Action{}, "", shoal.NewError(shoal.ErrorInvalidArgument, "action deadline exceeds its bound")
 	}
+	if !request.NotBefore.IsZero() &&
+		(request.NotBefore.Location() != time.UTC ||
+			!request.NotBefore.Before(request.Context.Deadline)) {
+		return ActionRecord{}, Action{}, "", shoal.NewError(
+			shoal.ErrorInvalidArgument, "action not-before time must be UTC and precede its deadline")
+	}
 	// Binding, not execution: queueing work for an executor that runs out of
 	// process must not require it to be runnable here.
 	descriptor, action, _, err := s.registry.resolveActionBindingLapsing(
@@ -286,12 +292,17 @@ func (s *DispatchService) queuedRecordBinding(
 		AuthorizationExpiresAt: decision.AuthenticationExpires(),
 		AuthorizedOperations:   decisionOperations(decision, operation),
 		RequestID:              decision.RequestID(), CorrelationID: decision.CorrelationID(),
-		Reason: reason, Deadline: request.Context.Deadline.UTC(), CreatedAt: now, UpdatedAt: now,
+		Reason: reason, Deadline: request.Context.Deadline.UTC(),
+		NotBefore: request.NotBefore, CreatedAt: now, UpdatedAt: now,
 		ExecutorKey: executorKey(request.ID, request.IdempotencyKey),
 	}, action, descriptor.ExecutorRef, nil
 }
 
 func (s *DispatchService) Invoke(ctx context.Context, request InvokeRequest) (ActionRecord, error) {
+	if !request.Enqueue.NotBefore.IsZero() {
+		return ActionRecord{}, shoal.NewError(
+			shoal.ErrorInvalidArgument, "invoke cannot schedule a delayed action")
+	}
 	// Whether this caller already holds a terminal record at this ID,
 	// established before the enqueue and by an authorized read (#578).
 	//
@@ -570,6 +581,12 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 			return ActionRecord{}, auth.ObjectNotFound()
 		}
 		return ActionRecord{}, ErrClaimLost
+	}
+	if !current.NotBefore.IsZero() && now.Before(current.NotBefore) {
+		if concealFrom(decision, current, now) {
+			return ActionRecord{}, auth.ObjectNotFound()
+		}
+		return ActionRecord{}, ErrActionConflict
 	}
 	// Resolved for the declared Effect, which decides whether claiming this
 	// action already makes an effect possible.
@@ -1744,11 +1761,13 @@ func (s *DispatchService) Cancel(ctx context.Context, request CancelRequest) (Ac
 	if current.State.terminal() {
 		return ActionRecord{}, ErrActionTerminal
 	}
-	// A lapsed in-process attempt may already have sent an effect. Keep its
-	// claimed record available for reconciliation rather than rewriting it as
-	// a cancellation that asserts the work never ran.
-	if current.State == DispatchClaimed && len(current.ExecutionAttemptID) != 0 {
-		return ActionRecord{}, ErrExecutionAmbiguous
+	// A lapsed claim with a possible external effect, or an in-process
+	// execution attempt, must remain available for reconciliation. Rewriting
+	// it as canceled would assert that Shoal refused work which may already
+	// have happened outside the store.
+	if current.State == DispatchClaimed &&
+		(current.EffectPossible || len(current.ExecutionAttemptID) != 0) {
+		return ActionRecord{}, ErrCancelClaimUncertain
 	}
 	next := cloneActionRecord(current)
 	next.Version++
@@ -2581,6 +2600,9 @@ func (s *DispatchService) Pull(ctx context.Context, request PullActionsRequest) 
 		if !now.Before(record.Deadline) {
 			continue
 		}
+		if !record.NotBefore.IsZero() && now.Before(record.NotBefore) {
+			continue
+		}
 		// The same two routes authorizedClaimant takes, in the same order and
 		// for the same reason: an executor granted execute on this record's
 		// descriptor may take work it did not enqueue, and the enqueuing
@@ -3230,7 +3252,8 @@ func observableThroughPull(record ActionRecord, now time.Time) bool {
 		!(record.State == DispatchClaimed && !now.Before(record.ClaimLeaseUntil)) {
 		return false
 	}
-	return now.Before(record.Deadline)
+	return now.Before(record.Deadline) &&
+		(record.NotBefore.IsZero() || !now.Before(record.NotBefore))
 }
 
 // concealFrom reports whether a refusal about this record must be replaced with
@@ -3728,6 +3751,7 @@ func equivalentEnqueue(current, wanted ActionRecord) bool {
 		current.AuthorizationFingerprint == wanted.AuthorizationFingerprint &&
 		current.PolicyGeneration == wanted.PolicyGeneration &&
 		current.Reason == wanted.Reason &&
+		current.NotBefore.Equal(wanted.NotBefore) &&
 		current.Deadline.Equal(wanted.Deadline)
 }
 

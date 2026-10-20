@@ -366,6 +366,7 @@ type Action struct {
 	RequestID               string            `json:"request_id"`
 	CorrelationID           string            `json:"correlation_id,omitempty"`
 	Deadline                time.Time         `json:"deadline"`
+	NotBefore               time.Time         `json:"not_before,omitzero"`
 	CreatedAt               time.Time         `json:"created_at"`
 	UpdatedAt               time.Time         `json:"updated_at"`
 	ExecutorKey             string            `json:"executor_key,omitempty"`

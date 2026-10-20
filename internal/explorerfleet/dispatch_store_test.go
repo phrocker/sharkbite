@@ -25,6 +25,47 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
+func TestScheduledDispatchEncodingRejectsLegacyReaders(t *testing.T) {
+	legacy := testActionRecord()
+	oldBytes, err := encodeAction(legacy)
+	if err != nil || !bytes.HasPrefix(oldBytes, dispatchMagic) {
+		t.Fatalf("legacy action envelope = %x, %v", oldBytes, err)
+	}
+	scheduled := legacy
+	scheduled.NotBefore = legacy.CreatedAt.Add(10 * time.Minute)
+	newBytes, err := encodeAction(scheduled)
+	if err != nil || !bytes.HasPrefix(newBytes, dispatchScheduleMagic) ||
+		bytes.HasPrefix(newBytes, dispatchMagic) {
+		t.Fatalf("scheduled action can be decoded by a legacy reader: %x, %v", newBytes, err)
+	}
+	decoded, err := decodeAction(newBytes)
+	if err != nil || !decoded.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled action round trip = %#v, %v", decoded, err)
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchMagic...),
+		newBytes[len(dispatchScheduleMagic):]...)); err == nil {
+		t.Fatal("v1 envelope accepted a scheduled action")
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchScheduleMagic...),
+		oldBytes[len(dispatchMagic):]...)); err == nil {
+		t.Fatal("v2 envelope accepted an unscheduled action")
+	}
+
+	transition, err := fleet.NewActionTransition([]byte("scheduled-transition"), "action.enqueued", scheduled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transitionBytes, err := encodeTransition(storedTransition{Transition: transition})
+	if err != nil || !bytes.HasPrefix(transitionBytes, transitionScheduleMagic) ||
+		bytes.HasPrefix(transitionBytes, transitionMagic) {
+		t.Fatalf("scheduled transition can be decoded by a legacy reader: %x, %v", transitionBytes, err)
+	}
+	got, err := decodeTransition(transitionBytes)
+	if err != nil || !got.Transition.Record.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled transition round trip = %#v, %v", got, err)
+	}
+}
+
 func TestDispatchStoreCASReplayFenceAndRestart(t *testing.T) {
 	directory := t.TempDir()
 	runtime := openDispatchRuntime(t, directory)
@@ -901,6 +942,7 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 		t.Fatal(err)
 	}
 	record := testActionRecord()
+	record.NotBefore = record.CreatedAt.Add(10 * time.Minute)
 	token := []byte("enqueue-transition")
 	if _, err := store.ApplyAction(context.Background(), fleet.DispatchMutation{
 		Token: token, TransitionKind: "action.enqueued", Record: record,
@@ -915,6 +957,10 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 	store, err = NewDispatchStore(runtime, nil)
 	if err != nil {
 		t.Fatal(err)
+	}
+	restarted, err := store.GetAction(context.Background(), record.ID)
+	if err != nil || !restarted.NotBefore.Equal(record.NotBefore) {
+		t.Fatalf("scheduled action after restart = %#v, %v", restarted, err)
 	}
 	page, err := store.PendingActionTransitions(
 		context.Background(), record.ID, nil, 10)
@@ -1201,6 +1247,11 @@ func TestDispatchStoreRefusesARewrittenIdentity(t *testing.T) {
 		// outlive the bound its dispatcher accepted.
 		{"deadline", nil, func(r *fleet.ActionRecord) {
 			r.Deadline = r.Deadline.Add(24 * time.Hour)
+		}},
+		{"not-before time", func(r *fleet.ActionRecord) {
+			r.NotBefore = r.CreatedAt.Add(5 * time.Minute)
+		}, func(r *fleet.ActionRecord) {
+			r.NotBefore = r.NotBefore.Add(time.Minute)
 		}},
 		// A real Reason, not a hand-built one with a bogus digest: Validate
 		// requires the digest to be 64 lowercase hex characters, so "x" was
