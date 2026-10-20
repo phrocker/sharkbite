@@ -1696,10 +1696,12 @@ func (s *DispatchService) Cancel(ctx context.Context, request CancelRequest) (Ac
 	if current.State.terminal() {
 		return ActionRecord{}, ErrActionTerminal
 	}
-	// A lapsed in-process attempt may already have sent an effect. Keep its
-	// claimed record available for reconciliation rather than rewriting it as
-	// a cancellation that asserts the work never ran.
-	if current.State == DispatchClaimed && len(current.ExecutionAttemptID) != 0 {
+	// A lapsed claim with a possible external effect, or an in-process
+	// execution attempt, must remain available for reconciliation. Rewriting
+	// it as canceled would assert that Shoal refused work which may already
+	// have happened outside the store.
+	if current.State == DispatchClaimed &&
+		(current.EffectPossible || len(current.ExecutionAttemptID) != 0) {
 		return ActionRecord{}, ErrExecutionAmbiguous
 	}
 	next := cloneActionRecord(current)
