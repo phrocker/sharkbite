@@ -144,12 +144,21 @@ func (b *Backend) Remove(ctx context.Context, path string) error {
 //   - "gs://bucket/object/path"
 //   - "bucket/object/path"  (no scheme — first segment is bucket)
 func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, false)
+}
+
+// OpenSnapshot pins every range read to the generation observed at Open.
+func (b *Backend) OpenSnapshot(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, true)
+}
+
+func (b *Backend) open(ctx context.Context, path string, snapshot bool) (shstorage.File, error) {
 	bucket, object, err := ParsePath(path)
 	if err != nil {
 		return nil, err
 	}
 
-	obj := b.client.Bucket(bucket).Object(object)
+	obj := b.bucket(bucket).Object(object)
 	attrs, err := obj.Attrs(ctx)
 	if err != nil {
 		if errors.Is(err, storage.ErrObjectNotExist) {
@@ -157,10 +166,21 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 		}
 		return nil, fmt.Errorf("gcs: stat gs://%s/%s: %w", bucket, object, err)
 	}
+	if snapshot {
+		if attrs.Size < 0 {
+			return nil, fmt.Errorf("gcs: snapshot gs://%s/%s has negative size", bucket, object)
+		}
+		if attrs.Generation <= 0 {
+			return nil, fmt.Errorf("gcs: snapshot gs://%s/%s has no generation", bucket, object)
+		}
+		obj = obj.Generation(attrs.Generation)
+	}
 	return &file{
-		obj:  obj,
-		size: attrs.Size,
-		ctx:  ctx,
+		obj:        obj,
+		size:       attrs.Size,
+		ctx:        ctx,
+		snapshot:   snapshot,
+		generation: attrs.Generation,
 	}, nil
 }
 
@@ -443,9 +463,11 @@ func isLowerHex(value string) bool {
 // RangeReader — stateless per call so concurrent ReadAts don't share
 // reader state.
 type file struct {
-	obj  *storage.ObjectHandle
-	size int64
-	ctx  context.Context
+	obj        objectHandle
+	size       int64
+	ctx        context.Context
+	snapshot   bool
+	generation int64
 }
 
 func (g *file) Size() int64 { return g.size }
@@ -475,6 +497,12 @@ func (g *file) ReadAt(p []byte, off int64) (int, error) {
 		return 0, fmt.Errorf("gcs: NewRangeReader off=%d len=%d: %w", off, want, err)
 	}
 	defer rdr.Close()
+	if g.snapshot {
+		attrs := rdr.RangeAttrs()
+		if attrs.StartOffset != off || attrs.Size != g.size || attrs.Generation != g.generation {
+			return 0, fmt.Errorf("gcs: NewRangeReader returned a different range")
+		}
+	}
 	n, err := io.ReadFull(rdr, p[:want])
 	if err != nil {
 		// io.ReadFull returns io.ErrUnexpectedEOF for short reads; map
@@ -688,12 +716,22 @@ type bucketHandle interface {
 
 type objectHandle interface {
 	NewWriter(context.Context) objectWriter
+	NewRangeReader(context.Context, int64, int64) (rangeReader, error)
 	Attrs(context.Context) (*storage.ObjectAttrs, error)
 	If(storage.Conditions) objectHandle
 	Generation(int64) objectHandle
 	CopierFrom(objectHandle) objectCopier
 	Delete(context.Context) error
 }
+
+type rangeReader interface {
+	io.ReadCloser
+	RangeAttrs() storage.ReaderObjectAttrs
+}
+
+type sdkRangeReader struct{ *storage.Reader }
+
+func (r sdkRangeReader) RangeAttrs() storage.ReaderObjectAttrs { return r.Attrs }
 
 type objectCopier interface {
 	Run(context.Context) (*storage.ObjectAttrs, error)
@@ -709,6 +747,14 @@ func (b storageBucketHandle) Object(name string) objectHandle {
 
 type storageObjectHandle struct {
 	object *storage.ObjectHandle
+}
+
+func (o storageObjectHandle) NewRangeReader(ctx context.Context, off, length int64) (rangeReader, error) {
+	r, err := o.object.NewRangeReader(ctx, off, length)
+	if err != nil {
+		return nil, err
+	}
+	return sdkRangeReader{Reader: r}, nil
 }
 
 type sdkGCSArtifactOperations struct {

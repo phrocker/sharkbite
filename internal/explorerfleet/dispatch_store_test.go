@@ -25,6 +25,47 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
+func TestScheduledDispatchEncodingRejectsLegacyReaders(t *testing.T) {
+	legacy := testActionRecord()
+	oldBytes, err := encodeAction(legacy)
+	if err != nil || !bytes.HasPrefix(oldBytes, dispatchMagic) {
+		t.Fatalf("legacy action envelope = %x, %v", oldBytes, err)
+	}
+	scheduled := legacy
+	scheduled.NotBefore = legacy.CreatedAt.Add(10 * time.Minute)
+	newBytes, err := encodeAction(scheduled)
+	if err != nil || !bytes.HasPrefix(newBytes, dispatchScheduleMagic) ||
+		bytes.HasPrefix(newBytes, dispatchMagic) {
+		t.Fatalf("scheduled action can be decoded by a legacy reader: %x, %v", newBytes, err)
+	}
+	decoded, err := decodeAction(newBytes)
+	if err != nil || !decoded.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled action round trip = %#v, %v", decoded, err)
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchMagic...),
+		newBytes[len(dispatchScheduleMagic):]...)); err == nil {
+		t.Fatal("v1 envelope accepted a scheduled action")
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchScheduleMagic...),
+		oldBytes[len(dispatchMagic):]...)); err == nil {
+		t.Fatal("v2 envelope accepted an unscheduled action")
+	}
+
+	transition, err := fleet.NewActionTransition([]byte("scheduled-transition"), "action.enqueued", scheduled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transitionBytes, err := encodeTransition(storedTransition{Transition: transition})
+	if err != nil || !bytes.HasPrefix(transitionBytes, transitionScheduleMagic) ||
+		bytes.HasPrefix(transitionBytes, transitionMagic) {
+		t.Fatalf("scheduled transition can be decoded by a legacy reader: %x, %v", transitionBytes, err)
+	}
+	got, err := decodeTransition(transitionBytes)
+	if err != nil || !got.Transition.Record.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled transition round trip = %#v, %v", got, err)
+	}
+}
+
 func TestDispatchStoreCASReplayFenceAndRestart(t *testing.T) {
 	directory := t.TempDir()
 	runtime := openDispatchRuntime(t, directory)
@@ -152,6 +193,254 @@ func TestDispatchStoreCASReplayFenceAndRestart(t *testing.T) {
 		restarted.EventProvenance().CorrelationID !=
 			current.EventProvenance().CorrelationID {
 		t.Fatalf("restart = %#v, %v", restarted, err)
+	}
+}
+
+func TestDispatchRecoveryCommitmentIsDurableAndWriteOnce(t *testing.T) {
+	directory := t.TempDir()
+	runtime := openDispatchRuntime(t, directory)
+	defer func() {
+		if runtime != nil {
+			_ = runtime.Close()
+		}
+	}()
+	store, err := NewDispatchStore(runtime, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx := context.Background()
+	queued, err := store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("enqueue"), Record: testActionRecord(),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	forged := queued
+	forged.ID = []byte("forged-initial-action")
+	forged.IdempotencyKey = []byte("forged-key")
+	forged.State = fleet.DispatchClaimed
+	forged.ClaimID = []byte("first-claim")
+	forged.ClaimFence = 1
+	forged.ClaimLease = time.Minute
+	forged.ClaimLeaseUntil = forged.UpdatedAt.Add(time.Minute)
+	forged.ExecutionPolicyGeneration = 1
+	forged.ExecutionExpiresAt = forged.Deadline
+	forged.EffectPossible = true
+	forged.RecoveryCommitment = &fleet.RecoveryCommitment{
+		Version: fleet.RecoveryCommitmentVersion, Mode: fleet.RecoveryKey,
+		RequestDigest:     sha256.Sum256([]byte("forged-request")),
+		TargetScopeDigest: sha256.Sum256([]byte("forged-account")),
+		PreparedFence:     1, PreparedAt: forged.UpdatedAt,
+	}
+	if err := forged.Validate(); err != nil {
+		t.Fatalf("forged initial record is invalid: %v", err)
+	}
+	if _, err := store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("forged-initial"), Record: forged,
+	}); !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("forged initial commitment = %v", err)
+	}
+	claim := queued
+	claim.Version++
+	claim.State = fleet.DispatchClaimed
+	claim.ClaimID = []byte("first-claim")
+	claim.ClaimFence = 1
+	claim.ClaimLease = time.Minute
+	claim.ClaimLeaseUntil = queued.UpdatedAt.Add(time.Minute)
+	claim.ExecutionPolicyGeneration = 1
+	claim.ExecutionExpiresAt = queued.Deadline
+	claim.EffectPossible = true
+	claim.UpdatedAt = queued.UpdatedAt.Add(time.Second)
+	claim.TransitionRequestID = "claim-request"
+	claim.TransitionCorrelationID = "claim-correlation"
+	claim, err = store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("claim"), ExpectedVersion: queued.Version,
+		Record: claim,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	commitment := fleet.RecoveryCommitment{
+		Version: fleet.RecoveryCommitmentVersion, Mode: fleet.RecoveryKey,
+		RequestDigest:     sha256.Sum256([]byte("bound-request")),
+		TargetScopeDigest: sha256.Sum256([]byte("tenant-account")),
+		PreparedFence:     1, PreparedAt: claim.UpdatedAt.Add(time.Second),
+	}
+	backdated := claim
+	backdated.Version++
+	backdatedCommitment := commitment
+	backdatedCommitment.PreparedAt = queued.UpdatedAt
+	backdated.RecoveryCommitment = &backdatedCommitment
+	backdated.UpdatedAt = claim.UpdatedAt.Add(time.Second)
+	if err := backdated.Validate(); err != nil {
+		t.Fatalf("backdated probe is invalid: %v", err)
+	}
+	if _, err := store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("backdated-prepare"), ExpectedVersion: claim.Version,
+		ExpectedFence: claim.ClaimFence, Record: backdated,
+	}); !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("backdated prepare = %v", err)
+	}
+	late := claim
+	late.Version++
+	lateCommitment := commitment
+	lateCommitment.PreparedAt = claim.ClaimLeaseUntil
+	late.RecoveryCommitment = &lateCommitment
+	late.UpdatedAt = lateCommitment.PreparedAt
+	late.ClaimLeaseUntil = claim.ClaimLeaseUntil.Add(time.Minute)
+	if err := late.Validate(); err != nil {
+		t.Fatalf("late probe is invalid: %v", err)
+	}
+	if _, err := store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("late-prepare"), ExpectedVersion: claim.Version,
+		ExpectedFence: claim.ClaimFence, Record: late,
+	}); !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("late prepare = %v", err)
+	}
+	prepared := claim
+	prepared.Version++
+	prepared.UpdatedAt = commitment.PreparedAt
+	prepared.RecoveryCommitment = &commitment
+	prepared, err = store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("prepare"), ExpectedVersion: claim.Version,
+		ExpectedFence: claim.ClaimFence, Record: prepared,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if prepared.RecoveryCommitment == nil || *prepared.RecoveryCommitment != commitment {
+		t.Fatalf("prepared commitment = %#v", prepared.RecoveryCommitment)
+	}
+	if err := runtime.Close(); err != nil {
+		t.Fatal(err)
+	}
+	runtime = nil
+	runtime = openDispatchRuntime(t, directory)
+	store, err = NewDispatchStore(runtime, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restarted, err := store.GetAction(ctx, queued.ID)
+	if err != nil || restarted.RecoveryCommitment == nil ||
+		*restarted.RecoveryCommitment != commitment {
+		t.Fatalf("restart commitment = %#v, %v", restarted.RecoveryCommitment, err)
+	}
+	// Every probe remains a valid record. Its rejection therefore comes from
+	// the write-once guard, not from decoding or record validation.
+	for _, probe := range []struct {
+		name   string
+		change func(*fleet.ActionRecord)
+	}{
+		{"remove", func(r *fleet.ActionRecord) { r.RecoveryCommitment = nil }},
+		{"request", func(r *fleet.ActionRecord) {
+			c := *r.RecoveryCommitment
+			c.RequestDigest = sha256.Sum256([]byte("different-request"))
+			r.RecoveryCommitment = &c
+		}},
+		{"mode", func(r *fleet.ActionRecord) {
+			c := *r.RecoveryCommitment
+			c.Mode = fleet.RecoveryNatural
+			r.RecoveryCommitment = &c
+		}},
+		{"scope", func(r *fleet.ActionRecord) {
+			c := *r.RecoveryCommitment
+			c.TargetScopeDigest = sha256.Sum256([]byte("other-account"))
+			r.RecoveryCommitment = &c
+		}},
+	} {
+		t.Run(probe.name, func(t *testing.T) {
+			next := restarted
+			next.Version++
+			next.UpdatedAt = next.UpdatedAt.Add(time.Second)
+			probe.change(&next)
+			if err := next.Validate(); err != nil {
+				t.Fatalf("probe is invalid: %v", err)
+			}
+			_, err := store.ApplyAction(ctx, fleet.DispatchMutation{
+				Token:           []byte("rewrite-" + probe.name),
+				ExpectedVersion: restarted.Version,
+				ExpectedFence:   restarted.ClaimFence, Record: next,
+			})
+			if !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+				t.Fatalf("rewrite = %v", err)
+			}
+		})
+	}
+	unchanged, err := store.GetAction(ctx, queued.ID)
+	if err != nil || !reflect.DeepEqual(unchanged, restarted) {
+		t.Fatalf("after rejected writes = %#v, %v", unchanged, err)
+	}
+	// A later claim can advance its fence while carrying the original
+	// commitment. It cannot acquire or rewrite that commitment.
+	reclaimed := restarted
+	reclaimed.Version++
+	reclaimed.ClaimFence++
+	reclaimed.ClaimID = []byte("second-claim")
+	reclaimed.ClaimLeaseUntil = reclaimed.ClaimLeaseUntil.Add(time.Minute)
+	reclaimed.UpdatedAt = reclaimed.UpdatedAt.Add(time.Minute)
+	reclaimed.TransitionRequestID = "reclaim-request"
+	reclaimed.TransitionCorrelationID = "reclaim-correlation"
+	reclaimed, err = store.ApplyAction(ctx, fleet.DispatchMutation{
+		Token: []byte("reclaim"), ExpectedVersion: restarted.Version,
+		ExpectedFence: restarted.ClaimFence, Record: reclaimed,
+	})
+	if err != nil || reclaimed.RecoveryCommitment == nil ||
+		*reclaimed.RecoveryCommitment != commitment {
+		t.Fatalf("reclaim = %#v, %v", reclaimed.RecoveryCommitment, err)
+	}
+}
+
+func TestDispatchRecoveryCommitmentCannotBeAddedAfterFirstClaim(t *testing.T) {
+	record := testActionRecord()
+	record.State = fleet.DispatchClaimed
+	record.Version = 3
+	record.ClaimID = []byte("second-claim")
+	record.ClaimFence = 2
+	record.ClaimLease = time.Minute
+	record.ClaimLeaseUntil = record.UpdatedAt.Add(time.Minute)
+	record.ExecutionPolicyGeneration = 1
+	record.ExecutionExpiresAt = record.Deadline
+	record.EffectPossible = true
+	next := record
+	next.Version++
+	next.RecoveryCommitment = &fleet.RecoveryCommitment{
+		Version: fleet.RecoveryCommitmentVersion, Mode: fleet.RecoveryKey,
+		RequestDigest:     sha256.Sum256([]byte("request")),
+		TargetScopeDigest: sha256.Sum256([]byte("account")),
+		PreparedFence:     1, PreparedAt: record.UpdatedAt,
+	}
+	if err := next.Validate(); err != nil {
+		t.Fatalf("probe is invalid: %v", err)
+	}
+	if err := refuseRewrittenIdentity(record, next); !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("late legacy preparation = %v", err)
+	}
+}
+
+func TestDispatchRecoveryCommitmentCannotRecastEvidenceOnlyClaim(t *testing.T) {
+	record := testActionRecord()
+	record.State = fleet.DispatchClaimed
+	record.Version = 2
+	record.ClaimID = []byte("first-claim")
+	record.ClaimFence = 1
+	record.ClaimLease = time.Minute
+	record.ClaimLeaseUntil = record.UpdatedAt.Add(time.Minute)
+	record.ExecutionPolicyGeneration = 1
+	record.ExecutionExpiresAt = record.Deadline
+	next := record
+	next.Version++
+	next.EffectPossible = true
+	next.RecoveryCommitment = &fleet.RecoveryCommitment{
+		Version: fleet.RecoveryCommitmentVersion, Mode: fleet.RecoveryKey,
+		RequestDigest:     sha256.Sum256([]byte("request")),
+		TargetScopeDigest: sha256.Sum256([]byte("account")),
+		PreparedFence:     1, PreparedAt: record.UpdatedAt,
+	}
+	if err := next.Validate(); err != nil {
+		t.Fatalf("probe is invalid: %v", err)
+	}
+	if err := refuseRewrittenIdentity(record, next); !shoal.IsErrorCode(err, shoal.ErrorInternal) {
+		t.Fatalf("evidence-only preparation = %v", err)
 	}
 }
 
@@ -649,6 +938,7 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 		t.Fatal(err)
 	}
 	record := testActionRecord()
+	record.NotBefore = record.CreatedAt.Add(10 * time.Minute)
 	token := []byte("enqueue-transition")
 	if _, err := store.ApplyAction(context.Background(), fleet.DispatchMutation{
 		Token: token, TransitionKind: "action.enqueued", Record: record,
@@ -663,6 +953,10 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 	store, err = NewDispatchStore(runtime, nil)
 	if err != nil {
 		t.Fatal(err)
+	}
+	restarted, err := store.GetAction(context.Background(), record.ID)
+	if err != nil || !restarted.NotBefore.Equal(record.NotBefore) {
+		t.Fatalf("scheduled action after restart = %#v, %v", restarted, err)
 	}
 	page, err := store.PendingActionTransitions(
 		context.Background(), record.ID, nil, 10)
@@ -942,6 +1236,11 @@ func TestDispatchStoreRefusesARewrittenIdentity(t *testing.T) {
 		// outlive the bound its dispatcher accepted.
 		{"deadline", nil, func(r *fleet.ActionRecord) {
 			r.Deadline = r.Deadline.Add(24 * time.Hour)
+		}},
+		{"not-before time", func(r *fleet.ActionRecord) {
+			r.NotBefore = r.CreatedAt.Add(5 * time.Minute)
+		}, func(r *fleet.ActionRecord) {
+			r.NotBefore = r.NotBefore.Add(time.Minute)
 		}},
 		// A real Reason, not a hand-built one with a bogus digest: Validate
 		// requires the digest to be 64 lowercase hex characters, so "x" was

@@ -28,6 +28,7 @@ type fakeCluster struct {
 	ambiguous   bool
 	reject      bool
 	locateCalls int
+	writeCalls  int
 }
 
 func newFakeCluster() *fakeCluster {
@@ -136,6 +137,7 @@ func (f *fakeCluster) ConditionalWrite(
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writeCalls++
 	if f.reject {
 		return ingestclient.ConditionalRejected, nil
 	}
@@ -333,6 +335,36 @@ func TestAuthorityConcurrentReferencesAndAmbiguousMincCommit(t *testing.T) {
 	cluster.mu.Unlock()
 	if !fileColumn || len(embeddingColumn) == 0 {
 		t.Fatalf("file and embedding columns were not committed atomically: file=%t embedding=%q", fileColumn, embeddingColumn)
+	}
+}
+
+func TestAuthorityRejectsUncoveredFileBeforeMetadataMutation(t *testing.T) {
+	cluster := newFakeCluster()
+	authority, fence := testAuthority(t, cluster)
+	cluster.mu.Lock()
+	writesBefore := cluster.writeCalls
+	cluster.mu.Unlock()
+
+	file := mincauthority.DataFile{
+		Path: "file:///tables/5/t-1/uncovered.rf", Format: "rfile",
+		Size: 42, Entries: 1, Embedding: embeddingspace.Unknown(),
+	}
+	outcome, err := authority.Commit(context.Background(), mincauthority.MetadataCommit{
+		OperationID: "unlogged-op", Extent: authority.extent, Fence: fence,
+		File: file, TabletTime: "M42",
+	})
+	if outcome != mincauthority.CommitRejected || !errors.Is(err, ErrUncoveredFile) {
+		t.Fatalf("uncovered Commit = %v, %v", outcome, err)
+	}
+	cluster.mu.Lock()
+	writesAfter := cluster.writeCalls
+	cluster.mu.Unlock()
+	if writesAfter != writesBefore {
+		t.Fatalf("uncovered Commit made %d conditional writes", writesAfter-writesBefore)
+	}
+	state, err := authority.Read(context.Background(), authority.extent)
+	if err != nil || len(state.Files) != 0 || len(state.WALs) != 0 || state.Time != "M0" {
+		t.Fatalf("metadata changed after rejected uncovered Commit: %+v, %v", state, err)
 	}
 }
 

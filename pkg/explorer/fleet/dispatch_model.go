@@ -128,6 +128,7 @@ var (
 	ErrClaimLost            = errors.New("fleet dispatch: claim lost")
 	ErrActionTerminal       = errors.New("fleet dispatch: action is terminal")
 	ErrExecutionAmbiguous   = errors.New("fleet dispatch: execution may have occurred")
+	ErrCancelClaimUncertain = errors.New("fleet dispatch: cancellation refused because a lapsed claim may have executed")
 	ErrActionCommitted      = errors.New("fleet dispatch: action state committed")
 	ErrRecordingUnavailable = errors.New("fleet dispatch: recording is unavailable")
 )
@@ -479,9 +480,13 @@ type ActionRecord struct {
 	CancelAuthorizationExpiresAt   time.Time
 	Reason                         interaction.Reason
 	Deadline                       time.Time
-	CreatedAt                      time.Time
-	UpdatedAt                      time.Time
-	ClaimID                        []byte
+	// NotBefore is the earliest time a queued action may be claimed. Zero
+	// retains the immediate-dispatch behavior of records written before this
+	// field existed.
+	NotBefore time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	ClaimID   []byte
 	// The claimant's own principal chain, recorded when the claim is taken
 	// and compared when it is reported on.
 	//
@@ -579,6 +584,11 @@ type ActionRecord struct {
 	EvidenceSnapshotAsOf time.Time
 	Evidence             []EvidenceRef
 	EffectPossible       bool
+	// RecoveryCommitment is a write-once statement of the exact request a
+	// trusted external gateway prepared before its first target send. Nil on
+	// legacy actions and on actions not yet prepared. A later claim may use it
+	// only after independently binding and comparing its candidate request.
+	RecoveryCommitment *RecoveryCommitment `json:"-"`
 	// AdmittedEffects is the effect set a pre-call admission declared it was
 	// about to perform. Empty on an action that was dispatched rather than
 	// admitted.
@@ -821,6 +831,7 @@ type EnqueueRequest struct {
 	PolicyID        []byte
 	ObjectID        shoal.ID
 	Input           json.RawMessage
+	NotBefore       time.Time
 	Context         RequestContext
 }
 
@@ -1377,6 +1388,10 @@ func (r ActionRecord) Validate() error {
 	if r.UpdatedAt.Before(r.CreatedAt) || !r.CreatedAt.Before(r.Deadline) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "action timestamps are inconsistent")
 	}
+	if !r.NotBefore.IsZero() &&
+		(r.NotBefore.Location() != time.UTC || !r.NotBefore.Before(r.Deadline)) {
+		return shoal.NewError(shoal.ErrorInvalidArgument, "action not-before time must be UTC and precede its deadline")
+	}
 	if len(r.AuthorizedOperations) == 0 {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "authorized action operations are required")
 	}
@@ -1449,6 +1464,20 @@ func (r ActionRecord) Validate() error {
 	if (r.State == DispatchClaimed || r.State == DispatchSucceeded || r.State == DispatchFailed) &&
 		(r.ExecutionPolicyGeneration <= 0 || r.ExecutionExpiresAt.IsZero()) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "action execution authorization is incomplete")
+	}
+	if r.RecoveryCommitment != nil {
+		if err := r.RecoveryCommitment.validate(); err != nil {
+			return err
+		}
+		if r.State == DispatchQueued || len(r.ClaimID) == 0 ||
+			r.ClaimFence < r.RecoveryCommitment.PreparedFence || !r.EffectPossible ||
+			r.RecoveryCommitment.PreparedAt.Before(r.CreatedAt) ||
+			r.RecoveryCommitment.PreparedAt.After(r.UpdatedAt) ||
+			!r.RecoveryCommitment.PreparedAt.Before(r.ClaimLeaseUntil) ||
+			!r.RecoveryCommitment.PreparedAt.Before(r.Deadline) {
+			return shoal.NewError(shoal.ErrorInvalidArgument,
+				"action recovery commitment is outside its claim bounds")
+		}
 	}
 	// EffectPossible is deliberately not required here. It was, and that
 	// requirement enforced a falsehood: it made every terminal record assert
@@ -1841,6 +1870,10 @@ func validateSchemaValue(schema map[string]any, value any, path string, depth in
 
 func cloneActionRecord(input ActionRecord) ActionRecord {
 	result := input
+	if input.RecoveryCommitment != nil {
+		commitment := *input.RecoveryCommitment
+		result.RecoveryCommitment = &commitment
+	}
 	result.ID = append([]byte(nil), input.ID...)
 	result.IdempotencyKey = append([]byte(nil), input.IdempotencyKey...)
 	result.SourceID = append([]byte(nil), input.SourceID...)

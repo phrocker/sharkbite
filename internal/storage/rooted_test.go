@@ -158,3 +158,33 @@ func TestRooted_MirrorsInnerCapabilities(t *testing.T) {
 		t.Fatal("BackendRootOf mismatch")
 	}
 }
+
+func TestRootedSnapshotForwardingAndUnsupportedInner(t *testing.T) {
+	dir := t.TempDir()
+	inner := memory.New()
+	rooted, err := storage.NewRooted(inner, dir, "bucket/prefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "table", "file.rf")
+	inner.Put("bucket/prefix/table/file.rf", []byte("first"))
+	opener := rooted.(storage.SnapshotOpener)
+	f, err := opener.OpenSnapshot(context.Background(), path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	inner.Put("bucket/prefix/table/file.rf", []byte("later"))
+	buf := make([]byte, 5)
+	if n, err := f.ReadAt(buf, 0); n != 5 || err != nil || string(buf) != "first" {
+		t.Fatalf("rooted snapshot = %d, %q, %v", n, buf, err)
+	}
+
+	unsupported, err := storage.NewRooted(openOnly{memory.New()}, dir, "bucket/prefix")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := unsupported.(storage.SnapshotOpener).OpenSnapshot(context.Background(), path); !errors.Is(err, storage.ErrSnapshotUnsupported) {
+		t.Fatalf("unsupported rooted snapshot = %v", err)
+	}
+}
