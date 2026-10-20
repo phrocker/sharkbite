@@ -347,6 +347,13 @@ explorer:
     endpoint: http://127.0.0.1:8701
     allowNonLoopback: false
     resources: {}
+  # The Learning console and its authenticated routes (#193). Empty leaves
+  # every learning route unmounted and the console reports the service
+  # unavailable. The state root holds the release registry, sealed records,
+  # and offline release bundles under stateDir.
+  learning:
+    enabled: false
+    evidenceDir: ""
   # The execution boundary (#381). Registration is fail-closed: a descriptor can
   # only name an executor reference this list allows.
   fleet:

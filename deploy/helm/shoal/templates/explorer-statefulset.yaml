@@ -208,6 +208,18 @@ spec:
             {{- with $explorer.ontologyFile }}
             - {{ printf "-ontology-file=%v" (.) | quote }}
             {{- end }}
+            {{- if $explorer.learning.enabled }}
+            - {{ printf "-learning-state-dir=%v/learning" $explorer.stateDir | quote }}
+            - {{ printf "-learning-serving-root=%v/releases" $explorer.stateDir | quote }}
+            {{- with $explorer.learning.evidenceDir }}
+            - {{ printf "-learning-evidence-dir=%v" (.) | quote }}
+            {{- end }}
+            {{- end }}
+            {{- if $explorer.studentModel.enabled }}
+            - {{ printf "-learning-images=student-runtime=%v@%v" $explorer.studentModel.image.repository $explorer.studentModel.image.digest | quote }}
+            - {{ printf "-student-endpoint=%v" $explorer.studentModel.endpoint | quote }}
+            - {{ printf "-student-model-alias=%v" $explorer.studentModel.modelAlias | quote }}
+            {{- end }}
           {{- if or (and $explorer.chat.credentialSecretName $explorer.chat.provider) (and $explorer.embedding.credentialSecretName $explorer.embedding.provider) }}
           env:
             {{- if and $explorer.chat.credentialSecretName $explorer.chat.provider }}

@@ -725,6 +725,7 @@ note "== the student runtime sidecar is loopback-only and pinned by digest (#191
 student_digest=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 bundle_digest=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
 student_base=("${explorer_base[@]}"
+  --set explorer.learning.enabled=true
   --set explorer.studentModel.enabled=true
   --set explorer.studentModel.image.repository=ghcr.io/example/shoal-student-runtime
   --set "explorer.studentModel.image.digest=$student_digest"
@@ -737,6 +738,10 @@ assert_renders "the sidecar serves the imported bundle by digest" "--bundle-dir=
 assert_renders "the sidecar probe is loopback" '^ +host: 127\.0\.0\.1$' "${student_base[@]}"
 assert_absent "no student model endpoint is rendered beyond loopback" 'student.*http://[^1]' "${student_base[@]}"
 assert_absent "a disabled student model renders no sidecar" 'student-runtime' "${explorer_base[@]}"
+assert_renders "the learning routes are mounted from the state root" '"-learning-state-dir=/var/lib/shoal/learning"' "${student_base[@]}"
+assert_renders "the workspace resolves the student on loopback" '"-student-endpoint=http://127.0.0.1:8701"' "${student_base[@]}"
+assert_absent "no learning routes without learning.enabled" 'learning-state-dir' "${explorer_base[@]}"
+refuses_citing "explorer.learning.enabled must be true when explorer.studentModel.enabled" "a student sidecar without the learning routes" "${student_base[@]}" --set explorer.learning.enabled=false
 refuses_citing "explorer.studentModel.image.digest must be an image digest" "a student image by tag" "${student_base[@]}" --set explorer.studentModel.image.digest=latest
 refuses_citing "explorer.studentModel.image.digest must be an image digest" "a student image with an empty digest" "${student_base[@]}" --set explorer.studentModel.image.digest=
 refuses_citing "explorer.studentModel.image.repository is required" "a student image with no repository" "${student_base[@]}" --set explorer.studentModel.image.repository=

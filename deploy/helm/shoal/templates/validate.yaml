@@ -317,6 +317,9 @@
        The endpoint the workspace resolves is loopback or an explicit boolean
        acknowledgement; a runtime in another pod of the same cluster is
        off-host and egressing even over the identical protocol. */ -}}
+{{- if and $explorer.studentModel.enabled (not $explorer.learning.enabled) -}}
+{{- fail "explorer.learning.enabled must be true when explorer.studentModel.enabled is true: the student sidecar serves the active release of the learning registry, which only the learning routes maintain" -}}
+{{- end -}}
 {{- $student := $explorer.studentModel -}}
 {{- if $student.enabled -}}
 {{- if not $student.image.repository -}}

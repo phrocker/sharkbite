@@ -52,7 +52,7 @@
       <section><h2>Hierarchy</h2><p id="hierarchy-status" class="muted" role="status" aria-live="polite">Select a document.</p><div id="hierarchy" class="tree"></div></section>
     </aside>
     <section class="center">
-      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
+      <div class="tabs" role="tablist" aria-label="Explorer views"><button id="tab-chat" class="tab" data-panel="chat" role="tab" aria-controls="chat" aria-selected="false" tabindex="-1" type="button">Chat</button><button id="tab-evidence" class="tab active" data-panel="evidence" role="tab" aria-controls="evidence" aria-selected="true" type="button">Evidence</button><button id="tab-team" class="tab" data-panel="team" role="tab" aria-controls="team" aria-selected="false" tabindex="-1" type="button">Team</button><button id="tab-decisions" class="tab" data-panel="decisions" role="tab" aria-controls="decisions" aria-selected="false" tabindex="-1" type="button">Decisions</button><button id="tab-learning" class="tab" data-panel="learning" role="tab" aria-controls="learning" aria-selected="false" tabindex="-1" type="button">Learning</button><button id="tab-graph" class="tab" data-panel="graph" role="tab" aria-controls="graph" aria-selected="false" tabindex="-1" type="button">Graph</button><button id="tab-ontology" class="tab" data-panel="ontology" role="tab" aria-controls="ontology" aria-selected="false" tabindex="-1" type="button">Ontology</button></div>
       <div id="chat" class="panel" role="tabpanel" aria-labelledby="tab-chat">
         <form id="chat-form" class="stack">
           <label for="chat-question">Ask the governed workspace</label>
@@ -176,6 +176,104 @@
         <p id="decision-console-status" class="muted" role="status" aria-live="polite">Choose a registered identity to inspect.</p>
         <pre id="decision-console-output" class="decision-output" aria-live="polite"></pre>
       </div>
+      <div id="learning" class="panel decision-panel learning-panel" role="tabpanel" aria-labelledby="tab-learning">
+        <section class="decision-intro" aria-labelledby="learning-console-heading">
+          <h2 id="learning-console-heading">Learning console</h2>
+          <p class="muted">Datasets, distillation jobs, candidates and evaluations, releases, evidence, and offline release bundles, driven through the authenticated learning routes. Every action here has an equivalent route and produces the same record. Shadow evidence cannot promote a model or exclude review: promotion grants shadow-candidate status, and activation is an explicit, bound approval. This console creates no authority and cannot make an unmounted service appear available.</p>
+        </section>
+        <div class="decision-grid">
+          <section class="decision-card" aria-labelledby="learning-datasets-heading">
+            <h3 id="learning-datasets-heading">Datasets</h3>
+            <div class="button-row"><button type="button" data-learning-load="datasets">List cohorts and exports</button></div>
+            <form id="learning-export-form" class="stack decision-secondary-form">
+              <label for="learning-cohort-id">Cohort ID<input id="learning-cohort-id" required autocomplete="off" spellcheck="false" placeholder="registered cohort ID"></label>
+              <button type="submit">Request authorized export</button>
+            </form>
+          </section>
+          <section class="decision-card" aria-labelledby="learning-jobs-heading">
+            <h3 id="learning-jobs-heading">Distillation jobs</h3>
+            <div class="button-row"><button type="button" data-learning-load="jobs">List jobs</button></div>
+            <form id="learning-job-inspect-form" class="stack decision-secondary-form">
+              <label for="learning-job-pin">Manifest pin<input id="learning-job-pin" required autocomplete="off" spellcheck="false" placeholder="64-hex manifest pin"></label>
+              <button type="submit">Show requested vs actual, executor, receipt</button>
+            </form>
+            <form id="learning-job-compose-form" class="stack decision-secondary-form">
+              <label for="learning-job-task">Task ID<input id="learning-job-task" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-cohorts">Cohort IDs (comma separated)<input id="learning-job-cohorts" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-export-pins">Export manifest pins, cohort=sha256 (comma separated)<input id="learning-job-export-pins" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-label-policies">Label policy IDs (comma separated)<input id="learning-job-label-policies" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-families">Evidence families (comma separated)<input id="learning-job-families" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-prompt">Prompt version<input id="learning-job-prompt" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-training-pin">Training manifest SHA-256<input id="learning-job-training-pin" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-held-out">Held-out example IDs (comma separated)<input id="learning-job-held-out" autocomplete="off" spellcheck="false"></label>
+              <label for="learning-job-teacher">Teacher selection JSON<textarea id="learning-job-teacher" required spellcheck="false" placeholder='{"role":"teacher","eligible":[...],"rule":{...},"chosen":"...","rejected":[...]}'></textarea></label>
+              <label for="learning-job-base">Base selection JSON<textarea id="learning-job-base" required spellcheck="false" placeholder='{"role":"base","eligible":[...],"rule":{...},"chosen":"...","rejected":[]}'></textarea></label>
+              <label for="learning-job-parameters">Generation parameters JSON<textarea id="learning-job-parameters" required spellcheck="false" placeholder='{"temperature":0.0}'></textarea></label>
+              <button type="submit">Submit manifest</button>
+            </form>
+            <form id="learning-receipt-form" class="stack decision-secondary-form">
+              <label for="learning-receipt-pin">Manifest pin<input id="learning-receipt-pin" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-receipt-json">Training receipt JSON<textarea id="learning-receipt-json" required spellcheck="false"></textarea></label>
+              <button type="submit">Submit receipt</button>
+            </form>
+          </section>
+          <section class="decision-card" aria-labelledby="learning-candidates-heading">
+            <h3 id="learning-candidates-heading">Candidates and evaluations</h3>
+            <div class="button-row"><button type="button" data-learning-load="candidates">List candidates</button></div>
+            <form id="learning-evaluations-form" class="stack decision-secondary-form">
+              <label for="learning-evaluations-candidate">Candidate ID<input id="learning-evaluations-candidate" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Show verdicts per assessor</button>
+            </form>
+            <form id="learning-candidate-form" class="stack decision-secondary-form">
+              <label for="learning-candidate-json">Sealed candidate and artifact JSON<textarea id="learning-candidate-json" required spellcheck="false" placeholder='{"candidate":{...},"artifact":{...}}'></textarea></label>
+              <button type="submit">Record candidate</button>
+            </form>
+            <form id="learning-evaluation-form" class="stack decision-secondary-form">
+              <label for="learning-evaluation-json">Sealed evaluation (promotion_record) JSON<textarea id="learning-evaluation-json" required spellcheck="false"></textarea></label>
+              <button type="submit">Record evaluation</button>
+            </form>
+          </section>
+          <section class="decision-card" aria-labelledby="learning-releases-heading">
+            <h3 id="learning-releases-heading">Releases</h3>
+            <div class="button-row"><button type="button" data-learning-load="releases">Show active release and history</button></div>
+            <form id="learning-promote-form" class="stack decision-secondary-form">
+              <label for="learning-promote-candidate">Candidate ID<input id="learning-promote-candidate" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-promote-evaluation">Evaluation ID<input id="learning-promote-evaluation" autocomplete="off" spellcheck="false" placeholder="required by the record; a promotion without it is refused"></label>
+              <label for="learning-promote-owner">Approval owner<input id="learning-promote-owner" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Promote with bound approval</button>
+            </form>
+            <form id="learning-rollback-form" class="stack decision-secondary-form">
+              <label for="learning-rollback-prior">Prior release ID<input id="learning-rollback-prior" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-rollback-owner">Approval owner<input id="learning-rollback-owner" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Roll back</button>
+            </form>
+          </section>
+          <section class="decision-card" aria-labelledby="learning-evidence-heading">
+            <h3 id="learning-evidence-heading">Evidence (read-only)</h3>
+            <form id="learning-evidence-form" class="stack">
+              <label for="learning-evidence-kind">Report kind<select id="learning-evidence-kind"><option value="quality">quality</option><option value="poisoning">poisoning</option><option value="calibration">calibration</option><option value="influence">influence</option><option value="challenger">challenger</option></select></label>
+              <button type="submit">Read reports</button>
+            </form>
+          </section>
+          <section class="decision-card" aria-labelledby="learning-bundles-heading">
+            <h3 id="learning-bundles-heading">Offline release bundles</h3>
+            <div class="button-row"><button type="button" data-learning-load="bundles">List bundles and verification</button></div>
+            <form id="learning-bundle-export-form" class="stack decision-secondary-form">
+              <label for="learning-bundle-export-release">Release ID<input id="learning-bundle-export-release" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-bundle-export-name">Bundle name<input id="learning-bundle-export-name" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Export bundle</button>
+            </form>
+            <form id="learning-bundle-import-form" class="stack decision-secondary-form">
+              <label for="learning-bundle-import-name">Bundle name<input id="learning-bundle-import-name" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-bundle-import-importer">Importer identity<input id="learning-bundle-import-importer" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Verify and import</button>
+            </form>
+          </section>
+        </div>
+        <p id="learning-console-status" class="muted" role="status" aria-live="polite">Choose a learning record to inspect.</p>
+        <div id="learning-console-summary" class="learning-summary" aria-live="polite"></div>
+        <pre id="learning-console-output" class="decision-output" aria-live="polite"></pre>
+      </div>
       <div id="graph" class="panel" role="tabpanel" aria-labelledby="tab-graph">
         <div class="graph-tools">
           <button id="expand" type="button" disabled>Expand selected</button>
@@ -258,5 +356,6 @@
   <script src="/assets/app.js"></script>
   <script src="/assets/team-overview.js"></script>
   <script src="/assets/decision-console.js"></script>
+  <script src="/assets/learning-console.js"></script>
 </body>
 </html>
