@@ -1172,9 +1172,6 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 		renewDone: make(chan struct{}),
 	}
 	run.renewCtx, run.renewCancel = context.WithCancel(w.hard)
-	if len(run.action.CorrelationID) == 0 {
-		run.action.CorrelationID = append([]byte(nil), offered.CorrelationID...)
-	}
 	anchored, err := AnchorAnswer(sent, w.clock.Now(), claimed.ClaimTimes())
 	if err != nil {
 		// A claim whose bounds cannot be placed on the local clock is held

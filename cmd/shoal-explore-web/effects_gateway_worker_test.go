@@ -384,6 +384,7 @@ type recordView struct {
 	ClaimID          string          `json:"claim_id"`
 	ClaimFence       uint64          `json:"claim_fence"`
 	ClaimLeaseUntil  time.Time       `json:"claim_lease_until"`
+	EffectPossible   bool            `json:"effect_possible"`
 	CorrelationID    string          `json:"correlation_id"`
 	AmbiguityReports []struct {
 		ClaimFence uint64 `json:"claim_fence"`
@@ -444,6 +445,9 @@ func TestTheWorkerPerformsAnActionEndToEnd(t *testing.T) {
 	worker := g.startWorker(clock, target, workerOptions{dir: t.TempDir()})
 	waitFor(t, "success", func() bool { return g.view("w-happy").State == string(fleet.DispatchSucceeded) })
 	view := g.view("w-happy")
+	if !view.EffectPossible {
+		t.Fatal("externally effected claim did not retain effect_possible")
+	}
 	var output map[string]any
 	if err := json.Unmarshal(view.Output, &output); err != nil || output["reference"] != "ch_1" ||
 		output["idempotency"] != "key" {

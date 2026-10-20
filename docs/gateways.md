@@ -94,6 +94,22 @@ it. `internal/effectsgateway` is a thin adapter over it and links no
 `pkg/explorer` package. Golden fixtures in `pkg/dispatch/api/testdata/wire` pin
 both sides.
 
+Dispatch accepts an optional UTC `not_before` on `POST /api/v1/fleet/actions`
+and approval requests. It must precede the action deadline. The timestamp is
+durable and immutable: workers do not see the action in Pull, and a direct
+Claim is refused, until that time. A replay with a different timestamp is a
+conflict. `Invoke` remains immediate and refuses `not_before`. This is the
+one-shot delayed-dispatch slice of #144; Pull still scans action-ID pages, so
+workers must follow `next` even when a page contains no due actions. The due
+index, recurring schedules, retry/dead-letter policy and operator recovery
+remain in #144.
+
+Scheduled action records and transition outbox entries use a versioned store
+envelope. Older gateways reject them rather than silently drop `not_before`
+and execute them early. During a rolling upgrade, those older gateways can
+return an error for pages containing scheduled work, so enable scheduled
+enqueues after the gateway fleet has upgraded.
+
 **Extensions use only that public surface:**
 
 - The session gateway: an SSH adapter, then an RDP adapter.

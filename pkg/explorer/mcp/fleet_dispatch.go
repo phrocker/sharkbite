@@ -22,6 +22,7 @@ import (
 const (
 	FleetDispatchToolName = "shoal.agent_dispatch"
 	FleetInvokeToolName   = "shoal.agent_invoke"
+	FleetStatusToolName   = "shoal.agent_status"
 )
 
 type fleetDispatchTool struct {
@@ -36,11 +37,11 @@ type fleetDispatchTool struct {
 // finalized complete evidence-reference schema is composed; bare node IDs
 // would understate edge, anchor, revision, range, and visibility provenance.
 type FleetActionToolResult struct {
-	Action   fleet.ActionRecord          `json:"action"`
-	Recovery *dispatchapi.RecoveryStatus `json:"recovery_commitment,omitempty"`
+	Action dispatchapi.Action `json:"action"`
 }
 
-// NewFleetDispatchTools returns enqueue and synchronous invoke providers.
+// NewFleetDispatchTools returns enqueue, synchronous invoke, and status
+// providers. Status reads the same durable record as the HTTP status route.
 // The MCP dispatcher enforces each provider's primary operation; fleet.Service
 // performs target-bound and conditional delegation authorization again.
 func NewFleetDispatchTools(
@@ -60,7 +61,67 @@ func NewFleetDispatchTools(
 			service: service, resolver: resolver,
 			operation: auth.OperationInvoke, invoke: true,
 		},
+		&fleetStatusTool{service: service, resolver: resolver},
 	}, nil
+}
+
+type fleetStatusTool struct {
+	service  webapi.FleetDispatchProvider
+	resolver auth.Resolver
+}
+
+func (*fleetStatusTool) Tool() Tool {
+	readOnly, destructive, openWorld := true, false, false
+	return Tool{
+		Name: FleetStatusToolName, Title: "Read agent action status",
+		Description: "Read the durable receipt for an agent action you dispatched.",
+		InputSchema: json.RawMessage(`{
+			"type":"object",
+			"properties":{"action_id":{"type":"string","minLength":1,"maxLength":344}},
+			"required":["action_id"],"additionalProperties":false
+		}`),
+		Annotations: &ToolAnnotations{
+			ReadOnlyHint: &readOnly, DestructiveHint: &destructive,
+			OpenWorldHint: &openWorld,
+		},
+		Execution: &ToolExecution{TaskSupport: "forbidden"},
+	}
+}
+
+func (*fleetStatusTool) ToolAuthorizationOperation() auth.Operation {
+	return auth.OperationDispatch
+}
+
+func (p *fleetStatusTool) Call(ctx context.Context, arguments json.RawMessage) (any, error) {
+	var input struct {
+		ActionID string `json:"action_id"`
+	}
+	if err := decodeFleetToolInput(arguments, &input); err != nil {
+		return nil, err
+	}
+	actionID, err := decodeFleetToolBytes("action ID", input.ActionID, false)
+	if err != nil {
+		return nil, err
+	}
+	decision, err := p.resolver.Resolve(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if decision.RequestID() == "" || decision.CorrelationID() == "" {
+		return nil, shoal.NewError(shoal.ErrorUnauthorized,
+			"fleet MCP decision lacks request or correlation identity")
+	}
+	action, err := p.service.Status(ctx, fleet.StatusRequest{
+		ID: actionID,
+		Context: fleet.RequestContext{
+			RequestID: decision.RequestID(), CorrelationID: decision.CorrelationID(),
+			ReasonCode: "receipt_lookup", Deadline: time.Now().UTC().Add(30 * time.Second),
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+	return FleetActionToolResult{Action: webapi.EncodeFleetAction(action)}, nil
 }
 
 func (p *fleetDispatchTool) Tool() Tool {
@@ -166,14 +227,7 @@ func (p *fleetDispatchTool) Call(
 	if err != nil {
 		return nil, err
 	}
-	result := FleetActionToolResult{Action: action}
-	if committed := action.RecoveryCommitment; committed != nil {
-		result.Recovery = &dispatchapi.RecoveryStatus{
-			Version: committed.Version, Mode: string(committed.Mode),
-			PreparedFence: committed.PreparedFence, PreparedAt: committed.PreparedAt,
-		}
-	}
-	return result, nil
+	return FleetActionToolResult{Action: webapi.EncodeFleetAction(action)}, nil
 }
 
 type fleetActionToolInput struct {

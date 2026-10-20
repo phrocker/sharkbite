@@ -510,6 +510,11 @@ func fleetDispatchError(err error) error {
 		return explorer.MarkIndeterminateCommit(shoal.WrapError(
 			shoal.ErrorUnavailable,
 			"fleet action outcome requires reconciliation", err))
+	// Cancel refused before its audit or store write. The prior claim may have
+	// executed, but this cancellation did not commit.
+	case errors.Is(err, fleet.ErrCancelClaimUncertain):
+		return shoal.WrapError(shoal.ErrorConflict,
+			"cancellation refused: lapsed claim may have executed; reconcile the claim", err)
 	// Deliberately *not* marked, and the first version of this comment got
 	// the reason wrong in a way worth recording.
 	//
@@ -560,6 +565,7 @@ type fleetEnqueueWire struct {
 	PolicyID        []byte                  `json:"policy_id"`
 	ObjectID        string                  `json:"object_id"`
 	Input           json.RawMessage         `json:"input"`
+	NotBefore       time.Time               `json:"not_before,omitzero"`
 }
 
 type fleetInvokeWire struct {
@@ -783,7 +789,8 @@ func (w fleetEnqueueWire) decode(pathID []byte) (fleet.EnqueueRequest, error) {
 		ID: id, IdempotencyKey: key, AgentID: agent, AgentGeneration: w.AgentGeneration,
 		Capability: w.Capability, Action: w.Action, SourceID: append([]byte(nil), w.SourceID...),
 		PolicyID: append([]byte(nil), w.PolicyID...), ObjectID: object,
-		Input: append(json.RawMessage(nil), w.Input...), Context: contextValue,
+		Input:     append(json.RawMessage(nil), w.Input...),
+		NotBefore: w.NotBefore, Context: contextValue,
 	}, nil
 }
 
@@ -907,6 +914,7 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 		Effected:        encodeEffected(record.Effected),
 		RequestID:       encodeFleetID(record.RequestID),
 		CorrelationID:   encodeFleetID(record.CorrelationID), Deadline: record.Deadline,
+		NotBefore: record.NotBefore,
 		CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
 		ClaimID: base64.RawURLEncoding.EncodeToString(record.ClaimID), ClaimFence: record.ClaimFence,
 		ClaimLeaseUntil: record.ClaimLeaseUntil, EffectPossible: record.EffectPossible,
@@ -918,6 +926,13 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 	}
 }
 
+// EncodeFleetAction returns the public action receipt used by non-claim
+// routes. It omits execution input, idempotency keys, and internal
+// authorization metadata. MCP uses this projection so it cannot expose more
+// than the HTTP status route for the same action.
+func EncodeFleetAction(record fleet.ActionRecord) dispatchapi.Action {
+	return encodeFleetAction(record)
+}
 func encodeFleetAmbiguityReports(
 	reports []fleet.AmbiguityReport,
 ) []fleetAmbiguityReportWire {

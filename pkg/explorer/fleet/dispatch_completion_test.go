@@ -327,11 +327,11 @@ func TestCompleteClaimReplayReturnsTheCommittedRecord(t *testing.T) {
 // to produce, and clones the record it cancelled — so it preserves that
 // reporter's own ClaimID. A replay check that accepted any terminal state would
 // therefore hand a late reporter the cancelled record with no error, telling it
-// the work it performed was recorded while the record says the opposite. For an
-// external effect that is the worst possible answer: the effect happened, the
-// action says cancelled, and the worker was told everything was fine.
+// the work it performed was recorded while the record says the opposite. An
+// external-effect claim cannot be cancelled after it lapses; use an action
+// without a possible external effect to exercise the terminal replay guard.
 func TestCompleteClaimDoesNotAcknowledgeACancelledAction(t *testing.T) {
-	fixture := newCompletionFixture(t, Effects{EffectMutatesExternal})
+	fixture := newCompletionFixture(t, Effects{})
 	// Cancel refuses a live claim, so the lease has to lapse first — which is
 	// also the only way a worker ends up reporting this late.
 	*fixture.clock = fixture.clock.Add(2 * time.Minute)

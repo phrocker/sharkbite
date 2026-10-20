@@ -143,6 +143,24 @@ func TestLeaseEndingDuringRetryCredentialLookupKeepsWrittenOutcomeHonest(t *test
 		cfg.ClaimLease = 90 * time.Second
 		cfg.OperationTimeout = 30 * time.Second
 	})
+	// Keep this test on the first claim. A later prepared claimant may safely
+	// resend the same committed request after this lease expires.
+	h.explorer.onClaim = func(n int, _ []byte, _ ClaimRequest) (Action, error, bool) {
+		if n > 1 {
+			return Action{}, conflict("claim", http.StatusConflict), true
+		}
+		return Action{}, nil, false
+	}
+	// Production refuses completion after the claim lease ends. The fake must
+	// do the same or this test can mistake a late terminal write for safety.
+	h.explorer.onComplete = func(_ int, _ []byte, _ Completion) (Action, error, bool) {
+		record := h.explorer.records["retry-lease"]
+		now := h.explorer.serverNow()
+		if !now.Before(record.action.ClaimLeaseUntil) || !now.Before(record.action.Deadline) {
+			return Action{}, conflict("complete", http.StatusConflict), true
+		}
+		return Action{}, nil, false
+	}
 	h.explorer.enqueue("retry-lease", "charge", chargeInput, workerEpoch.Add(time.Hour))
 	credentialReads := 0
 	h.credential = func() {
@@ -169,16 +187,24 @@ func TestLeaseEndingDuringRetryCredentialLookupKeepsWrittenOutcomeHonest(t *test
 		settle()
 		h.clock.Advance(time.Second)
 	}
-	eventually(t, "retry completion", func() bool {
+	eventually(t, "uncertain first claim to be reported", func() bool {
 		h.explorer.mu.Lock()
 		defer h.explorer.mu.Unlock()
-		return len(h.explorer.completions) != 0
+		return len(h.explorer.reports) != 0
 	})
 	if _, requests, _ := h.target.stats(); requests != 1 {
-		t.Fatalf("sent after credential lookup consumed lease: %d requests", requests)
+		t.Fatalf("sent after credential lookup consumed lease: %d requests, credential reads=%d, now=%s, logs=%s",
+			requests, credentialReads, h.clock.Now().Format(time.RFC3339Nano), h.logs.String())
 	}
-	if got := h.completion(1); got.ErrorCode == "" || got.Effected.Bytes == 0 {
-		t.Fatalf("written retry lost its uncertain outcome: %+v", got)
+	h.explorer.mu.Lock()
+	state := h.explorer.records["retry-lease"].action.State
+	completions := len(h.explorer.completions)
+	reports := append([]AmbiguityReport(nil), h.explorer.reports...)
+	h.explorer.mu.Unlock()
+	if state != dispatchapi.DispatchClaimed || completions > 1 || len(reports) != 1 ||
+		reports[0].ClaimFence != 1 || reports[0].Outcome != dispatchapi.AmbiguityOutcomeUnknown {
+		t.Fatalf("late completion resolved written uncertainty: state=%s completions=%d reports=%+v",
+			state, completions, reports)
 	}
 }
 
