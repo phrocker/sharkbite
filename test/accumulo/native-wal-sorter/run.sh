@@ -2,7 +2,13 @@
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-image='ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db'
+image="$(python3 - "${root}/test/accumulo/harness.py" <<'PY'
+import runpy
+import sys
+
+print(runpy.run_path(sys.argv[1])["ACCUMULO_IMAGE"])
+PY
+)"
 work="$(mktemp -d)"
 trap 'rm -rf "${work}"' EXIT
 wal="${work}/wal/localhost+9997/00000000-0000-0000-0000-000000000172"

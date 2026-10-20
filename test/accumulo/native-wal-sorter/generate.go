@@ -39,7 +39,7 @@ func main() {
 			Value: mutation("left", "left-value", 101)},
 		{Key: qwal.LogFileKey{Event: qwal.EventManyMutations, TabletID: 7, Seq: 15},
 			Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{
-				mutation("batch-a", "A", 102).Mutations[0],
+				binaryMutation("batch-a", 102),
 				deletedMutation("batch-b", 103),
 			}}},
 	}
@@ -60,7 +60,8 @@ func main() {
 func mutation(row, value string, systemTime int64) qwal.LogFileValue {
 	return qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
 		Row: []byte(row), SystemTime: systemTime,
-		Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("cf"), ColumnQualifier: []byte("cq"), Value: []byte(value)}},
+		Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("cf"), ColumnQualifier: []byte("cq"),
+			ColumnVisibility: []byte("vis"), Value: []byte(value)}},
 	}}}
 }
 
@@ -68,6 +69,14 @@ func deletedMutation(row string, systemTime int64) qwal.ServerMutation {
 	return qwal.ServerMutation{
 		Row: []byte(row), SystemTime: systemTime,
 		Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("cf"), ColumnQualifier: []byte("cq"),
-			HasTimestamp: true, Timestamp: 0, Deleted: true}},
+			ColumnVisibility: []byte("vis"), HasTimestamp: true, Timestamp: 0, Deleted: true}},
+	}
+}
+
+func binaryMutation(row string, systemTime int64) qwal.ServerMutation {
+	return qwal.ServerMutation{
+		Row: []byte(row), SystemTime: systemTime,
+		Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("cf"), ColumnQualifier: []byte("cq"),
+			ColumnVisibility: []byte("vis"), Value: []byte{0, 0xff, 1}}},
 	}
 }

@@ -7,6 +7,9 @@ on:
       - ".github/workflows/native-wal-sorter.yml"
       - "internal/qwal/**"
       - "internal/rfile/wire/**"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
       - "test/accumulo/docker-compose.yml"
       - "test/accumulo/image/Dockerfile"
       - "test/accumulo/harness.py"
@@ -17,6 +20,9 @@ on:
       - ".github/workflows/native-wal-sorter.yml"
       - "internal/qwal/**"
       - "internal/rfile/wire/**"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
       - "test/accumulo/docker-compose.yml"
       - "test/accumulo/image/Dockerfile"
       - "test/accumulo/harness.py"
@@ -35,7 +41,7 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
-      - name: Verify pinned Accumulo image and source contract
+      - name: Verify pinned Accumulo harness configuration
         run: make test-accumulo-static
       - name: Sort and recover Go-native WAL with pinned Accumulo Java
         run: bash test/accumulo/native-wal-sorter/run.sh

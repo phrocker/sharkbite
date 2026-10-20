@@ -2,6 +2,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import org.apache.accumulo.core.conf.AccumuloConfiguration;
@@ -76,15 +77,21 @@ public final class NativeRecoveryProbe {
       require(row.equals(expected[i]), "row " + i + " = " + row + ", want " + expected[i]);
       require(got.get(i) instanceof ServerMutation, "lost server mutation at " + row);
       require(got.get(i).getUpdates().size() == 1, "update count for " + row);
-      String value = new String(got.get(i).getUpdates().get(0).getValue(), StandardCharsets.UTF_8);
-      String want = switch (row) {
-        case "left" -> "left-value";
-        case "right" -> "right-value";
-        case "batch-a" -> "A";
-        case "batch-b" -> "";
+      var update = got.get(i).getUpdates().get(0);
+      byte[] want = switch (row) {
+        case "left" -> "left-value".getBytes(StandardCharsets.UTF_8);
+        case "right" -> "right-value".getBytes(StandardCharsets.UTF_8);
+        case "batch-a" -> new byte[] {0, (byte) 0xff, 1};
+        case "batch-b" -> new byte[0];
         default -> throw new AssertionError("unexpected row " + row);
       };
-      require(value.equals(want), "value for " + row + " = " + value);
+      require(Arrays.equals(update.getValue(), want), "value bytes changed for " + row);
+      require(Arrays.equals(update.getColumnFamily(), "cf".getBytes(StandardCharsets.UTF_8)),
+          "column family changed for " + row);
+      require(Arrays.equals(update.getColumnQualifier(), "cq".getBytes(StandardCharsets.UTF_8)),
+          "column qualifier changed for " + row);
+      require(Arrays.equals(update.getColumnVisibility(), "vis".getBytes(StandardCharsets.UTF_8)),
+          "column visibility changed for " + row);
       long systemTime = switch (row) {
         case "left" -> 101;
         case "right" -> 202;
@@ -94,7 +101,6 @@ public final class NativeRecoveryProbe {
       };
       require(((ServerMutation) got.get(i)).getSystemTimestamp() == systemTime,
           "system timestamp changed for " + row);
-      var update = got.get(i).getUpdates().get(0);
       require(update.isDeleted() == row.equals("batch-b"), "delete flag changed for " + row);
       require(update.hasTimestamp() == row.equals("batch-b"), "timestamp flag changed for " + row);
       if (row.equals("batch-b")) require(update.getTimestamp() == 0, "explicit zero timestamp changed");
