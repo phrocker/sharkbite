@@ -265,3 +265,17 @@ func mustRecord(t *testing.T, r Release) Record {
 	}
 	return rec
 }
+
+func TestResolveForTaskRefusesOutsideScope(t *testing.T) {
+	c := loadChain(t)
+	r := NewRegistry()
+	if _, err := r.Promote(context.Background(), chainInput(c), chainLineage); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.ResolveForTask("task-v1"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.ResolveForTask("task-v2"); !errors.Is(err, ErrRefused) {
+		t.Fatalf("%v", err)
+	}
+}

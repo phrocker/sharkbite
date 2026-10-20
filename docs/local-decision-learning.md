@@ -67,6 +67,52 @@ dataset manifest included; withdrawing a source marks every release that
 included it ineligible for new use, with an event that states no unlearning
 is claimed. Rollback to a withdrawn release is refused.
 
+## Selective distillation
+
+A student language model is produced by **selective distillation** and
+promoted through the same candidate, shadow, explicit promotion, and
+rollback lifecycle. Selection runs along two dimensions and both are
+recorded inputs to the job (`internal/distillation`):
+
+- **What** the student learns: the selected tasks, the cohorts and label
+  policies admitted per task, the evidence families the student may see,
+  the prompt or serialization version, the generation parameters, and the
+  held-out example ids excluded from teacher generation, selection, and
+  training.
+- **Which models** it learns from and is built on: the eligible teachers and
+  base checkpoints, each with provider, model, version, cache identity,
+  resolved egress posture, and bundle digest where local; the selection
+  rule; the development-split measurements the rule used; the chosen
+  teacher and base; and every rejected alternative with its reason.
+
+The manifest is content-addressed. Changing any selection changes the pin
+and therefore the bundle lineage. A chosen model outside the eligible set,
+a choice whose recorded measurements do not satisfy the recorded rule, a
+measurement from a non-development split, or an unexplained rejection
+refuses the manifest before training. Egress is the resolved posture
+(`loopback` or `off_host`), never a declaration.
+
+Selection is enforced at export. The authorized cohort exporter produces
+only the selected slice; the trainer refuses an export the manifest did not
+pin, a cohort or label policy outside the task's admission, or an export
+containing a held-out example. A job must supply every admitted cohort.
+Teacher outputs are recorded as a sealed prediction set with provenance
+(teacher, egress at generation, prompt version) and the kind `prediction`;
+an output recorded as an assessment or observation is refused.
+
+The trainer contract is provider-neutral. A job consumes the manifest pin
+and the exports and emits a weights bundle plus a receipt naming requested
+versus actual parameters, cohorts, teacher, and base; runtime identities;
+and the executor. A deviation without a recorded reason, a cohort outside
+the selection, an improvement claim, or an evaluation inside the receipt is
+refused. Completion is not improvement. The reference worker is
+`experiments/local-ml/distill.py`: a deterministic CPU student with no
+model-hub access; a checkpoint fine-tune student plugs into the same
+contract. Evaluation compares students against their teachers and the
+incumbent on the same picture, and the comparison names each teacher, so an
+extraction change and a model change stay distinguishable. A release records
+the selection's task scope; a request for a task outside it is refused.
+
 Random audits and targeted labeling are complementary. Targeted cases include
 assessor disagreement, uncertain margins, novel relationships and consequential
 outcomes. The random sample covers confidently wrong decisions that uncertainty
