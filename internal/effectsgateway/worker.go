@@ -1114,15 +1114,23 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 			Route: route, DispatchError: DispatchKind(err)})
 		return nil, err
 	}
+	// Older claim wires omitted correlation_id even when Pull supplied it.
+	// The claim request carried Pull's correlation, so retaining that value
+	// is safe once the action and issued claim are checked below.
+	if len(claimed.CorrelationID) == 0 {
+		claimed.CorrelationID = append([]byte(nil), offered.CorrelationID...)
+	}
+	if err := validateClaimAnswer(offered, claimed, claimID, w.cfg.ClaimLease); err != nil {
+		w.log.Log(LogRecord{Event: EventDispatch, ActionID: offered.ID, ClaimNonce: nonce,
+			Route: route, DispatchError: DispatchProtocol})
+		return nil, err
+	}
 	run := &claimRun{
 		action: claimed, route: route, claimID: claimID, nonce: nonce,
 		lostCh: make(chan struct{}), stopRenew: make(chan struct{}),
 		renewDone: make(chan struct{}),
 	}
 	run.renewCtx, run.renewCancel = context.WithCancel(w.hard)
-	if len(run.action.CorrelationID) == 0 {
-		run.action.CorrelationID = append([]byte(nil), offered.CorrelationID...)
-	}
 	anchored, err := AnchorAnswer(sent, w.clock.Now(), claimed.ClaimTimes())
 	if err != nil {
 		// A claim whose bounds cannot be placed on the local clock is held
@@ -1135,6 +1143,38 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 	run.anchorAt = sent
 	w.log.Log(w.record(run, EventClaimed))
 	return run, nil
+}
+
+// validateClaimAnswer binds the only response that carries executable input
+// to the action offered by Pull and to this worker's fresh claim ID. A 2xx
+// response with another action or claim must never reach the target; even if
+// the explorer committed this claim, leaving it to lapse sends no effect.
+func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease time.Duration) error {
+	leaseDuration := claimed.ClaimLeaseUntil.Sub(claimed.UpdatedAt)
+	if !bytes.Equal(claimed.ID, offered.ID) ||
+		!bytes.Equal(claimed.AgentID, offered.AgentID) ||
+		claimed.AgentGeneration != offered.AgentGeneration ||
+		claimed.Capability != offered.Capability ||
+		claimed.Action != offered.Action ||
+		!claimed.CreatedAt.Equal(offered.CreatedAt) ||
+		!claimed.Deadline.Equal(offered.Deadline) ||
+		len(offered.CorrelationID) == 0 ||
+		!bytes.Equal(claimed.CorrelationID, offered.CorrelationID) ||
+		claimed.State != dispatchapi.DispatchClaimed ||
+		claimed.Version <= offered.Version ||
+		claimed.Version != offered.Version+1 ||
+		!bytes.Equal(claimed.ClaimID, claimID) ||
+		claimed.ClaimFence <= offered.ClaimFence ||
+		claimed.ClaimFence != offered.ClaimFence+1 ||
+		claimed.UpdatedAt.Before(offered.UpdatedAt) ||
+		leaseDuration <= 0 || leaseDuration > requestedLease ||
+		!claimed.EffectPossible ||
+		len(claimed.Input) == 0 ||
+		!claimed.ExecutorKey.set {
+		return &DispatchError{Op: "claim", Kind: DispatchProtocol,
+			reason: "claim response is not bound to the offered action and issued claim"}
+	}
+	return nil
 }
 
 func (w *Worker) record(run *claimRun, event Event) LogRecord {

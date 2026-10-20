@@ -604,7 +604,11 @@ PULL → FILTER → PRECHECK → [ATTEST] → CLAIM → BIND → SEND → CLASSI
   is not claimed under.
 - **CLAIM** with a fresh claim ID per attempt. `repull`, 404 and 409 send the
   worker back to PULL; a 409 on an attested action also forgets the
-  attestation in hand.
+  attestation in hand. Before using the returned input, the worker checks
+  that the claimed record still names the offered action and its immutable
+  identity, carries the issued claim ID and a new fence, and marks an
+  external effect possible. A mismatched response sends nothing; a claim
+  already committed by the explorer is left to lapse.
 - **BIND** failure sends nothing: `request_not_sent` is reported, then the
   action completes `failed/input_invalid`.
 - **SEND** behind the send gate, re-checked before every attempt and once
