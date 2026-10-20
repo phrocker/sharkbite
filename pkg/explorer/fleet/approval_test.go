@@ -183,6 +183,34 @@ func TestApprovalDigestCoversWhatEquivalentEnqueueCompares(t *testing.T) {
 	}
 }
 
+func TestScheduledApprovalDigestDoesNotWrapAncientTimes(t *testing.T) {
+	first := approvalTestRecord(t)
+	first.NotBefore = time.Date(2, 1, 1, 0, 0, 0, 0, time.UTC)
+	second := first
+	second.NotBefore = time.Date(586, 7, 21, 23, 34, 33, 709551616, time.UTC)
+	if first.NotBefore.UnixNano() != second.NotBefore.UnixNano() {
+		t.Fatal("test times no longer reproduce the legacy UnixNano collision")
+	}
+	if bytes.Equal(ApprovalRequestDigest(first), ApprovalRequestDigest(second)) {
+		t.Fatal("different scheduled approval times share one request digest")
+	}
+}
+
+func TestScheduledApprovalRejectsDroppedScheduleField(t *testing.T) {
+	approval := validApprovalRecord(t)
+	approval.Request.NotBefore = approval.Request.CreatedAt.Add(10 * time.Minute)
+	approval.RequestDigest = ApprovalRequestDigest(approval.Request)
+	if err := approval.Validate(); err != nil {
+		t.Fatalf("scheduled approval = %v", err)
+	}
+	// A legacy Gob reader has no NotBefore field. Its validation must refuse
+	// the stored digest before it can approve or materialize the request.
+	approval.Request.NotBefore = time.Time{}
+	if err := approval.Validate(); err == nil {
+		t.Fatal("legacy-shaped approval accepted a digest binding a missing schedule")
+	}
+}
+
 func validApprovalRecord(t *testing.T) ApprovalRecord {
 	t.Helper()
 	base := approvalTestRecord(t)

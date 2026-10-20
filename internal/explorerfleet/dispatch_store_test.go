@@ -25,6 +25,47 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
+func TestScheduledDispatchEncodingRejectsLegacyReaders(t *testing.T) {
+	legacy := testActionRecord()
+	oldBytes, err := encodeAction(legacy)
+	if err != nil || !bytes.HasPrefix(oldBytes, dispatchMagic) {
+		t.Fatalf("legacy action envelope = %x, %v", oldBytes, err)
+	}
+	scheduled := legacy
+	scheduled.NotBefore = legacy.CreatedAt.Add(10 * time.Minute)
+	newBytes, err := encodeAction(scheduled)
+	if err != nil || !bytes.HasPrefix(newBytes, dispatchScheduleMagic) ||
+		bytes.HasPrefix(newBytes, dispatchMagic) {
+		t.Fatalf("scheduled action can be decoded by a legacy reader: %x, %v", newBytes, err)
+	}
+	decoded, err := decodeAction(newBytes)
+	if err != nil || !decoded.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled action round trip = %#v, %v", decoded, err)
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchMagic...),
+		newBytes[len(dispatchScheduleMagic):]...)); err == nil {
+		t.Fatal("v1 envelope accepted a scheduled action")
+	}
+	if _, err := decodeAction(append(append([]byte(nil), dispatchScheduleMagic...),
+		oldBytes[len(dispatchMagic):]...)); err == nil {
+		t.Fatal("v2 envelope accepted an unscheduled action")
+	}
+
+	transition, err := fleet.NewActionTransition([]byte("scheduled-transition"), "action.enqueued", scheduled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	transitionBytes, err := encodeTransition(storedTransition{Transition: transition})
+	if err != nil || !bytes.HasPrefix(transitionBytes, transitionScheduleMagic) ||
+		bytes.HasPrefix(transitionBytes, transitionMagic) {
+		t.Fatalf("scheduled transition can be decoded by a legacy reader: %x, %v", transitionBytes, err)
+	}
+	got, err := decodeTransition(transitionBytes)
+	if err != nil || !got.Transition.Record.NotBefore.Equal(scheduled.NotBefore) {
+		t.Fatalf("scheduled transition round trip = %#v, %v", got, err)
+	}
+}
+
 func TestDispatchStoreCASReplayFenceAndRestart(t *testing.T) {
 	directory := t.TempDir()
 	runtime := openDispatchRuntime(t, directory)

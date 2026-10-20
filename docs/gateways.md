@@ -104,6 +104,12 @@ workers must follow `next` even when a page contains no due actions. The due
 index, recurring schedules, retry/dead-letter policy and operator recovery
 remain in #144.
 
+Scheduled action records and transition outbox entries use a versioned store
+envelope. Older gateways reject them rather than silently drop `not_before`
+and execute them early. During a rolling upgrade, those older gateways can
+return an error for pages containing scheduled work, so enable scheduled
+enqueues after the gateway fleet has upgraded.
+
 **Extensions use only that public surface:**
 
 - The session gateway: an SSH adapter, then an RDP adapter.
