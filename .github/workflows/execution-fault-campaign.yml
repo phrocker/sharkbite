@@ -15,6 +15,7 @@ on:
       - ".github/workflows/execution-fault-campaign.yml"
       - "scripts/execution_fault_evidence.py"
       - "scripts/test_execution_fault_evidence.py"
+      - "internal/explorerfleet/dispatch_gateway_process_test.go"
 
 permissions:
   contents: read
@@ -40,7 +41,7 @@ jobs:
           cache: true
       - name: Verify evidence gate rejects missing or corrupt results
         run: python3 -m unittest scripts.test_execution_fault_evidence
-      - name: Choose reproducible seed and repeat count
+      - name: Record Go shuffle seed and repeat count
         id: config
         shell: bash
         env:
@@ -94,6 +95,100 @@ jobs:
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: execution-fault-${{ github.sha }}-${{ steps.config.outputs.seed }}-${{ github.run_attempt }}
+          path: evidence/
+          if-no-files-found: warn
+          retention-days: 30
+
+  container-claim:
+    name: Two-container gateway claim race
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      GOWORK: off
+      GATEWAY_TEST_IMAGE: ubuntu@sha256:a2d43bffc46670d7108bb3c0468c67c5557c4c92e83e1e34cbff1322ad1b94dc
+      SHOAL_TEST_GATEWAY_CONTAINER_IMAGE: ubuntu@sha256:a2d43bffc46670d7108bb3c0468c67c5557c4c92e83e1e34cbff1322ad1b94dc
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Record Go shuffle seed and repeat count
+        id: config
+        shell: bash
+        env:
+          REQUESTED_SEED: ${{ inputs.seed }}
+        run: |
+          seed="$REQUESTED_SEED"
+          if [[ -z "$seed" ]]; then seed="$(date -u +%s)"; fi
+          if [[ ! "$seed" =~ ^[1-9][0-9]*$ ]] ||
+             (( ${#seed} > 19 )) ||
+             { (( ${#seed} == 19 )) && [[ "$seed" > "9223372036854775807" ]]; }; then
+            echo "::error::Seed must be a positive signed 64-bit integer"
+            exit 1
+          fi
+          repeats=5
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then repeats=1; fi
+          echo "seed=$seed" >> "$GITHUB_OUTPUT"
+          echo "repeats=$repeats" >> "$GITHUB_OUTPUT"
+      - name: Pull pinned gateway test runtime
+        shell: bash
+        run: |
+          mkdir -p evidence
+          : > evidence/image-digest.txt
+          set +e
+          docker pull "$GATEWAY_TEST_IMAGE" > evidence/image-pull.log 2>&1
+          status=$?
+          if [[ "$status" == 0 ]]; then
+            resolved="$(docker image inspect "$GATEWAY_TEST_IMAGE" --format '{{index .RepoDigests 0}}' 2>> evidence/image-pull.log)"
+            inspect_status=$?
+            if [[ "$inspect_status" != 0 || "$resolved" != "$GATEWAY_TEST_IMAGE" ]]; then status=1; fi
+            echo "$resolved" > evidence/image-digest.txt
+          fi
+          echo "$status" > evidence/image-pull-exit.txt
+      - name: Race claims from two isolated gateway containers
+        shell: bash
+        env:
+          SEED: ${{ steps.config.outputs.seed }}
+          REPEATS: ${{ steps.config.outputs.repeats }}
+        run: |
+          if [[ "$(cat evidence/image-pull-exit.txt)" != 0 ]]; then
+            : > evidence/events.jsonl
+            : > evidence/stderr.log
+            echo 125 > evidence/exit-code.txt
+            exit 0
+          fi
+          pattern="$(python3 scripts/execution_fault_evidence.py pattern --suite container)"
+          set +e
+          timeout --signal=TERM --kill-after=30s 20m \
+            go test -race -json -shuffle="$SEED" -count="$REPEATS" \
+            ./internal/explorerfleet -run "$pattern" \
+            > evidence/events.jsonl 2> evidence/stderr.log
+          status=$?
+          set -e
+          echo "$status" > evidence/exit-code.txt
+      - name: Verify the container invariant and write evidence
+        shell: bash
+        env:
+          SEED: ${{ steps.config.outputs.seed }}
+          REPEATS: ${{ steps.config.outputs.repeats }}
+        run: |
+          python3 scripts/execution_fault_evidence.py verify \
+            --suite container --image-ref "$GATEWAY_TEST_IMAGE" \
+            --events evidence/events.jsonl --stderr evidence/stderr.log \
+            --exit-code "$(cat evidence/exit-code.txt)" \
+            --repeats "$REPEATS" --seed "$SEED" \
+            --commit "$GITHUB_SHA" --go-version "$(go version)" \
+            --runner-image "$ImageOS/$ImageVersion" \
+            --run-id "$GITHUB_RUN_ID" --run-attempt "$GITHUB_RUN_ATTEMPT" \
+            --manifest evidence/manifest.json
+      - name: Retain container evidence even when an invariant fails
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: execution-container-${{ github.sha }}-${{ steps.config.outputs.seed }}-${{ github.run_attempt }}
           path: evidence/
           if-no-files-found: warn
           retention-days: 30
