@@ -29,11 +29,12 @@
 //	RFileSource (one per locality group, per file)  ─┐
 //	memtable leaf (one per tablet, fed by qwal)      ├─ MergingIterator
 //	                                                 ┘
+//	  → DeletingIterator (suppresses tombstones and older values)
 //	  → VersioningIterator (newest-N per coordinate)
 //	  → VisibilityFilter   (drops cells the auth set can't satisfy)
 //
-// This mirrors the tserver's scan stack: merge every source, then
-// version-collapse, then visibility-filter.
+// This mirrors the tserver's scan stack: merge every source, suppress
+// deletes, then version-collapse and visibility-filter.
 package scanserver
 
 import (
@@ -153,13 +154,15 @@ func (s *Server) scanTabletRangeWAL(
 		slog.Bool("wal_leaf", memLeaf != nil),
 	)
 
-	// Stack: MergingIterator → VersioningIterator → VisibilityFilter.
+	// All WAL and RFile leaves are present, so suppress tombstones here rather
+	// than returning empty-value cells to the caller.
 	merge := iterrt.NewMergingIterator(leaves...)
 	env := iterrt.IteratorEnvironment{
 		Scope:          iterrt.ScopeScan,
 		Authorizations: authorizations,
 	}
 	stack, serr := iterrt.BuildStack(merge, []iterrt.IterSpec{
+		{Name: iterrt.IterDeleting, Options: map[string]string{iterrt.DeletingOptionPropagate: "false"}},
 		{Name: iterrt.IterVersioning, Options: map[string]string{iterrt.VersioningOption: "1"}},
 		{Name: iterrt.IterVisibility},
 	}, env)

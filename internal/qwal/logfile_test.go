@@ -28,8 +28,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"math"
 	"os"
 	"testing"
+	"unsafe"
 
 	"github.com/phrocker/shoal-oss/internal/rfile/wire"
 )
@@ -185,7 +187,7 @@ func buildFixture(t *testing.T) []byte {
 		encodeColumnUpdate([]byte("e"), []byte("q1"), nil, false, 0, false, []byte("v1")),
 	}, 10000)
 	w.mutation([]byte("vertex:3"), [][]byte{
-		encodeColumnUpdate([]byte("e"), []byte("q2"), nil, true, 0, true, nil),
+		encodeColumnUpdate([]byte("e"), []byte("q2"), nil, false, 0, true, nil),
 	}, 10001)
 
 	return w.buf.Bytes()
@@ -256,19 +258,19 @@ func TestDecodeSyntheticWAL(t *testing.T) {
 	if len(mu) != 1 {
 		t.Fatalf("MUTATION: want 1 mutation, got %d", len(mu))
 	}
-	if string(mu[0].Row()) != "vertex:1" {
-		t.Errorf("MUTATION row: got %q", mu[0].Row())
+	if string(mu[0].Row) != "vertex:1" {
+		t.Errorf("MUTATION row: got %q", mu[0].Row)
 	}
-	ents := mu[0].Entries()
+	ents := mu[0].Updates
 	if len(ents) != 1 {
 		t.Fatalf("MUTATION: want 1 column entry, got %d", len(ents))
 	}
 	e := ents[0]
-	if string(e.ColFamily) != "cf" || string(e.ColQualifier) != "name" ||
-		string(e.ColVisibility) != "VIS" || e.Timestamp != 1234 || e.Deleted ||
+	if string(e.ColumnFamily) != "cf" || string(e.ColumnQualifier) != "name" ||
+		string(e.ColumnVisibility) != "VIS" || !e.HasTimestamp || e.Timestamp != 1234 || e.Deleted ||
 		string(e.Value) != "hello" {
 		t.Errorf("MUTATION update: got cf=%q cq=%q cv=%q ts=%d del=%v val=%q",
-			e.ColFamily, e.ColQualifier, e.ColVisibility, e.Timestamp, e.Deleted, e.Value)
+			e.ColumnFamily, e.ColumnQualifier, e.ColumnVisibility, e.Timestamp, e.Deleted, e.Value)
 	}
 
 	// MANY_MUTATIONS: two mutations, second is a delete with server timestamp.
@@ -276,13 +278,184 @@ func TestDecodeSyntheticWAL(t *testing.T) {
 	if len(mm) != 2 {
 		t.Fatalf("MANY_MUTATIONS: want 2 mutations, got %d", len(mm))
 	}
-	del := mm[1].Entries()[0]
+	del := mm[1].Updates[0]
 	if !del.Deleted {
 		t.Errorf("MANY_MUTATIONS second update should be a delete")
 	}
-	// hasTs=false on disk decodes to ts 0 (Mutation.deserializeColumnUpdate).
-	if del.Timestamp != 0 {
-		t.Errorf("delete with hasTs=false should decode to ts 0, got %d", del.Timestamp)
+	if del.HasTimestamp || mm[1].SystemTime != 10001 || mm[1].EffectiveTimestamp(del) != 10001 {
+		t.Errorf("delete with hasTs=false should use system time 10001, got %+v", del)
+	}
+}
+
+func TestDecodeMutationPreservesServerTimestampSemantics(t *testing.T) {
+	var data bytes.Buffer
+	data.Write(encodeColumnUpdate([]byte("f"), []byte("implicit"), nil, false, 0, false, []byte("a")))
+	data.Write(encodeColumnUpdate([]byte("f"), []byte("explicit-max"), nil, true, math.MaxInt64, false, []byte("b")))
+	data.Write(encodeColumnUpdate([]byte("f"), []byte("delete"), nil, false, 0, true, nil))
+	mutation, err := decodeMutation([]byte{}, data.Bytes(), 3, nil, 9876)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mutation.Row) != 0 || mutation.SystemTime != 9876 || len(mutation.Updates) != 3 {
+		t.Fatalf("unexpected native mutation: %+v", mutation)
+	}
+	if mutation.Updates[0].HasTimestamp || mutation.EffectiveTimestamp(mutation.Updates[0]) != 9876 {
+		t.Fatalf("implicit timestamp changed: %+v", mutation.Updates[0])
+	}
+	if !mutation.Updates[1].HasTimestamp || mutation.EffectiveTimestamp(mutation.Updates[1]) != math.MaxInt64 {
+		t.Fatalf("explicit maximum timestamp changed: %+v", mutation.Updates[1])
+	}
+	if !mutation.Updates[2].Deleted || mutation.Updates[2].HasTimestamp || mutation.EffectiveTimestamp(mutation.Updates[2]) != 9876 {
+		t.Fatalf("implicit-timestamp delete changed: %+v", mutation.Updates[2])
+	}
+}
+
+func TestDecodeMutationRejectsTrailingPackedBytes(t *testing.T) {
+	data := append(encodeColumnUpdate(nil, nil, nil, false, 0, false, nil), 0xff)
+	if _, err := decodeMutation([]byte("row"), data, 1, nil, 1); err == nil {
+		t.Fatal("accepted unconsumed packed mutation bytes")
+	}
+}
+
+func TestDecodeMutationRejectsMalformedPackedFieldsBeforeAllocation(t *testing.T) {
+	var claimedFamily bytes.Buffer
+	if _, err := wire.WriteVLong(&claimedFamily, maxMutationDataBytes); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := decodeMutation([]byte("r"), claimedFamily.Bytes(), 1, nil, 1); err == nil {
+		t.Fatal("accepted column length larger than available packed bytes")
+	}
+	var claimedValue bytes.Buffer
+	claimedValue.Write([]byte{0, 0, 0, 0, 0}) // empty cf/cq/cv, hasTs=false, deleted=false
+	if _, err := wire.WriteVLong(&claimedValue, maxMutationDataBytes); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := decodeMutation([]byte("r"), claimedValue.Bytes(), 1, nil, 1); err == nil {
+		t.Fatal("accepted inline value larger than available packed bytes")
+	}
+	if _, err := decodeMutation([]byte("r"), []byte{0, 0, 0, 0, 2, 0}, 1, nil, 1); err == nil {
+		t.Fatal("accepted malformed packed delete flag")
+	}
+}
+
+func TestReadModifiedUTF(t *testing.T) {
+	// Java writeUTF encodes NUL as C0 80 and U+1F47B as surrogate pair
+	// D83D DC7B, each encoded as a three-byte UTF-8 sequence.
+	body := []byte{'a', 0xc0, 0x80, 0xed, 0xa0, 0xbd, 0xed, 0xb1, 0xbb}
+	var frame bytes.Buffer
+	frame.WriteByte(0)
+	frame.WriteByte(byte(len(body)))
+	frame.Write(body)
+	got, err := newDataInput(&frame).readUTF()
+	if err != nil || got != "a\x00👻" {
+		t.Fatalf("modified UTF: %q, %v", got, err)
+	}
+}
+
+func TestReadModifiedUTFRejectsMalformedSurrogate(t *testing.T) {
+	frame := []byte{0, 3, 0xed, 0xa0, 0xbd}
+	if _, err := newDataInput(bytes.NewReader(frame)).readUTF(); err == nil {
+		t.Fatal("accepted unpaired surrogate")
+	}
+}
+
+func TestDecodePinnedJavaNativeWAL(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/native_wal_oracle_172.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	di := newDataInput(bytes.NewReader(fixture))
+	if err := di.readHeader(); err != nil {
+		t.Fatal(err)
+	}
+	var entries []Entry
+	for {
+		key, err := di.readKey()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			t.Fatalf("read key: %v", err)
+		}
+		value, err := di.readValue()
+		if err != nil {
+			t.Fatalf("read %s value: %v", key.Event, err)
+		}
+		entries = append(entries, Entry{Key: key, Value: value})
+	}
+	if len(entries) != 3 || entries[0].Key.Event != EventOpen ||
+		entries[0].Key.TServerSession != "session\x00👻" ||
+		entries[1].Key.Event != EventDefineTablet || entries[1].Key.Tablet == nil ||
+		entries[1].Key.Tablet.TableID != "g" || string(entries[1].Key.Tablet.EndRow) != "z" ||
+		entries[1].Key.Tablet.PrevEndRow != nil ||
+		entries[2].Key.Event != EventManyMutations || entries[2].Key.Seq != 11 {
+		t.Fatalf("pinned Java WAL keys changed: %+v", entries)
+	}
+	mutations := entries[2].Value.Mutations
+	if len(mutations) != 5 {
+		t.Fatalf("want five native mutations, got %d", len(mutations))
+	}
+	type expected struct {
+		row                   string
+		systemTime, timestamp int64
+		hasTimestamp, deleted bool
+		value                 []byte
+	}
+	wants := []expected{
+		{"implicit", 123456789, 123456789, false, false, []byte{0, 0xff, 1, 0x80}},
+		{"max", 42, math.MaxInt64, true, false, []byte("maximum")},
+		{"delete", 987654321, 987654321, false, true, []byte{}},
+		{"zero", 77, 0, true, false, []byte("zero")},
+		{"min", 88, math.MinInt64, true, true, []byte{}},
+	}
+	for i, want := range wants {
+		mutation := mutations[i]
+		if string(mutation.Row) != want.row || mutation.SystemTime != want.systemTime || len(mutation.Updates) != 1 {
+			t.Fatalf("mutation %d changed: %+v", i, mutation)
+		}
+		update := mutation.Updates[0]
+		if update.HasTimestamp != want.hasTimestamp || update.Deleted != want.deleted ||
+			mutation.EffectiveTimestamp(update) != want.timestamp || !bytes.Equal(update.Value, want.value) {
+			t.Fatalf("mutation %d update changed: %+v", i, update)
+		}
+	}
+}
+
+func TestReadServerMutationRejectsOversizedFieldsBeforeAllocation(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		build func(*walBuilder)
+	}{
+		{"row", func(w *walBuilder) { w.u8(0x80); w.vint(maxMutationRowBytes + 1) }},
+		{"data", func(w *walBuilder) { w.u8(0x80); w.vint(0); w.vint(maxMutationDataBytes + 1) }},
+		{"entries", func(w *walBuilder) { w.u8(0x80); w.vint(0); w.vint(0); w.vint(1) }},
+		{"pool", func(w *walBuilder) {
+			w.u8(0x81)
+			w.vint(0)
+			w.vint(0)
+			w.vint(0)
+			w.vint(1)
+			w.vint(maxMutationPoolBytes + 1)
+		}},
+		{"legacy_repl", func(w *walBuilder) { w.u8(0x82) }},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			w := &walBuilder{}
+			tc.build(w)
+			budget := int64(maxDecodedRecordBytes)
+			if _, err := newDataInput(bytes.NewReader(w.buf.Bytes())).readServerMutation(&budget); err == nil {
+				t.Fatal("accepted malformed mutation")
+			}
+		})
+	}
+}
+
+func TestNativeMutationBudgetCoversRetainedStructs(t *testing.T) {
+	if got := unsafe.Sizeof(ServerMutation{}); got > 64 {
+		t.Fatalf("ServerMutation struct grew to %d bytes beyond record budget charge", got)
+	}
+	if got := unsafe.Sizeof(ColumnUpdate{}); got > mutationUpdateBudgetBytes {
+		t.Fatalf("ColumnUpdate struct grew to %d bytes beyond update budget charge", got)
 	}
 }
 
