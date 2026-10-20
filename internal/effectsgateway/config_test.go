@@ -43,6 +43,7 @@ func baseArgs() map[string]string {
 		"dispatch-url":          "https://explorer.shoal.svc",
 		"agent-id":              "Z2F0ZXdheQ",
 		"surface-name":          "payments",
+		"target-scope":          "stripe-account",
 		"target-base-url":       "https://api.example.com",
 		"routes":                configRoutes,
 		"idempotency-header":    "Idempotency-Key",

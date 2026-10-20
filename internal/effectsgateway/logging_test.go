@@ -113,18 +113,33 @@ func TestClassifyFailure(t *testing.T) {
 // TestLogRecordAdmitsOnlyThePolicyFields fails if a field is added to
 // LogRecord that could carry free text. Adding one is a change to the logging
 // policy and should be argued for there, not slipped in here.
+func TestRecoveryRefusalLogUsesClosedCode(t *testing.T) {
+	var output bytes.Buffer
+	logger := NewLogger(&output, func() time.Time { return serverEpoch })
+	logger.Log(LogRecord{Event: EventDispatch, RecoveryRefusal: RecoveryRefusal("scope_drift")})
+	if !bytes.Contains(output.Bytes(), []byte(`"recovery_refusal":"scope_drift"`)) {
+		t.Fatalf("missing safe refusal: %s", output.String())
+	}
+	output.Reset()
+	logger.Log(LogRecord{Event: EventDispatch, RecoveryRefusal: RecoveryRefusal("secret-tenant")})
+	if bytes.Contains(output.Bytes(), []byte("secret-tenant")) {
+		t.Fatalf("arbitrary refusal leaked: %s", output.String())
+	}
+}
+
 func TestLogRecordAdmitsOnlyThePolicyFields(t *testing.T) {
 	allowed := map[string]reflect.Type{
-		"Event":          reflect.TypeOf(Event("")),
-		"ActionID":       reflect.TypeOf([]byte(nil)),
-		"Fence":          reflect.TypeOf(uint64(0)),
-		"ClaimNonce":     reflect.TypeOf(ClaimNonce{}),
-		"Route":          reflect.TypeOf((*Route)(nil)),
-		"Status":         reflect.TypeOf(0),
-		"Classification": reflect.TypeOf(Kind("")),
-		"Failure":        reflect.TypeOf(FailureKind("")),
-		"Gate":           reflect.TypeOf(GateRefusal("")),
-		"DispatchError":  reflect.TypeOf(DispatchErrorKind("")),
+		"Event":           reflect.TypeOf(Event("")),
+		"ActionID":        reflect.TypeOf([]byte(nil)),
+		"Fence":           reflect.TypeOf(uint64(0)),
+		"ClaimNonce":      reflect.TypeOf(ClaimNonce{}),
+		"Route":           reflect.TypeOf((*Route)(nil)),
+		"Status":          reflect.TypeOf(0),
+		"Classification":  reflect.TypeOf(Kind("")),
+		"Failure":         reflect.TypeOf(FailureKind("")),
+		"Gate":            reflect.TypeOf(GateRefusal("")),
+		"DispatchError":   reflect.TypeOf(DispatchErrorKind("")),
+		"RecoveryRefusal": reflect.TypeOf(RecoveryRefusal("")),
 		// Closed sets and a count, added with the worker loop.
 		"Ambiguity":     reflect.TypeOf(dispatchapi.AmbiguityOutcome("")),
 		"Unrecorded":    reflect.TypeOf(0),

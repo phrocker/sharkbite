@@ -49,7 +49,12 @@ type gatewayOps struct {
 
 func newGatewayOps(t *testing.T) *gatewayOps {
 	t.Helper()
-	return &gatewayOps{executorWorld: newExecutorWorld(t)}
+	return &gatewayOps{executorWorld: newExecutorWorldWithExternalEffects(t, true)}
+}
+
+func newGatewayWorkerOps(t *testing.T) *gatewayOps {
+	t.Helper()
+	return newGatewayOps(t)
 }
 
 // gateway installs the recording handler and returns a client holding the
@@ -202,6 +207,23 @@ func (g *gatewayOps) pullAndClaim(
 	return offered, claimed, claimID
 }
 
+// prepareClaim records a stable keyed request for tests that exercise a
+// replacement claim without sending to a target.
+func (g *gatewayOps) prepareClaim(client *effectsgateway.DispatchClient, claimed effectsgateway.Action, claimID []byte) {
+	g.t.Helper()
+	_, err := client.Prepare(context.Background(), claimed.ID, effectsgateway.RecoveryPrepareRequest{
+		RecoveryClaimRequest: effectsgateway.RecoveryClaimRequest{
+			Context: claimed.Correlate(g.context("gateway_prepare")),
+			ClaimID: claimID, ClaimFence: claimed.ClaimFence,
+		},
+		Mode:          effectsgateway.IdempotencyKey,
+		RequestDigest: [32]byte{1}, TargetScopeDigest: [32]byte{2},
+	})
+	if err != nil {
+		g.t.Fatalf("prepare claim: %v", err)
+	}
+}
+
 func (g *gatewayOps) complete(
 	client *effectsgateway.DispatchClient, claimed effectsgateway.Action, claimID []byte,
 	expectedVersion uint64,
@@ -323,7 +345,7 @@ func TestTheGatewayCannotExtendAfterARebindButStillCompletes(t *testing.T) {
 				SourceID: workspaceSourceID, PolicyID: workspaceGrantPolicyID,
 			}},
 			"executor_ref":     testOtherExecutorRef,
-			"capabilities":     approvalActions(true),
+			"capabilities":     g.declaredCapabilities(),
 			"lease_expires_at": g.h.now().Add(20 * time.Hour).Format(time.RFC3339Nano),
 		},
 	})
@@ -517,7 +539,7 @@ func TestTheGatewayThreadsTheRecordsCorrelation(t *testing.T) {
 	if len(polls) != 2 {
 		t.Fatalf("%d polls recorded, want 2", len(polls))
 	}
-	for _, route := range []string{"claim", "extend", "ambiguity", "complete"} {
+	for _, route := range []string{"claim-prepared", "extend", "ambiguity", "complete"} {
 		if !routes[route] {
 			t.Fatalf("no %s request was recorded (%v)", route, routes)
 		}

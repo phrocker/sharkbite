@@ -53,11 +53,14 @@ const (
 // The per-action verbs: ActionRoute(id, VerbClaim) is
 // /api/v1/fleet/actions/{id}/claim.
 const (
-	VerbClaim     = "claim"
-	VerbExtend    = "extend"
-	VerbComplete  = "complete"
-	VerbAmbiguity = "ambiguity"
-	VerbStatus    = "status"
+	VerbClaim         = "claim"
+	VerbClaimPrepared = "claim-prepared"
+	VerbMaterial      = "material"
+	VerbPrepare       = "prepare"
+	VerbExtend        = "extend"
+	VerbComplete      = "complete"
+	VerbAmbiguity     = "ambiguity"
+	VerbStatus        = "status"
 )
 
 // ActionRoute is the route of one verb on one action.
@@ -206,6 +209,45 @@ type ClaimRequest struct {
 	Lease           time.Duration  `json:"lease"`
 }
 
+// RecoveryClaimRequest is the authenticated live-claim read used for
+// material retrieval. It grants no permission to send by itself.
+type RecoveryClaimRequest struct {
+	Context    RequestContext `json:"context"`
+	ClaimID    string         `json:"claim_id"`
+	ClaimFence uint64         `json:"claim_fence"`
+}
+
+// ClaimMaterial carries executable fields only to the current claimant.
+type ClaimMaterial struct {
+	ID          string          `json:"id"`
+	ClaimID     string          `json:"claim_id"`
+	ClaimFence  uint64          `json:"claim_fence"`
+	Input       json.RawMessage `json:"input"`
+	ExecutorKey string          `json:"executor_key"`
+}
+
+// PrepareRequest commits or confirms one bound request. The digest fields
+// are never returned by ordinary action projections.
+type PrepareRequest struct {
+	Context           RequestContext `json:"context"`
+	ClaimID           string         `json:"claim_id"`
+	ClaimFence        uint64         `json:"claim_fence"`
+	Mode              string         `json:"mode"`
+	RequestDigest     string         `json:"request_digest"`
+	TargetScopeDigest string         `json:"target_scope_digest"`
+}
+
+type PrepareReceipt struct {
+	ID                string `json:"id"`
+	ClaimID           string `json:"claim_id"`
+	ClaimFence        uint64 `json:"claim_fence"`
+	Version           uint64 `json:"version"`
+	Committed         bool   `json:"committed"`
+	Mode              string `json:"mode"`
+	RequestDigest     string `json:"request_digest"`
+	TargetScopeDigest string `json:"target_scope_digest"`
+}
+
 // ExtendRequest is the body of VerbExtend. With ClaimFence the renewal binds
 // on the fence and ExpectedVersion is not compared (#629), so a client
 // leaves it zero and it is omitted.
@@ -297,32 +339,44 @@ type AmbiguityReport struct {
 	ReportedAt time.Time        `json:"reported_at"`
 }
 
+// RecoveryStatus is the public, non-secret identity of a durable prepare.
+// The request and target-scope digests are intentionally absent.
+type RecoveryStatus struct {
+	Version       uint8     `json:"version"`
+	Mode          string    `json:"mode"`
+	PreparedFence uint64    `json:"prepared_fence"`
+	PreparedAt    time.Time `json:"prepared_at"`
+}
+
 // Action is an action record as every dispatch route returns it. Input and
-// ExecutorKey are populated on the claim response only.
+// ExecutorKey are returned only by claimant-only Material.
 type Action struct {
-	ID               string            `json:"id"`
-	Version          uint64            `json:"version"`
-	State            DispatchState     `json:"state"`
-	AgentID          string            `json:"agent_id"`
-	AgentGeneration  int64             `json:"agent_generation"`
-	Capability       string            `json:"capability"`
-	Action           string            `json:"action"`
-	Input            json.RawMessage   `json:"input,omitempty"`
-	Output           json.RawMessage   `json:"output,omitempty"`
-	ErrorCode        string            `json:"error_code,omitempty"`
-	ErrorCodeOrigin  string            `json:"error_code_origin,omitempty"`
-	Effected         *Effected         `json:"effected,omitempty"`
-	RequestID        string            `json:"request_id"`
-	CorrelationID    string            `json:"correlation_id,omitempty"`
-	Deadline         time.Time         `json:"deadline"`
-	CreatedAt        time.Time         `json:"created_at"`
-	UpdatedAt        time.Time         `json:"updated_at"`
-	ExecutorKey      string            `json:"executor_key,omitempty"`
-	ClaimID          string            `json:"claim_id,omitempty"`
-	ClaimFence       uint64            `json:"claim_fence,omitempty"`
-	ClaimLeaseUntil  time.Time         `json:"claim_lease_until,omitempty"`
-	EffectPossible   bool              `json:"effect_possible"`
-	AmbiguityReports []AmbiguityReport `json:"ambiguity_reports,omitempty"`
+	ID                      string            `json:"id"`
+	Version                 uint64            `json:"version"`
+	State                   DispatchState     `json:"state"`
+	AgentID                 string            `json:"agent_id"`
+	AgentGeneration         int64             `json:"agent_generation"`
+	Capability              string            `json:"capability"`
+	Action                  string            `json:"action"`
+	Input                   json.RawMessage   `json:"input,omitempty"`
+	Output                  json.RawMessage   `json:"output,omitempty"`
+	ErrorCode               string            `json:"error_code,omitempty"`
+	ErrorCodeOrigin         string            `json:"error_code_origin,omitempty"`
+	Effected                *Effected         `json:"effected,omitempty"`
+	RequestID               string            `json:"request_id"`
+	CorrelationID           string            `json:"correlation_id,omitempty"`
+	Deadline                time.Time         `json:"deadline"`
+	NotBefore               time.Time         `json:"not_before,omitzero"`
+	CreatedAt               time.Time         `json:"created_at"`
+	UpdatedAt               time.Time         `json:"updated_at"`
+	ExecutorKey             string            `json:"executor_key,omitempty"`
+	ClaimID                 string            `json:"claim_id,omitempty"`
+	ClaimFence              uint64            `json:"claim_fence,omitempty"`
+	ClaimLeaseUntil         time.Time         `json:"claim_lease_until,omitempty"`
+	EffectPossible          bool              `json:"effect_possible"`
+	RecoveryProtocolVersion uint8             `json:"recovery_protocol_version,omitempty"`
+	RecoveryCommitment      *RecoveryStatus   `json:"recovery_commitment,omitempty"`
+	AmbiguityReports        []AmbiguityReport `json:"ambiguity_reports,omitempty"`
 	// The evidence fields are what an in-plane executor reported; the
 	// explorer returns them on every record.
 	EvidenceSnapshotID   string     `json:"evidence_snapshot_id,omitempty"`

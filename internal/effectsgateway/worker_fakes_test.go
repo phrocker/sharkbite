@@ -133,6 +133,7 @@ type fakeRecord struct {
 	input      json.RawMessage
 	key        ExecutorKey
 	leaseUntil time.Time
+	prepared   *RecoveryPrepareRequest
 }
 
 // fakeExplorer is a scripted Dispatcher.
@@ -143,7 +144,6 @@ type fakeExplorer struct {
 	mu      sync.Mutex
 	records map[string]*fakeRecord
 	order   []string
-	fence   uint64
 
 	pulls       int
 	claims      []ClaimRequest
@@ -310,19 +310,78 @@ func (e *fakeExplorer) Claim(ctx context.Context, id []byte, request ClaimReques
 		!(record.action.State == dispatchapi.DispatchClaimed && !now.Before(record.leaseUntil)) {
 		return Action{}, conflict("claim", http.StatusNotFound)
 	}
-	e.fence++
+	if record.action.ClaimFence > 0 &&
+		(record.action.RecoveryProtocolVersion != 1 || record.prepared == nil ||
+			(record.prepared.Mode != IdempotencyKey && record.prepared.Mode != IdempotencyNatural)) {
+		return Action{}, conflict("claim", http.StatusConflict)
+	}
 	lease := now.Add(request.Lease)
 	if lease.After(record.action.Deadline) {
 		lease = record.action.Deadline
 	}
 	record.action.State, record.action.Version = dispatchapi.DispatchClaimed, record.action.Version+1
 	record.action.ClaimID = append([]byte(nil), request.ClaimID...)
-	record.action.ClaimFence, record.action.ClaimLeaseUntil = e.fence, lease.UTC()
+	// Fleet fences are per action, not global across the worker's queue.
+	record.action.ClaimFence++
+	record.action.ClaimLeaseUntil = lease.UTC()
 	record.action.UpdatedAt, record.action.EffectPossible = now.UTC(), true
+	record.action.RecoveryProtocolVersion = 1
 	record.leaseUntil = lease
 	claimed := record.action
-	claimed.Input, claimed.ExecutorKey = record.input, record.key
 	return claimed, nil
+}
+
+func (e *fakeExplorer) ClaimMaterial(ctx context.Context, id []byte, request RecoveryClaimRequest) (RecoveryMaterial, error) {
+	if gate := e.gateFn(); gate != nil {
+		if err := gate(ctx, "material"); err != nil {
+			return RecoveryMaterial{}, err
+		}
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.note("material")
+	record := e.records[string(id)]
+	if record == nil || record.action.ClaimFence != request.ClaimFence ||
+		!bytes.Equal(record.action.ClaimID, request.ClaimID) ||
+		!e.serverNow().Before(record.leaseUntil) || record.action.RecoveryProtocolVersion != 1 ||
+		(request.ClaimFence > 1 && (record.prepared == nil ||
+			(record.prepared.Mode != IdempotencyKey && record.prepared.Mode != IdempotencyNatural))) {
+		return RecoveryMaterial{}, conflict("material", http.StatusConflict)
+	}
+	return RecoveryMaterial{Input: append(json.RawMessage(nil), record.input...), ExecutorKey: record.key}, nil
+}
+
+func (e *fakeExplorer) Prepare(ctx context.Context, id []byte, request RecoveryPrepareRequest) (uint64, error) {
+	if gate := e.gateFn(); gate != nil {
+		if err := gate(ctx, "prepare"); err != nil {
+			return 0, err
+		}
+	}
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.note("prepare")
+	record := e.records[string(id)]
+	if record == nil || record.action.ClaimFence != request.ClaimFence ||
+		!bytes.Equal(record.action.ClaimID, request.ClaimID) ||
+		!e.serverNow().Before(record.leaseUntil) || record.action.RecoveryProtocolVersion != 1 {
+		return 0, conflict("prepare", http.StatusConflict)
+	}
+	if record.prepared != nil {
+		if record.prepared.Mode != request.Mode ||
+			record.prepared.RequestDigest != request.RequestDigest ||
+			record.prepared.TargetScopeDigest != request.TargetScopeDigest ||
+			(request.ClaimFence > 1 && request.Mode == IdempotencyUnprotected) {
+			return 0, conflict("prepare", http.StatusConflict)
+		}
+		return record.action.Version, nil
+	}
+	if request.ClaimFence != 1 {
+		return 0, conflict("prepare", http.StatusConflict)
+	}
+	copied := request
+	record.prepared = &copied
+	record.action.Version++
+	return record.action.Version, nil
 }
 
 func (e *fakeExplorer) Extend(ctx context.Context, id []byte, request ExtendRequest) (Action, error) {
@@ -645,7 +704,8 @@ func (h *workerHarness) build(mutate func(*WorkerConfig)) {
 			return "Authorization", "Bearer sk_test_SECRETCRED", nil
 		},
 		AgentID: []byte(testAgent), Capability: testCapability, SurfaceName: testSurface,
-		Pod: "gw-0", IdempotencyRetention: 24 * time.Hour,
+		TargetScope: "test-account",
+		Pod:         "gw-0", IdempotencyRetention: 24 * time.Hour,
 		ClaimLease: 60 * time.Second, OperationTimeout: 64 * time.Second, Renew: true,
 		PlaneTimeout: 5 * time.Second, MaxResponseBytes: 64 << 10, PullLimit: 32,
 		PullInterval: time.Second, Unrecorded: h.log,

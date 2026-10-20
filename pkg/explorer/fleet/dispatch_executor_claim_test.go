@@ -1192,6 +1192,17 @@ func TestALiveClaimIsNotVisibleToAStranger(t *testing.T) {
 	}
 
 	fixture.assertIndistinguishable(t, stranger, claimed.Version)
+	// A prepared worker must not reveal that this live claim is legacy,
+	// even through the more specific recovery-refusal vocabulary.
+	_, err = fixture.service.Claim(stranger, ClaimRequest{
+		ID: claimed.ID, ExpectedVersion: claimed.Version,
+		ClaimID: []byte("stranger-prepared"), Lease: time.Minute, Prepared: true,
+		Context: dispatchContext(fixture.now, "stranger-request"),
+	})
+	var refusal *RecoveryRefusalError
+	if !shoal.IsErrorCode(err, shoal.ErrorNotFound) || errors.As(err, &refusal) {
+		t.Fatalf("prepared claim disclosed a concealed live action: %v", err)
+	}
 }
 
 // TestTheLoserOfAClaimRaceIsToldNotFound pins a deliberate degradation, which
