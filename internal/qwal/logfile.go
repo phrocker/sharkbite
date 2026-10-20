@@ -34,8 +34,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"unicode/utf16"
 
-	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/rfile/wire"
 )
 
@@ -132,11 +132,37 @@ type LogFileKey struct {
 	Tablet *KeyExtent
 }
 
+// ColumnUpdate preserves the timestamp flag on the WAL wire. A missing client
+// timestamp uses the enclosing ServerMutation's system time when materialized.
+type ColumnUpdate struct {
+	ColumnFamily, ColumnQualifier, ColumnVisibility []byte
+	Timestamp                                       int64
+	HasTimestamp                                    bool
+	Deleted                                         bool
+	Value                                           []byte
+}
+
+// ServerMutation is the native WAL representation. In particular, SystemTime
+// and HasTimestamp must survive decoding independently: the client mutation
+// API's latest-timestamp sentinel cannot represent an explicit MaxInt64.
+type ServerMutation struct {
+	Row        []byte
+	SystemTime int64
+	Updates    []ColumnUpdate
+}
+
+func (m ServerMutation) EffectiveTimestamp(update ColumnUpdate) int64 {
+	if update.HasTimestamp {
+		return update.Timestamp
+	}
+	return m.SystemTime
+}
+
 // LogFileValue is the decoded value half: the list of mutations carried by a
 // MUTATION (exactly one) or MANY_MUTATIONS (zero or more) entry. Other event
 // types carry an empty value frame.
 type LogFileValue struct {
-	Mutations []*cclient.Mutation
+	Mutations []ServerMutation
 }
 
 // Entry pairs a decoded key and value as surfaced by the reader stream.
@@ -150,11 +176,27 @@ type Entry struct {
 // pre-allocating at the corrupt count would OOM the reader.
 const maxMutationsPerRecord = 1_000_000
 
+// The reader materializes each native WAL record. These are supported-size
+// bounds, not Accumulo format limits: larger valid records fail closed until
+// the decoder can stream them without unbounded retained memory.
+const (
+	maxDecodedRecordBytes = 64 << 20
+	maxMutationRowBytes   = 1 << 20
+	maxMutationDataBytes  = 32 << 20
+	maxMutationPoolBytes  = 48 << 20
+	// The retained ColumnUpdate struct occupies 112 bytes on 64-bit Go.
+	// Charge above that size so the decoded-record cap covers slice growth.
+	mutationUpdateBudgetBytes = 128
+)
+
 // dataInput is a Java-DataInput-style cursor over a byte stream. It satisfies
 // wire.ByteAndReader (io.Reader + io.ByteReader) so it can drive the shared
 // VInt/VLong helpers in internal/rfile/wire.
 type dataInput struct {
 	r *bufio.Reader
+	// Only set for the bounded packed Mutation.data substream. The bufio
+	// reader can prefetch, so remaining bytes include both buffers.
+	packed *byteSliceReader
 }
 
 func newDataInput(r io.Reader) *dataInput {
@@ -163,6 +205,10 @@ func newDataInput(r io.Reader) *dataInput {
 
 func (d *dataInput) Read(p []byte) (int, error) { return d.r.Read(p) }
 func (d *dataInput) ReadByte() (byte, error)    { return d.r.ReadByte() }
+
+func (d *dataInput) packedRemaining() int64 {
+	return int64(d.r.Buffered() + len(*d.packed))
+}
 
 func (d *dataInput) readFull(p []byte) error {
 	_, err := io.ReadFull(d.r, p)
@@ -173,7 +219,16 @@ func (d *dataInput) readU8() (byte, error) { return d.r.ReadByte() }
 
 func (d *dataInput) readBool() (bool, error) {
 	b, err := d.r.ReadByte()
-	return b != 0, err
+	if err != nil {
+		return false, err
+	}
+	// Mutation's UnsynchronizedBuffer.Reader treats only 1 as true, while
+	// DataInput.readBoolean (used by KeyExtent) treats any nonzero as true.
+	// Reject malformed packed flags rather than changing a put to a delete.
+	if d.packed != nil && b > 1 {
+		return false, fmt.Errorf("qwal: invalid packed boolean %d", b)
+	}
+	return b != 0, nil
 }
 
 func (d *dataInput) readInt32() (int32, error) {
@@ -192,8 +247,8 @@ func (d *dataInput) readInt64() (int64, error) {
 	return int64(binary.BigEndian.Uint64(buf[:])), nil
 }
 
-// readUTF decodes a Java DataOutput.writeUTF string: 2-byte unsigned
-// big-endian length + that many (modified) UTF-8 bytes.
+// readUTF decodes Java DataOutput.writeUTF's modified UTF-8, including its
+// two-byte NUL and surrogate-pair representation of supplementary runes.
 func (d *dataInput) readUTF() (string, error) {
 	var lenBuf [2]byte
 	if err := d.readFull(lenBuf[:]); err != nil {
@@ -207,7 +262,45 @@ func (d *dataInput) readUTF() (string, error) {
 	if err := d.readFull(body); err != nil {
 		return "", err
 	}
-	return string(body), nil
+	units := make([]uint16, 0, n)
+	for i := 0; i < len(body); {
+		b := body[i]
+		switch {
+		case b&0x80 == 0:
+			units = append(units, uint16(b))
+			i++
+		case b&0xe0 == 0xc0:
+			if i+1 >= len(body) || body[i+1]&0xc0 != 0x80 {
+				return "", errors.New("qwal: malformed modified UTF-8")
+			}
+			units = append(units, uint16(b&0x1f)<<6|uint16(body[i+1]&0x3f))
+			i += 2
+		case b&0xf0 == 0xe0:
+			if i+2 >= len(body) || body[i+1]&0xc0 != 0x80 || body[i+2]&0xc0 != 0x80 {
+				return "", errors.New("qwal: malformed modified UTF-8")
+			}
+			units = append(units, uint16(b&0x0f)<<12|uint16(body[i+1]&0x3f)<<6|uint16(body[i+2]&0x3f))
+			i += 3
+		default:
+			return "", errors.New("qwal: unsupported modified UTF-8 lead byte")
+		}
+	}
+	runes := make([]rune, 0, len(units))
+	for i := 0; i < len(units); i++ {
+		u := units[i]
+		if u >= 0xd800 && u <= 0xdbff {
+			if i+1 >= len(units) || units[i+1] < 0xdc00 || units[i+1] > 0xdfff {
+				return "", errors.New("qwal: unpaired modified UTF-8 surrogate")
+			}
+			runes = append(runes, utf16.DecodeRune(rune(u), rune(units[i+1])))
+			i++
+		} else if u >= 0xdc00 && u <= 0xdfff {
+			return "", errors.New("qwal: unpaired modified UTF-8 surrogate")
+		} else {
+			runes = append(runes, rune(u))
+		}
+	}
+	return string(runes), nil
 }
 
 // readVInt / readVLong delegate to the shared Hadoop varint helpers.
@@ -415,9 +508,14 @@ func (d *dataInput) readValue() (LogFileValue, error) {
 		return v, fmt.Errorf("qwal: implausible mutation count %d (max %d); frame likely corrupt",
 			count, maxMutationsPerRecord)
 	}
-	v.Mutations = make([]*cclient.Mutation, 0, count)
+	remaining := int64(maxDecodedRecordBytes) - int64(count)*64
+	if remaining < 0 {
+		return v, errors.New("qwal: decoded record exceeds memory limit")
+	}
+	// Exact capacity avoids geometric slice growth escaping the byte budget.
+	v.Mutations = make([]ServerMutation, 0, count)
 	for i := int32(0); i < count; i++ {
-		m, err := d.readServerMutation()
+		m, err := d.readServerMutation(&remaining)
 		if err != nil {
 			return v, fmt.Errorf("qwal: mutation %d: %w", i, err)
 		}
@@ -436,103 +534,98 @@ func (d *dataInput) readValue() (LogFileValue, error) {
 //	vint   dataLen ; bytes data        (column updates, decoded below)
 //	vint   entries           number of column updates packed in `data`
 //	[if 0x01] vint numValues ; for each: vint len ; bytes val   (large-value pool)
-//	[if 0x02] vint numMutations ; for each: WritableUtils.readString  (legacy repl;
-//	          0x02 is no longer written but consumed for back-compat)
+//	[if 0x02] legacy replication block (rejected: not emitted by pinned v4)
 //	vlong  systemTime        (ServerMutation.readFields, VERSION2 only)
 //
 // The 0x80-clear (VERSION1 "old") path is not produced by any currently
 // supported tserver; we reject it rather than carry a second decoder.
-func (d *dataInput) readServerMutation() (*cclient.Mutation, error) {
+func (d *dataInput) readServerMutation(remaining *int64) (ServerMutation, error) {
+	var empty ServerMutation
 	first, err := d.readU8()
 	if err != nil {
-		return nil, err
+		return empty, err
 	}
 	if first&0x80 != 0x80 {
-		return nil, fmt.Errorf("qwal: VERSION1 (old) mutation format not supported")
+		return empty, fmt.Errorf("qwal: VERSION1 (old) mutation format not supported")
+	}
+	if first&^byte(0x81) != 0 {
+		return empty, fmt.Errorf("qwal: unsupported VERSION2 mutation flags %#x", first)
 	}
 	valuesPresent := first&0x01 == 0x01
 
 	rowLen, err := d.readVInt()
 	if err != nil {
-		return nil, fmt.Errorf("rowLen: %w", err)
+		return empty, fmt.Errorf("rowLen: %w", err)
 	}
-	if rowLen < 0 {
-		return nil, fmt.Errorf("qwal: negative row length %d", rowLen)
+	if rowLen < 0 || rowLen > maxMutationRowBytes || int64(rowLen) > *remaining {
+		return empty, fmt.Errorf("qwal: invalid row length %d", rowLen)
 	}
+	*remaining -= int64(rowLen)
 	row := make([]byte, rowLen)
 	if err := d.readFull(row); err != nil {
-		return nil, fmt.Errorf("row: %w", err)
+		return empty, fmt.Errorf("row: %w", err)
 	}
 
 	dataLen, err := d.readVInt()
 	if err != nil {
-		return nil, fmt.Errorf("dataLen: %w", err)
+		return empty, fmt.Errorf("dataLen: %w", err)
 	}
-	if dataLen < 0 {
-		return nil, fmt.Errorf("qwal: negative data length %d", dataLen)
+	if dataLen < 0 || dataLen > maxMutationDataBytes || int64(dataLen)*2 > *remaining {
+		return empty, fmt.Errorf("qwal: invalid data length %d", dataLen)
 	}
+	*remaining -= int64(dataLen) * 2 // packed bytes and decoded column copies
 	data := make([]byte, dataLen)
 	if err := d.readFull(data); err != nil {
-		return nil, fmt.Errorf("data: %w", err)
+		return empty, fmt.Errorf("data: %w", err)
 	}
 
 	entries, err := d.readVInt()
 	if err != nil {
-		return nil, fmt.Errorf("entries: %w", err)
+		return empty, fmt.Errorf("entries: %w", err)
 	}
-	if entries < 0 {
-		return nil, fmt.Errorf("qwal: negative entry count %d", entries)
+	if entries < 0 || entries > dataLen/6 || int64(entries)*mutationUpdateBudgetBytes > *remaining {
+		return empty, fmt.Errorf("qwal: invalid entry count %d for %d packed bytes", entries, dataLen)
 	}
+	*remaining -= int64(entries) * mutationUpdateBudgetBytes
 
 	var values [][]byte
 	if valuesPresent {
 		numValues, err := d.readVInt()
 		if err != nil {
-			return nil, fmt.Errorf("numValues: %w", err)
+			return empty, fmt.Errorf("numValues: %w", err)
 		}
-		if numValues < 0 {
-			return nil, fmt.Errorf("qwal: negative value count %d", numValues)
+		if numValues < 0 || int64(numValues)*24 > *remaining {
+			return empty, fmt.Errorf("qwal: invalid value count %d", numValues)
 		}
+		*remaining -= int64(numValues) * 24
 		values = make([][]byte, 0, numValues)
 		for i := int32(0); i < numValues; i++ {
 			vl, err := d.readVInt()
 			if err != nil {
-				return nil, fmt.Errorf("value %d len: %w", i, err)
+				return empty, fmt.Errorf("value %d len: %w", i, err)
 			}
-			if vl < 0 {
-				return nil, fmt.Errorf("qwal: negative value length %d", vl)
+			if vl < 0 || vl > maxMutationPoolBytes || int64(vl) > *remaining {
+				return empty, fmt.Errorf("qwal: invalid value length %d", vl)
 			}
+			*remaining -= int64(vl)
 			val := make([]byte, vl)
 			if err := d.readFull(val); err != nil {
-				return nil, fmt.Errorf("value %d body: %w", i, err)
+				return empty, fmt.Errorf("value %d body: %w", i, err)
 			}
 			values = append(values, val)
 		}
 	}
 
-	if first&0x02 == 0x02 {
-		// Legacy replication-sources block: a count followed by that many
-		// WritableUtils strings (a VInt length + bytes). Consume and discard.
-		numRepl, err := d.readVInt()
-		if err != nil {
-			return nil, fmt.Errorf("repl count: %w", err)
-		}
-		for i := int32(0); i < numRepl; i++ {
-			if _, err := d.readText(); err != nil {
-				return nil, fmt.Errorf("repl string %d: %w", i, err)
-			}
-		}
-	}
-
 	// ServerMutation: trailing VLong systemTime in the VERSION2 format.
-	if _, err := d.readVLong(); err != nil {
-		return nil, fmt.Errorf("systemTime: %w", err)
+	systemTime, err := d.readVLong()
+	if err != nil {
+		return empty, fmt.Errorf("systemTime: %w", err)
 	}
 
-	return decodeMutation(row, data, entries, values)
+	return decodeMutation(row, data, entries, values, systemTime)
 }
 
-// decodeMutation expands the packed `data` block into a cclient.Mutation.
+// decodeMutation expands the packed `data` block into a ServerMutation.
 // Port of Mutation.deserializeColumnUpdate, applied `entries` times.
 //
 // Per-update layout inside `data`:
@@ -545,69 +638,77 @@ func (d *dataInput) readServerMutation() (*cclient.Mutation, error) {
 //	bool   deleted
 //	vlong  valLen        (<0 => index into the large-value pool; 0 => empty)
 //	[if valLen>0] bytes val
-func decodeMutation(row, data []byte, entries int32, values [][]byte) (*cclient.Mutation, error) {
-	m, err := cclient.NewMutation(row)
-	if err != nil {
-		return nil, err
-	}
+func decodeMutation(row, data []byte, entries int32, values [][]byte, systemTime int64) (ServerMutation, error) {
+	m := ServerMutation{Row: row, SystemTime: systemTime, Updates: make([]ColumnUpdate, 0, entries)}
 	src := byteSliceReader(data)
 	cur := newDataInput(&src)
+	cur.packed = &src
 	for i := int32(0); i < entries; i++ {
 		cf, err := cur.readVBytes()
 		if err != nil {
-			return nil, fmt.Errorf("update %d cf: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d cf: %w", i, err)
 		}
 		cq, err := cur.readVBytes()
 		if err != nil {
-			return nil, fmt.Errorf("update %d cq: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d cq: %w", i, err)
 		}
 		cv, err := cur.readVBytes()
 		if err != nil {
-			return nil, fmt.Errorf("update %d cv: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d cv: %w", i, err)
 		}
 		hasTs, err := cur.readBool()
 		if err != nil {
-			return nil, fmt.Errorf("update %d hasTs: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d hasTs: %w", i, err)
 		}
-		// Mirror Mutation.deserializeColumnUpdate: ts defaults to 0 when the
-		// update carries no client timestamp (hasTs=false). The Long.MAX_VALUE
-		// sentinel is a client-side write convention, not an on-disk value.
+		// Preserve the raw flag and timestamp. Java's ServerColumnUpdate
+		// substitutes systemTime only when the client timestamp is absent.
 		var ts int64
 		if hasTs {
 			if ts, err = cur.readVLong(); err != nil {
-				return nil, fmt.Errorf("update %d ts: %w", i, err)
+				return ServerMutation{}, fmt.Errorf("update %d ts: %w", i, err)
 			}
 		}
 		deleted, err := cur.readBool()
 		if err != nil {
-			return nil, fmt.Errorf("update %d deleted: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d deleted: %w", i, err)
 		}
 		valLen, err := cur.readVLong()
 		if err != nil {
-			return nil, fmt.Errorf("update %d valLen: %w", i, err)
+			return ServerMutation{}, fmt.Errorf("update %d valLen: %w", i, err)
 		}
 		var val []byte
 		switch {
 		case valLen < 0:
 			idx := int(-valLen) - 1
 			if idx < 0 || idx >= len(values) {
-				return nil, fmt.Errorf("qwal: update %d value-pool index %d out of range (%d values)",
+				return ServerMutation{}, fmt.Errorf("qwal: update %d value-pool index %d out of range (%d values)",
 					i, idx, len(values))
 			}
 			val = values[idx]
 		case valLen == 0:
 			val = []byte{}
 		default:
+			if valLen > maxMutationDataBytes {
+				return ServerMutation{}, fmt.Errorf("qwal: update %d inline value length %d exceeds limit", i, valLen)
+			}
+			if valLen > cur.packedRemaining() {
+				return ServerMutation{}, fmt.Errorf("qwal: update %d inline value length %d exceeds packed bytes", i, valLen)
+			}
 			val = make([]byte, valLen)
 			if err := cur.readFull(val); err != nil {
-				return nil, fmt.Errorf("update %d val: %w", i, err)
+				return ServerMutation{}, fmt.Errorf("update %d val: %w", i, err)
 			}
 		}
-		if deleted {
-			m.Delete(cf, cq, cv, ts)
-		} else {
-			m.Put(cf, cq, cv, ts, val)
+		m.Updates = append(m.Updates, ColumnUpdate{
+			ColumnFamily: cf, ColumnQualifier: cq, ColumnVisibility: cv,
+			Timestamp: ts, HasTimestamp: hasTs, Deleted: deleted, Value: val,
+		})
+	}
+	if _, err := cur.readU8(); err != io.EOF {
+		if err != nil {
+			return ServerMutation{}, fmt.Errorf("qwal: packed mutation trailing data: %w", err)
 		}
+		return ServerMutation{}, errors.New("qwal: packed mutation has trailing data")
 	}
 	return m, nil
 }
@@ -620,6 +721,12 @@ func (d *dataInput) readVBytes() ([]byte, error) {
 	}
 	if n < 0 {
 		return nil, fmt.Errorf("qwal: negative vbytes length %d", n)
+	}
+	if n > maxMutationDataBytes {
+		return nil, fmt.Errorf("qwal: vbytes length %d exceeds limit", n)
+	}
+	if d.packed != nil && n > d.packedRemaining() {
+		return nil, fmt.Errorf("qwal: vbytes length %d exceeds packed bytes", n)
 	}
 	if n == 0 {
 		return []byte{}, nil
