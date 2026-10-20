@@ -50,6 +50,34 @@ func TestLiveExclusiveCreator(t *testing.T) {
 	}, "/tmp/shoal-integration/"+uuid.NewString())
 }
 
+func TestLivePublishUnreferenced(t *testing.T) {
+	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
+		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
+	}
+	backend, err := hdfsstorage.New("127.0.0.1:8020")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = backend.Close() })
+	target := "/tmp/shoal-integration/" + uuid.NewString() + "/wal"
+	t.Cleanup(func() { _ = backend.Remove(context.Background(), target) })
+	if err := backend.PublishUnreferenced(context.Background(), target, []byte("complete native wal")); err != nil {
+		t.Fatal(err)
+	}
+	if err := backend.PublishUnreferenced(context.Background(), target, []byte("different")); !errors.Is(err, storage.ErrExists) {
+		t.Fatalf("second publication = %v, want ErrExists", err)
+	}
+	file, err := backend.Open(context.Background(), target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	got := make([]byte, len("complete native wal"))
+	if _, err := file.ReadAt(got, 0); err != nil || string(got) != "complete native wal" {
+		t.Fatalf("immutable bytes = %q, %v", got, err)
+	}
+}
+
 func TestLiveBackendAndRFileRoundTrip(t *testing.T) {
 	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
 		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
