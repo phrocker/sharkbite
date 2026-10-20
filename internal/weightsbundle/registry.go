@@ -192,7 +192,7 @@ func OpenRegistry(ctx context.Context, store Store, prefix string) (*Registry, e
 		return nil, err
 	}
 	sort.Strings(events)
-	for _, p := range events {
+	for i, p := range events {
 		raw, err := readObject(ctx, store, p, MaxRecordBytes)
 		if err != nil {
 			return nil, fmt.Errorf("registry: %w", err)
@@ -200,6 +200,15 @@ func OpenRegistry(ctx context.Context, store Store, prefix string) (*Registry, e
 		var ev Event
 		if err := strictDecode(raw, &ev); err != nil {
 			return nil, fmt.Errorf("registry: %s: %w", p, err)
+		}
+		// The event log is append-only and gap-free, exactly like the
+		// pointer log: a missing or renamed event file is corruption, not a
+		// shorter history.
+		if ev.Sequence != int64(i+1) || path.Base(p) != sequenceName(ev.Sequence) || ev.Kind == "" {
+			return nil, fmt.Errorf("registry: event %s out of sequence", p)
+		}
+		if _, ok := r.releases[ev.ReleaseID]; !ok {
+			return nil, fmt.Errorf("registry: event %s names unknown release %s", p, ev.ReleaseID)
 		}
 		r.events = append(r.events, ev)
 		r.applyEvent(ev)
@@ -341,9 +350,18 @@ func (r *Registry) Rollback(ctx context.Context, priorID string, approval Record
 	if active == nil {
 		return Release{}, ErrNoActiveRelease
 	}
+	if got := stringField(approval, "active_release_id"); got != active.ID {
+		return Release{}, fmt.Errorf("%w: approval names active release %s; active release is %s", ErrConflict, got, active.ID)
+	}
 	prior, ok := r.releases[priorID]
 	if !ok {
 		return Release{}, refuse("prior release is not recorded")
+	}
+	// Only a release the pointer once named is a prior release. A record
+	// that lost a pointer race, or was written and never pointed at, is an
+	// orphan and cannot become active through rollback.
+	if !r.wasActive(priorID) {
+		return Release{}, refuse("prior release " + priorID + " was never active")
 	}
 	if e := r.eligibility[priorID]; e.Status != "" && e.Status != EligibilityEligible {
 		return Release{}, fmt.Errorf("%w: %s: %s", ErrIneligible, e.Status, e.Reason)
@@ -359,7 +377,40 @@ func (r *Registry) Rollback(ctx context.Context, priorID string, approval Record
 	return release, nil
 }
 
+func (r *Registry) wasActive(id string) bool {
+	for _, past := range r.order {
+		if past == id {
+			return true
+		}
+	}
+	return false
+}
+
+// withdrawnSource returns the first of the lineage's sources that a recorded
+// withdrawal names, so a release that depends on it is refused before it is
+// ever pointed at, whether promoted here or imported from elsewhere.
+func (r *Registry) withdrawnSource(lineage *DatasetLineage) (string, bool) {
+	if lineage == nil {
+		return "", false
+	}
+	withdrawn := map[string]bool{}
+	for _, ev := range r.events {
+		if ev.Kind == EventSourceWithdrawn && ev.SourceID != "" {
+			withdrawn[ev.SourceID] = true
+		}
+	}
+	for _, s := range lineage.SourceIDs {
+		if withdrawn[s] {
+			return s, true
+		}
+	}
+	return "", false
+}
+
 func (r *Registry) commit(ctx context.Context, release Release, lineage *DatasetLineage) error {
+	if s, ok := r.withdrawnSource(lineage); ok {
+		return fmt.Errorf("%w: dataset manifest included withdrawn source %s", ErrIneligible, s)
+	}
 	seq := r.sequence + 1
 	previous := ""
 	if active := r.active.Load(); active != nil {
@@ -599,6 +650,9 @@ func (r *Registry) ImportRelease(ctx context.Context, release Release, lineage D
 	}
 	if release.State != StateActive || release.BundleDigest == nil || release.ApprovalID == "" || release.EvaluationID == "" || release.ArtifactID == "" {
 		return false, refuse("release record is not a complete promotion")
+	}
+	if release.DatasetManifestSHA256 == nil || *release.DatasetManifestSHA256 != lineage.DatasetManifestSHA256 {
+		return false, refuse("imported lineage does not match the release's dataset manifest pin")
 	}
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -223,7 +223,10 @@ func (m Manifest) Encode() ([]byte, error) {
 	return weightsbundle.Canonical(m)
 }
 
-// Decode parses manifest bytes strictly and validates them.
+// Decode parses manifest bytes strictly, validates them, and refuses bytes
+// that do not round-trip: a member the typed form drops or rewrites (an
+// explicit empty optional, a number spelled another way) would let two
+// different byte strings share one pin.
 func Decode(raw []byte) (Manifest, error) {
 	var m Manifest
 	if err := weightsbundle.StrictUnmarshal(raw, &m); err != nil {
@@ -231,6 +234,21 @@ func Decode(raw []byte) (Manifest, error) {
 	}
 	if err := m.Validate(); err != nil {
 		return Manifest{}, err
+	}
+	generic, err := weightsbundle.DecodeRecord(raw)
+	if err != nil {
+		return Manifest{}, invalid("%v", err)
+	}
+	typed, err := weightsbundle.Canonical(m)
+	if err != nil {
+		return Manifest{}, invalid("%v", err)
+	}
+	loose, err := weightsbundle.Canonical(generic)
+	if err != nil {
+		return Manifest{}, invalid("%v", err)
+	}
+	if string(typed) != string(loose) {
+		return Manifest{}, invalid("manifest does not round-trip canonically: a member is absent, explicitly empty, or not in canonical form")
 	}
 	return m, nil
 }
@@ -306,6 +324,7 @@ func (s ModelSelection) validate(role string) error {
 		if len(c.Measurements) > MaxMeasurements {
 			return invalid("%s %q: too many measurements", role, c.Alias)
 		}
+		metrics := map[string]bool{}
 		for _, meas := range c.Measurements {
 			if meas.Split != SplitDevelopment {
 				return invalid("%s %q: measurement %q from split %q; only development evidence selects a model", role, c.Alias, meas.Metric, meas.Split)
@@ -313,6 +332,10 @@ func (s ModelSelection) validate(role string) error {
 			if meas.Metric == "" || meas.EvidenceID == "" || !finite(meas.Value) {
 				return invalid("%s %q: measurement needs metric, finite value, and evidence", role, c.Alias)
 			}
+			if metrics[meas.Metric] {
+				return invalid("%s %q: metric %q measured twice; one recorded value per metric", role, c.Alias, meas.Metric)
+			}
+			metrics[meas.Metric] = true
 		}
 	}
 	chosen, ok := s.chosen()
@@ -343,12 +366,11 @@ func (s ModelSelection) validate(role string) error {
 		if _, ok := rejected[c.Alias]; !ok {
 			return invalid("%s: eligible %q neither chosen nor rejected with a reason", role, c.Alias)
 		}
-		// The rule must not prefer a rejected model that satisfies it; a
-		// better-measuring alternative needs an explicit reason beyond the rule.
-		if v, ok := c.value(s.Rule.Metric); ok && s.Rule.satisfied(v) && s.Rule.better(v, chosenValue) && rejected[c.Alias] == "" {
-			return invalid("%s: %q measures better than chosen", role, c.Alias)
-		}
 	}
+	// The rule is advisory over the recorded measurements: the choice may
+	// depart from what Apply() would pick only by rejecting the rule's
+	// preference with a recorded reason, which the loop above requires for
+	// every unchosen model. Apply() lets a reader see when that happened.
 	return nil
 }
 

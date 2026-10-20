@@ -114,6 +114,19 @@ func TestReleaseExportImportRollbackCLI(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"verified":true`) {
 		t.Fatal(stdout.String())
 	}
+	var verifyReport map[string]any
+	json.Unmarshal(stdout.Bytes(), &verifyReport)
+	indexDigest, _ := verifyReport["index_digest"].(string)
+	if len(indexDigest) != 64 {
+		t.Fatal(stdout.String())
+	}
+	// The index digest quoted from the exporting side pins the bundle.
+	if err := run([]string{"release", "verify", "-bundle", output, "-index-digest", indexDigest}, &stdout, &stderr); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"release", "verify", "-bundle", output, "-index-digest", strings.Repeat("0", 64)}, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "index digest") {
+		t.Fatalf("wrong index digest accepted: %v", err)
+	}
 	if err := run(first.exportArgs("x=repo:tag", output+"2"), &stdout, &stderr); err == nil {
 		t.Fatal("image by tag accepted")
 	}
@@ -164,7 +177,18 @@ func TestReleaseExportImportRollbackCLI(t *testing.T) {
 		t.Fatal(err)
 	}
 	stdout.Reset()
-	if err := run([]string{"release", "rollback", "-registry", offlineRegistry, "-prior", first.release.ID, "-owner", "op"}, &stdout, &stderr); err != nil {
+	// A rollback target whose bundle is gone from the serving root is refused.
+	if err := os.Rename(filepath.Join(serving, bundleDigest), filepath.Join(serving, "parked")); err != nil {
+		t.Fatal(err)
+	}
+	if err := run([]string{"release", "rollback", "-registry", offlineRegistry, "-prior", first.release.ID, "-owner", "op", "-serving-root", serving}, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "not on the serving root") {
+		t.Fatalf("rollback to a pruned bundle: %v", err)
+	}
+	os.Rename(filepath.Join(serving, "parked"), filepath.Join(serving, bundleDigest))
+	if err := run([]string{"release", "rollback", "-registry", offlineRegistry, "-prior", first.release.ID, "-owner", "op"}, &stdout, &stderr); err == nil {
+		t.Fatal("rollback without -serving-root accepted")
+	}
+	if err := run([]string{"release", "rollback", "-registry", offlineRegistry, "-prior", first.release.ID, "-owner", "op", "-serving-root", serving}, &stdout, &stderr); err != nil {
 		t.Fatal(err)
 	}
 	if !strings.Contains(stdout.String(), `"rollback_of":"`+second.release.ID+`"`) || !strings.Contains(stdout.String(), bundleDigest) {

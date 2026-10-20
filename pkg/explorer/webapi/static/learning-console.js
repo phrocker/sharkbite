@@ -138,10 +138,21 @@
       }
       case "releases": {
         const active = value.active;
-        note(active ? `Active release ${active.release.id} serving bundle ${active.bundle_digest_served_now || "(none)"}; eligibility ${active.eligibility.status}` : "No active release.");
+        note(active ? `Active release ${active.release.id} bundle ${active.bundle_digest || "(none)"}; eligibility ${active.eligibility.status}` : "No active release.");
         const rows = (value.history || []).map((h) => [h.release.id, h.release.bundle_digest, h.release.rollback_of || "", h.release.approval_id, h.eligibility.status]);
         summary.appendChild(table(["release", "bundle digest", "rollback of", "approval", "eligibility"], rows));
-        if (value.serving) note(`Serving: ${JSON.stringify(value.serving)}`);
+        if (value.serving) {
+          const serving = value.serving;
+          const line = document.createElement("p");
+          line.className = "learning-note";
+          const servesActive = serving.serves_active_release === true;
+          line.appendChild(mark(servesActive, `Runtime serves the active release (bundle ${serving.bundle_digest || "(none)"}, device ${serving.actual_device || "?"})`,
+            serving.error ? `Runtime report failed: ${serving.error}` : `Runtime serves bundle ${serving.bundle_digest || "(none)"}, not the active release, or is not ready${serving.health_error ? `: ${serving.health_error}` : ""}`));
+          summary.appendChild(line);
+          if (serving.recording_errors && serving.recording_errors.length) note(`Event recording failed: ${serving.recording_errors.join("; ")}`);
+        } else if (value.serving_note) {
+          note(value.serving_note);
+        }
         break;
       }
       case "evidence": {
@@ -296,6 +307,7 @@
     };
     return post(`${ROOT}/jobs`, manifest);
   });
+  onSubmit("learning-predictions-form", "Teacher predictions", "predictions", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-predictions-pin"))}/predictions`, jsonValue("learning-predictions-json")));
   onSubmit("learning-receipt-form", "Receipt submission", "receipt", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-receipt-pin"))}/receipt`, jsonValue("learning-receipt-json")));
   onSubmit("learning-evaluations-form", "Evaluations", "evaluations", () => requestJSON(`${ROOT}/candidates/${encodeURIComponent(required("learning-evaluations-candidate"))}/evaluations`));
   onSubmit("learning-candidate-form", "Candidate record", "candidate", () => post(`${ROOT}/candidates`, jsonValue("learning-candidate-json")));
@@ -303,19 +315,19 @@
   onSubmit("learning-promote-form", "Promotion", "promote", () => post(`${ROOT}/releases/promote`, {
     candidate_id: required("learning-promote-candidate"),
     evaluation_id: optional("learning-promote-evaluation"),
-    owner: required("learning-promote-owner"),
   }));
   onSubmit("learning-rollback-form", "Rollback", "rollback", () => post(`${ROOT}/releases/rollback`, {
     prior_release_id: required("learning-rollback-prior"),
-    owner: required("learning-rollback-owner"),
   }));
   onSubmit("learning-evidence-form", "Evidence", "evidence", () => requestJSON(`${ROOT}/evidence/${encodeURIComponent(required("learning-evidence-kind"))}`));
   onSubmit("learning-bundle-export-form", "Bundle export", "bundle", () => post(`${ROOT}/bundles/export`, {
     release_id: required("learning-bundle-export-release"),
     name: required("learning-bundle-export-name"),
   }));
-  onSubmit("learning-bundle-import-form", "Bundle import", "bundle", () => post(`${ROOT}/bundles/import`, {
-    name: required("learning-bundle-import-name"),
-    importer: required("learning-bundle-import-importer"),
-  }));
+  onSubmit("learning-bundle-import-form", "Bundle import", "bundle", () => {
+    const body = {name: required("learning-bundle-import-name")};
+    const expected = optional("learning-bundle-import-index");
+    if (expected) body.expected_index_digest = expected;
+    return post(`${ROOT}/bundles/import`, body);
+  });
 })();

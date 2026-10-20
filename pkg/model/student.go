@@ -76,12 +76,23 @@ type StudentConfig struct {
 	Recorder       StudentEventRecorder
 }
 
-// StudentReport is what the provider observed from its runtime.
+// StudentReport is what the provider observed from its runtime. Ready and
+// ActualDevice describe the pinned release only: a runtime that answered
+// for another release, bundle, or alias leaves Ready false and the device
+// unset, whatever it said about itself.
 type StudentReport struct {
 	ActualDevice   string
 	FallbackEvents []string
 	Ready          bool
+	// RecordingErrors lists failures to write events against the release
+	// (a read-only or full state volume), so lost evidence is itself
+	// visible. Bounded to the most recent few.
+	RecordingErrors []string
 }
+
+// MaxStudentRuntimeSettingsBytes bounds the bundle's runtime settings file
+// read at construction.
+const MaxStudentRuntimeSettingsBytes = 1 << 20
 
 // StudentPredictor serves a verified weights bundle through a loopback
 // runtime. Construction verifies every file digest and the bundle digest
@@ -102,8 +113,9 @@ type StudentPredictor struct {
 	egresses bool
 	recorder StudentEventRecorder
 
-	mu     sync.Mutex
-	report StudentReport
+	mu       sync.Mutex
+	report   StudentReport
+	recorded map[string]bool
 }
 
 // NewStudentPredictor verifies the bundle and constructs the client. A
@@ -111,9 +123,16 @@ type StudentPredictor struct {
 // recorded against the release before the error returns. Construction
 // performs no network access.
 func NewStudentPredictor(ctx context.Context, cfg StudentConfig) (*StudentPredictor, error) {
-	u, err := url.Parse(strings.TrimSpace(cfg.BaseURL))
+	baseURL := strings.TrimRight(strings.TrimSpace(cfg.BaseURL), "/")
+	u, err := url.Parse(baseURL)
 	if err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" || u.Hostname() == "" {
 		return nil, fmt.Errorf("%w: invalid student base URL", ErrInvalidConfig)
+	}
+	// The endpoint is an origin, nothing more: credentials in the URL would
+	// be sent to the runtime, and a path, query, or fragment would change
+	// what /health and /v1/predict resolve to.
+	if u.User != nil || u.RawQuery != "" || u.ForceQuery || u.Fragment != "" || u.RawFragment != "" || (u.Path != "" && u.Path != "/") || u.Opaque != "" {
+		return nil, fmt.Errorf("%w: student base URL must be scheme://host[:port] with no path, userinfo, query, or fragment", ErrInvalidConfig)
 	}
 	if cfg.Release.ID == "" || len(cfg.Release.BundleDigest) != 64 {
 		return nil, fmt.Errorf("%w: student release identity is required", ErrInvalidConfig)
@@ -183,9 +202,10 @@ func NewStudentPredictor(ctx context.Context, cfg StudentConfig) (*StudentPredic
 	copied := *client
 	copied.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
 	return &StudentPredictor{
-		baseURL: strings.TrimRight(cfg.BaseURL, "/"), token: strings.TrimSpace(cfg.BearerToken), id: id, release: cfg.Release,
+		baseURL: baseURL, token: strings.TrimSpace(cfg.BearerToken), id: id, release: cfg.Release,
 		client: &copied, timeout: timeout, maxReq: maxReq, maxResp: maxResp, maxToks: maxToks, tokens: tokens,
-		gate: make(chan struct{}, concurrent), egresses: egressesForConfiguredURL(cfg.BaseURL), recorder: cfg.Recorder,
+		gate: make(chan struct{}, concurrent), egresses: egressesForConfiguredURL(baseURL), recorder: cfg.Recorder,
+		recorded: map[string]bool{},
 	}, nil
 }
 
@@ -197,8 +217,11 @@ func studentMaxInputTokens(root string, m weightsbundle.Manifest) int {
 	if !ok {
 		return DefaultStudentMaxInputTokens
 	}
+	if f.Size > MaxStudentRuntimeSettingsBytes {
+		return DefaultStudentMaxInputTokens
+	}
 	raw, err := os.ReadFile(filepath.Join(root, filepath.FromSlash(f.Path)))
-	if err != nil {
+	if err != nil || int64(len(raw)) > MaxStudentRuntimeSettingsBytes {
 		return DefaultStudentMaxInputTokens
 	}
 	var settings struct {
@@ -226,6 +249,7 @@ func (p *StudentPredictor) Report() StudentReport {
 	defer p.mu.Unlock()
 	out := p.report
 	out.FallbackEvents = append([]string(nil), p.report.FallbackEvents...)
+	out.RecordingErrors = append([]string(nil), p.report.RecordingErrors...)
 	return out
 }
 
@@ -263,9 +287,14 @@ func (p *StudentPredictor) CheckHealth(ctx context.Context) error {
 	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, MaxStudentHealthResponseBytes+1))
 	if err != nil {
+		p.setReady(false)
+		if callCtx.Err() != nil && ctx.Err() == nil {
+			return &Error{Kind: ErrTimeout, Operation: "student health", Detail: err.Error(), Retryable: true}
+		}
 		return &Error{Kind: ErrUnavailable, Operation: "student health", Detail: err.Error(), Retryable: true}
 	}
 	if int64(len(body)) > MaxStudentHealthResponseBytes {
+		p.setReady(false)
 		return &Error{Kind: ErrOversizedResponse, Operation: "student health"}
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -274,29 +303,35 @@ func (p *StudentPredictor) CheckHealth(ctx context.Context) error {
 	}
 	var health studentHealth
 	if err := json.Unmarshal(body, &health); err != nil {
+		p.setReady(false)
 		return &Error{Kind: ErrMalformedResponse, Operation: "student health", Detail: err.Error()}
 	}
 	return p.checkServed(ctx, health.ReleaseID, health.BundleDigest, health.ModelAlias, health.Device, health.Status == "ready", health.FallbackEvents)
 }
 
+// checkServed compares what the runtime says it serves with the pinned
+// identity. The report is updated only for the pinned release: a runtime
+// answering for anything else leaves Ready false and records a mismatch.
 func (p *StudentPredictor) checkServed(ctx context.Context, releaseID, digest, alias, device string, ready bool, fallbacks []string) error {
+	if releaseID != p.release.ID || digest != p.release.BundleDigest || alias != p.id.ModelAlias {
+		detail := fmt.Sprintf("runtime serves release %q bundle %q alias %q; pinned release %q bundle %q alias %q", releaseID, digest, alias, p.release.ID, p.release.BundleDigest, p.id.ModelAlias)
+		p.mu.Lock()
+		p.report.Ready = false
+		p.report.ActualDevice = ""
+		p.mu.Unlock()
+		p.record(ctx, StudentEventHealthMismatch, detail)
+		return &Error{Kind: ErrUnavailable, Operation: "student identity", Detail: detail}
+	}
 	p.mu.Lock()
 	p.report.ActualDevice = device
-	p.report.Ready = ready
 	for _, f := range fallbacks {
 		if !contains(p.report.FallbackEvents, f) {
 			p.report.FallbackEvents = append(p.report.FallbackEvents, f)
 		}
 	}
-	p.mu.Unlock()
-	if releaseID != p.release.ID || digest != p.release.BundleDigest || alias != p.id.ModelAlias {
-		detail := fmt.Sprintf("runtime serves release %q bundle %q alias %q; pinned release %q bundle %q alias %q", releaseID, digest, alias, p.release.ID, p.release.BundleDigest, p.id.ModelAlias)
-		p.record(ctx, StudentEventHealthMismatch, detail)
-		return &Error{Kind: ErrUnavailable, Operation: "student identity", Detail: detail}
-	}
 	if device != p.id.Device {
 		detail := fmt.Sprintf("runtime reports device %q; release promoted for %q", device, p.id.Device)
-		p.mu.Lock()
+		p.report.Ready = false
 		if !contains(p.report.FallbackEvents, detail) {
 			p.report.FallbackEvents = append(p.report.FallbackEvents, detail)
 		}
@@ -304,6 +339,8 @@ func (p *StudentPredictor) checkServed(ctx context.Context, releaseID, digest, a
 		p.record(ctx, StudentEventDeviceFallback, detail)
 		return &Error{Kind: ErrUnavailable, Operation: "student device", Detail: detail}
 	}
+	p.report.Ready = ready
+	p.mu.Unlock()
 	if !ready {
 		return &Error{Kind: ErrUnavailable, Operation: "student readiness", Detail: "runtime not ready", Retryable: true}
 	}
@@ -316,9 +353,30 @@ func (p *StudentPredictor) setReady(ready bool) {
 	p.mu.Unlock()
 }
 
+// record writes one event per distinct (kind, detail) for the lifetime of
+// this provider, so a mis-pinned runtime polled on every page view does not
+// grow the registry's event log without bound. A failure to record is kept
+// in the report: lost evidence must not be silent.
 func (p *StudentPredictor) record(ctx context.Context, kind, detail string) {
-	if p.recorder != nil {
-		_ = p.recorder.RecordStudentEvent(ctx, p.release.ID, kind, detail)
+	if p.recorder == nil {
+		return
+	}
+	key := kind + "\x00" + detail
+	p.mu.Lock()
+	if p.recorded[key] {
+		p.mu.Unlock()
+		return
+	}
+	p.recorded[key] = true
+	p.mu.Unlock()
+	if err := p.recorder.RecordStudentEvent(ctx, p.release.ID, kind, detail); err != nil {
+		p.mu.Lock()
+		delete(p.recorded, key)
+		p.report.RecordingErrors = append(p.report.RecordingErrors, kind+": "+err.Error())
+		if len(p.report.RecordingErrors) > 8 {
+			p.report.RecordingErrors = p.report.RecordingErrors[len(p.report.RecordingErrors)-8:]
+		}
+		p.mu.Unlock()
 	}
 }
 
@@ -428,10 +486,25 @@ func (p *StudentPredictor) Predict(ctx context.Context, req TypedRequest) (Typed
 	defer resp.Body.Close()
 	responseBody, readErr := io.ReadAll(io.LimitReader(resp.Body, p.maxResp+1))
 	if readErr != nil {
+		if ctx.Err() != nil {
+			return TypedResult{}, contextError("student read", ctx.Err())
+		}
+		if callCtx.Err() != nil {
+			return TypedResult{}, &Error{Kind: ErrTimeout, Operation: "student read", Detail: readErr.Error(), Retryable: true}
+		}
 		return TypedResult{}, &Error{Kind: ErrUnavailable, Operation: "student read", Detail: readErr.Error(), Retryable: true}
 	}
 	if int64(len(responseBody)) > p.maxResp {
 		return TypedResult{}, &Error{Kind: ErrOversizedResponse, Operation: "student read"}
+	}
+	if resp.StatusCode == http.StatusNotFound || resp.StatusCode == http.StatusConflict {
+		// The runtime refused the pinned identity in the request: it serves
+		// another alias, release, or bundle. That is a mismatch, recorded as
+		// one, not a transient failure.
+		detail := fmt.Sprintf("runtime refused the pinned identity with status %d: release %q bundle %q alias %q", resp.StatusCode, p.release.ID, p.release.BundleDigest, p.id.ModelAlias)
+		p.setReady(false)
+		p.record(ctx, StudentEventHealthMismatch, detail)
+		return TypedResult{}, &Error{Kind: ErrUnavailable, Operation: "student identity", StatusCode: resp.StatusCode, Detail: detail}
 	}
 	if resp.StatusCode != http.StatusOK {
 		return TypedResult{}, &Error{Kind: ErrUnavailable, Operation: "student response", StatusCode: resp.StatusCode, Retryable: resp.StatusCode >= 500}

@@ -3,6 +3,8 @@ package releasebundle
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"os"
 	"path/filepath"
@@ -222,15 +224,21 @@ func TestOneAlteredByteFailsImportWithTheEntryNamed(t *testing.T) {
 }
 
 func TestExportRefusesIncompletePromotion(t *testing.T) {
-	f := newFixture(t)
 	cases := map[string]struct {
 		mutate func(in *ExportInput)
 		want   string
 	}{
-		"legacy release without bundle": {func(in *ExportInput) {
+		"unsealed release": {func(in *ExportInput) {
 			in.Release.BundleDigest = nil
 			in.Release.ID = ""
 		}, "identity"},
+		"legacy release without bundle": {func(in *ExportInput) {
+			in.Release = resealRelease(t, in.Release, func(r map[string]any) { r["bundle_digest"] = nil })
+		}, "needs active state, bundle digest"},
+		"release without dataset manifest pin": {func(in *ExportInput) {
+			in.Release = resealRelease(t, in.Release, func(r map[string]any) { r["dataset_manifest_sha256"] = nil })
+		}, "no dataset manifest pin"},
+		"lineage sources not the manifest's": {func(in *ExportInput) { in.Lineage.SourceIDs = []string{} }, "lineage source ids"},
 		"image by tag": {func(in *ExportInput) {
 			in.Images = []ImageRef{{Name: "x", Repository: "ghcr.io/example/x", Digest: "latest"}}
 		}, "not a tag"},
@@ -238,7 +246,7 @@ func TestExportRefusesIncompletePromotion(t *testing.T) {
 		"wrong evaluation": {func(in *ExportInput) {
 			in.Evaluation = seal(t, weightsbundle.KindEvaluation, map[string]any{"disposition": "shadow_candidate"})
 		}, "not the release's evaluation"},
-		"held evaluation": {func(in *ExportInput) {
+		"resealed evaluation with another disposition is another record": {func(in *ExportInput) {
 			e := map[string]any{}
 			for k, v := range in.Evaluation {
 				if k != "id" && k != "kind" && k != "schema" {
@@ -264,5 +272,234 @@ func TestExportRefusesIncompletePromotion(t *testing.T) {
 			}
 		})
 	}
-	_ = f
+}
+
+// resealRelease rebuilds a release record with one field changed and a
+// fresh identity, so a structurally different but sealed record reaches the
+// completeness checks rather than the identity check.
+func resealRelease(t *testing.T, r weightsbundle.Release, mutate func(map[string]any)) weightsbundle.Release {
+	t.Helper()
+	record, err := r.Record()
+	if err != nil {
+		t.Fatal(err)
+	}
+	fields := map[string]any{}
+	for k, v := range record {
+		if k != "id" && k != "kind" && k != "schema" {
+			fields[k] = v
+		}
+	}
+	mutate(fields)
+	out, err := weightsbundle.ReleaseFromRecord(seal(t, weightsbundle.KindRelease, fields))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+// rewriteEntry replaces one bundle file and updates its index entry so the
+// per-entry digests still verify: this is what an attacker who controls the
+// bundle directory but not the sealed records can do.
+func rewriteEntry(t *testing.T, dest, name string, content []byte) {
+	t.Helper()
+	if err := os.WriteFile(filepath.Join(dest, filepath.FromSlash(name)), content, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	raw, err := os.ReadFile(filepath.Join(dest, IndexName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var index Index
+	if err := weightsbundle.StrictUnmarshal(raw, &index); err != nil {
+		t.Fatal(err)
+	}
+	for i := range index.Entries {
+		if index.Entries[i].Path == name {
+			sum := sha256.Sum256(content)
+			index.Entries[i].Size = int64(len(content))
+			index.Entries[i].SHA256 = hex.EncodeToString(sum[:])
+		}
+	}
+	rewriteIndex(t, dest, index)
+}
+
+func rewriteIndex(t *testing.T, dest string, index Index) {
+	t.Helper()
+	encoded, err := weightsbundle.Canonical(index)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dest, IndexName), encoded, 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func readIndex(t *testing.T, dest string) Index {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(dest, IndexName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var index Index
+	if err := weightsbundle.StrictUnmarshal(raw, &index); err != nil {
+		t.Fatal(err)
+	}
+	return index
+}
+
+// A consistent rewrite of the unsealed files (lineage, index) must still be
+// refused: lineage follows from the pinned manifest, images and entry kinds
+// from the exporting side's index digest.
+func TestConsistentRewritesOfUnsealedFilesAreRefused(t *testing.T) {
+	ctx := context.Background()
+	cases := map[string]struct {
+		mutate func(t *testing.T, dest string, exported Index)
+		pin    bool
+		want   error
+		detail string
+	}{
+		"lineage source ids emptied": {func(t *testing.T, dest string, _ Index) {
+			rewriteEntry(t, dest, LineageName, []byte(`{"dataset_manifest_sha256":"`+readIndexManifestPin(t, dest)+`","source_ids":[]}`))
+		}, false, ErrRefused, "lineage source ids"},
+		"dataset manifest swapped with its lineage": {func(t *testing.T, dest string, _ Index) {
+			manifest := []byte(`{"schema":1,"kind":"authorized-numeric-training-export","rows":[{"id":"r1","sources":[{"Digest":"attacker-src"}]}]}`)
+			lineage, _ := weightsbundle.SourcesFromExportManifest(manifest)
+			encoded, _ := weightsbundle.Canonical(lineage)
+			rewriteEntry(t, dest, DatasetManifestName, manifest)
+			rewriteEntry(t, dest, LineageName, encoded)
+		}, false, ErrRefused, "not the release pin"},
+		"images rewritten, index unpinned": {func(t *testing.T, dest string, index Index) {
+			index.Images = []ImageRef{{Name: "student-runtime", Repository: "evil.example/x", Digest: "sha256:" + strings.Repeat("0", 64)}}
+			rewriteIndex(t, dest, index)
+		}, false, nil, ""},
+		"images rewritten, index pinned": {func(t *testing.T, dest string, index Index) {
+			index.Images = []ImageRef{{Name: "student-runtime", Repository: "evil.example/x", Digest: "sha256:" + strings.Repeat("0", 64)}}
+			rewriteIndex(t, dest, index)
+		}, true, ErrVerification, "index digest"},
+		"images emptied": {func(t *testing.T, dest string, index Index) {
+			index.Images = nil
+			rewriteIndex(t, dest, index)
+		}, false, ErrRefused, "at least one image"},
+		"image by tag": {func(t *testing.T, dest string, index Index) {
+			index.Images[0].Digest = "latest"
+			rewriteIndex(t, dest, index)
+		}, false, ErrRefused, "not a tag"},
+		"entry kind relabelled": {func(t *testing.T, dest string, index Index) {
+			for i := range index.Entries {
+				if index.Entries[i].Path == EvaluationName {
+					index.Entries[i].Kind = EntryRelease
+				}
+			}
+			rewriteIndex(t, dest, index)
+		}, false, ErrVerification, `kind mismatch "evaluation.json"`},
+	}
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			f := newFixture(t)
+			dest := filepath.Join(t.TempDir(), "rb")
+			exported, err := Export(f.input(), dest)
+			if err != nil {
+				t.Fatal(err)
+			}
+			expectedDigest, _ := exported.Digest()
+			tc.mutate(t, dest, readIndex(t, dest))
+			opts := ImportOptions{Registry: weightsbundle.NewRegistry(), ServingRoot: filepath.Join(t.TempDir(), "serving"), Importer: "op"}
+			if tc.pin {
+				opts.ExpectedIndexDigest = expectedDigest
+			}
+			_, err = Import(ctx, dest, opts)
+			if tc.want == nil {
+				// Documents the limit: without the quoted index digest a
+				// rewritten image list passes, which is why import takes one.
+				if err != nil {
+					t.Fatalf("unexpected %v", err)
+				}
+				return
+			}
+			if !errors.Is(err, tc.want) || !strings.Contains(err.Error(), tc.detail) {
+				t.Fatalf("got %v, want %v containing %q", err, tc.want, tc.detail)
+			}
+			if _, ok := opts.Registry.Active(); ok {
+				t.Fatal("refused import activated a release")
+			}
+		})
+	}
+}
+
+func readIndexManifestPin(t *testing.T, dest string) string {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(dest, DatasetManifestName))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return weightsbundle.SHA256Hex(raw)
+}
+
+// A directory already at the digest's serving path that is not the verified
+// bundle must not let the pointer advance.
+func TestImportRefusesForeignServingDirectory(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture(t)
+	dest := filepath.Join(t.TempDir(), "rb")
+	index, err := Export(f.input(), dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	serving := filepath.Join(t.TempDir(), "serving")
+	junk := filepath.Join(serving, index.BundleDigest)
+	if err := os.MkdirAll(junk, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(junk, "junk"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	registry := weightsbundle.NewRegistry()
+	result, err := Import(ctx, dest, ImportOptions{Registry: registry, ServingRoot: serving, Importer: "op"})
+	if !errors.Is(err, ErrVerification) || !strings.Contains(err.Error(), "serving path") {
+		t.Fatalf("got %v (activated=%v)", err, result.Activated)
+	}
+	if _, ok := registry.Active(); ok || len(registry.Events()) != 0 {
+		t.Fatal("registry advanced to a release whose serving path does not load")
+	}
+}
+
+func TestReimportOfActiveReleaseRecordsNoEvent(t *testing.T) {
+	ctx := context.Background()
+	f := newFixture(t)
+	dest := filepath.Join(t.TempDir(), "rb")
+	if _, err := Export(f.input(), dest); err != nil {
+		t.Fatal(err)
+	}
+	serving := filepath.Join(t.TempDir(), "serving")
+	registry := weightsbundle.NewRegistry()
+	for i := 0; i < 2; i++ {
+		result, err := Import(ctx, dest, ImportOptions{Registry: registry, ServingRoot: serving, Importer: "op"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if result.Activated != (i == 0) {
+			t.Fatalf("import %d activated=%v", i, result.Activated)
+		}
+	}
+	if events := registry.Events(); len(events) != 1 || events[0].Kind != weightsbundle.EventImported {
+		t.Fatalf("events %+v", events)
+	}
+}
+
+func TestVerifyFollowsSymlinkedBundleDirectory(t *testing.T) {
+	f := newFixture(t)
+	dest := filepath.Join(t.TempDir(), "rb")
+	if _, err := Export(f.input(), dest); err != nil {
+		t.Fatal(err)
+	}
+	link := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(dest, link); err != nil {
+		t.Skip(err)
+	}
+	if _, err := Verify(link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := VerifyPinned(link, ""); !errors.Is(err, ErrVerification) {
+		t.Fatalf("empty expected digest accepted: %v", err)
+	}
 }

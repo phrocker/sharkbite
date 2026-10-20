@@ -54,6 +54,7 @@ func TestStaticWorkspaceMountsLearningConsole(t *testing.T) {
 		`id="learning-export-form"`,
 		`id="learning-job-inspect-form"`,
 		`id="learning-job-compose-form"`,
+		`id="learning-predictions-form"`,
 		`id="learning-receipt-form"`,
 		`id="learning-evaluations-form"`,
 		`id="learning-candidate-form"`,

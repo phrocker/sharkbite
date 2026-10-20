@@ -3,6 +3,7 @@ package distillation
 
 import (
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 
@@ -10,22 +11,58 @@ import (
 )
 
 // The Python worker in experiments/local-ml/distill.py emits records this
-// package verifies: the manifest pins identically, the receipt satisfies the
-// contract, and teacher outputs are predictions on non-held-out examples.
+// package verifies: the manifest pins identically (its raw bytes are its
+// pin), the receipt satisfies the contract, and teacher outputs are
+// predictions on admitted, non-held-out examples. The checked-in records
+// come from distill_fixture.py; when python3 is available the worker is
+// also run live and its fresh output verified the same way.
 func TestPythonTrainerOutputsSatisfyTheContract(t *testing.T) {
+	verifyPythonRecords(t, "testdata")
+}
+
+func TestPythonTrainerRunsLiveAgainstTheContract(t *testing.T) {
+	python, err := exec.LookPath("python3")
+	if err != nil {
+		t.Skip("python3 not available")
+	}
+	worker := filepath.Join("..", "..", "experiments", "local-ml")
+	out := t.TempDir()
+	cmd := exec.Command(python, "distill_fixture.py", out)
+	cmd.Dir = worker
+	if output, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("%v\n%s", err, output)
+	}
+	verifyPythonRecords(t, out)
+}
+
+func verifyPythonRecords(t *testing.T, dir string) {
+	t.Helper()
 	read := func(name string) []byte {
-		raw, err := os.ReadFile(filepath.Join("testdata", name))
+		raw, err := os.ReadFile(filepath.Join(dir, name))
 		if err != nil {
 			t.Fatal(err)
 		}
 		return raw
 	}
-	manifest, err := Decode(read("python-manifest.json"))
+	rawManifest := read("python-manifest.json")
+	manifest, err := Decode(rawManifest)
 	if err != nil {
 		t.Fatal(err)
 	}
 	pin, err := manifest.Pin()
 	if err != nil {
+		t.Fatal(err)
+	}
+	// The trainer refuses a manifest whose raw bytes do not hash to the pin,
+	// so the fixture must be exactly canonical, with no trailing newline.
+	if weightsbundle.SHA256Hex(rawManifest) != pin {
+		t.Fatalf("manifest bytes hash to %s, go pin %s: the file is not canonical", weightsbundle.SHA256Hex(rawManifest), pin)
+	}
+	var export ExportDescriptor
+	if err := weightsbundle.StrictUnmarshal(read("python-export.json"), &export); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := NewJob(manifest, []ExportDescriptor{export}); err != nil {
 		t.Fatal(err)
 	}
 	var receipt Receipt
@@ -38,11 +75,14 @@ func TestPythonTrainerOutputsSatisfyTheContract(t *testing.T) {
 	if err := VerifyReceipt(manifest, receipt); err != nil {
 		t.Fatal(err)
 	}
+	if receipt.Status != StatusCompleted || len(receipt.Deviations) != 0 || receipt.HeldOutExcludedCount != 0 {
+		t.Fatalf("%+v", receipt)
+	}
 	var set PredictionSet
 	if err := weightsbundle.StrictUnmarshal(read("python-predictions.json"), &set); err != nil {
 		t.Fatal(err)
 	}
-	rebuilt, err := NewPredictionSet(manifest, set.Predictions)
+	rebuilt, err := NewPredictionSet(manifest, []ExportDescriptor{export}, set.Predictions)
 	if err != nil {
 		t.Fatal(err)
 	}

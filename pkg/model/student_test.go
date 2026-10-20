@@ -23,11 +23,15 @@ type recordedEvent struct{ release, kind, detail string }
 type studentRecorder struct {
 	mu     sync.Mutex
 	events []recordedEvent
+	err    error
 }
 
 func (r *studentRecorder) RecordStudentEvent(_ context.Context, release, kind, detail string) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
+	if r.err != nil {
+		return r.err
+	}
 	r.events = append(r.events, recordedEvent{release, kind, detail})
 	return nil
 }
@@ -285,21 +289,76 @@ func TestStudentHealthAndResultsMustNameThePinnedRelease(t *testing.T) {
 			if _, err := p.Predict(context.Background(), studentRequestFor()); !errors.Is(err, ErrUnavailable) {
 				t.Fatalf("predict: %v", err)
 			}
+			// The same mismatch, observed again, is one event, not one per
+			// poll: the registry's event log must not grow with page views.
 			kinds := recorder.kinds()
-			if len(kinds) != 2 || kinds[0] != tc.event {
+			if len(kinds) != 1 || kinds[0] != tc.event {
 				t.Fatalf("events %v", kinds)
 			}
+			report := p.Report()
+			if report.Ready {
+				t.Fatalf("a runtime serving something else reported ready: %+v", report)
+			}
 			if name == "device fallback" {
-				if report := p.Report(); report.ActualDevice != "cuda:0" || len(report.FallbackEvents) != 1 {
+				if report.ActualDevice != "cuda:0" || len(report.FallbackEvents) != 1 {
 					t.Fatalf("%+v", report)
 				}
+			} else if report.ActualDevice != "" {
+				t.Fatalf("device of a runtime serving another release reported: %+v", report)
 			}
 		})
 	}
-	runtime := &fakeRuntime{release: "release:7", digest: digest, alias: "student-v1", device: "cpu", ready: false, fallbacks: []string{"cuda unavailable at start"}}
+	// A runtime that refuses the pinned identity on /v1/predict is a
+	// mismatch, recorded as one.
+	refusing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/health" {
+			json.NewEncoder(w).Encode(map[string]any{"status": "ready", "release_id": "release:7", "bundle_digest": digest, "model_alias": "student-v1", "device": "cpu"})
+			return
+		}
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte(`{"error":"request names a different release or bundle"}`))
+	}))
+	defer refusing.Close()
+	recorder := &studentRecorder{}
+	cfg := studentConfig(root, digest, refusing.URL)
+	cfg.Recorder = recorder
+	p, _ := NewStudentPredictor(context.Background(), cfg)
+	if err := p.CheckHealth(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.Predict(context.Background(), studentRequestFor()); !errors.Is(err, ErrUnavailable) || !strings.Contains(err.Error(), "refused the pinned identity") {
+		t.Fatalf("%v", err)
+	}
+	if kinds := recorder.kinds(); len(kinds) != 1 || kinds[0] != StudentEventHealthMismatch {
+		t.Fatalf("events %v", kinds)
+	}
+	if p.Report().Ready {
+		t.Fatal("ready after the runtime refused the identity")
+	}
+	// Ready never survives a health answer that cannot be read.
+	garbage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("not json")) }))
+	defer garbage.Close()
+	p, _ = NewStudentPredictor(context.Background(), studentConfig(root, digest, garbage.URL))
+	p.setReady(true)
+	if err := p.CheckHealth(context.Background()); !errors.Is(err, ErrMalformedResponse) || p.Report().Ready {
+		t.Fatalf("%v ready=%v", err, p.Report().Ready)
+	}
+	// A recorder that cannot write leaves the failure visible in the report.
+	failing := &studentRecorder{err: errors.New("state volume is read-only")}
+	runtime := &fakeRuntime{release: "release:8", digest: digest, alias: "student-v1", device: "cpu", ready: true}
 	server := httptest.NewServer(runtime.handler())
 	defer server.Close()
-	p, _ := NewStudentPredictor(context.Background(), studentConfig(root, digest, server.URL))
+	cfg = studentConfig(root, digest, server.URL)
+	cfg.Recorder = failing
+	p, _ = NewStudentPredictor(context.Background(), cfg)
+	p.CheckHealth(context.Background())
+	if report := p.Report(); len(report.RecordingErrors) != 1 || !strings.Contains(report.RecordingErrors[0], "read-only") {
+		t.Fatalf("%+v", report)
+	}
+	runtime = &fakeRuntime{release: "release:7", digest: digest, alias: "student-v1", device: "cpu", ready: false, fallbacks: []string{"cuda unavailable at start"}}
+	server = httptest.NewServer(runtime.handler())
+	defer server.Close()
+	p, _ = NewStudentPredictor(context.Background(), studentConfig(root, digest, server.URL))
 	if err := p.CheckHealth(context.Background()); !errors.Is(err, ErrUnavailable) || !strings.Contains(err.Error(), "not ready") {
 		t.Fatalf("%v", err)
 	}
@@ -389,6 +448,10 @@ func TestStudentConstructionRejectsBadConfig(t *testing.T) {
 	cases := map[string]func(c *StudentConfig){
 		"url":      func(c *StudentConfig) { c.BaseURL = "not a url" },
 		"scheme":   func(c *StudentConfig) { c.BaseURL = "file:///tmp/x" },
+		"userinfo": func(c *StudentConfig) { c.BaseURL = "http://user:pw@127.0.0.1:9" },
+		"path":     func(c *StudentConfig) { c.BaseURL = "http://127.0.0.1:9/sub" },
+		"query":    func(c *StudentConfig) { c.BaseURL = "http://127.0.0.1:9/?x=1" },
+		"fragment": func(c *StudentConfig) { c.BaseURL = "http://127.0.0.1:9#f" },
 		"release":  func(c *StudentConfig) { c.Release = StudentRelease{} },
 		"alias":    func(c *StudentConfig) { c.ModelAlias = "" },
 		"device":   func(c *StudentConfig) { c.Device = "" },
@@ -403,6 +466,13 @@ func TestStudentConstructionRejectsBadConfig(t *testing.T) {
 		if _, err := NewStudentPredictor(context.Background(), cfg); err == nil {
 			t.Errorf("%s accepted", name)
 		}
+	}
+	// Surrounding whitespace and a trailing slash are tolerated and
+	// normalised, so the stored origin is exactly what every call uses.
+	padded := good
+	padded.BaseURL = "  http://127.0.0.1:9/ "
+	if p, err := NewStudentPredictor(context.Background(), padded); err != nil || p.baseURL != "http://127.0.0.1:9" || p.EgressesOffHost() {
+		t.Fatalf("padded url: %v %+v", err, p)
 	}
 	var calls atomic.Int32
 	good.HTTPClient = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {

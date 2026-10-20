@@ -735,7 +735,14 @@ student_base=("${explorer_base[@]}"
 renders "a loopback student sidecar" "${student_base[@]}"
 assert_renders "the sidecar image is pinned by digest" "image: \"ghcr.io/example/shoal-student-runtime@$student_digest\"" "${student_base[@]}"
 assert_renders "the sidecar serves the imported bundle by digest" "--bundle-dir=/var/lib/shoal/releases/$bundle_digest" "${student_base[@]}"
-assert_renders "the sidecar probe is loopback" '^ +host: 127\.0\.0\.1$' "${student_base[@]}"
+assert_renders "the sidecar probe runs inside the container" "urlopen\\('http://127\\.0\\.0\\.1:8701/health'" "${student_base[@]}"
+assert_absent "no httpGet probe with a host override reaches the node's loopback" '^ +host: 127\.0\.0\.1$' "${student_base[@]}"
+assert_renders "the student endpoint is trimmed before it reaches the workspace" '"-student-endpoint=http://127.0.0.1:8701"' "${student_base[@]}" --set "explorer.studentModel.endpoint= http://127.0.0.1:8701 "
+refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:9000" "a sidecar port the endpoint does not name" "${student_base[@]}" --set explorer.studentModel.port=9000
+refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:8701" "an IPv6 loopback endpoint the IPv4-only runtime never answers" "${student_base[@]}" --set "explorer.studentModel.endpoint=http://[::1]:8701"
+refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:8701" "a localhost endpoint that resolves through /etc/hosts" "${student_base[@]}" --set explorer.studentModel.endpoint=http://localhost:8701
+refuses_citing "explorer.studentModel.port must be a whole number" "a non-numeric sidecar port" "${student_base[@]}" --set-string explorer.studentModel.port=abc
+renders "a sidecar on another port when the endpoint names it" "${student_base[@]}" --set explorer.studentModel.port=9000,explorer.studentModel.endpoint=http://127.0.0.1:9000
 assert_absent "no student model endpoint is rendered beyond loopback" 'student.*http://[^1]' "${student_base[@]}"
 assert_absent "a disabled student model renders no sidecar" 'student-runtime' "${explorer_base[@]}"
 assert_renders "the learning routes are mounted from the state root" '"-learning-state-dir=/var/lib/shoal/learning"' "${student_base[@]}"

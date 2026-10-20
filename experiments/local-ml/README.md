@@ -142,8 +142,13 @@ executor. The receipt never claims improvement and never evaluates.
 ```
 
 `--teacher-command` runs an external teacher (rows as JSON on stdin,
-predictions on stdout); `--parameter key=json` records an actual-parameter
-deviation. The Go fixtures in `internal/distillation/testdata` were produced
+predictions on stdout; a label outside the task's label set is refused);
+`--parameter key=json` records an actual-parameter deviation as a
+structured `{parameter, requested, actual}` entry, and only keys the
+manifest's generation parameters already name are accepted, so a receipt
+never carries a value the request did not ask for. `distill_fixture.py` runs
+one reference job and writes the records the Go contract tests read. The
+Go fixtures in `internal/distillation/testdata` were produced
 by this worker. A checkpoint fine-tune student is a `STUDENTS` entry with the
 same inputs and outputs; the pinned CPU run of a small open checkpoint is
 tracked work, not shipped here.

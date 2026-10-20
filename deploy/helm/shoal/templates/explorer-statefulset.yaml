@@ -217,7 +217,7 @@ spec:
             {{- end }}
             {{- if $explorer.studentModel.enabled }}
             - {{ printf "-learning-images=student-runtime=%v@%v" $explorer.studentModel.image.repository $explorer.studentModel.image.digest | quote }}
-            - {{ printf "-student-endpoint=%v" $explorer.studentModel.endpoint | quote }}
+            - {{ printf "-student-endpoint=%v" (trim (toString $explorer.studentModel.endpoint)) | quote }}
             - {{ printf "-student-model-alias=%v" $explorer.studentModel.modelAlias | quote }}
             {{- end }}
           {{- if or (and $explorer.chat.credentialSecretName $explorer.chat.provider) (and $explorer.embedding.credentialSecretName $explorer.embedding.provider) }}
@@ -320,11 +320,16 @@ spec:
               mountPath: {{ printf "%v/releases" $explorer.stateDir | quote }}
               subPath: releases
               readOnly: true
+          # The runtime binds the pod's loopback, which the kubelet's httpGet
+          # prober cannot reach (it runs in the node's network namespace and
+          # "host: 127.0.0.1" would probe the node). The probe therefore runs
+          # inside the container.
           readinessProbe:
-            httpGet:
-              path: /health
-              port: {{ $student.port }}
-              host: 127.0.0.1
+            exec:
+              command:
+                - python3
+                - -c
+                - {{ printf "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:%v/health', timeout=2).status == 200 else 1)" $student.port | quote }}
             initialDelaySeconds: 3
             periodSeconds: 5
           resources:

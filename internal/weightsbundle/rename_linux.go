@@ -24,5 +24,10 @@ func renameNoReplace(staging, dest string) error {
 	if errors.Is(err, unix.EINVAL) || errors.Is(err, unix.ENOSYS) {
 		return fmt.Errorf("%w: filesystem does not support no-replace rename", ErrPublicationIndeterminate)
 	}
+	// These are definite failures before anything moved: nothing is
+	// published, and the caller may fix the cause and retry.
+	if errors.Is(err, unix.ENOENT) || errors.Is(err, unix.EXDEV) || errors.Is(err, unix.EACCES) || errors.Is(err, unix.EPERM) || errors.Is(err, unix.ENOTDIR) {
+		return fmt.Errorf("weights bundle publication failed: %w", err)
+	}
 	return fmt.Errorf("%w: %v", ErrPublicationIndeterminate, err)
 }

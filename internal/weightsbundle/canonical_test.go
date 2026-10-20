@@ -29,6 +29,29 @@ func TestCanonicalMatchesPythonJSONDumps(t *testing.T) {
 	if digest := SHA256Hex(got); digest != "8ab0d88cfb7ba5caf9e04c4706d319d755c498764c1dc31f23a8d4f65c670043" {
 		t.Fatalf("digest %s", digest)
 	}
+	// An empty key is an ordinary key, as in Python; only the record
+	// identity is ever skipped, and only at the top level.
+	if got, _ := Canonical(map[string]any{"": 8, "a": 2}); string(got) != `{"":8,"a":2}` {
+		t.Fatalf("empty key dropped: %s", got)
+	}
+	a, _ := Seal("x", map[string]any{"": 1, "a": 2})
+	b, _ := Seal("x", map[string]any{"a": 2})
+	if a["id"] == b["id"] {
+		t.Fatal("empty key does not change the identity")
+	}
+	nested, _ := Canonical(map[string]any{"id": 1, "x": map[string]any{"id": 2}})
+	if string(nested) != `{"id":1,"x":{"id":2}}` {
+		t.Fatalf("nested id dropped: %s", nested)
+	}
+	// Python parses -0 as 0; a literal that is not an integer is refused.
+	if got, _ := Canonical(json.Number("-0")); string(got) != "0" {
+		t.Fatalf("-0: %s", got)
+	}
+	for _, bad := range []string{"01", "+1", "0x10", "-"} {
+		if _, err := Canonical(json.Number(bad)); err == nil {
+			t.Fatalf("literal %q accepted", bad)
+		}
+	}
 	// Records decoded from JSON keep their literal numbers.
 	record, err := DecodeRecord(got)
 	if err != nil {
