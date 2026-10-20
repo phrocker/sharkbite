@@ -161,5 +161,72 @@ class LearningTests(unittest.TestCase):
         self.assertEqual(rollback['rollback_of'], second['id'])
         self.assertNotEqual(rollback['id'], second['id'])
 
+    def _bundle(self, order=('model.json', 'runtime.json')):
+        files = {'model.json': dict(path='model.json', role='weights', size=10, sha256='a' * 64),
+                 'runtime.json': dict(path='runtime.json', role='runtime', size=5, sha256='b' * 64)}
+        return l.bundle_manifest([files[p] for p in order])
+
+    def test_bundle_manifest_order_and_roles_are_identity(self):
+        a = l.bundle_manifest([dict(path='model.json', role='weights', size=10, sha256='a' * 64)])
+        b = l.bundle_manifest([dict(path='model.json', role='weights', size=10, sha256='a' * 64)])
+        self.assertEqual(l.bundle_digest(a), l.bundle_digest(b))
+        self.assertNotEqual(l.bundle_digest(self._bundle()), l.bundle_digest(self._bundle(('runtime.json', 'model.json'))))
+        with self.assertRaisesRegex(ValueError, 'weights'):
+            l.bundle_manifest([dict(path='runtime.json', role='runtime', size=5, sha256='b' * 64)])
+        with self.assertRaisesRegex(ValueError, 'repeated'):
+            l.bundle_manifest([dict(path='a', role='weights', size=1, sha256='a' * 64), dict(path='b', role='weights', size=1, sha256='a' * 64)])
+        with self.assertRaisesRegex(ValueError, 'path'):
+            l.bundle_manifest([dict(path='bundle.json', role='weights', size=1, sha256='a' * 64)])
+
+    def test_compare_bundles_names_diverging_files(self):
+        first = self._bundle()
+        second = l.bundle_manifest([dict(path='model.json', role='weights', size=10, sha256='c' * 64), first['files'][1]])
+        result = l.compare_bundles(first, second)
+        self.assertFalse(result['reproducible'])
+        self.assertEqual(result['diverging'], ['model.json'])
+        self.assertTrue(l.compare_bundles(first, self._bundle())['reproducible'])
+
+    def test_bundle_release_binds_digest_and_rollback_restores_it(self):
+        candidate = l.seal('candidate', dataset_id=self.data['id'], evaluation_policy_id=self.ep['id'], training_ids=['0'],
+                           model_digest='a' * 64, policy_predeclared=True, task_ids=['task-v1'],
+                           dataset_manifest_sha256='d' * 64, training_manifest_sha256='t' * 64)
+        predictions = l.seal('predictions', ledger_id=self.ledger['id'], candidate_id=candidate['id'],
+                             rows=[{'id': i, 'proposal': 'retain', 'audit_priority': 0.5} for i in ['1', '2']])
+        evaluation = l.evaluate(self.ledger, self.data, self.ep, candidate, predictions)
+        artifact = l.candidate_artifact(candidate, evaluation, self._bundle(), 'runtime')
+        approval = l.seal('promotion_approval', candidate_id=candidate['id'], evaluation_id=evaluation['id'], owner='owner', approved=True)
+        first = l.promote_candidate(candidate, evaluation, artifact, approval)
+        self.assertEqual(first['bundle_digest'], l.bundle_digest(self._bundle()))
+        self.assertEqual(first['task_ids'], ['task-v1'])
+        self.assertEqual(first['dataset_manifest_sha256'], 'd' * 64)
+        tampered = dict(artifact, bundle_files=[dict(artifact['bundle_files'][0], sha256='c' * 64)] + artifact['bundle_files'][1:])
+        with self.assertRaisesRegex(ValueError, 'identity'):
+            l.promote_candidate(candidate, evaluation, tampered, approval)
+        tampered = reseal(tampered)
+        with self.assertRaisesRegex(ValueError, 'bundle digest'):
+            l.promote_candidate(candidate, evaluation, tampered, approval)
+        other = l.candidate_artifact(candidate, evaluation, self._bundle(('runtime.json', 'model.json')), 'runtime')
+        second = l.promote_candidate(candidate, evaluation, other, approval, predecessor_release=first)
+        self.assertNotEqual(second['bundle_digest'], first['bundle_digest'])
+        rollback_approval = l.seal('rollback_approval', active_release_id=second['id'], prior_release_id=first['id'], owner='owner', approved=True)
+        rollback = l.rollback_release(second, first, rollback_approval)
+        self.assertEqual(rollback['bundle_digest'], first['bundle_digest'])
+        self.assertEqual(rollback['rollback_of'], second['id'])
+
+    def test_withdrawn_source_marks_release_ineligible_without_unlearning_claim(self):
+        candidate = l.seal('candidate', dataset_id=self.data['id'], evaluation_policy_id=self.ep['id'], training_ids=['0'],
+                           model_digest='a' * 64, policy_predeclared=True, dataset_manifest_sha256='d' * 64)
+        predictions = l.seal('predictions', ledger_id=self.ledger['id'], candidate_id=candidate['id'],
+                             rows=[{'id': i, 'proposal': 'retain', 'audit_priority': 0.5} for i in ['1', '2']])
+        evaluation = l.evaluate(self.ledger, self.data, self.ep, candidate, predictions)
+        artifact = l.candidate_artifact(candidate, evaluation, self._bundle(), 'runtime')
+        approval = l.seal('promotion_approval', candidate_id=candidate['id'], evaluation_id=evaluation['id'], owner='owner', approved=True)
+        release = l.promote_candidate(candidate, evaluation, artifact, approval)
+        lineage = dict(dataset_manifest_sha256='d' * 64, source_ids=['src-1', 'src-2'])
+        self.assertIsNone(l.withdraw_source(release, lineage, 'src-9'))
+        record = l.withdraw_source(release, lineage, 'src-2')
+        self.assertEqual(record['status'], 'ineligible_withdrawn_source')
+        self.assertIn('does not claim removal', record['limitation'])
+
 
 if __name__ == '__main__':unittest.main()

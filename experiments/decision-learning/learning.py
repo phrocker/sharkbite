@@ -199,6 +199,83 @@ def evaluate(ledger, data, policy, candidate, predictions):
                 limitation='Relevance assessments are not defect truth. No quality-parity or exclusion authorization.')
 
 
+BUNDLE_ROLES = ('weights', 'tokenizer', 'preprocessing', 'runtime', 'calibration')
+
+
+def bundle_manifest(files):
+    """Ordered weights-bundle manifest: every file with role, size and SHA-256.
+
+    Order is part of the identity. Exactly one weights file is required; each
+    other role may appear once. The existing SVM artifact is a one-file bundle.
+    """
+    if not files or len(files) > 256:
+        raise ValueError('bundle needs 1..256 files')
+    paths, roles = set(), set()
+    for f in files:
+        if set(f) != {'path', 'role', 'size', 'sha256'}:
+            raise ValueError('bundle file needs path, role, size, sha256')
+        if not f['path'] or f['path'] == 'bundle.json' or f['path'].startswith('/') or '..' in f['path'].split('/') or f['path'] in paths:
+            raise ValueError('invalid bundle path ' + repr(f['path']))
+        if f['role'] not in BUNDLE_ROLES or f['role'] in roles:
+            raise ValueError('invalid or repeated bundle role ' + repr(f['role']))
+        if type(f['size']) is not int or f['size'] < 0 or len(f['sha256']) != 64 or f['sha256'] != f['sha256'].lower() or set(f['sha256']) - set('0123456789abcdef'):
+            raise ValueError('invalid bundle file metadata for ' + f['path'])
+        paths.add(f['path']); roles.add(f['role'])
+    if 'weights' not in roles:
+        raise ValueError('bundle has no weights file')
+    return dict(schema=1, kind='weights-bundle', files=[dict(f) for f in files])
+
+
+def bundle_digest(manifest):
+    """Bundle digest: SHA-256 of the canonical manifest (paths, roles, sizes, digests, order)."""
+    bundle_manifest(manifest['files'])
+    if manifest.get('schema') != 1 or manifest.get('kind') != 'weights-bundle' or set(manifest) != {'schema', 'kind', 'files'}:
+        raise ValueError('invalid bundle manifest')
+    return digest(manifest)
+
+
+def compare_bundles(first, second):
+    """Name the files that differ between two trainer runs; never claim reproducibility by completion."""
+    a, b = bundle_digest(first), bundle_digest(second)
+    if a == b:
+        return dict(reproducible=True, first_digest=a, second_digest=b, diverging=[])
+    fa = {f['path']: (i, f) for i, f in enumerate(first['files'])}
+    fb = {f['path']: (i, f) for i, f in enumerate(second['files'])}
+    diverging = sorted(p for p in set(fa) | set(fb) if fa.get(p) != fb.get(p))
+    return dict(reproducible=False, first_digest=a, second_digest=b, diverging=diverging)
+
+
+def candidate_artifact(candidate, evaluation, manifest, runtime_digest):
+    """Bind a verified weights bundle to a candidate and its evaluation."""
+    verify(candidate, 'candidate'); verify(evaluation, 'promotion_record')
+    if not runtime_digest:
+        raise ValueError('artifact requires a runtime digest')
+    weights = next(f for f in manifest['files'] if f['role'] == 'weights')
+    return seal('candidate_artifact', candidate_id=candidate['id'], evaluation_id=evaluation['id'],
+                dataset_id=candidate['dataset_id'], model_digest=weights['sha256'], runtime_digest=runtime_digest,
+                bundle_digest=bundle_digest(manifest), bundle_files=[dict(f) for f in manifest['files']])
+
+
+def _task_ids(candidate):
+    tasks = set(candidate.get('task_ids') or [])
+    if candidate.get('task_id'):
+        tasks.add(candidate['task_id'])
+    return sorted(tasks)
+
+
+def withdraw_source(release, lineage, source_id):
+    """Mark a release ineligible for new use when its dataset manifest included source_id.
+
+    Returns a sealed eligibility record, or None when the release is unaffected.
+    No unlearning is claimed: the weights are unchanged and the record says so.
+    """
+    verify(release, 'model_release')
+    if lineage['dataset_manifest_sha256'] != release['dataset_manifest_sha256'] or source_id not in lineage['source_ids']:
+        return None
+    return seal('release_eligibility', release_id=release['id'], status='ineligible_withdrawn_source', source_id=source_id,
+                limitation='Withdrawal marks the release ineligible for new use; it does not claim removal of the source\'s influence from trained weights.')
+
+
 def promote_candidate(candidate, evaluation, artifact, approval, predecessor_release=None):
     """Create an explicit active release after a clean shadow evaluation.
 
@@ -216,6 +293,14 @@ def promote_candidate(candidate, evaluation, artifact, approval, predecessor_rel
         raise ValueError('artifact evaluation lineage mismatch')
     if not artifact.get('runtime_digest') or not artifact.get('model_digest') or artifact['model_digest'] != candidate.get('model_digest'):
         raise ValueError('artifact model mismatch')
+    bundle = None
+    if 'bundle_digest' in artifact:
+        manifest = bundle_manifest(artifact['bundle_files'])
+        if bundle_digest(manifest) != artifact['bundle_digest']:
+            raise ValueError('artifact bundle digest does not match its files')
+        if next(f for f in manifest['files'] if f['role'] == 'weights')['sha256'] != artifact['model_digest']:
+            raise ValueError('artifact weights digest does not match model digest')
+        bundle = artifact['bundle_digest']
     if evaluation['disposition'] != 'shadow_candidate' or evaluation.get('reasons'):
         raise ValueError('candidate did not pass shadow evaluation')
     if approval.get('approved') is not True or not approval.get('owner') or approval.get('candidate_id') != candidate['id'] or approval.get('evaluation_id') != evaluation['id']:
@@ -226,8 +311,10 @@ def promote_candidate(candidate, evaluation, artifact, approval, predecessor_rel
         if predecessor_release['state'] != 'active' or any(predecessor_release[field] != candidate[field] for field in ('dataset_id', 'evaluation_policy_id')) or predecessor_release['ledger_id'] != evaluation['ledger_id']:
             raise ValueError('invalid predecessor release')
         predecessor_release_id = predecessor_release['id']
-    return seal('model_release', state='active', candidate_id=candidate['id'], artifact_id=artifact['id'],
+    return seal('model_release', state='active', candidate_id=candidate['id'], artifact_id=artifact['id'], bundle_digest=bundle,
                 evaluation_id=evaluation['id'], dataset_id=candidate['dataset_id'],
+                dataset_manifest_sha256=candidate.get('dataset_manifest_sha256') or None,
+                training_manifest_sha256=candidate.get('training_manifest_sha256') or None, task_ids=_task_ids(candidate),
                 evaluation_policy_id=candidate['evaluation_policy_id'], ledger_id=evaluation['ledger_id'],
                 predecessor_release_id=predecessor_release_id, rollback_of=None,
                 approval_id=approval['id'], limitation='Structural release record; serving pointer mutation is external.')
@@ -246,7 +333,9 @@ def rollback_release(active_release, prior_release, approval):
     if approval.get('approved') is not True or not approval.get('owner') or approval.get('active_release_id') != active_release['id'] or approval.get('prior_release_id') != prior_release['id']:
         raise ValueError('rollback approval is not bound')
     return seal('model_release', state='active', candidate_id=prior_release['candidate_id'], artifact_id=prior_release['artifact_id'],
-                evaluation_id=prior_release['evaluation_id'], dataset_id=prior_release['dataset_id'],
+                bundle_digest=prior_release['bundle_digest'], evaluation_id=prior_release['evaluation_id'], dataset_id=prior_release['dataset_id'],
+                dataset_manifest_sha256=prior_release['dataset_manifest_sha256'], training_manifest_sha256=prior_release['training_manifest_sha256'],
+                task_ids=list(prior_release['task_ids']),
                 evaluation_policy_id=prior_release['evaluation_policy_id'], ledger_id=prior_release['ledger_id'],
                 predecessor_release_id=active_release['id'], rollback_of=active_release['id'],
                 approval_id=approval['id'], limitation='Structural rollback record; serving pointer mutation is external.')
