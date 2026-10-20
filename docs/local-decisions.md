@@ -275,6 +275,35 @@ That gap is part of the adapter issue, not a reason to weaken the contract.
 Runtime completion on synthetic snippets demonstrates integration only; it does
 not establish authorization-analysis accuracy or useful confidence thresholds.
 
+## Local student runtime
+
+A promoted student weights bundle is served by `model.StudentPredictor`
+(`pkg/model/student.go`) through a local runtime behind a loopback
+endpoint, following the Laya adapter pattern. Construction verifies the
+bundle digest and every file digest against the release the registry
+resolved; a bundle altered on disk after promotion fails to load and the
+failure is recorded against the release. The serving identity is the full
+bundle: weights, tokenizer, preprocessing, calibration, and runtime
+settings digests, plus the release identity as the revision. An unknown
+model alias is refused before any call, and every request and result names
+the exact release and bundle digest, so a runtime serving anything else is
+refused and the mismatch recorded.
+
+Egress posture is derived from the resolved endpoint. Loopback is
+egress-free. Any other host, including a runtime in another pod of the same
+cluster speaking the identical protocol, is egressing; the supported
+offline shape is a runtime sidecar in the same pod. The provider enforces
+bounded request and response sizes, token preflight on the exact
+serialization (the bound travels in the bundle's runtime settings),
+deadlines, a concurrency gate, health, and readiness, and it reports the
+actual device: a runtime that reports a device other than the one the
+release was promoted for is a recorded fallback event and is not served.
+
+`experiments/local-ml/serve_student.py` is the reference runtime: it
+verifies the bundle before it listens, binds to loopback only, needs no
+network or model hub, and answers `/health` and `/v1/predict` for the
+linear student that `distill.py` produces.
+
 ## PR-triage showcase: external agents
 
 Keep the executable integration under a separate showcase/tooling boundary
