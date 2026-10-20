@@ -577,3 +577,9 @@ func (r *Registry) ResolveForTask(task string) (Release, error) {
 	}
 	return rel, nil
 }
+
+// RecordStudentEvent lets a serving provider record a load failure, health
+// mismatch, or device fallback against the release it serves.
+func (r *Registry) RecordStudentEvent(ctx context.Context, releaseID, kind, detail string) error {
+	return r.RecordEvent(ctx, Event{Kind: kind, ReleaseID: releaseID, Detail: detail})
+}
