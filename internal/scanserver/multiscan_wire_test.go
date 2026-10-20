@@ -24,9 +24,9 @@ func TestMultiScanResultOmitsAbsentPartialScanOnWire(t *testing.T) {
 		{
 			name: "partial",
 			result: &data.MultiScanResult_{
-				PartScan: &data.TKeyExtent{Table: []byte("+r")},
+				PartScan:    &data.TKeyExtent{Table: []byte("+r")},
 				PartNextKey: &data.TKey{Row: []byte("row")},
-				More: true,
+				More:        true,
 			},
 			want: true,
 		},
