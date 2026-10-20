@@ -20,7 +20,7 @@ require (
 	github.com/go-zookeeper/zk v1.0.4
 	github.com/golang/snappy v1.0.0
 	github.com/google/uuid v1.6.0
-	github.com/klauspost/compress v1.17.9
+	github.com/klauspost/compress v1.18.7
 	github.com/mattn/go-sqlite3 v1.14.46
 	github.com/parquet-go/parquet-go v0.32.0
 	github.com/pierrec/lz4/v4 v4.1.21
