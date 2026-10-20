@@ -35,6 +35,7 @@ const state = {
     decision_datasets: false,
     decision_outcomes: false,
     decision_adjudications: false,
+    decision_learning: false,
   },
   uploadLimits: {
     max_upload_files: 0,
@@ -1917,6 +1918,30 @@ function applyCapabilities() {
     button.disabled = !capability("extraction");
   });
   applyDecisionCapability();
+  applyLearningCapability();
+}
+
+function applyLearningCapability() {
+  const tab = $("tab-learning");
+  const panel = $("learning");
+  const available = capability("decision_learning");
+  if (!tab || !panel) return;
+  tab.disabled = !available;
+  tab.setAttribute("aria-disabled", String(!available));
+  tab.classList.toggle("unavailable", !available);
+  tab.title = available
+    ? "Drive the governed learning loop through the authenticated routes"
+    : "The learning service is not mounted by this host";
+  panel.dataset.capabilityUnavailable = String(!available);
+  panel.querySelectorAll("form input, form textarea, form select, form button, button[data-learning-load]").forEach((control) => {
+    control.disabled = !available;
+  });
+  const status = $("learning-console-status");
+  if (!available && status) {
+    status.textContent =
+      "The learning service is unavailable on this Explorer host. " +
+      "No datasets, jobs, candidates, releases, or bundles are being implied or synthesized.";
+  }
 }
 
 function applyDecisionCapability() {

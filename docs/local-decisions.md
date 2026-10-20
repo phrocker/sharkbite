@@ -299,6 +299,11 @@ deadlines, a concurrency gate, health, and readiness, and it reports the
 actual device: a runtime that reports a device other than the one the
 release was promoted for is a recorded fallback event and is not served.
 
+The **Learning** tab drives the whole loop (datasets, distillation jobs,
+candidates and evaluations, releases, evidence, offline bundles) as a thin
+client over the [Learning HTTP API](decision-learning-http-api.md); it is
+disabled unless the host mounts the complete learning surface.
+
 A promoted release travels to a cluster without model-hub access as an
 [offline release bundle](offline-release-bundle.md): plain files plus
 digests, exported with `shoalctl release export`, verified entry by entry
@@ -524,9 +529,11 @@ authenticated handler. The mount is atomic: an incomplete or conflicting
 surface leaves every decision route unavailable. The UI does not create
 authority or make an unmounted service appear available, and the default
 `shoal-explore-web` binary intentionally supplies no decision surface. Offline
-quality, poisoning, calibration, influence, and challenger reports remain
-file-backed evidence until a host provides a read-only evidence service for
-them.
+quality, poisoning, calibration, influence, and challenger reports are
+file-backed evidence; a host that mounts the learning surface
+(`-learning-evidence-dir`) exposes them through the read-only evidence route
+of the [Learning HTTP API](decision-learning-http-api.md), and the Learning
+tab reads them there.
 
 ## Executable learning slice
 
