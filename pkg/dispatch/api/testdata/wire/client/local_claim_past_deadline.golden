@@ -1,5 +1,5 @@
 requests: 0
-error: dispatch claim: refused_locally: request deadline must be in the future
+error: dispatch claim-prepared: refused_locally: request deadline must be in the future
 kind: refused_locally
 status: 0 code: "" failure: ""
 is ambiguity unrecorded: false

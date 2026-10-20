@@ -349,6 +349,7 @@ func (w *binaryWorld) runArgs(flags gatewayFlags) []string {
 		"-dispatch-url=" + front.server.URL, "-dispatch-token-file=" + token,
 		"-agent-id=" + b64([]byte(commandAgent)), "-executor-ref=" + ref,
 		"-surface-name=api.stripe.test",
+		"-target-scope=stripe-test-account",
 		"-target-base-url=" + w.target.server.URL, "-target-allow-private",
 		"-target-credential-file=" + w.credential,
 		"-routes=" + statusRoutes,
@@ -1001,7 +1002,7 @@ func binaryWrongExecutor(t *testing.T) {
 		t.Logf("%s", p.stderr)
 	}
 	for _, call := range w.explorerCalls() {
-		if call == "pull" || call == "claim" {
+		if call == "pull" || call == "claim-prepared" {
 			t.Fatalf("a wrongly bound gateway reached %s: %q", call, w.explorerCalls())
 		}
 	}
@@ -1064,11 +1065,11 @@ func binaryAttestation(t *testing.T) {
 	var sequence []string
 	for _, call := range w.explorerCalls() {
 		switch call {
-		case "attestation", "claim", "complete":
+		case "attestation", "claim-prepared", "complete":
 			sequence = append(sequence, call)
 		}
 	}
-	if len(sequence) < 3 || sequence[0] != "attestation" || !strings.Contains(strings.Join(sequence, ","), "claim") {
+	if len(sequence) < 3 || sequence[0] != "attestation" || !strings.Contains(strings.Join(sequence, ","), "claim-prepared") {
 		t.Fatalf("explorer calls = %q: want attestation before any claim", sequence)
 	}
 	// Never by way of a refused claim: the attestation gate answers 409.

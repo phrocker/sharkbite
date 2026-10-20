@@ -59,6 +59,24 @@ type Backend interface {
 	Open(ctx context.Context, path string) (File, error)
 }
 
+// SnapshotOpener is an optional backend capability for an open file whose
+// subsequent range reads are bound to the generation/version or conditional
+// ETag observed at open time. If that binding cannot be established,
+// OpenSnapshot fails rather than returning a File that could mix bytes from
+// replacements with different consistency tokens.
+//
+// A version or ETag condition is a consistency token, not a content digest.
+// Callers that attest file contents must still validate the format/footer.
+// The cloud backends and memory implement this capability. Rooted forwards it
+// when its inner backend does; diskcache, local and HDFS do not claim it.
+type SnapshotOpener interface {
+	OpenSnapshot(ctx context.Context, path string) (File, error)
+}
+
+// ErrSnapshotUnsupported reports that a backend or wrapper cannot bind reads
+// to one object version. Callers requiring evidence integrity must stop here.
+var ErrSnapshotUnsupported = errors.New("storage: snapshot reads unsupported")
+
 // Writer is a write-only handle to a backend object. Streaming writes
 // via io.Writer; close to flush. Not all backends support writing; use
 // the WritableBackend type-assertion / interface to discover.

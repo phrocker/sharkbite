@@ -504,6 +504,11 @@ func (t *Tablet) LookupRows(rows [][]byte, columnFamilies [][]byte, inclusive bo
 	})
 
 	for _, idx := range order {
+		if env.Context != nil {
+			if err := env.Context.Err(); err != nil {
+				return err
+			}
+		}
 		row := rows[idx]
 		// Whole-row range: [{row}, {row\x00}) — a bare {row} key sorts
 		// before the row's non-empty-CF cells so can't be an inclusive
@@ -515,6 +520,11 @@ func (t *Tablet) LookupRows(rows [][]byte, columnFamilies [][]byte, inclusive bo
 			return fmt.Errorf("tablet: lookup seek: %w", err)
 		}
 		for top.HasTop() {
+			if env.Context != nil {
+				if err := env.Context.Err(); err != nil {
+					return err
+				}
+			}
 			visit(idx, top.GetTopKey(), top.GetTopValue())
 			if err := top.Next(); err != nil {
 				return fmt.Errorf("tablet: lookup next: %w", err)

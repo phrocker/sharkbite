@@ -1,6 +1,6 @@
 requests: 1
-request: POST /shoal/api/v1/fleet/actions/YQD_/claim
-error: dispatch claim: unexpected_status (HTTP 302)
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: unexpected_status (HTTP 302)
 kind: unexpected_status
 status: 302 code: "" failure: ""
 is ambiguity unrecorded: false

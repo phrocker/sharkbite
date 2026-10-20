@@ -304,6 +304,15 @@ func (b *Backend) Remove(ctx context.Context, path string) error {
 // Open resolves path to a (container, blob) pair, calls GetProperties for size,
 // and returns a File that issues a ranged DownloadStream per ReadAt.
 func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, false)
+}
+
+// OpenSnapshot binds every range read to the version or ETag observed by HEAD.
+func (b *Backend) OpenSnapshot(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, true)
+}
+
+func (b *Backend) open(ctx context.Context, path string, snapshot bool) (shstorage.File, error) {
 	cont, name, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -320,12 +329,37 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 	if props.ContentLength != nil {
 		size = *props.ContentLength
 	}
+	var versionID string
+	var etag *azcore.ETag
+	if snapshot {
+		if props.ContentLength == nil || size < 0 {
+			return nil, fmt.Errorf("azure: snapshot az://%s/%s has no valid size", cont, name)
+		}
+		if props.VersionID != nil && *props.VersionID != "null" {
+			versionID = *props.VersionID
+		}
+		if props.ETag != nil && *props.ETag != "" {
+			value := *props.ETag
+			etag = &value
+		}
+		if versionID == "" && etag == nil {
+			return nil, fmt.Errorf("azure: snapshot az://%s/%s has no version ID or ETag", cont, name)
+		}
+		if versionID != "" {
+			bc, err = bc.WithVersionID(versionID)
+			if err != nil {
+				return nil, fmt.Errorf("azure: pin az://%s/%s to version: %w", cont, name, err)
+			}
+		}
+	}
 	return &file{
 		blob:      bc,
 		container: cont,
 		name:      name,
 		size:      size,
 		ctx:       ctx,
+		versionID: versionID,
+		etag:      etag,
 	}, nil
 }
 
@@ -806,6 +840,8 @@ type file struct {
 	name      string
 	size      int64
 	ctx       context.Context //nolint:containedctx
+	versionID string
+	etag      *azcore.ETag
 }
 
 func (f *file) Size() int64 { return f.size }
@@ -829,13 +865,31 @@ func (f *file) ReadAt(p []byte, off int64) (int, error) {
 	if off+want > f.size {
 		want = f.size - off
 	}
-	resp, err := f.blob.DownloadStream(f.ctx, &blob.DownloadStreamOptions{
+	opts := &blob.DownloadStreamOptions{
 		Range: blob.HTTPRange{Offset: off, Count: want},
-	})
+	}
+	if f.etag != nil {
+		opts.AccessConditions = &blob.AccessConditions{
+			ModifiedAccessConditions: &blob.ModifiedAccessConditions{IfMatch: f.etag},
+		}
+	}
+	resp, err := f.blob.DownloadStream(f.ctx, opts)
 	if err != nil {
 		return 0, fmt.Errorf("azure: download az://%s/%s off=%d: %w", f.container, f.name, off, err)
 	}
 	defer resp.Body.Close()
+	if f.versionID != "" && (resp.VersionID == nil || *resp.VersionID != f.versionID) {
+		return 0, fmt.Errorf("azure: download az://%s/%s returned a different version", f.container, f.name)
+	}
+	if f.etag != nil && (resp.ETag == nil || *resp.ETag != *f.etag) {
+		return 0, fmt.Errorf("azure: download az://%s/%s returned a different ETag", f.container, f.name)
+	}
+	if f.versionID != "" || f.etag != nil {
+		expected := fmt.Sprintf("bytes %d-%d/%d", off, off+want-1, f.size)
+		if resp.ContentRange == nil || *resp.ContentRange != expected {
+			return 0, fmt.Errorf("azure: download az://%s/%s returned a different range", f.container, f.name)
+		}
+	}
 
 	n, err := io.ReadFull(resp.Body, p[:want])
 	if err != nil {

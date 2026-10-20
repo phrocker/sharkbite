@@ -60,6 +60,8 @@ func TestWorkspaceSettingsClampAnalyticsAndMarkResponseLoss(t *testing.T) {
 		{http.MethodPost, "/api/v1/fleet/actions"},
 		{http.MethodPost, "/api/v1/fleet/actions/invoke"},
 		{http.MethodPost, "/api/v1/fleet/actions/action/claim"},
+		{http.MethodPost, "/api/v1/fleet/actions/action/claim-prepared"},
+		{http.MethodPost, "/api/v1/fleet/actions/action/prepare"},
 		// Completion writes the terminal record for work an out-of-process
 		// worker has already performed. If its response is lost — including to
 		// the workspace output limit — the worker must be told the outcome is
@@ -106,6 +108,7 @@ func TestWorkspaceSettingsClampAnalyticsAndMarkResponseLoss(t *testing.T) {
 	}{
 		{http.MethodPost, "/api/v1/fleet/actions/pull"},
 		{http.MethodPost, "/api/v1/fleet/actions/action/status"},
+		{http.MethodPost, "/api/v1/fleet/actions/action/material"},
 		// Listing what is outstanding writes nothing.
 		{http.MethodPost, "/api/v1/admission/outstanding"},
 		// Listing what is decidable writes nothing. Reading one request may
@@ -150,6 +153,9 @@ func TestWorkspaceOperationForRequestUsesRouteOperation(t *testing.T) {
 		{http.MethodPost, "/api/v1/document", auth.OperationRead, true},
 		{http.MethodPost, "/api/v1/fleet/actions/invoke", auth.OperationInvoke, true},
 		{http.MethodPost, "/api/v1/fleet/actions/action/claim", auth.OperationInvoke, true},
+		{http.MethodPost, "/api/v1/fleet/actions/action/claim-prepared", auth.OperationInvoke, true},
+		{http.MethodPost, "/api/v1/fleet/actions/action/material", auth.OperationInvoke, true},
+		{http.MethodPost, "/api/v1/fleet/actions/action/prepare", auth.OperationInvoke, true},
 		// A route missing here is not a 404: ServeHTTP consults this table
 		// before dispatching, and an unlisted path is refused as not
 		// registered for the workspace, so the handler is never reached at all.

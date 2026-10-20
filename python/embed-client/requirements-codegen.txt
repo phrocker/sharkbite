@@ -1,0 +1,4 @@
+# grpcio-tools bundles protoc; protobuf here is the generation-time runtime.
+grpcio-tools==1.74.0
+grpcio==1.74.0
+protobuf==6.33.5

@@ -16,6 +16,16 @@ import (
 	"github.com/phrocker/shoal-oss/internal/storage/memory"
 )
 
+func TestDiskcacheDoesNotAdvertiseSnapshotReads(t *testing.T) {
+	b, err := New(memory.New(), t.TempDir(), 1024)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := any(b).(storage.SnapshotOpener); ok {
+		t.Fatal("path-keyed cache must not advertise snapshot reads")
+	}
+}
+
 // openCountingBackend wraps a storage.Backend and counts Open calls, so a
 // test can prove a cache hit avoids re-fetching from the inner backend.
 type openCountingBackend struct {

@@ -1,4 +1,4 @@
-POST /api/v1/fleet/actions/YQD_/claim
+POST /api/v1/fleet/actions/YQD_/claim-prepared
 request content-type: application/json
 request body: "[]"
 provider calls: 0

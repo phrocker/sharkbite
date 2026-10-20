@@ -802,6 +802,7 @@ func bindDialContextWithSource(ctxSource func() context.Context, dial func(conte
 		effectiveCtx, release := combineDialContexts(requestCtx, ctxSource())
 		conn, err := dial(effectiveCtx, network, addr)
 		if err != nil {
+			err = dialRequestError(requestCtx, err)
 			release()
 			return nil, err
 		}
@@ -826,6 +827,7 @@ func bindDialContextWithDialContextSource(source *dialContextSource, dial func(c
 		effectiveCtx, release := combineDialContexts(requestCtx, source.Context())
 		conn, err := dial(effectiveCtx, network, addr)
 		if err != nil {
+			err = dialRequestError(requestCtx, err)
 			release()
 			return nil, err
 		}
@@ -836,6 +838,15 @@ func bindDialContextWithDialContextSource(source *dialContextSource, dial func(c
 		}
 		return bindConnContextWithSource(requestCtx, conn, source, release), nil
 	}
+}
+
+// The combined context may be canceled by its AfterFunc just before the
+// request deadline fires. Preserve the request's deadline verdict for callers.
+func dialRequestError(requestCtx context.Context, err error) error {
+	if errors.Is(err, context.Canceled) && requestCtx != nil && requestCtx.Err() != nil {
+		return requestCtx.Err()
+	}
+	return err
 }
 
 func contextOrBackground(ctx context.Context) context.Context {

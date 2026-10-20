@@ -787,6 +787,7 @@ llmGateway:
 #       executorRef: stripe
 #       dispatch: {url: https://shoal-explorer.shoal.svc:8098, tokenAudience: shoal-executors}
 #       target:
+#         targetScope: stripe-live-account
 #         baseURL: https://api.stripe.com
 #         credentialSecretName: stripe-api-key
 #         idempotencyHeader: Idempotency-Key
@@ -857,6 +858,10 @@ effectsGatewayDefaults:
     credentialSecretName: ""
     credentialSecretKey: token
   target:
+    # Required on each enabled entry: a stable, nonsecret account or tenant
+    # boundary for prepared recovery. Keep it across credential rotation;
+    # change it when the target's deduplication namespace changes. No default.
+    targetScope: ""
     # Required: the operational surface (-target-base-url). https, or http to
     # loopback; there is no plaintext opt-out. No userinfo, query or fragment.
     baseURL: ""

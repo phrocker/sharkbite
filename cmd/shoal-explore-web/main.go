@@ -954,6 +954,15 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		}
 		mcpTools = append(mcpTools, fleetTools...)
 	}
+	if opened.fleetRegistry != nil {
+		discoveryTool, err := mcp.NewFleetDiscoveryTool(
+			opened.fleetRegistry, authority.Resolver())
+		if err != nil {
+			listener.Close()
+			return err
+		}
+		mcpTools = append(mcpTools, discoveryTool)
+	}
 	mcpServer, err := mcp.NewServer(mcp.Config{
 		Service:           service,
 		Authority:         authority,

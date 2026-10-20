@@ -6,6 +6,7 @@ package fleet
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/binary"
 	"encoding/json"
@@ -247,6 +248,12 @@ func (s *DispatchService) queuedRecordBinding(
 	if request.Context.Deadline.Sub(now) > MaxActionDeadline {
 		return ActionRecord{}, Action{}, "", shoal.NewError(shoal.ErrorInvalidArgument, "action deadline exceeds its bound")
 	}
+	if !request.NotBefore.IsZero() &&
+		(request.NotBefore.Location() != time.UTC ||
+			!request.NotBefore.Before(request.Context.Deadline)) {
+		return ActionRecord{}, Action{}, "", shoal.NewError(
+			shoal.ErrorInvalidArgument, "action not-before time must be UTC and precede its deadline")
+	}
 	// Binding, not execution: queueing work for an executor that runs out of
 	// process must not require it to be runnable here.
 	descriptor, action, _, err := s.registry.resolveActionBindingLapsing(
@@ -285,12 +292,17 @@ func (s *DispatchService) queuedRecordBinding(
 		AuthorizationExpiresAt: decision.AuthenticationExpires(),
 		AuthorizedOperations:   decisionOperations(decision, operation),
 		RequestID:              decision.RequestID(), CorrelationID: decision.CorrelationID(),
-		Reason: reason, Deadline: request.Context.Deadline.UTC(), CreatedAt: now, UpdatedAt: now,
+		Reason: reason, Deadline: request.Context.Deadline.UTC(),
+		NotBefore: request.NotBefore, CreatedAt: now, UpdatedAt: now,
 		ExecutorKey: executorKey(request.ID, request.IdempotencyKey),
 	}, action, descriptor.ExecutorRef, nil
 }
 
 func (s *DispatchService) Invoke(ctx context.Context, request InvokeRequest) (ActionRecord, error) {
+	if !request.Enqueue.NotBefore.IsZero() {
+		return ActionRecord{}, shoal.NewError(
+			shoal.ErrorInvalidArgument, "invoke cannot schedule a delayed action")
+	}
 	// Whether this caller already holds a terminal record at this ID,
 	// established before the enqueue and by an authorized read (#578).
 	//
@@ -449,6 +461,53 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 	if current.isAdmission() {
 		return ActionRecord{}, auth.ObjectNotFound()
 	}
+	// A live claim is withheld from Pull. Check visibility before the
+	// prepared-protocol refusal branches so their specific recovery reason
+	// cannot turn a guessed action ID into an existence oracle.
+	if concealFrom(decision, current, now) {
+		return ActionRecord{}, auth.ObjectNotFound()
+	}
+	if request.Prepared {
+		if !claimedAction.Effects.contains(EffectMutatesExternal) &&
+			!claimedAction.Effects.contains(EffectEgressesContent) {
+			return ActionRecord{}, shoal.NewError(shoal.ErrorInvalidArgument,
+				"prepared claim requires a declared external effect")
+		}
+		// A fresh prepared claim is either the first ever claim, or a replay
+		// under the original durable key/natural commitment. A legacy claim,
+		// an unprepared first claim, and an unprotected commitment can never
+		// be upgraded after a possible effect.
+		if current.ClaimFence != 0 {
+			retry := current.RecoveryProtocolVersion == RecoveryCommitmentVersion &&
+				current.State == DispatchClaimed &&
+				current.Version == request.ExpectedVersion+1 &&
+				bytes.Equal(current.ClaimID, request.ClaimID)
+			replay := current.RecoveryProtocolVersion == RecoveryCommitmentVersion &&
+				current.RecoveryCommitment != nil &&
+				(current.RecoveryCommitment.Mode == RecoveryKey ||
+					current.RecoveryCommitment.Mode == RecoveryNatural)
+			if !retry && !replay {
+				reason := RecoveryLegacyClaim
+				if current.RecoveryProtocolVersion == RecoveryCommitmentVersion {
+					reason = RecoveryMissingCommitment
+					if current.RecoveryCommitment != nil && current.RecoveryCommitment.Mode == RecoveryUnprotected {
+						reason = RecoveryUnprotectedReplay
+					}
+				}
+				return ActionRecord{}, &RecoveryRefusalError{reason, ErrClaimLost}
+			}
+		}
+	} else if current.RecoveryProtocolVersion != 0 {
+		// Even an in-process claimant must not re-run an action that entered
+		// the prepared remote protocol. This slice refuses all reclaims.
+		return ActionRecord{}, ErrClaimLost
+	}
+	if current.State == DispatchClaimed && len(current.ExecutionAttemptID) != 0 {
+		if concealFrom(decision, current, now) {
+			return ActionRecord{}, auth.ObjectNotFound()
+		}
+		return ActionRecord{}, ErrExecutionAmbiguous
+	}
 	if current.Version != request.ExpectedVersion {
 		// A replayed claim: this caller's own claim landed and the response
 		// was lost, so return the record it already holds rather than a
@@ -467,6 +526,10 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 			bytes.Equal(current.ClaimID, request.ClaimID) &&
 			current.ClaimLease == request.Lease &&
 			holdsClaimOn(decision, current) {
+			if request.Prepared && (!now.Before(current.ClaimLeaseUntil) ||
+				!now.Before(current.Deadline)) {
+				return ActionRecord{}, ErrClaimLost
+			}
 			if err := s.publishTransition(
 				context.WithoutCancel(ctx), "action.claimed", current,
 			); err != nil {
@@ -519,6 +582,12 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 		}
 		return ActionRecord{}, ErrClaimLost
 	}
+	if !current.NotBefore.IsZero() && now.Before(current.NotBefore) {
+		if concealFrom(decision, current, now) {
+			return ActionRecord{}, auth.ObjectNotFound()
+		}
+		return ActionRecord{}, ErrActionConflict
+	}
 	// Resolved for the declared Effect, which decides whether claiming this
 	// action already makes an effect possible.
 	//
@@ -548,6 +617,9 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 			s.auditAttestationRefusal(ctx, current, authorizing, decision)
 		}
 		return ActionRecord{}, err
+	}
+	if request.Prepared {
+		next.RecoveryProtocolVersion = RecoveryCommitmentVersion
 	}
 	if err := s.recorder.RecordAction(ctx, ActionAudit{Phase: "claim_admission", Operation: authorizing, Record: next}); err != nil {
 		return ActionRecord{}, errors.Join(ErrRecordingUnavailable, err)
@@ -937,6 +1009,9 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 		current.State != DispatchClaimed || !now.Before(current.ClaimLeaseUntil) {
 		return ActionRecord{}, ErrClaimLost
 	}
+	if len(current.ExecutionAttemptID) != 0 {
+		return ActionRecord{}, ErrExecutionAmbiguous
+	}
 	// Empty for a record claimed by a build that had no TransitionOperation,
 	// where the claimant was by construction the enqueuer and invoke is what
 	// authorized it. ActionRecorder.RecordAction validates the operation
@@ -951,6 +1026,8 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 	if err := s.recorder.RecordAction(ctx, ActionAudit{Phase: "effect_admission", Operation: admissionOperation, Record: current}); err != nil {
 		return ActionRecord{}, errors.Join(ErrRecordingUnavailable, err)
 	}
+	// Recording may block while the caller's authority or the registry changes.
+	// Resolve both again after the audit, before committing an attempt.
 	invocationDecision, err := s.resolver.Resolve(ctx)
 	if err != nil {
 		return ActionRecord{}, err
@@ -992,6 +1069,15 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 		!executionNow.Before(current.Deadline) {
 		return ActionRecord{}, ErrClaimLost
 	}
+	if len(current.ExecutionAttemptID) != 0 {
+		return ActionRecord{}, ErrExecutionAmbiguous
+	}
+	// The audit may take time or change the test clock. The lease and deadline
+	// must still be live when admission is persisted.
+	executionNow = s.clock().UTC()
+	if !executionNow.Before(current.ClaimLeaseUntil) || !executionNow.Before(current.Deadline) {
+		return ActionRecord{}, ErrClaimLost
+	}
 	executionDeadline := current.ClaimLeaseUntil
 	if current.Deadline.Before(executionDeadline) {
 		executionDeadline = current.Deadline
@@ -1005,6 +1091,44 @@ func (s *DispatchService) ExecuteClaim(ctx context.Context, claimed ActionRecord
 	); err != nil {
 		cancel()
 		return ActionRecord{}, err
+	}
+	// Persist one unique execution admission under the claim fence before
+	// entering user code. A second Invoke, including one on another replica,
+	// attempts a different record at the same version and loses the CAS. The
+	// marker survives lease loss: a crash after this write leaves the effect
+	// indeterminate rather than silently permitting a second execution.
+	var attempt [16]byte
+	if _, err := rand.Read(attempt[:]); err != nil {
+		cancel()
+		return ActionRecord{}, err
+	}
+	admitted := cloneActionRecord(current)
+	admitted.ExecutionAttemptID = append([]byte(nil), attempt[:]...)
+	admitted.ExecutionAdmittedAt = executionNow
+	admitted.Version++
+	admitted.UpdatedAt = executionNow
+	current, err = s.store.ApplyAction(ctx, DispatchMutation{
+		Token:           transitionToken("execution-admission", current.ID, attempt[:], admitted.Version),
+		ExpectedVersion: current.Version, ExpectedFence: current.ClaimFence,
+		Record: admitted,
+	})
+	if err != nil {
+		cancel()
+		if errors.Is(err, ErrActionConflict) {
+			return ActionRecord{}, ErrExecutionAmbiguous
+		}
+		return ActionRecord{}, err
+	}
+	if !bytes.Equal(current.ExecutionAttemptID, attempt[:]) {
+		cancel()
+		return ActionRecord{}, ErrExecutionAmbiguous
+	}
+	// The store write can outlive the lease. Once the marker is committed we
+	// cannot safely clear it, but we can still refuse to enter the executor.
+	if effectNow := s.clock().UTC(); !effectNow.Before(current.ClaimLeaseUntil) ||
+		!effectNow.Before(current.Deadline) {
+		cancel()
+		return ActionRecord{}, ErrExecutionAmbiguous
 	}
 	var result ExecutionResult
 	var executionErr error
@@ -1636,6 +1760,14 @@ func (s *DispatchService) Cancel(ctx context.Context, request CancelRequest) (Ac
 	}
 	if current.State.terminal() {
 		return ActionRecord{}, ErrActionTerminal
+	}
+	// A lapsed claim with a possible external effect, or an in-process
+	// execution attempt, must remain available for reconciliation. Rewriting
+	// it as canceled would assert that Shoal refused work which may already
+	// have happened outside the store.
+	if current.State == DispatchClaimed &&
+		(current.EffectPossible || len(current.ExecutionAttemptID) != 0) {
+		return ActionRecord{}, ErrCancelClaimUncertain
 	}
 	next := cloneActionRecord(current)
 	next.Version++
@@ -2456,11 +2588,19 @@ func (s *DispatchService) Pull(ctx context.Context, request PullActionsRequest) 
 	}
 	result := ActionPage{Next: append([]byte(nil), page.Next...)}
 	for _, record := range page.Actions {
+		// A persisted in-process attempt is indeterminate after its lease
+		// lapses; Claim cannot hand it to a worker for another execution.
+		if len(record.ExecutionAttemptID) != 0 {
+			continue
+		}
 		if record.State != DispatchQueued &&
 			!(record.State == DispatchClaimed && !now.Before(record.ClaimLeaseUntil)) {
 			continue
 		}
 		if !now.Before(record.Deadline) {
+			continue
+		}
+		if !record.NotBefore.IsZero() && now.Before(record.NotBefore) {
 			continue
 		}
 		// The same two routes authorizedClaimant takes, in the same order and
@@ -3075,8 +3215,8 @@ func (s *DispatchService) claimableBy(
 	return false, nil
 }
 
-// observableThroughPull reports whether Pull's *state* filter would return
-// this record.
+// observableThroughPull reports whether Pull's state and execution-admission
+// filters would return this record.
 //
 // It mirrors that filter and the two must not drift. It is not the whole of
 // Pull's selection: Pull also drops admission records and applies claimableBy
@@ -3105,11 +3245,15 @@ func (s *DispatchService) claimableBy(
 // lapsed. So live-claimed is withheld, and claiming one had been answering
 // with a distinguishable ErrActionConflict.
 func observableThroughPull(record ActionRecord, now time.Time) bool {
+	if len(record.ExecutionAttemptID) != 0 {
+		return false
+	}
 	if record.State != DispatchQueued &&
 		!(record.State == DispatchClaimed && !now.Before(record.ClaimLeaseUntil)) {
 		return false
 	}
-	return now.Before(record.Deadline)
+	return now.Before(record.Deadline) &&
+		(record.NotBefore.IsZero() || !now.Before(record.NotBefore))
 }
 
 // concealFrom reports whether a refusal about this record must be replaced with
@@ -3607,6 +3751,7 @@ func equivalentEnqueue(current, wanted ActionRecord) bool {
 		current.AuthorizationFingerprint == wanted.AuthorizationFingerprint &&
 		current.PolicyGeneration == wanted.PolicyGeneration &&
 		current.Reason == wanted.Reason &&
+		current.NotBefore.Equal(wanted.NotBefore) &&
 		current.Deadline.Equal(wanted.Deadline)
 }
 

@@ -465,8 +465,14 @@ func (s *EngineStore) ScannerContext(
 		if vs.MinScoreSet {
 			opts[iterrt.VectorKNNMinScore] = strconv.FormatFloat(float64(vs.MinScore), 'g', -1, 32)
 		}
-		return s.eng.ScanHostedContext(ctx, table, scanRange, engine.ScanOptions{},
-			[]iterrt.IterSpec{{Name: iterrt.IterVectorKNN, Options: opts}})
+		stack := []iterrt.IterSpec{{Name: iterrt.IterVectorKNN, Options: opts}}
+		if req.AsOf > 0 {
+			stack = append([]iterrt.IterSpec{{
+				Name:    iterrt.IterAsOf,
+				Options: map[string]string{iterrt.AsOfOption: strconv.FormatInt(req.AsOf, 10)},
+			}}, stack...)
+		}
+		return s.eng.ScanHostedContext(ctx, table, scanRange, engine.ScanOptions{}, stack)
 	}
 
 	if ee := req.EdgeExpand; ee != nil {
