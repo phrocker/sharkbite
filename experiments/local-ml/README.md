@@ -149,9 +149,14 @@ manifest's generation parameters already name are accepted, so a receipt
 never carries a value the request did not ask for. `distill_fixture.py` runs
 one reference job and writes the records the Go contract tests read. The
 Go fixtures in `internal/distillation/testdata` were produced
-by this worker. A checkpoint fine-tune student is a `STUDENTS` entry with the
-same inputs and outputs; the pinned CPU run of a small open checkpoint is
-tracked work, not shipped here.
+by this worker. `--student checkpoint-fine-tune --base-bundle DIR` starts
+from the chosen base's weights bundle instead of zero weights: the bundle
+must verify and its digest must equal the `bundle_digest` the manifest
+pinned for the chosen base, `learning_rate` (a generation parameter) scales
+every update, and the student's `model.json` records `base_bundle_digest`.
+Both students are linear; a transformer checkpoint student would implement
+the same `STUDENTS` entry with a torch runtime, which this CPU-only
+reference does not ship.
 
 ## Student runtime
 

@@ -120,6 +120,39 @@ class DistillTests(unittest.TestCase):
             self.run_job(out='first')
 
     @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_checkpoint_fine_tune_starts_from_the_pinned_base_bundle(self):
+        first = self.run_job(out='base')
+        base_dir = self.root / 'base' / 'bundle'
+        tuned = manifest_fixture(self.export_sha)
+        tuned['base']['eligible'][0]['identity']['bundle_digest'] = first['bundle_digest']
+        tuned['data']['generation_parameters'] = dict(epochs=2, learning_rate=0.5)
+        receipt = self.run_job(tuned, out='tuned', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        self.assertEqual(receipt['status'], 'completed')
+        model = json.loads((self.root / 'tuned/bundle/model.json').read_bytes())
+        self.assertEqual(model['base_bundle_digest'], first['bundle_digest'])
+        self.assertEqual((model['epochs'], model['learning_rate']), (2, 0.5))
+        self.assertEqual(len(model['coefficients']), 2)
+        again = self.run_job(tuned, out='tuned-again', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        self.assertEqual(again['bundle_digest'], receipt['bundle_digest'])
+        # The base is a verified input: a wrong digest, an altered bundle, a
+        # missing pin, or no bundle at all refuses before any export is read.
+        with self.assertRaisesRegex(distill.Refused, 'pins no bundle digest'):
+            self.run_job(manifest_fixture(self.export_sha), out='x1', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        with self.assertRaisesRegex(distill.Refused, 'no --base-bundle'):
+            self.run_job(tuned, out='x2', student='checkpoint-fine-tune')
+        wrong = copy.deepcopy(tuned)
+        wrong['base']['eligible'][0]['identity']['bundle_digest'] = '0' * 64
+        with self.assertRaisesRegex(distill.Refused, 'not the manifest'):
+            self.run_job(wrong, out='x3', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        altered = self.root / 'altered-base'
+        import shutil
+        shutil.copytree(base_dir, altered)
+        (altered / 'model.json').write_bytes(b'{}')
+        with self.assertRaisesRegex(ValueError, 'altered model.json'):
+            self.run_job(tuned, out='x4', student='checkpoint-fine-tune', base_bundle_dir=str(altered))
+        self.assertFalse(any(p.exists() for p in (self.root / 'x1', self.root / 'x2', self.root / 'x3', self.root / 'x4')))
+
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
     def test_changed_selection_changes_pin_and_bundle_lineage(self):
         first = self.run_job(out='a')
         changed = manifest_fixture(self.export_sha)

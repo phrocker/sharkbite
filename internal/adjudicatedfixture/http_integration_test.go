@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"bytes"
@@ -36,12 +36,12 @@ func (p *lockedDatasetProvider) Export(ctx context.Context, id shoal.ID) (api.Da
 func TestDatasetHTTPRealAuthorizedExportAndSDK(t *testing.T) {
 	for _, task := range []string{"source", "review"} {
 		t.Run(task, func(t *testing.T) {
-			r, eng, authority, _, e := prepareRegistry(filepath.Join(t.TempDir(), task), task)
+			r, eng, authority, _, e := Prepare(filepath.Join(t.TempDir(), task), task)
 			if e != nil {
 				t.Fatal(e)
 			}
 			defer eng.Close()
-			exporter := freshDatasetExporter{r, authority.Resolver()}
+			exporter := FreshDatasetExporter{r, authority.Resolver()}
 			adapter, e := decisiondatasethttp.New(exporter)
 			if e != nil {
 				t.Fatal(e)
@@ -81,7 +81,7 @@ func TestDatasetHTTPRealAuthorizedExportAndSDK(t *testing.T) {
 			if e != nil {
 				t.Fatal(e)
 			}
-			if out.CohortID != r.cohort.ID || out.ManifestSHA256 != hash(out.Manifest) {
+			if out.CohortID != r.cohort.ID || out.ManifestSHA256 != Hash(out.Manifest) {
 				t.Fatal("SDK lost provenance pin")
 			}
 			var data struct {

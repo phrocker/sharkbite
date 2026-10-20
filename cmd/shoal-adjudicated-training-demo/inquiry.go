@@ -8,6 +8,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"github.com/phrocker/shoal-oss/internal/adjudicatedfixture"
 	"io"
 	"os"
 	"path/filepath"
@@ -159,7 +160,7 @@ func (a *inquiryAuthority) Verify(_ context.Context, d auth.Decision, r decision
 	if !reflect.DeepEqual(r, a.record) {
 		return auth.ObjectNotFound()
 	}
-	return d.AuthorizeObject(auth.OperationRetrieve, auth.ResourceRequest{AuthorizationDomain: []byte(domain), SourceID: []byte("sources"), PolicyID: []byte("fixture-policy"), ObjectID: r.Sources[0].ID}, time.Now().UTC())
+	return d.AuthorizeObject(auth.OperationRetrieve, auth.ResourceRequest{AuthorizationDomain: []byte(adjudicatedfixture.Domain), SourceID: []byte("sources"), PolicyID: []byte("fixture-policy"), ObjectID: r.Sources[0].ID}, time.Now().UTC())
 }
 
 type inquiryProvider struct {
@@ -179,7 +180,7 @@ func (p *inquiryProvider) Resolve(ctx context.Context, release, predictor shoal.
 }
 func inquireCandidate(taskName, modelPath, expectedSHA, dir string) (out inquiryReport, err error) {
 	var zero inquiryReport
-	def, e := definitions(taskName)
+	def, e := adjudicatedfixture.Definitions(taskName)
 	if e != nil {
 		return zero, e
 	}
@@ -200,12 +201,12 @@ func inquireCandidate(taskName, modelPath, expectedSHA, dir string) (out inquiry
 		return zero, e
 	}
 	defer lock.Close()
-	fixture := fixtures(taskName)[12] // registered held-out input, never an accuracy claim
-	saved, e := inquiryMetadata(dir, inquiryState{Schema: 1, Task: taskName, ModelSHA256: expectedSHA, PredictorID: provider.Identity().ID(), FixtureID: fixture.ID, FixtureSHA256: hash(fixture.Raw)})
+	fixture := adjudicatedfixture.Fixtures(taskName)[12] // registered held-out input, never an accuracy claim
+	saved, e := inquiryMetadata(dir, inquiryState{Schema: 1, Task: taskName, ModelSHA256: expectedSHA, PredictorID: provider.Identity().ID(), FixtureID: fixture.ID, FixtureSHA256: adjudicatedfixture.Hash(fixture.Raw)})
 	if e != nil {
 		return zero, e
 	}
-	d, e := auth.NewDecision(auth.DecisionConfig{Subject: "fixture-inquirer", Actor: "fixture-inquirer", ClientID: "fixture-cli", AuthorizationDomain: []byte(domain), AllowedOperations: []auth.Operation{auth.OperationInvoke, auth.OperationRead, auth.OperationRetrieve}, PermittedSourceIDs: [][]byte{[]byte("tasks"), []byte("sources")}, PermittedPolicyIDs: [][]byte{[]byte("fixture-policy")}, PolicyGeneration: 1, AuthenticationExpires: time.Now().UTC().Add(time.Hour), RequestID: "fixture-inquiry"})
+	d, e := auth.NewDecision(auth.DecisionConfig{Subject: "fixture-inquirer", Actor: "fixture-inquirer", ClientID: "fixture-cli", AuthorizationDomain: []byte(adjudicatedfixture.Domain), AllowedOperations: []auth.Operation{auth.OperationInvoke, auth.OperationRead, auth.OperationRetrieve}, PermittedSourceIDs: [][]byte{[]byte("tasks"), []byte("sources")}, PermittedPolicyIDs: [][]byte{[]byte("fixture-policy")}, PolicyGeneration: 1, AuthenticationExpires: time.Now().UTC().Add(time.Hour), RequestID: "fixture-inquiry"})
 	if e != nil {
 		return zero, e
 	}
@@ -216,7 +217,7 @@ func inquireCandidate(taskName, modelPath, expectedSHA, dir string) (out inquiry
 	if e != nil {
 		return zero, e
 	}
-	record, e := buildRecord(def, fixture, provider, release, d, saved.CreatedAt)
+	record, e := adjudicatedfixture.BuildRecord(def, fixture, provider, release, d, saved.CreatedAt)
 	if e != nil {
 		return zero, e
 	}

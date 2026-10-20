@@ -10,10 +10,13 @@ receipt naming requested versus actual parameters, runtime identities, and
 the executor. It never evaluates, never promotes, and never reports
 completion as improvement.
 
-The reference student is a deterministic averaged perceptron over the
-export's numeric features, trained to reproduce the teacher's predictions.
-It exists to exercise the contract end to end on CPU with no model hub; a
-checkpoint fine-tune student plugs into the same `STUDENTS` table.
+Two students ship. `averaged-perceptron` fits a deterministic averaged
+perceptron over the export's numeric features from zero weights, trained to
+reproduce the teacher's predictions. `checkpoint-fine-tune` starts from the
+chosen base's weights bundle instead: the bundle on disk must verify and its
+digest must equal the `bundle_digest` the manifest pinned for the chosen
+base, so the base is a recorded, verified input and the student records
+which bundle it was fine-tuned from. Both run on CPU with no model hub.
 """
 import argparse
 import hashlib
@@ -242,7 +245,70 @@ def student_perceptron(rows, predictions, manifest, parameters):
                 base=manifest['base']['chosen'], epochs=epochs)
 
 
-STUDENTS = {'averaged-perceptron': student_perceptron}
+def load_base_checkpoint(manifest, base_bundle_dir):
+    """Verify the base bundle on disk against the manifest's pinned base digest and load its weights."""
+    base = chosen_identity(manifest, 'base')
+    pinned = base.get('bundle_digest')
+    if not pinned:
+        raise Refused('the chosen base %r pins no bundle digest; a checkpoint fine-tune needs a local base bundle' % manifest['base']['chosen'])
+    if base_bundle_dir is None:
+        raise Refused('the chosen base is a local bundle %s but no --base-bundle directory was supplied' % pinned)
+    bundle, digest = weights_bundle.verify(base_bundle_dir)
+    if digest != pinned:
+        raise Refused('base bundle digest %s is not the manifest\'s pinned base %s' % (digest, pinned))
+    weights = next(f for f in bundle['files'] if f['role'] == 'weights')
+    model = json.loads((Path(base_bundle_dir) / weights['path']).read_bytes())
+    if model.get('kind') != 'linear-student' or model.get('schema') != 1:
+        raise Refused('base bundle weights are not a linear-student checkpoint')
+    if not isinstance(model.get('coefficients'), list) or not all(type(c) in (int, float) for c in model['coefficients']) or type(model.get('intercept')) not in (int, float):
+        raise Refused('base checkpoint has no numeric coefficients and intercept')
+    return model, digest
+
+
+def student_checkpoint(rows, predictions, manifest, parameters):
+    """Averaged perceptron fine-tuned from the chosen base's verified checkpoint.
+
+    The base's coefficients and intercept are the starting point; `learning_rate`
+    (a generation parameter, default 1.0) scales every update; the averaged
+    weights are the student. The resulting model records the base bundle
+    digest so the lineage names the checkpoint it came from.
+    """
+    labels = manifest['_labels']
+    base, base_digest = load_base_checkpoint(manifest, manifest.get('_base_bundle_dir'))
+    width = len(rows[0]['features'])
+    if width == 0 or any(len(r['features']) != width for r in rows):
+        raise Refused('rows disagree on feature width or have none')
+    if len(base['coefficients']) != width:
+        raise Refused('base checkpoint width %d does not match the export feature width %d' % (len(base['coefficients']), width))
+    if base.get('labels') not in (None, labels):
+        raise Refused('base checkpoint labels %r are not the task labels %r' % (base.get('labels'), labels))
+    epochs = parameters.get('epochs', 10)
+    rate = parameters.get('learning_rate', 1.0)
+    if type(epochs) is not int or epochs < 1:
+        raise Refused('epochs must be a positive integer')
+    if type(rate) not in (int, float) or not (0 < rate <= 100):
+        raise Refused('learning_rate must be a number in (0, 100]')
+    by_id = {p['example_id']: p['output']['label'] for p in predictions}
+    weights, bias = [float(c) for c in base['coefficients']], float(base['intercept'])
+    total_w, total_b = [0.0] * width, 0.0
+    steps = 0
+    for _ in range(epochs):
+        for r in sorted(rows, key=lambda r: r['id']):
+            y = 1.0 if by_id[r['id']] == labels[1] else -1.0
+            score = sum(w * x for w, x in zip(weights, r['features'])) + bias
+            if y * score <= 0:
+                weights = [w + rate * y * x for w, x in zip(weights, r['features'])]
+                bias += rate * y
+            total_w = [t + w for t, w in zip(total_w, weights)]
+            total_b += bias
+            steps += 1
+    return dict(schema=1, kind='linear-student', task_id=manifest['_task_id'], feature_schema_id=manifest['_feature_schema_id'],
+                labels=labels, coefficients=[t / steps for t in total_w], intercept=total_b / steps, threshold=float(base.get('threshold', 0.0)),
+                distillation_manifest_pin=manifest['_pin'], teacher=manifest['teacher']['chosen'],
+                base=manifest['base']['chosen'], base_bundle_digest=base_digest, epochs=epochs, learning_rate=rate)
+
+
+STUDENTS = {'averaged-perceptron': student_perceptron, 'checkpoint-fine-tune': student_checkpoint}
 TEACHERS = {'sign': teacher_sign}
 
 
@@ -259,10 +325,14 @@ def write_exclusive(path, data):
 
 
 def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teacher='sign', student='averaged-perceptron',
-            teacher_cmd=None, parameters=None):
+            teacher_cmd=None, parameters=None, base_bundle_dir=None):
     """Run the whole job. exports: {cohort_id: (dataset_path, export_manifest_path)}."""
     manifest = load_manifest(manifest_path, manifest_pin)
     manifest['_pin'] = manifest_pin
+    manifest['_base_bundle_dir'] = base_bundle_dir
+    if student == 'checkpoint-fine-tune':
+        # Refuse before any export is read: the base is an input, verified first.
+        load_base_checkpoint(manifest, base_bundle_dir)
     output = Path(os.path.abspath(output_dir))
     if output.exists():
         raise FileExistsError(str(output))
@@ -342,6 +412,7 @@ def main(argv=None):
     parser.add_argument('--teacher-command', nargs='+')
     parser.add_argument('--student', choices=sorted(STUDENTS), default='averaged-perceptron')
     parser.add_argument('--parameter', action='append', default=[], metavar='KEY=JSON')
+    parser.add_argument('--base-bundle', help='verified weights bundle of the chosen base, required by the checkpoint-fine-tune student')
     args = parser.parse_args(argv)
     exports = {}
     for item in args.export:
@@ -352,7 +423,8 @@ def main(argv=None):
     try:
         receipt = distill(args.manifest, args.manifest_pin, exports, args.output_dir,
                           executor=dict(id=args.executor_id, attestation_id=args.executor_attestation, host=platform.node()),
-                          teacher=args.teacher, student=args.student, teacher_cmd=args.teacher_command, parameters=parameters)
+                          teacher=args.teacher, student=args.student, teacher_cmd=args.teacher_command, parameters=parameters,
+                          base_bundle_dir=args.base_bundle)
     except Refused as error:
         parser.exit(3, 'distillation refused: %s\n' % error)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError, KeyError, TypeError, AttributeError,

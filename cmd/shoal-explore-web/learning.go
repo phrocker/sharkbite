@@ -32,6 +32,9 @@ type learningHostConfig struct {
 	// refused, since its egress cannot be resolved.
 	modelEgress        string
 	allowOffHostModels bool
+	// fixtureCohorts names the demo task fixtures (source, review) to
+	// prepare as the development cohort authority and exporter.
+	fixtureCohorts string
 }
 
 // hostEgressResolver resolves model egress from the operator's
@@ -167,10 +170,22 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 			egress[model.StudentProvider] = "loopback"
 		}
 	}
+	var cohorts decisionlearning.CohortLister
+	var exporter decisionlearning.Exporter
+	if tasks, err := parseFixtureCohortTasks(cfg.fixtureCohorts); err != nil {
+		return err
+	} else if len(tasks) > 0 {
+		fixtures, err := mountFixtureCohorts(cfg.stateDir, tasks, output)
+		if err != nil {
+			return err
+		}
+		cohorts, exporter = fixtures, fixtures
+	}
 	service, err := decisionlearning.New(decisionlearning.Config{
 		Registry: registry, Store: store, Prefix: cfg.stateDir, EvidenceDir: cfg.evidenceDir,
 		BundlesDir: filepath.Join(cfg.stateDir, "bundles"), ServingRoot: cfg.servingRoot,
 		Serving: serving, Images: images, Egress: egress, AllowOffHostModels: cfg.allowOffHostModels, Log: output,
+		Cohorts: cohorts, Exporter: exporter,
 	})
 	if err != nil {
 		return err

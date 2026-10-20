@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"bytes"
@@ -21,12 +21,12 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
-func (r *registry) inventoryBinding(v *registered) inventory.Binding {
+func (r *Registry) inventoryBinding(v *registered) inventory.Binding {
 	return inventory.Binding{CoverageID: "compiled-sixteen-guarded-targets-v1", TargetID: v.target, TaskID: r.def.Task.ID(), PictureID: v.prediction.Request().PictureID(), SubjectID: v.fixture.ID, QuestionID: question}
 }
-func (r *registry) inventoryBindings() []inventory.Binding {
+func (r *Registry) inventoryBindings() []inventory.Binding {
 	var b []inventory.Binding
-	for _, f := range fixtures(r.def.Name) {
+	for _, f := range Fixtures(r.def.Name) {
 		b = append(b, r.inventoryBinding(r.rows[f.ID]))
 	}
 	return b
@@ -38,7 +38,7 @@ func crossReadRole(d auth.Decision) bool {
 	return d.Subject() == "fixture-judge" || d.Subject() == "fixture-exporter"
 }
 
-type inventoryAdmissionAuthority struct{ r *registry }
+type inventoryAdmissionAuthority struct{ r *Registry }
 
 func (a inventoryAdmissionAuthority) Resolve(_ context.Context, d auth.Decision, p decision.PredictionRecord, o decision.OutcomeObservation) (inventory.Binding, error) {
 	v := a.r.byPrediction(p.Request().ID(), p.ID())
@@ -54,7 +54,7 @@ func (a inventoryAdmissionAuthority) Verify(_ context.Context, d auth.Decision, 
 	}
 	return a.r.allCurrent(d, v, auth.OperationIngest)
 }
-func (r *registry) currentInventory(ctx context.Context, d auth.Decision, v *registered) (inventory.Snapshot, error) {
+func (r *Registry) currentInventory(ctx context.Context, d auth.Decision, v *registered) (inventory.Snapshot, error) {
 	if v == nil || !crossReadRole(d) {
 		return inventory.Snapshot{}, auth.ObjectNotFound()
 	}
@@ -76,7 +76,7 @@ func publishedEntry(s inventory.Snapshot, id shoal.ID) (inventory.Entry, bool) {
 	return inventory.Entry{}, false
 }
 
-type registeredOutcomeAuthority struct{ r *registry }
+type registeredOutcomeAuthority struct{ r *Registry }
 
 func (a registeredOutcomeAuthority) Resolve(ctx context.Context, d auth.Decision, ref outcomes.RegisteredReference) (outcomes.RegisteredBinding, error) {
 	v := a.r.byTarget(ref.TargetID)
@@ -135,7 +135,7 @@ func (a registeredOutcomeAuthority) Verify(ctx context.Context, d auth.Decision,
 	}
 	return nil
 }
-func (r *registry) publishedReceipts(ctx context.Context, d auth.Decision, v *registered, s inventory.Snapshot) ([]outcomes.Receipt, error) {
+func (r *Registry) publishedReceipts(ctx context.Context, d auth.Decision, v *registered, s inventory.Snapshot) ([]outcomes.Receipt, error) {
 	if !s.Complete() || s.Binding != r.inventoryBinding(v) {
 		return nil, auth.ObjectNotFound()
 	}
@@ -159,14 +159,14 @@ type inventoryPin struct {
 	TargetID, SnapshotID shoal.ID
 	Version              int64
 }
-type captureProof struct {
+type CaptureProof struct {
 	VectorID shoal.ID
 	Window   inventoryset.Window
 	Pins     []inventoryPin
 }
 
-func proof(c inventoryset.Capture) captureProof {
-	p := captureProof{VectorID: c.VectorID, Window: c.Window}
+func Proof(c inventoryset.Capture) CaptureProof {
+	p := CaptureProof{VectorID: c.VectorID, Window: c.Window}
 	for _, s := range c.Snapshots {
 		p.Pins = append(p.Pins, inventoryPin{s.Binding, s.Binding.TargetID, s.ID, s.Version})
 	}
@@ -183,7 +183,7 @@ type historicalCapture struct {
 	Schema            int
 	Kind              string
 	Domain            []byte
-	Capture           captureProof
+	Capture           CaptureProof
 	SnapshotUpdatedAt time.Time
 	Entries           []captureEntry
 }
@@ -199,7 +199,7 @@ func capturePath(dir string, id shoal.ID) (string, error) {
 	}
 	return filepath.Join(dir, "captures", value+".json"), nil
 }
-func (r *registry) retainCapture(c inventoryset.Capture) (shoal.ID, error) {
+func (r *Registry) retainCapture(c inventoryset.Capture) (shoal.ID, error) {
 	if len(c.Snapshots) != 1 || !c.Snapshots[0].Complete() {
 		return "", auth.ObjectNotFound()
 	}
@@ -208,7 +208,7 @@ func (r *registry) retainCapture(c inventoryset.Capture) (shoal.ID, error) {
 	if e != nil {
 		return "", e
 	}
-	h := historicalCapture{Schema: 1, Kind: "sealed-historical-inventory-capture", Domain: []byte(domain), Capture: proof(c), SnapshotUpdatedAt: s.UpdatedAt, Snapshot: snapshotBytes}
+	h := historicalCapture{Schema: 1, Kind: "sealed-historical-inventory-capture", Domain: []byte(domain), Capture: Proof(c), SnapshotUpdatedAt: s.UpdatedAt, Snapshot: snapshotBytes}
 	for _, e := range s.Entries {
 		h.Entries = append(h.Entries, captureEntry{e.Intent.ReceiptID, e.ReceiptDigest, e.ReceivedAt, e.PublishedAt})
 	}
@@ -216,7 +216,7 @@ func (r *registry) retainCapture(c inventoryset.Capture) (shoal.ID, error) {
 	if e != nil || len(raw) > historicalCaptureLimit {
 		return "", auth.ObjectNotFound()
 	}
-	id := shoal.ID("fixture-inventory-capture:" + hash(raw))
+	id := shoal.ID("fixture-inventory-capture:" + Hash(raw))
 	path, e := capturePath(r.dir, id)
 	if e != nil {
 		return "", e
@@ -226,14 +226,14 @@ func (r *registry) retainCapture(c inventoryset.Capture) (shoal.ID, error) {
 	}
 	return id, nil
 }
-func (r *registry) verifyHistoricalCapture(ctx context.Context, d auth.Decision, v *registered, b decision.AdjudicationBasis) error {
+func (r *Registry) verifyHistoricalCapture(ctx context.Context, d auth.Decision, v *registered, b decision.AdjudicationBasis) error {
 	id := b.Config().EnumerationID
 	path, e := capturePath(r.dir, id)
 	if e != nil {
 		return e
 	}
-	raw, e := inquiryRead(path, historicalCaptureLimit)
-	if e != nil || string(id) != "fixture-inventory-capture:"+hash(raw) || !captureShape(raw) {
+	raw, e := readBounded(path, historicalCaptureLimit)
+	if e != nil || string(id) != "fixture-inventory-capture:"+Hash(raw) || !captureShape(raw) {
 		return auth.ObjectNotFound()
 	}
 	var h historicalCapture
@@ -289,14 +289,14 @@ func (r *registry) verifyHistoricalCapture(ctx context.Context, d auth.Decision,
 	}
 	return nil
 }
-func basisOutcome(r *registry, v *registered, receipt outcomes.Receipt) decision.BasisOutcome {
+func basisOutcome(r *Registry, v *registered, receipt outcomes.Receipt) decision.BasisOutcome {
 	who := decision.BasisIdentity{SubjectID: []byte(receipt.SubmitterID), ActorID: []byte(receipt.ActorID), ClientID: []byte(receipt.ClientID)}
 	for _, id := range receipt.OnBehalfOf {
 		who.OnBehalfOf = append(who.OnBehalfOf, []byte(id))
 	}
 	return decision.BasisOutcome{ReceiptID: receipt.ID, ObservationID: receipt.ObservationID, RequestID: receipt.ObservationConfig.RequestID, PredictionID: receipt.ObservationConfig.PredictionID, TaskID: r.def.Task.ID(), PictureID: v.prediction.Request().PictureID(), SubjectID: v.fixture.ID, QuestionID: question, Kind: decision.OutcomeCorrectness, Reporter: who, ReceivedAt: receipt.ReceivedAt, Supersedes: receipt.ObservationConfig.Supersedes}
 }
-func exportSession(ctx context.Context, r *registry, resolver auth.Resolver, id shoal.ID) (*decisiondatasets.Service, *cohortAuthority, error) {
+func ExportSession(ctx context.Context, r *Registry, resolver auth.Resolver, id shoal.ID) (*decisiondatasets.Service, *cohortAuthority, error) {
 	if id != r.cohort.ID || !r.sealed {
 		return nil, nil, auth.ObjectNotFound()
 	}
@@ -319,21 +319,21 @@ func exportSession(ctx context.Context, r *registry, resolver auth.Resolver, id 
 	service, e := decisiondatasets.New(decisiondatasets.Config{Resolver: resolver, Authority: authority, Clock: r.now})
 	return service, authority, e
 }
-func freshExport(ctx context.Context, r *registry, resolver auth.Resolver, id shoal.ID) (decisiondatasets.Bundle, error) {
-	service, _, e := exportSession(ctx, r, resolver, id)
+func FreshExport(ctx context.Context, r *Registry, resolver auth.Resolver, id shoal.ID) (decisiondatasets.Bundle, error) {
+	service, _, e := ExportSession(ctx, r, resolver, id)
 	if e != nil {
 		return decisiondatasets.Bundle{}, e
 	}
 	return service.Export(ctx, id)
 }
 
-type freshDatasetExporter struct {
-	r        *registry
+type FreshDatasetExporter struct {
+	r        *Registry
 	resolver auth.Resolver
 }
 
-func (e freshDatasetExporter) Export(ctx context.Context, id shoal.ID) (decisiondatasets.Bundle, error) {
-	return freshExport(ctx, e.r, e.resolver, id)
+func (e FreshDatasetExporter) Export(ctx context.Context, id shoal.ID) (decisiondatasets.Bundle, error) {
+	return FreshExport(ctx, e.r, e.resolver, id)
 }
 
 func captureShape(raw []byte) bool {

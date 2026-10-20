@@ -2,6 +2,7 @@
 package main
 
 import (
+	"github.com/phrocker/shoal-oss/internal/adjudicatedfixture"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,11 +11,11 @@ import (
 func TestInquiryDurableReplayAndStateBinding(t *testing.T) {
 	for _, task := range []string{"source", "review"} {
 		t.Run(task, func(t *testing.T) {
-			def, e := definitions(task)
+			def, e := adjudicatedfixture.Definitions(task)
 			if e != nil {
 				t.Fatal(e)
 			}
-			_, model, e := baseline(def)
+			_, model, e := adjudicatedfixture.Baseline(def)
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -24,11 +25,11 @@ func TestInquiryDurableReplayAndStateBinding(t *testing.T) {
 				t.Fatal(e)
 			}
 			state := filepath.Join(dir, "state")
-			first, e := inquireCandidate(task, path, hash(model), state)
+			first, e := inquireCandidate(task, path, adjudicatedfixture.Hash(model), state)
 			if e != nil {
 				t.Fatal(e)
 			}
-			second, e := inquireCandidate(task, path, hash(model), state)
+			second, e := inquireCandidate(task, path, adjudicatedfixture.Hash(model), state)
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -39,24 +40,24 @@ func TestInquiryDurableReplayAndStateBinding(t *testing.T) {
 			if task == other {
 				other = "source"
 			}
-			if _, e = inquireCandidate(other, path, hash(model), state); e == nil {
+			if _, e = inquireCandidate(other, path, adjudicatedfixture.Hash(model), state); e == nil {
 				t.Fatal("cross-task state accepted")
 			}
 			if e = os.Remove(filepath.Join(state, "inquiry-state.json")); e != nil {
 				t.Fatal(e)
 			}
-			if _, e = inquireCandidate(task, path, hash(model), state); e == nil {
+			if _, e = inquireCandidate(task, path, adjudicatedfixture.Hash(model), state); e == nil {
 				t.Fatal("minted identity over old engine")
 			}
 		})
 	}
 }
 func TestInquiryRejectsModelSubstitutionBeforeState(t *testing.T) {
-	def, e := definitions("source")
+	def, e := adjudicatedfixture.Definitions("source")
 	if e != nil {
 		t.Fatal(e)
 	}
-	_, model, e := baseline(def)
+	_, model, e := adjudicatedfixture.Baseline(def)
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -66,7 +67,7 @@ func TestInquiryRejectsModelSubstitutionBeforeState(t *testing.T) {
 		t.Fatal(e)
 	}
 	state := filepath.Join(dir, "state")
-	if _, e = inquireCandidate("source", path, hash(model), state); e == nil {
+	if _, e = inquireCandidate("source", path, adjudicatedfixture.Hash(model), state); e == nil {
 		t.Fatal("substituted bytes accepted")
 	}
 	if _, e = os.Stat(state); !os.IsNotExist(e) {

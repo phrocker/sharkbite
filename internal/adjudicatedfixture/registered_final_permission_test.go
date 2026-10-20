@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -36,7 +36,7 @@ func (a *finalPermissionAuthority) Verify(ctx context.Context, d auth.Decision, 
 }
 
 func TestRegisteredReaderRevocationInsideFinalPermissionClock(t *testing.T) {
-	r, eng, capability, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "fixture"), "source")
+	r, eng, capability, ctx, err := Prepare(filepath.Join(t.TempDir(), "fixture"), "source")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -246,6 +246,12 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		"learning-allow-off-host-models", os.Getenv("SHOAL_LEARNING_ALLOW_OFF_HOST_MODELS") == "true",
 		"Admit distillation jobs whose chosen teacher or base resolves off "+
 			"host (every training example then leaves this host). Default refuses.")
+	learningFixtureCohorts := flags.String(
+		"learning-fixture-cohorts", os.Getenv("SHOAL_LEARNING_FIXTURE_COHORTS"),
+		"Development only: comma-separated demo task fixtures (source, review) "+
+			"to prepare as the Learning console's cohort authority and exporter. "+
+			"A finite synthetic census, regenerated on every start; never a "+
+			"repository sampling authority.")
 	studentDevice := flags.String(
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+
@@ -886,7 +892,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			images:      *learningImages, studentEndpoint: *studentEndpoint,
 			studentModelAlias: *studentModelAlias, studentCriteriaID: *studentCriteriaID,
 			studentDevice: *studentDevice, modelEgress: *learningModelEgress,
-			allowOffHostModels: *learningAllowOffHost,
+			allowOffHostModels: *learningAllowOffHost, fixtureCohorts: *learningFixtureCohorts,
 		}, output); err != nil {
 			listener.Close()
 			return err
