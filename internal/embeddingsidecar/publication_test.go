@@ -342,6 +342,25 @@ func TestPublicationRevokedKeyDuringMarkerIORefusesAck(t *testing.T) {
 	}
 }
 
+func TestPublicationMarkerCannotCrossAuthorityNamespace(t *testing.T) {
+	ctx := context.Background()
+	candidates, publication, record, live, _ := publicationFixture(t)
+	if err := candidates.Put(ctx, record); err != nil {
+		t.Fatal(err)
+	}
+	if err := publication.Publish(ctx, record, "op-1"); err != nil {
+		t.Fatal(err)
+	}
+	publication.Namespace = "other-cluster"
+	candidates.Publication = publication
+	if got := resolve(t, candidates, live, record); got.Known() {
+		t.Fatalf("copied marker promoted state in another namespace: %v", got)
+	}
+	if err := publication.Publish(ctx, record, "op-1"); !errors.Is(err, ErrConflict) {
+		t.Fatalf("other namespace reused marker = %v", err)
+	}
+}
+
 func TestPublicationReconcilesLostMarkerAnswerAndRejectsConflict(t *testing.T) {
 	ctx := context.Background()
 	candidates, publication, record, live, backend := publicationFixture(t)
