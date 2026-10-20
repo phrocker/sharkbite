@@ -41,6 +41,21 @@ func TestMemory_PutOpenReadAt(t *testing.T) {
 	}
 }
 
+func TestMemory_OpenSnapshotRetainsBytesAcrossReplacement(t *testing.T) {
+	b := New()
+	b.Put("file.rf", []byte("first"))
+	f, err := b.OpenSnapshot(context.Background(), "file.rf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	b.Put("file.rf", []byte("later"))
+	buf := make([]byte, 5)
+	if n, err := f.ReadAt(buf, 0); n != 5 || err != nil || string(buf) != "first" {
+		t.Fatalf("snapshot read = %d, %q, %v", n, buf, err)
+	}
+}
+
 func TestMemory_NotFound(t *testing.T) {
 	_, err := New().Open(context.Background(), "no-such-path")
 	if !errors.Is(err, storage.ErrNotFound) {

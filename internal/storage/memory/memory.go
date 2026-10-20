@@ -100,6 +100,12 @@ func (b *Backend) Open(_ context.Context, path string) (storage.File, error) {
 	return &file{r: bytes.NewReader(data), size: int64(len(data))}, nil
 }
 
+// OpenSnapshot is safe because Put and writer Close publish fresh byte slices;
+// an open bytes.Reader retains the previous slice across a replacement.
+func (b *Backend) OpenSnapshot(ctx context.Context, path string) (storage.File, error) {
+	return b.Open(ctx, path)
+}
+
 // Create returns a Writer that, on Close, registers its accumulated
 // bytes at path (replacing any prior value). Until Close, Open(path)
 // still sees the old bytes — the new entry is only published atomically
