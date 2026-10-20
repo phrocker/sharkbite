@@ -155,6 +155,7 @@ func TestApprovalDigestCoversWhatEquivalentEnqueueCompares(t *testing.T) {
 		"reason code": func(r *ActionRecord) { r.Reason.Code = "other" },
 		"reason":      func(r *ActionRecord) { r.Reason.Digest = "other" },
 		"deadline":    func(r *ActionRecord) { r.Deadline = r.Deadline.Add(time.Nanosecond) },
+		"not before":  func(r *ActionRecord) { r.NotBefore = r.CreatedAt.Add(time.Minute) },
 	}
 	for name, mutate := range compared {
 		changed := cloneActionRecord(base)

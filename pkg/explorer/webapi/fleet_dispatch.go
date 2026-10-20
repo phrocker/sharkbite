@@ -466,6 +466,7 @@ type fleetEnqueueWire struct {
 	PolicyID        []byte                  `json:"policy_id"`
 	ObjectID        string                  `json:"object_id"`
 	Input           json.RawMessage         `json:"input"`
+	NotBefore       time.Time               `json:"not_before,omitzero"`
 }
 
 type fleetInvokeWire struct {
@@ -732,7 +733,8 @@ func (w fleetEnqueueWire) decode(pathID []byte) (fleet.EnqueueRequest, error) {
 		ID: id, IdempotencyKey: key, AgentID: agent, AgentGeneration: w.AgentGeneration,
 		Capability: w.Capability, Action: w.Action, SourceID: append([]byte(nil), w.SourceID...),
 		PolicyID: append([]byte(nil), w.PolicyID...), ObjectID: object,
-		Input: append(json.RawMessage(nil), w.Input...), Context: contextValue,
+		Input:     append(json.RawMessage(nil), w.Input...),
+		NotBefore: w.NotBefore, Context: contextValue,
 	}, nil
 }
 
@@ -849,6 +851,7 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 		Effected:        encodeEffected(record.Effected),
 		RequestID:       encodeFleetID(record.RequestID),
 		CorrelationID:   encodeFleetID(record.CorrelationID), Deadline: record.Deadline,
+		NotBefore: record.NotBefore,
 		CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
 		ClaimID: base64.RawURLEncoding.EncodeToString(record.ClaimID), ClaimFence: record.ClaimFence,
 		ClaimLeaseUntil: record.ClaimLeaseUntil, EffectPossible: record.EffectPossible,

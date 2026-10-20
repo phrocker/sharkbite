@@ -26,6 +26,7 @@ type Record struct {
 	ErrorCode       string
 	ErrorCodeOrigin string
 	Deadline        time.Time
+	NotBefore       time.Time
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 	// ExecutorKey is the decoded key, ExecutorKeyBytes long, or nil when the
@@ -84,6 +85,7 @@ type recordWire struct {
 	Effected         *Effected               `json:"effected,omitempty"`
 	CorrelationID    string                  `json:"correlation_id,omitempty"`
 	Deadline         time.Time               `json:"deadline"`
+	NotBefore        time.Time               `json:"not_before,omitzero"`
 	CreatedAt        time.Time               `json:"created_at"`
 	UpdatedAt        time.Time               `json:"updated_at"`
 	ExecutorKey      string                  `json:"executor_key,omitempty"`
@@ -131,6 +133,7 @@ func DecodeRecord(w Action) (Record, error) {
 		AgentGeneration: w.AgentGeneration, Capability: w.Capability, Action: w.Action,
 		Input: w.Input, Output: w.Output, ErrorCode: w.ErrorCode, ErrorCodeOrigin: origin,
 		Effected: w.Effected, CorrelationID: w.CorrelationID, Deadline: w.Deadline,
+		NotBefore: w.NotBefore,
 		CreatedAt: w.CreatedAt, UpdatedAt: w.UpdatedAt, ExecutorKey: w.ExecutorKey,
 		ClaimID: w.ClaimID, ClaimFence: w.ClaimFence, ClaimLeaseUntil: w.ClaimLeaseUntil,
 		EffectPossible: w.EffectPossible, AmbiguityReports: reports,
@@ -158,7 +161,8 @@ func decodeRecord(w recordWire) (Record, error) {
 		ID: id, Version: w.Version, State: w.State, AgentID: agent,
 		AgentGeneration: w.AgentGeneration, Capability: w.Capability,
 		Action: w.Action, Input: w.Input, Output: w.Output,
-		ErrorCode: w.ErrorCode, Deadline: w.Deadline, CreatedAt: w.CreatedAt,
+		ErrorCode: w.ErrorCode, Deadline: w.Deadline, NotBefore: w.NotBefore,
+		CreatedAt: w.CreatedAt,
 		UpdatedAt: w.UpdatedAt, ClaimID: claimID, ClaimFence: w.ClaimFence,
 		ClaimLeaseUntil: w.ClaimLeaseUntil, EffectPossible: w.EffectPossible,
 	}

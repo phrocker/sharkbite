@@ -649,6 +649,7 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 		t.Fatal(err)
 	}
 	record := testActionRecord()
+	record.NotBefore = record.CreatedAt.Add(10 * time.Minute)
 	token := []byte("enqueue-transition")
 	if _, err := store.ApplyAction(context.Background(), fleet.DispatchMutation{
 		Token: token, TransitionKind: "action.enqueued", Record: record,
@@ -663,6 +664,10 @@ func TestDispatchStorePersistsImmutableTransitionOutboxAcrossRestart(t *testing.
 	store, err = NewDispatchStore(runtime, nil)
 	if err != nil {
 		t.Fatal(err)
+	}
+	restarted, err := store.GetAction(context.Background(), record.ID)
+	if err != nil || !restarted.NotBefore.Equal(record.NotBefore) {
+		t.Fatalf("scheduled action after restart = %#v, %v", restarted, err)
 	}
 	page, err := store.PendingActionTransitions(
 		context.Background(), record.ID, nil, 10)
@@ -942,6 +947,11 @@ func TestDispatchStoreRefusesARewrittenIdentity(t *testing.T) {
 		// outlive the bound its dispatcher accepted.
 		{"deadline", nil, func(r *fleet.ActionRecord) {
 			r.Deadline = r.Deadline.Add(24 * time.Hour)
+		}},
+		{"not-before time", func(r *fleet.ActionRecord) {
+			r.NotBefore = r.CreatedAt.Add(5 * time.Minute)
+		}, func(r *fleet.ActionRecord) {
+			r.NotBefore = r.NotBefore.Add(time.Minute)
 		}},
 		// A real Reason, not a hand-built one with a bogus digest: Validate
 		// requires the digest to be 64 lowercase hex characters, so "x" was

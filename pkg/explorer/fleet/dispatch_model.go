@@ -479,9 +479,13 @@ type ActionRecord struct {
 	CancelAuthorizationExpiresAt   time.Time
 	Reason                         interaction.Reason
 	Deadline                       time.Time
-	CreatedAt                      time.Time
-	UpdatedAt                      time.Time
-	ClaimID                        []byte
+	// NotBefore is the earliest time a queued action may be claimed. Zero
+	// retains the immediate-dispatch behavior of records written before this
+	// field existed.
+	NotBefore time.Time
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	ClaimID   []byte
 	// The claimant's own principal chain, recorded when the claim is taken
 	// and compared when it is reported on.
 	//
@@ -821,6 +825,7 @@ type EnqueueRequest struct {
 	PolicyID        []byte
 	ObjectID        shoal.ID
 	Input           json.RawMessage
+	NotBefore       time.Time
 	Context         RequestContext
 }
 
@@ -1376,6 +1381,10 @@ func (r ActionRecord) Validate() error {
 	}
 	if r.UpdatedAt.Before(r.CreatedAt) || !r.CreatedAt.Before(r.Deadline) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "action timestamps are inconsistent")
+	}
+	if !r.NotBefore.IsZero() &&
+		(r.NotBefore.Location() != time.UTC || !r.NotBefore.Before(r.Deadline)) {
+		return shoal.NewError(shoal.ErrorInvalidArgument, "action not-before time must be UTC and precede its deadline")
 	}
 	if len(r.AuthorizedOperations) == 0 {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "authorized action operations are required")

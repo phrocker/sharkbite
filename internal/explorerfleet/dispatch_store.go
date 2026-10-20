@@ -866,6 +866,8 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 	// accepted, and nothing below the service would notice.
 	case !current.Deadline.Equal(next.Deadline):
 		return rewrittenIdentity("deadline")
+	case !current.NotBefore.Equal(next.NotBefore):
+		return rewrittenIdentity("not-before time")
 	case current.Reason != next.Reason:
 		return rewrittenIdentity("reason")
 	}
