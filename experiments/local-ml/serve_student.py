@@ -13,6 +13,7 @@ import argparse
 import json
 import math
 import platform
+import re
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -20,6 +21,9 @@ import weights_bundle
 
 MAX_REQUEST_BYTES = 1 << 20
 MAX_STATE_FEATURES = 65536
+# Integers beyond this are not exactly representable as floats; the model
+# arithmetic is float, so such a feature is refused rather than rounded.
+MAX_ABS_INT_FEATURE = 2 ** 53
 # A client that opens a connection and never finishes its request holds a
 # handler thread; the socket timeout bounds that.
 SOCKET_TIMEOUT_SECONDS = 30
@@ -59,7 +63,7 @@ def predict(served, request):
     state = request.get('state')
     features = state.get('features') if isinstance(state, dict) else None
     if (not isinstance(features, list) or not features or len(features) > MAX_STATE_FEATURES
-            or any(type(x) not in (int, float) or not math.isfinite(x) for x in features)):
+            or any(type(x) not in (int, float) or (type(x) is int and abs(x) > MAX_ABS_INT_FEATURE) or not math.isfinite(x) for x in features)):
         return 400, dict(error='state.features must be a bounded list of finite numbers')
     model = served['model']
     if len(features) != len(model['coefficients']):
@@ -118,10 +122,10 @@ def handler_for(served, token=None):
                 return self._send(404, dict(error='not found'))
             if not self._authorized():
                 return self._send(401, dict(error='unauthorized'))
-            try:
-                length = int(self.headers.get('Content-Length') or 0)
-            except ValueError:
+            declared = self.headers.get('Content-Length') or '0'
+            if not re.fullmatch(r'[0-9]{1,9}', declared):
                 return self._send(400, dict(error='malformed Content-Length'))
+            length = int(declared)
             if length <= 0 or length > MAX_REQUEST_BYTES:
                 return self._send(413, dict(error='request exceeds bound'))
             try:
@@ -133,7 +137,7 @@ def handler_for(served, token=None):
             try:
                 request = parse_request(body)
                 status, reply = predict(served, request)
-            except (ValueError, TypeError, AttributeError, KeyError):
+            except (ValueError, TypeError, AttributeError, KeyError, RecursionError, ArithmeticError):
                 return self._send(400, dict(error='malformed request'))
             self._send(status, reply)
 

@@ -104,10 +104,10 @@ type Config struct {
 	// Egress resolves every eligible model's posture before a job is
 	// recorded. Without one, no job can be submitted on this host.
 	Egress EgressResolver
-	// AllowOffHostTeachers admits a job whose chosen teacher resolves to an
-	// off-host posture. The default refuses it: teacher generation then sends
-	// every training example off the host.
-	AllowOffHostTeachers bool
+	// AllowOffHostModels admits a job whose chosen teacher or base resolves
+	// to an off-host posture. The default refuses it: generation or
+	// fine-tuning there sends every training example off the host.
+	AllowOffHostModels bool
 	// Log receives the causes of internal failures that are reported to
 	// callers only generically.
 	Log io.Writer
@@ -167,13 +167,49 @@ func classify(err error) error {
 
 func (s *Service) classified(err error) error { return s.classifyLogged("request", err) }
 
-// classifyLogged is classify for errors whose cause belongs in the host log.
+// classifyLogged is classify for errors whose cause belongs in the host log,
+// with every host path redacted from what reaches the wire: a refusal that
+// names a file under the bundles, serving, evidence, or state root names it
+// by role, and the full path goes to the log.
 func (s *Service) classifyLogged(op string, err error) error {
 	out := classify(err)
 	if shoal.IsErrorCode(out, shoal.ErrorUnavailable) && out.Error() != err.Error() {
 		fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+		return out
+	}
+	se := new(shoal.Error)
+	if errors.As(out, &se) {
+		if redacted := s.redact(se.Message); redacted != se.Message {
+			fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+			return shoal.NewError(se.Code, redacted)
+		}
 	}
 	return out
+}
+
+// redact replaces the host's configured roots in a message with their role.
+func (s *Service) redact(msg string) string {
+	for _, root := range []struct{ path, role string }{
+		{s.cfg.BundlesDir, "<bundles>"}, {s.cfg.ServingRoot, "<serving>"}, {s.cfg.EvidenceDir, "<evidence>"}, {s.cfg.Prefix, "<state>"},
+	} {
+		if root.path == "" {
+			continue
+		}
+		msg = strings.ReplaceAll(msg, root.path, root.role)
+		if abs, err := filepath.Abs(root.path); err == nil && abs != root.path {
+			msg = strings.ReplaceAll(msg, abs, root.role)
+		}
+	}
+	return msg
+}
+
+// redactErr is redact for a message that is sent as data, not as an error.
+func (s *Service) redactErr(op string, err error) string {
+	redacted := s.redact(err.Error())
+	if redacted != err.Error() {
+		fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+	}
+	return redacted
 }
 
 // recordID is the only shape a stored record's key may take: the 64-hex
@@ -450,8 +486,16 @@ func (s *Service) resolveEgress(ctx context.Context, m distillation.Manifest) er
 			}
 		}
 	}
-	if m.TeacherEgressAtGeneration == distillation.EgressOffHost && !s.cfg.AllowOffHostTeachers {
-		return refused(errors.New("the chosen teacher generates off host; this host does not authorize off-host teacher generation (every training example would leave the host)"))
+	if s.cfg.AllowOffHostModels {
+		return nil
+	}
+	if m.TeacherEgressAtGeneration == distillation.EgressOffHost {
+		return refused(errors.New("the chosen teacher generates off host; this host does not authorize off-host models (every training example would leave the host)"))
+	}
+	for _, c := range m.Base.Eligible {
+		if c.Alias == m.Base.Chosen && c.Identity.Egress == distillation.EgressOffHost {
+			return refused(errors.New("the chosen base is fine-tuned off host; this host does not authorize off-host models (every training example would leave the host)"))
+		}
 	}
 	return nil
 }
@@ -623,6 +667,11 @@ func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMes
 		}
 		if id, _ := weightsbundle.Digest(set); id != receipt.TeacherPredictionsID {
 			return nil, refused(fmt.Errorf("receipt names teacher predictions %s; the recorded set for this manifest is %s", receipt.TeacherPredictionsID, id))
+		}
+		// A student trains on teacher predictions: it cannot have trained on
+		// more examples than the recorded set covers.
+		if n := len(toSlice(set["predictions"])); receipt.TrainedExampleCount > n {
+			return nil, refused(fmt.Errorf("receipt claims %d trained examples; the recorded prediction set covers %d", receipt.TrainedExampleCount, n))
 		}
 	}
 	s.mu.Lock()
@@ -963,9 +1012,9 @@ func (s *Service) Evidence(ctx context.Context, kind string) (json.RawMessage, e
 		raw, err := os.ReadFile(filepath.Join(dir, e.Name()))
 		item := map[string]any{"file": e.Name()}
 		if err != nil {
-			item["error"] = err.Error()
+			item["error"] = s.redactErr("evidence", err)
 		} else if record, err := weightsbundle.DecodeRecord(raw); err != nil {
-			item["error"] = err.Error()
+			item["error"] = s.redactErr("evidence", err)
 		} else {
 			item["record"] = record
 			item["kind"] = record["kind"]
@@ -988,7 +1037,7 @@ func (s *Service) Bundles(ctx context.Context) (json.RawMessage, error) {
 	}
 	out := []any{}
 	for _, e := range entries {
-		if !e.IsDir() || strings.HasSuffix(e.Name(), ".exporting") {
+		if !e.IsDir() || strings.Contains(e.Name(), ".exporting") {
 			continue
 		}
 		out = append(out, s.bundleView(e.Name()))
@@ -1000,7 +1049,7 @@ func (s *Service) bundleView(name string) map[string]any {
 	verified, err := releasebundle.Verify(filepath.Join(s.cfg.BundlesDir, name))
 	view := map[string]any{"name": name, "verified": err == nil, "entries": verified.Results, "release_id": verified.Index.ReleaseID, "bundle_digest": verified.Index.BundleDigest, "index_digest": verified.IndexDigest, "images": verified.Index.Images}
 	if err != nil {
-		view["error"] = err.Error()
+		view["error"] = s.redactErr("bundle view", err)
 	}
 	return view
 }
@@ -1096,9 +1145,10 @@ func (s *Service) ImportBundle(ctx context.Context, raw json.RawMessage) (json.R
 	result, err := releasebundle.Import(ctx, filepath.Join(s.cfg.BundlesDir, body.Name), releasebundle.ImportOptions{Registry: s.cfg.Registry, ServingRoot: s.cfg.ServingRoot, Importer: importer, Now: s.cfg.Now(), ExpectedIndexDigest: body.ExpectedIndexDigest})
 	view := map[string]any{"name": body.Name, "entries": result.Verified.Results, "activated": result.Activated, "already_present": result.AlreadyThere, "release_id": result.Verified.Index.ReleaseID, "bundle_digest": result.Verified.Index.BundleDigest, "index_digest": result.Verified.IndexDigest, "importer": importer}
 	if err != nil {
-		view["error"] = s.classified(err).Error()
+		classified := s.classifyLogged("import bundle", err)
+		view["error"] = classified.Error()
 		encoded, _ := json.Marshal(view)
-		return encoded, s.classifyLogged("import bundle", err)
+		return encoded, classified
 	}
 	if err := s.put(ctx, kindEvaluation, str(result.Verified.Evaluation, "id"), result.Verified.Evaluation); err != nil && !errors.Is(err, storage.ErrExists) {
 		return nil, s.classified(err)

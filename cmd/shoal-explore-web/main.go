@@ -243,9 +243,9 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			"each model provider a distillation manifest may name sends its "+
 			"calls. A manifest naming a provider absent here is refused.")
 	learningAllowOffHost := flags.Bool(
-		"learning-allow-off-host-teachers", os.Getenv("SHOAL_LEARNING_ALLOW_OFF_HOST_TEACHERS") == "true",
-		"Admit distillation jobs whose chosen teacher resolves off host "+
-			"(every training example then leaves this host). Default refuses.")
+		"learning-allow-off-host-models", os.Getenv("SHOAL_LEARNING_ALLOW_OFF_HOST_MODELS") == "true",
+		"Admit distillation jobs whose chosen teacher or base resolves off "+
+			"host (every training example then leaves this host). Default refuses.")
 	studentDevice := flags.String(
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+
@@ -886,7 +886,7 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			images:      *learningImages, studentEndpoint: *studentEndpoint,
 			studentModelAlias: *studentModelAlias, studentCriteriaID: *studentCriteriaID,
 			studentDevice: *studentDevice, modelEgress: *learningModelEgress,
-			allowOffHostTeachers: *learningAllowOffHost,
+			allowOffHostModels: *learningAllowOffHost,
 		}, output); err != nil {
 			listener.Close()
 			return err

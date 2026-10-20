@@ -207,7 +207,10 @@ func OpenRegistry(ctx context.Context, store Store, prefix string) (*Registry, e
 		if ev.Sequence != int64(i+1) || path.Base(p) != sequenceName(ev.Sequence) || ev.Kind == "" {
 			return nil, fmt.Errorf("registry: event %s out of sequence", p)
 		}
-		if _, ok := r.releases[ev.ReleaseID]; !ok {
+		// A withdrawal recorded before any release used the source names no
+		// release; every other event names a recorded one.
+		bareWithdrawal := ev.Kind == EventSourceWithdrawn && ev.ReleaseID == "" && ev.SourceID != ""
+		if _, ok := r.releases[ev.ReleaseID]; !ok && !bareWithdrawal {
 			return nil, fmt.Errorf("registry: event %s names unknown release %s", p, ev.ReleaseID)
 		}
 		r.events = append(r.events, ev)
@@ -509,7 +512,24 @@ func (r *Registry) WithdrawSource(ctx context.Context, sourceID string, now time
 			return affected, err
 		}
 	}
+	// The withdrawal itself must outlive the moment: a source no release
+	// has used yet is still withdrawn for every release that arrives later.
+	if len(affected) == 0 && !r.sourceWithdrawn(sourceID) {
+		ev := Event{Kind: EventSourceWithdrawn, SourceID: sourceID, Detail: "source withdrawn before any recorded release used it; " + WithdrawalLimitation, At: now.UTC()}
+		if err := r.record(ctx, ev); err != nil {
+			return affected, err
+		}
+	}
 	return affected, nil
+}
+
+func (r *Registry) sourceWithdrawn(sourceID string) bool {
+	for _, ev := range r.events {
+		if ev.Kind == EventSourceWithdrawn && ev.SourceID == sourceID {
+			return true
+		}
+	}
+	return false
 }
 
 // RecordEvent appends an event against a recorded release, such as a load
@@ -549,7 +569,7 @@ func (r *Registry) record(ctx context.Context, ev Event) error {
 }
 
 func (r *Registry) applyEvent(ev Event) {
-	if ev.Kind == EventSourceWithdrawn {
+	if ev.Kind == EventSourceWithdrawn && ev.ReleaseID != "" {
 		r.eligibility[ev.ReleaseID] = Eligibility{Status: EligibilityWithdrawnSource, SourceID: ev.SourceID, At: ev.At, Reason: "dataset manifest included withdrawn source " + ev.SourceID}
 	}
 }

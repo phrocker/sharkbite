@@ -248,7 +248,7 @@ func Decode(raw []byte) (Manifest, error) {
 		return Manifest{}, invalid("%v", err)
 	}
 	if string(typed) != string(loose) {
-		return Manifest{}, invalid("manifest does not round-trip canonically: a member is absent, explicitly empty, or not in canonical form")
+		return Manifest{}, invalid("manifest does not round-trip canonically: a member is absent, explicitly empty, or spelled in a form the typed record rewrites (a float such as a measurement value or rule bound must be written with a decimal point, e.g. 1.0 not 1)")
 	}
 	return m, nil
 }

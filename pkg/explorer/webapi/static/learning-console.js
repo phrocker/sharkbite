@@ -147,7 +147,7 @@
           line.className = "learning-note";
           const servesActive = serving.serves_active_release === true;
           line.appendChild(mark(servesActive, `Runtime serves the active release (bundle ${serving.bundle_digest || "(none)"}, device ${serving.actual_device || "?"})`,
-            serving.error ? `Runtime report failed: ${serving.error}` : `Runtime serves bundle ${serving.bundle_digest || "(none)"}, not the active release, or is not ready${serving.health_error ? `: ${serving.health_error}` : ""}`));
+            serving.error ? `Runtime report failed: ${serving.error}` : `Runtime pinned to bundle ${serving.bundle_digest || "(none)"} is not serving the active release or is not ready${serving.health_error ? `: ${serving.health_error}` : ""}`));
           summary.appendChild(line);
           if (serving.recording_errors && serving.recording_errors.length) note(`Event recording failed: ${serving.recording_errors.join("; ")}`);
         } else if (value.serving_note) {

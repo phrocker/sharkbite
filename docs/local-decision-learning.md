@@ -94,8 +94,8 @@ refuses the manifest before training. Egress is the resolved posture
 one, and the host that records the job resolves every eligible model's
 posture from its own configuration (`-learning-model-egress`), refusing a
 declaration it does not confirm, a provider it cannot resolve, and an
-off-host chosen teacher unless the operator opted in
-(`-learning-allow-off-host-teachers`). Two byte strings that decode to the
+off-host chosen teacher or base unless the operator opted in
+(`-learning-allow-off-host-models`). Two byte strings that decode to the
 same typed manifest but differ (an explicit empty optional member) do not
 share a pin; the recorder refuses bytes that do not round-trip.
 

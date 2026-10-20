@@ -323,7 +323,8 @@ spec:
           # The runtime binds the pod's loopback, which the kubelet's httpGet
           # prober cannot reach (it runs in the node's network namespace and
           # "host: 127.0.0.1" would probe the node). The probe therefore runs
-          # inside the container.
+          # inside the container, which must provide python3 (the student
+          # runtime image does). The exec timeout covers interpreter start.
           readinessProbe:
             exec:
               command:
@@ -332,6 +333,8 @@ spec:
                 - {{ printf "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:%v/health', timeout=2).status == 200 else 1)" $student.port | quote }}
             initialDelaySeconds: 3
             periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 3
           resources:
             {{- toYaml $student.resources | nindent 12 }}
           securityContext:

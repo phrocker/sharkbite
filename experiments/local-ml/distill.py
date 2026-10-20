@@ -34,6 +34,8 @@ KIND = 'distillation-manifest'
 RECEIPT_KIND = 'distillation-receipt'
 PREDICTIONS_KIND = 'teacher-predictions'
 MAX_MANIFEST_BYTES = 1 << 20
+MAX_EPOCHS = 10000
+MANIFEST_KEYS = {'schema', 'kind', 'training_manifest_sha256', 'teacher', 'base', 'teacher_egress_at_generation', 'data', 'exports'}
 RUNTIME_ID = 'distill:averaged-perceptron:v1'
 
 
@@ -54,24 +56,51 @@ def _expect(condition, message):
         raise Refused(message)
 
 
+def _strings(values):
+    return isinstance(values, list) and all(isinstance(v, str) and v for v in values)
+
+
+def _number(value):
+    return type(value) in (int, float) and not isinstance(value, bool)
+
+
+def _hex64(value):
+    return isinstance(value, str) and len(value) == 64 and not set(value) - set('0123456789abcdef')
+
+
 def _shape(manifest):
-    """Refuse a manifest whose shape is not the contract's before any field is trusted."""
+    """Refuse a manifest whose shape is not the contract's before any field is trusted.
+
+    Go's Decode is the authority on validity; this mirrors it closely enough
+    that a malformed manifest is a refusal here, not a traceback.
+    """
     _expect(isinstance(manifest, dict), 'manifest is not an object')
+    _expect(set(manifest) == MANIFEST_KEYS, 'manifest keys must be exactly the contract\'s')
+    _expect(_hex64(manifest['training_manifest_sha256']), 'training manifest pin must be 64-hex')
+    _expect(manifest['teacher_egress_at_generation'] in ('loopback', 'off_host'), 'teacher egress at generation shape')
     for role in ('teacher', 'base'):
         selection = manifest.get(role)
         _expect(isinstance(selection, dict) and isinstance(selection.get('eligible'), list) and selection['eligible'], role + ' selection shape')
         _expect(isinstance(selection.get('rule'), dict) and isinstance(selection.get('chosen'), str), role + ' selection shape')
+        rule = selection['rule']
+        _expect(isinstance(rule.get('metric'), str) and rule.get('direction') in ('maximize', 'minimize'), role + ' rule shape')
+        _expect(all(rule.get(k) is None or _number(rule.get(k)) for k in ('minimum', 'maximum')), role + ' rule bounds must be numbers or null')
+        _expect(isinstance(selection.get('rejected'), list) and all(isinstance(r, dict) and isinstance(r.get('alias'), str) and isinstance(r.get('reason'), str) for r in selection['rejected']), role + ' rejections shape')
         for c in selection['eligible']:
-            _expect(isinstance(c, dict) and isinstance(c.get('identity'), dict) and isinstance(c.get('measurements'), list), role + ' candidate shape')
-            _expect(all(isinstance(m, dict) for m in c['measurements']), role + ' measurement shape')
+            _expect(isinstance(c, dict) and isinstance(c.get('alias'), str) and c['alias'] and isinstance(c.get('identity'), dict) and isinstance(c.get('measurements'), list), role + ' candidate shape')
+            identity = c['identity']
+            _expect(all(isinstance(identity.get(k), str) and identity[k] for k in ('provider', 'model', 'version', 'cache_identity')), role + ' identity shape')
+            _expect(identity.get('egress') in ('loopback', 'off_host'), role + ' identity egress shape')
+            _expect(all(isinstance(m, dict) and isinstance(m.get('metric'), str) and isinstance(m.get('split'), str) and _number(m.get('value')) and isinstance(m.get('evidence_id'), str) for m in c['measurements']), role + ' measurement shape')
     data = manifest.get('data')
     _expect(isinstance(data, dict) and isinstance(data.get('tasks'), list) and data['tasks'], 'data selection shape')
-    _expect(all(isinstance(t, dict) and isinstance(t.get('cohort_ids'), list) and isinstance(t.get('label_policy_ids'), list) for t in data['tasks']), 'task selection shape')
+    _expect(all(isinstance(t, dict) and isinstance(t.get('task_id'), str) and t['task_id'] and _strings(t.get('cohort_ids')) and _strings(t.get('label_policy_ids')) for t in data['tasks']), 'task selection shape')
+    _expect(_strings(data.get('evidence_families')) and isinstance(data.get('prompt_version'), str), 'evidence families and prompt version shape')
     _expect(isinstance(data.get('generation_parameters'), dict), 'generation parameters must be an object')
-    _expect(isinstance(data.get('held_out_example_ids'), list), 'held-out ids must be a list')
-    _expect(isinstance(manifest.get('exports'), list) and all(isinstance(e, dict) for e in manifest['exports']), 'exports shape')
+    _expect(_strings(data.get('held_out_example_ids')) or data.get('held_out_example_ids') == [], 'held-out ids must be a list of strings')
+    _expect(isinstance(manifest.get('exports'), list) and all(isinstance(e, dict) and isinstance(e.get('cohort_id'), str) and _hex64(e.get('manifest_sha256')) for e in manifest['exports']), 'exports shape')
     epochs = data['generation_parameters'].get('epochs', 1)
-    _expect(type(epochs) is int and epochs >= 1, 'epochs must be a positive integer')
+    _expect(type(epochs) is int and 1 <= epochs <= MAX_EPOCHS, 'epochs must be a positive integer no greater than %d' % MAX_EPOCHS)
 
 
 def load_manifest(path, expected_pin):
@@ -87,6 +116,13 @@ def load_manifest(path, expected_pin):
     if digest(manifest) != expected_pin:
         raise Refused('manifest is not in canonical form; its pin is not its content address')
     _shape(manifest)
+    try:
+        return _selections(manifest)
+    except (KeyError, TypeError, IndexError) as error:
+        raise Refused('manifest shape: %s' % error)
+
+
+def _selections(manifest):
     for role in ('teacher', 'base'):
         selection = manifest[role]
         chosen = [c for c in selection['eligible'] if c['alias'] == selection['chosen']]

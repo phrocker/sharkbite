@@ -85,6 +85,12 @@ class ServeStudentTests(unittest.TestCase):
                 self.assertEqual(caught.exception.code, 400)
             except (ValueError, urllib.error.URLError):
                 pass  # the client library itself refuses to send a non-numeric length
+        huge = b'{"model":"student-v1","release_id":"release:7","bundle_digest":"%s","state":{"features":[1%s, 1.0]},"questions":{}}' % (self.digest.encode(), b'0' * 400)
+        for raw in (b'[' * 200000, huge):
+            req = urllib.request.Request(base + '/v1/predict', data=raw, headers={'Content-Type': 'application/json'})
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                urllib.request.urlopen(req)
+            self.assertEqual(caught.exception.code, 400)
         self.assertEqual(self.call(base, '/health')[0], 200)
         self.assertEqual(self.call(base, '/v1/predict', good)[0], 200)
         self.assertEqual(serve_student.handler_for({}).timeout, serve_student.SOCKET_TIMEOUT_SECONDS)

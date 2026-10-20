@@ -104,7 +104,14 @@ the serving root, or the rollback is refused rather than pointing the
 runtime at nothing. Only a release the pointer once named is a prior
 release: a record written but never pointed at cannot become active this
 way. A release marked ineligible by a source withdrawal cannot be rolled
-back to.
+back to. A withdrawal recorded before any release used the source is kept
+as its own event and refuses the first release that would use it.
+
+The registry's pointer and event logs are append-only and gap-free. A
+registry whose event log has a missing or renamed file refuses to open at
+all (the explorer host then refuses to start) rather than opening with a
+shorter history; restore the file from the durable store or move the
+damaged registry aside before starting the host.
 
 ## Serving in the chart
 

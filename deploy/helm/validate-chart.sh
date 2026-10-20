@@ -742,6 +742,8 @@ refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:9000" "a
 refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:8701" "an IPv6 loopback endpoint the IPv4-only runtime never answers" "${student_base[@]}" --set "explorer.studentModel.endpoint=http://[::1]:8701"
 refuses_citing "explorer.studentModel.endpoint must be http://127.0.0.1:8701" "a localhost endpoint that resolves through /etc/hosts" "${student_base[@]}" --set explorer.studentModel.endpoint=http://localhost:8701
 refuses_citing "explorer.studentModel.port must be a whole number" "a non-numeric sidecar port" "${student_base[@]}" --set-string explorer.studentModel.port=abc
+refuses_citing "explorer.studentModel.port must be a whole number" "a sidecar port above 65535" "${student_base[@]}" --set explorer.studentModel.port=65536,explorer.studentModel.endpoint=http://127.0.0.1:65536
+assert_renders "the sidecar probe allows for interpreter start" '^ +timeoutSeconds: 5$' "${student_base[@]}"
 renders "a sidecar on another port when the endpoint names it" "${student_base[@]}" --set explorer.studentModel.port=9000,explorer.studentModel.endpoint=http://127.0.0.1:9000
 assert_absent "no student model endpoint is rendered beyond loopback" 'student.*http://[^1]' "${student_base[@]}"
 assert_absent "a disabled student model renders no sidecar" 'student-runtime' "${explorer_base[@]}"
