@@ -96,6 +96,7 @@ while the gateway is already pulling; and
 | `-agent-id` | | required; the descriptor ID as unpadded base64url, not a display name |
 | `-capability` | `effects.http` | fleet name grammar |
 | `-surface-name` | | required; the ambiguity report's `target` |
+| `-target-scope` | | required stable, nonsecret account or tenant boundary (1–256 printable bytes); keep it across credential rotation |
 | `-target-base-url` | | required; https, or http to loopback; **no plaintext opt-out**; no userinfo, query or fragment |
 | `-target-credential-env` / `-target-credential-file` | `SHOAL_TARGET_CREDENTIAL` / | exactly one; sent verbatim as the value of `-target-auth-header` |
 | `-target-auth-header` | `Authorization` | must not be a header the gateway writes itself |
@@ -604,7 +605,11 @@ PULL → FILTER → PRECHECK → [ATTEST] → CLAIM → BIND → SEND → CLASSI
   is not claimed under.
 - **CLAIM** with a fresh claim ID per attempt. `repull`, 404 and 409 send the
   worker back to PULL; a 409 on an attested action also forgets the
-  attestation in hand.
+  attestation in hand. Before using the returned input, the worker checks
+  that the claimed record still names the offered action and its immutable
+  identity, carries the issued claim ID and a new fence, and marks an
+  external effect possible. A mismatched response sends nothing; a claim
+  already committed by the explorer is left to lapse.
 - **BIND** failure sends nothing: `request_not_sent` is reported, then the
   action completes `failed/input_invalid`.
 - **SEND** behind the send gate, re-checked before every attempt and once
@@ -966,6 +971,7 @@ Every key, with its default, is in `effectsGatewayDefaults` in
 | `dispatch.tokenAudience` | | projected token | required with `projected` |
 | `dispatch.tokenExpirationSeconds` | 3600 | projected token | at least 600 |
 | `dispatch.credentialSecretName`, `.credentialSecretKey` | , `token` | Secret token | required with `secret`, refused with `projected` |
+| `target.targetScope` | | `-target-scope` | required stable, nonsecret account or tenant boundary (1–256 printable bytes); no default |
 | `target.baseURL` | | `-target-base-url` | required. https, or http to loopback; no userinfo, query or fragment |
 | `target.allowPrivate` | false | `-target-allow-private` | required for loopback |
 | `target.authHeader` | `Authorization` | `-target-auth-header` | |
@@ -994,6 +1000,11 @@ Durations are Go literals built from whole numbers and `ms`, `s`, `m` or `h`
 (`90s`, `1m30s`). Every value is rendered as a quoted scalar or as JSON, and a
 line break anywhere in an entry is refused (#468).
 
+Set `target.targetScope` to the target's stable account or tenant boundary,
+not a credential or a route name. Keep it unchanged across gateway replicas
+and credential rotation. Change it when the target's deduplication namespace
+changes; prepared recovery refuses an old commitment under a new scope.
+
 ### A complete entry
 
 The executor mapping must map this gateway's ServiceAccount
@@ -1015,6 +1026,7 @@ effectsGateways:
       url: https://shoal-explorer.shoal.svc:8098
       tokenAudience: shoal-executors
     target:
+      targetScope: stripe-live-account
       baseURL: https://api.stripe.com
       credentialSecretName: stripe-api-key
       idempotencyHeader: Idempotency-Key
@@ -1097,8 +1109,11 @@ those never see this refusal; `helm upgrade --dry-run=server` does.
 
 The target client reaches one host and one port. Each connection resolves the
 name once and dials the checked address as a literal, and a `Control` hook
-re-checks the socket's peer, so DNS rebinding cannot swap the address between
-check and connect. Every resolved address must pass, not merely one.
+re-checks that destination before connecting, so DNS rebinding cannot swap the
+address between check and connect. Every resolved address must pass, not merely one.
+For a target named `localhost` (with or without a trailing dot), every resolved
+address must also be loopback. Its routes declare no `egresses-content` effect,
+so a DNS or hosts-file change cannot turn that declaration into remote egress.
 
 Always refused: `0.0.0.0/8`, `169.254.0.0/16`, `fe80::/10`, `fd00:ec2::254`,
 `100.100.100.200`, `168.63.129.16`, `192.0.0.192`, multicast, reserved and

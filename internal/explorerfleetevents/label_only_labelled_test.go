@@ -97,6 +97,10 @@ func TestAnOutsiderOfOnlyLabelledEvidenceSeesTheWireOfNone(t *testing.T) {
 		{"Status", gotStatus, wantStatus}, {"TeamActions", gotTeam, wantTeam},
 		{"enqueue replay", gotEnqueue, wantEnqueue}, {"invoke replay", gotInvoke, wantInvoke},
 	} {
+		// Each independent invocation writes a fresh, opaque CAS token before
+		// execution. Its value says nothing about evidence visibility.
+		path.got.ExecutionAttemptID = nil
+		path.want.ExecutionAttemptID = nil
 		if !reflect.DeepEqual(path.got, path.want) {
 			t.Fatalf("%s to an outsider:\n%#v\nwant, as if no evidence was recorded,\n%#v",
 				path.name, path.got, path.want)

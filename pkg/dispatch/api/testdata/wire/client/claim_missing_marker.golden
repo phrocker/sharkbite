@@ -1,0 +1,8 @@
+requests: 1
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: protocol: prepared claim response exposes material or lacks its protocol marker
+kind: protocol
+status: 0 code: "" failure: ""
+is ambiguity unrecorded: false
+is unexpected EOF: false is deadline: false
+chain: protocol(0)

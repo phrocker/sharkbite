@@ -1284,6 +1284,10 @@
 {{- end -}}
 
 {{- /* The target hop: no plaintext opt-out, as in the binary. */ -}}
+{{- $targetScope := $target.targetScope -}}
+{{- if or (not (kindIs "string" $targetScope)) (eq $targetScope "") (ne (trim $targetScope) $targetScope) (gt (len $targetScope) 256) (not (regexMatch "^[\\pL\\pM\\pN\\pP\\pS ]+$" $targetScope)) -}}
+{{- fail (printf "%s.target.targetScope must be a stable printable nonsecret account or tenant identifier (1 to 256 bytes, no leading or trailing whitespace): the prepared recovery commitment binds this scope" $key) -}}
+{{- end -}}
 {{- $targetURL := toString $target.baseURL -}}
 {{- $parsedTarget := urlParse $targetURL -}}
 {{- $loopbackTarget := include "shoal.urlIsLoopback" $targetURL -}}

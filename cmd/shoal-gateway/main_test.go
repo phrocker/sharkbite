@@ -137,7 +137,7 @@ func TestSIGTERMDrainsTheProcessToACleanExit(t *testing.T) {
 	cmd, output := gatewayProcess(t, "run",
 		"-dispatch-url="+explorer.URL, "-dispatch-token-file="+token,
 		"-agent-id="+base64.RawURLEncoding.EncodeToString([]byte("agent")),
-		"-executor-ref=stripe", "-surface-name=api.test",
+		"-executor-ref=stripe", "-surface-name=api.test", "-target-scope=stripe-test-account",
 		"-target-base-url="+target.URL, "-target-allow-private",
 		"-routes="+routes, "-idempotency-header=Idempotency-Key", "-idempotency-retention=48h",
 		"-unrecorded-dir="+filepath.Join(t.TempDir(), "unrecorded"), "-pod-name=gw-0",

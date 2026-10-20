@@ -19,13 +19,9 @@ jobs:
     name: build / vet / test
     runs-on: ubuntu-latest
     env:
-      # The repository's go.work overlays a private, local-only module
-      # (wal-quorum-sidecar) that CI cannot fetch. Disable the workspace so the
-      # build resolves against go.mod alone. The handful of packages that need
-      # the sidecar (internal/qwal, internal/memtable, internal/scanserver and
-      # the cmd/shoal server that wires them) are excluded from the package set
-      # below; everything else — the RFile core, engine, tablet, iterators,
-      # compaction, storage backends and the shoal-embed tool — builds cleanly.
+      # Use the root module and its checked-in wal-quorum-sidecar replacement.
+      # The developer workspace also contains independent extension modules;
+      # those are tested separately below.
       GOWORK: off
     steps:
       - name: Checkout
@@ -39,6 +35,9 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+
+      - name: Validate pinned Accumulo conformance harness
+        run: make test-accumulo-static
 
       - name: Install Apache Thrift 0.24.0
         run: |
@@ -124,13 +123,11 @@ jobs:
       - name: Compute package set
         id: pkgs
         run: |
-          # Exclude packages that depend on the private wal-quorum-sidecar.
-          # Emit as a single space-separated line so it expands to arguments
-          # (not separate commands) in the build/vet/test steps below.
-          pkgs=$(go list -e ./... \
-            | grep -vE '/internal/(qwal|memtable|scanserver)$' \
-            | grep -vE '/cmd/shoal$' \
-            | tr '\n' ' ')
+          set -euo pipefail
+          # A plain go list fails the job if any root-module package cannot
+          # resolve; -e would hide that failure and leave coverage gaps.
+          # Emit one line for the build/vet/test commands below.
+          pkgs=$(go list ./... | tr '\n' ' ')
           echo "Selected $(echo $pkgs | wc -w) packages"
           echo "list=$pkgs" >> "$GITHUB_OUTPUT"
 

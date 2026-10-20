@@ -324,7 +324,8 @@ func newSSHHarness(t *testing.T, clock *timerClock, explorer *fakeExplorer, targ
 			return "Authorization", "Bearer effects-ssh-caller-token-0123456789abcdef", nil
 		},
 		AgentID: []byte(testAgent), Capability: sshCapability, SurfaceName: "web-fleet",
-		Pod: "gw-0", IdempotencyRetention: 24 * time.Hour,
+		TargetScope: "ssh-test-account",
+		Pod:         "gw-0", IdempotencyRetention: 24 * time.Hour,
 		ClaimLease: 60 * time.Second, OperationTimeout: 64 * time.Second, Renew: true,
 		PlaneTimeout: 5 * time.Second, MaxResponseBytes: 64 << 10, PullLimit: 32,
 		PullInterval: time.Second, Unrecorded: log,

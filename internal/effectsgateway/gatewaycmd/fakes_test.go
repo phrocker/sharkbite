@@ -58,6 +58,7 @@ type fakeExplorer struct {
 	// offer is the one action the pull page offers until it is claimed.
 	offer     *offeredAction
 	claimed   bool
+	claimID   string
 	completed []json.RawMessage
 }
 
@@ -154,7 +155,7 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		}
 		f.mu.Unlock()
 		reply(http.StatusOK, map[string]any{"actions": actions})
-	case strings.HasSuffix(r.URL.Path, "/claim"):
+	case strings.HasSuffix(r.URL.Path, "/claim-prepared"):
 		var claimID string
 		var lease time.Duration
 		_ = json.Unmarshal(body["claim_id"], &claimID)
@@ -162,6 +163,7 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		f.mu.Lock()
 		offer := f.offer
 		f.claimed = true
+		f.claimID = claimID
 		f.mu.Unlock()
 		record := f.actionWire(offer, 2, dispatchapi.DispatchClaimed)
 		now := time.Now().UTC()
@@ -169,10 +171,47 @@ func (f *fakeExplorer) serve(w http.ResponseWriter, r *http.Request) {
 		record["claim_id"] = claimID
 		record["claim_fence"] = 1
 		record["claim_lease_until"] = now.Add(lease)
-		record["input"] = json.RawMessage(`{}`)
-		record["executor_key"] = b64([]byte(strings.Repeat("k", 32)))
 		record["effect_possible"] = true
+		record["recovery_protocol_version"] = 1
 		reply(http.StatusOK, record)
+	case strings.HasSuffix(r.URL.Path, "/material"):
+		var claimID string
+		var fence uint64
+		_ = json.Unmarshal(body["claim_id"], &claimID)
+		_ = json.Unmarshal(body["claim_fence"], &fence)
+		f.mu.Lock()
+		offer, expected, claimed := f.offer, f.claimID, f.claimed
+		f.mu.Unlock()
+		if !claimed || claimID != expected || fence != 1 {
+			reply(http.StatusConflict, map[string]any{"code": "conflict"})
+			return
+		}
+		reply(http.StatusOK, map[string]any{
+			"id": b64(offer.id), "claim_id": claimID, "claim_fence": fence,
+			"input":        json.RawMessage(`{}`),
+			"executor_key": b64([]byte(strings.Repeat("k", 32))),
+		})
+	case strings.HasSuffix(r.URL.Path, "/prepare"):
+		var claimID, mode, requestDigest, scopeDigest string
+		var fence uint64
+		_ = json.Unmarshal(body["claim_id"], &claimID)
+		_ = json.Unmarshal(body["claim_fence"], &fence)
+		_ = json.Unmarshal(body["mode"], &mode)
+		_ = json.Unmarshal(body["request_digest"], &requestDigest)
+		_ = json.Unmarshal(body["target_scope_digest"], &scopeDigest)
+		f.mu.Lock()
+		offer, expected, claimed := f.offer, f.claimID, f.claimed
+		f.mu.Unlock()
+		if !claimed || claimID != expected || fence != 1 || mode == "" ||
+			requestDigest == "" || scopeDigest == "" {
+			reply(http.StatusConflict, map[string]any{"code": "conflict"})
+			return
+		}
+		reply(http.StatusOK, map[string]any{
+			"id": b64(offer.id), "claim_id": claimID, "claim_fence": fence,
+			"version": 3, "committed": true, "mode": mode,
+			"request_digest": requestDigest, "target_scope_digest": scopeDigest,
+		})
 	case strings.HasSuffix(r.URL.Path, "/complete"):
 		f.mu.Lock()
 		offer := f.offer
@@ -285,6 +324,7 @@ func (w *world) args(changes map[string]string) []string {
 		"executor-ref":          "stripe",
 		"surface-name":          "api.stripe.test",
 		"target-base-url":       w.target.server.URL,
+		"target-scope":          "test-account",
 		"target-allow-private":  "true",
 		"target-credential-env": "SHOAL_GATEWAY_TEST_UNSET_CREDENTIAL",
 		"routes":                testRoutes,

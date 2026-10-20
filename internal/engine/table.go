@@ -636,6 +636,7 @@ func (t *table) conditionalWrite(mutations []ConditionalMutation) ([]bool, error
 // path builds on this primitive.
 func (t *table) lookupRows(rows [][]byte, opts ScanOptions, visit func(idx int, key *iterrt.Key, value []byte)) error {
 	env := iterrt.IteratorEnvironment{
+		Context:        opts.Context,
 		Scope:          iterrt.ScopeScan,
 		Authorizations: opts.Authorizations,
 	}

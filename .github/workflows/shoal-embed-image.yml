@@ -27,7 +27,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  IMAGE_NAME: ghcr.io/phrocker/shoal-oss/shoal-embed
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/shoal-embed
 
 jobs:
   validate:
@@ -43,7 +43,8 @@ jobs:
             IMAGE=shoal-embed:smoke \
             VERSION="${GITHUB_REF_NAME}" \
             REVISION="${GITHUB_SHA}" \
-            CREATED="$(git show -s --format=%cI HEAD)"
+            CREATED="$(git show -s --format=%cI HEAD)" \
+            SOURCE_DATE="$(git show -s --format=%cI HEAD)"
 
   publish:
     name: Build and publish multi-arch image
@@ -85,6 +86,10 @@ jobs:
             exit 1
           fi
 
+      - name: Source commit date
+        id: source
+        run: echo "date=$(git show -s --format=%cI HEAD)" >> "$GITHUB_OUTPUT"
+
       - name: Log in to GHCR
         uses: docker/login-action@v3
         with:
@@ -105,6 +110,7 @@ jobs:
             VERSION=${{ github.ref_name }}
             REVISION=${{ github.sha }}
             CREATED=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+            SOURCE_DATE=${{ steps.source.outputs.date }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           provenance: mode=max

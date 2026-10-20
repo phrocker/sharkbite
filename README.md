@@ -44,6 +44,9 @@ to be an agent runtime or a model vendor.
 | Build against the knowledge contracts | [Public packages](#public-packages) |
 | Run a local sorted KV engine | [Embedded engine](#embedded-engine) |
 | Evaluate Accumulo compatibility | [Compatibility harness](test/accumulo/README.md) |
+| Govern an OpenAI-compatible client | [LLM gateway](docs/llm-gateway-deploy.md) |
+| Perform approved actions at most once | [Effects gateway](docs/effects-gateway-deploy.md) |
+| Serve an authorized corpus to an agent | [MCP over stdio](docs/mcp-stdio.md) |
 | Understand the product direction | [Platform product plan](docs/platform-product-plan.md) |
 
 Capability status and validation evidence are tracked in
@@ -213,7 +216,10 @@ not as a passing conformance result. See
 - [Local decisions and learning](docs/local-decisions.md)
 - [Decision HTTP APIs](docs/decision-http-api.md)
 - [Adjudication](docs/decision-adjudication.md)
-- [Deployment and effects](docs/effects-gateway-deploy.md)
+- [Gateways: LLM, effects, and session](docs/gateways.md)
+- [LLM gateway deployment](docs/llm-gateway-deploy.md)
+- [Effects gateway deployment](docs/effects-gateway-deploy.md)
+- [MCP over stdio](docs/mcp-stdio.md)
 - [Embedded engine](docs/shoal-embed-container.md)
 - [Iterator capability registry](docs/iterator-capability-registry.md)
 - [Offline compaction design](docs/offline-compaction-design.md)

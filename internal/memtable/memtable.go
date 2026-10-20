@@ -34,7 +34,6 @@ package memtable
 import (
 	"io"
 
-	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 	"github.com/phrocker/shoal-oss/internal/qwal"
 	"github.com/phrocker/shoal-oss/internal/rfile/wire"
@@ -126,9 +125,16 @@ func (m *Memtable) Ingest(e *qwal.Entry) {
 // Mutation came from a per-entry decode (qwal.readValue allocates fresh
 // backing arrays per record), so aliasing is safe for the Memtable's
 // lifetime — it holds the only reference once Ingest returns.
-func (m *Memtable) ingestMutation(mut *cclient.Mutation) {
-	for _, c := range mut.Cells() {
-		m.list.insert(c.Key, c.Value)
+func (m *Memtable) ingestMutation(mut qwal.ServerMutation) {
+	for _, update := range mut.Updates {
+		m.list.insert(wire.Key{
+			Row:              mut.Row,
+			ColumnFamily:     update.ColumnFamily,
+			ColumnQualifier:  update.ColumnQualifier,
+			ColumnVisibility: update.ColumnVisibility,
+			Timestamp:        mut.EffectiveTimestamp(update),
+			Deleted:          update.Deleted,
+		}, update.Value)
 	}
 }
 

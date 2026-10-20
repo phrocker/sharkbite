@@ -21,7 +21,6 @@ import (
 	"io"
 	"testing"
 
-	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 	"github.com/phrocker/shoal-oss/internal/qwal"
 	"github.com/phrocker/shoal-oss/internal/rfile/wire"
@@ -30,26 +29,48 @@ import (
 // putEntry builds a single-mutation MUTATION WAL entry for the given tablet
 // and seq, with one Put column update.
 func putEntry(tabletID int32, seq int64, row, cf, cq string, ts int64, val string) *qwal.Entry {
-	m, err := cclient.NewMutation([]byte(row))
-	if err != nil {
-		panic(err)
-	}
-	m.Put([]byte(cf), []byte(cq), nil, ts, []byte(val))
 	return &qwal.Entry{
-		Key:   qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
-		Value: qwal.LogFileValue{Mutations: []*cclient.Mutation{m}},
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte(row), Updates: []qwal.ColumnUpdate{{
+				ColumnFamily: []byte(cf), ColumnQualifier: []byte(cq), Timestamp: ts,
+				HasTimestamp: true, Value: []byte(val),
+			}},
+		}}},
 	}
 }
 
 func delEntry(tabletID int32, seq int64, row, cf, cq string, ts int64) *qwal.Entry {
-	m, err := cclient.NewMutation([]byte(row))
-	if err != nil {
-		panic(err)
-	}
-	m.Delete([]byte(cf), []byte(cq), nil, ts)
 	return &qwal.Entry{
-		Key:   qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
-		Value: qwal.LogFileValue{Mutations: []*cclient.Mutation{m}},
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte(row), Updates: []qwal.ColumnUpdate{{
+				ColumnFamily: []byte(cf), ColumnQualifier: []byte(cq), Timestamp: ts,
+				HasTimestamp: true, Deleted: true,
+			}},
+		}}},
+	}
+}
+
+func TestMemtableUsesServerTimeForImplicitPutAndDelete(t *testing.T) {
+	mt := New(Options{TabletID: AllTablets, Watermark: NoWatermark})
+	mt.Ingest(&qwal.Entry{
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: 1, Seq: 1},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte("r"), SystemTime: 17,
+			Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("f"), ColumnQualifier: []byte("q"), Value: []byte("v")}},
+		}}},
+	})
+	mt.Ingest(&qwal.Entry{
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: 1, Seq: 2},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte("r"), SystemTime: 18,
+			Updates: []qwal.ColumnUpdate{{ColumnFamily: []byte("f"), ColumnQualifier: []byte("q"), Deleted: true}},
+		}}},
+	})
+	got := collect(t, mt.Iterator())
+	if len(got) != 2 || got[0].ts != 18 || !got[0].deleted || got[1].ts != 17 || got[1].deleted {
+		t.Fatalf("implicit WAL timestamps not projected through memtable: %+v", got)
 	}
 }
 
