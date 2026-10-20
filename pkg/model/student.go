@@ -325,16 +325,12 @@ func (p *StudentPredictor) checkServed(ctx context.Context, releaseID, digest, a
 	p.mu.Lock()
 	p.report.ActualDevice = device
 	for _, f := range fallbacks {
-		if !contains(p.report.FallbackEvents, f) {
-			p.report.FallbackEvents = append(p.report.FallbackEvents, f)
-		}
+		p.addFallback(f)
 	}
 	if device != p.id.Device {
 		detail := fmt.Sprintf("runtime reports device %q; release promoted for %q", device, p.id.Device)
 		p.report.Ready = false
-		if !contains(p.report.FallbackEvents, detail) {
-			p.report.FallbackEvents = append(p.report.FallbackEvents, detail)
-		}
+		p.addFallback(detail)
 		p.mu.Unlock()
 		p.record(ctx, StudentEventDeviceFallback, detail)
 		return &Error{Kind: ErrUnavailable, Operation: "student device", Detail: detail}
@@ -347,21 +343,43 @@ func (p *StudentPredictor) checkServed(ctx context.Context, releaseID, digest, a
 	return nil
 }
 
+// MaxStudentFallbackEvents bounds the runtime-supplied fallback list.
+const MaxStudentFallbackEvents = 32
+
+// addFallback keeps a bounded, de-duplicated list; the caller holds p.mu.
+func (p *StudentPredictor) addFallback(detail string) {
+	if len(detail) > MaxStudentEventDetailBytes {
+		detail = detail[:MaxStudentEventDetailBytes] + "…(truncated)"
+	}
+	if contains(p.report.FallbackEvents, detail) || len(p.report.FallbackEvents) >= MaxStudentFallbackEvents {
+		return
+	}
+	p.report.FallbackEvents = append(p.report.FallbackEvents, detail)
+}
+
 func (p *StudentPredictor) setReady(ready bool) {
 	p.mu.Lock()
 	p.report.Ready = ready
 	p.mu.Unlock()
 }
 
-// record writes one event per distinct (kind, detail) for the lifetime of
-// this provider, so a mis-pinned runtime polled on every page view does not
-// grow the registry's event log without bound. A failure to record is kept
-// in the report: lost evidence must not be silent.
+// MaxStudentEventDetailBytes bounds what a runtime's answer can put into a
+// recorded event.
+const MaxStudentEventDetailBytes = 512
+
+// record writes one event per kind for the lifetime of this provider, so a
+// mis-pinned or flapping runtime polled on every page view does not grow the
+// registry's event log without bound; the first observation is the
+// evidence, and the runtime's text in it is truncated. A failure to record
+// is kept in the report: lost evidence must not be silent.
 func (p *StudentPredictor) record(ctx context.Context, kind, detail string) {
 	if p.recorder == nil {
 		return
 	}
-	key := kind + "\x00" + detail
+	if len(detail) > MaxStudentEventDetailBytes {
+		detail = detail[:MaxStudentEventDetailBytes] + "…(truncated)"
+	}
+	key := kind
 	p.mu.Lock()
 	if p.recorded[key] {
 		p.mu.Unlock()

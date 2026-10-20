@@ -76,7 +76,11 @@ def bundle_digest(manifest):
 def _regular_files(root):
     """Every regular file under root; a symlink or other special entry anywhere is refused, as Go does."""
     present = set()
-    for dirpath, dirnames, filenames in os.walk(root, followlinks=False):
+
+    def unreadable(error):
+        raise ValueError('unreadable ' + str(Path(error.filename).relative_to(root)) if error.filename else 'unreadable directory')
+
+    for dirpath, dirnames, filenames in os.walk(root, onerror=unreadable, followlinks=False):
         for name in dirnames:
             if os.path.islink(os.path.join(dirpath, name)):
                 raise ValueError('symlink ' + str(Path(dirpath, name).relative_to(root)))
@@ -92,7 +96,7 @@ def validate_manifest(manifest):
     """Refuse a manifest Go would refuse: wrong schema or kind, unknown keys, bad paths, bad roles."""
     if not isinstance(manifest, dict) or set(manifest) != {'schema', 'kind', 'files'}:
         raise ValueError('manifest keys')
-    if manifest['schema'] != 1 or manifest['kind'] != 'weights-bundle':
+    if type(manifest['schema']) is not int or manifest['schema'] != 1 or manifest['kind'] != 'weights-bundle':
         raise ValueError('not a weights bundle manifest')
     files = manifest['files']
     if not isinstance(files, list) or not files or len(files) > 256:

@@ -146,6 +146,7 @@ const (
 const (
 	MaxRuntimeIdentities = 64
 	MaxReceiptString     = 256
+	MaxParametersBytes   = 64 << 10
 )
 
 // Receipt is what a trainer emits. It names requested versus actual
@@ -292,6 +293,9 @@ func VerifyReceipt(m Manifest, r Receipt) error {
 	}
 	if len(r.ActualParameters) != len(m.Data.GenerationParameters) {
 		return refuse("actual parameters omit a requested parameter; every requested parameter has an actual value")
+	}
+	if encoded, err := weightsbundle.Canonical(r.ActualParameters); err != nil || len(encoded) > MaxParametersBytes {
+		return refuse("actual parameters exceed %d bytes or cannot be encoded", MaxParametersBytes)
 	}
 	// Deviations are exactly the recomputed differences, no more, no less.
 	expected := ExpectedDeviations(m, r)

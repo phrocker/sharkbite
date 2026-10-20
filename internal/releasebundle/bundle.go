@@ -109,8 +109,8 @@ func Export(in ExportInput, dest string) (Index, error) {
 	if _, err := os.Lstat(dest); err == nil {
 		return Index{}, fmt.Errorf("%w: %s exists", ErrRefused, dest)
 	}
-	staging := dest + ".exporting"
-	if err := os.Mkdir(staging, 0o700); err != nil {
+	staging, err := os.MkdirTemp(filepath.Dir(dest), filepath.Base(dest)+".exporting-")
+	if err != nil {
 		return Index{}, err
 	}
 	cleanup := func() { os.RemoveAll(staging) }

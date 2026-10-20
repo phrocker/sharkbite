@@ -158,7 +158,15 @@ class DistillTests(unittest.TestCase):
             'task outside selection': (lambda m: m['data']['tasks'][0].update(task_id='other-task'), 'outside the selection'),
             'held-out leak': (lambda m: m['data'].update(held_out_example_ids=['row-1']), 'contains held-out example'),
             'zero epochs pinned': (lambda m: m['data']['generation_parameters'].update(epochs=0), 'positive integer'),
+            'unbounded epochs': (lambda m: m['data']['generation_parameters'].update(epochs=10 ** 9), 'no greater than'),
             'teacher not an object': (lambda m: m.update(teacher='x'), 'selection shape'),
+            'candidate without alias': (lambda m: m['teacher']['eligible'][0].pop('alias'), 'candidate shape'),
+            'measurement value a string': (lambda m: m['teacher']['eligible'][0]['measurements'][0].update(value='0.9'), 'measurement shape'),
+            'rule bound a string': (lambda m: m['teacher']['rule'].update(minimum='0.5'), 'rule bounds'),
+            'extra top-level key': (lambda m: m.update(note='x'), 'exactly the contract'),
+            'cohort id not a string': (lambda m: m['data']['tasks'][0].update(cohort_ids=['cohort-1', 1]), 'task selection shape'),
+            'held-out id a list': (lambda m: m['data'].update(held_out_example_ids=[['row-1']]), 'held-out ids'),
+            'export pin not hex': (lambda m: m['exports'][0].update(manifest_sha256='zz'), 'exports shape'),
         }
         for name, (mutate, want) in cases.items():
             with self.subTest(name):

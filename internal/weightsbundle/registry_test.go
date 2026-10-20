@@ -213,8 +213,10 @@ func TestWithdrawSourceMarksReleasesIneligible(t *testing.T) {
 	if e.Status != EligibilityWithdrawnSource || e.SourceID != "src-2" {
 		t.Fatalf("%+v", e)
 	}
+	// The withdrawal of src-9 (which no release used) is recorded on its
+	// own; the withdrawal of src-2 is recorded against the release it hits.
 	events := r.Events()
-	if len(events) != 1 || events[0].Kind != EventSourceWithdrawn || !strings.Contains(events[0].Detail, "does not claim removal") {
+	if len(events) != 2 || events[0].ReleaseID != "" || events[0].SourceID != "src-9" || events[1].Kind != EventSourceWithdrawn || events[1].ReleaseID != first.ID || !strings.Contains(events[1].Detail, "does not claim removal") {
 		t.Fatalf("%+v", events)
 	}
 	// Rolling back to a withdrawn release is refused; promoting a successor is not.
@@ -241,7 +243,7 @@ func TestWithdrawSourceMarksReleasesIneligible(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if reopened.EligibilityOf(first.ID).Status != EligibilityWithdrawnSource || len(reopened.Events()) != 2 {
+	if reopened.EligibilityOf(first.ID).Status != EligibilityWithdrawnSource || len(reopened.Events()) != 3 {
 		t.Fatal("events not replayed")
 	}
 }
@@ -335,6 +337,31 @@ func TestWithdrawnSourceRefusesLaterReleases(t *testing.T) {
 	}
 	if active, _ := r.Active(); active.ID != first.ID || len(r.History()) != 1 {
 		t.Fatal("registry advanced")
+	}
+	// A withdrawal that touched no release is still a withdrawal, durable
+	// across reopen, and refuses the first release that would use the source.
+	fresh, _ := OpenRegistry(ctx, memory.New(), "w3")
+	if affected, err := fresh.WithdrawSource(ctx, "src-2", time.Now()); err != nil || len(affected) != 0 {
+		t.Fatalf("%v %v", affected, err)
+	}
+	if events := fresh.Events(); len(events) != 1 || events[0].ReleaseID != "" || events[0].SourceID != "src-2" {
+		t.Fatalf("%+v", events)
+	}
+	if _, err := fresh.Promote(ctx, chainInput(c), chainLineage); !errors.Is(err, ErrIneligible) {
+		t.Fatalf("first release over a pre-withdrawn source: %v", err)
+	}
+	if _, err := fresh.WithdrawSource(ctx, "src-2", time.Now()); err != nil || len(fresh.Events()) != 1 {
+		t.Fatalf("repeated withdrawal duplicated: %v %d", err, len(fresh.Events()))
+	}
+	store3 := memory.New()
+	durable, _ := OpenRegistry(ctx, store3, "w4")
+	durable.WithdrawSource(ctx, "src-1", time.Now())
+	reopened, err := OpenRegistry(ctx, store3, "w4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := reopened.Promote(ctx, chainInput(c), chainLineage); !errors.Is(err, ErrIneligible) {
+		t.Fatalf("withdrawal lost on reopen: %v", err)
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -342,6 +343,26 @@ func TestStudentHealthAndResultsMustNameThePinnedRelease(t *testing.T) {
 	p.setReady(true)
 	if err := p.CheckHealth(context.Background()); !errors.Is(err, ErrMalformedResponse) || p.Report().Ready {
 		t.Fatalf("%v ready=%v", err, p.Report().Ready)
+	}
+	// A runtime that varies its answer is still one mismatch: events are
+	// recorded once per kind, and the runtime's text is bounded.
+	var n atomic.Int32
+	flapping := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"status": "ready", "release_id": fmt.Sprintf("other-%d", n.Add(1)), "bundle_digest": digest, "model_alias": strings.Repeat("a", 4096), "device": "cpu", "fallback_events": []string{strings.Repeat("f", 2000)}})
+	}))
+	defer flapping.Close()
+	counting := &studentRecorder{}
+	cfg = studentConfig(root, digest, flapping.URL)
+	cfg.Recorder = counting
+	p, _ = NewStudentPredictor(context.Background(), cfg)
+	for i := 0; i < 50; i++ {
+		p.CheckHealth(context.Background())
+	}
+	if kinds := counting.kinds(); len(kinds) != 1 {
+		t.Fatalf("flapping runtime recorded %d events", len(kinds))
+	}
+	if len(counting.events[0].detail) > MaxStudentEventDetailBytes+32 {
+		t.Fatalf("detail not bounded: %d", len(counting.events[0].detail))
 	}
 	// A recorder that cannot write leaves the failure visible in the report.
 	failing := &studentRecorder{err: errors.New("state volume is read-only")}

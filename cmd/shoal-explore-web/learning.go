@@ -30,8 +30,8 @@ type learningHostConfig struct {
 	// statement of where each provider's calls go. The student provider is
 	// added from its endpoint. A manifest naming a provider absent here is
 	// refused, since its egress cannot be resolved.
-	modelEgress          string
-	allowOffHostTeachers bool
+	modelEgress        string
+	allowOffHostModels bool
 }
 
 // hostEgressResolver resolves model egress from the operator's
@@ -135,6 +135,13 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 	}
 	var serving decisionlearning.ServingReporter
 	if cfg.studentEndpoint != "" {
+		// The endpoint is classified before anything else: an off-host
+		// student runtime is refused at startup whether or not a release is
+		// active, so "local-student" is only ever resolved as loopback when
+		// it is one.
+		if model.EndpointEgressesOffHost(cfg.studentEndpoint) {
+			return errors.New("-student-endpoint is not loopback: an off-host student runtime is classified as egressing and is not served by this host")
+		}
 		active, ok := registry.Active()
 		switch {
 		case !ok:
@@ -163,7 +170,7 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 	service, err := decisionlearning.New(decisionlearning.Config{
 		Registry: registry, Store: store, Prefix: cfg.stateDir, EvidenceDir: cfg.evidenceDir,
 		BundlesDir: filepath.Join(cfg.stateDir, "bundles"), ServingRoot: cfg.servingRoot,
-		Serving: serving, Images: images, Egress: egress, AllowOffHostTeachers: cfg.allowOffHostTeachers, Log: output,
+		Serving: serving, Images: images, Egress: egress, AllowOffHostModels: cfg.allowOffHostModels, Log: output,
 	})
 	if err != nil {
 		return err

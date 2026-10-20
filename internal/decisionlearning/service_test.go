@@ -235,8 +235,16 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	honest.Teacher.Eligible[0].Identity.Egress = distillation.EgressOffHost
 	honest.TeacherEgressAtGeneration = distillation.EgressOffHost
 	raw, _ = honest.Encode()
-	if _, err := h.svc.SubmitJob(ctx, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "does not authorize off-host teacher generation") {
+	if _, err := h.svc.SubmitJob(ctx, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "does not authorize off-host models") {
 		t.Fatalf("off-host teacher: %v", err)
+	}
+	offBase := h.manifest()
+	offBase.Base.Eligible[0].Identity.Provider = "hosted"
+	offBase.Base.Eligible[0].Identity.CacheIdentity = "hosted:small"
+	offBase.Base.Eligible[0].Identity.Egress = distillation.EgressOffHost
+	raw, _ = offBase.Encode()
+	if _, err := h.svc.SubmitJob(ctx, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "chosen base is fine-tuned off host") {
+		t.Fatalf("off-host base: %v", err)
 	}
 	unknown := h.manifest()
 	unknown.Base.Eligible[0].Identity.Provider = "mystery"
@@ -267,6 +275,12 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 		t.Fatalf("candidate before receipt: %v", err)
 	}
 	receipt.TeacherPredictionsID = predictionsID
+	receipt.TrainedExampleCount = 3
+	raw, _ = json.Marshal(receipt)
+	if _, err := h.svc.SubmitReceipt(ctx, pin, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "prediction set covers 2") {
+		t.Fatalf("overclaimed count: %v", err)
+	}
+	receipt.TrainedExampleCount = 2
 	raw, _ = json.Marshal(receipt)
 	submitted := h.decode(h.svc.SubmitReceipt(ctx, pin, raw))
 	if submitted["status"] != "completed" || submitted["candidate_only"] != true {
@@ -491,9 +505,26 @@ func TestRecordIDsNeverReachTheFilesystemUnvalidated(t *testing.T) {
 	if _, err := svc.Promote(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		t.Fatalf("record of another kind under the key: %v", err)
 	}
-	// An internal failure never carries a host path to the caller.
-	if _, err := svc.Job(ctx, strings.Repeat("c", 64)); err != nil && strings.Contains(err.Error(), base) {
-		t.Fatalf("host path leaked: %v", err)
+	// No host path reaches the wire: a half-made bundle directory, a broken
+	// evidence file, and a failed import are reported by role.
+	os.MkdirAll(filepath.Join(base, "bundles", "half"), 0o700)
+	bundles, err := svc.Bundles(ctx)
+	if err != nil || strings.Contains(string(bundles), base) || !strings.Contains(string(bundles), `\u003cbundles\u003e`) {
+		t.Fatalf("bundle view leaked a path: %v %s", err, bundles)
+	}
+	svc.cfg.EvidenceDir = filepath.Join(base, "evidence")
+	os.MkdirAll(filepath.Join(base, "evidence", "quality"), 0o700)
+	os.WriteFile(filepath.Join(base, "evidence", "quality", "r.json"), []byte("{"), 0o600)
+	evidence, err := svc.Evidence(ctx, "quality")
+	if err != nil || strings.Contains(string(evidence), base) {
+		t.Fatalf("evidence leaked a path: %v %s", err, evidence)
+	}
+	raw, err := svc.ImportBundle(ctx, []byte(`{"name":"half"}`))
+	if err == nil || strings.Contains(err.Error(), base) || strings.Contains(string(raw), base) {
+		t.Fatalf("import leaked a path: %v %s", err, raw)
+	}
+	if !strings.Contains(err.Error(), "<bundles>") {
+		t.Fatalf("import error not redacted by role: %v", err)
 	}
 	if err := classify(errors.New("open /var/lib/secret: permission denied")); !strings.HasSuffix(err.Error(), GenericUnavailable) || !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
 		t.Fatalf("internal cause leaked: %v", err)

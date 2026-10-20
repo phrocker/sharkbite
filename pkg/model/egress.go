@@ -51,6 +51,11 @@ func EgressesOffHost(provider any) bool {
 // It fails closed on a URL it cannot parse. That case should be unreachable —
 // every provider validates its base URL before construction — but "unparseable"
 // must not be the input that makes a remote endpoint look local.
+// EndpointEgressesOffHost classifies a configured endpoint the way every
+// provider in this package does: loopback is egress-free, anything else
+// (including an unparsable value) egresses.
+func EndpointEgressesOffHost(baseURL string) bool { return egressesForConfiguredURL(baseURL) }
+
 func egressesForConfiguredURL(baseURL string) bool {
 	parsed, err := url.Parse(strings.TrimSpace(baseURL))
 	if err != nil || parsed.Hostname() == "" {
