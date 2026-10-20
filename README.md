@@ -207,6 +207,9 @@ make conformance-live      # run live release conformance checks
 The live Accumulo targets are opt-in. Docker absence is reported as unsupported,
 not as a passing conformance result. See
 [`test/accumulo/README.md`](test/accumulo/README.md).
+The [live tserver workflow](.github/workflows/accumulo-live-tserver.yml)
+checks the pinned tserver role on relevant pull requests and retains its JSON
+verdict and role log as a CI artifact; it is one role, not the full release gate.
 
 ## Documentation map
 

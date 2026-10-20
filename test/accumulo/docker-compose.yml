@@ -1,6 +1,6 @@
 services:
   zookeeper:
-    image: zookeeper:3.9.5
+    image: zookeeper@sha256:f5ce2c0274fd99c77bcb51505c748ac109fd5be36b4247b46c178ce59ea59e59
     hostname: zookeeper
     environment:
       ZOO_4LW_COMMANDS_WHITELIST: ruok,srvr
@@ -16,7 +16,7 @@ services:
       - zookeeper-log:/datalog
 
   namenode:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     user: "0:0"
     hostname: namenode
     command:
@@ -41,7 +41,7 @@ services:
       - namenode-data:/tmp/shoal-hdfs/name
 
   datanode:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     user: "0:0"
     hostname: datanode
     command: ["hdfs", "datanode"]
@@ -62,7 +62,7 @@ services:
       - datanode-data:/tmp/shoal-hdfs/data
 
   hdfs-init:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     hostname: hdfs-init
     depends_on:
       datanode:
@@ -143,6 +143,23 @@ services:
       - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
       - ./smoke:/opt/shoal-smoke:ro
 
+  wal-sorter:
+    profiles: ["shoal"]
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: wal-sorter
+    command: ["proc", "tserver", "-o", "tserver.group=walsorter"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms128m -Xmx768m
+      HADOOP_USER_NAME: accumulo
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
   shoal-tserver:
     profiles: ["shoal"]
     image: shoal/conformance:local
@@ -160,7 +177,8 @@ services:
           -accumulo-version 4.0.0-SNAPSHOT \
           -instance-secret shoal-test-instance-secret \
           -password secret -storage hdfs -enable-ingest \
-          -flush-cells 1 -wal-root /var/lib/shoal/wal \
+          -flush-cells 1000 -native-wal \
+          -wal-root hdfs://namenode:8020/accumulo/wal \
           -state-root /var/lib/shoal/minc-state \
           -minc-root hdfs://namenode:8020/accumulo/tables
     depends_on:
@@ -236,7 +254,7 @@ services:
       ACCUMULO_JAVA_OPTS: -Xms64m -Xmx256m
       HADOOP_USER_NAME: accumulo
     ports:
-      - "127.0.0.1:9995:9995"
+      - "127.0.0.1:${SHOAL_ACCUMULO_MONITOR_PORT:-9995}:9995"
     volumes:
       - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro

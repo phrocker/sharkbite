@@ -139,6 +139,28 @@ thrift-verify: validate thrift-check
 patch-thrift-nil-binary:
 	@$(MAKE) --no-print-directory _patch-binary-fields
 	@$(MAKE) --no-print-directory _patch-struct-fields
+	@$(MAKE) --no-print-directory _patch-multiscan-optional
+
+# Thrift 0.24's Go generator emits nil struct pointers as empty structs for
+# MultiScanResult's optional partial-scan fields. Accumulo's Java manager sees
+# a non-null partScan and dereferences its missing table ID, so omit both
+# fields when no partial scan exists. Keep this targeted patch in thrift-gen
+# so regeneration cannot silently restore the broken wire format.
+.PHONY: _patch-multiscan-optional
+_patch-multiscan-optional:
+	@f=$(THRIFT_OUT)/data/data.go; \
+	test -f $$f || { echo "$$f not found; run thrift-gen first"; exit 1; }; \
+	if grep -q 'PATCH (shoal): absent multi-scan partScan' $$f; then \
+	  echo "_patch-multiscan-optional: already applied"; \
+	else \
+	  awk 'BEGIN { p=0 } \
+	       /^func \(p \*MultiScanResult_\) writeField4\(/ { p=1; print; next } \
+	       /^func \(p \*MultiScanResult_\) writeField5\(/ { p=2; print; next } \
+	       p==1 && /WriteFieldBegin\(ctx, "partScan"/ { print "  // PATCH (shoal): absent multi-scan partScan must stay absent on wire."; print "  if p.PartScan == nil { return nil }"; p=0 } \
+	       p==2 && /WriteFieldBegin\(ctx, "partNextKey"/ { print "  // PATCH (shoal): absent multi-scan partNextKey must stay absent on wire."; print "  if p.PartNextKey == nil { return nil }"; p=0 } \
+	       { print }' $$f > $$f.tmp && mv $$f.tmp $$f; \
+	  echo "_patch-multiscan-optional: applied"; \
+	fi
 
 # Patch TKeyExtent infinite bounds and Manager waitForFlush unbounded rows.
 .PHONY: _patch-binary-fields

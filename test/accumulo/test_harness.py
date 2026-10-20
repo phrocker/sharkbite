@@ -59,6 +59,33 @@ class HarnessTest(unittest.TestCase):
             timeout=42,
         )
 
+    @mock.patch.object(harness.subprocess, "run")
+    def test_tserver_smoke_has_bounded_timeout(self, run):
+        with mock.patch.dict(
+            harness.os.environ, {"SHOAL_ACCUMULO_TSERVER_TIMEOUT": "42"}
+        ):
+            harness.run_tserver_smoke("tserver")
+        run.assert_called_once_with(
+            harness.client_command("tserver"),
+            text=True,
+            check=True,
+            timeout=42,
+        )
+
+    @mock.patch.object(
+        harness.subprocess,
+        "run",
+        side_effect=harness.subprocess.TimeoutExpired(["docker"], 42),
+    )
+    def test_tserver_smoke_timeout_identifies_stage(self, _run):
+        with mock.patch.dict(
+            harness.os.environ, {"SHOAL_ACCUMULO_TSERVER_TIMEOUT": "42"}
+        ):
+            with self.assertRaisesRegex(
+                RuntimeError, "tserver recovery-verify smoke did not complete within 42 seconds"
+            ):
+                harness.run_tserver_smoke("recovery-verify")
+
     def test_role_commands_are_explicit_and_noninteractive(self):
         self.assertEqual(
             [
@@ -111,6 +138,20 @@ class HarnessTest(unittest.TestCase):
         run.assert_called_once_with(
             harness.compose_command("--profile", "shoal", "logs", "--no-color"),
             check=False,
+        )
+        down.assert_called_once()
+
+    @mock.patch.object(harness, "_run_tserver_role")
+    @mock.patch.object(harness, "down")
+    @mock.patch.object(harness, "run")
+    @mock.patch.object(harness, "require_docker")
+    def test_role_success_requires_profiled_logs_before_cleanup(
+        self, _require_docker, run, down, _role
+    ):
+        harness.role_run("tserver")
+        run.assert_called_once_with(
+            harness.compose_command("--profile", "shoal", "logs", "--no-color"),
+            check=True,
         )
         down.assert_called_once()
 
