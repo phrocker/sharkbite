@@ -907,6 +907,8 @@ func TestFleetDispatchErrorMarksEveryIndeterminateJoin(t *testing.T) {
 			false, shoal.ErrorConflict},
 		{"a conflict alone", fleet.ErrActionConflict,
 			false, shoal.ErrorConflict},
+		{"cancel refused for uncertain prior claim", fleet.ErrCancelClaimUncertain,
+			false, shoal.ErrorConflict},
 		{"a terminal record alone", fleet.ErrActionTerminal,
 			false, shoal.ErrorConflict},
 		{"a missing record alone", fleet.ErrActionNotFound,
@@ -1011,5 +1013,19 @@ func TestFleetDispatchErrorMarksEveryIndeterminateJoin(t *testing.T) {
 				t.Fatalf("answered by another arm: %v", mapped)
 			}
 		})
+	}
+}
+
+func TestCancelPossibleEffectRefusalIsAnUnmarkedHTTPConflict(t *testing.T) {
+	response := serveDispatchGolden(t, dispatchGoldenCase{
+		path: dispatchGoldenAction + "cancel",
+		body: `{"context":` + dispatchGoldenContext.String() +
+			`,"expected_version":3,"mutation_key":"Y2FuY2Vs"}`,
+		provider: recordingDispatchProvider{err: fleet.ErrCancelClaimUncertain},
+	})
+	if !strings.Contains(response, "provider calls: 1\n") ||
+		!strings.Contains(response, "status: 409\n") ||
+		!strings.Contains(response, "shoal-commit-outcome: \n") {
+		t.Fatalf("cancel refusal transport contract:\n%s", response)
 	}
 }

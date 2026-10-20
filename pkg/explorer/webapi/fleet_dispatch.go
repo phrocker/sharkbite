@@ -416,6 +416,11 @@ func fleetDispatchError(err error) error {
 		return explorer.MarkIndeterminateCommit(shoal.WrapError(
 			shoal.ErrorUnavailable,
 			"fleet action outcome requires reconciliation", err))
+	// Cancel refused before its audit or store write. The prior claim may have
+	// executed, but this cancellation did not commit.
+	case errors.Is(err, fleet.ErrCancelClaimUncertain):
+		return shoal.WrapError(shoal.ErrorConflict,
+			"cancellation refused: lapsed claim may have executed; reconcile the claim", err)
 	// Deliberately *not* marked, and the first version of this comment got
 	// the reason wrong in a way worth recording.
 	//
