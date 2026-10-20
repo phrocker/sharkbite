@@ -148,6 +148,15 @@ by this worker. A checkpoint fine-tune student is a `STUDENTS` entry with the
 same inputs and outputs; the pinned CPU run of a small open checkpoint is
 tracked work, not shipped here.
 
+## Student runtime
+
+`serve_student.py --bundle-dir student/bundle --release-id R --bundle-digest D --model-alias A`
+verifies the bundle against the release before listening on loopback, and
+serves `/health` (release, bundle digest, device, fallback events) and
+`/v1/predict`. The Go provider `model.StudentPredictor` is its client and
+re-verifies the bundle, the release identity in every response, and the
+device. Neither side needs network access or a model hub.
+
 ## Validation and remaining work
 
 ```sh
