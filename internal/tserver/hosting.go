@@ -576,6 +576,16 @@ func (h *Host) VerifyAssigned(fence Fence, attempt Attempt) error {
 	return h.verifyAssignedState(fence, attempt, StateLoading, StateHosted)
 }
 
+// VerifyAssignedGeneration checks an assignment identity when its opaque
+// Attempt is held by another component. The generation must come from the
+// original assignment; looking up the current one would let a stale caller
+// adopt a later assignment under the same server lock.
+func (h *Host) VerifyAssignedGeneration(fence Fence, extent Extent, generation uint64) error {
+	return h.verifyAssignedState(fence, Attempt{
+		extent: extent.clone(), lock: fence.Server, id: generation,
+	}, StateLoading, StateHosted)
+}
+
 func (h *Host) verifyAssignedState(fence Fence, attempt Attempt, allowed ...HostingState) error {
 	if !attempt.Valid() {
 		return fmt.Errorf("%w: attempt was never assigned", ErrStaleAttempt)
