@@ -95,6 +95,13 @@ func TestNativeWriterEventFramingAndValidation(t *testing.T) {
 			t.Fatal("invalid extent wrote a partial entry")
 		}
 	}
+	if err := w.WriteEntry(Entry{Key: LogFileKey{Event: EventDefineTablet,
+		Tablet: &KeyExtent{TableID: "g\xff"}}}); err == nil {
+		t.Fatal("accepted an invalid UTF-8 table ID")
+	}
+	if out.Len() != validSize {
+		t.Fatal("invalid table ID wrote a partial entry")
+	}
 	if err := w.WriteEntry(Entry{Key: LogFileKey{Event: EventCompactionStart, Seq: 4, TabletID: 2,
 		Filename: "f\x00👻"}}); err != nil {
 		t.Fatal(err)
@@ -172,5 +179,16 @@ func TestNativeWriterRejectsOversizeWithoutWritingFrame(t *testing.T) {
 	}
 	if out.Len() != size {
 		t.Fatal("invalid mutation wrote a partial frame")
+	}
+	large := make([]byte, maxMutationDataBytes/2)
+	oversize = Entry{Key: LogFileKey{Event: EventMutation, Seq: 1, TabletID: 7},
+		Value: LogFileValue{Mutations: []ServerMutation{{Row: []byte("r"), Updates: []ColumnUpdate{{
+			ColumnFamily: large, ColumnQualifier: large, ColumnVisibility: large,
+		}}}}}}
+	if err := w.WriteEntry(oversize); err == nil {
+		t.Fatal("accepted a packed update above the supported-size bound")
+	}
+	if out.Len() != size {
+		t.Fatal("oversize packed update wrote a partial frame")
 	}
 }

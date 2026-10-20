@@ -176,6 +176,11 @@ func encodeNativeKey(w *bytes.Buffer, key LogFileKey) error {
 		if key.Tablet == nil {
 			return errors.New("qwal: DEFINE_TABLET requires extent")
 		}
+		// Java writes new Text(tableId.canonical()) and then recovers the ID
+		// through Text.toString(). Invalid UTF-8 would change the identity.
+		if !utf8.ValidString(key.Tablet.TableID) {
+			return errors.New("qwal: DEFINE_TABLET table ID is not valid UTF-8")
+		}
 		if key.Tablet.EndRow != nil && key.Tablet.PrevEndRow != nil &&
 			bytes.Compare(key.Tablet.PrevEndRow, key.Tablet.EndRow) >= 0 {
 			return errors.New("qwal: DEFINE_TABLET prevEndRow must precede endRow")
@@ -253,36 +258,50 @@ func encodeServerMutation(w *bytes.Buffer, m ServerMutation, remaining *int64) e
 	var data bytes.Buffer
 	var pool [][]byte
 	for _, u := range m.Updates {
-		for _, part := range [][]byte{u.ColumnFamily, u.ColumnQualifier, u.ColumnVisibility} {
-			if len(part) > maxMutationDataBytes {
-				return fmt.Errorf("qwal: column length %d exceeds reader limit", len(part))
+		for _, part := range [3][]byte{u.ColumnFamily, u.ColumnQualifier, u.ColumnVisibility} {
+			if err := appendPackedVLong(&data, int64(len(part))); err != nil {
+				return err
 			}
-			writeVLong(&data, int64(len(part)))
-			data.Write(part)
+			if err := appendPackedBytes(&data, part); err != nil {
+				return err
+			}
 		}
 		if u.HasTimestamp {
-			data.WriteByte(1)
-			writeVLong(&data, u.Timestamp)
+			if err := appendPackedByte(&data, 1); err != nil {
+				return err
+			}
+			if err := appendPackedVLong(&data, u.Timestamp); err != nil {
+				return err
+			}
 		} else {
-			data.WriteByte(0)
+			if err := appendPackedByte(&data, 0); err != nil {
+				return err
+			}
 		}
 		if u.Deleted {
-			data.WriteByte(1)
+			if err := appendPackedByte(&data, 1); err != nil {
+				return err
+			}
 		} else {
-			data.WriteByte(0)
+			if err := appendPackedByte(&data, 0); err != nil {
+				return err
+			}
 		}
 		if len(u.Value) < 1<<15 {
-			writeVLong(&data, int64(len(u.Value)))
-			data.Write(u.Value)
+			if err := appendPackedVLong(&data, int64(len(u.Value))); err != nil {
+				return err
+			}
+			if err := appendPackedBytes(&data, u.Value); err != nil {
+				return err
+			}
 		} else {
 			if len(u.Value) > maxMutationPoolBytes {
 				return fmt.Errorf("qwal: pooled value length %d exceeds reader limit", len(u.Value))
 			}
 			pool = append(pool, u.Value)
-			writeVLong(&data, -int64(len(pool)))
-		}
-		if data.Len() > maxMutationDataBytes {
-			return fmt.Errorf("qwal: packed mutation length %d exceeds reader limit", data.Len())
+			if err := appendPackedVLong(&data, -int64(len(pool))); err != nil {
+				return err
+			}
 		}
 	}
 	if len(m.Updates) > data.Len()/6 {
@@ -315,4 +334,25 @@ func encodeServerMutation(w *bytes.Buffer, m ServerMutation, remaining *int64) e
 	}
 	writeVLong(w, m.SystemTime)
 	return nil
+}
+
+func appendPackedByte(w *bytes.Buffer, b byte) error {
+	if w.Len() >= maxMutationDataBytes {
+		return errors.New("qwal: packed mutation exceeds reader limit")
+	}
+	return w.WriteByte(b)
+}
+
+func appendPackedBytes(w *bytes.Buffer, b []byte) error {
+	if len(b) > maxMutationDataBytes-w.Len() {
+		return errors.New("qwal: packed mutation exceeds reader limit")
+	}
+	_, err := w.Write(b)
+	return err
+}
+
+func appendPackedVLong(w *bytes.Buffer, n int64) error {
+	var prefix bytes.Buffer
+	writeVLong(&prefix, n)
+	return appendPackedBytes(w, prefix.Bytes())
 }
