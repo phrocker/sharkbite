@@ -322,6 +322,31 @@ explorer:
     dimensions: 0
     credentialSecretName: ""
     credentialSecretKey: api-key
+  # Promoted student model served by a runtime sidecar in this pod (#191,
+  # #192). The runtime loads one weights bundle imported from an offline
+  # release bundle under stateDir/releases/<bundleDigest>, verifies every
+  # digest before it listens, and answers on loopback only. The image is
+  # pinned by digest because a disconnected cluster has nothing to resolve a
+  # tag against; validate.yaml refuses a tag.
+  studentModel:
+    enabled: false
+    image:
+      repository: ""
+      digest: ""        # sha256:<64 hex>, required
+      pullPolicy: IfNotPresent
+    # The release identity and bundle digest the sidecar must serve, as
+    # `shoalctl release import` reported them. The runtime refuses a bundle
+    # whose digest differs.
+    releaseID: ""
+    bundleDigest: ""
+    modelAlias: ""
+    port: 8701
+    # The endpoint the workspace resolves. Loopback is egress-free and is
+    # the supported offline shape. Any other host is classified as egressing
+    # and refused unless allowNonLoopback acknowledges it as a boolean.
+    endpoint: http://127.0.0.1:8701
+    allowNonLoopback: false
+    resources: {}
   # The execution boundary (#381). Registration is fail-closed: a descriptor can
   # only name an executor reference this list allows.
   fleet:

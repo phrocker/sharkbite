@@ -312,6 +312,41 @@
 {{- end -}}
 {{- end -}}
 
+{{- /* The student runtime sidecar (#191, #192). A disconnected cluster has
+       nothing to resolve a tag against, so the image is a digest or nothing.
+       The endpoint the workspace resolves is loopback or an explicit boolean
+       acknowledgement; a runtime in another pod of the same cluster is
+       off-host and egressing even over the identical protocol. */ -}}
+{{- $student := $explorer.studentModel -}}
+{{- if $student.enabled -}}
+{{- if not $student.image.repository -}}
+{{- fail "explorer.studentModel.image.repository is required when explorer.studentModel.enabled is true" -}}
+{{- end -}}
+{{- if not (regexMatch "^sha256:[0-9a-f]{64}$" (toString $student.image.digest)) -}}
+{{- fail (printf "explorer.studentModel.image.digest must be an image digest of the form sha256:<64 hex> (got %q): an offline cluster cannot resolve a tag, and a tag can move under a promoted release" (toString $student.image.digest)) -}}
+{{- end -}}
+{{- if not (regexMatch "^[0-9a-f]{64}$" (toString $student.bundleDigest)) -}}
+{{- fail (printf "explorer.studentModel.bundleDigest must be the 64-hex weights bundle digest shoalctl release import reported (got %q)" (toString $student.bundleDigest)) -}}
+{{- end -}}
+{{- if not (trim (toString $student.releaseID)) -}}
+{{- fail "explorer.studentModel.releaseID is required: the runtime serves exactly one release and refuses any other" -}}
+{{- end -}}
+{{- if not (trim (toString $student.modelAlias)) -}}
+{{- fail "explorer.studentModel.modelAlias is required: an unknown alias is refused before any call" -}}
+{{- end -}}
+{{- if not (kindIs "bool" $student.allowNonLoopback) -}}
+{{- fail (printf "explorer.studentModel.allowNonLoopback must be a boolean (got %v): a quoted string is not an acknowledgement" $student.allowNonLoopback) -}}
+{{- end -}}
+{{- $studentURL := trim (toString (default "" $student.endpoint)) -}}
+{{- include "shoal.explorerProviderURL" (dict "name" "explorer.studentModel.endpoint" "value" $studentURL) -}}
+{{- if and (not (include "shoal.urlIsLoopback" $studentURL)) (not $student.allowNonLoopback) -}}
+{{- fail (printf "explorer.studentModel.endpoint must be loopback (got %q): the supported offline shape is a runtime sidecar in this pod, and any other host is classified as egressing. Set explorer.studentModel.allowNonLoopback=true to acknowledge an off-host, egressing runtime" $studentURL) -}}
+{{- end -}}
+{{- if and (include "shoal.urlIsLoopback" $studentURL) $student.allowNonLoopback -}}
+{{- fail (printf "explorer.studentModel.allowNonLoopback is true but the endpoint is loopback (%q): the acknowledgement covers nothing. Remove it" $studentURL) -}}
+{{- end -}}
+{{- end -}}
+
 {{- /* Every fleet executor reference reaches the container as part of a
        single argument, and three of the four settings are comma-joined into
        one. So two classes of character cannot appear in a reference without

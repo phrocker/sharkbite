@@ -583,3 +583,33 @@ func (r *Registry) ResolveForTask(task string) (Release, error) {
 func (r *Registry) RecordStudentEvent(ctx context.Context, releaseID, kind, detail string) error {
 	return r.RecordEvent(ctx, Event{Kind: kind, ReleaseID: releaseID, Detail: detail})
 }
+
+// EventImported is recorded when a release arrives through an offline
+// release bundle rather than a local promotion.
+const EventImported = "release_imported"
+
+// ImportRelease commits an already-sealed release from an offline release
+// bundle and makes it active. The record's identity is verified; its
+// predecessor chain is the connected side's and is recorded as-is. A release
+// already recorded is not re-imported: if it is active this is a no-op, and
+// if it is a prior release the caller must roll back rather than import.
+func (r *Registry) ImportRelease(ctx context.Context, release Release, lineage DatasetLineage) (bool, error) {
+	if err := release.Verify(); err != nil {
+		return false, err
+	}
+	if release.State != StateActive || release.BundleDigest == nil || release.ApprovalID == "" || release.EvaluationID == "" || release.ArtifactID == "" {
+		return false, refuse("release record is not a complete promotion")
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if _, exists := r.releases[release.ID]; exists {
+		if active := r.active.Load(); active != nil && active.ID == release.ID {
+			return false, nil
+		}
+		return false, refuse("release " + release.ID + " is already imported; roll back to it instead of importing again")
+	}
+	if err := r.commit(ctx, release, &lineage); err != nil {
+		return false, err
+	}
+	return true, nil
+}
