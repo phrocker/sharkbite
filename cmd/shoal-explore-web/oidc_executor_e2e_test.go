@@ -30,7 +30,8 @@ import (
 
 type executorWorld struct {
 	*oidcApprovalWorld
-	executorIssuer *fakeOIDCIssuer
+	executorIssuer  *fakeOIDCIssuer
+	externalEffects bool
 }
 
 // newExecutorWorld opens the service with three executor references —
@@ -38,6 +39,13 @@ type executorWorld struct {
 // mapping binds — and registers one agent per mapped reference, by an OIDC
 // operator over the registry route.
 func newExecutorWorld(t *testing.T) *executorWorld {
+	return newExecutorWorldWithExternalEffects(t, false)
+}
+
+// The effects-gateway worker tests register the action with the external
+// effect its route declares. Other executor tests retain their zero-effect
+// descriptor so their existing authorization contract stays explicit.
+func newExecutorWorldWithExternalEffects(t *testing.T, externalEffects bool) *executorWorld {
 	t.Helper()
 	executorIssuer := newFakeOIDCIssuer(t)
 	executors, err := newConfiguredFleetExecutors(
@@ -45,12 +53,19 @@ func newExecutorWorld(t *testing.T) *executorWorld {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if externalEffects {
+		if err := bindExternalFleetEffects(executors, externalFleetEffectBindings{
+			mutating: []string{testExecutorRef, testOtherExecutorRef},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	mapping := writeExecutorMapping(t, executorMappingDocument(executorIssuer.server.URL))
 	w := &executorWorld{
 		oidcApprovalWorld: newOIDCApprovalWorldOn(t, func(config *oidcConfig) {
 			config.executorMappingFile = mapping
 		}, nil, nil, approverMappingDocument, executors),
-		executorIssuer: executorIssuer,
+		executorIssuer: executorIssuer, externalEffects: externalEffects,
 	}
 	owner := w.fleetToken("owner", nil)
 	w.registerOn(owner, "stripe-agent", testExecutorRef)
@@ -70,13 +85,29 @@ func (w *executorWorld) registerOn(token string, id shoal.ID, ref string) {
 				SourceID: workspaceSourceID, PolicyID: workspaceGrantPolicyID,
 			}},
 			"executor_ref":     ref,
-			"capabilities":     approvalActions(true),
+			"capabilities":     w.declaredCapabilities(),
 			"lease_expires_at": w.h.now().Add(20 * time.Hour).Format(time.RFC3339Nano),
 		},
 	})
 	if got.status != http.StatusCreated {
 		w.t.Fatalf("register %s = %d %s", id, got.status, got.raw)
 	}
+}
+
+func (w *executorWorld) declaredCapabilities() []fleet.Capability {
+	capabilities := approvalActions(true)
+	if w.externalEffects {
+		for i := range capabilities {
+			for j := range capabilities[i].Actions {
+				// An external executor ref has no effect floor, but it
+				// refuses an action that declares nothing while it can
+				// reach outside Shoal. This fixture's route exercises
+				// status; deploy is approval-gated and never dispatched.
+				capabilities[i].Actions[j].Effects = fleet.Effects{fleet.EffectMutatesExternal}
+			}
+		}
+	}
+	return capabilities
 }
 
 // executorToken is a projected service-account token from the executor
