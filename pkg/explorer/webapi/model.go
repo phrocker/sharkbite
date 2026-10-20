@@ -76,6 +76,7 @@ const (
 	CapabilityDatasets      Capability = "decision_datasets"
 	CapabilityOutcomes      Capability = "decision_outcomes"
 	CapabilityAdjudications Capability = "decision_adjudications"
+	CapabilityLearning      Capability = "decision_learning"
 )
 
 // Capabilities advertises only stable logical features supported by a backend.
@@ -95,6 +96,7 @@ type Capabilities struct {
 	Datasets      bool `json:"decision_datasets"`
 	Outcomes      bool `json:"decision_outcomes"`
 	Adjudications bool `json:"decision_adjudications"`
+	Learning      bool `json:"decision_learning"`
 }
 
 // AllCapabilities returns the complete feature set implemented by the embedded

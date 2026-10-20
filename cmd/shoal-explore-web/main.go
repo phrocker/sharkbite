@@ -203,6 +203,45 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		"chat-project", os.Getenv("SHOAL_OPENAI_PROJECT"),
 		"Optional OpenAI-compatible project header",
 	)
+	learningStateDir := flags.String(
+		"learning-state-dir", os.Getenv("SHOAL_LEARNING_STATE_DIR"),
+		"Optional learning state root (release registry, sealed records, and "+
+			"offline release bundles). Empty leaves every learning route "+
+			"unmounted; the console then reports the service unavailable",
+	)
+	learningEvidenceDir := flags.String(
+		"learning-evidence-dir", os.Getenv("SHOAL_LEARNING_EVIDENCE_DIR"),
+		"Optional read-only evidence root with quality/, poisoning/, "+
+			"calibration/, influence/, and challenger/ report directories",
+	)
+	learningServingRoot := flags.String(
+		"learning-serving-root", os.Getenv("SHOAL_LEARNING_SERVING_ROOT"),
+		"Directory holding imported weights bundles by digest; defaults to "+
+			"<state-dir>/releases",
+	)
+	learningImages := flags.String(
+		"learning-images", os.Getenv("SHOAL_LEARNING_IMAGES"),
+		"Comma-separated name=repository@sha256:digest image pins an offline "+
+			"release bundle export records",
+	)
+	studentEndpoint := flags.String(
+		"student-endpoint", os.Getenv("SHOAL_STUDENT_ENDPOINT"),
+		"Optional loopback endpoint of the student runtime sidecar serving "+
+			"the active release; any other host is classified as egressing",
+	)
+	studentModelAlias := flags.String(
+		"student-model-alias", os.Getenv("SHOAL_STUDENT_MODEL_ALIAS"),
+		"Model alias the student runtime serves; unknown aliases are refused",
+	)
+	studentCriteriaID := flags.String(
+		"student-criteria-id", firstNonEmpty(os.Getenv("SHOAL_STUDENT_CRITERIA_ID"), "criteria:default"),
+		"Criteria identity pinned into the student serving identity",
+	)
+	studentDevice := flags.String(
+		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
+		"Device the active release was promoted for; a runtime reporting "+
+			"another device is a recorded fallback and is not served",
+	)
 	fleetExecutorRefs := flags.String(
 		"fleet-executor-refs", os.Getenv("SHOAL_FLEET_EXECUTOR_REFS"),
 		"Comma-separated opaque executor references accepted by the durable "+
@@ -830,6 +869,18 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	if err != nil {
 		listener.Close()
 		return err
+	}
+	if *learningStateDir != "" {
+		if err := mountLearning(ctx, handler, authority.Resolver(), learningHostConfig{
+			stateDir: *learningStateDir, evidenceDir: *learningEvidenceDir,
+			servingRoot: firstNonEmpty(*learningServingRoot, filepath.Join(*stateDir, "releases")),
+			images:      *learningImages, studentEndpoint: *studentEndpoint,
+			studentModelAlias: *studentModelAlias, studentCriteriaID: *studentCriteriaID,
+			studentDevice: *studentDevice,
+		}, output); err != nil {
+			listener.Close()
+			return err
+		}
 	}
 	var chat webapi.AskProvider
 	var provenance webapi.InteractionProvider
