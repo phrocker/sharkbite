@@ -21,6 +21,7 @@ SHELL := /bin/bash
 
 THRIFT_VERSION        := 0.24.0
 THRIFT                ?= thrift
+PYTHON                ?= python3
 THRIFT_IDL            := internal/thrift/idl
 THRIFT_OUT            := internal/thrift/gen
 THRIFT_PACKAGE_PREFIX := github.com/phrocker/shoal-oss/internal/thrift/gen/
@@ -269,26 +270,26 @@ capi:
 
 .PHONY: python-test
 python-test:
-	cd python && PYTHONPATH=src python -m unittest discover -s tests -v
+	cd python && PYTHONPATH=src "$(PYTHON)" -m unittest discover -s tests -v
 
 .PHONY: python-dist
 python-dist:
-	python python/scripts/build_release.py
+	"$(PYTHON)" python/scripts/build_release.py
 
 .PHONY: python-dist-verify
 python-dist-verify:
-	python python/scripts/verify_release.py
+	"$(PYTHON)" python/scripts/verify_release.py
 
 .PHONY: python-preview-macos
 python-preview-macos:
-	python python/scripts/build_preview.py --platform-tag macosx_11_0_x86_64 --dist build/cross-platform-artifacts/wheel-preview-darwin-amd64 --allow-dirty
-	python python/scripts/verify_preview.py --dist build/cross-platform-artifacts/wheel-preview-darwin-amd64
-	python python/scripts/build_preview.py --platform-tag macosx_11_0_arm64 --dist build/cross-platform-artifacts/wheel-preview-darwin-arm64 --allow-dirty
-	python python/scripts/verify_preview.py --dist build/cross-platform-artifacts/wheel-preview-darwin-arm64
+	"$(PYTHON)" python/scripts/build_preview.py --platform-tag macosx_11_0_x86_64 --dist build/cross-platform-artifacts/wheel-preview-darwin-amd64 --allow-dirty
+	"$(PYTHON)" python/scripts/verify_preview.py --dist build/cross-platform-artifacts/wheel-preview-darwin-amd64
+	"$(PYTHON)" python/scripts/build_preview.py --platform-tag macosx_11_0_arm64 --dist build/cross-platform-artifacts/wheel-preview-darwin-arm64 --allow-dirty
+	"$(PYTHON)" python/scripts/verify_preview.py --dist build/cross-platform-artifacts/wheel-preview-darwin-arm64
 
 .PHONY: cross-platform-artifacts
 cross-platform-artifacts:
-	python scripts/cross_platform_artifacts.py
+	"$(PYTHON)" scripts/cross_platform_artifacts.py
 
 .PHONY: python-release-validate
 python-release-validate: python-test python-dist python-dist-verify
@@ -296,8 +297,8 @@ python-release-validate: python-test python-dist python-dist-verify
 
 .PHONY: docs-validate
 docs-validate:
-	python docs/test_validate_sharkbite_matrix.py
-	python docs/validate_sharkbite_matrix.py
+	"$(PYTHON)" docs/test_validate_sharkbite_matrix.py
+	"$(PYTHON)" docs/validate_sharkbite_matrix.py
 
 .PHONY: module-path-verify
 module-path-verify:
@@ -351,8 +352,8 @@ test-objectstore:
 
 .PHONY: test-accumulo-static
 test-accumulo-static:
-	python test/accumulo/harness.py validate
-	python -m unittest -v test/accumulo/test_harness.py
+	"$(PYTHON)" test/accumulo/harness.py validate
+	"$(PYTHON)" -m unittest discover -s test/accumulo -p 'test_harness.py' -v
 	go test ./internal/conformance ./cmd/shoal-conformance
 
 .PHONY: conformance-replay
@@ -381,19 +382,19 @@ conformance-live-compactor:
 
 .PHONY: accumulo-up
 accumulo-up:
-	python test/accumulo/harness.py up
+	"$(PYTHON)" test/accumulo/harness.py up
 
 .PHONY: accumulo-smoke
 accumulo-smoke:
-	python test/accumulo/harness.py smoke
+	"$(PYTHON)" test/accumulo/harness.py smoke
 
 .PHONY: accumulo-down
 accumulo-down:
-	python test/accumulo/harness.py down
+	"$(PYTHON)" test/accumulo/harness.py down
 
 .PHONY: test-accumulo
 test-accumulo:
-	python test/accumulo/harness.py test
+	"$(PYTHON)" test/accumulo/harness.py test
 
 .PHONY: vet
 vet:
