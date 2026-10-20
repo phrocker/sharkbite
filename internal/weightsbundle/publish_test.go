@@ -45,6 +45,28 @@ func TestPublishLocalNeverReplacesAndIsAtomic(t *testing.T) {
 	if err := PublishLocal(unstaged, filepath.Join(t.TempDir(), "x")); !errors.Is(err, ErrVerification) {
 		t.Fatalf("unstaged bundle published: %v", err)
 	}
+	// Anything other than the same bundle at the destination is a
+	// verification failure naming the path, never "already published".
+	third, m3 := stageBundle(t, svmFiles, svmRoles)
+	if _, err := Stage(third, m3); err != nil {
+		t.Fatal(err)
+	}
+	junk := filepath.Join(t.TempDir(), digest)
+	if err := os.MkdirAll(junk, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(junk, "stray"), []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := PublishLocal(third, junk); !errors.Is(err, ErrVerification) || errors.Is(err, ErrExists) {
+		t.Fatalf("junk at destination: %v", err)
+	}
+	dangling := filepath.Join(t.TempDir(), "dangling")
+	if err := os.Symlink(filepath.Join(t.TempDir(), "nowhere"), dangling); err == nil {
+		if err := PublishLocal(third, dangling); !errors.Is(err, ErrVerification) {
+			t.Fatalf("dangling symlink at destination: %v", err)
+		}
+	}
 }
 
 func TestPublishToBackendIsVisibleOnlyWhenComplete(t *testing.T) {

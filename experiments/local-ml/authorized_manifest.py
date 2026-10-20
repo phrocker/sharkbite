@@ -251,6 +251,7 @@ def load(dataset_path, manifest_path, expected_sha256):
     validate(manifest, data, raw)
     return data, { 'manifest_sha256': expected_sha256,
                   **{key: manifest[key] for key in (
-                      'cohort_id', 'cohort_sha256', 'authority_revision_id',
+                      'cohort_id', 'task_id', 'label_policy_id',
+                      'cohort_sha256', 'authority_revision_id',
                       'inventory_id', 'training_purpose_id', 'dataset_sha256',
                       'dataset_bytes', 'provenance_mode', 'checkpoint_overlap')}}

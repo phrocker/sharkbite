@@ -341,9 +341,14 @@ explorer:
     bundleDigest: ""
     modelAlias: ""
     port: 8701
+    # The readiness probe runs python3 inside this image (the kubelet cannot
+    # reach the pod's loopback), so the image must provide python3.
     # The endpoint the workspace resolves. Loopback is egress-free and is
-    # the supported offline shape. Any other host is classified as egressing
-    # and refused unless allowNonLoopback acknowledges it as a boolean.
+    # the supported offline shape, and for the sidecar it must be exactly
+    # http://127.0.0.1:<port>: the runtime binds IPv4 loopback on `port`,
+    # so [::1], localhost, or another port can never connect and the chart
+    # refuses them. Any other host is classified as egressing and refused
+    # unless allowNonLoopback acknowledges it as a boolean.
     endpoint: http://127.0.0.1:8701
     allowNonLoopback: false
     resources: {}

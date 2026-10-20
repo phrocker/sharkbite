@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path"
 	"path/filepath"
@@ -27,6 +28,7 @@ import (
 	"github.com/phrocker/shoal-oss/internal/releasebundle"
 	"github.com/phrocker/shoal-oss/internal/storage"
 	"github.com/phrocker/shoal-oss/internal/weightsbundle"
+	decisionapi "github.com/phrocker/shoal-oss/pkg/decision/api"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -40,13 +42,14 @@ var EvidenceKinds = []string{"quality", "poisoning", "calibration", "influence",
 
 // Record kinds kept in the store.
 const (
-	kindExport     = "dataset-export"
-	kindManifest   = "distillation-manifest"
-	kindJob        = "distillation-job"
-	kindReceipt    = "distillation-receipt"
-	kindCandidate  = weightsbundle.KindCandidate
-	kindArtifact   = weightsbundle.KindArtifact
-	kindEvaluation = weightsbundle.KindEvaluation
+	kindPredictions = distillation.KindPredictions
+	kindExport      = "dataset-export"
+	kindManifest    = "distillation-manifest"
+	kindJob         = "distillation-job"
+	kindReceipt     = "distillation-receipt"
+	kindCandidate   = weightsbundle.KindCandidate
+	kindArtifact    = weightsbundle.KindArtifact
+	kindEvaluation  = weightsbundle.KindEvaluation
 )
 
 // Cohort is what a cohort authority lists.
@@ -78,6 +81,13 @@ type ServingReporter interface {
 	ServingReport(ctx context.Context) (map[string]any, error)
 }
 
+// EgressResolver resolves the egress posture of a model identity from the
+// host's configuration. A manifest author declares a posture; the host
+// decides what it is, and a declaration the host does not confirm is refused.
+type EgressResolver interface {
+	ResolveEgress(ctx context.Context, identity distillation.ModelIdentity) (string, error)
+}
+
 // Config composes a service.
 type Config struct {
 	Registry    *weightsbundle.Registry
@@ -91,6 +101,16 @@ type Config struct {
 	Serving     ServingReporter
 	Images      []releasebundle.ImageRef
 	Now         func() time.Time
+	// Egress resolves every eligible model's posture before a job is
+	// recorded. Without one, no job can be submitted on this host.
+	Egress EgressResolver
+	// AllowOffHostModels admits a job whose chosen teacher or base resolves
+	// to an off-host posture. The default refuses it: generation or
+	// fine-tuning there sends every training example off the host.
+	AllowOffHostModels bool
+	// Log receives the causes of internal failures that are reported to
+	// callers only generically.
+	Log io.Writer
 }
 
 // Service implements decisionapi.LearningProvider.
@@ -109,9 +129,17 @@ func New(cfg Config) (*Service, error) {
 	if cfg.Now == nil {
 		cfg.Now = time.Now
 	}
+	if cfg.Log == nil {
+		cfg.Log = io.Discard
+	}
 	cfg.Prefix = strings.TrimRight(cfg.Prefix, "/")
 	return &Service{cfg: cfg}, nil
 }
+
+// GenericUnavailable is what a caller sees when the service itself failed:
+// the cause goes to the host log, never to the wire, since store paths and
+// decoder messages describe the host, not the request.
+const GenericUnavailable = "learning service could not complete the request; the cause is in the host log"
 
 func refused(err error) error   { return shoal.NewError(shoal.ErrorConflict, err.Error()) }
 func invalid(msg string) error  { return shoal.NewError(shoal.ErrorInvalidArgument, msg) }
@@ -134,7 +162,79 @@ func classify(err error) error {
 	case errors.Is(err, distillation.ErrInvalid), errors.Is(err, weightsbundle.ErrInvalidManifest):
 		return invalid(err.Error())
 	}
-	return unavailable(err.Error())
+	return unavailable(GenericUnavailable)
+}
+
+func (s *Service) classified(err error) error { return s.classifyLogged("request", err) }
+
+// classifyLogged is classify for errors whose cause belongs in the host log,
+// with every host path redacted from what reaches the wire: a refusal that
+// names a file under the bundles, serving, evidence, or state root names it
+// by role, and the full path goes to the log.
+func (s *Service) classifyLogged(op string, err error) error {
+	out := classify(err)
+	if shoal.IsErrorCode(out, shoal.ErrorUnavailable) && out.Error() != err.Error() {
+		fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+		return out
+	}
+	se := new(shoal.Error)
+	if errors.As(out, &se) {
+		if redacted := s.redact(se.Message); redacted != se.Message {
+			fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+			return shoal.NewError(se.Code, redacted)
+		}
+	}
+	return out
+}
+
+// redact replaces the host's configured roots in a message with their role.
+func (s *Service) redact(msg string) string {
+	for _, root := range []struct{ path, role string }{
+		{s.cfg.BundlesDir, "<bundles>"}, {s.cfg.ServingRoot, "<serving>"}, {s.cfg.EvidenceDir, "<evidence>"}, {s.cfg.Prefix, "<state>"},
+	} {
+		if root.path == "" {
+			continue
+		}
+		msg = strings.ReplaceAll(msg, root.path, root.role)
+		if abs, err := filepath.Abs(root.path); err == nil && abs != root.path {
+			msg = strings.ReplaceAll(msg, abs, root.role)
+		}
+	}
+	return msg
+}
+
+// redactErr is redact for a message that is sent as data, not as an error.
+func (s *Service) redactErr(op string, err error) string {
+	redacted := s.redact(err.Error())
+	if redacted != err.Error() {
+		fmt.Fprintf(s.cfg.Log, "learning: %s: %v\n", op, err)
+	}
+	return redacted
+}
+
+// recordID is the only shape a stored record's key may take: the 64-hex
+// content address every sealed record and pin carries. Anything else in a
+// path position is refused before it reaches the store.
+var recordID = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+func checkRecordID(id string) error {
+	if !recordID.MatchString(id) {
+		return invalid("record id must be a 64-hex content address")
+	}
+	return nil
+}
+
+// actorFor returns the authenticated actor a write is bound to. A body may
+// name the owner only to confirm it; it can never choose one.
+func actorFor(ctx context.Context, claimed string) (string, error) {
+	actor, ok := decisionapi.LearningActorFrom(ctx)
+	if !ok {
+		return "", shoal.NewError(shoal.ErrorUnauthorized, "learning writes are bound to an authenticated actor")
+	}
+	if claimed != "" && claimed != actor.Actor {
+		return "", invalid("owner must be the authenticated actor " + actor.Actor + ", not " + claimed)
+	}
+	return actor.Actor, nil
 }
 
 func (s *Service) recordPath(kind, id string) string {
@@ -146,6 +246,9 @@ func (s *Service) recordPath(kind, id string) string {
 }
 
 func (s *Service) put(ctx context.Context, kind, id string, value any) error {
+	if err := checkRecordID(id); err != nil {
+		return err
+	}
 	raw, err := weightsbundle.Canonical(value)
 	if err != nil {
 		return err
@@ -164,6 +267,9 @@ func (s *Service) put(ctx context.Context, kind, id string, value any) error {
 }
 
 func (s *Service) get(ctx context.Context, kind, id string) (weightsbundle.Record, error) {
+	if err := checkRecordID(id); err != nil {
+		return nil, err
+	}
 	f, err := s.cfg.Store.Open(ctx, s.recordPath(kind, id))
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
@@ -172,11 +278,26 @@ func (s *Service) get(ctx context.Context, kind, id string) (weightsbundle.Recor
 		return nil, err
 	}
 	defer f.Close()
+	if f.Size() > weightsbundle.MaxRecordBytes {
+		return nil, fmt.Errorf("%s %s exceeds %d bytes", kind, id, weightsbundle.MaxRecordBytes)
+	}
 	raw := make([]byte, f.Size())
 	if _, err := f.ReadAt(raw, 0); err != nil && f.Size() != 0 {
 		return nil, err
 	}
-	return weightsbundle.DecodeRecord(raw)
+	record, err := weightsbundle.DecodeRecord(raw)
+	if err != nil {
+		return nil, err
+	}
+	// What the store returns must be the record the key names: a file of
+	// another kind, or a sealed record under the wrong key, is not it.
+	if str(record, "kind") != kind {
+		return nil, notFound(kind + " " + id + " is not recorded")
+	}
+	if recorded := str(record, "id"); recorded != "" && recorded != id {
+		return nil, notFound(kind + " " + id + " is not recorded")
+	}
+	return record, nil
 }
 
 func (s *Service) list(ctx context.Context, kind string) ([]weightsbundle.Record, error) {
@@ -216,7 +337,7 @@ var safeID = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$`)
 func (s *Service) Datasets(ctx context.Context) (json.RawMessage, error) {
 	exports, err := s.list(ctx, kindExport)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	latest := map[string]weightsbundle.Record{}
 	for _, e := range exports {
@@ -232,7 +353,7 @@ func (s *Service) Datasets(ctx context.Context) (json.RawMessage, error) {
 	}
 	cohorts, err := s.cfg.Cohorts.ListCohorts(ctx)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	rows := make([]any, 0, len(cohorts))
 	for _, c := range cohorts {
@@ -258,15 +379,15 @@ func (s *Service) RequestExport(ctx context.Context, cohortID string) (json.RawM
 	}
 	export, err := s.cfg.Exporter.Export(ctx, shoal.ID(cohortID))
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	manifest, err := weightsbundle.DecodeRecord(export.Manifest)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	lineage, err := weightsbundle.SourcesFromExportManifest(export.Manifest)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	quarantine := map[string]int{}
 	var exampleIDs []string
@@ -291,7 +412,7 @@ func (s *Service) RequestExport(ctx context.Context, cohortID string) (json.RawM
 	}
 	id := lineage.DatasetManifestSHA256
 	if err := s.put(ctx, kindExport, id, record); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(record)
 }
@@ -302,7 +423,10 @@ func (s *Service) RequestExport(ctx context.Context, cohortID string) (json.RawM
 func (s *Service) SubmitJob(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
 	manifest, err := distillation.Decode(raw)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
+	}
+	if err := s.resolveEgress(ctx, manifest); err != nil {
+		return nil, err
 	}
 	pin, _ := manifest.Pin()
 	var descriptors []distillation.ExportDescriptor
@@ -310,6 +434,9 @@ func (s *Service) SubmitJob(ctx context.Context, raw json.RawMessage) (json.RawM
 		export, err := s.get(ctx, kindExport, e.ManifestSHA256)
 		if err != nil {
 			return nil, refused(fmt.Errorf("cohort %q has no recorded export at pin %s", e.CohortID, e.ManifestSHA256))
+		}
+		if str(export, "cohort_id") != e.CohortID {
+			return nil, refused(fmt.Errorf("export at pin %s is cohort %q, not %q", e.ManifestSHA256, str(export, "cohort_id"), e.CohortID))
 		}
 		var ids []string
 		for _, v := range toSlice(export["eligible_example_ids"]) {
@@ -319,26 +446,58 @@ func (s *Service) SubmitJob(ctx context.Context, raw json.RawMessage) (json.RawM
 	}
 	job, err := distillation.NewJob(manifest, descriptors)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	encoded, _ := manifest.Encode()
 	generic, err := weightsbundle.DecodeRecord(encoded)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	if err := s.put(ctx, kindManifest, pin, generic); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	record := map[string]any{"schema": 1, "kind": kindJob, "manifest_pin": pin, "status": "submitted", "submitted_at": s.cfg.Now().UTC().Format(time.RFC3339Nano), "requested": summarize(manifest), "exports": job.Exports}
 	if err := s.put(ctx, kindJob, pin, record); err != nil {
 		if errors.Is(err, storage.ErrExists) {
 			return nil, refused(fmt.Errorf("a job for manifest %s is already recorded", pin))
 		}
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(record)
+}
+
+// resolveEgress confirms every declared egress posture against the host's
+// resolver and applies the host's off-host teacher policy. The manifest
+// author's declaration is a claim; the host's resolution is the fact.
+func (s *Service) resolveEgress(ctx context.Context, m distillation.Manifest) error {
+	if s.cfg.Egress == nil {
+		return unavailable("no model egress resolver is mounted on this host; a manifest's declared egress cannot be confirmed, so no job can be recorded")
+	}
+	for _, sel := range []distillation.ModelSelection{m.Teacher, m.Base} {
+		for _, c := range sel.Eligible {
+			resolved, err := s.cfg.Egress.ResolveEgress(ctx, c.Identity)
+			if err != nil {
+				return refused(fmt.Errorf("%s %q (%s/%s): egress could not be resolved: %v", sel.Role, c.Alias, c.Identity.Provider, c.Identity.Model, err))
+			}
+			if resolved != c.Identity.Egress {
+				return refused(fmt.Errorf("%s %q (%s/%s) declares egress %q but this host resolves it as %q", sel.Role, c.Alias, c.Identity.Provider, c.Identity.Model, c.Identity.Egress, resolved))
+			}
+		}
+	}
+	if s.cfg.AllowOffHostModels {
+		return nil
+	}
+	if m.TeacherEgressAtGeneration == distillation.EgressOffHost {
+		return refused(errors.New("the chosen teacher generates off host; this host does not authorize off-host models (every training example would leave the host)"))
+	}
+	for _, c := range m.Base.Eligible {
+		if c.Alias == m.Base.Chosen && c.Identity.Egress == distillation.EgressOffHost {
+			return refused(errors.New("the chosen base is fine-tuned off host; this host does not authorize off-host models (every training example would leave the host)"))
+		}
+	}
+	return nil
 }
 
 func summarize(m distillation.Manifest) map[string]any {
@@ -369,7 +528,7 @@ func toSlice(v any) []any { s, _ := v.([]any); return s }
 func (s *Service) Jobs(ctx context.Context) (json.RawMessage, error) {
 	jobs, err := s.list(ctx, kindJob)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	out := make([]any, 0, len(jobs))
 	for _, j := range jobs {
@@ -390,7 +549,7 @@ func (s *Service) Job(ctx context.Context, pin string) (json.RawMessage, error) 
 	}
 	job, err := s.get(ctx, kindJob, pin)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	view, err := s.jobView(ctx, job)
 	if err != nil {
@@ -398,14 +557,20 @@ func (s *Service) Job(ctx context.Context, pin string) (json.RawMessage, error) 
 	}
 	manifest, err := s.get(ctx, kindManifest, pin)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	view["manifest"] = manifest
 	return marshal(view)
 }
 
 func (s *Service) jobView(ctx context.Context, job weightsbundle.Record) (map[string]any, error) {
-	view := map[string]any{"job": job, "receipt": nil, "requested": job["requested"], "actual": nil, "executor": nil, "deviations": nil}
+	view := map[string]any{"job": job, "receipt": nil, "requested": job["requested"], "actual": nil, "executor": nil, "deviations": nil, "predictions_id": nil}
+	if set, err := s.get(ctx, kindPredictions, str(job, "manifest_pin")); err == nil {
+		if id, err := weightsbundle.Digest(set); err == nil {
+			view["predictions_id"] = id
+			view["predictions_count"] = len(toSlice(set["predictions"]))
+		}
+	}
 	receipt, err := s.get(ctx, kindReceipt, str(job, "manifest_pin"))
 	if err == nil {
 		view["receipt"] = receipt
@@ -413,34 +578,101 @@ func (s *Service) jobView(ctx context.Context, job weightsbundle.Record) (map[st
 		view["executor"] = receipt["executor"]
 		view["deviations"] = receipt["deviations"]
 	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return view, nil
 }
 
-// SubmitReceipt verifies a trainer receipt against the recorded manifest.
-func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
-	if !safeID.MatchString(pin) {
-		return nil, invalid("manifest pin")
+// recordedJob returns the manifest and job descriptors recorded for a pin.
+func (s *Service) recordedJob(ctx context.Context, pin string) (distillation.Manifest, []distillation.ExportDescriptor, error) {
+	if !recordID.MatchString(pin) {
+		return distillation.Manifest{}, nil, invalid("manifest pin")
 	}
 	manifestRecord, err := s.get(ctx, kindManifest, pin)
 	if err != nil {
-		return nil, classify(err)
+		return distillation.Manifest{}, nil, s.classified(err)
 	}
-	if _, err := s.get(ctx, kindJob, pin); err != nil {
-		return nil, classify(err)
+	job, err := s.get(ctx, kindJob, pin)
+	if err != nil {
+		return distillation.Manifest{}, nil, s.classified(err)
 	}
 	encoded, _ := weightsbundle.Canonical(manifestRecord)
 	manifest, err := distillation.Decode(encoded)
 	if err != nil {
-		return nil, classify(err)
+		return distillation.Manifest{}, nil, s.classified(err)
+	}
+	exportsRaw, _ := weightsbundle.Canonical(job["exports"])
+	var exports []distillation.ExportDescriptor
+	if err := weightsbundle.StrictUnmarshal(exportsRaw, &exports); err != nil {
+		return distillation.Manifest{}, nil, s.classifyLogged("recorded job exports", err)
+	}
+	return manifest, exports, nil
+}
+
+// SubmitPredictions records the sealed teacher output for a job. The set
+// must rebuild identically from the recorded manifest and job: every
+// output a prediction from the chosen teacher, every example inside an
+// admitted export and never held out. A receipt that names a prediction set
+// is admitted only after that set is recorded here.
+func (s *Service) SubmitPredictions(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
+	manifest, exports, err := s.recordedJob(ctx, pin)
+	if err != nil {
+		return nil, err
+	}
+	var set distillation.PredictionSet
+	if err := weightsbundle.StrictUnmarshal(raw, &set); err != nil {
+		return nil, invalid("predictions: " + err.Error())
+	}
+	rebuilt, err := distillation.NewPredictionSet(manifest, exports, set.Predictions)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	wantID, _ := rebuilt.ID()
+	gotID, err := set.ID()
+	if err != nil || wantID != gotID {
+		return nil, refused(errors.New("prediction set does not rebuild from the recorded manifest and job: its teacher, egress, prompt version, or pin differs"))
+	}
+	generic, err := weightsbundle.DecodeRecord(raw)
+	if err != nil {
+		return nil, invalid(err.Error())
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if err := s.put(ctx, kindPredictions, pin, generic); err != nil {
+		if errors.Is(err, storage.ErrExists) {
+			return nil, refused(fmt.Errorf("teacher predictions for manifest %s are already recorded", pin))
+		}
+		return nil, s.classifyLogged("record predictions", err)
+	}
+	return marshal(map[string]any{"manifest_pin": pin, "predictions_id": gotID, "count": len(set.Predictions), "teacher": set.Teacher, "teacher_egress": set.TeacherEgress})
+}
+
+// SubmitReceipt verifies a trainer receipt against the recorded manifest.
+func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
+	manifest, _, err := s.recordedJob(ctx, pin)
+	if err != nil {
+		return nil, err
 	}
 	var receipt distillation.Receipt
 	if err := weightsbundle.StrictUnmarshal(raw, &receipt); err != nil {
 		return nil, invalid("receipt: " + err.Error())
 	}
 	if err := distillation.VerifyReceipt(manifest, receipt); err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
+	}
+	if receipt.Status == distillation.StatusCompleted {
+		set, err := s.get(ctx, kindPredictions, pin)
+		if err != nil {
+			return nil, refused(fmt.Errorf("receipt names teacher predictions %s, but no prediction set is recorded for manifest %s; submit the predictions first", receipt.TeacherPredictionsID, pin))
+		}
+		if id, _ := weightsbundle.Digest(set); id != receipt.TeacherPredictionsID {
+			return nil, refused(fmt.Errorf("receipt names teacher predictions %s; the recorded set for this manifest is %s", receipt.TeacherPredictionsID, id))
+		}
+		// A student trains on teacher predictions: it cannot have trained on
+		// more examples than the recorded set covers.
+		if n := len(toSlice(set["predictions"])); receipt.TrainedExampleCount > n {
+			return nil, refused(fmt.Errorf("receipt claims %d trained examples; the recorded prediction set covers %d", receipt.TrainedExampleCount, n))
+		}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -448,7 +680,7 @@ func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMes
 		if errors.Is(err, storage.ErrExists) {
 			return nil, refused(fmt.Errorf("a receipt for manifest %s is already recorded", pin))
 		}
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	record, _ := s.get(ctx, kindReceipt, pin)
 	return marshal(map[string]any{"receipt": record, "status": receipt.Status, "candidate_only": true, "note": "Completion of a run is not improvement; evaluation is a separate record."})
@@ -476,7 +708,7 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 	}
 	manifest, err := weightsbundle.ArtifactManifest(body.Artifact)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	digest, _ := manifest.Digest()
 	if _, got, err := weightsbundle.Load(filepath.Join(s.cfg.ServingRoot, digest)); err != nil {
@@ -484,23 +716,44 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 	} else if got != digest {
 		return nil, refused(fmt.Errorf("published bundle digest %s differs from artifact %s", got, digest))
 	}
+	// A candidate that names a distillation manifest is bound to it: the
+	// manifest and a completed receipt for exactly this bundle must be
+	// recorded here, and the candidate's task scope must be the selection's.
+	// Naming an unrecorded pin is not a way out of the check.
 	if pin := str(body.Candidate, "training_manifest_sha256"); pin != "" {
-		if record, err := s.get(ctx, kindManifest, pin); err == nil {
-			encoded, _ := weightsbundle.Canonical(record)
-			if m, err := distillation.Decode(encoded); err == nil {
-				if err := distillation.CheckCandidateScope(m, body.Candidate); err != nil {
-					return nil, classify(err)
-				}
-			}
+		if !recordID.MatchString(pin) {
+			return nil, invalid("candidate training_manifest_sha256 must be a 64-hex content address")
+		}
+		record, err := s.get(ctx, kindManifest, pin)
+		if err != nil {
+			return nil, refused(fmt.Errorf("candidate names training manifest %s, which is not recorded on this host", pin))
+		}
+		encoded, _ := weightsbundle.Canonical(record)
+		m, err := distillation.Decode(encoded)
+		if err != nil {
+			return nil, s.classified(err)
+		}
+		if err := distillation.CheckCandidateScope(m, body.Candidate); err != nil {
+			return nil, s.classified(err)
+		}
+		receipt, err := s.get(ctx, kindReceipt, pin)
+		if err != nil {
+			return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no recorded receipt", pin))
+		}
+		if str(receipt, "status") != distillation.StatusCompleted {
+			return nil, refused(fmt.Errorf("the recorded run for manifest %s is %q, not completed", pin, str(receipt, "status")))
+		}
+		if str(receipt, "bundle_digest") != digest {
+			return nil, refused(fmt.Errorf("the recorded receipt for manifest %s produced bundle %s, not the artifact's %s", pin, str(receipt, "bundle_digest"), digest))
 		}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.put(ctx, kindCandidate, str(body.Candidate, "id"), body.Candidate); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	if err := s.put(ctx, kindArtifact, str(body.Artifact, "id"), body.Artifact); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(map[string]any{"candidate": body.Candidate, "artifact": body.Artifact, "bundle_digest": digest})
 }
@@ -509,15 +762,15 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 func (s *Service) Candidates(ctx context.Context) (json.RawMessage, error) {
 	candidates, err := s.list(ctx, kindCandidate)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	artifacts, err := s.list(ctx, kindArtifact)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	evaluations, err := s.list(ctx, kindEvaluation)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	out := make([]any, 0, len(candidates))
 	for _, c := range candidates {
@@ -552,12 +805,12 @@ func (s *Service) SubmitEvaluation(ctx context.Context, raw json.RawMessage) (js
 		return nil, invalid(err.Error())
 	}
 	if _, err := s.get(ctx, kindCandidate, str(record, "candidate_id")); err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := s.put(ctx, kindEvaluation, str(record, "id"), record); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(evaluationView(record))
 }
@@ -570,7 +823,7 @@ func (s *Service) Evaluations(ctx context.Context, candidateID string) (json.Raw
 	}
 	evaluations, err := s.list(ctx, kindEvaluation)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	out := []any{}
 	for _, e := range evaluations {
@@ -586,8 +839,9 @@ func (s *Service) Evaluations(ctx context.Context, candidateID string) (json.Raw
 func (s *Service) Releases(ctx context.Context) (json.RawMessage, error) {
 	r := s.cfg.Registry
 	out := map[string]any{"disclaimer": Disclaimer, "active": nil, "history": []any{}, "events": r.Events(), "serving": nil}
-	if active, ok := r.Active(); ok {
-		out["active"] = map[string]any{"release": active, "eligibility": r.EligibilityOf(active.ID), "bundle_digest_served_now": active.BundleDigest}
+	active, hasActive := r.Active()
+	if hasActive {
+		out["active"] = map[string]any{"release": active, "eligibility": r.EligibilityOf(active.ID), "bundle_digest": active.BundleDigest}
 	}
 	history := []any{}
 	for _, rel := range r.History() {
@@ -595,10 +849,19 @@ func (s *Service) Releases(ctx context.Context) (json.RawMessage, error) {
 	}
 	out["history"] = history
 	if s.cfg.Serving != nil {
+		// What is served now comes only from the runtime's own report; the
+		// registry's pointer says what should be served, and the two are
+		// compared rather than conflated.
 		report, err := s.cfg.Serving.ServingReport(ctx)
 		if err != nil {
-			out["serving"] = map[string]any{"error": err.Error()}
+			out["serving"] = map[string]any{"error": err.Error(), "ready": false}
 		} else {
+			served, _ := report["bundle_digest"].(string)
+			if hasActive && active.BundleDigest != nil {
+				report["serves_active_release"] = served == *active.BundleDigest && report["ready"] == true
+			} else {
+				report["serves_active_release"] = false
+			}
 			out["serving"] = report
 		}
 	} else {
@@ -620,12 +883,21 @@ func (s *Service) Promote(ctx context.Context, raw json.RawMessage) (json.RawMes
 	if err := weightsbundle.StrictUnmarshal(raw, &body); err != nil {
 		return nil, invalid("body: " + err.Error())
 	}
-	if body.CandidateID == "" || body.Owner == "" {
-		return nil, invalid("candidate_id and owner are required")
+	owner, err := actorFor(ctx, body.Owner)
+	if err != nil {
+		return nil, err
+	}
+	if body.CandidateID == "" {
+		return nil, invalid("candidate_id is required")
+	}
+	for _, id := range []string{body.CandidateID, body.EvaluationID, body.ArtifactID} {
+		if id != "" && !recordID.MatchString(id) {
+			return nil, invalid("record ids must be 64-hex content addresses")
+		}
 	}
 	candidate, err := s.get(ctx, kindCandidate, body.CandidateID)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	if body.EvaluationID == "" {
 		return nil, refused(errors.New("promotion requires its evaluation: no evaluation_id was supplied"))
@@ -636,7 +908,7 @@ func (s *Service) Promote(ctx context.Context, raw json.RawMessage) (json.RawMes
 	}
 	artifacts, err := s.list(ctx, kindArtifact)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	var artifact weightsbundle.Record
 	for _, a := range artifacts {
@@ -647,12 +919,15 @@ func (s *Service) Promote(ctx context.Context, raw json.RawMessage) (json.RawMes
 	if artifact == nil {
 		return nil, refused(errors.New("no artifact binds this candidate to this evaluation"))
 	}
-	approval, err := weightsbundle.NewPromotionApproval(body.CandidateID, body.EvaluationID, body.Owner)
+	approval, err := weightsbundle.NewPromotionApproval(body.CandidateID, body.EvaluationID, owner)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	lineage := weightsbundle.DatasetLineage{}
 	if pin := str(candidate, "dataset_manifest_sha256"); pin != "" {
+		if !recordID.MatchString(pin) {
+			return nil, refused(errors.New("candidate dataset manifest pin is not a content address"))
+		}
 		export, err := s.get(ctx, kindExport, pin)
 		if err != nil {
 			return nil, refused(fmt.Errorf("candidate dataset manifest %s has no recorded export; lineage cannot be bound", pin))
@@ -668,7 +943,7 @@ func (s *Service) Promote(ctx context.Context, raw json.RawMessage) (json.RawMes
 	}
 	release, err := s.cfg.Registry.Promote(ctx, in, lineage)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(map[string]any{"release": release, "approval": approval, "disclaimer": Disclaimer})
 }
@@ -682,20 +957,31 @@ func (s *Service) Rollback(ctx context.Context, raw json.RawMessage) (json.RawMe
 	if err := weightsbundle.StrictUnmarshal(raw, &body); err != nil {
 		return nil, invalid("body: " + err.Error())
 	}
-	if body.PriorReleaseID == "" || body.Owner == "" {
-		return nil, invalid("prior_release_id and owner are required")
+	owner, err := actorFor(ctx, body.Owner)
+	if err != nil {
+		return nil, err
+	}
+	if body.PriorReleaseID == "" {
+		return nil, invalid("prior_release_id is required")
 	}
 	active, ok := s.cfg.Registry.Active()
 	if !ok {
 		return nil, refused(weightsbundle.ErrNoActiveRelease)
 	}
-	approval, err := weightsbundle.NewRollbackApproval(active.ID, body.PriorReleaseID, body.Owner)
+	// The prior bundle must still be on the serving path, exactly: a
+	// rollback to a release the runtime cannot load would point at nothing.
+	if prior, ok := s.cfg.Registry.Get(body.PriorReleaseID); ok && prior.BundleDigest != nil {
+		if _, got, err := weightsbundle.Load(filepath.Join(s.cfg.ServingRoot, *prior.BundleDigest)); err != nil || got != *prior.BundleDigest {
+			return nil, refused(fmt.Errorf("prior release %s bundle %s is not on the serving root; re-import it before rolling back", body.PriorReleaseID, *prior.BundleDigest))
+		}
+	}
+	approval, err := weightsbundle.NewRollbackApproval(active.ID, body.PriorReleaseID, owner)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	release, err := s.cfg.Registry.Rollback(ctx, body.PriorReleaseID, approval)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(map[string]any{"release": release, "approval": approval})
 }
@@ -716,7 +1002,7 @@ func (s *Service) Evidence(ctx context.Context, kind string) (json.RawMessage, e
 	dir := filepath.Join(s.cfg.EvidenceDir, kind)
 	entries, err := os.ReadDir(dir)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	reports := []any{}
 	for _, e := range entries {
@@ -726,9 +1012,9 @@ func (s *Service) Evidence(ctx context.Context, kind string) (json.RawMessage, e
 		raw, err := os.ReadFile(filepath.Join(dir, e.Name()))
 		item := map[string]any{"file": e.Name()}
 		if err != nil {
-			item["error"] = err.Error()
+			item["error"] = s.redactErr("evidence", err)
 		} else if record, err := weightsbundle.DecodeRecord(raw); err != nil {
-			item["error"] = err.Error()
+			item["error"] = s.redactErr("evidence", err)
 		} else {
 			item["record"] = record
 			item["kind"] = record["kind"]
@@ -747,11 +1033,11 @@ func (s *Service) Evidence(ctx context.Context, kind string) (json.RawMessage, e
 func (s *Service) Bundles(ctx context.Context) (json.RawMessage, error) {
 	entries, err := os.ReadDir(s.cfg.BundlesDir)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	out := []any{}
 	for _, e := range entries {
-		if !e.IsDir() || strings.HasSuffix(e.Name(), ".exporting") {
+		if !e.IsDir() || strings.Contains(e.Name(), ".exporting") {
 			continue
 		}
 		out = append(out, s.bundleView(e.Name()))
@@ -763,7 +1049,7 @@ func (s *Service) bundleView(name string) map[string]any {
 	verified, err := releasebundle.Verify(filepath.Join(s.cfg.BundlesDir, name))
 	view := map[string]any{"name": name, "verified": err == nil, "entries": verified.Results, "release_id": verified.Index.ReleaseID, "bundle_digest": verified.Index.BundleDigest, "index_digest": verified.IndexDigest, "images": verified.Index.Images}
 	if err != nil {
-		view["error"] = err.Error()
+		view["error"] = s.redactErr("bundle view", err)
 	}
 	return view
 }
@@ -794,7 +1080,7 @@ func (s *Service) ExportBundle(ctx context.Context, raw json.RawMessage) (json.R
 	lineage, _ := r.Lineage(release.ID)
 	evaluation, err := s.get(ctx, kindEvaluation, release.EvaluationID)
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	export, err := s.get(ctx, kindExport, lineage.DatasetManifestSHA256)
 	if err != nil {
@@ -808,11 +1094,11 @@ func (s *Service) ExportBundle(ctx context.Context, raw json.RawMessage) (json.R
 		return nil, unavailable("no image digests are configured on this host; an offline bundle needs the runtime image pinned by digest")
 	}
 	if err := os.MkdirAll(s.cfg.BundlesDir, 0o700); err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	index, err := releasebundle.Export(releasebundle.ExportInput{Release: release, Lineage: lineage, BundleRoot: filepath.Join(s.cfg.ServingRoot, *release.BundleDigest), DatasetManifest: datasetManifest, Evaluation: evaluation, Images: s.cfg.Images, Now: s.cfg.Now()}, filepath.Join(s.cfg.BundlesDir, body.Name))
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	view := s.bundleView(body.Name)
 	view["index"] = index
@@ -828,7 +1114,7 @@ func (s *Service) exportManifestBytes(ctx context.Context, export weightsbundle.
 	}
 	result, err := s.cfg.Exporter.Export(ctx, shoal.ID(str(export, "cohort_id")))
 	if err != nil {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	if weightsbundle.SHA256Hex(result.Manifest) != str(export, "manifest_sha256") {
 		return nil, refused(errors.New("the authority's current export no longer matches the recorded manifest pin"))
@@ -839,24 +1125,33 @@ func (s *Service) exportManifestBytes(ctx context.Context, export weightsbundle.
 // ImportBundle imports an offline release bundle from the bundles directory.
 func (s *Service) ImportBundle(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
 	var body struct {
-		Name     string `json:"name"`
-		Importer string `json:"importer"`
+		Name                string `json:"name"`
+		Importer            string `json:"importer"`
+		ExpectedIndexDigest string `json:"expected_index_digest"`
 	}
 	if err := weightsbundle.StrictUnmarshal(raw, &body); err != nil {
 		return nil, invalid("body: " + err.Error())
 	}
-	if !safeID.MatchString(body.Name) || body.Importer == "" {
-		return nil, invalid("name must be a safe directory name and importer is required")
-	}
-	result, err := releasebundle.Import(ctx, filepath.Join(s.cfg.BundlesDir, body.Name), releasebundle.ImportOptions{Registry: s.cfg.Registry, ServingRoot: s.cfg.ServingRoot, Importer: body.Importer, Now: s.cfg.Now()})
-	view := map[string]any{"name": body.Name, "entries": result.Verified.Results, "activated": result.Activated, "already_present": result.AlreadyThere, "serving_path": result.ServingPath, "release_id": result.Verified.Index.ReleaseID, "bundle_digest": result.Verified.Index.BundleDigest}
+	importer, err := actorFor(ctx, body.Importer)
 	if err != nil {
-		view["error"] = err.Error()
+		return nil, err
+	}
+	if !safeID.MatchString(body.Name) {
+		return nil, invalid("name must be a safe directory name")
+	}
+	if body.ExpectedIndexDigest != "" && !recordID.MatchString(body.ExpectedIndexDigest) {
+		return nil, invalid("expected_index_digest must be a 64-hex digest")
+	}
+	result, err := releasebundle.Import(ctx, filepath.Join(s.cfg.BundlesDir, body.Name), releasebundle.ImportOptions{Registry: s.cfg.Registry, ServingRoot: s.cfg.ServingRoot, Importer: importer, Now: s.cfg.Now(), ExpectedIndexDigest: body.ExpectedIndexDigest})
+	view := map[string]any{"name": body.Name, "entries": result.Verified.Results, "activated": result.Activated, "already_present": result.AlreadyThere, "release_id": result.Verified.Index.ReleaseID, "bundle_digest": result.Verified.Index.BundleDigest, "index_digest": result.Verified.IndexDigest, "importer": importer}
+	if err != nil {
+		classified := s.classifyLogged("import bundle", err)
+		view["error"] = classified.Error()
 		encoded, _ := json.Marshal(view)
-		return encoded, classify(err)
+		return encoded, classified
 	}
 	if err := s.put(ctx, kindEvaluation, str(result.Verified.Evaluation, "id"), result.Verified.Evaluation); err != nil && !errors.Is(err, storage.ErrExists) {
-		return nil, classify(err)
+		return nil, s.classified(err)
 	}
 	return marshal(view)
 }

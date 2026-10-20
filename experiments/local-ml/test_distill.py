@@ -102,7 +102,11 @@ class DistillTests(unittest.TestCase):
         self.assertEqual(receipt, first)
         self.assertTrue(receipt['candidate_only']); self.assertFalse(receipt['improvement_claimed'])
         self.assertEqual(receipt['status'], 'completed'); self.assertEqual(receipt['deviations'], [])
-        self.assertEqual(receipt['requested_cohorts'], receipt['actual_cohorts'], ['cohort-1'])
+        self.assertEqual(receipt['requested_cohorts'], ['cohort-1'])
+        self.assertEqual(receipt['actual_cohorts'], ['cohort-1'])
+        self.assertEqual(receipt['held_out_excluded_count'], 0)
+        self.assertEqual([e['cohort_id'] for e in receipt['authorized_exports']], ['cohort-1'])
+        self.assertEqual(receipt['authorized_exports'][0]['task_id'], 'synthetic-task')
         self.assertEqual(receipt['trained_example_count'], 3)
         self.assertNotIn('recall', json.dumps(receipt))
         predictions = json.loads((self.root / 'first/teacher-predictions.json').read_bytes())
@@ -128,7 +132,11 @@ class DistillTests(unittest.TestCase):
     def test_actual_parameters_deviation_is_recorded(self):
         receipt = self.run_job(parameters=dict(epochs=5))
         self.assertEqual(receipt['actual_parameters'], dict(epochs=5))
-        self.assertEqual(receipt['deviations'], ['epochs: requested 3, actual 5'])
+        self.assertEqual(receipt['deviations'], [dict(parameter='epochs', requested=3, actual=5)])
+        with self.assertRaisesRegex(distill.Refused, 'was not requested'):
+            self.run_job(out='claim', parameters=dict(held_out_recall=0.97))
+        with self.assertRaisesRegex(distill.Refused, 'positive integer'):
+            self.run_job(out='zero', parameters=dict(epochs=0))
 
     def test_refusals_happen_before_training(self):
         good = manifest_fixture(self.export_sha)
@@ -149,6 +157,16 @@ class DistillTests(unittest.TestCase):
             'label policy not admitted': (lambda m: m['data']['tasks'][0].update(label_policy_ids=['other']), 'label policy'),
             'task outside selection': (lambda m: m['data']['tasks'][0].update(task_id='other-task'), 'outside the selection'),
             'held-out leak': (lambda m: m['data'].update(held_out_example_ids=['row-1']), 'contains held-out example'),
+            'zero epochs pinned': (lambda m: m['data']['generation_parameters'].update(epochs=0), 'positive integer'),
+            'unbounded epochs': (lambda m: m['data']['generation_parameters'].update(epochs=10 ** 9), 'no greater than'),
+            'teacher not an object': (lambda m: m.update(teacher='x'), 'selection shape'),
+            'candidate without alias': (lambda m: m['teacher']['eligible'][0].pop('alias'), 'candidate shape'),
+            'measurement value a string': (lambda m: m['teacher']['eligible'][0]['measurements'][0].update(value='0.9'), 'measurement shape'),
+            'rule bound a string': (lambda m: m['teacher']['rule'].update(minimum='0.5'), 'rule bounds'),
+            'extra top-level key': (lambda m: m.update(note='x'), 'exactly the contract'),
+            'cohort id not a string': (lambda m: m['data']['tasks'][0].update(cohort_ids=['cohort-1', 1]), 'task selection shape'),
+            'held-out id a list': (lambda m: m['data'].update(held_out_example_ids=[['row-1']]), 'held-out ids'),
+            'export pin not hex': (lambda m: m['exports'][0].update(manifest_sha256='zz'), 'exports shape'),
         }
         for name, (mutate, want) in cases.items():
             with self.subTest(name):
@@ -169,6 +187,16 @@ class DistillTests(unittest.TestCase):
         manifest['data']['held_out_example_ids'] = ['row-0']
         with self.assertRaisesRegex(distill.Refused, 'held-out'):
             distill.record_predictions(manifest, [dict(example_id='row-0', kind='prediction', teacher='teacher-a', output={})])
+        manifest['data']['held_out_example_ids'] = []
+        manifest['_labels'] = ['no', 'yes']
+        with self.assertRaisesRegex(distill.Refused, 'outside the task labels'):
+            distill.record_predictions(manifest, [dict(example_id='row-0', kind='prediction', teacher='teacher-a', output=dict(label='maybe'))])
+
+    def test_manifest_that_is_not_an_object_is_refused_not_crashed(self):
+        raw = distill.canonical([]).encode()
+        (self.root / 'list.json').write_bytes(raw)
+        with self.assertRaisesRegex(distill.Refused, 'not a distillation manifest'):
+            distill.distill(str(self.root / 'list.json'), hashlib.sha256(raw).hexdigest(), self.exports, self.root / 'x', executor=self.executor)
 
 
 if __name__ == '__main__':

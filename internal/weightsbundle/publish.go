@@ -15,8 +15,10 @@ import (
 	"github.com/phrocker/shoal-oss/internal/storage"
 )
 
-// ErrExists reports that a bundle with the same digest is already published.
-// It wraps storage.ErrExists so callers can test either sentinel.
+// ErrExists reports that a bundle with the same digest is already published
+// at the destination. Anything else occupying the destination is reported as
+// ErrVerification, never as an existing publication. It wraps
+// storage.ErrExists so callers can test either sentinel.
 var ErrExists = fmt.Errorf("weights bundle already published: %w", storage.ErrExists)
 
 // ErrPublicationIndeterminate reports that durable publication could not be
@@ -52,7 +54,7 @@ func PublishLocal(staging, dest string) error {
 	}
 	_ = m
 	if _, err := os.Lstat(dest); err == nil {
-		return fmt.Errorf("%w: %s", ErrExists, digest)
+		return occupied(dest, digest)
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%w: %v", ErrPublicationIndeterminate, err)
 	}
@@ -61,7 +63,7 @@ func PublishLocal(staging, dest string) error {
 	}
 	if err := renameNoReplace(staging, dest); err != nil {
 		if errors.Is(err, os.ErrExist) {
-			return fmt.Errorf("%w: %s", ErrExists, digest)
+			return occupied(dest, digest)
 		}
 		return err
 	}
@@ -69,6 +71,18 @@ func PublishLocal(staging, dest string) error {
 		return fmt.Errorf("%w: %v", ErrPublicationIndeterminate, err)
 	}
 	return nil
+}
+
+// occupied classifies what already sits at dest: the same bundle is
+// ErrExists; anything else (an empty directory, a partial copy, a foreign
+// bundle, a dangling symlink) is a verification failure naming the path.
+func occupied(dest, digest string) error {
+	if _, got, err := Load(dest); err == nil && got == digest {
+		return fmt.Errorf("%w: %s", ErrExists, digest)
+	} else if err == nil {
+		return fmt.Errorf("%w: destination %s holds bundle %s, not %s", ErrVerification, dest, got, digest)
+	}
+	return fmt.Errorf("%w: destination %s exists and is not a verified copy of bundle %s", ErrVerification, dest, digest)
 }
 
 // Publish copies a verified local bundle into backend under prefix/<digest>/.
@@ -82,7 +96,8 @@ func Publish(ctx context.Context, backend storage.ExclusiveCreator, prefix, root
 		return "", err
 	}
 	base := bundlePrefix(prefix, digest)
-	if _, err := backend.Open(ctx, base+ManifestName); err == nil {
+	if existing, err := backend.Open(ctx, base+ManifestName); err == nil {
+		existing.Close()
 		return "", fmt.Errorf("%w: %s", ErrExists, digest)
 	}
 	for _, f := range m.Files {
@@ -132,9 +147,14 @@ func Fetch(ctx context.Context, backend storage.Backend, prefix, digest, dest st
 	if actual != digest {
 		return Manifest{}, fmt.Errorf("%w: manifest digest %s does not match %s", ErrVerification, actual, digest)
 	}
-	staging := dest + ".fetching"
-	if err := os.Mkdir(staging, 0o700); err != nil {
-		return Manifest{}, fmt.Errorf("%w: %v", ErrVerification, err)
+	if _, err := os.Lstat(dest); err == nil {
+		return Manifest{}, occupied(dest, digest)
+	}
+	// A fresh staging name per fetch, so a crash leftover never masquerades
+	// as a tampered bundle on the next attempt.
+	staging, err := os.MkdirTemp(filepath.Dir(dest), filepath.Base(dest)+".fetching-")
+	if err != nil {
+		return Manifest{}, err
 	}
 	cleanup := func() { os.RemoveAll(staging) }
 	for _, f := range m.Files {

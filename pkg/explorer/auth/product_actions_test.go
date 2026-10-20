@@ -58,6 +58,7 @@ var productActionOperations = []auth.Operation{
 	auth.OperationWorkspaceSettingsWrite,
 	auth.OperationCollectorAdmin,
 	auth.OperationApprovalSweep,
+	auth.OperationLearningWrite,
 }
 
 var authorizationOperations = append(
@@ -86,6 +87,7 @@ var authorizationServiceRoles = []auth.ServiceRole{
 	auth.ServiceRoleTeamOverview,
 	auth.ServiceRoleWorkspaceSettingsRead,
 	auth.ServiceRoleWorkspaceSettingsWrite,
+	auth.ServiceRoleLearningWrite,
 }
 
 var roleOperationCeilings = map[auth.ServiceRole]map[auth.Operation]bool{
@@ -193,6 +195,10 @@ var roleOperationCeilings = map[auth.ServiceRole]map[auth.Operation]bool{
 		auth.OperationWorkspaceSettingsWrite,
 		auth.OperationValidate,
 	),
+	auth.ServiceRoleLearningWrite: operationSet(
+		auth.OperationLearningWrite,
+		auth.OperationValidate,
+	),
 }
 
 func operationSet(operations ...auth.Operation) map[auth.Operation]bool {
@@ -231,6 +237,7 @@ func TestProductActionOperationValuesAndParsingAreStable(t *testing.T) {
 		auth.OperationWorkspaceSettingsWrite: "workspace_settings_write",
 		auth.OperationCollectorAdmin:         "collector_admin",
 		auth.OperationApprovalSweep:          "approval_sweep",
+		auth.OperationLearningWrite:          "learning_write",
 	}
 	if len(expected) != len(authorizationOperations) {
 		t.Fatalf("operation inventory = %d, want %d", len(authorizationOperations), len(expected))
@@ -286,6 +293,7 @@ func TestProductActionServiceRoleValuesAreStable(t *testing.T) {
 		auth.ServiceRoleTeamOverview:           "team_overview",
 		auth.ServiceRoleWorkspaceSettingsRead:  "workspace_settings_read",
 		auth.ServiceRoleWorkspaceSettingsWrite: "workspace_settings_write",
+		auth.ServiceRoleLearningWrite:          "learning_write",
 	}
 	if len(expected) != len(authorizationServiceRoles) {
 		t.Fatalf("role inventory = %d, want %d", len(authorizationServiceRoles), len(expected))
@@ -516,6 +524,7 @@ func TestProductActionServiceRolesRoundTripThroughPolicy(t *testing.T) {
 		auth.ServiceRoleTeamOverview:           auth.OperationTeamOverviewRead,
 		auth.ServiceRoleWorkspaceSettingsRead:  auth.OperationWorkspaceSettingsRead,
 		auth.ServiceRoleWorkspaceSettingsWrite: auth.OperationWorkspaceSettingsWrite,
+		auth.ServiceRoleLearningWrite:          auth.OperationLearningWrite,
 	}
 	for role, operation := range primaryOperation {
 		config := baseDecisionConfig()

@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -108,8 +109,8 @@ func Export(in ExportInput, dest string) (Index, error) {
 	if _, err := os.Lstat(dest); err == nil {
 		return Index{}, fmt.Errorf("%w: %s exists", ErrRefused, dest)
 	}
-	staging := dest + ".exporting"
-	if err := os.Mkdir(staging, 0o700); err != nil {
+	staging, err := os.MkdirTemp(filepath.Dir(dest), filepath.Base(dest)+".exporting-")
+	if err != nil {
 		return Index{}, err
 	}
 	cleanup := func() { os.RemoveAll(staging) }
@@ -161,28 +162,24 @@ func assemble(in ExportInput) (Index, map[string][]byte, error) {
 	if err := checkDatasetManifest(in.Release, in.Lineage, in.DatasetManifest); err != nil {
 		return Index{}, nil, err
 	}
-	if len(in.Images) == 0 {
-		return Index{}, nil, fmt.Errorf("%w: at least one image reference by digest is required", ErrRefused)
-	}
-	seen := map[string]bool{}
-	for _, img := range in.Images {
-		if img.Name == "" || img.Repository == "" || !digestPattern.MatchString(img.Digest) || strings.Contains(img.Repository, "@") || strings.Contains(img.Repository, ":") && strings.LastIndex(img.Repository, ":") > strings.LastIndex(img.Repository, "/") {
-			return Index{}, nil, fmt.Errorf("%w: image %q must be a repository with a sha256 digest, not a tag", ErrRefused, img.Name)
-		}
-		if seen[img.Name] {
-			return Index{}, nil, fmt.Errorf("%w: image %q listed twice", ErrRefused, img.Name)
-		}
-		seen[img.Name] = true
+	if err := checkImages(in.Images); err != nil {
+		return Index{}, nil, err
 	}
 	files := map[string][]byte{}
 	releaseRecord, err := in.Release.Record()
 	if err != nil {
 		return Index{}, nil, err
 	}
-	files[ReleaseName], _ = weightsbundle.EncodeRecord(releaseRecord)
-	files[LineageName], _ = weightsbundle.Canonical(in.Lineage)
+	if files[ReleaseName], err = weightsbundle.EncodeRecord(releaseRecord); err != nil {
+		return Index{}, nil, err
+	}
+	if files[LineageName], err = weightsbundle.Canonical(in.Lineage); err != nil {
+		return Index{}, nil, err
+	}
 	files[DatasetManifestName] = in.DatasetManifest
-	files[EvaluationName], _ = weightsbundle.EncodeRecord(in.Evaluation)
+	if files[EvaluationName], err = weightsbundle.EncodeRecord(in.Evaluation); err != nil {
+		return Index{}, nil, err
+	}
 	for _, f := range manifest.Files {
 		content, err := os.ReadFile(filepath.Join(in.BundleRoot, filepath.FromSlash(f.Path)))
 		if err != nil {
@@ -190,7 +187,9 @@ func assemble(in ExportInput) (Index, map[string][]byte, error) {
 		}
 		files[BundleDir+"/"+f.Path] = content
 	}
-	files[BundleDir+"/"+weightsbundle.ManifestName], _ = manifest.Encode()
+	if files[BundleDir+"/"+weightsbundle.ManifestName], err = manifest.Encode(); err != nil {
+		return Index{}, nil, err
+	}
 	index := Index{Schema: 1, Kind: Kind, ReleaseID: in.Release.ID, BundleDigest: digest, ExportedAt: in.Now.UTC().Format(time.RFC3339), Images: append([]ImageRef(nil), in.Images...)}
 	paths := make([]string, 0, len(files))
 	for p := range files {
@@ -202,6 +201,26 @@ func assemble(in ExportInput) (Index, map[string][]byte, error) {
 		index.Entries = append(index.Entries, Entry{Path: p, Kind: entryKind(p), Size: int64(len(files[p])), SHA256: hex.EncodeToString(sum[:])})
 	}
 	return index, files, nil
+}
+
+// checkImages applies the same rule at export and at verification: every
+// image is a repository pinned by a sha256 digest, never a tag, and an
+// offline bundle without a pinned runtime image is incomplete.
+func checkImages(images []ImageRef) error {
+	if len(images) == 0 {
+		return fmt.Errorf("%w: at least one image reference by digest is required", ErrRefused)
+	}
+	seen := map[string]bool{}
+	for _, img := range images {
+		if img.Name == "" || img.Repository == "" || !digestPattern.MatchString(img.Digest) || strings.Contains(img.Repository, "@") || strings.Contains(img.Repository, ":") && strings.LastIndex(img.Repository, ":") > strings.LastIndex(img.Repository, "/") {
+			return fmt.Errorf("%w: image %q must be a repository with a sha256 digest, not a tag", ErrRefused, img.Name)
+		}
+		if seen[img.Name] {
+			return fmt.Errorf("%w: image %q listed twice", ErrRefused, img.Name)
+		}
+		seen[img.Name] = true
+	}
+	return nil
 }
 
 func entryKind(p string) string {
@@ -226,6 +245,9 @@ func checkRelease(r weightsbundle.Release) error {
 	}
 	if r.State != weightsbundle.StateActive || r.BundleDigest == nil || r.ApprovalID == "" || r.EvaluationID == "" || r.ArtifactID == "" || r.CandidateID == "" {
 		return fmt.Errorf("%w: release record is not a complete promotion (needs active state, bundle digest, artifact, evaluation, and bound approval)", ErrRefused)
+	}
+	if r.DatasetManifestSHA256 == nil || *r.DatasetManifestSHA256 == "" {
+		return fmt.Errorf("%w: release record carries no dataset manifest pin; an offline bundle cannot bind its dataset without one", ErrRefused)
 	}
 	return nil
 }
@@ -252,8 +274,18 @@ func checkDatasetManifest(r weightsbundle.Release, lineage weightsbundle.Dataset
 	if lineage.DatasetManifestSHA256 != actual {
 		return fmt.Errorf("%w: dataset manifest digest %s is not the lineage pin %s", ErrRefused, actual, lineage.DatasetManifestSHA256)
 	}
-	if r.DatasetManifestSHA256 != nil && *r.DatasetManifestSHA256 != actual {
-		return fmt.Errorf("%w: dataset manifest digest %s is not the release pin %s", ErrRefused, actual, *r.DatasetManifestSHA256)
+	if r.DatasetManifestSHA256 == nil || *r.DatasetManifestSHA256 != actual {
+		return fmt.Errorf("%w: dataset manifest digest %s is not the release pin", ErrRefused, actual)
+	}
+	// The lineage file is bound to nothing sealed on its own, so it must be
+	// exactly what the pinned manifest derives: the manifest is bound by the
+	// release record, and the source ids follow from the manifest.
+	expected, err := weightsbundle.SourcesFromExportManifest(manifest)
+	if err != nil {
+		return fmt.Errorf("%w: dataset manifest: %v", ErrRefused, err)
+	}
+	if !slices.Equal(expected.SourceIDs, lineage.SourceIDs) {
+		return fmt.Errorf("%w: lineage source ids %v are not those of the pinned dataset manifest %v", ErrRefused, lineage.SourceIDs, expected.SourceIDs)
 	}
 	return nil
 }
@@ -282,6 +314,9 @@ type EntryResult struct {
 // complete promotion. It writes nothing. A single altered byte fails with
 // the entry named; an unlisted file is an extra entry and also fails.
 func Verify(dir string) (Verified, error) {
+	if resolved, err := filepath.EvalSymlinks(dir); err == nil {
+		dir = resolved
+	}
 	raw, err := readBounded(filepath.Join(dir, IndexName), weightsbundle.MaxRecordBytes)
 	if err != nil {
 		return Verified{}, fmt.Errorf("%w: index: %v", ErrVerification, err)
@@ -320,6 +355,9 @@ func Verify(dir string) (Verified, error) {
 		result := EntryResult{Path: e.Path, Kind: e.Kind}
 		if _, ok := present[e.Path]; !ok {
 			result.Detail = "missing"
+		} else if e.Kind != entryKind(e.Path) {
+			delete(present, e.Path)
+			result.Detail = "kind mismatch"
 		} else {
 			delete(present, e.Path)
 			size, digest, err := hashFile(filepath.Join(dir, filepath.FromSlash(e.Path)))
@@ -385,10 +423,26 @@ func Verify(dir string) (Verified, error) {
 	} else if digest != index.BundleDigest {
 		return out, fmt.Errorf("%w: weights bundle digest %s is not the index's %s", ErrVerification, digest, index.BundleDigest)
 	}
-	for _, img := range index.Images {
-		if !digestPattern.MatchString(img.Digest) {
-			return out, fmt.Errorf("%w: image %q is not pinned by digest", ErrRefused, img.Name)
-		}
+	if err := checkImages(index.Images); err != nil {
+		return out, err
+	}
+	return out, nil
+}
+
+// VerifyPinned is Verify plus the out-of-band identity: the operator quotes
+// the index digest from the exporting side, and a bundle whose index was
+// rewritten (images, entries) after export is refused even when every entry
+// still matches the rewritten index.
+func VerifyPinned(dir, expectedIndexDigest string) (Verified, error) {
+	if expectedIndexDigest == "" {
+		return Verified{}, fmt.Errorf("%w: an expected index digest is required", ErrVerification)
+	}
+	out, err := Verify(dir)
+	if err != nil {
+		return out, err
+	}
+	if out.IndexDigest != expectedIndexDigest {
+		return out, fmt.Errorf("%w: index digest %s is not the expected %s", ErrVerification, out.IndexDigest, expectedIndexDigest)
 	}
 	return out, nil
 }
@@ -399,6 +453,9 @@ type ImportOptions struct {
 	ServingRoot string
 	Importer    string
 	Now         time.Time
+	// ExpectedIndexDigest, when set, is the index identity quoted from the
+	// exporting side; the import is refused unless the index matches it.
+	ExpectedIndexDigest string
 }
 
 // ImportResult is what an import did.
@@ -414,7 +471,13 @@ type ImportResult struct {
 // to the registry and records the import as a provenance event. Nothing is
 // written to the serving path before verification succeeds.
 func Import(ctx context.Context, dir string, opts ImportOptions) (ImportResult, error) {
-	verified, err := Verify(dir)
+	var verified Verified
+	var err error
+	if opts.ExpectedIndexDigest != "" {
+		verified, err = VerifyPinned(dir, opts.ExpectedIndexDigest)
+	} else {
+		verified, err = Verify(dir)
+	}
 	if err != nil {
 		return ImportResult{Verified: verified}, err
 	}
@@ -425,7 +488,7 @@ func Import(ctx context.Context, dir string, opts ImportOptions) (ImportResult, 
 		return ImportResult{}, err
 	}
 	result := ImportResult{Verified: verified, ServingPath: filepath.Join(opts.ServingRoot, verified.Index.BundleDigest)}
-	if _, _, err := weightsbundle.Load(result.ServingPath); err == nil {
+	if _, digest, err := weightsbundle.Load(result.ServingPath); err == nil && digest == verified.Index.BundleDigest {
 		result.AlreadyThere = true
 	} else {
 		staging := result.ServingPath + ".importing"
@@ -436,17 +499,33 @@ func Import(ctx context.Context, dir string, opts ImportOptions) (ImportResult, 
 		}
 		if err := weightsbundle.PublishLocal(staging, result.ServingPath); err != nil {
 			os.RemoveAll(staging)
+			if errors.Is(err, weightsbundle.ErrVerification) {
+				return result, fmt.Errorf("%w: serving path %s: %v", ErrVerification, result.ServingPath, err)
+			}
 			if !errors.Is(err, weightsbundle.ErrExists) {
 				return result, err
 			}
 			result.AlreadyThere = true
 		}
 	}
+	// The pointer must never advance to a release whose serving path does
+	// not load as exactly the verified bundle: a pre-existing directory at
+	// the digest's path that is partial, foreign, or altered is refused.
+	if _, digest, err := weightsbundle.Load(result.ServingPath); err != nil {
+		return result, fmt.Errorf("%w: serving path %s does not hold the verified bundle: %v", ErrVerification, result.ServingPath, err)
+	} else if digest != verified.Index.BundleDigest {
+		return result, fmt.Errorf("%w: serving path %s holds bundle %s, not %s", ErrVerification, result.ServingPath, digest, verified.Index.BundleDigest)
+	}
 	activated, err := opts.Registry.ImportRelease(ctx, verified.Release, verified.Lineage)
 	if err != nil {
 		return result, err
 	}
 	result.Activated = activated
+	if !activated {
+		// The active release was re-imported unchanged: nothing happened, so
+		// no provenance event claims an import that changed nothing.
+		return result, nil
+	}
 	now := opts.Now
 	if now.IsZero() {
 		now = time.Now()

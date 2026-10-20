@@ -18,6 +18,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,7 +42,7 @@ type Record map[string]any
 // the Python objects they came from.
 func Canonical(value any) ([]byte, error) {
 	var out bytes.Buffer
-	if err := writeValue(&out, reflect.ValueOf(value), ""); err != nil {
+	if err := writeValue(&out, reflect.ValueOf(value), nil); err != nil {
 		return nil, err
 	}
 	return out.Bytes(), nil
@@ -54,7 +55,10 @@ var (
 
 // writeValue renders v. skip names one top-level object member to omit,
 // which SealStruct uses to hash a record without its id.
-func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
+// writeValue encodes v. skip, when non-nil, names one top-level member to
+// omit (the record identity); it is never applied to nested values, and an
+// empty key is an ordinary key.
+func writeValue(out *bytes.Buffer, v reflect.Value, skip *string) error {
 	if !v.IsValid() {
 		out.WriteString("null")
 		return nil
@@ -114,7 +118,7 @@ func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
 			if i > 0 {
 				out.WriteByte(',')
 			}
-			if err := writeValue(out, v.Index(i), ""); err != nil {
+			if err := writeValue(out, v.Index(i), nil); err != nil {
 				return err
 			}
 		}
@@ -132,7 +136,7 @@ func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
 		out.WriteByte('{')
 		first := true
 		for _, k := range keys {
-			if k.String() == skip {
+			if skip != nil && k.String() == *skip {
 				continue
 			}
 			if !first {
@@ -141,7 +145,7 @@ func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
 			first = false
 			writeString(out, k.String())
 			out.WriteByte(':')
-			if err := writeValue(out, v.MapIndex(k), ""); err != nil {
+			if err := writeValue(out, v.MapIndex(k), nil); err != nil {
 				return err
 			}
 		}
@@ -151,7 +155,7 @@ func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
 		collectFields(v, members)
 		keys := make([]string, 0, len(members))
 		for k := range members {
-			if k != skip {
+			if skip == nil || k != *skip {
 				keys = append(keys, k)
 			}
 		}
@@ -163,7 +167,7 @@ func writeValue(out *bytes.Buffer, v reflect.Value, skip string) error {
 			}
 			writeString(out, k)
 			out.WriteByte(':')
-			if err := writeValue(out, members[k], ""); err != nil {
+			if err := writeValue(out, members[k], nil); err != nil {
 				return err
 			}
 		}
@@ -201,9 +205,18 @@ func collectFields(v reflect.Value, members map[string]reflect.Value) {
 	}
 }
 
+var integerLiteral = regexp.MustCompile(`^-?(0|[1-9][0-9]*)$`)
+
 // writeNumber reproduces Python's repr for floats and passes integers through.
 func writeNumber(out *bytes.Buffer, literal string) error {
 	if !strings.ContainsAny(literal, ".eE") {
+		if !integerLiteral.MatchString(literal) {
+			return fmt.Errorf("canonical: integer literal %q", literal)
+		}
+		// Python parses -0 as the integer 0 and re-emits "0".
+		if literal == "-0" {
+			literal = "0"
+		}
 		out.WriteString(literal)
 		return nil
 	}
@@ -352,7 +365,8 @@ func Seal(kind string, fields map[string]any) (Record, error) {
 // members. It returns the identity the "id" member must carry.
 func SealStruct(value any) (string, error) {
 	var out bytes.Buffer
-	if err := writeValue(&out, reflect.ValueOf(value), "id"); err != nil {
+	id := "id"
+	if err := writeValue(&out, reflect.ValueOf(value), &id); err != nil {
 		return "", err
 	}
 	return SHA256Hex(out.Bytes()), nil

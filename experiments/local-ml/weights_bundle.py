@@ -73,11 +73,60 @@ def bundle_digest(manifest):
     return hashlib.sha256(canonical(manifest)).hexdigest()
 
 
+def _regular_files(root):
+    """Every regular file under root; a symlink or other special entry anywhere is refused, as Go does."""
+    present = set()
+
+    def unreadable(error):
+        raise ValueError('unreadable ' + str(Path(error.filename).relative_to(root)) if error.filename else 'unreadable directory')
+
+    for dirpath, dirnames, filenames in os.walk(root, onerror=unreadable, followlinks=False):
+        for name in dirnames:
+            if os.path.islink(os.path.join(dirpath, name)):
+                raise ValueError('symlink ' + str(Path(dirpath, name).relative_to(root)))
+        for name in filenames:
+            p = Path(dirpath, name)
+            if p.is_symlink() or not p.is_file():
+                raise ValueError('not a regular file ' + str(p.relative_to(root)))
+            present.add(str(p.relative_to(root)))
+    return present
+
+
+def validate_manifest(manifest):
+    """Refuse a manifest Go would refuse: wrong schema or kind, unknown keys, bad paths, bad roles."""
+    if not isinstance(manifest, dict) or set(manifest) != {'schema', 'kind', 'files'}:
+        raise ValueError('manifest keys')
+    if type(manifest['schema']) is not int or manifest['schema'] != 1 or manifest['kind'] != 'weights-bundle':
+        raise ValueError('not a weights bundle manifest')
+    files = manifest['files']
+    if not isinstance(files, list) or not files or len(files) > 256:
+        raise ValueError('bundle needs 1..256 files')
+    paths, roles = set(), set()
+    for f in files:
+        if not isinstance(f, dict) or set(f) != {'path', 'role', 'size', 'sha256'}:
+            raise ValueError('bundle file needs path, role, size, sha256')
+        path = f['path']
+        parts = path.split('/') if isinstance(path, str) else []
+        if (not parts or path == MANIFEST or path.startswith('/') or '\\' in path or os.path.normpath(path) != path
+                or any(seg in ('', '.', '..') for seg in parts) or path in paths):
+            raise ValueError('invalid bundle path ' + repr(path))
+        if f['role'] not in ROLES or f['role'] in roles:
+            raise ValueError('invalid or repeated bundle role ' + repr(f['role']))
+        if type(f['size']) is not int or f['size'] < 0 or not isinstance(f['sha256'], str) or len(f['sha256']) != 64 or set(f['sha256']) - set('0123456789abcdef'):
+            raise ValueError('invalid bundle file metadata for ' + repr(path))
+        paths.add(path); roles.add(f['role'])
+    if 'weights' not in roles:
+        raise ValueError('bundle has no weights file')
+    return manifest
+
+
 def verify(root):
-    """Verify every file against bundle.json; name the first missing, extra, or altered file."""
+    """Verify every file against bundle.json; name the first missing, extra, altered, or non-regular file."""
     root = Path(root)
-    manifest = json.loads((root / MANIFEST).read_bytes())
-    present = {str(p.relative_to(root)) for p in root.rglob('*') if p.is_file()}
+    if root.is_symlink() or not root.is_dir():
+        raise ValueError('bundle root must be a directory, not a symlink')
+    manifest = validate_manifest(json.loads((root / MANIFEST).read_bytes()))
+    present = _regular_files(root)
     present.discard(MANIFEST)
     for f in manifest['files']:
         if f['path'] not in present:

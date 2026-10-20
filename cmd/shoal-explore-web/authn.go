@@ -84,6 +84,9 @@ var workspaceOperations = []auth.Operation{
 	auth.OperationDelegate,
 	auth.OperationDispatch,
 	auth.OperationInvoke,
+	// The development principal may drive the Learning console's writes;
+	// every approval it seals is bound to its one fixed actor.
+	auth.OperationLearningWrite,
 	// Deliberately no OperationExecute. It would buy this principal nothing:
 	// -dev-auth mints one fixed identity, so it is always its own enqueuer and
 	// already passes the principal check that the execute routes skip. What it

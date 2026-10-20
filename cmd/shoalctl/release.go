@@ -152,13 +152,20 @@ func runReleaseVerify(args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("verify", flag.ContinueOnError)
 	flags.SetOutput(stderr)
 	dir := flags.String("bundle", "", "offline release bundle directory")
+	expected := flags.String("index-digest", "", "index digest quoted from the exporting side; the bundle is refused unless its index matches")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
 	if *dir == "" || flags.NArg() != 0 {
 		return errors.New("release verify requires -bundle")
 	}
-	verified, err := releasebundle.Verify(*dir)
+	var verified releasebundle.Verified
+	var err error
+	if *expected != "" {
+		verified, err = releasebundle.VerifyPinned(*dir, *expected)
+	} else {
+		verified, err = releasebundle.Verify(*dir)
+	}
 	report := map[string]any{"verified": err == nil, "entries": verified.Results, "release_id": verified.Index.ReleaseID, "bundle_digest": verified.Index.BundleDigest, "index_digest": verified.IndexDigest}
 	if err != nil {
 		report["error"] = err.Error()
@@ -176,6 +183,7 @@ func runReleaseImport(args []string, stdout, stderr io.Writer) error {
 	registryDir := flags.String("registry", "", "release registry directory on the disconnected side")
 	servingRoot := flags.String("serving-root", "", "directory where verified weights bundles are published by digest")
 	importer := flags.String("importer", "", "identity of the operator performing the import")
+	expected := flags.String("index-digest", "", "index digest quoted from the exporting side; the import is refused unless the index matches")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
@@ -187,8 +195,8 @@ func runReleaseImport(args []string, stdout, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	result, err := releasebundle.Import(ctx, *dir, releasebundle.ImportOptions{Registry: registry, ServingRoot: *servingRoot, Importer: *importer, Now: time.Now()})
-	report := map[string]any{"imported": err == nil, "activated": result.Activated, "already_present": result.AlreadyThere, "serving_path": result.ServingPath, "entries": result.Verified.Results, "release_id": result.Verified.Index.ReleaseID, "bundle_digest": result.Verified.Index.BundleDigest}
+	result, err := releasebundle.Import(ctx, *dir, releasebundle.ImportOptions{Registry: registry, ServingRoot: *servingRoot, Importer: *importer, Now: time.Now(), ExpectedIndexDigest: *expected})
+	report := map[string]any{"imported": err == nil, "activated": result.Activated, "already_present": result.AlreadyThere, "serving_path": result.ServingPath, "entries": result.Verified.Results, "release_id": result.Verified.Index.ReleaseID, "bundle_digest": result.Verified.Index.BundleDigest, "index_digest": result.Verified.IndexDigest}
 	if err != nil {
 		report["error"] = err.Error()
 	}
@@ -204,11 +212,12 @@ func runReleaseRollback(args []string, stdout, stderr io.Writer) error {
 	registryDir := flags.String("registry", "", "release registry directory")
 	prior := flags.String("prior", "", "identity of the previously imported or promoted release to restore")
 	owner := flags.String("owner", "", "identity of the approver bound to this rollback")
+	servingRoot := flags.String("serving-root", "", "directory where verified weights bundles are published by digest; the prior bundle must still be there")
 	if err := flags.Parse(args); err != nil {
 		return err
 	}
-	if *prior == "" || *owner == "" || flags.NArg() != 0 {
-		return errors.New("release rollback requires -registry, -prior, and -owner")
+	if *prior == "" || *owner == "" || *servingRoot == "" || flags.NArg() != 0 {
+		return errors.New("release rollback requires -registry, -prior, -owner, and -serving-root")
 	}
 	ctx := context.Background()
 	registry, err := openRegistry(ctx, *registryDir)
@@ -218,6 +227,13 @@ func runReleaseRollback(args []string, stdout, stderr io.Writer) error {
 	active, ok := registry.Active()
 	if !ok {
 		return weightsbundle.ErrNoActiveRelease
+	}
+	// The runtime loads the prior bundle from the serving root; a rollback
+	// to a release whose bundle was pruned would point at nothing.
+	if priorRelease, ok := registry.Get(*prior); ok && priorRelease.BundleDigest != nil {
+		if _, got, err := weightsbundle.Load(filepath.Join(*servingRoot, *priorRelease.BundleDigest)); err != nil || got != *priorRelease.BundleDigest {
+			return fmt.Errorf("%w: prior release %s bundle %s is not on the serving root %s; re-import it before rolling back", weightsbundle.ErrRefused, *prior, *priorRelease.BundleDigest, *servingRoot)
+		}
 	}
 	approval, err := weightsbundle.NewRollbackApproval(active.ID, *prior, *owner)
 	if err != nil {
