@@ -250,21 +250,8 @@ func (s Store) Resolve(
 	if identity.validate() != nil {
 		return unknown, nil
 	}
-	if live.TableID != identity.Extent.TableID ||
-		!live.PrevRowSet || !equalOptionalBytes(live.PrevRow, identity.Extent.PrevEndRow) ||
-		!equalOptionalBytes(live.EndRow, identity.Extent.EndRow) ||
+	if !liveMatchesIdentity(live, identity) ||
 		footerSHA256 != identity.FooterSHA256 || footerState.Validate() != nil {
-		return unknown, nil
-	}
-	found := false
-	for _, file := range live.Files {
-		if bytes.Equal(file.RawQualifier, identity.Qualifier) &&
-			bytes.Equal(file.RawValue, identity.Value) && file.Path == identity.FilePath {
-			found = true
-			break
-		}
-	}
-	if !found {
 		return unknown, nil
 	}
 	objectPath, err := s.objectPath(identity)
@@ -306,6 +293,21 @@ func (s Store) Resolve(
 		return unknown, nil
 	}
 	return record.State, nil
+}
+
+func liveMatchesIdentity(live metadata.TabletInfo, identity Identity) bool {
+	if live.TableID != identity.Extent.TableID || !live.PrevRowSet ||
+		!equalOptionalBytes(live.PrevRow, identity.Extent.PrevEndRow) ||
+		!equalOptionalBytes(live.EndRow, identity.Extent.EndRow) {
+		return false
+	}
+	for _, file := range live.Files {
+		if bytes.Equal(file.RawQualifier, identity.Qualifier) &&
+			bytes.Equal(file.RawValue, identity.Value) && file.Path == identity.FilePath {
+			return true
+		}
+	}
+	return false
 }
 
 func readBounded(ctx context.Context, backend storage.Backend, objectPath string) ([]byte, error) {
