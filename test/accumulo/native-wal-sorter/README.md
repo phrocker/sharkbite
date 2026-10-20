@@ -10,7 +10,7 @@ The WAL path uses Accumulo's required `wal/<server>/<uuid>` layout. The
 `Native WAL sorter proof` workflow reruns this fixture on qwal and harness
 changes; a failed assertion or Java error fails the job.
 
-Run locally with Docker and Go:
+Run locally with Docker, Go, and Python 3:
 
 ```bash
 bash test/accumulo/native-wal-sorter/run.sh
