@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"io"
+	"path/filepath"
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/embeddingspace"
@@ -82,7 +83,14 @@ type interruptingFile struct {
 }
 
 func (b interruptingBackend) Open(ctx context.Context, path string) (storage.File, error) {
-	f, err := b.Backend.Open(ctx, path)
+	return b.OpenSnapshot(ctx, path)
+}
+func (b interruptingBackend) OpenSnapshot(ctx context.Context, path string) (storage.File, error) {
+	opener, ok := b.Backend.(storage.SnapshotOpener)
+	if !ok {
+		return nil, storage.ErrSnapshotUnsupported
+	}
+	f, err := opener.OpenSnapshot(ctx, path)
 	if err != nil {
 		return nil, err
 	}
@@ -118,5 +126,34 @@ func TestRFileEvidenceReaderRefusesShortFooterReadWithNilError(t *testing.T) {
 		Backend: backend, cancel: func() {}, short: true}}
 	if _, _, err := reader.ReadFooter(context.Background(), "file.rf"); !errors.Is(err, io.ErrUnexpectedEOF) {
 		t.Fatalf("short nil-error BCFile read = %v", err)
+	}
+}
+
+type ordinaryOnlyBackend struct {
+	inner storage.Backend
+	opens int
+}
+
+func (b *ordinaryOnlyBackend) Open(ctx context.Context, path string) (storage.File, error) {
+	b.opens++
+	return b.inner.Open(ctx, path)
+}
+
+func TestRFileEvidenceReaderRefusesRootedBackendWithoutSnapshotCapability(t *testing.T) {
+	backend := memory.New()
+	ordinary := &ordinaryOnlyBackend{inner: backend}
+	dir := t.TempDir()
+	rooted, err := storage.NewRooted(ordinary, dir, "s3://bucket/files")
+	if err != nil {
+		t.Fatal(err)
+	}
+	reader := RFileEvidenceReader{Backend: rooted.(storage.SnapshotOpener)}
+	path := filepath.Join(dir, "table", "file.rf")
+	backend.Put("s3://bucket/files/table/file.rf", evidenceRFile(t, embeddingspace.Has("space-a"), "v"))
+	if _, _, _, _, err := reader.ReadEvidence(context.Background(), path); !errors.Is(err, storage.ErrSnapshotUnsupported) {
+		t.Fatalf("unpinned rooted evidence = %v", err)
+	}
+	if ordinary.opens != 0 {
+		t.Fatalf("unpinned fallback called ordinary Open %d times", ordinary.opens)
 	}
 }

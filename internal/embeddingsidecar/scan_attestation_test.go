@@ -31,16 +31,19 @@ func (f *operatorApprovalFake) VerifyAuthorization(_ context.Context, digest str
 }
 
 type alternatingBackend struct {
-	first, second storage.Backend
+	first, second storage.SnapshotOpener
 	opens         int
 }
 
 func (b *alternatingBackend) Open(ctx context.Context, path string) (storage.File, error) {
+	return b.OpenSnapshot(ctx, path)
+}
+func (b *alternatingBackend) OpenSnapshot(ctx context.Context, path string) (storage.File, error) {
 	b.opens++
 	if b.opens%2 == 1 {
-		return b.first.Open(ctx, path)
+		return b.first.OpenSnapshot(ctx, path)
 	}
-	return b.second.Open(ctx, path)
+	return b.second.OpenSnapshot(ctx, path)
 }
 
 func attestationFixture(t *testing.T) (ScanAttestationStore, ScanAttestation, Record, *memory.Backend) {

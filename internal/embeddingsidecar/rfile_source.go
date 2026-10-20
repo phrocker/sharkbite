@@ -20,13 +20,12 @@ import (
 const maxEmbeddingMetaBlockBytes = 64 << 10
 const fileDigestChunkBytes = 64 << 10
 
-// RFileEvidenceReader reads source evidence from immutable RFile objects.
-// The backend MUST provide a stable byte snapshot per Open. A cloud backend
-// that issues unpinned range GETs for ReadAt does not satisfy this contract
-// on mutable paths; hosted activation requires immutable object names or
-// version-pinned reads. The caller must also recheck live native file metadata
-// before acknowledging publication. No hosted path uses this reader yet.
-type RFileEvidenceReader struct{ Backend storage.Backend }
+// RFileEvidenceReader reads source evidence from one pinned RFile snapshot.
+// The backend must refuse reads when it cannot bind every range to the opened
+// object version or consistency token. The caller must also recheck live native
+// file metadata before acknowledging publication. No hosted path uses this
+// reader yet.
+type RFileEvidenceReader struct{ Backend storage.SnapshotOpener }
 
 type strictReaderAt struct {
 	ctx context.Context
@@ -59,7 +58,7 @@ func (r RFileEvidenceReader) ReadFooter(
 	if err := ctx.Err(); err != nil {
 		return "", embeddingspace.FileState{}, err
 	}
-	file, err := r.Backend.Open(ctx, filePath)
+	file, err := r.Backend.OpenSnapshot(ctx, filePath)
 	if err != nil {
 		return "", embeddingspace.FileState{}, err
 	}
@@ -131,7 +130,7 @@ func (r RFileEvidenceReader) ReadFileDigest(ctx context.Context, filePath string
 	if err := ctx.Err(); err != nil {
 		return "", 0, err
 	}
-	file, err := r.Backend.Open(ctx, filePath)
+	file, err := r.Backend.OpenSnapshot(ctx, filePath)
 	if err != nil {
 		return "", 0, err
 	}
@@ -202,7 +201,7 @@ func (r RFileEvidenceReader) withEvidence(
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	file, err := r.Backend.Open(ctx, filePath)
+	file, err := r.Backend.OpenSnapshot(ctx, filePath)
 	if err != nil {
 		return false, err
 	}
