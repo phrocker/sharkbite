@@ -108,11 +108,23 @@ Receipt retrieval returns the exact stored original, including its timestamps.
 Recomputation is a new execution and has a new completion time even when its label
 matches. Deterministic output does not establish a correct decision.
 
+## Weights bundle
+
+`weights_bundle.py stage --candidate-dir OUT --output-dir BUNDLE` publishes
+the serving subset of an unchanged `train.py` output (`model.json` as
+`weights`, `runtime.json` as `runtime`) with an ordered `bundle.json`
+manifest, using the same exclusive no-replace publication as training.
+`verify` names the first missing, extra, or altered file; `compare` names the
+files on which two runs diverge instead of reporting completion as
+reproducibility. The bundle digest matches `learning.bundle_digest` in
+`experiments/decision-learning` and `internal/weightsbundle` in Go, and
+`decisionlinear.LoadBundle` serves the bundle after verifying every digest.
+
 ## Validation and remaining work
 
 ```sh
 "$PYTHON" -m unittest discover -s experiments/local-ml -v
-go test -race ./internal/decisionlinear ./cmd/shoal-local-ml-demo \
+go test -race ./internal/decisionlinear ./internal/weightsbundle ./cmd/shoal-local-ml-demo \
   ./internal/decisionartifacts ./internal/decisionservice ./internal/decisionstore ./pkg/decision
 go vet ./internal/decisionlinear ./cmd/shoal-local-ml-demo
 ```
