@@ -1,6 +1,9 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-// This executable is a finite synthetic conformance example, not a repository
-// sampling authority, human witness system, or estimate of classifier quality.
+// Package adjudicatedfixture is the finite synthetic conformance census of
+// the adjudicated training demo, not a repository sampling authority, human
+// witness system, or estimate of classifier quality. It is the only
+// implementation of decisiondatasets.Authority in this repository and is
+// what the explorer host mounts for development.
 package adjudicatedfixture
 
 import (

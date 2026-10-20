@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/phrocker/shoal-oss/internal/decisiondatasethttp"
 	"github.com/phrocker/shoal-oss/internal/decisionlearning"
 	"github.com/phrocker/shoal-oss/internal/distillation"
 	"github.com/phrocker/shoal-oss/internal/releasebundle"
@@ -114,27 +115,27 @@ func parseImagePins(spec string) ([]releasebundle.ImageRef, error) {
 // mountLearning composes the file-backed learning service and mounts the
 // learning surface atomically. No cohort authority or exporter is wired by
 // the default binary, and the service says so rather than faking one.
-func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.Resolver, cfg learningHostConfig, output io.Writer) error {
+func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.Resolver, cfg learningHostConfig, output io.Writer) (io.Closer, error) {
 	images, err := parseImagePins(cfg.images)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	for _, sub := range []string{"releases/releases", "releases/pointers", "releases/lineage", "releases/events", "records", "bundles"} {
 		if err := os.MkdirAll(filepath.Join(cfg.stateDir, sub), 0o700); err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if err := os.MkdirAll(cfg.servingRoot, 0o700); err != nil {
-		return err
+		return nil, err
 	}
 	store := local.New()
 	registry, err := weightsbundle.OpenRegistry(ctx, store, filepath.Join(cfg.stateDir, "releases"))
 	if err != nil {
-		return fmt.Errorf("learning registry: %w", err)
+		return nil, fmt.Errorf("learning registry: %w", err)
 	}
 	egress, err := parseModelEgress(cfg.modelEgress)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var serving decisionlearning.ServingReporter
 	if cfg.studentEndpoint != "" {
@@ -143,7 +144,7 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 		// active, so "local-student" is only ever resolved as loopback when
 		// it is one.
 		if model.EndpointEgressesOffHost(cfg.studentEndpoint) {
-			return errors.New("-student-endpoint is not loopback: an off-host student runtime is classified as egressing and is not served by this host")
+			return nil, errors.New("-student-endpoint is not loopback: an off-host student runtime is classified as egressing and is not served by this host")
 		}
 		active, ok := registry.Active()
 		switch {
@@ -159,10 +160,10 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 				DistributionTolerance: 0.01, Recorder: registry,
 			})
 			if err != nil {
-				return fmt.Errorf("student runtime for release %s: %w", active.ID, err)
+				return nil, fmt.Errorf("student runtime for release %s: %w", active.ID, err)
 			}
 			if predictor.EgressesOffHost() {
-				return errors.New("-student-endpoint is not loopback: an off-host student runtime is classified as egressing and is not served by this host")
+				return nil, errors.New("-student-endpoint is not loopback: an off-host student runtime is classified as egressing and is not served by this host")
 			}
 			serving = studentServing{predictor}
 		}
@@ -172,14 +173,27 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 	}
 	var cohorts decisionlearning.CohortLister
 	var exporter decisionlearning.Exporter
+	var closer io.Closer = nopCloser{}
 	if tasks, err := parseFixtureCohortTasks(cfg.fixtureCohorts); err != nil {
-		return err
+		return nil, err
 	} else if len(tasks) > 0 {
 		fixtures, err := mountFixtureCohorts(cfg.stateDir, tasks, output)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		cohorts, exporter = fixtures, fixtures
+		cohorts, exporter, closer = fixtures, fixtures, fixtures
+		// The bytes behind every recorded pin are served on the dataset
+		// exports route, so a trainer on this host can fetch exactly what
+		// the learning service recorded.
+		datasets, err := decisiondatasethttp.New(fixtureDatasetProvider{fixtures})
+		if err != nil {
+			fixtures.Close()
+			return nil, err
+		}
+		if err := handler.MountDatasetExports(datasets, resolver); err != nil {
+			fixtures.Close()
+			return nil, err
+		}
 	}
 	service, err := decisionlearning.New(decisionlearning.Config{
 		Registry: registry, Store: store, Prefix: cfg.stateDir, EvidenceDir: cfg.evidenceDir,
@@ -188,7 +202,15 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 		Cohorts: cohorts, Exporter: exporter,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return handler.MountLearningSurface(webapi.LearningSurface{Resolver: resolver, Provider: service})
+	if err := handler.MountLearningSurface(webapi.LearningSurface{Resolver: resolver, Provider: service}); err != nil {
+		closer.Close()
+		return nil, err
+	}
+	return closer, nil
 }
+
+type nopCloser struct{}
+
+func (nopCloser) Close() error { return nil }

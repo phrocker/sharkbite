@@ -57,7 +57,17 @@ func bindRole(a *auth.Authority, role string) (context.Context, auth.Decision, e
 
 // Prepare registers exactly the compiled fixture census. There is no
 // public registration route or caller-provided completeness/role assertion.
+// Prepare registers exactly the compiled fixture census under the demo's
+// stable cohort identity.
 func Prepare(dir, name string) (*Registry, *engine.Engine, *auth.Authority, context.Context, error) {
+	return PrepareSealed(dir, name, "")
+}
+
+// PrepareSealed is Prepare with a preparation nonce folded into the cohort
+// identity, for hosts that prepare a fresh census on every start: each
+// preparation's cutoffs and request ids differ, so each gets its own cohort
+// id and a stale export from an earlier preparation is never attached to it.
+func PrepareSealed(dir, name, nonce string) (*Registry, *engine.Engine, *auth.Authority, context.Context, error) {
 	var eng *engine.Engine
 	fail := func(err error) (*Registry, *engine.Engine, *auth.Authority, context.Context, error) {
 		if eng != nil {
@@ -262,7 +272,11 @@ func Prepare(dir, name string) (*Registry, *engine.Engine, *auth.Authority, cont
 		v.basis = r.bases[receipt.BasisID]
 	}
 	cutoff := time.Now().UTC()
-	r.cohort = decisiondatasets.Cohort{ID: shoal.ID("sealed-fixture-cohort:" + name), AuthorityRevisionID: "fixture-authority-revision:1", InventoryID: "compiled-target-membership-v1", Task: def.Task, Policy: def.Labels, QuestionID: question, FeatureSchemaID: def.FeatureSchema, FeatureBuilderID: shoal.ID("original-bytes:" + string(def.FeatureSchema)), SplitPolicyID: "compiled-family-disjoint-v1", SamplingPolicyID: "finite-fixture-census-only-v1", Cutoff: cutoff, Mode: "reconstructed"}
+	cohortID := "sealed-fixture-cohort:" + name
+	if nonce != "" {
+		cohortID += ":" + nonce
+	}
+	r.cohort = decisiondatasets.Cohort{ID: shoal.ID(cohortID), AuthorityRevisionID: "fixture-authority-revision:1", InventoryID: "compiled-target-membership-v1", Task: def.Task, Policy: def.Labels, QuestionID: question, FeatureSchemaID: def.FeatureSchema, FeatureBuilderID: shoal.ID("original-bytes:" + string(def.FeatureSchema)), SplitPolicyID: "compiled-family-disjoint-v1", SamplingPolicyID: "finite-fixture-census-only-v1", Cutoff: cutoff, Mode: "reconstructed"}
 	for _, f := range Fixtures(name) {
 		v := r.rows[f.ID]
 		one := float64(1)
@@ -285,23 +299,6 @@ func (r *Registry) Cohort() decisiondatasets.Cohort { return cloneCohort(r.cohor
 func (a *cohortAuthority) Proofs() (initial, final CaptureProof) {
 	return Proof(a.initialCapture), Proof(a.finalCapture)
 }
-
-// NewFreshExporter exports the cohort under a fresh session each call.
-func NewFreshExporter(r *Registry, resolver auth.Resolver) FreshDatasetExporter {
-	return FreshDatasetExporter{r: r, resolver: resolver}
-}
-
-// BindRole mints the demo's synthetic decision for one of its roles
-// (fixture-exporter, fixture-reporter, fixture-judge, ...) and binds it.
-func BindRole(a *auth.Authority, role string) (context.Context, auth.Decision, error) {
-	return bindRole(a, role)
-}
-
-// ReadBounded reads a file of at most limit bytes.
-func ReadBounded(path string, limit int) ([]byte, error) { return readBounded(path, limit) }
-
-// SyncDir fsyncs a directory so its entries are durable.
-func SyncDir(path string) error { return syncDir(path) }
 
 func readBounded(path string, limit int) ([]byte, error) {
 	f, err := os.Open(path)

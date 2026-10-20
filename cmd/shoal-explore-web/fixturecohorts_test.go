@@ -6,9 +6,11 @@ import (
 	"context"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/phrocker/shoal-oss/internal/adjudicatedfixture"
 	"github.com/phrocker/shoal-oss/internal/decisionlearning"
 	"github.com/phrocker/shoal-oss/internal/releasebundle"
 	"github.com/phrocker/shoal-oss/internal/storage/memory"
@@ -84,9 +86,41 @@ func TestFixtureCohortsFeedTheLearningService(t *testing.T) {
 		t.Fatalf("unknown cohort: %v", err)
 	}
 	// Exports are re-obtainable at the same pin, which is what an offline
-	// bundle export needs.
+	// bundle export needs, and the dataset-exports provider serves the same
+	// bytes so a trainer fetches exactly what was recorded.
 	again, err := cohorts.Export(ctx, id)
 	if err != nil || weightsbundle.SHA256Hex(again.Manifest) != export.ManifestSHA256 {
 		t.Fatalf("re-export drifted: %v", err)
+	}
+	served, err := fixtureDatasetProvider{cohorts}.Export(ctx, id)
+	if err != nil || served.ManifestSHA256 != export.ManifestSHA256 || !bytes.Equal(served.Manifest, again.Manifest) || len(served.Dataset) == 0 {
+		t.Fatalf("dataset route bytes differ: %v", err)
+	}
+	// The export was sealed at mount time, under the demo's one-hour
+	// exporter decision, so nothing on the request path depends on it.
+	if cohorts.entries[id].sealed.ManifestSHA256 != export.ManifestSHA256 {
+		t.Fatal("export not sealed at mount")
+	}
+	// A second preparation is a new cohort identity: a recorded export from
+	// an earlier start is never attached to the cohort of this one.
+	second, err := mountFixtureCohorts(t.TempDir(), tasks, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer second.Close()
+	if _, same := second.entries[id]; same {
+		t.Fatal("cohort identity reused across preparations")
+	}
+	if !strings.HasPrefix(string(second.order[0]), "sealed-fixture-cohort:source:") {
+		t.Fatalf("cohort id %s", second.order[0])
+	}
+	// The demo's own CLI keeps its stable identity.
+	if r, eng, _, _, err := adjudicatedfixture.Prepare(filepath.Join(t.TempDir(), "demo"), "source"); err != nil {
+		t.Fatal(err)
+	} else {
+		eng.Close()
+		if r.Cohort().ID != "sealed-fixture-cohort:source" {
+			t.Fatalf("demo cohort id %s", r.Cohort().ID)
+		}
 	}
 }

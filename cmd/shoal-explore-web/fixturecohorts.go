@@ -3,6 +3,8 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -15,7 +17,6 @@ import (
 	"github.com/phrocker/shoal-oss/internal/decisiondatasets"
 	"github.com/phrocker/shoal-oss/internal/decisionlearning"
 	"github.com/phrocker/shoal-oss/internal/engine"
-	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
@@ -33,19 +34,16 @@ type fixtureCohorts struct {
 }
 
 type fixtureCohort struct {
-	task     string
-	registry *adjudicatedfixture.Registry
-	engine   *engine.Engine
-	resolver auth.Resolver
-	// ctx carries the demo's own fixture-exporter decision: the registry's
-	// authority governs source permission, the web caller's authority
-	// governs who may ask for an export.
-	ctx    context.Context
+	engine *engine.Engine
 	cohort decisiondatasets.Cohort
-	// sealed is the first export, returned for every later request: the
+	// sealed is the export taken at startup under the demo's own
+	// fixture-exporter decision (which expires an hour after it is minted,
+	// so it is used once, immediately) and returned for every request: the
 	// census is immutable, and the recorded manifest pin must be
-	// re-obtainable for an offline bundle export.
-	sealed *decisiondatasets.Bundle
+	// re-obtainable for an offline bundle export. The registry's authority
+	// governed source permission; the web caller's authority governs who
+	// may ask for the bytes.
+	sealed decisiondatasets.Bundle
 }
 
 // fixtureCohortTasks are the demo's compiled task fixtures.
@@ -69,9 +67,12 @@ func parseFixtureCohortTasks(spec string) ([]string, error) {
 }
 
 // mountFixtureCohorts prepares one sealed registry per task under
-// <stateDir>/fixture-cohorts. The census is synthetic and regenerated on
-// every start, so the previous preparation is removed first; identities in
-// it (cutoffs, request ids) are fresh each time.
+// <stateDir>/fixture-cohorts and takes each cohort's export at once. The
+// census is synthetic and regenerated on every start, so the previous
+// preparation is removed first; every preparation gets a fresh nonce in its
+// cohort identity because its cutoffs and request ids, and therefore its
+// export pin, are new, and a recorded export from an earlier start must not
+// look attached to this one.
 func mountFixtureCohorts(stateDir string, tasks []string, output io.Writer) (*fixtureCohorts, error) {
 	root := filepath.Join(stateDir, "fixture-cohorts")
 	if err := os.RemoveAll(root); err != nil {
@@ -80,17 +81,28 @@ func mountFixtureCohorts(stateDir string, tasks []string, output io.Writer) (*fi
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		return nil, err
 	}
+	var seed [8]byte
+	if _, err := rand.Read(seed[:]); err != nil {
+		return nil, err
+	}
+	nonce := hex.EncodeToString(seed[:])
 	f := &fixtureCohorts{entries: map[shoal.ID]*fixtureCohort{}}
 	for _, task := range tasks {
-		registry, eng, authority, ctx, err := adjudicatedfixture.Prepare(filepath.Join(root, task), task)
+		registry, eng, authority, ctx, err := adjudicatedfixture.PrepareSealed(filepath.Join(root, task), task, nonce)
 		if err != nil {
 			f.Close()
 			return nil, fmt.Errorf("fixture cohort %s: %w", task, err)
 		}
 		cohort := registry.Cohort()
-		f.entries[cohort.ID] = &fixtureCohort{task: task, registry: registry, engine: eng, resolver: authority.Resolver(), ctx: ctx, cohort: cohort}
+		bundle, err := adjudicatedfixture.FreshExport(ctx, registry, authority.Resolver(), cohort.ID)
+		if err != nil {
+			eng.Close()
+			f.Close()
+			return nil, fmt.Errorf("fixture cohort %s export: %w", task, err)
+		}
+		f.entries[cohort.ID] = &fixtureCohort{engine: eng, cohort: cohort, sealed: bundle}
 		f.order = append(f.order, cohort.ID)
-		fmt.Fprintf(output, "learning: fixture cohort %s prepared (%d members, synthetic conformance fixture, not a sampling authority)\n", cohort.ID, len(cohort.Members))
+		fmt.Fprintf(output, "learning: fixture cohort %s prepared and exported at pin %s (%d members, synthetic conformance fixture, not a sampling authority)\n", cohort.ID, bundle.ManifestSHA256, len(cohort.Members))
 	}
 	return f, nil
 }
@@ -107,31 +119,37 @@ func (f *fixtureCohorts) ListCohorts(context.Context) ([]decisionlearning.Cohort
 	return out, nil
 }
 
-// Export produces the authorized export of one fixture cohort. The first
-// request runs the demo's real export session; later requests return the
-// same sealed bytes. The registry is single-owner, so exports are
-// serialized.
-func (f *fixtureCohorts) Export(ctx context.Context, id shoal.ID) (decisionlearning.Export, error) {
+// bundle returns the sealed export of one fixture cohort.
+func (f *fixtureCohorts) bundle(ctx context.Context, id shoal.ID) (decisiondatasets.Bundle, error) {
 	if ctx.Err() != nil {
-		return decisionlearning.Export{}, ctx.Err()
+		return decisiondatasets.Bundle{}, ctx.Err()
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	entry, ok := f.entries[id]
 	if !ok {
-		return decisionlearning.Export{}, shoal.NewError(shoal.ErrorNotFound, "cohort "+string(id)+" is not a prepared fixture cohort")
+		return decisiondatasets.Bundle{}, shoal.NewError(shoal.ErrorNotFound, "cohort "+string(id)+" is not a prepared fixture cohort")
 	}
-	if entry.sealed == nil {
-		bundle, err := adjudicatedfixture.FreshExport(entry.ctx, entry.registry, entry.resolver, id)
-		if err != nil {
-			return decisionlearning.Export{}, err
-		}
-		entry.sealed = &bundle
+	return decisiondatasets.Bundle{Dataset: append([]byte(nil), entry.sealed.Dataset...), Manifest: append([]byte(nil), entry.sealed.Manifest...), ManifestSHA256: entry.sealed.ManifestSHA256}, nil
+}
+
+// Export is the learning service's exporter: the sealed export of one
+// fixture cohort, identical on every call.
+func (f *fixtureCohorts) Export(ctx context.Context, id shoal.ID) (decisionlearning.Export, error) {
+	b, err := f.bundle(ctx, id)
+	if err != nil {
+		return decisionlearning.Export{}, err
 	}
-	if ctx.Err() != nil {
-		return decisionlearning.Export{}, ctx.Err()
-	}
-	return decisionlearning.Export{Dataset: append([]byte(nil), entry.sealed.Dataset...), Manifest: append([]byte(nil), entry.sealed.Manifest...)}, nil
+	return decisionlearning.Export{Dataset: b.Dataset, Manifest: b.Manifest}, nil
+}
+
+// fixtureDatasetProvider serves the same sealed bytes through the
+// dataset-exports route, so a trainer can fetch exactly the export whose
+// pin the learning service recorded.
+type fixtureDatasetProvider struct{ f *fixtureCohorts }
+
+func (p fixtureDatasetProvider) Export(ctx context.Context, id shoal.ID) (decisiondatasets.Bundle, error) {
+	return p.f.bundle(ctx, id)
 }
 
 // Close releases every prepared registry's engine.

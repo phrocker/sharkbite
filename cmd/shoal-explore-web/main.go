@@ -886,17 +886,19 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		return err
 	}
 	if *learningStateDir != "" {
-		if err := mountLearning(ctx, handler, authority.Resolver(), learningHostConfig{
+		learningCloser, err := mountLearning(ctx, handler, authority.Resolver(), learningHostConfig{
 			stateDir: *learningStateDir, evidenceDir: *learningEvidenceDir,
 			servingRoot: firstNonEmpty(*learningServingRoot, filepath.Join(*stateDir, "releases")),
 			images:      *learningImages, studentEndpoint: *studentEndpoint,
 			studentModelAlias: *studentModelAlias, studentCriteriaID: *studentCriteriaID,
 			studentDevice: *studentDevice, modelEgress: *learningModelEgress,
 			allowOffHostModels: *learningAllowOffHost, fixtureCohorts: *learningFixtureCohorts,
-		}, output); err != nil {
+		}, output)
+		if err != nil {
 			listener.Close()
 			return err
 		}
+		defer learningCloser.Close()
 	}
 	var chat webapi.AskProvider
 	var provenance webapi.InteractionProvider
