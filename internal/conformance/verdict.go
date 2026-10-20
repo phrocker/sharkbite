@@ -83,6 +83,7 @@ type Gate struct {
 	Evidence             []Evidence `json:"evidence"`
 	ReplayFixture        string     `json:"replay_fixture"`
 	FixtureSHA256        string     `json:"fixture_sha256"`
+	LiveLog              string     `json:"live_log,omitempty"`
 }
 
 type Verdict struct {
@@ -173,11 +174,12 @@ func (OSExecutor) Run(ctx context.Context, root string, command []string) Comman
 }
 
 type Options struct {
-	Root     string
-	Mode     string
-	Required []string
-	Commit   string
-	Executor Executor
+	Root       string
+	Mode       string
+	Required   []string
+	Commit     string
+	Executor   Executor
+	LiveLogDir string
 }
 
 func Run(ctx context.Context, opts Options) (Verdict, int, error) {
@@ -375,7 +377,7 @@ func missingGates(required []string, covered map[string]bool) []string {
 }
 
 func runLive(ctx context.Context, opts Options, spec adapterSpec, verdict *Verdict, gate *Gate) {
-	command := []string{"python", "test/accumulo/harness.py", "role", gate.Role}
+	command := []string{"python3", "test/accumulo/harness.py", "role", gate.Role}
 	harnessSHA, err := sourceSHA256(opts.Root, "test/accumulo/harness.py")
 	if err != nil {
 		gate.State = Fail
@@ -383,6 +385,19 @@ func runLive(ctx context.Context, opts Options, spec adapterSpec, verdict *Verdi
 		return
 	}
 	result := opts.Executor.Run(ctx, opts.Root, command)
+	if opts.LiveLogDir != "" {
+		if err := os.MkdirAll(opts.LiveLogDir, 0o755); err != nil {
+			gate.State = Fail
+			gate.Summary = fmt.Sprintf("create live log directory: %v", err)
+			return
+		}
+		gate.LiveLog = filepath.ToSlash(filepath.Join(opts.LiveLogDir, gate.Role+".log"))
+		if err := os.WriteFile(gate.LiveLog, []byte(result.Output), 0o644); err != nil {
+			gate.State = Fail
+			gate.Summary = fmt.Sprintf("write live log %s: %v", gate.LiveLog, err)
+			return
+		}
+	}
 	switch result.ExitCode {
 	case 0:
 		marker := "SHOAL_EVIDENCE role=" + gate.Role + " status=pass"

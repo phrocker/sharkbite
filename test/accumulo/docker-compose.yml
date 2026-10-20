@@ -1,6 +1,6 @@
 services:
   zookeeper:
-    image: zookeeper:3.9.5
+    image: zookeeper@sha256:f5ce2c0274fd99c77bcb51505c748ac109fd5be36b4247b46c178ce59ea59e59
     hostname: zookeeper
     environment:
       ZOO_4LW_COMMANDS_WHITELIST: ruok,srvr
@@ -16,7 +16,7 @@ services:
       - zookeeper-log:/datalog
 
   namenode:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     user: "0:0"
     hostname: namenode
     command:
@@ -41,7 +41,7 @@ services:
       - namenode-data:/tmp/shoal-hdfs/name
 
   datanode:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     user: "0:0"
     hostname: datanode
     command: ["hdfs", "datanode"]
@@ -62,7 +62,7 @@ services:
       - datanode-data:/tmp/shoal-hdfs/data
 
   hdfs-init:
-    image: apache/hadoop:3.4.2
+    image: apache/hadoop@sha256:0f79c18d27a2b15984868a41e245b09c98daa5638b573b4dbd848be650f05635
     hostname: hdfs-init
     depends_on:
       datanode:

@@ -100,7 +100,7 @@ func TestReplayFailureMakesRequiredGateFail(t *testing.T) {
 }
 
 func TestUnavailableLiveEnvironmentIsUnsupportedNotPass(t *testing.T) {
-	command := []string{"python", "test/accumulo/harness.py", "role", "client"}
+	command := []string{"python3", "test/accumulo/harness.py", "role", "client"}
 	verdict, code, err := Run(context.Background(), Options{
 		Root:     repositoryRoot(t),
 		Mode:     "live",
@@ -126,7 +126,7 @@ func TestUnavailableLiveEnvironmentIsUnsupportedNotPass(t *testing.T) {
 func TestLiveRoleCommandsPromoteOnlyTheirCompletedProductionGate(t *testing.T) {
 	for _, role := range Roles {
 		t.Run(role, func(t *testing.T) {
-			command := []string{"python", "test/accumulo/harness.py", "role", role}
+			command := []string{"python3", "test/accumulo/harness.py", "role", role}
 			verdict, code, err := Run(context.Background(), Options{
 				Root:     repositoryRoot(t),
 				Mode:     "live",
@@ -156,7 +156,7 @@ func TestLiveRoleCommandsPromoteOnlyTheirCompletedProductionGate(t *testing.T) {
 }
 
 func TestLiveRoleZeroExitWithoutEvidenceMarkerFailsClosed(t *testing.T) {
-	command := []string{"python", "test/accumulo/harness.py", "role", "tserver"}
+	command := []string{"python3", "test/accumulo/harness.py", "role", "tserver"}
 	verdict, code, err := Run(context.Background(), Options{
 		Root:     repositoryRoot(t),
 		Mode:     "live",
@@ -172,6 +172,35 @@ func TestLiveRoleZeroExitWithoutEvidenceMarkerFailsClosed(t *testing.T) {
 	if code != 1 || verdict.Gates[0].State != Fail ||
 		!strings.Contains(verdict.Gates[0].Summary, "without required evidence marker") {
 		t.Fatalf("code=%d gate=%#v", code, verdict.Gates[0])
+	}
+}
+
+func TestFailedLiveRolePreservesRawLogAndFailingVerdict(t *testing.T) {
+	command := []string{"python3", "test/accumulo/harness.py", "role", "tserver"}
+	logDir := t.TempDir()
+	verdict, code, err := Run(context.Background(), Options{
+		Root:       repositoryRoot(t),
+		Mode:       "live",
+		Required:   []string{"tserver"},
+		Commit:     strings.Repeat("e", 40),
+		LiveLogDir: logDir,
+		Executor: fakeExecutor{results: map[string]CommandResult{
+			strings.Join(command, "\x00"): {ExitCode: 1, Output: "cluster broke\ncompose diagnostics\n"},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gate := verdict.Gates[0]
+	if code != 1 || gate.State != Fail || gate.LiveLog != filepath.ToSlash(filepath.Join(logDir, "tserver.log")) {
+		t.Fatalf("code=%d gate=%#v", code, gate)
+	}
+	data, err := os.ReadFile(gate.LiveLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "cluster broke\ncompose diagnostics\n" {
+		t.Fatalf("raw live log = %q", data)
 	}
 }
 

@@ -112,8 +112,8 @@ def validate(root: Path = ROOT) -> list[str]:
             compose,
             ACCUMULO_IMAGE,
         ),
-        "compose Hadoop image": (compose, f"apache/hadoop:{HADOOP_VERSION}"),
-        "compose ZooKeeper image": (compose, f"zookeeper:{ZOOKEEPER_VERSION}"),
+        "compose Hadoop image": (compose, f"apache/hadoop@{HADOOP_IMAGE_DIGEST}"),
+        "compose ZooKeeper image": (compose, f"zookeeper@{ZOOKEEPER_IMAGE_DIGEST}"),
         "Dockerfile Accumulo revision": (
             dockerfile,
             f"ARG ACCUMULO_REVISION={ACCUMULO_REVISION}",
@@ -156,6 +156,13 @@ def validate(root: Path = ROOT) -> list[str]:
     for description, (text, expected) in required_text.items():
         if expected not in text:
             errors.append(f"{description} is not pinned to {expected!r}")
+
+    if compose.count(f"image: apache/hadoop@{HADOOP_IMAGE_DIGEST}") != 3:
+        errors.append("all three Hadoop Compose services must use the pinned digest")
+    if compose.count(f"image: zookeeper@{ZOOKEEPER_IMAGE_DIGEST}") != 1:
+        errors.append("ZooKeeper Compose service must use the pinned digest")
+    if "image: apache/hadoop:" in compose or "image: zookeeper:" in compose:
+        errors.append("Compose Hadoop and ZooKeeper images must not use mutable tags")
 
     if "2.1.6" in compose or "2.1.6" in dockerfile:
         errors.append("legacy Accumulo 2.1.6 reference remains")

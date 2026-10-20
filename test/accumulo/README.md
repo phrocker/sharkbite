@@ -18,9 +18,10 @@ with the pinned Accumulo source, avoiding the moving `1.0.0-SNAPSHOT`
 artifact. The build requires network access to Maven Central, Docker Hub, and
 GitHub.
 
-The local harness pulls the resulting public GHCR image by immutable digest,
-so normal test runs do not rebuild Accumulo or download Hadoop from the Apache
-archive server.
+The local harness pulls the resulting public GHCR image by immutable digest.
+Its Compose Hadoop and ZooKeeper services also use the same immutable image
+digests as the image build, so normal test runs do not rebuild Accumulo or
+download Hadoop from the Apache archive server.
 
 ## Commands
 
@@ -98,8 +99,8 @@ and restart.
 On a Docker host, run the exact independent gates:
 
 ```bash
-python test/accumulo/harness.py validate
-python -m unittest -v test/accumulo/test_harness.py
+python3 test/accumulo/harness.py validate
+python3 -m unittest -v test/accumulo/test_harness.py
 go test ./internal/conformance ./cmd/shoal-conformance
 go build -o bin/shoal-conformance ./cmd/shoal-conformance
 bin/shoal-conformance -mode replay -output replay-verdict.json
@@ -108,6 +109,23 @@ bin/shoal-conformance -mode live -required tserver,scanserver,client \
 bin/shoal-conformance -mode live -required compactor,promotion \
   -output compactor-live-verdict.json
 ```
+
+The dedicated [live tserver CI workflow](../../.github/workflows/accumulo-live-tserver.yml)
+runs on relevant pull requests and by manual dispatch. It selects only
+`-required tserver`, writes `evidence/verdict.json`, and passes
+`-live-log-dir evidence` to retain the raw `evidence/tserver.log` output before
+the harness removes its containers and volumes. Static validation, build and
+CLI diagnostics are retained alongside the verdict. The artifact upload runs
+even if a check or the live gate fails. Exit 1 (`fail`) and exit 2
+(`unsupported`, including absent Docker) both fail the workflow. A preflight
+or build failure can prevent the CLI from producing a verdict; its step log
+remains in the artifact.
+
+This CI slice establishes the pinned tserver role only. The `scanserver`,
+`client`, `compactor`, and `promotion` gates are explicitly `skipped` in its
+JSON and need their own required live runs before a full release-conformance
+claim. The tserver result does not establish Python client behavior or every
+live-cluster row in the compatibility matrix.
 
 Keep the JSON verdicts and complete Compose logs. A live pass must contain
 `SHOAL_EVIDENCE` lines for ServiceLock/assignment, Java ingest, continuation,
@@ -128,7 +146,8 @@ Each selected gate is `required` and has exactly one state:
 
 Exit status is `0` only when every required gate passes, `1` when any required
 gate or its exact evidence fails, and `2` when no required gate failed but at
-least one is unsupported or skipped. Consequently a successful replay,
+least one required gate is unsupported. Nonrequired skipped roles do not affect
+the exit status. Consequently a successful replay,
 Docker absence, and unwired live roles cannot authorize a release. To
 evaluate a slice independently, pass a
 comma-separated list such as `-required scanserver,client`; all gates remain
