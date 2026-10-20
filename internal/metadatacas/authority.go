@@ -33,6 +33,7 @@ var (
 	ErrStaleOwner    = errors.New("metadatacas: stale tablet owner")
 	ErrRejected      = errors.New("metadatacas: conditional mutation rejected")
 	ErrInconsistent  = errors.New("metadatacas: inconsistent authoritative metadata")
+	ErrUncoveredFile = errors.New("metadatacas: file commit has no covered WAL reference")
 )
 
 const rootTabletPath = "root_tablet"
@@ -261,6 +262,13 @@ func (a *Authority) Commit(
 ) (mincauthority.CommitOutcome, error) {
 	if err := a.validateIdentity(request.Extent, request.Fence); err != nil {
 		return mincauthority.CommitRejected, err
+	}
+	// This API is the WAL-backed minor-compaction commit. Without a covered
+	// reference, adding a file can acknowledge an unlogged batch without any
+	// durable operation identity to reconcile after compaction or a split.
+	// RFile-direct commits need a separate protocol, not this shortcut.
+	if len(request.RemoveWALs) == 0 {
+		return mincauthority.CommitRejected, ErrUncoveredFile
 	}
 
 	fileQualifier, fileValue, err := encodeFile(request.File)
