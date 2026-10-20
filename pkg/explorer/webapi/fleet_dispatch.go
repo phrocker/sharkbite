@@ -863,6 +863,14 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 	}
 }
 
+// EncodeFleetAction returns the public action receipt used by non-claim
+// routes. It omits execution input, idempotency keys, and internal
+// authorization metadata. MCP uses this projection so it cannot expose more
+// than the HTTP status route for the same action.
+func EncodeFleetAction(record fleet.ActionRecord) dispatchapi.Action {
+	return encodeFleetAction(record)
+}
+
 // encodeClaimedFleetAction is encodeFleetAction plus the two fields a claimant
 // needs in order to perform the work: the operation's parameters and the
 // idempotency key to present to the target. Only the claim route calls it.
