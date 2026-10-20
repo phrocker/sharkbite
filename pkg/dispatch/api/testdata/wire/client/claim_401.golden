@@ -1,6 +1,6 @@
 requests: 1
-request: POST /shoal/api/v1/fleet/actions/YQD_/claim
-error: dispatch claim: unauthorized (HTTP 401, unauthorized)
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: unauthorized (HTTP 401, unauthorized)
 kind: unauthorized
 status: 401 code: "unauthorized" failure: ""
 is ambiguity unrecorded: false

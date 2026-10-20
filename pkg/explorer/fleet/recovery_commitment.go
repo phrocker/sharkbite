@@ -36,8 +36,8 @@ const (
 
 const RecoveryCommitmentVersion = 1
 
-// RecoveryCommitment is the action-bound statement a future
-// prepare protocol will persist before the first external target send. The
+// RecoveryCommitment is the action-bound statement the prepare protocol
+// persists before the first external target send. The
 // request digest covers a versioned canonical encoding of the bound method,
 // full target URL, non-credential headers (including the idempotency key),
 // and body. TargetScopeDigest separately commits to a stable operator-supplied

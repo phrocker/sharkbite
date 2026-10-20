@@ -10,9 +10,8 @@ import (
 )
 
 // Record is an action record decoded from the wire: IDs as bytes and the
-// executor key decoded. Input and ExecutorKey are populated on the claim
-// response only; the pull page never carries them, and re-reading the action
-// does not return them, so a worker keeps them from the claim.
+// executor key decoded. Input and ExecutorKey are populated only by Material;
+// ordinary action responses never carry them.
 type Record struct {
 	ID              []byte
 	Version         uint64
@@ -30,11 +29,13 @@ type Record struct {
 	UpdatedAt       time.Time
 	// ExecutorKey is the decoded key, ExecutorKeyBytes long, or nil when the
 	// response carried none.
-	ExecutorKey     []byte
-	ClaimID         []byte
-	ClaimFence      uint64
-	ClaimLeaseUntil time.Time
-	EffectPossible  bool
+	ExecutorKey             []byte
+	ClaimID                 []byte
+	ClaimFence              uint64
+	ClaimLeaseUntil         time.Time
+	EffectPossible          bool
+	RecoveryProtocolVersion uint8
+	RecoveryCommitment      *RecoveryStatus
 	// Effected is the volume a failed record says escaped before the failure
 	// (#427), zero when none was reported.
 	Effected Effected
@@ -70,28 +71,30 @@ func (r Record) Correlate(ctx Context) Context {
 // carried raw and read only if it is a string. Action is the full wire type
 // the explorer encodes; DecodeRecord reads one already decoded.
 type recordWire struct {
-	ID               string                  `json:"id"`
-	Version          uint64                  `json:"version"`
-	State            DispatchState           `json:"state"`
-	AgentID          string                  `json:"agent_id"`
-	AgentGeneration  int64                   `json:"agent_generation"`
-	Capability       string                  `json:"capability"`
-	Action           string                  `json:"action"`
-	Input            json.RawMessage         `json:"input,omitempty"`
-	Output           json.RawMessage         `json:"output,omitempty"`
-	ErrorCode        string                  `json:"error_code,omitempty"`
-	ErrorCodeOrigin  json.RawMessage         `json:"error_code_origin,omitempty"`
-	Effected         *Effected               `json:"effected,omitempty"`
-	CorrelationID    string                  `json:"correlation_id,omitempty"`
-	Deadline         time.Time               `json:"deadline"`
-	CreatedAt        time.Time               `json:"created_at"`
-	UpdatedAt        time.Time               `json:"updated_at"`
-	ExecutorKey      string                  `json:"executor_key,omitempty"`
-	ClaimID          string                  `json:"claim_id,omitempty"`
-	ClaimFence       uint64                  `json:"claim_fence,omitempty"`
-	ClaimLeaseUntil  time.Time               `json:"claim_lease_until,omitempty"`
-	EffectPossible   bool                    `json:"effect_possible"`
-	AmbiguityReports []recordedAmbiguityWire `json:"ambiguity_reports,omitempty"`
+	ID                      string                  `json:"id"`
+	Version                 uint64                  `json:"version"`
+	State                   DispatchState           `json:"state"`
+	AgentID                 string                  `json:"agent_id"`
+	AgentGeneration         int64                   `json:"agent_generation"`
+	Capability              string                  `json:"capability"`
+	Action                  string                  `json:"action"`
+	Input                   json.RawMessage         `json:"input,omitempty"`
+	Output                  json.RawMessage         `json:"output,omitempty"`
+	ErrorCode               string                  `json:"error_code,omitempty"`
+	ErrorCodeOrigin         json.RawMessage         `json:"error_code_origin,omitempty"`
+	Effected                *Effected               `json:"effected,omitempty"`
+	CorrelationID           string                  `json:"correlation_id,omitempty"`
+	Deadline                time.Time               `json:"deadline"`
+	CreatedAt               time.Time               `json:"created_at"`
+	UpdatedAt               time.Time               `json:"updated_at"`
+	ExecutorKey             string                  `json:"executor_key,omitempty"`
+	ClaimID                 string                  `json:"claim_id,omitempty"`
+	ClaimFence              uint64                  `json:"claim_fence,omitempty"`
+	ClaimLeaseUntil         time.Time               `json:"claim_lease_until,omitempty"`
+	EffectPossible          bool                    `json:"effect_possible"`
+	RecoveryProtocolVersion uint8                   `json:"recovery_protocol_version,omitempty"`
+	RecoveryCommitment      *RecoveryStatus         `json:"recovery_commitment,omitempty"`
+	AmbiguityReports        []recordedAmbiguityWire `json:"ambiguity_reports,omitempty"`
 }
 
 // recordedAmbiguityWire is the part of a report a worker matches on.
@@ -133,7 +136,9 @@ func DecodeRecord(w Action) (Record, error) {
 		Effected: w.Effected, CorrelationID: w.CorrelationID, Deadline: w.Deadline,
 		CreatedAt: w.CreatedAt, UpdatedAt: w.UpdatedAt, ExecutorKey: w.ExecutorKey,
 		ClaimID: w.ClaimID, ClaimFence: w.ClaimFence, ClaimLeaseUntil: w.ClaimLeaseUntil,
-		EffectPossible: w.EffectPossible, AmbiguityReports: reports,
+		EffectPossible: w.EffectPossible, RecoveryProtocolVersion: w.RecoveryProtocolVersion,
+		RecoveryCommitment: w.RecoveryCommitment,
+		AmbiguityReports:   reports,
 	})
 }
 
@@ -161,6 +166,8 @@ func decodeRecord(w recordWire) (Record, error) {
 		ErrorCode: w.ErrorCode, Deadline: w.Deadline, CreatedAt: w.CreatedAt,
 		UpdatedAt: w.UpdatedAt, ClaimID: claimID, ClaimFence: w.ClaimFence,
 		ClaimLeaseUntil: w.ClaimLeaseUntil, EffectPossible: w.EffectPossible,
+		RecoveryProtocolVersion: w.RecoveryProtocolVersion,
+		RecoveryCommitment:      w.RecoveryCommitment,
 	}
 	// Informational only: read when it is a string, ignored otherwise.
 	var origin string

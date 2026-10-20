@@ -1,6 +1,6 @@
 requests: 1
-request: POST /shoal/api/v1/fleet/actions/YQD_/claim
-error: dispatch claim: repull (reset)
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: repull (reset)
 kind: repull
 status: 0 code: "" failure: "reset"
 is ambiguity unrecorded: false

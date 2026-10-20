@@ -12,6 +12,7 @@ import (
 	"io"
 	"time"
 
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
@@ -35,7 +36,8 @@ type fleetDispatchTool struct {
 // finalized complete evidence-reference schema is composed; bare node IDs
 // would understate edge, anchor, revision, range, and visibility provenance.
 type FleetActionToolResult struct {
-	Action fleet.ActionRecord `json:"action"`
+	Action   fleet.ActionRecord          `json:"action"`
+	Recovery *dispatchapi.RecoveryStatus `json:"recovery_commitment,omitempty"`
 }
 
 // NewFleetDispatchTools returns enqueue and synchronous invoke providers.
@@ -164,7 +166,14 @@ func (p *fleetDispatchTool) Call(
 	if err != nil {
 		return nil, err
 	}
-	return FleetActionToolResult{Action: action}, nil
+	result := FleetActionToolResult{Action: action}
+	if committed := action.RecoveryCommitment; committed != nil {
+		result.Recovery = &dispatchapi.RecoveryStatus{
+			Version: committed.Version, Mode: string(committed.Mode),
+			PreparedFence: committed.PreparedFence, PreparedAt: committed.PreparedAt,
+		}
+	}
+	return result, nil
 }
 
 type fleetActionToolInput struct {

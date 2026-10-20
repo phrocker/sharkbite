@@ -70,6 +70,7 @@ type Config struct {
 	AgentIDEncoded     string
 	Capability         string
 	SurfaceName        string
+	TargetScope        string
 
 	TargetBaseURL    *url.URL
 	TargetCredential func() (string, error)
@@ -186,6 +187,8 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 	surfaceName := flags.String("surface-name", "",
 		"Operator name for the operational surface, recorded as the target of "+
 			"an ambiguity report")
+	targetScope := flags.String("target-scope", "",
+		"Stable nonsecret target account or tenant scope for request recovery. Required; keep constant across replicas and credential rotations")
 
 	targetBaseURL := flags.String("target-base-url", "",
 		"Base URL of the operational surface. Required. https, or http "+
@@ -319,6 +322,11 @@ func ParseFlags(args []string, output io.Writer) (*Config, error) {
 		return nil, err
 	}
 	config.SurfaceName = *surfaceName
+	if value := strings.TrimSpace(*targetScope); value == "" || value != *targetScope ||
+		len(value) > 256 || !printableAmbiguityText(value) {
+		return nil, errors.New("-target-scope must be a stable printable nonsecret account or tenant identifier (1 to 256 bytes)")
+	}
+	config.TargetScope = *targetScope
 
 	if strings.TrimSpace(*targetBaseURL) == "" {
 		return nil, errors.New("-target-base-url is required")

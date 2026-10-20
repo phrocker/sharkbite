@@ -4,6 +4,7 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -30,7 +31,12 @@ func TestFleetDispatchToolsUseTrustedDecisionAndStableKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider := &fleetToolService{}
+	provider := &fleetToolService{returned: &fleet.ActionRecord{
+		RecoveryCommitment: &fleet.RecoveryCommitment{
+			Version: 1, Mode: fleet.RecoveryKey, PreparedFence: 1,
+			PreparedAt: now, RequestDigest: [32]byte{1}, TargetScopeDigest: [32]byte{2},
+		},
+	}}
 	tools, err := NewFleetDispatchTools(
 		provider, fleetToolResolver{decision: decision})
 	if err != nil {
@@ -47,9 +53,18 @@ func TestFleetDispatchToolsUseTrustedDecisionAndStableKeys(t *testing.T) {
 		t.Fatalf("dispatch operation = %q", dispatch.ToolAuthorizationOperation())
 	}
 	raw := fleetToolArguments(now, false)
-	_, err = dispatch.Call(context.Background(), raw)
+	result, err := dispatch.Call(context.Background(), raw)
 	if err != nil {
 		t.Fatal(err)
+	}
+	encoded, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(encoded, []byte(`"recovery_commitment":{"version":1,"mode":"key"`)) ||
+		bytes.Contains(encoded, []byte("request_digest")) ||
+		bytes.Contains(encoded, []byte("target_scope_digest")) {
+		t.Fatalf("MCP recovery projection = %s", encoded)
 	}
 	if provider.enqueued.Context.RequestID != decision.RequestID() ||
 		provider.enqueued.Context.CorrelationID != decision.CorrelationID() ||
@@ -146,12 +161,16 @@ func (r fleetToolResolver) Resolve(context.Context) (auth.Decision, error) {
 type fleetToolService struct {
 	enqueued fleet.EnqueueRequest
 	invoked  fleet.InvokeRequest
+	returned *fleet.ActionRecord
 }
 
 func (s *fleetToolService) Enqueue(
 	_ context.Context, request fleet.EnqueueRequest,
 ) (fleet.ActionRecord, error) {
 	s.enqueued = request
+	if s.returned != nil {
+		return *s.returned, nil
+	}
 	return fleet.ActionRecord{ID: request.ID, Evidence: []fleet.EvidenceRef{}}, nil
 }
 func (s *fleetToolService) Invoke(
@@ -161,6 +180,12 @@ func (s *fleetToolService) Invoke(
 	return fleet.ActionRecord{ID: request.Enqueue.ID}, nil
 }
 func (*fleetToolService) Claim(context.Context, fleet.ClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*fleetToolService) ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*fleetToolService) PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
 func (*fleetToolService) CompleteClaim(context.Context, fleet.CompletionRequest) (fleet.ActionRecord, error) {

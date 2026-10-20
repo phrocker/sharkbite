@@ -1820,6 +1820,12 @@ func (*httpFleetToolService) Claim(
 ) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
+func (*httpFleetToolService) ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*httpFleetToolService) PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
 
 func (*httpFleetToolService) CompleteClaim(
 	context.Context, fleet.CompletionRequest,

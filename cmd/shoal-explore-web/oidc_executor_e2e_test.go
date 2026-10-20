@@ -30,7 +30,8 @@ import (
 
 type executorWorld struct {
 	*oidcApprovalWorld
-	executorIssuer *fakeOIDCIssuer
+	executorIssuer  *fakeOIDCIssuer
+	externalEffects bool
 }
 
 // newExecutorWorld opens the service with three executor references —
@@ -38,6 +39,10 @@ type executorWorld struct {
 // mapping binds — and registers one agent per mapped reference, by an OIDC
 // operator over the registry route.
 func newExecutorWorld(t *testing.T) *executorWorld {
+	return newExecutorWorldWithExternalEffects(t, false)
+}
+
+func newExecutorWorldWithExternalEffects(t *testing.T, externalEffects bool) *executorWorld {
 	t.Helper()
 	executorIssuer := newFakeOIDCIssuer(t)
 	executors, err := newConfiguredFleetExecutors(
@@ -45,12 +50,19 @@ func newExecutorWorld(t *testing.T) *executorWorld {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if externalEffects {
+		if err := bindExternalFleetEffects(executors, externalFleetEffectBindings{
+			mutating: []string{testExecutorRef, testOtherExecutorRef},
+		}); err != nil {
+			t.Fatal(err)
+		}
+	}
 	mapping := writeExecutorMapping(t, executorMappingDocument(executorIssuer.server.URL))
 	w := &executorWorld{
 		oidcApprovalWorld: newOIDCApprovalWorldOn(t, func(config *oidcConfig) {
 			config.executorMappingFile = mapping
 		}, nil, nil, approverMappingDocument, executors),
-		executorIssuer: executorIssuer,
+		executorIssuer: executorIssuer, externalEffects: externalEffects,
 	}
 	owner := w.fleetToken("owner", nil)
 	w.registerOn(owner, "stripe-agent", testExecutorRef)
@@ -70,13 +82,25 @@ func (w *executorWorld) registerOn(token string, id shoal.ID, ref string) {
 				SourceID: workspaceSourceID, PolicyID: workspaceGrantPolicyID,
 			}},
 			"executor_ref":     ref,
-			"capabilities":     approvalActions(true),
+			"capabilities":     w.declaredCapabilities(),
 			"lease_expires_at": w.h.now().Add(20 * time.Hour).Format(time.RFC3339Nano),
 		},
 	})
 	if got.status != http.StatusCreated {
 		w.t.Fatalf("register %s = %d %s", id, got.status, got.raw)
 	}
+}
+
+func (w *executorWorld) declaredCapabilities() []fleet.Capability {
+	capabilities := approvalActions(true)
+	if w.externalEffects {
+		for i := range capabilities {
+			for j := range capabilities[i].Actions {
+				capabilities[i].Actions[j].Effects = fleet.Effects{fleet.EffectMutatesExternal}
+			}
+		}
+	}
+	return capabilities
 }
 
 // executorToken is a projected service-account token from the executor
@@ -175,7 +199,7 @@ func (w *executorWorld) pull(caller call) []actionWire {
 
 func (w *executorWorld) claim(caller call, id string, version uint64, claimID string) (answer, actionWire) {
 	w.t.Helper()
-	return w.send(caller, "/api/v1/fleet/actions/"+b64([]byte(id))+"/claim", map[string]any{
+	return w.send(caller, "/api/v1/fleet/actions/"+b64([]byte(id))+"/claim-prepared", map[string]any{
 		"context":          w.contextWire(w.h.now().Add(time.Minute)),
 		"expected_version": version,
 		"claim_id":         b64([]byte(claimID)),
@@ -255,7 +279,7 @@ func assertUnauthenticated(t *testing.T, name string, got answer) {
 // on every route, including work it can name exactly.
 func TestAMappedServiceAccountWorksItsOwnReference(t *testing.T) {
 	t.Parallel()
-	w := newExecutorWorld(t)
+	w := newExecutorWorldWithExternalEffects(t, true)
 	alice := call{token: w.fleetToken("alice", nil)}
 	w.enqueue(alice, "stripe-1", "stripe-agent")
 	w.enqueue(alice, "ledger-1", "ledger-agent")
@@ -402,7 +426,7 @@ func TestNonExecutorTokensAreRefusedOnTheExecutorRoutes(t *testing.T) {
 // on the same agent, after the executor has worked it, still succeeds.
 func TestApprovalOfExecutorTouchedWorkIsUnaffected(t *testing.T) {
 	t.Parallel()
-	w := newExecutorWorld(t)
+	w := newExecutorWorldWithExternalEffects(t, true)
 	h := w.h
 	alice := call{token: w.fleetToken("alice", nil)}
 	bob := call{token: w.approverToken("bob")}
