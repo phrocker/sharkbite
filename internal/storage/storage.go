@@ -94,6 +94,13 @@ type Aborter interface {
 	Abort() error
 }
 
+// AbortableWriter can release an unsuccessful write without requiring callers
+// to Close it. Capabilities that require fail-closed cleanup return this type.
+type AbortableWriter interface {
+	Writer
+	Aborter
+}
+
 // WriteCleanupState tracks whether a caller already attempted Close on a
 // Writer before deferred cleanup runs. Call MarkCloseAttempted immediately
 // before any explicit Close call when also deferring AbortOnError.

@@ -50,6 +50,50 @@ func TestLiveExclusiveCreator(t *testing.T) {
 	}, "/tmp/shoal-integration/"+uuid.NewString())
 }
 
+func TestLiveNativeSegmentDirectExclusive(t *testing.T) {
+	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
+		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
+	}
+	backend, err := hdfsstorage.New("127.0.0.1:8020")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = backend.Close() })
+	id := uuid.NewString()
+	walPath := "hdfs://127.0.0.1:8020/tmp/shoal-integration/" + id + "/wal/server+9997/" + uuid.NewString()
+	t.Cleanup(func() { _ = backend.Remove(context.Background(), walPath) })
+	w, err := backend.CreateNativeSegmentExclusive(context.Background(), walPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []byte("native WAL direct exclusive live proof")
+	if _, err := w.Write(want); err != nil {
+		_ = w.(storage.Aborter).Abort()
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	f, err := backend.Open(context.Background(), walPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := make([]byte, f.Size())
+	if _, err := f.ReadAt(got, 0); err != nil {
+		_ = f.Close()
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got, want) {
+		t.Fatalf("readback %q, want %q", got, want)
+	}
+	if _, err := backend.CreateNativeSegmentExclusive(context.Background(), walPath); !errors.Is(err, storage.ErrExists) {
+		t.Fatalf("collision = %v, want ErrExists", err)
+	}
+}
+
 func TestLiveBackendAndRFileRoundTrip(t *testing.T) {
 	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
 		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
