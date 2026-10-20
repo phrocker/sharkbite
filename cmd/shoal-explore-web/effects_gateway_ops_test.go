@@ -52,6 +52,11 @@ func newGatewayOps(t *testing.T) *gatewayOps {
 	return &gatewayOps{executorWorld: newExecutorWorld(t)}
 }
 
+func newGatewayWorkerOps(t *testing.T) *gatewayOps {
+	t.Helper()
+	return &gatewayOps{executorWorld: newExecutorWorldWithExternalEffects(t, true)}
+}
+
 // gateway installs the recording handler and returns a client holding the
 // stripe executor's projected token, bound to its ref. Installed again before
 // each phase, because the world's own helpers replace the handler.

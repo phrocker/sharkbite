@@ -617,6 +617,16 @@ func ApprovalRequestDigest(record ActionRecord) []byte {
 	writeDispatchTupleField(digest, []byte(record.Reason.Code))
 	writeDispatchTupleField(digest, []byte(record.Reason.Digest))
 	writeApprovalInt64(digest, record.Deadline.UnixNano())
+	// Append only for scheduled requests. Legacy approvals have a zero
+	// NotBefore and must retain their existing digest across upgrades, while
+	// an approver must not approve one schedule and materialize another.
+	if !record.NotBefore.IsZero() {
+		writeDispatchTupleField(digest, []byte("not_before"))
+		// UnixNano wraps outside 1678-2262, while validation permits any UTC
+		// timestamp before the deadline. Seconds plus nanos remain distinct.
+		writeApprovalInt64(digest, record.NotBefore.Unix())
+		writeApprovalInt64(digest, int64(record.NotBefore.Nanosecond()))
+	}
 	return digest.Sum(nil)
 }
 

@@ -143,7 +143,6 @@ type fakeExplorer struct {
 	mu      sync.Mutex
 	records map[string]*fakeRecord
 	order   []string
-	fence   uint64
 
 	pulls       int
 	claims      []ClaimRequest
@@ -310,14 +309,15 @@ func (e *fakeExplorer) Claim(ctx context.Context, id []byte, request ClaimReques
 		!(record.action.State == dispatchapi.DispatchClaimed && !now.Before(record.leaseUntil)) {
 		return Action{}, conflict("claim", http.StatusNotFound)
 	}
-	e.fence++
 	lease := now.Add(request.Lease)
 	if lease.After(record.action.Deadline) {
 		lease = record.action.Deadline
 	}
 	record.action.State, record.action.Version = dispatchapi.DispatchClaimed, record.action.Version+1
 	record.action.ClaimID = append([]byte(nil), request.ClaimID...)
-	record.action.ClaimFence, record.action.ClaimLeaseUntil = e.fence, lease.UTC()
+	// Fleet fences are per action, not global across the worker's queue.
+	record.action.ClaimFence++
+	record.action.ClaimLeaseUntil = lease.UTC()
 	record.action.UpdatedAt, record.action.EffectPossible = now.UTC(), true
 	record.leaseUntil = lease
 	claimed := record.action
