@@ -1,0 +1,172 @@
+{
+ "approval": {
+  "approved": true,
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "evaluation_id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "id": "2f413ccc16b542f574a5bc5afb060a2e7614d5f5b316abf1c4128d4144c2e706",
+  "kind": "promotion_approval",
+  "owner": "owner",
+  "schema": 1
+ },
+ "artifact": {
+  "bundle_digest": "238e8d68e60df20d774dac03bf01dd2e448f90c185d90674465fc0c7809e49d7",
+  "bundle_files": [
+   {
+    "path": "model.json",
+    "role": "weights",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size": 10
+   },
+   {
+    "path": "runtime.json",
+    "role": "runtime",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "size": 5
+   }
+  ],
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "evaluation_id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "id": "0a9de047ed8ae0ff49efe1f1de0b900610c946d855cc18b1a7be5236e1186009",
+  "kind": "candidate_artifact",
+  "model_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "runtime_digest": "runtime",
+  "schema": 1
+ },
+ "bundle_digest": "238e8d68e60df20d774dac03bf01dd2e448f90c185d90674465fc0c7809e49d7",
+ "candidate": {
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "dataset_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evaluation_policy_id": "8e1e2b04d1a5dc2ff241f1e5fba66f3a97d7693f5a0b4b793b45913712b8a0b3",
+  "id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "kind": "candidate",
+  "model_digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "policy_predeclared": true,
+  "schema": 1,
+  "task_ids": [
+   "task-v1"
+  ],
+  "training_ids": [
+   "0"
+  ],
+  "training_manifest_sha256": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+ },
+ "evaluation": {
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "disposition": "shadow_candidate",
+  "evaluation_policy_id": "8e1e2b04d1a5dc2ff241f1e5fba66f3a97d7693f5a0b4b793b45913712b8a0b3",
+  "families": 2,
+  "id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "kind": "promotion_record",
+  "ledger_id": "161ba881dbe22044a38d81cc1b0c8dde7cba8a9e589c30ed8bcc135883da735e",
+  "limitation": "Relevance assessments are not defect truth. No quality-parity or exclusion authorization.",
+  "metrics": [
+   {
+    "assessor": "r",
+    "missed_ids": [],
+    "positives": 2,
+    "recall": 1.0,
+    "unknown_lowered_ids": []
+   }
+  ],
+  "optimization_enabled": false,
+  "permitted_action": "full_review",
+  "predictions_id": "4af46316bc6b9f8ed62274cc8f1020a6ffe0c8e6cf00df7c73ac82dbcca65141",
+  "reasons": [],
+  "schema": 1
+ },
+ "first_release": {
+  "approval_id": "2f413ccc16b542f574a5bc5afb060a2e7614d5f5b316abf1c4128d4144c2e706",
+  "artifact_id": "0a9de047ed8ae0ff49efe1f1de0b900610c946d855cc18b1a7be5236e1186009",
+  "bundle_digest": "238e8d68e60df20d774dac03bf01dd2e448f90c185d90674465fc0c7809e49d7",
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "dataset_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evaluation_id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "evaluation_policy_id": "8e1e2b04d1a5dc2ff241f1e5fba66f3a97d7693f5a0b4b793b45913712b8a0b3",
+  "id": "d0860b2d5563aa0bece55dcab8548a9e6d28b7cdfd2b0ac51d57fa4a38103ecb",
+  "kind": "model_release",
+  "ledger_id": "161ba881dbe22044a38d81cc1b0c8dde7cba8a9e589c30ed8bcc135883da735e",
+  "limitation": "Structural release record; serving pointer mutation is external.",
+  "predecessor_release_id": null,
+  "rollback_of": null,
+  "schema": 1,
+  "state": "active",
+  "task_ids": [
+   "task-v1"
+  ],
+  "training_manifest_sha256": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+ },
+ "manifest": {
+  "files": [
+   {
+    "path": "model.json",
+    "role": "weights",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "size": 10
+   },
+   {
+    "path": "runtime.json",
+    "role": "runtime",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "size": 5
+   }
+  ],
+  "kind": "weights-bundle",
+  "schema": 1
+ },
+ "rollback": {
+  "approval_id": "cc39c1d212a4b478b05b46c4ad05ae51d620b850a0a31f330e98993a381188f4",
+  "artifact_id": "0a9de047ed8ae0ff49efe1f1de0b900610c946d855cc18b1a7be5236e1186009",
+  "bundle_digest": "238e8d68e60df20d774dac03bf01dd2e448f90c185d90674465fc0c7809e49d7",
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "dataset_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evaluation_id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "evaluation_policy_id": "8e1e2b04d1a5dc2ff241f1e5fba66f3a97d7693f5a0b4b793b45913712b8a0b3",
+  "id": "ce81886470224ce114dc04e54d305dbac9523cb322228cfa5237cc2a91951919",
+  "kind": "model_release",
+  "ledger_id": "161ba881dbe22044a38d81cc1b0c8dde7cba8a9e589c30ed8bcc135883da735e",
+  "limitation": "Structural rollback record; serving pointer mutation is external.",
+  "predecessor_release_id": "dee5a7a3c0aefbe63a0d9e3072823c8498054325a4cad5123aa8bde3f2825046",
+  "rollback_of": "dee5a7a3c0aefbe63a0d9e3072823c8498054325a4cad5123aa8bde3f2825046",
+  "schema": 1,
+  "state": "active",
+  "task_ids": [
+   "task-v1"
+  ],
+  "training_manifest_sha256": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+ },
+ "rollback_approval": {
+  "active_release_id": "dee5a7a3c0aefbe63a0d9e3072823c8498054325a4cad5123aa8bde3f2825046",
+  "approved": true,
+  "id": "cc39c1d212a4b478b05b46c4ad05ae51d620b850a0a31f330e98993a381188f4",
+  "kind": "rollback_approval",
+  "owner": "owner",
+  "prior_release_id": "d0860b2d5563aa0bece55dcab8548a9e6d28b7cdfd2b0ac51d57fa4a38103ecb",
+  "schema": 1
+ },
+ "second_release": {
+  "approval_id": "2f413ccc16b542f574a5bc5afb060a2e7614d5f5b316abf1c4128d4144c2e706",
+  "artifact_id": "0a9de047ed8ae0ff49efe1f1de0b900610c946d855cc18b1a7be5236e1186009",
+  "bundle_digest": "238e8d68e60df20d774dac03bf01dd2e448f90c185d90674465fc0c7809e49d7",
+  "candidate_id": "2e7df4a0ecb172234cb82260e81580a98d0efe020b3b6e53de655981b8110de3",
+  "dataset_id": "b12c30417dc7dbd602fa382386fbd27e654f73e2c0b29507520d01d9349a7c59",
+  "dataset_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "evaluation_id": "c3f04390ad6e86d92d040548f12a8f03d97f9f72f9ec3316fc7f9c05c8ffedd7",
+  "evaluation_policy_id": "8e1e2b04d1a5dc2ff241f1e5fba66f3a97d7693f5a0b4b793b45913712b8a0b3",
+  "id": "dee5a7a3c0aefbe63a0d9e3072823c8498054325a4cad5123aa8bde3f2825046",
+  "kind": "model_release",
+  "ledger_id": "161ba881dbe22044a38d81cc1b0c8dde7cba8a9e589c30ed8bcc135883da735e",
+  "limitation": "Structural release record; serving pointer mutation is external.",
+  "predecessor_release_id": "d0860b2d5563aa0bece55dcab8548a9e6d28b7cdfd2b0ac51d57fa4a38103ecb",
+  "rollback_of": null,
+  "schema": 1,
+  "state": "active",
+  "task_ids": [
+   "task-v1"
+  ],
+  "training_manifest_sha256": "tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt"
+ }
+}
