@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -17,16 +17,16 @@ import (
 func TestSealedReferenceExportUsesRealReceipts(t *testing.T) {
 	for _, name := range []string{"source", "review"} {
 		t.Run(name, func(t *testing.T) {
-			r, e, a, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "bundle"), name)
+			r, e, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), name)
 			if err != nil {
 				t.Fatal(err)
 			}
 			defer e.Close()
-			_, ca, err := exportSession(ctx, r, a.Resolver(), r.cohort.ID)
+			_, ca, err := ExportSession(ctx, r, a.Resolver(), r.cohort.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
-			bundle, err := freshExport(ctx, r, a.Resolver(), r.cohort.ID)
+			bundle, err := FreshExport(ctx, r, a.Resolver(), r.cohort.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -80,12 +80,12 @@ func TestSealedReferenceExportUsesRealReceipts(t *testing.T) {
 				t.Fatal("unregistered target accepted")
 			}
 			r.training = false
-			if _, err = freshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
+			if _, err = FreshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
 				t.Fatal("source read substituted for training permission")
 			}
 			r.training = true
 			r.readable = false
-			if _, err = freshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
+			if _, err = FreshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
 				t.Fatal("revoked sources exported")
 			}
 			r.readable = true
@@ -97,7 +97,7 @@ func TestSealedReferenceExportUsesRealReceipts(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			bundle, err = freshExport(ctx, r, a.Resolver(), r.cohort.ID)
+			bundle, err = FreshExport(ctx, r, a.Resolver(), r.cohort.ID)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -118,7 +118,7 @@ func TestSealedReferenceExportUsesRealReceipts(t *testing.T) {
 			if err = os.WriteFile(path, []byte("substitute"), 0600); err != nil {
 				t.Fatal(err)
 			}
-			if _, err = freshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
+			if _, err = FreshExport(ctx, r, a.Resolver(), r.cohort.ID); err == nil {
 				t.Fatal("substituted source exported")
 			}
 		})
@@ -135,7 +135,7 @@ func (a changingAuthority) Verify(ctx context.Context, d auth.Decision, c decisi
 	return a.cohortAuthority.Verify(ctx, d, c, targets)
 }
 func TestFinalInventoryAndTrainingRecheck(t *testing.T) {
-	r, e, a, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "bundle"), "source")
+	r, e, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), "source")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -169,7 +169,7 @@ func TestFinalInventoryAndTrainingRecheck(t *testing.T) {
 		r.training = true
 		r.readable = true
 		r.now = time.Now
-		_, ca, err := exportSession(ctx, r, a.Resolver(), r.cohort.ID)
+		_, ca, err := ExportSession(ctx, r, a.Resolver(), r.cohort.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -184,11 +184,11 @@ func TestFinalInventoryAndTrainingRecheck(t *testing.T) {
 	}
 }
 func TestSeparateTaskBindingsAndOriginalFeatureOnly(t *testing.T) {
-	source, err := definitions("source")
+	source, err := Definitions("source")
 	if err != nil {
 		t.Fatal(err)
 	}
-	review, err := definitions("review")
+	review, err := Definitions("review")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestSeparateTaskBindingsAndOriginalFeatureOnly(t *testing.T) {
 		t.Fatal("task/model binding collision")
 	}
 	for _, name := range []string{"source", "review"} {
-		for _, f := range fixtures(name) {
+		for _, f := range Fixtures(name) {
 			values, err := features(name, f.Raw)
 			if err != nil || len(values) != 3 {
 				t.Fatal(err)
@@ -207,7 +207,7 @@ func TestSeparateTaskBindingsAndOriginalFeatureOnly(t *testing.T) {
 			}
 		}
 	}
-	if _, err = definitions("unregistered"); err == nil {
+	if _, err = Definitions("unregistered"); err == nil {
 		t.Fatal("unknown task")
 	}
 }

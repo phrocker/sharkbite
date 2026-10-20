@@ -4,6 +4,7 @@ import hashlib
 import json
 import os
 import platform
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -120,6 +121,73 @@ class DistillTests(unittest.TestCase):
             self.run_job(out='first')
 
     @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_checkpoint_fine_tune_starts_from_the_pinned_base_bundle(self):
+        first = self.run_job(out='base')
+        base_dir = self.root / 'base' / 'bundle'
+        tuned = manifest_fixture(self.export_sha)
+        tuned['base']['eligible'][0]['identity']['bundle_digest'] = first['bundle_digest']
+        tuned['data']['generation_parameters'] = dict(epochs=2, learning_rate=0.5)
+        receipt = self.run_job(tuned, out='tuned', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        self.assertEqual(receipt['status'], 'completed')
+        model = json.loads((self.root / 'tuned/bundle/model.json').read_bytes())
+        self.assertEqual(model['base_bundle_digest'], first['bundle_digest'])
+        self.assertEqual((model['epochs'], model['learning_rate']), (2, 0.5))
+        self.assertEqual(len(model['coefficients']), 2)
+        self.assertEqual((receipt['runtime_identities']['runtime_id'], receipt['runtime_identities']['student']), ('distill:checkpoint-fine-tune:v1', 'checkpoint-fine-tune'))
+        self.assertEqual(first['runtime_identities']['student'], 'averaged-perceptron')
+        # A manifest that pins a base may only run the student that opens it:
+        # the receipt attests the base, so a run from zero weights is refused.
+        with self.assertRaisesRegex(distill.Refused, 'would attest a base it never opened'):
+            self.run_job(tuned, out='zero', student='averaged-perceptron')
+        again = self.run_job(tuned, out='tuned-again', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        self.assertEqual(again['bundle_digest'], receipt['bundle_digest'])
+        # The base is a verified input: a wrong digest, an altered bundle, a
+        # missing pin, or no bundle at all refuses before any export is read.
+        with self.assertRaisesRegex(distill.Refused, 'pins no bundle digest'):
+            self.run_job(manifest_fixture(self.export_sha), out='x1', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        with self.assertRaisesRegex(distill.Refused, 'no --base-bundle'):
+            self.run_job(tuned, out='x2', student='checkpoint-fine-tune')
+        wrong = copy.deepcopy(tuned)
+        wrong['base']['eligible'][0]['identity']['bundle_digest'] = '0' * 64
+        with self.assertRaisesRegex(distill.Refused, 'not the manifest'):
+            self.run_job(wrong, out='x3', student='checkpoint-fine-tune', base_bundle_dir=str(base_dir))
+        altered = self.root / 'altered-base'
+        import shutil
+        shutil.copytree(base_dir, altered)
+        (altered / 'model.json').write_bytes(b'{}')
+        with self.assertRaisesRegex(distill.Refused, 'does not verify.*altered model.json'):
+            self.run_job(tuned, out='x4', student='checkpoint-fine-tune', base_bundle_dir=str(altered))
+        with self.assertRaisesRegex(distill.Refused, 'does not verify'):
+            self.run_job(tuned, out='x5', student='checkpoint-fine-tune', base_bundle_dir=str(self.root / 'nowhere'))
+        # A base of the wrong width is refused before the teacher runs.
+        marker = self.root / 'teacher-ran'
+        wide = self.root / 'wide-base'
+        wide.mkdir()
+        wide_model = dict(json.loads((base_dir / 'model.json').read_bytes()), coefficients=[0.0, 0.0, 0.0])
+        (wide / 'model.json').write_bytes(weights_bundle.canonical(wide_model))
+        (wide / 'runtime.json').write_bytes((base_dir / 'runtime.json').read_bytes())
+        wide_manifest = weights_bundle.manifest_for(wide, weights_bundle.SERVING_FILES)
+        (wide / weights_bundle.MANIFEST).write_bytes(weights_bundle.canonical(wide_manifest))
+        wide_pin = copy.deepcopy(tuned)
+        wide_pin['base']['eligible'][0]['identity']['bundle_digest'] = weights_bundle.bundle_digest(wide_manifest)
+        with self.assertRaisesRegex(distill.Refused, 'width 3 does not match'):
+            self.run_job(wide_pin, out='x6', student='checkpoint-fine-tune', base_bundle_dir=str(wide),
+                         teacher_cmd=[sys.executable, '-c', 'import pathlib,sys; pathlib.Path(%r).write_text("ran"); print("[]")' % str(marker)])
+        self.assertFalse(marker.exists())
+        # Non-finite or overflowing checkpoint numbers are refused, not crashed on.
+        huge = self.root / 'huge-base'
+        huge.mkdir()
+        (huge / 'model.json').write_bytes(weights_bundle.canonical(dict(wide_model, coefficients=[10 ** 400, 1])))
+        (huge / 'runtime.json').write_bytes((base_dir / 'runtime.json').read_bytes())
+        huge_manifest = weights_bundle.manifest_for(huge, weights_bundle.SERVING_FILES)
+        (huge / weights_bundle.MANIFEST).write_bytes(weights_bundle.canonical(huge_manifest))
+        huge_pin = copy.deepcopy(tuned)
+        huge_pin['base']['eligible'][0]['identity']['bundle_digest'] = weights_bundle.bundle_digest(huge_manifest)
+        with self.assertRaisesRegex(distill.Refused, 'finite numeric'):
+            self.run_job(huge_pin, out='x7', student='checkpoint-fine-tune', base_bundle_dir=str(huge))
+        self.assertFalse(any((self.root / x).exists() for x in ('x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'zero')))
+
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
     def test_changed_selection_changes_pin_and_bundle_lineage(self):
         first = self.run_job(out='a')
         changed = manifest_fixture(self.export_sha)
@@ -137,6 +205,8 @@ class DistillTests(unittest.TestCase):
             self.run_job(out='claim', parameters=dict(held_out_recall=0.97))
         with self.assertRaisesRegex(distill.Refused, 'positive integer'):
             self.run_job(out='zero', parameters=dict(epochs=0))
+        with self.assertRaisesRegex(distill.Refused, 'no greater than'):
+            self.run_job(out='many', parameters=dict(epochs=distill.MAX_EPOCHS + 1))
 
     def test_refusals_happen_before_training(self):
         good = manifest_fixture(self.export_sha)
@@ -167,6 +237,7 @@ class DistillTests(unittest.TestCase):
             'cohort id not a string': (lambda m: m['data']['tasks'][0].update(cohort_ids=['cohort-1', 1]), 'task selection shape'),
             'held-out id a list': (lambda m: m['data'].update(held_out_example_ids=[['row-1']]), 'held-out ids'),
             'export pin not hex': (lambda m: m['exports'][0].update(manifest_sha256='zz'), 'exports shape'),
+            'base bundle digest not hex': (lambda m: m['base']['eligible'][0]['identity'].update(bundle_digest='abc'), 'bundle digest'),
         }
         for name, (mutate, want) in cases.items():
             with self.subTest(name):

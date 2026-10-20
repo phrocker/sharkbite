@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func durableVerified(status map[string]string) int {
 	}
 	return n
 }
-func durableAppend(t *testing.T, r *registry, a *auth.Authority, role, key string) (outcomes.Receipt, error) {
+func durableAppend(t *testing.T, r *Registry, a *auth.Authority, role, key string) (outcomes.Receipt, error) {
 	t.Helper()
 	ctx, _, err := bindRole(a, role)
 	if err != nil {
@@ -73,15 +73,15 @@ func (a *durableFailedPublication) Publish(ctx context.Context, d auth.Decision,
 	return a.Admission.Publish(ctx, d, p, o, r)
 }
 
-func durableBundle(t *testing.T, r *registry, ctx context.Context) decisiondatasets.Bundle {
+func durableBundle(t *testing.T, r *Registry, ctx context.Context) decisiondatasets.Bundle {
 	t.Helper()
-	b, err := freshExport(ctx, r, r.resolver, r.cohort.ID)
+	b, err := FreshExport(ctx, r, r.resolver, r.cohort.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return b
 }
-func durableSnapshot(t *testing.T, r *registry, v *registered) inventory.Snapshot {
+func durableSnapshot(t *testing.T, r *Registry, v *registered) inventory.Snapshot {
 	t.Helper()
 	s, err := r.inventories.Load(context.Background(), inventory.Scope{Domain: []byte(domain)}, r.inventoryBinding(v))
 	if err != nil {
@@ -93,7 +93,7 @@ func durableSnapshot(t *testing.T, r *registry, v *registered) inventory.Snapsho
 func TestDurableInventoryLateAppendAloneQuarantinesOriginalLabel(t *testing.T) {
 	for _, task := range []string{"source", "review"} {
 		t.Run(task, func(t *testing.T) {
-			r, eng, a, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "bundle"), task)
+			r, eng, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), task)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -157,7 +157,7 @@ func TestDurableInventoryLateAppendAloneQuarantinesOriginalLabel(t *testing.T) {
 			if err = os.WriteFile(capturePath, []byte("substituted capture"), 0600); err != nil {
 				t.Fatal(err)
 			}
-			if b, err := freshExport(ctx, r, r.resolver, r.cohort.ID); err == nil || len(b.Dataset) != 0 {
+			if b, err := FreshExport(ctx, r, r.resolver, r.cohort.ID); err == nil || len(b.Dataset) != 0 {
 				t.Fatal("corrupt historical capture exported")
 			}
 			if err = os.WriteFile(capturePath, captureBytes, 0600); err != nil {
@@ -171,7 +171,7 @@ func TestDurableInventoryLateAppendAloneQuarantinesOriginalLabel(t *testing.T) {
 }
 
 func TestDurableInventoryPublicationOutageBlocksExportThenRepairs(t *testing.T) {
-	r, eng, a, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "bundle"), "source")
+	r, eng, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), "source")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -200,7 +200,7 @@ func TestDurableInventoryPublicationOutageBlocksExportThenRepairs(t *testing.T) 
 	if pending.Complete() || len(pending.Entries) != 2 {
 		t.Fatal("unpublished durable outcome did not block inventory")
 	}
-	if b, err := freshExport(ctx, r, r.resolver, r.cohort.ID); err == nil || len(b.Dataset) != 0 {
+	if b, err := FreshExport(ctx, r, r.resolver, r.cohort.ID); err == nil || len(b.Dataset) != 0 {
 		t.Fatal("pending admission exported partial dataset")
 	}
 	original, err := faulty.Read(reportCtx, cfg.RequestID, cfg.PredictionID, key)
@@ -220,7 +220,7 @@ func TestDurableInventoryPublicationOutageBlocksExportThenRepairs(t *testing.T) 
 }
 
 func TestDurableInventoryCrossReporterUnionAndConcurrentExports(t *testing.T) {
-	r, eng, a, ctx, err := prepareRegistry(filepath.Join(t.TempDir(), "bundle"), "review")
+	r, eng, a, ctx, err := Prepare(filepath.Join(t.TempDir(), "bundle"), "review")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,7 +240,7 @@ func TestDurableInventoryCrossReporterUnionAndConcurrentExports(t *testing.T) {
 	errs := make([]error, n)
 	wg.Add(n)
 	for i := 0; i < n; i++ {
-		go func(i int) { defer wg.Done(); results[i], errs[i] = freshExport(ctx, r, r.resolver, r.cohort.ID) }(i)
+		go func(i int) { defer wg.Done(); results[i], errs[i] = FreshExport(ctx, r, r.resolver, r.cohort.ID) }(i)
 	}
 	wg.Wait()
 	for i := range results {
@@ -256,7 +256,7 @@ func TestDurableInventoryCrossReporterUnionAndConcurrentExports(t *testing.T) {
 	}
 	// A session captured before another actual report must not silently adopt the
 	// newer session's vector; either it rejects the stale cut or stays immutable.
-	service, _, err := exportSession(ctx, r, r.resolver, r.cohort.ID)
+	service, _, err := ExportSession(ctx, r, r.resolver, r.cohort.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

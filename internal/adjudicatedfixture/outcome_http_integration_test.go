@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -43,7 +43,7 @@ func httpObservation(c decision.OutcomeObservationConfig) api.OutcomeObservation
 func TestOutcomeHTTPRealInventoryRecoveryAndSDK(t *testing.T) {
 	for _, task := range []string{"source", "review"} {
 		t.Run(task, func(t *testing.T) {
-			r, eng, a, exportCtx, e := prepareRegistry(filepath.Join(t.TempDir(), task), task)
+			r, eng, a, exportCtx, e := Prepare(filepath.Join(t.TempDir(), task), task)
 			if e != nil {
 				t.Fatal(e)
 			}
@@ -159,7 +159,7 @@ func TestOutcomeHTTPRealInventoryRecoveryAndSDK(t *testing.T) {
 			if durableSnapshot(t, r, v).ID != pending.ID {
 				t.Fatal("GET repaired inventory")
 			}
-			if b, e := freshExport(exportCtx, r, r.resolver, r.cohort.ID); e == nil || len(b.Dataset) != 0 {
+			if b, e := FreshExport(exportCtx, r, r.resolver, r.cohort.ID); e == nil || len(b.Dataset) != 0 {
 				t.Fatal("pending inventory exported")
 			}
 			provider.mu.Lock()

@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -35,7 +35,7 @@ func (p *lockedAdjudicationProvider) AdjudicationHistory(c context.Context, id s
 func TestAdjudicationHTTPRealAuthorityAndSDK(t *testing.T) {
 	for _, task := range []string{"source", "review"} {
 		t.Run(task, func(t *testing.T) {
-			r, eng, a, _, e := prepareRegistry(filepath.Join(t.TempDir(), task), task)
+			r, eng, a, _, e := Prepare(filepath.Join(t.TempDir(), task), task)
 			if e != nil {
 				t.Fatal(e)
 			}

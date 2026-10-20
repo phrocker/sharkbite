@@ -1,7 +1,10 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-// This executable is a finite synthetic conformance example, not a repository
-// sampling authority, human witness system, or estimate of classifier quality.
-package main
+// Package adjudicatedfixture is the finite synthetic conformance census of
+// the adjudicated training demo, not a repository sampling authority, human
+// witness system, or estimate of classifier quality. It is the only
+// implementation of decisiondatasets.Authority in this repository and is
+// what the explorer host mounts for development.
+package adjudicatedfixture
 
 import (
 	"crypto/sha256"
@@ -36,7 +39,7 @@ type taskDefinition struct {
 	Name          string
 }
 
-func definitions(name string) (taskDefinition, error) {
+func Definitions(name string) (taskDefinition, error) {
 	var out taskDefinition
 	if name != "source" && name != "review" {
 		return out, fmt.Errorf("task must be source or review")
@@ -59,7 +62,7 @@ func definitions(name string) (taskDefinition, error) {
 	out.Task, err = decision.NewTaskSpec(decision.TaskConfig{OwnerID: domain, Name: "synthetic-" + name + "-property", Version: "1", InputSchemaID: "numeric-subjects-v1", EvidencePolicyID: out.Evidence.ID(), LabelPolicyID: out.Labels.ID(), EvaluationPolicyID: "fixture-conformance-only", PredictionUnit: "subject", LabelUnit: "narrow-objective-property", ActionUnit: "inspection", AggregationID: out.Ranking.ID(), Questions: []decision.Question{{ID: question, Kind: decision.Choice, RubricID: shoal.ID("fixture-" + name + "-oracle-v1"), Labels: []string{"negative", "positive"}}}})
 	return out, err
 }
-func hash(b []byte) string { v := sha256.Sum256(b); return hex.EncodeToString(v[:]) }
+func Hash(b []byte) string { v := sha256.Sum256(b); return hex.EncodeToString(v[:]) }
 
 type fixture struct {
 	ID            shoal.ID
@@ -67,7 +70,7 @@ type fixture struct {
 	Split, Status string
 }
 
-func fixtures(name string) []fixture {
+func Fixtures(name string) []fixture {
 	var out []fixture
 	for i := 0; i < 16; i++ {
 		id := shoal.ID(fmt.Sprintf("%s-%02d", name, i))
@@ -160,16 +163,16 @@ func oracle(name string, raw []byte) (string, error) {
 	}
 	return "negative", nil
 }
-func baseline(def taskDefinition) (*decisionlinear.Provider, []byte, error) {
+func Baseline(def taskDefinition) (*decisionlinear.Provider, []byte, error) {
 	// Hand-set bootstrap predictor; it supplies real proposed predictions, never labels.
-	b, err := json.Marshal(map[string]any{"schema": 1, "kind": "linear-svm", "task_id": def.Task.ID(), "question_id": question, "feature_schema_id": def.FeatureSchema, "dataset_sha256": hash([]byte("untrained-bootstrap")), "recipe_sha256": hash([]byte("hand-set-zero-weights")), "training_runtime_sha256": hash([]byte("no-training-performed")), "labels": []string{"negative", "positive"}, "coefficients": []float64{0, 0, 0}, "intercept": -1, "threshold": 0})
+	b, err := json.Marshal(map[string]any{"schema": 1, "kind": "linear-svm", "task_id": def.Task.ID(), "question_id": question, "feature_schema_id": def.FeatureSchema, "dataset_sha256": Hash([]byte("untrained-bootstrap")), "recipe_sha256": Hash([]byte("hand-set-zero-weights")), "training_runtime_sha256": Hash([]byte("no-training-performed")), "labels": []string{"negative", "positive"}, "coefficients": []float64{0, 0, 0}, "intercept": -1, "threshold": 0})
 	if err != nil {
 		return nil, nil, err
 	}
-	p, err := decisionlinear.New(decisionlinear.Config{ModelBytes: b, ExpectedSHA256: hash(b), ReleaseID: shoal.ID("fixture-bootstrap:" + hash(b))})
+	p, err := decisionlinear.New(decisionlinear.Config{ModelBytes: b, ExpectedSHA256: Hash(b), ReleaseID: shoal.ID("fixture-bootstrap:" + Hash(b))})
 	return p, b, err
 }
-func buildRecord(def taskDefinition, f fixture, provider *decisionlinear.Provider, release shoal.ID, d auth.Decision, created time.Time) (decisionartifacts.Record, error) {
+func BuildRecord(def taskDefinition, f fixture, provider *decisionlinear.Provider, release shoal.ID, d auth.Decision, created time.Time) (decisionartifacts.Record, error) {
 	var zero decisionartifacts.Record
 	fs, err := features(def.Name, f.Raw)
 	if err != nil {
@@ -183,7 +186,7 @@ func buildRecord(def taskDefinition, f fixture, provider *decisionlinear.Provide
 	if err != nil {
 		return zero, err
 	}
-	snapshot, err := inference.NewSnapshotPin(shoal.ID("fixture-snapshot:"+hash(f.Raw)), created)
+	snapshot, err := inference.NewSnapshotPin(shoal.ID("fixture-snapshot:"+Hash(f.Raw)), created)
 	if err != nil {
 		return zero, err
 	}
@@ -199,7 +202,7 @@ func buildRecord(def taskDefinition, f fixture, provider *decisionlinear.Provide
 	if err != nil {
 		return zero, err
 	}
-	picture, err := decision.NewPictureManifest(pack, decision.PictureConfig{TaskID: def.Task.ID(), ObservationID: f.ID, EnumerationID: "sealed-sixteen-fixtures-v1", ScopeID: domain, BuilderID: shoal.ID("original-bytes:" + string(def.FeatureSchema)), OntologyProjectionID: "no-ontology-v1", InputDigest: hash(input), TokenizerID: "numeric-features-v1", InputTokens: 3, TokenBudget: 3, Cutoff: created, Sources: []decision.Source{{ID: f.ID, ArtifactID: f.ID, RevisionID: "original-fixture-v1", Digest: hash(f.Raw), OriginID: "synthetic-source-controller", AuthorityPolicyID: "fixture-source-authority", Role: decision.Observation, Control: decision.CandidateControlled, ObservedAt: created, ReceivedAt: created}}, Subjects: []decision.Subject{{ID: f.ID, SourceID: f.ID, Disposition: decision.Supported, EvidenceIDs: []shoal.ID{anchor.ID()}}}})
+	picture, err := decision.NewPictureManifest(pack, decision.PictureConfig{TaskID: def.Task.ID(), ObservationID: f.ID, EnumerationID: "sealed-sixteen-fixtures-v1", ScopeID: domain, BuilderID: shoal.ID("original-bytes:" + string(def.FeatureSchema)), OntologyProjectionID: "no-ontology-v1", InputDigest: Hash(input), TokenizerID: "numeric-features-v1", InputTokens: 3, TokenBudget: 3, Cutoff: created, Sources: []decision.Source{{ID: f.ID, ArtifactID: f.ID, RevisionID: "original-fixture-v1", Digest: Hash(f.Raw), OriginID: "synthetic-source-controller", AuthorityPolicyID: "fixture-source-authority", Role: decision.Observation, Control: decision.CandidateControlled, ObservedAt: created, ReceivedAt: created}}, Subjects: []decision.Subject{{ID: f.ID, SourceID: f.ID, Disposition: decision.Supported, EvidenceIDs: []shoal.ID{anchor.ID()}}}})
 	if err != nil {
 		return zero, err
 	}

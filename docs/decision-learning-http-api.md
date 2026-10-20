@@ -27,7 +27,18 @@ host mounts a complete `webapi.LearningSurface` (provider plus the trusted
 resolver of its authenticated transport); an incomplete surface mounts
 nothing, every learning route then answers 401 unauthenticated and 404
 authenticated, and `GET /api/v1/meta` reports `decision_learning: false`.
-`shoal-explore-web -learning-state-dir` mounts the file-backed service.
+`shoal-explore-web -learning-state-dir` mounts the file-backed service. A
+cohort authority and exporter are host-wired; without one the datasets
+route lists recorded exports and reports that no authority is mounted.
+For development, `-learning-fixture-cohorts source,review` prepares the
+adjudicated training demo's sealed synthetic fixture census at startup as
+the authority and exporter, exports each cohort once at startup, and also
+mounts `/api/v1/dataset-exports` over the same sealed bytes, so a trainer on
+the host fetches exactly the export whose pin the learning service recorded
+and dataset export, distillation, and promotion can be exercised end to end.
+It is a finite conformance fixture regenerated on every start under a fresh
+cohort identity (so exports recorded by an earlier start stay attached to
+that start's cohort), never a repository sampling authority.
 
 All routes need a bearer token, same-origin requests, no query string, and
 (for POST) a JSON object body of at most 1 MiB. Every POST additionally

@@ -10,14 +10,18 @@ receipt naming requested versus actual parameters, runtime identities, and
 the executor. It never evaluates, never promotes, and never reports
 completion as improvement.
 
-The reference student is a deterministic averaged perceptron over the
-export's numeric features, trained to reproduce the teacher's predictions.
-It exists to exercise the contract end to end on CPU with no model hub; a
-checkpoint fine-tune student plugs into the same `STUDENTS` table.
+Two students ship. `averaged-perceptron` fits a deterministic averaged
+perceptron over the export's numeric features from zero weights, trained to
+reproduce the teacher's predictions. `checkpoint-fine-tune` starts from the
+chosen base's weights bundle instead: the bundle on disk must verify and its
+digest must equal the `bundle_digest` the manifest pinned for the chosen
+base, so the base is a recorded, verified input and the student records
+which bundle it was fine-tuned from. Both run on CPU with no model hub.
 """
 import argparse
 import hashlib
 import json
+import math
 import os
 import platform
 import shutil
@@ -36,7 +40,10 @@ PREDICTIONS_KIND = 'teacher-predictions'
 MAX_MANIFEST_BYTES = 1 << 20
 MAX_EPOCHS = 10000
 MANIFEST_KEYS = {'schema', 'kind', 'training_manifest_sha256', 'teacher', 'base', 'teacher_egress_at_generation', 'data', 'exports'}
-RUNTIME_ID = 'distill:averaged-perceptron:v1'
+# One runtime id per student, so a receipt names which student ran.
+RUNTIME_IDS = {'averaged-perceptron': 'distill:averaged-perceptron:v1', 'checkpoint-fine-tune': 'distill:checkpoint-fine-tune:v1'}
+# Effective defaults, shared by every student and recorded in model.json.
+DEFAULT_PARAMETERS = {'epochs': 10, 'learning_rate': 1.0}
 
 
 class Refused(ValueError):
@@ -91,6 +98,7 @@ def _shape(manifest):
             identity = c['identity']
             _expect(all(isinstance(identity.get(k), str) and identity[k] for k in ('provider', 'model', 'version', 'cache_identity')), role + ' identity shape')
             _expect(identity.get('egress') in ('loopback', 'off_host'), role + ' identity egress shape')
+            _expect('bundle_digest' not in identity or _hex64(identity['bundle_digest']), role + ' identity bundle digest must be 64-hex when present')
             _expect(all(isinstance(m, dict) and isinstance(m.get('metric'), str) and isinstance(m.get('split'), str) and _number(m.get('value')) and isinstance(m.get('evidence_id'), str) for m in c['measurements']), role + ' measurement shape')
     data = manifest.get('data')
     _expect(isinstance(data, dict) and isinstance(data.get('tasks'), list) and data['tasks'], 'data selection shape')
@@ -220,9 +228,7 @@ def student_perceptron(rows, predictions, manifest, parameters):
     width = len(rows[0]['features'])
     if width == 0 or any(len(r['features']) != width for r in rows):
         raise Refused('rows disagree on feature width or have none')
-    epochs = parameters.get('epochs', 10)
-    if type(epochs) is not int or epochs < 1:
-        raise Refused('epochs must be a positive integer')
+    epochs = _epochs(parameters)
     weights, bias = [0.0] * width, 0.0
     total_w, total_b = [0.0] * width, 0.0
     steps = 0
@@ -242,13 +248,94 @@ def student_perceptron(rows, predictions, manifest, parameters):
                 base=manifest['base']['chosen'], epochs=epochs)
 
 
-STUDENTS = {'averaged-perceptron': student_perceptron}
+def _finite_number(value):
+    return type(value) in (int, float) and abs(value) < 1e300 and math.isfinite(value)
+
+
+def _epochs(parameters):
+    epochs = parameters.get('epochs', DEFAULT_PARAMETERS['epochs'])
+    if type(epochs) is not int or not (1 <= epochs <= MAX_EPOCHS):
+        raise Refused('epochs must be a positive integer no greater than %d' % MAX_EPOCHS)
+    return epochs
+
+
+def load_base_checkpoint(manifest, base_bundle_dir, labels=None, width=None):
+    """Verify the base bundle on disk against the manifest's pinned base digest and load its weights.
+
+    Everything about the base that can be checked before any export is read
+    is checked here; labels and width are checked too once they are known.
+    """
+    base = chosen_identity(manifest, 'base')
+    pinned = base.get('bundle_digest')
+    if not pinned:
+        raise Refused('the chosen base %r pins no bundle digest; a checkpoint fine-tune needs a local base bundle' % manifest['base']['chosen'])
+    if base_bundle_dir is None:
+        raise Refused('the chosen base is a local bundle %s but no --base-bundle directory was supplied' % pinned)
+    try:
+        bundle, digest = weights_bundle.verify(base_bundle_dir)
+    except (OSError, ValueError) as error:
+        raise Refused('base bundle %s does not verify: %s' % (base_bundle_dir, error))
+    if digest != pinned:
+        raise Refused('base bundle digest %s is not the manifest\'s pinned base %s' % (digest, pinned))
+    weights = next(f for f in bundle['files'] if f['role'] == 'weights')
+    model = json.loads((Path(base_bundle_dir) / weights['path']).read_bytes())
+    if not isinstance(model, dict) or model.get('kind') != 'linear-student' or model.get('schema') != 1:
+        raise Refused('base bundle weights are not a linear-student checkpoint')
+    coefficients = model.get('coefficients')
+    if (not isinstance(coefficients, list) or not coefficients or not all(_finite_number(c) for c in coefficients)
+            or not _finite_number(model.get('intercept')) or not _finite_number(model.get('threshold', 0.0))):
+        raise Refused('base checkpoint needs finite numeric coefficients, intercept, and threshold')
+    if labels is not None and model.get('labels') not in (None, labels):
+        raise Refused('base checkpoint labels %r are not the task labels %r' % (model.get('labels'), labels))
+    if width is not None and len(coefficients) != width:
+        raise Refused('base checkpoint width %d does not match the export feature width %d' % (len(coefficients), width))
+    return model, digest
+
+
+def student_checkpoint(rows, predictions, manifest, parameters):
+    """Averaged perceptron fine-tuned from the chosen base's verified checkpoint.
+
+    The base's coefficients and intercept are the starting point; `learning_rate`
+    (a generation parameter, default 1.0) scales every update; the averaged
+    weights are the student. The resulting model records the base bundle
+    digest so the lineage names the checkpoint it came from.
+    """
+    labels = manifest['_labels']
+    width = len(rows[0]['features'])
+    if width == 0 or any(len(r['features']) != width for r in rows):
+        raise Refused('rows disagree on feature width or have none')
+    base, base_digest = load_base_checkpoint(manifest, manifest.get('_base_bundle_dir'), labels, width)
+    epochs = _epochs(parameters)
+    rate = parameters.get('learning_rate', DEFAULT_PARAMETERS['learning_rate'])
+    if type(rate) not in (int, float) or not (0 < rate <= 100):
+        raise Refused('learning_rate must be a number in (0, 100]')
+    by_id = {p['example_id']: p['output']['label'] for p in predictions}
+    weights, bias = [float(c) for c in base['coefficients']], float(base['intercept'])
+    total_w, total_b = [0.0] * width, 0.0
+    steps = 0
+    for _ in range(epochs):
+        for r in sorted(rows, key=lambda r: r['id']):
+            y = 1.0 if by_id[r['id']] == labels[1] else -1.0
+            score = sum(w * x for w, x in zip(weights, r['features'])) + bias
+            if y * score <= 0:
+                weights = [w + rate * y * x for w, x in zip(weights, r['features'])]
+                bias += rate * y
+            total_w = [t + w for t, w in zip(total_w, weights)]
+            total_b += bias
+            steps += 1
+    return dict(schema=1, kind='linear-student', task_id=manifest['_task_id'], feature_schema_id=manifest['_feature_schema_id'],
+                labels=labels, coefficients=[t / steps for t in total_w], intercept=total_b / steps, threshold=float(base.get('threshold', 0.0)),
+                distillation_manifest_pin=manifest['_pin'], teacher=manifest['teacher']['chosen'],
+                base=manifest['base']['chosen'], base_bundle_digest=base_digest, epochs=epochs, learning_rate=rate)
+
+
+STUDENTS = {'averaged-perceptron': student_perceptron, 'checkpoint-fine-tune': student_checkpoint}
 TEACHERS = {'sign': teacher_sign}
 
 
-def runtime_identities():
+def runtime_identities(student):
     return {'python': platform.python_version(), 'implementation': platform.python_implementation(),
-            'system': platform.system(), 'machine': platform.machine(), 'runtime_id': RUNTIME_ID,
+            'system': platform.system(), 'machine': platform.machine(), 'runtime_id': RUNTIME_IDS[student], 'student': student,
             'distill.py': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
             'weights_bundle.py': hashlib.sha256(Path(weights_bundle.__file__).read_bytes()).hexdigest()}
 
@@ -259,10 +346,20 @@ def write_exclusive(path, data):
 
 
 def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teacher='sign', student='averaged-perceptron',
-            teacher_cmd=None, parameters=None):
+            teacher_cmd=None, parameters=None, base_bundle_dir=None):
     """Run the whole job. exports: {cohort_id: (dataset_path, export_manifest_path)}."""
     manifest = load_manifest(manifest_path, manifest_pin)
     manifest['_pin'] = manifest_pin
+    manifest['_base_bundle_dir'] = base_bundle_dir
+    pinned_base = chosen_identity(manifest, 'base').get('bundle_digest')
+    if student == 'checkpoint-fine-tune':
+        # Refuse before any export is read: the base is an input, verified first.
+        load_base_checkpoint(manifest, base_bundle_dir)
+    elif pinned_base:
+        # The receipt attests the chosen base, bundle digest included. A student
+        # that would not open that bundle must not run under a manifest that
+        # pins it, or the receipt would attest a base the run never used.
+        raise Refused('the chosen base pins bundle %s, which only the checkpoint-fine-tune student consumes; the %s student would attest a base it never opened' % (pinned_base, student))
     output = Path(os.path.abspath(output_dir))
     if output.exists():
         raise FileExistsError(str(output))
@@ -281,11 +378,16 @@ def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teach
         rows.extend(r for r in data['rows'] if r['split'] == 'train' and r['training_allowed'] and r['label_status'] == 'verified')
     if not rows:
         raise Refused('no training rows inside the selection')
+    if student == 'checkpoint-fine-tune':
+        # Width and labels are known now; refuse before the teacher runs.
+        width = len(rows[0]['features'])
+        load_base_checkpoint(manifest, base_bundle_dir, manifest['_labels'], width if all(len(r['features']) == width for r in rows) else None)
     requested_parameters = manifest['data']['generation_parameters']
     unrequested = sorted(set(parameters or {}) - set(requested_parameters))
     if unrequested:
         raise Refused('parameter %r was not requested by the manifest; a receipt carries no new keys' % unrequested[0])
     actual_parameters = dict(requested_parameters, **(parameters or {}))
+    _epochs(actual_parameters)
     # Deviations are the recomputed differences, in the structure the Go
     # verifier recomputes: parameter, requested, actual. Never prose.
     deviations = [dict(parameter=k, requested=requested_parameters[k], actual=actual_parameters[k])
@@ -295,7 +397,7 @@ def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teach
     if {p['example_id'] for p in predictions['predictions']} != {r['id'] for r in rows}:
         raise Refused('teacher predictions do not cover exactly the training rows')
     model = STUDENTS[student](rows, predictions['predictions'], manifest, actual_parameters)
-    runtime = runtime_identities()
+    runtime = runtime_identities(student)
     staging = Path(tempfile.mkdtemp(prefix='.distill-staging-', dir=output.parent))
     try:
         bundle_dir = staging / 'bundle'
@@ -342,6 +444,7 @@ def main(argv=None):
     parser.add_argument('--teacher-command', nargs='+')
     parser.add_argument('--student', choices=sorted(STUDENTS), default='averaged-perceptron')
     parser.add_argument('--parameter', action='append', default=[], metavar='KEY=JSON')
+    parser.add_argument('--base-bundle', help='verified weights bundle of the chosen base, required by the checkpoint-fine-tune student')
     args = parser.parse_args(argv)
     exports = {}
     for item in args.export:
@@ -352,11 +455,12 @@ def main(argv=None):
     try:
         receipt = distill(args.manifest, args.manifest_pin, exports, args.output_dir,
                           executor=dict(id=args.executor_id, attestation_id=args.executor_attestation, host=platform.node()),
-                          teacher=args.teacher, student=args.student, teacher_cmd=args.teacher_command, parameters=parameters)
+                          teacher=args.teacher, student=args.student, teacher_cmd=args.teacher_command, parameters=parameters,
+                          base_bundle_dir=args.base_bundle)
     except Refused as error:
         parser.exit(3, 'distillation refused: %s\n' % error)
     except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError, KeyError, TypeError, AttributeError,
-            IndexError, ZeroDivisionError, StopIteration) as error:
+            IndexError, ArithmeticError, StopIteration) as error:
         parser.exit(1, 'distillation failed: %s\n' % error)
     print(json.dumps(dict(candidate_only=True, bundle_digest=receipt['bundle_digest'], status=receipt['status']), sort_keys=True))
 

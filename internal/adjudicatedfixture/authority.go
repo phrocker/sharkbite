@@ -1,5 +1,5 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE and NOTICE.
-package main
+package adjudicatedfixture
 
 import (
 	"context"
@@ -31,7 +31,7 @@ type registered struct {
 	admitted     []journal.Receipt
 	basis        decision.AdjudicationBasis
 }
-type registry struct {
+type Registry struct {
 	roleBytes []byte
 
 	dir                string
@@ -52,17 +52,17 @@ type registry struct {
 	now                func() time.Time
 }
 
-func identity(id string) decision.BasisIdentity {
+func Identity(id string) decision.BasisIdentity {
 	return decision.BasisIdentity{SubjectID: []byte(id), ActorID: []byte(id + "-actor"), ClientID: []byte(id + "-client")}
 }
-func (r *registry) permission(d auth.Decision, op auth.Operation, id shoal.ID) error {
+func (r *Registry) permission(d auth.Decision, op auth.Operation, id shoal.ID) error {
 	now := r.now()
 	if !r.readable {
 		return auth.ObjectNotFound()
 	}
 	return d.AuthorizeObject(op, auth.ResourceRequest{AuthorizationDomain: []byte(domain), SourceID: []byte("fixtures"), PolicyID: []byte("fixture-policy"), ObjectID: id}, now)
 }
-func (r *registry) byPrediction(request, pred shoal.ID) *registered {
+func (r *Registry) byPrediction(request, pred shoal.ID) *registered {
 	for _, v := range r.rows {
 		if v.prediction.ID() == pred && v.prediction.Request().ID() == request {
 			return v
@@ -70,7 +70,7 @@ func (r *registry) byPrediction(request, pred shoal.ID) *registered {
 	}
 	return nil
 }
-func (r *registry) byTarget(target shoal.ID) *registered {
+func (r *Registry) byTarget(target shoal.ID) *registered {
 	for _, v := range r.rows {
 		if v.target == target {
 			return v
@@ -78,18 +78,18 @@ func (r *registry) byTarget(target shoal.ID) *registered {
 	}
 	return nil
 }
-func (r *registry) source(v *registered) error {
-	b, err := inquiryRead(filepath.Join(r.dir, "sources", string(v.fixture.ID)+".txt"), len(v.fixture.Raw))
-	if err != nil || hash(b) != hash(v.fixture.Raw) || !reflect.DeepEqual(b, v.record.Sources[0].Bytes) {
+func (r *Registry) source(v *registered) error {
+	b, err := readBounded(filepath.Join(r.dir, "sources", string(v.fixture.ID)+".txt"), len(v.fixture.Raw))
+	if err != nil || Hash(b) != Hash(v.fixture.Raw) || !reflect.DeepEqual(b, v.record.Sources[0].Bytes) {
 		return auth.ObjectNotFound()
 	}
 	return nil
 }
-func (r *registry) allCurrent(d auth.Decision, v *registered, op auth.Operation) error {
+func (r *Registry) allCurrent(d auth.Decision, v *registered, op auth.Operation) error {
 	if v == nil {
 		return auth.ObjectNotFound()
 	}
-	roles, e := inquiryRead(filepath.Join(r.dir, "roles.json"), len(r.roleBytes))
+	roles, e := readBounded(filepath.Join(r.dir, "roles.json"), len(r.roleBytes))
 	if e != nil || !reflect.DeepEqual(roles, r.roleBytes) {
 		return auth.ObjectNotFound()
 	}
@@ -97,15 +97,15 @@ func (r *registry) allCurrent(d auth.Decision, v *registered, op auth.Operation)
 		return err
 	}
 	if v.witness.ID != "" {
-		b, e := inquiryRead(filepath.Join(r.dir, "witnesses", string(v.fixture.ID)+".json"), len(v.witnessBytes))
-		if e != nil || hash(b) != v.witness.Digest || !reflect.DeepEqual(b, v.witnessBytes) {
+		b, e := readBounded(filepath.Join(r.dir, "witnesses", string(v.fixture.ID)+".json"), len(v.witnessBytes))
+		if e != nil || Hash(b) != v.witness.Digest || !reflect.DeepEqual(b, v.witnessBytes) {
 			return auth.ObjectNotFound()
 		}
 	}
 	return r.permission(d, op, v.fixture.ID)
 }
 
-type artifactAuthority struct{ r *registry }
+type artifactAuthority struct{ r *Registry }
 
 func (a artifactAuthority) AuthorizeRequest(_ context.Context, d auth.Decision, id shoal.ID) error {
 	for _, v := range a.r.rows {
@@ -124,7 +124,7 @@ func (a artifactAuthority) Verify(_ context.Context, d auth.Decision, record dec
 	return auth.ObjectNotFound()
 }
 
-type outcomeAuthority struct{ r *registry }
+type outcomeAuthority struct{ r *Registry }
 
 func (a outcomeAuthority) Resolve(_ context.Context, d auth.Decision, request, pred shoal.ID, op auth.Operation) (decision.PredictionRecord, error) {
 	v := a.r.byPrediction(request, pred)
@@ -150,7 +150,7 @@ func (a outcomeAuthority) Verify(_ context.Context, d auth.Decision, chain []dec
 	return nil
 }
 
-type adjudicationAuthority struct{ r *registry }
+type adjudicationAuthority struct{ r *Registry }
 
 func (a adjudicationAuthority) Resolve(_ context.Context, d auth.Decision, request, pred shoal.ID, op auth.Operation) (adjud.Binding, error) {
 	v := a.r.byPrediction(request, pred)
@@ -187,7 +187,7 @@ func (a adjudicationAuthority) Capture(ctx context.Context, d auth.Decision, p d
 	if cutoff.Before(capture.Window.CompletedAt) || cutoff.Before(capture.Snapshots[0].UpdatedAt) {
 		return decision.AdjudicationBasis{}, auth.ObjectNotFound()
 	}
-	c := decision.AdjudicationBasisConfig{AuthorityID: domain, AuthorityRevisionID: "fixture-authority-revision:1", EnumerationID: enumeration, CapturedAt: cutoff, Cutoff: cutoff, InventoryComplete: true, ControllersComplete: true, Witnesses: []decision.BasisWitness{v.witness}, SourceControllers: []decision.BasisIdentity{identity("fixture-source-controller")}, RoleEvidenceIDs: []shoal.ID{"fixture-judge-role-grant:v1"}}
+	c := decision.AdjudicationBasisConfig{AuthorityID: domain, AuthorityRevisionID: "fixture-authority-revision:1", EnumerationID: enumeration, CapturedAt: cutoff, Cutoff: cutoff, InventoryComplete: true, ControllersComplete: true, Witnesses: []decision.BasisWitness{v.witness}, SourceControllers: []decision.BasisIdentity{Identity("fixture-source-controller")}, RoleEvidenceIDs: []shoal.ID{"fixture-judge-role-grant:v1"}}
 	for _, receipt := range receipts {
 		c.Outcomes = append(c.Outcomes, basisOutcome(a.r, v, receipt))
 	}
@@ -214,7 +214,7 @@ func (a adjudicationAuthority) Verify(ctx context.Context, d auth.Decision, op a
 	}
 	if candidate != nil {
 		expected, ok := a.r.bases[candidate.Basis.ID()]
-		if !ok || !reflect.DeepEqual(expected.Config(), candidate.Basis.Config()) || d.Subject() != "fixture-judge" || !reflect.DeepEqual(candidate.Adjudicator, identity("fixture-judge")) {
+		if !ok || !reflect.DeepEqual(expected.Config(), candidate.Basis.Config()) || d.Subject() != "fixture-judge" || !reflect.DeepEqual(candidate.Adjudicator, Identity("fixture-judge")) {
 			return auth.ObjectNotFound()
 		}
 		if e := a.r.verifyHistoricalCapture(ctx, d, v, candidate.Basis); e != nil {
@@ -238,7 +238,7 @@ func (a adjudicationAuthority) Verify(ctx context.Context, d auth.Decision, op a
 }
 
 type cohortAuthority struct {
-	r                            *registry
+	r                            *Registry
 	cohort                       decisiondatasets.Cohort
 	initialCapture, finalCapture inventoryset.Capture
 }
