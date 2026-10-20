@@ -93,6 +93,29 @@ func resolve(t *testing.T, store Store, live metadata.TabletInfo, record Record)
 	return state
 }
 
+func TestRecordRejectsInvalidUTF8IdentityAndFenceCollisions(t *testing.T) {
+	for _, invalid := range []string{string([]byte{0xff}), string([]byte{0xfe})} {
+		for _, field := range []string{"table", "path", "server fence", "manager fence"} {
+			t.Run(field, func(t *testing.T) {
+				record, _ := sidecarFixture()
+				switch field {
+				case "table":
+					record.Identity.Extent.TableID = invalid
+				case "path":
+					record.Identity.FilePath = invalid
+				case "server fence":
+					record.Fence.ServerGeneration = invalid
+				case "manager fence":
+					record.Fence.ManagerGeneration = invalid
+				}
+				if err := record.validate(); !errors.Is(err, ErrInvalid) {
+					t.Fatalf("invalid UTF-8 %s accepted: %v", field, err)
+				}
+			})
+		}
+	}
+}
+
 func TestResolveExactLiveFileAcrossReplacementAndFailClosedChanges(t *testing.T) {
 	ctx := context.Background()
 	record, live := sidecarFixture()

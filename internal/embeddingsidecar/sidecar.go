@@ -15,6 +15,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/phrocker/shoal-oss/internal/embeddingspace"
 	"github.com/phrocker/shoal-oss/internal/ingestrouter"
@@ -83,6 +84,8 @@ type Store struct {
 
 func (r Record) validate() error {
 	if r.Version != Version || !r.Fence.Valid() ||
+		!utf8.ValidString(r.Fence.ServerGeneration) ||
+		!utf8.ValidString(r.Fence.ManagerGeneration) ||
 		len(r.Fence.ServerGeneration) > 1<<10 ||
 		len(r.Fence.ManagerGeneration) > 1<<10 ||
 		len(r.State.Identity) > embeddingspace.MaxIdentityBytes ||
@@ -114,8 +117,10 @@ func (i Identity) validate() error {
 	// deterministic path. Corrupt or caller-supplied identities cannot force
 	// large transient allocations before the record cap is enforced.
 	if len(i.Extent.TableID) == 0 || len(i.Extent.TableID) > 256 ||
+		!utf8.ValidString(i.Extent.TableID) ||
 		len(i.Extent.PrevEndRow) > 16<<10 || len(i.Extent.EndRow) > 16<<10 ||
 		len(i.FilePath) == 0 || len(i.FilePath) > 8<<10 ||
+		!utf8.ValidString(i.FilePath) ||
 		len(i.Qualifier) == 0 || len(i.Qualifier) > 64<<10 ||
 		len(i.Value) == 0 || len(i.Value) > 4<<10 ||
 		!validDigest(i.FooterSHA256) {
