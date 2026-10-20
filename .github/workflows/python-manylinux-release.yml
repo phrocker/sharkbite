@@ -160,10 +160,15 @@ jobs:
             python python/scripts/chaos_release.py \
             --wheel "$(find dist -name '*.whl' -print -quit)"
 
+  execution-fault:
+    name: Standalone execution fault gate
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/execution-fault-campaign.yml
+
   attest:
     name: Attest verified artifacts
     if: github.event_name != 'pull_request'
-    needs: [build, chaos, source-build-compat]
+    needs: [build, chaos, source-build-compat, execution-fault]
     runs-on: ubuntu-24.04
     permissions:
       contents: read
