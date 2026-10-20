@@ -86,7 +86,7 @@ func embeddedIPv4(address netip.Addr) (netip.Addr, bool) {
 
 // CheckAddress decides whether the target client may connect to address.
 // It is applied to every address a name resolves to and again, through the
-// dialer's Control hook, to the address the socket actually connects to.
+// dialer's Control hook, to the literal destination before the socket connects.
 func CheckAddress(address netip.Addr, allowPrivate bool) error {
 	if !address.IsValid() {
 		return fmt.Errorf("%w: invalid address", ErrEgressRefused)
@@ -196,8 +196,8 @@ func normalizeHost(host string) string {
 // address that is connected to. That is what makes it safe against DNS
 // rebinding: a name that answers with a public address for a check and a
 // metadata address for the connect cannot do so here, because there is no
-// second lookup. The Control hook re-checks the socket's peer anyway, so a
-// future change that reintroduces a lookup cannot reopen it silently.
+// second lookup. The Control hook re-checks the literal destination before
+// connecting; it does not observe a post-connect peer.
 //
 // Every address a name resolves to must pass, not merely one. A name answering
 // with a public address and a metadata address is refused outright rather than
