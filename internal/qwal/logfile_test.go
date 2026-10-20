@@ -28,6 +28,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"io"
+	"os"
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/rfile/wire"
@@ -74,10 +75,12 @@ func (w *walBuilder) text(p []byte) {
 	w.buf.Write(p)
 }
 
-// header writes the v4 magic and a zero-length crypto-params block (no crypto).
+// header writes the pinned v4 no-crypto params; the independent Java fixture
+// below verifies that this synthetic helper matches Accumulo's writer.
 func (w *walBuilder) header() {
 	w.buf.WriteString(logFileHeaderV4)
-	w.i32(0) // CryptoUtils.writeParams: zero-length params == NoCryptoService
+	w.i32(int32(len(noCryptoParams)))
+	w.raw([]byte(noCryptoParams))
 }
 
 // vbytes encodes a Mutation.readBytes field: VInt length + raw bytes.
@@ -283,19 +286,73 @@ func TestDecodeSyntheticWAL(t *testing.T) {
 	}
 }
 
-func TestReadHeaderEncryptedRejected(t *testing.T) {
-	var b bytes.Buffer
-	b.WriteString(logFileHeaderV4)
-	// Non-zero crypto params length => encrypted WAL.
-	var lb [4]byte
-	binary.BigEndian.PutUint32(lb[:], 16)
-	b.Write(lb[:])
-	b.Write(make([]byte, 16))
+func TestReadPinnedJavaHeader(t *testing.T) {
+	fixture, err := os.ReadFile("testdata/native_v4_no_crypto_header.bin")
+	if err != nil {
+		t.Fatal(err)
+	}
+	di := newDataInput(bytes.NewReader(fixture))
+	if err := di.readHeader(); err != nil {
+		t.Fatalf("read pinned Java header: %v", err)
+	}
+	marker, err := di.readU8()
+	if err != nil || marker != 0xFA {
+		t.Fatalf("entry marker after header: got %02x, %v", marker, err)
+	}
+	if _, err := di.readU8(); err != io.EOF {
+		t.Fatalf("expected EOF after marker, got %v", err)
+	}
+}
 
-	di := newDataInput(bytes.NewReader(b.Bytes()))
-	err := di.readHeader()
-	if !errors.Is(err, ErrEncryptedWAL) {
-		t.Fatalf("want ErrEncryptedWAL, got %v", err)
+func TestReadHeaderRejectsUnsupportedParams(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		length int32
+		params string
+	}{
+		{"legacy_empty", 0, ""},
+		{"encrypted", 16, ""},
+		{"huge", int32(^uint32(0) >> 1), ""},
+		{"wrong_bytes", int32(len(noCryptoParams)), "U+1F47C"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var b bytes.Buffer
+			b.WriteString(logFileHeaderV4)
+			if err := binary.Write(&b, binary.BigEndian, tc.length); err != nil {
+				t.Fatal(err)
+			}
+			b.WriteString(tc.params)
+			if err := newDataInput(&b).readHeader(); !errors.Is(err, ErrEncryptedWAL) {
+				t.Fatalf("want ErrEncryptedWAL, got %v", err)
+			}
+		})
+	}
+}
+
+func TestReadHeaderTruncation(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body []byte
+	}{
+		{"magic", []byte(logFileHeaderV4[:10])},
+		{"length", append([]byte(logFileHeaderV4), 0, 0)},
+		{"params", append(append([]byte(logFileHeaderV4), 0, 0, 0, 7), []byte("U+1")...)},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if err := newDataInput(bytes.NewReader(tc.body)).readHeader(); !errors.Is(err, ErrHeaderIncomplete) {
+				t.Fatalf("want ErrHeaderIncomplete, got %v", err)
+			}
+		})
+	}
+}
+
+func TestReadTextRejectsOversizedVIntBeforeAllocation(t *testing.T) {
+	var b bytes.Buffer
+	if _, err := wire.WriteVLong(&b, int64(maxWALTextBytes)+1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := newDataInput(&b).readText(); err == nil {
+		t.Fatal("expected bounded Text length error")
 	}
 }
 

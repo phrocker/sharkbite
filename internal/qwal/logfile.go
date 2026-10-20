@@ -46,6 +46,14 @@ import (
 const (
 	logFileHeaderV4 = "--- Log File Header (v4) ---"
 	logFileHeaderV3 = "--- Log File Header (v3) ---"
+	// NoFileEncrypter.getDecryptionParameters in the pinned Accumulo revision
+	// returns NoCryptoService.VERSION as UTF-8, which is the seven ASCII bytes
+	// below (not the ghost emoji itself).
+	noCryptoParams = "U+1F47B"
+	// Text fields are untrusted WAL bytes. Bound the allocation before
+	// reading a corrupt Hadoop VInt; this is a reader safety limit, not an
+	// Accumulo wire-format limit.
+	maxWALTextBytes = 16 << 20
 )
 
 // LogEvent is the WAL entry type. Ordinal order is load-bearing — it must
@@ -88,10 +96,10 @@ const logEventCount = 6
 // an OPEN event's ordinal. A mismatch means an incompatible WAL format.
 const logFileKeyVersion = 2
 
-// ErrEncryptedWAL is returned when a WAL carries a non-empty crypto parameter
-// block. Full WAL decryption is out of scope for W0; the reader detects it
-// and refuses rather than silently mis-parsing ciphertext as entries.
-var ErrEncryptedWAL = errors.New("qwal: WAL segment is encrypted; decryption is out of scope for W0")
+// ErrEncryptedWAL is returned when a v4 WAL does not carry the exact pinned
+// NoCryptoService parameter block. This includes encrypted and unsupported
+// legacy headers; the reader must not guess whether following bytes are clear.
+var ErrEncryptedWAL = errors.New("qwal: WAL crypto params are not the pinned no-crypto sentinel")
 
 // ErrHeaderIncomplete is returned when the file ends before the header is
 // fully read — the tserver died mid-write before flushing the header. Mirrors
@@ -223,6 +231,9 @@ func (d *dataInput) readText() ([]byte, error) {
 	if n < 0 {
 		return nil, fmt.Errorf("qwal: negative Text length %d", n)
 	}
+	if n > maxWALTextBytes {
+		return nil, fmt.Errorf("qwal: Text length %d exceeds reader limit %d", n, maxWALTextBytes)
+	}
 	if n == 0 {
 		return []byte{}, nil
 	}
@@ -234,14 +245,14 @@ func (d *dataInput) readText() ([]byte, error) {
 }
 
 // readHeader consumes the WAL file header. It returns nil once the cursor is
-// positioned at the first entry, ErrEncryptedWAL if a crypto block is
-// present, or ErrHeaderIncomplete on a short header.
+// positioned at the first entry, ErrEncryptedWAL unless the exact pinned
+// no-crypto params are present, or ErrHeaderIncomplete on a short header.
 //
 // v4 layout (DfsLogger.getDecryptingStream + open()):
 //
 //	bytes  magic            ("--- Log File Header (v4) ---")
 //	int32  cryptoParamsLen  (CryptoUtils.writeParams)
-//	bytes  cryptoParams     (length above; empty/zero-length => no crypto)
+//	bytes  cryptoParams     (exactly ASCII "U+1F47B" => no crypto)
 //	... entries follow ...
 func (d *dataInput) readHeader() error {
 	magic := make([]byte, len(logFileHeaderV4))
@@ -254,8 +265,7 @@ func (d *dataInput) readHeader() error {
 	switch string(magic) {
 	case logFileHeaderV4:
 		// CryptoUtils.writeParams: int32 length + that many param bytes.
-		// The NoCryptoService writes a zero-length param block, so a 0 here
-		// is the no-crypto case and we proceed straight to entries.
+		// Reject any other length before allocating or reading a claimed block.
 		paramLen, err := d.readInt32()
 		if err != nil {
 			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
@@ -266,7 +276,17 @@ func (d *dataInput) readHeader() error {
 		if paramLen < 0 {
 			return fmt.Errorf("qwal: negative crypto params length %d", paramLen)
 		}
-		if paramLen > 0 {
+		if paramLen != int32(len(noCryptoParams)) {
+			return ErrEncryptedWAL
+		}
+		var params [len(noCryptoParams)]byte
+		if err := d.readFull(params[:]); err != nil {
+			if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+				return ErrHeaderIncomplete
+			}
+			return fmt.Errorf("qwal: read crypto params: %w", err)
+		}
+		if string(params[:]) != noCryptoParams {
 			return ErrEncryptedWAL
 		}
 		return nil
