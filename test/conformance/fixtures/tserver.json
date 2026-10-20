@@ -24,21 +24,21 @@
       "gate": "ingest-minor-compaction",
       "kind": "go-test",
       "reference": "internal/hostedingest/tablet_test.go#TestTabletDurableCommitMinorCompactionAndAmbiguousResponses",
-      "source_sha256": "2ee227292e1cc4064977103f73ee41588626cd4cab7ce14bc2f57f17c6deea4d",
+      "source_sha256": "48d0da2d0eef5d82ab116533985ad32e2af98437ad81e9f677be9fc6926700e1",
       "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletDurableCommitMinorCompactionAndAmbiguousResponses$", "-count=1"]
     },
     {
       "gate": "wal-recovery",
       "kind": "go-test",
       "reference": "internal/hostedingest/tablet_test.go#TestTabletRestartReplaysReferencedWALExactlyOnce",
-      "source_sha256": "2ee227292e1cc4064977103f73ee41588626cd4cab7ce14bc2f57f17c6deea4d",
+      "source_sha256": "48d0da2d0eef5d82ab116533985ad32e2af98437ad81e9f677be9fc6926700e1",
       "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletRestartReplaysReferencedWALExactlyOnce$", "-count=1"]
     },
     {
       "gate": "restart-fencing",
       "kind": "go-test",
       "reference": "internal/hostedingest/tablet_test.go#TestTabletFencesStaleOwnerDuringCommit",
-      "source_sha256": "2ee227292e1cc4064977103f73ee41588626cd4cab7ce14bc2f57f17c6deea4d",
+      "source_sha256": "48d0da2d0eef5d82ab116533985ad32e2af98437ad81e9f677be9fc6926700e1",
       "replay_command": ["go", "test", "./internal/hostedingest", "-run", "^TestTabletFencesStaleOwnerDuringCommit$", "-count=1"]
     }
   ]

@@ -223,7 +223,7 @@ func hostAssignmentFor(t *testing.T, extent tserver.Extent) (*tserver.Host, tser
 }
 
 func TestSystemTabletCommitPublishesWithUserWALThreshold(t *testing.T) {
-	for _, tableID := range []string{metadata.RootTableID, metadata.MetadataTableID} {
+	for _, tableID := range []string{metadata.RootTableID, metadata.MetadataTableID, metadata.FateTableID} {
 		t.Run(tableID, func(t *testing.T) {
 			extent := tserver.Extent{TableID: tableID}
 			host, attempt := hostAssignmentFor(t, extent)
@@ -248,6 +248,29 @@ func TestSystemTabletCommitPublishesWithUserWALThreshold(t *testing.T) {
 				t.Fatalf("published files = %d, want 1", len(files))
 			}
 		})
+	}
+}
+
+func TestUserTabletCommitRetainsWALThreshold(t *testing.T) {
+	extent := tserver.Extent{TableID: "1"}
+	host, attempt := hostAssignmentFor(t, extent)
+	factory := testFactory(t, host, &fakeMetadata{}, 1000)
+	opened, err := factory.Open(context.Background(), tabletloader.Specification{Extent: extent}, attempt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := host.LoadComplete(attempt); err != nil {
+		t.Fatal(err)
+	}
+	tablet := opened.(*Tablet)
+	request := testRequest(attempt)
+	request.Extent = ingestrouter.Extent{TableID: extent.TableID}
+	request.Fence = tablet.Fence()
+	if err := tablet.Commit(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	if files := tablet.DataFiles(); len(files) != 0 {
+		t.Fatalf("published user-tablet files = %d, want 0 before threshold", len(files))
 	}
 }
 

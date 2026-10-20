@@ -188,14 +188,14 @@ func (f *Factory) Open(
 		TableID: spec.Extent.TableID, PrevEndRow: spec.Extent.PrevEndRow, EndRow: spec.Extent.EndRow,
 	}
 	flushCells := f.cfg.FlushCells
-	if extent.TableID == metadata.RootTableID || extent.TableID == metadata.MetadataTableID {
+	if extent.TableID == metadata.RootTableID || extent.TableID == metadata.MetadataTableID || extent.TableID == metadata.FateTableID {
 		conditional, ok := f.cfg.Metadata.(systemTabletMetadataFactory)
 		if !ok || !conditional.SupportsSystemTablets() {
 			return nil, ErrSystemTabletConditionalUnsupported
 		}
-		// Assignment metadata must be visible to the next ordinary Accumulo
-		// scan. That path reads hosted RFiles, not the active memtable. Keep
-		// system-tablet writes immediately published even when user tablets
+		// Accumulo reads root, metadata, and FATE through ordinary scans.
+		// Those scans read hosted RFiles, not the active memtable. Publish
+		// system-tablet writes before acknowledging them while user tablets
 		// retain unflushed WAL entries for recovery.
 		flushCells = 1
 	}
