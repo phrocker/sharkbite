@@ -36,8 +36,9 @@ representation; an absent block has a separate digest and decodes as unknown.
 For a scan attestation, it also streams SHA-256 over the complete RFile in
 fixed-size reads with cancellation. The footer, full-file hash, and scanner
 receive one opened source snapshot, so a same-path replacement cannot combine
-evidence from different object versions. Backends used here must keep each
-open file handle pinned to immutable bytes. The attestation record is bounded,
+evidence from different object versions. `RFileEvidenceReader` requires the
+storage `SnapshotOpener` capability and never falls back to ordinary `Open`.
+The attestation record is bounded,
 canonical, signed under the authority namespace, and binds the exact native
 file identity, full RFile digest/size, footer digest, scan algorithm/config,
 locality-group coverage, and observed cell counts. Lost create answers need
@@ -53,13 +54,14 @@ digest for that protocol; the current write and resolve paths refuse negative
 attestations. Full-file hashing costs one streamed read per verification until
 an immutable-object digest cache is introduced with equivalent provenance.
 
-**Hosted activation also requires source snapshot stability.** Current cloud
-backend `ReadAt` calls can issue unpinned range requests: GCS reads do not pin
-an object generation, and S3 reads do not send a version ID or ETag condition.
-One `Open` is therefore insufficient if an object can be overwritten while
-footer, hash, and scan reads run. Production must use version/generation-pinned
-reads or enforce a never-overwrite RFile namespace, and test replacement during
-range reads. The present slice is inert and makes no hosted durability claim.
+**Hosted activation also requires source snapshot stability.** GCS snapshot
+reads pin an object generation; S3 and Azure pin a version or enforce the ETag
+seen at open on every range request. A missing token or unsupported backend,
+including the path-keyed disk cache, fails closed. Rooted storage forwards
+snapshot reads only when its inner backend supports them. An ETag is a
+consistency token, not a content digest; the attestation still hashes the
+complete RFile. These reads need deployment-specific replacement testing,
+and the present slice remains inert without a hosted publisher or scanner.
 
 The bounded publication-marker protocol requires a candidate record, an
 owner-fenced read of the exact native `file` entry, verified RFile footer, and
