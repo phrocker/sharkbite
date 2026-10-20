@@ -244,6 +244,43 @@ func testAuthority(t *testing.T, cluster *fakeCluster) (*Authority, ingestrouter
 	return opened.(*Authority), fence
 }
 
+func TestSidecarOwnedReadRejectsChangedAssignmentAndExtent(t *testing.T) {
+	cluster := newFakeCluster()
+	authority, fence := testAuthority(t, cluster)
+	ctx := context.Background()
+	if _, err := authority.ReadOwned(ctx, authority.extent, fence); err != nil {
+		t.Fatalf("current owner: %v", err)
+	}
+
+	changedExtent := authority.extent
+	changedExtent.PrevEndRow = []byte{}
+	if _, err := authority.ReadOwned(ctx, changedExtent, fence); !errors.Is(err, ErrStaleOwner) {
+		t.Fatalf("nil versus empty previous row: %v", err)
+	}
+	changedFence := fence
+	changedFence.Assignment++
+	if err := authority.Verify(ctx, authority.extent, changedFence); !errors.Is(err, ErrStaleOwner) {
+		t.Fatalf("changed assignment: %v", err)
+	}
+
+	host := authority.factory.cfg.Host
+	server, _ := host.Lock()
+	manager, _ := host.ManagerLock()
+	hostFence := tserver.Fence{Server: server, Manager: manager}
+	hostExtent := tserver.Extent{TableID: authority.extent.TableID}
+	if _, err := host.Unassign(hostFence, hostExtent, tserver.UnloadImmediate); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := host.Assign(hostFence, hostExtent); err != nil {
+		t.Fatal(err)
+	}
+	// The Accumulo location and ServiceLock still match. Only the local
+	// assignment generation distinguishes this new owner from the old one.
+	if _, err := authority.ReadOwned(ctx, authority.extent, fence); !errors.Is(err, ErrStaleOwner) {
+		t.Fatalf("reassigned under same lock: %v", err)
+	}
+}
+
 func TestAuthorityClaimsOwnerAndReconcilesAmbiguousWALMutations(t *testing.T) {
 	cluster := newFakeCluster()
 	authority, fence := testAuthority(t, cluster)

@@ -577,6 +577,72 @@ func (a *Authority) readOwned(ctx context.Context) (metadata.TabletInfo, error) 
 	return info, nil
 }
 
+// ReadOwned supplies the sidecar publisher with a fresh native metadata row.
+// It checks the process-local assignment as well as Accumulo's location and
+// lock, since an unload and reassignment can keep the same ServiceLock.
+func (a *Authority) ReadOwned(
+	ctx context.Context, extent ingestrouter.Extent, fence ingestrouter.Fence,
+) (metadata.TabletInfo, error) {
+	if err := a.validateIdentity(extent, fence); err != nil {
+		return metadata.TabletInfo{}, err
+	}
+	if !exactExtent(a.extent, extent) {
+		return metadata.TabletInfo{}, ErrStaleOwner
+	}
+	if err := a.verifyAssigned(ctx, fence); err != nil {
+		return metadata.TabletInfo{}, err
+	}
+	info, err := a.readOwned(ctx)
+	if err != nil {
+		return metadata.TabletInfo{}, err
+	}
+	if info.TableID != extent.TableID || !info.PrevRowSet ||
+		!exactBytes(info.PrevRow, extent.PrevEndRow) ||
+		!exactBytes(info.EndRow, extent.EndRow) {
+		return metadata.TabletInfo{}, ErrStaleOwner
+	}
+	if err := a.verifyAssigned(ctx, fence); err != nil {
+		return metadata.TabletInfo{}, err
+	}
+	return info, nil
+}
+
+// Verify implements the sidecar's write fence without treating a matching
+// Accumulo location as proof that this assignment is still live.
+func (a *Authority) Verify(ctx context.Context, extent ingestrouter.Extent, fence ingestrouter.Fence) error {
+	_, err := a.ReadOwned(ctx, extent, fence)
+	return err
+}
+
+func (a *Authority) verifyAssigned(ctx context.Context, fence ingestrouter.Fence) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	server, serverOK := a.factory.cfg.Host.Lock()
+	manager, managerOK := a.factory.cfg.Host.ManagerLock()
+	if !serverOK || !managerOK || manager.String() != fence.ManagerGeneration {
+		return ErrStaleOwner
+	}
+	if err := a.factory.cfg.Host.VerifyAssignedGeneration(
+		tserver.Fence{Server: server, Manager: manager},
+		tserver.Extent{TableID: a.extent.TableID,
+			PrevEndRow: a.extent.PrevEndRow, EndRow: a.extent.EndRow},
+		fence.Assignment,
+	); err != nil {
+		return errors.Join(ErrStaleOwner, err)
+	}
+	return ctx.Err()
+}
+
+func exactExtent(a, b ingestrouter.Extent) bool {
+	return a.TableID == b.TableID && exactBytes(a.PrevEndRow, b.PrevEndRow) &&
+		exactBytes(a.EndRow, b.EndRow)
+}
+
+func exactBytes(a, b []byte) bool {
+	return (a == nil) == (b == nil) && bytes.Equal(a, b)
+}
+
 func (a *Authority) read(ctx context.Context) (metadata.TabletInfo, error) {
 	if a.extent.TableID == metadata.RootTableID {
 		return a.readRoot(ctx)

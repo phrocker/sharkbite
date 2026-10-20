@@ -71,15 +71,44 @@ fence, operation ID, and attestation reference. A domain-separated keyed MAC
 or signature binds those fields and a key ID; verification must use a
 constant-time comparison and retain historical keys through rotation. Keys
 must be scoped to one metadata authority/cluster namespace. An unauthenticated
-precreated marker can deny publication but cannot promote known state. No
-production key source or rotation policy is wired, so a missing authenticator
-fails closed. A second owner-fenced native read, footer check, and fence check
-precede success. A lost marker-create answer is accepted only after a canonical,
-authenticated readback of the same candidate, operation, and namespace; an
+precreated marker can deny publication but cannot promote known state. A
+missing authenticator fails closed. A second owner-fenced native read, footer
+check, and fence check precede success. A lost marker-create answer is accepted
+only after a canonical, authenticated readback of the same candidate, operation,
+and namespace; an
 old valid key may be accepted across rotation. Resolution reads those bytes and
 independently rechecks the footer and scan attestation; marker
 existence alone grants no state. Split, replacement, GC, stale owner, and
 missing or contradictory attestation refuse acknowledgement or promotion.
+
+The metadata authority now exposes `ReadOwned` and `Verify` for this protocol.
+They require exact byte-level tablet bounds, the current Accumulo location
+and ServiceLock, and the original process-local assignment generation. They
+check that generation before and after the native read, so an unload and
+reassignment under the same ServiceLock cannot authorize an old publisher.
+This reader is not yet connected to hosted publication.
+
+`LoadHMACKeyring` supplies a file-backed, namespace-scoped MAC for markers and
+attestations. The secret file must be a regular owner-only file (mode 0400 or
+0600), at most 64 KiB, with this shape:
+
+```json
+{
+  "version": 1,
+  "namespace": "<Accumulo authority namespace>",
+  "current": "key-2026-10",
+  "keys": [
+    {"id": "key-2026-10", "material_base64": "<base64 of at least 32 random bytes>"}
+  ]
+}
+```
+
+The active key signs new records; retained older keys verify existing records.
+Rotate by installing a new owner-only file and restarting, retaining old keys
+until their records have been retired. The namespace is part of the MAC input,
+so copying a key file to another authority cannot validate its signatures.
+The hosted tserver and operator CLI do not yet load this file; configuring it
+alone does not enable publication or backfill.
 
 The marker's operation ID is asserted by the trusted caller. Native Accumulo
 `file` metadata has no operation ID to compare with it, so the marker alone
