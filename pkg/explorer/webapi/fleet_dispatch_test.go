@@ -129,7 +129,7 @@ func TestFleetDispatchMountRequiresAuthenticationAndPreservesOpaqueIDs(t *testin
 		AgentID:        encodeFleetID("agent"), AgentGeneration: 1,
 		Capability: "search", Action: "query", SourceID: []byte("source"),
 		PolicyID: []byte("policy"), ObjectID: encodeFleetID("object"),
-		Input: json.RawMessage(`{"value":1}`),
+		Input: json.RawMessage(`{"value":1}`), NotBefore: now.Add(30 * time.Second),
 	})
 	request := httptest.NewRequest(http.MethodPost, "http://example.test/api/v1/fleet/actions", bytes.NewReader(body))
 	request.Host = "example.test"
@@ -141,6 +141,12 @@ func TestFleetDispatchMountRequiresAuthenticationAndPreservesOpaqueIDs(t *testin
 	}
 	if !provider.enqueued || !bytes.Equal(provider.actionID, actionID) {
 		t.Fatalf("provider action=%x enqueued=%v", provider.actionID, provider.enqueued)
+	}
+	if !provider.notBefore.Equal(now.Add(30 * time.Second)) {
+		t.Fatalf("provider not-before time = %v", provider.notBefore)
+	}
+	if !strings.Contains(response.Body.String(), `"not_before":"2026-09-06T12:00:30Z"`) {
+		t.Fatalf("response omitted schedule: %s", response.Body.String())
 	}
 }
 
@@ -167,6 +173,7 @@ type stubDispatchProvider struct {
 	resolver   auth.Resolver
 	enqueued   bool
 	actionID   []byte
+	notBefore  time.Time
 }
 
 func (p *stubDispatchProvider) Enqueue(ctx context.Context, request fleet.EnqueueRequest) (fleet.ActionRecord, error) {
@@ -175,12 +182,14 @@ func (p *stubDispatchProvider) Enqueue(ctx context.Context, request fleet.Enqueu
 	}
 	p.enqueued = true
 	p.actionID = append([]byte(nil), request.ID...)
+	p.notBefore = request.NotBefore
 	return fleet.ActionRecord{
 		ID: request.ID, Version: 1, State: fleet.DispatchQueued,
 		AgentID: request.AgentID, AgentGeneration: request.AgentGeneration,
 		Capability: request.Capability, Action: request.Action,
 		RequestID: request.Context.RequestID, CorrelationID: request.Context.CorrelationID,
-		Deadline: request.Context.Deadline, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+		Deadline: request.Context.Deadline, NotBefore: request.NotBefore,
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
 	}, nil
 }
 

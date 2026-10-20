@@ -33,7 +33,11 @@ var (
 	dispatchQualifier = []byte("action")
 	dispatchPolicy    = []byte("fleet/dispatch/v1")
 	dispatchMagic     = []byte{'S', 'F', 'D', 1}
-	transitionMagic   = []byte{'S', 'F', 'T', 1}
+	// Scheduled records use a new envelope so older gateways reject them
+	// before Gob can silently drop the NotBefore field and claim them early.
+	dispatchScheduleMagic   = []byte{'S', 'F', 'D', 2}
+	transitionMagic         = []byte{'S', 'F', 'T', 1}
+	transitionScheduleMagic = []byte{'S', 'F', 'T', 2}
 )
 
 type storedTransition struct {
@@ -643,7 +647,11 @@ func encodeAction(record fleet.ActionRecord) ([]byte, error) {
 		return nil, err
 	}
 	var buffer bytes.Buffer
-	buffer.Write(dispatchMagic)
+	if record.NotBefore.IsZero() {
+		buffer.Write(dispatchMagic)
+	} else {
+		buffer.Write(dispatchScheduleMagic)
+	}
 	if err := gob.NewEncoder(&buffer).Encode(record); err != nil {
 		return nil, shoal.WrapError(shoal.ErrorInternal, "encode fleet action", err)
 	}
@@ -654,7 +662,11 @@ func encodeAction(record fleet.ActionRecord) ([]byte, error) {
 }
 
 func decodeAction(value []byte) (fleet.ActionRecord, error) {
-	if len(value) < len(dispatchMagic) || !bytes.Equal(value[:len(dispatchMagic)], dispatchMagic) {
+	if len(value) < len(dispatchMagic) {
+		return fleet.ActionRecord{}, errors.New("unknown fleet action encoding")
+	}
+	scheduled := bytes.Equal(value[:len(dispatchScheduleMagic)], dispatchScheduleMagic)
+	if !scheduled && !bytes.Equal(value[:len(dispatchMagic)], dispatchMagic) {
 		return fleet.ActionRecord{}, errors.New("unknown fleet action encoding")
 	}
 	var record fleet.ActionRecord
@@ -664,6 +676,9 @@ func decodeAction(value []byte) (fleet.ActionRecord, error) {
 	}
 	if reader.Len() != 0 {
 		return fleet.ActionRecord{}, errors.New("trailing fleet action bytes")
+	}
+	if scheduled == record.NotBefore.IsZero() {
+		return fleet.ActionRecord{}, errors.New("fleet action schedule does not match encoding version")
 	}
 	if err := record.Validate(); err != nil {
 		return fleet.ActionRecord{}, err
@@ -682,7 +697,11 @@ func encodeTransition(value storedTransition) ([]byte, error) {
 			"fleet transition completion time must be UTC")
 	}
 	var buffer bytes.Buffer
-	buffer.Write(transitionMagic)
+	if value.Transition.Record.NotBefore.IsZero() {
+		buffer.Write(transitionMagic)
+	} else {
+		buffer.Write(transitionScheduleMagic)
+	}
 	if err := gob.NewEncoder(&buffer).Encode(value); err != nil {
 		return nil, shoal.WrapError(
 			shoal.ErrorInternal, "encode fleet action transition", err)
@@ -696,8 +715,12 @@ func encodeTransition(value storedTransition) ([]byte, error) {
 }
 
 func decodeTransition(value []byte) (storedTransition, error) {
-	if len(value) < len(transitionMagic) ||
-		!bytes.Equal(value[:len(transitionMagic)], transitionMagic) {
+	if len(value) < len(transitionMagic) {
+		return storedTransition{}, errors.New(
+			"unknown fleet action transition encoding")
+	}
+	scheduled := bytes.Equal(value[:len(transitionScheduleMagic)], transitionScheduleMagic)
+	if !scheduled && !bytes.Equal(value[:len(transitionMagic)], transitionMagic) {
 		return storedTransition{}, errors.New(
 			"unknown fleet action transition encoding")
 	}
@@ -709,6 +732,10 @@ func decodeTransition(value []byte) (storedTransition, error) {
 	if reader.Len() != 0 {
 		return storedTransition{}, errors.New(
 			"trailing fleet action transition bytes")
+	}
+	if scheduled == stored.Transition.Record.NotBefore.IsZero() {
+		return storedTransition{}, errors.New(
+			"fleet action transition schedule does not match encoding version")
 	}
 	if err := stored.Transition.Validate(); err != nil {
 		return storedTransition{}, err
@@ -866,6 +893,8 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 	// accepted, and nothing below the service would notice.
 	case !current.Deadline.Equal(next.Deadline):
 		return rewrittenIdentity("deadline")
+	case !current.NotBefore.Equal(next.NotBefore):
+		return rewrittenIdentity("not-before time")
 	case current.Reason != next.Reason:
 		return rewrittenIdentity("reason")
 	}
