@@ -6,6 +6,7 @@ package explorerfleet
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -19,8 +20,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/phrocker/shoal-oss/internal/effectsgateway"
 	"github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
+	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 )
 
@@ -31,8 +34,9 @@ func chaosClock() time.Time {
 // TestDispatchClaimSurvivesLostResponseAndServerSIGKILL is opt-in for the
 // scheduled campaign. It starts two independent embedded-primary server
 // processes in succession against the same durable directory. The first
-// commits a claim but drops its HTTP answer, then dies without a clean close.
-// The replacement must recover the one winning fence and refuse a rival.
+// commits a prepared claim but drops its HTTP answer, then dies without a
+// clean close. The replacement must recover the one winning fence, retrieve
+// material as that claimant, prepare the bound request, and refuse a rival.
 func TestDispatchClaimSurvivesLostResponseAndServerSIGKILL(t *testing.T) {
 	if os.Getenv("SHOAL_CHAOS_SERVER_RESTART") != "1" {
 		t.Skip("scheduled server-restart chaos campaign")
@@ -44,13 +48,14 @@ func TestDispatchClaimSurvivesLostResponseAndServerSIGKILL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, dispatch := composeIntegratedServices(t, runtime, authority, &integratedExecutor{}, now)
+	registry, dispatch := composeIntegratedServices(t, runtime, authority,
+		&integratedExecutor{maxEffects: fleet.Effects{fleet.EffectMutatesExternal}}, now)
 	decision := integratedDecision(t, now)
 	bound, err := authority.Binder().Bind(context.Background(), decision)
 	if err != nil {
 		t.Fatal(err)
 	}
-	descriptor := registerIntegratedAgent(t, registry, bound, now)
+	descriptor := registerIntegratedAgent(t, registry, bound, now, fleet.EffectMutatesExternal)
 	actionID := []byte("server-restart-claim-action")
 	queued, err := dispatch.Enqueue(bound, integratedEnqueue(now, descriptor,
 		actionID, []byte("server-restart-claim-key")))
@@ -71,7 +76,7 @@ func TestDispatchClaimSurvivesLostResponseAndServerSIGKILL(t *testing.T) {
 		ExpectedVersion: queued.Version, ClaimID: []byte("gateway-a"), Lease: time.Minute,
 	}
 	claimCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	_, err = client.Claim(claimCtx, actionID, claim)
+	_, err = client.ClaimPrepared(claimCtx, actionID, claim)
 	cancel()
 	if api.Kind(err) != api.KindRepull {
 		t.Fatalf("lost claim response = %v (%v), want repull and no executable claim", api.Kind(err), err)
@@ -85,36 +90,112 @@ func TestDispatchClaimSurvivesLostResponseAndServerSIGKILL(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if status.State != api.DispatchClaimed || status.Version != 2 || status.ClaimFence != 1 {
-		t.Fatalf("recovered durable claim = %+v, want claimed/v2/fence1", status)
+	if status.State != api.DispatchClaimed || status.Version != 2 || status.ClaimFence != 1 ||
+		status.RecoveryProtocolVersion != 1 || !status.EffectPossible ||
+		len(status.Input) != 0 || len(status.ExecutorKey) != 0 {
+		t.Fatalf("recovered durable prepared claim = %+v, want claimed/v2/fence1/marker1 without material", status)
 	}
-	replay, err := recovered.Claim(context.Background(), actionID, claim)
+	replay, err := recovered.ClaimPrepared(context.Background(), actionID, claim)
 	if err != nil || replay.State != api.DispatchClaimed || replay.Version != status.Version ||
-		replay.ClaimFence != status.ClaimFence {
+		replay.ClaimFence != status.ClaimFence || replay.RecoveryProtocolVersion != 1 ||
+		len(replay.Input) != 0 || len(replay.ExecutorKey) != 0 {
 		t.Fatalf("exact claim replay = %+v, %v; status = %+v", replay, err, status)
+	}
+	currentClaim := api.RecoveryClaim{Context: claim.Context, ClaimID: claim.ClaimID, ClaimFence: replay.ClaimFence}
+	rivalClaim := currentClaim
+	rivalClaim.ClaimID = []byte("gateway-b")
+	rivalMaterial, err := recovered.ClaimMaterial(context.Background(), actionID, rivalClaim)
+	if err == nil || len(rivalMaterial.Input) != 0 || len(rivalMaterial.ExecutorKey) != 0 {
+		t.Fatalf("rival material = %+v, %v; want refusal without executable fields", rivalMaterial, err)
+	}
+	material, err := recovered.ClaimMaterial(context.Background(), actionID, currentClaim)
+	if err != nil || !bytes.Equal(material.Input, queued.Input) ||
+		!bytes.Equal(material.ExecutorKey, queued.ExecutorKey) || len(material.ExecutorKey) == 0 {
+		t.Fatalf("current claimant material = %+v, %v", material, err)
+	}
+	materialKey, err := effectsgateway.ParseExecutorKey(
+		base64.RawURLEncoding.EncodeToString(material.ExecutorKey))
+	if err != nil {
+		t.Fatalf("material executor key: %v", err)
+	}
+	request := effectsgateway.BoundRequest{
+		Method: http.MethodPost, URL: "https://target.example/v1/operations",
+		Header: http.Header{"Idempotency-Key": {materialKey.HeaderValue()}},
+		Body:   append([]byte(nil), material.Input...),
+	}
+	requestDigest, scopeDigest := effectsgateway.RecoveryDigests(request, "tenant-account-1")
+	prepare := api.RecoveryPrepare{
+		RecoveryClaim: currentClaim, Mode: "key",
+		RequestDigest: requestDigest, TargetScopeDigest: scopeDigest,
+	}
+	rivalPrepare := prepare
+	rivalPrepare.RecoveryClaim = rivalClaim
+	if version, err := recovered.Prepare(context.Background(), actionID, rivalPrepare); err == nil || version != 0 {
+		t.Fatalf("rival Prepare = version %d, %v; want no grant", version, err)
+	}
+	beforePrepare, err := recovered.Status(context.Background(), actionID, claim.Context)
+	if err != nil || beforePrepare.Version != 2 || beforePrepare.RecoveryCommitment != nil {
+		t.Fatalf("rival Prepare changed the record: %+v, %v", beforePrepare, err)
+	}
+	preparedVersion, err := recovered.Prepare(context.Background(), actionID, prepare)
+	if err != nil || preparedVersion != 3 {
+		t.Fatalf("current claimant Prepare = version %d, %v; want committed v3", preparedVersion, err)
+	}
+	drift := prepare
+	drift.RequestDigest[0] ^= 0xff
+	if version, err := recovered.Prepare(context.Background(), actionID, drift); err == nil || version != 0 {
+		t.Fatalf("substituted Prepare = version %d, %v; want no grant", version, err)
+	}
+	substitutedKey := append([]byte(nil), material.ExecutorKey...)
+	substitutedKey[0] ^= 0xff
+	request.Header.Set("Idempotency-Key", base64.RawURLEncoding.EncodeToString(substitutedKey))
+	keyDigest, _ := effectsgateway.RecoveryDigests(request, "tenant-account-1")
+	wrongKey := prepare
+	wrongKey.RequestDigest = keyDigest
+	if version, err := recovered.Prepare(context.Background(), actionID, wrongKey); err == nil || version != 0 {
+		t.Fatalf("substituted-key Prepare = version %d, %v; want no grant", version, err)
+	}
+	afterDrift, err := recovered.Status(context.Background(), actionID, claim.Context)
+	if err != nil || afterDrift.Version != preparedVersion || afterDrift.RecoveryCommitment == nil ||
+		afterDrift.RecoveryCommitment.Mode != "key" {
+		t.Fatalf("drifted Prepare changed the commitment: %+v, %v", afterDrift, err)
+	}
+	if version, err := recovered.Prepare(context.Background(), actionID, prepare); err != nil || version != preparedVersion {
+		t.Fatalf("exact Prepare retry = version %d, %v; want v%d", version, err, preparedVersion)
 	}
 	rival := claim
 	rival.ClaimID = []byte("gateway-b")
-	_, err = recovered.Claim(context.Background(), actionID, rival)
+	_, err = recovered.ClaimPrepared(context.Background(), actionID, rival)
 	if api.Kind(err) != api.KindConflict {
 		t.Fatalf("rival stale claim = %v (%v), want conflict", api.Kind(err), err)
 	}
 	final, err := recovered.Status(context.Background(), actionID, claim.Context)
-	if err != nil || final.State != api.DispatchClaimed || final.Version != 2 || final.ClaimFence != 1 {
-		t.Fatalf("durable claim after rival = %+v, %v", final, err)
+	if err != nil || final.State != api.DispatchClaimed || final.Version != 3 || final.ClaimFence != 1 ||
+		final.RecoveryCommitment == nil || final.RecoveryCommitment.Mode != "key" ||
+		len(final.Input) != 0 || len(final.ExecutorKey) != 0 {
+		t.Fatalf("durable prepared claim after rival = %+v, %v", final, err)
 	}
 	result := struct {
-		ActionID         string            `json:"action_id"`
-		ServerMode       string            `json:"server_mode"`
-		Fault            string            `json:"fault"`
-		FirstResponse    string            `json:"first_response"`
-		RecoveredState   api.DispatchState `json:"recovered_state"`
-		RecoveredVersion uint64            `json:"recovered_version"`
-		RecoveredFence   uint64            `json:"recovered_fence"`
-		ExactReplay      bool              `json:"exact_replay"`
-		RivalRefused     bool              `json:"rival_refused"`
-	}{string(actionID), chaosServerMode(), "claim_answer_dropped_then_server_sigkill", string(api.KindRepull),
-		final.State, final.Version, final.ClaimFence, true, true}
+		ActionID             string            `json:"action_id"`
+		ServerMode           string            `json:"server_mode"`
+		Fault                string            `json:"fault"`
+		FirstResponse        string            `json:"first_response"`
+		RecoveredState       api.DispatchState `json:"recovered_state"`
+		RecoveredVersion     uint64            `json:"recovered_version"`
+		RecoveredFence       uint64            `json:"recovered_fence"`
+		ProtocolVersion      uint8             `json:"protocol_version"`
+		ExactReplay          bool              `json:"exact_replay"`
+		MaterialBound        bool              `json:"material_bound"`
+		PrepareCommitted     bool              `json:"prepare_committed"`
+		PrepareVersion       uint64            `json:"prepare_version"`
+		RivalMaterialRefused bool              `json:"rival_material_refused"`
+		RivalPrepareRefused  bool              `json:"rival_prepare_refused"`
+		DriftPrepareRefused  bool              `json:"drift_prepare_refused"`
+		KeyPrepareRefused    bool              `json:"key_prepare_refused"`
+		RivalRefused         bool              `json:"rival_refused"`
+	}{string(actionID), chaosServerMode(), "prepared_claim_answer_dropped_then_server_sigkill", string(api.KindRepull),
+		status.State, status.Version, status.ClaimFence, status.RecoveryProtocolVersion,
+		true, true, true, preparedVersion, true, true, true, true, true}
 	encoded, err := json.Marshal(result)
 	if err != nil {
 		t.Fatal(err)
@@ -264,7 +345,8 @@ func TestDispatchChaosServerChild(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, dispatch := composeIntegratedServices(t, runtime, authority, &integratedExecutor{}, now)
+	_, dispatch := composeIntegratedServices(t, runtime, authority,
+		&integratedExecutor{maxEffects: fleet.Effects{fleet.EffectMutatesExternal}}, now)
 	decision := integratedDecision(t, now)
 	handler, err := webapi.NewFleetDispatchHandler(dispatch)
 	if err != nil {
@@ -279,7 +361,7 @@ func TestDispatchChaosServerChild(t *testing.T) {
 			return
 		}
 		r = r.WithContext(bound)
-		if dropClaim && r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/claim") &&
+		if dropClaim && r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/claim-prepared") &&
 			dropped.CompareAndSwap(false, true) {
 			recorded := httptest.NewRecorder()
 			handler.ServeHTTP(recorded, r)

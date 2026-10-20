@@ -25,7 +25,7 @@ concurrency:
 
 jobs:
   standalone:
-    name: Lost claim answer and two-container server replacement
+    name: Lost prepared claim answer and two-container server replacement
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     env:
@@ -72,7 +72,7 @@ jobs:
             echo "$resolved" > evidence/image-digest.txt
           fi
           echo "$status" > evidence/image-pull-exit.txt
-      - name: Inject lost claim answer and hard-kill server
+      - name: Inject lost prepared claim answer and hard-kill server
         shell: bash
         env:
           SEED: ${{ steps.config.outputs.seed }}
@@ -92,7 +92,7 @@ jobs:
           status=$?
           set -e
           echo "$status" > evidence/exit-code.txt
-      - name: Verify the durable claim invariant and write manifest
+      - name: Verify prepared-claim and Prepare invariants and write manifest
         shell: bash
         env:
           SEED: ${{ steps.config.outputs.seed }}

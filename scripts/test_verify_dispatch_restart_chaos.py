@@ -29,7 +29,15 @@ class RestartEvidenceTest(unittest.TestCase):
                 "recovered_state": "claimed",
                 "recovered_version": 2,
                 "recovered_fence": 1,
+                "protocol_version": 1,
                 "exact_replay": True,
+                "material_bound": True,
+                "prepare_committed": True,
+                "prepare_version": 3,
+                "rival_material_refused": True,
+                "rival_prepare_refused": True,
+                "drift_prepare_refused": True,
+                "key_prepare_refused": True,
                 "rival_refused": True,
             }
             event = lambda action, output=None: json.dumps({
@@ -57,6 +65,12 @@ class RestartEvidenceTest(unittest.TestCase):
             for bad in (good[:-1], good + [good[4]], good + [event("fail")],
                         good[:2] + good[3:],
                         good + ["{broken"],
+                        good[:4] + [event("output", "CHAOS_RESULT " + json.dumps({
+                            **observation, "prepare_committed": False}) + "\n"), good[5]],
+                        good[:4] + [event("output", "CHAOS_RESULT " + json.dumps({
+                            **observation, "prepare_committed": 1}) + "\n"), good[5]],
+                        good[:4] + [event("output", "CHAOS_RESULT " + json.dumps({
+                            **observation, "recovered_version": True}) + "\n"), good[5]],
                         good[:4] + [event("output", "CHAOS_RESULT {}\n"), good[5]]):
                 events.write_text("\n".join(bad) + "\n", encoding="utf-8")
                 self.assertFalse(campaign.verify(args))

@@ -13,7 +13,7 @@ import re
 TEST = "TestDispatchClaimSurvivesLostResponseAndServerSIGKILL"
 PACKAGE = "github.com/phrocker/shoal-oss/internal/explorerfleet"
 ACTION_ID = "server-restart-claim-action"
-FAULT = "claim_answer_dropped_then_server_sigkill"
+FAULT = "prepared_claim_answer_dropped_then_server_sigkill"
 IMAGE = re.compile(r"^[a-z0-9./_-]+@sha256:[0-9a-f]{64}$")
 
 
@@ -69,9 +69,24 @@ def verify(args: argparse.Namespace) -> bool:
         "recovered_state": "claimed",
         "recovered_version": 2,
         "recovered_fence": 1,
+        "protocol_version": 1,
         "exact_replay": True,
+        "material_bound": True,
+        "prepare_committed": True,
+        "prepare_version": 3,
+        "rival_material_refused": True,
+        "rival_prepare_refused": True,
+        "drift_prepare_refused": True,
+        "key_prepare_refused": True,
         "rival_refused": True,
     }
+    # Python considers True == 1. A forged JSON number must not certify a
+    # boolean refusal marker, nor a boolean certify a recovered version.
+    exact_observation = lambda value: (
+        isinstance(value, dict) and value.keys() == expected.keys()
+        and all(type(value[key]) is type(want) and value[key] == want
+                for key, want in expected.items())
+    )
     image_verified = bool(
         present and IMAGE.fullmatch(args.image_ref)
         and artifacts["image-digest.txt"].read_text().strip() == args.image_ref
@@ -91,7 +106,7 @@ def verify(args: argparse.Namespace) -> bool:
             "CHAOS_FAULT role=first container_sigkill_confirmed": args.repeats,
         }
         and len(observations) == args.repeats
-        and all(observation == expected for observation in observations)
+        and all(exact_observation(observation) for observation in observations)
     )
     manifest = {
         "schema_version": 1,
@@ -107,9 +122,11 @@ def verify(args: argparse.Namespace) -> bool:
         "injected_fault": FAULT,
         "action_identity": ACTION_ID,
         "expected_invariant": (
-            "a lost claim answer grants no worker execution authority; after SIGKILL "
-            "the replacement retains exactly one claim fence, replays the exact claim, "
-            "and refuses a rival"
+            "a lost prepared-claim answer grants no executable material; after SIGKILL "
+            "the replacement retains one claim fence, replays the exact prepared claim, "
+            "retrieves claimant-only material, durably prepares one bound request, and "
+            "refuses rival material/prepare, request drift and key substitution; target delivery and "
+            "post-Prepare crash recovery are not exercised"
         ),
         "observed_outcome": "pass" if passed else "fail",
         "go_exit_code": args.exit_code,
