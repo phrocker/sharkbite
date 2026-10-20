@@ -143,6 +143,23 @@ services:
       - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
       - ./smoke:/opt/shoal-smoke:ro
 
+  wal-sorter:
+    profiles: ["shoal"]
+    image: ghcr.io/phrocker/shoal-accumulo-test@sha256:bf9cbca5aaa8ada88d503e6cf178d41e72a6e0067cef47fe582f4b93c3d392db
+    hostname: wal-sorter
+    command: ["proc", "tserver", "-o", "tserver.group=walsorter"]
+    depends_on:
+      accumulo-init:
+        condition: service_completed_successfully
+    environment:
+      ACCUMULO_JAVA_OPTS: -Xms128m -Xmx768m
+      HADOOP_USER_NAME: accumulo
+    volumes:
+      - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
+      - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro
+      - ./conf/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml:ro
+      - ./conf/hdfs-client-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml:ro
+
   shoal-tserver:
     profiles: ["shoal"]
     image: shoal/conformance:local

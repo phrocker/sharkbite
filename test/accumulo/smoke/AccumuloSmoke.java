@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.conf.SiteConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.ResourceGroupId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.server.ServerContext;
@@ -53,6 +54,17 @@ public final class AccumuloSmoke {
         requireServer(client, SHOAL_TSERVER, true);
       } else if ("shoal-absent".equals(args[0])) {
         requireServer(client, SHOAL_TSERVER, false);
+      } else if ("wal-sorter-group".equals(args[0])) {
+        ResourceGroupId group = ResourceGroupId.of("walsorter");
+        if (!client.resourceGroupOperations().exists("walsorter")) {
+          client.resourceGroupOperations().create(group);
+        }
+        System.out.println("SHOAL_EVIDENCE wal-sorter-group=ready");
+      } else if ("wal-sorter-ready".equals(args[0])) {
+        boolean found = client.instanceOperations().getServers(ServerId.Type.TABLET_SERVER).stream()
+            .anyMatch(server -> "walsorter".equals(server.getResourceGroup().canonical()));
+        if (!found) throw new IllegalStateException("isolated WAL sorter is unavailable");
+        System.out.println("SHOAL_EVIDENCE wal-sorter=ready group=walsorter");
       } else if ("tserver".equals(args[0])) {
         tserver(client);
       } else if ("recovery-prepare".equals(args[0])) {

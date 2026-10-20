@@ -57,9 +57,15 @@ func TestNativeCommitPublishesBeforeReferenceAndRecovers(t *testing.T) {
 	}
 	replayed := newSink(nil)
 	cfg.Sink = replayed
+	cfg.Fence.Assignment++ // a different owner must recover the shared WAL
 	_, report, err := Open(context.Background(), cfg)
 	if err != nil || report.Applied != 1 || replayed.applied["native-op"] != 1 {
 		t.Fatalf("native recovery = %+v, %v, applied=%v", report, err, replayed.applied)
+	}
+	split := cfg
+	split.Extent.EndRow = []byte("m")
+	if _, _, err := Open(context.Background(), split); err == nil {
+		t.Fatal("split child accepted a parent WAL without an extent-safe replay plan")
 	}
 	boundary, err := tablet.SealForMinorCompaction(context.Background(), func(MinorCompactionBoundary) error { return nil })
 	if err != nil || boundary.Sequence != 1 || len(boundary.References) != 1 {

@@ -290,7 +290,7 @@ func (f *Factory) Open(
 	recovered := len(tablet.active) > 0
 	tablet.mu.Unlock()
 	if recovered {
-		if err := tablet.flush(ctx); err != nil {
+		if err := wal.WithRecoveryVerifier(func() error { return tablet.flush(ctx) }); err != nil {
 			_ = wal.Close(context.Background())
 			return nil, err
 		}

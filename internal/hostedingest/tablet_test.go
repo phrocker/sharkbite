@@ -366,9 +366,22 @@ func TestTabletRestartReplaysReferencedWALExactlyOnce(t *testing.T) {
 	if err := first.Commit(context.Background(), request); err != nil {
 		t.Fatal(err)
 	}
-
-	reopened, err := factory.Open(context.Background(), spec, attempt)
+	server, _ := host.Lock()
+	manager, _ := host.ManagerLock()
+	hostFence := tserver.Fence{Server: server, Manager: manager}
+	if _, err := host.Unassign(hostFence, spec.Extent, tserver.UnloadImmediate); err != nil {
+		t.Fatal(err)
+	}
+	reassigned, err := host.Assign(hostFence, spec.Extent)
 	if err != nil {
+		t.Fatal(err)
+	}
+
+	reopened, err := factory.Open(context.Background(), spec, reassigned)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := host.LoadComplete(reassigned); err != nil {
 		t.Fatal(err)
 	}
 	second := reopened.(*Tablet)
@@ -376,8 +389,8 @@ func TestTabletRestartReplaysReferencedWALExactlyOnce(t *testing.T) {
 		t.Fatalf("recovery = %#v", second.Recovery())
 	}
 	request.Fence = second.Fence()
-	if err := second.Commit(context.Background(), request); err != nil {
-		t.Fatal(err)
+	if err := second.Commit(context.Background(), request); !errors.Is(err, walauthority.ErrIdempotencyConflict) {
+		t.Fatalf("retry across owner fence = %v, want idempotency conflict", err)
 	}
 	second.mu.Lock()
 	defer second.mu.Unlock()

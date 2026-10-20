@@ -554,6 +554,30 @@ func (t *Tablet) verify(ctx context.Context) error {
 	return verifyFence(ctx, t.cfg.Verifier, t.cfg.Fence)
 }
 
+// WithRecoveryVerifier permits the owner that is still loading a tablet to
+// complete replay maintenance, including the RFile publication and WAL
+// retirement that follow recovery. The caller must keep the tablet private
+// until fn returns; ordinary hosted writes retain the strict verifier.
+func (t *Tablet) WithRecoveryVerifier(fn func() error) error {
+	if fn == nil || t.cfg.RecoveryVerifier == nil {
+		return ErrInvalidConfig
+	}
+	t.mu.Lock()
+	if t.closed {
+		t.mu.Unlock()
+		return ErrClosed
+	}
+	strict := t.cfg.Verifier
+	t.cfg.Verifier = t.cfg.RecoveryVerifier
+	t.mu.Unlock()
+	defer func() {
+		t.mu.Lock()
+		t.cfg.Verifier = strict
+		t.mu.Unlock()
+	}()
+	return fn()
+}
+
 func verifyFence(ctx context.Context, verifier FenceVerifier, fence ingestrouter.Fence) error {
 	if err := verifier.Verify(ctx, fence); err != nil {
 		return errors.Join(ErrStaleOwner, err)
