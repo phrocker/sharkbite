@@ -4,6 +4,7 @@
 package mcp
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -30,13 +31,19 @@ func TestFleetDispatchToolsUseTrustedDecisionAndStableKeys(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	provider := &fleetToolService{}
+	provider := &fleetToolService{returned: &fleet.ActionRecord{
+		ID: []byte("action"),
+		RecoveryCommitment: &fleet.RecoveryCommitment{
+			Version: 1, Mode: fleet.RecoveryKey, PreparedFence: 1,
+			PreparedAt: now, RequestDigest: [32]byte{1}, TargetScopeDigest: [32]byte{2},
+		},
+	}}
 	tools, err := NewFleetDispatchTools(
 		provider, fleetToolResolver{decision: decision})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(tools) != 2 {
+	if len(tools) != 3 {
 		t.Fatalf("tools = %d", len(tools))
 	}
 	if server, _ := newTestServer(t, &stubService{}, tools); server == nil {
@@ -47,9 +54,19 @@ func TestFleetDispatchToolsUseTrustedDecisionAndStableKeys(t *testing.T) {
 		t.Fatalf("dispatch operation = %q", dispatch.ToolAuthorizationOperation())
 	}
 	raw := fleetToolArguments(now, false)
-	_, err = dispatch.Call(context.Background(), raw)
+	dispatchResult, err := dispatch.Call(context.Background(), raw)
 	if err != nil {
 		t.Fatal(err)
+	}
+	assertPublicFleetReceipt(t, dispatchResult)
+	encoded, err := json.Marshal(dispatchResult)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Contains(encoded, []byte(`"recovery_commitment":{"version":1,"mode":"key"`)) ||
+		bytes.Contains(encoded, []byte("request_digest")) ||
+		bytes.Contains(encoded, []byte("target_scope_digest")) {
+		t.Fatalf("MCP recovery projection = %s", encoded)
 	}
 	if provider.enqueued.Context.RequestID != decision.RequestID() ||
 		provider.enqueued.Context.CorrelationID != decision.CorrelationID() ||
@@ -60,12 +77,56 @@ func TestFleetDispatchToolsUseTrustedDecisionAndStableKeys(t *testing.T) {
 	if invoke.ToolAuthorizationOperation() != auth.OperationInvoke {
 		t.Fatalf("invoke operation = %q", invoke.ToolAuthorizationOperation())
 	}
-	if _, err := invoke.Call(context.Background(), fleetToolArguments(now, true)); err != nil {
+	invokeResult, err := invoke.Call(context.Background(), fleetToolArguments(now, true))
+	if err != nil {
 		t.Fatal(err)
 	}
+	assertPublicFleetReceipt(t, invokeResult)
 	if string(provider.invoked.ClaimID) != "claim" ||
 		provider.invoked.Lease != time.Second {
 		t.Fatalf("invoke request = %#v", provider.invoked)
+	}
+	status := tools[2].(*fleetStatusTool)
+	if status.ToolAuthorizationOperation() != auth.OperationDispatch {
+		t.Fatalf("status operation = %q", status.ToolAuthorizationOperation())
+	}
+	statusResult, err := status.Call(context.Background(), json.RawMessage(`{"action_id":"YWN0aW9u"}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assertPublicFleetReceipt(t, statusResult)
+	if string(provider.status.ID) != "action" ||
+		provider.status.Context.RequestID != decision.RequestID() ||
+		provider.status.Context.CorrelationID != decision.CorrelationID() ||
+		provider.status.Context.ReasonCode != "receipt_lookup" ||
+		!provider.status.Context.Deadline.After(time.Now()) {
+		t.Fatalf("status request = %#v", provider.status)
+	}
+}
+
+func assertPublicFleetReceipt(t *testing.T, result any) {
+	t.Helper()
+	raw, err := json.Marshal(result)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var envelope struct {
+		Action map[string]json.RawMessage `json:"action"`
+	}
+	if err := json.Unmarshal(raw, &envelope); err != nil {
+		t.Fatal(err)
+	}
+	if string(envelope.Action["id"]) != `"YWN0aW9u"` {
+		t.Fatalf("missing public action identity: %s", raw)
+	}
+	for _, field := range []string{
+		"input", "Input", "Subject", "Actor", "ClientID",
+		"IdempotencyKey", "AuthorizationFingerprint", "PolicyGeneration",
+		"ClaimantSubject", "ClaimHistory",
+	} {
+		if _, found := envelope.Action[field]; found {
+			t.Fatalf("internal %s leaked in MCP receipt: %s", field, raw)
+		}
 	}
 }
 
@@ -79,8 +140,9 @@ func TestFleetDispatchToolRejectsUntrustedIdentityAndClaimFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	provider := &fleetToolService{}
 	tools, err := NewFleetDispatchTools(
-		&fleetToolService{}, fleetToolResolver{decision: decision})
+		provider, fleetToolResolver{decision: decision})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,6 +150,14 @@ func TestFleetDispatchToolRejectsUntrustedIdentityAndClaimFields(t *testing.T) {
 		context.Background(), fleetToolArguments(time.Now(), false),
 	); !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
 		t.Fatalf("missing trusted correlation = %v", err)
+	}
+	if _, err := tools[2].Call(
+		context.Background(), json.RawMessage(`{"action_id":"YWN0aW9u"}`),
+	); !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
+		t.Fatalf("status accepted missing trusted correlation: %v", err)
+	}
+	if len(provider.status.ID) != 0 {
+		t.Fatalf("status provider was called on an unbound request: %#v", provider.status)
 	}
 }
 
@@ -146,21 +216,38 @@ func (r fleetToolResolver) Resolve(context.Context) (auth.Decision, error) {
 type fleetToolService struct {
 	enqueued fleet.EnqueueRequest
 	invoked  fleet.InvokeRequest
+	returned *fleet.ActionRecord
+	status   fleet.StatusRequest
 }
 
 func (s *fleetToolService) Enqueue(
 	_ context.Context, request fleet.EnqueueRequest,
 ) (fleet.ActionRecord, error) {
 	s.enqueued = request
-	return fleet.ActionRecord{ID: request.ID, Evidence: []fleet.EvidenceRef{}}, nil
+	if s.returned != nil {
+		return *s.returned, nil
+	}
+	return fleet.ActionRecord{
+		ID: request.ID, Input: request.Input, Subject: "private-subject",
+		IdempotencyKey: request.IdempotencyKey,
+	}, nil
 }
 func (s *fleetToolService) Invoke(
 	_ context.Context, request fleet.InvokeRequest,
 ) (fleet.ActionRecord, error) {
 	s.invoked = request
-	return fleet.ActionRecord{ID: request.Enqueue.ID}, nil
+	return fleet.ActionRecord{
+		ID: request.Enqueue.ID, Input: request.Enqueue.Input,
+		Subject: "private-subject", IdempotencyKey: request.Enqueue.IdempotencyKey,
+	}, nil
 }
 func (*fleetToolService) Claim(context.Context, fleet.ClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*fleetToolService) ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*fleetToolService) PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
 func (*fleetToolService) CompleteClaim(context.Context, fleet.CompletionRequest) (fleet.ActionRecord, error) {
@@ -169,8 +256,12 @@ func (*fleetToolService) CompleteClaim(context.Context, fleet.CompletionRequest)
 func (*fleetToolService) Cancel(context.Context, fleet.CancelRequest) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
-func (*fleetToolService) Status(context.Context, fleet.StatusRequest) (fleet.ActionRecord, error) {
-	return fleet.ActionRecord{}, nil
+func (s *fleetToolService) Status(_ context.Context, request fleet.StatusRequest) (fleet.ActionRecord, error) {
+	s.status = request
+	return fleet.ActionRecord{
+		ID: request.ID, Input: json.RawMessage(`{"secret":"payload"}`),
+		Subject: "private-subject", IdempotencyKey: []byte("private-key"),
+	}, nil
 }
 func (*fleetToolService) Pull(context.Context, fleet.PullActionsRequest) (fleet.ActionPage, error) {
 	return fleet.ActionPage{}, nil

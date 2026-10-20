@@ -141,6 +141,10 @@ func TestStreamableHTTPFleetCallsUseTrustedSessionCorrelation(t *testing.T) {
 		t, httpServer.Client(), httpServer.URL+"/mcp", "alice-refresh",
 		aliceSession, 3, FleetInvokeToolName,
 		fleetToolArguments(now, true))
+	callHTTPFleetTool(
+		t, httpServer.Client(), httpServer.URL+"/mcp", "alice",
+		aliceSession, 4, FleetStatusToolName,
+		json.RawMessage(`{"action_id":"YWN0aW9u"}`))
 
 	if len(fleetService.enqueued) != 1 || len(fleetService.invoked) != 1 {
 		t.Fatalf(
@@ -164,11 +168,19 @@ func TestStreamableHTTPFleetCallsUseTrustedSessionCorrelation(t *testing.T) {
 			"caller correlation was trusted: %q",
 			dispatchContext.CorrelationID)
 	}
+	if len(fleetService.statuses) != 1 ||
+		string(fleetService.statuses[0].ID) != "action" ||
+		fleetService.statuses[0].Context.CorrelationID != dispatchContext.CorrelationID ||
+		fleetService.statuses[0].Context.RequestID == dispatchContext.RequestID ||
+		fleetService.statuses[0].Context.RequestID == invokeContext.RequestID {
+		t.Fatalf("status did not preserve the session and bind a fresh request: %#v",
+			fleetService.statuses)
+	}
 
 	crossCaller := postHTTPMCP(
 		t, httpServer.Client(), httpServer.URL+"/mcp", "bob",
 		aliceSession, ProtocolVersion,
-		`{"jsonrpc":"2.0","id":4,"method":"tools/list"}`)
+		`{"jsonrpc":"2.0","id":5,"method":"tools/list"}`)
 	if crossCaller.StatusCode != http.StatusNotFound {
 		t.Fatalf("cross-caller status = %d, want 404", crossCaller.StatusCode)
 	}
@@ -182,7 +194,7 @@ func TestStreamableHTTPFleetCallsUseTrustedSessionCorrelation(t *testing.T) {
 		`{"jsonrpc":"2.0","method":"notifications/initialized"}`))
 	callHTTPFleetTool(
 		t, httpServer.Client(), httpServer.URL+"/mcp", "bob",
-		bobSession, 6, FleetDispatchToolName,
+		bobSession, 7, FleetDispatchToolName,
 		fleetToolArguments(now, false))
 	if len(fleetService.enqueued) != 2 {
 		t.Fatalf("dispatch calls = %d, want 2", len(fleetService.enqueued))
@@ -195,24 +207,29 @@ func TestStreamableHTTPFleetCallsUseTrustedSessionCorrelation(t *testing.T) {
 			dispatchContext.CorrelationID, bobContext.CorrelationID)
 	}
 
-	if len(sink.sessions) != 6 {
-		t.Fatalf("recorded interactions = %d, want 6", len(sink.sessions))
+	if len(sink.sessions) != 7 {
+		t.Fatalf("recorded interactions = %d, want 7", len(sink.sessions))
 	}
-	expectedCalls := []fleet.RequestContext{
-		dispatchContext, invokeContext, bobContext,
+	expectedCalls := []struct {
+		context fleet.RequestContext
+		reasons []string
+	}{
+		{dispatchContext, []string{"mcp_tool_admission", "mcp_tool_outcome"}},
+		{invokeContext, []string{"mcp_tool_admission", "mcp_tool_outcome"}},
+		{fleetService.statuses[0].Context, []string{"mcp_tool_call"}},
+		{bobContext, []string{"mcp_tool_admission", "mcp_tool_outcome"}},
 	}
-	for index, expected := range expectedCalls {
-		for offset, reason := range []string{
-			"mcp_tool_admission", "mcp_tool_outcome",
-		} {
-			recorded := sink.sessions[index*2+offset]
-			if recorded.RequestID != expected.RequestID {
+	index := 0
+	for _, expected := range expectedCalls {
+		for _, reason := range expected.reasons {
+			recorded := sink.sessions[index]
+			if recorded.RequestID != expected.context.RequestID {
 				t.Fatalf(
 					"interaction %d request ID = %q, want %q",
-					index*2+offset, recorded.RequestID, expected.RequestID)
+					index, recorded.RequestID, expected.context.RequestID)
 			}
 			correlation := shoal.ID(interaction.Digest(
-				string(expected.CorrelationID) + "\x00" + reason))
+				string(expected.context.CorrelationID) + "\x00" + reason))
 			wantSession, err := interaction.OperationSessionID(
 				interaction.OperationToolCall, correlation, now)
 			if err != nil {
@@ -221,8 +238,9 @@ func TestStreamableHTTPFleetCallsUseTrustedSessionCorrelation(t *testing.T) {
 			if recorded.ID != wantSession {
 				t.Fatalf(
 					"interaction %d session ID = %q, want %q",
-					index*2+offset, recorded.ID, wantSession)
+					index, recorded.ID, wantSession)
 			}
+			index++
 		}
 	}
 }
@@ -1799,6 +1817,7 @@ func httpFleetDecision(
 type httpFleetToolService struct {
 	enqueued []fleet.EnqueueRequest
 	invoked  []fleet.InvokeRequest
+	statuses []fleet.StatusRequest
 }
 
 func (s *httpFleetToolService) Enqueue(
@@ -1820,6 +1839,12 @@ func (*httpFleetToolService) Claim(
 ) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
+func (*httpFleetToolService) ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
+func (*httpFleetToolService) PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
+	return fleet.ActionRecord{}, nil
+}
 
 func (*httpFleetToolService) CompleteClaim(
 	context.Context, fleet.CompletionRequest,
@@ -1833,10 +1858,11 @@ func (*httpFleetToolService) Cancel(
 	return fleet.ActionRecord{}, nil
 }
 
-func (*httpFleetToolService) Status(
-	context.Context, fleet.StatusRequest,
+func (s *httpFleetToolService) Status(
+	_ context.Context, request fleet.StatusRequest,
 ) (fleet.ActionRecord, error) {
-	return fleet.ActionRecord{}, nil
+	s.statuses = append(s.statuses, request)
+	return fleet.ActionRecord{ID: request.ID}, nil
 }
 
 func (*httpFleetToolService) Pull(

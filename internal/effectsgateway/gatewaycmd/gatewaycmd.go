@@ -385,7 +385,7 @@ func (g *gateway) compose(
 		Dispatch: bound, Target: target, Binder: binder, Routes: config.Routes,
 		TargetAuthorization: config.TargetAuthorization,
 		AgentID:             config.AgentID, Capability: config.Capability,
-		SurfaceName: config.SurfaceName, Pod: config.Pod,
+		SurfaceName: config.SurfaceName, TargetScope: config.TargetScope, Pod: config.Pod,
 		IdempotencyRetention: config.IdempotencyRetention,
 		ClaimLease:           config.ClaimLease, OperationTimeout: config.OperationTimeout,
 		PlaneTimeout: config.PlaneTimeout, MaxResponseBytes: config.MaxResponseBytes,

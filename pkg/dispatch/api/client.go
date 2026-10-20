@@ -102,10 +102,11 @@ func NewClient(c Config) (*Client, error) {
 type ErrorKind string
 
 const (
-	// KindNotFound (404): on claim, re-pull — the loser of a claim race is
-	// told not-found deliberately, to avoid an existence oracle.
+	// KindNotFound (404): on claim, re-pull. An absent or concealed action is
+	// answered the same way, so the route does not disclose its existence.
 	KindNotFound ErrorKind = "not_found"
-	// KindConflict (409): the version or claim moved.
+	// KindConflict (409): the version or claim moved. An authorized worker
+	// losing a claim race against an action it could observe must re-pull.
 	KindConflict ErrorKind = "conflict"
 	// KindIndeterminate: the mutation may have committed (503 with
 	// Shoal-Commit-Outcome: indeterminate, or a resend that could not confirm
@@ -152,6 +153,9 @@ type Error struct {
 	Status int
 	// Code is the explorer's error code, when it sent a well-formed one.
 	Code string
+	// RecoveryRefusal is a closed operator reason from the authenticated
+	// gateway recovery routes. Arbitrary response header values are ignored.
+	RecoveryRefusal string
 	// Reason is a fixed explanation, for refusals and protocol errors.
 	Reason string
 	Err    error
@@ -338,7 +342,18 @@ type Claim struct {
 // publication failed reaches the wire as a 503 without the indeterminate
 // header.
 func (c *Client) Claim(ctx context.Context, actionID []byte, request Claim) (Record, error) {
-	const op = "claim"
+	return c.claim(ctx, actionID, request, VerbClaim, false)
+}
+
+// ClaimPrepared uses the versioned gateway route. An old server has no such
+// route and cannot return a plausible successful claim. Executable material
+// is deliberately absent; retrieve it only while the claim remains live.
+func (c *Client) ClaimPrepared(ctx context.Context, actionID []byte, request Claim) (Record, error) {
+	return c.claim(ctx, actionID, request, VerbClaimPrepared, true)
+}
+
+func (c *Client) claim(ctx context.Context, actionID []byte, request Claim, verb string, prepared bool) (Record, error) {
+	op := verb
 	if err := checkActionID(op, actionID); err != nil {
 		return Record{}, err
 	}
@@ -366,7 +381,7 @@ func (c *Client) Claim(ctx context.Context, actionID []byte, request Claim) (Rec
 		ClaimID: EncodeID(request.ClaimID), Lease: request.Lease,
 	}
 	var response recordWire
-	if _, _, err := c.post(ctx, op, ActionRoute(actionID, VerbClaim), correlation, body, &response); err != nil {
+	if _, _, err := c.post(ctx, op, ActionRoute(actionID, verb), correlation, body, &response); err != nil {
 		if answerLost(err) {
 			var dispatchErr *Error
 			errors.As(err, &dispatchErr)
@@ -382,6 +397,10 @@ func (c *Client) Claim(ctx context.Context, actionID []byte, request Claim) (Rec
 	if !bytes.Equal(record.ID, actionID) || !bytes.Equal(record.ClaimID, request.ClaimID) ||
 		record.State != DispatchClaimed || record.ClaimFence == 0 {
 		return Record{}, protocolError(op, "claim response does not describe the requested claim")
+	}
+	if prepared && (record.RecoveryProtocolVersion != 1 ||
+		len(record.Input) != 0 || len(record.ExecutorKey) != 0) {
+		return Record{}, protocolError(op, "prepared claim response exposes material or lacks its protocol marker")
 	}
 	return record, nil
 }
@@ -951,6 +970,11 @@ func (c *Client) post(
 
 func statusError(op string, response *http.Response, body []byte) error {
 	result := &Error{Op: op, Status: response.StatusCode}
+	switch response.Header.Get("Shoal-Recovery-Refusal") {
+	case "legacy_claim", "missing_commitment", "unprotected_replay",
+		"mode_drift", "request_drift", "scope_drift":
+		result.RecoveryRefusal = response.Header.Get("Shoal-Recovery-Refusal")
+	}
 	// The code is read leniently, as the effects gateway always read it: it
 	// decides nothing (the status does) and wellFormedCode bounds what is
 	// kept, so a proxy's odd error body costs the code at most.

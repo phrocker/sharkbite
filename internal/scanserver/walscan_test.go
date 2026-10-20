@@ -24,7 +24,6 @@ import (
 	"testing"
 
 	"github.com/phrocker/shoal-oss/internal/cache"
-	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/metadata"
 	"github.com/phrocker/shoal-oss/internal/qwal"
 	"github.com/phrocker/shoal-oss/internal/storage/memory"
@@ -53,14 +52,60 @@ func (f *fakeWALSegment) Close() error { f.closed = true; return nil }
 
 // walPut builds a single-mutation MUTATION WAL entry with one Put.
 func walPut(tabletID int32, seq int64, row, cf, cq string, ts int64, val string) *qwal.Entry {
-	m, err := cclient.NewMutation([]byte(row))
-	if err != nil {
-		panic(err)
-	}
-	m.Put([]byte(cf), []byte(cq), nil, ts, []byte(val))
 	return &qwal.Entry{
-		Key:   qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
-		Value: qwal.LogFileValue{Mutations: []*cclient.Mutation{m}},
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte(row), Updates: []qwal.ColumnUpdate{{
+				ColumnFamily: []byte(cf), ColumnQualifier: []byte(cq), Timestamp: ts,
+				HasTimestamp: true, Value: []byte(val),
+			}},
+		}}},
+	}
+}
+
+func walDelete(tabletID int32, seq int64, row, cf, cq string, ts int64) *qwal.Entry {
+	return &qwal.Entry{
+		Key: qwal.LogFileKey{Event: qwal.EventMutation, TabletID: tabletID, Seq: seq},
+		Value: qwal.LogFileValue{Mutations: []qwal.ServerMutation{{
+			Row: []byte(row), Updates: []qwal.ColumnUpdate{{
+				ColumnFamily: []byte(cf), ColumnQualifier: []byte(cq), Timestamp: ts,
+				HasTimestamp: true, Deleted: true,
+			}},
+		}}},
+	}
+}
+
+func TestStartScan_WALRouteSuppressesTombstonesAndOlderRFileVersions(t *testing.T) {
+	mem := memory.New()
+	const path = "gs://test/delete.rf"
+	writeRFileToMemory(t, mem, path, []cellSpec{
+		{row: "r01", cf: "cf", cq: "cq", value: "old-deleted", ts: 1},
+		{row: "r02", cf: "cf", cq: "cq", value: "old-replaced", ts: 1},
+		{row: "r03", cf: "cf", cq: "cq", value: "kept", ts: 1},
+	})
+	loc := &stubLocator{tablets: map[string][]metadata.TabletInfo{
+		"1": {{TableID: "1", Files: []metadata.FileEntry{{Path: path}}, Logs: []metadata.LogEntry{{
+			UUID: "seg-A", WALPath: "/wal/seg-A", Peers: []string{"peer-0:9710"},
+		}}}},
+	}}
+	srv := newWALTestServer(t, loc, mem, map[string][]*qwal.Entry{"seg-A": {
+		walDelete(1, 1, "r01", "cf", "cq", 5),
+		walDelete(1, 2, "r02", "cf", "cq", 5),
+		walPut(1, 3, "r02", "cf", "cq", 7, "newer"),
+	}})
+	resp, err := srv.StartScan(context.Background(), nil, nil,
+		&data.TKeyExtent{Table: []byte("1")},
+		&data.TRange{InfiniteStartKey: true, InfiniteStopKey: true},
+		nil, 0, nil, nil, nil, false, false, 0, nil, 0, "",
+		map[string]string{RouteHintKey: RouteWAL}, 0,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := resp.Result_.Results
+	if len(got) != 2 || string(got[0].Key.Row) != "r02" || string(got[0].Value) != "newer" ||
+		string(got[1].Key.Row) != "r03" || string(got[1].Value) != "kept" {
+		t.Fatalf("WAL tombstone leaked or failed to suppress older cells: %+v", got)
 	}
 }
 

@@ -348,6 +348,19 @@ func (s *embedServer) ScanV2(
 	req *embedpb.ScanRequest,
 	stream embedpb.ShoalEmbed_ScanV2Server,
 ) error {
+	if req.VectorSearch != nil && req.VectorSearch.Projection != nil {
+		return status.Error(codes.FailedPrecondition, "vector projection requires ScanV3")
+	}
+	return s.scan(req, stream)
+}
+
+func (s *embedServer) ScanV3(
+	req *embedpb.ScanRequest,
+	stream embedpb.ShoalEmbed_ScanV3Server,
+) error {
+	if req.VectorSearch != nil && req.VectorSearch.Projection != nil {
+		return s.scanProjectedVector(req, stream)
+	}
 	return s.scan(req, stream)
 }
 
@@ -456,10 +469,9 @@ func (s *embedServer) Compact(ctx context.Context, req *embedpb.CompactRequest) 
 
 func (s *embedServer) Status(_ context.Context, _ *embedpb.StatusRequest) (*embedpb.StatusResponse, error) {
 	stats := s.eng.Stats()
-	resp := &embedpb.StatusResponse{
-		Tables:        make([]string, 0, len(stats)),
-		TableStatuses: make([]*embedpb.TableStatus, 0, len(stats)),
-	}
+	resp := embedStatusIdentity()
+	resp.Tables = make([]string, 0, len(stats))
+	resp.TableStatuses = make([]*embedpb.TableStatus, 0, len(stats))
 	for _, stat := range stats {
 		meta, err := s.readPersistedTableStatus(stat.Name)
 		if err != nil {

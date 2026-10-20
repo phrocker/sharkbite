@@ -1019,7 +1019,11 @@ func TestCompressedRetrievalPreservesCitationsAndOpaqueIDs(t *testing.T) {
 								DocumentID: documentID,
 								RevisionID: revisionID,
 								SectionID:  sectionID,
+								Range: document.SourceRange{
+									End: document.SourcePosition{Offset: 4},
+								},
 							},
+							Quote: "text",
 						}},
 					}},
 				},

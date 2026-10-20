@@ -204,6 +204,7 @@ func TestStdioSmokeUsesEmbeddedExplorerAndKeepsStdoutPure(t *testing.T) {
 		`{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"shoal.ingest","arguments":{"files":[{"name":"smoke.md","content":"` +
 			content + `"}]}}}`,
 		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"shoal.documents","arguments":{}}}`,
+		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"shoal.retrieve","arguments":{"query":{"text":"embedded MCP workspace","top_k":1}}}}`,
 	}, "\n") + "\n"
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
@@ -225,8 +226,8 @@ func TestStdioSmokeUsesEmbeddedExplorerAndKeepsStdoutPure(t *testing.T) {
 		t.Fatalf("stderr = %q", stderr.String())
 	}
 	lines := nonemptyLines(stdout.String())
-	if len(lines) != 4 {
-		t.Fatalf("stdout responses = %d, want 4:\n%s", len(lines), stdout.String())
+	if len(lines) != 5 {
+		t.Fatalf("stdout responses = %d, want 5:\n%s", len(lines), stdout.String())
 	}
 	responses := make([]mcp.Response, len(lines))
 	for index, line := range lines {
@@ -293,6 +294,20 @@ func TestStdioSmokeUsesEmbeddedExplorerAndKeepsStdoutPure(t *testing.T) {
 		documents.Documents[0].Document.Title != "smoke.md" {
 		t.Fatalf("documents = %+v", documents.Documents)
 	}
+	// Retrieval evidence is recorded through the Explorer's own anchor
+	// identity (#137); any other identity is refused and the result withheld.
+	var retrieved mcp.ToolResult
+	mustDecode(t, responses[4].Result, &retrieved)
+	if retrieved.IsError {
+		t.Fatalf("retrieve was withheld: %s", retrieved.StructuredContent)
+	}
+	var retrieval webapi.RetrievalResponse
+	mustDecode(t, retrieved.StructuredContent, &retrieval)
+	if len(retrieval.Retrieval.Results) == 0 ||
+		len(retrieval.Retrieval.Results[0].Evidence) == 0 ||
+		!strings.Contains(retrieval.Retrieval.Results[0].Evidence[0].Quote, "embedded MCP workspace") {
+		t.Fatalf("retrieval = %+v", retrieval.Retrieval.Results)
+	}
 	corpus, err := explorer.Open(filepath.Join(stateDir, "corpus"))
 	if err != nil {
 		t.Fatal(err)
@@ -302,13 +317,18 @@ func TestStdioSmokeUsesEmbeddedExplorerAndKeepsStdoutPure(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(sessions) != 3 {
-		t.Fatalf("recorded MCP sessions = %d, want 3", len(sessions))
+	// ingest records its admission and outcome, documents its call, and
+	// retrieve both its call and the retrieval itself.
+	if len(sessions) != 5 {
+		t.Fatalf("recorded MCP sessions = %d, want 5", len(sessions))
 	}
+	operations := map[interaction.Operation]int{}
 	for _, session := range sessions {
-		if session.Operation != interaction.OperationToolCall {
-			t.Fatalf("recorded operation = %q", session.Operation)
-		}
+		operations[session.Operation]++
+	}
+	if operations[interaction.OperationToolCall] != 4 ||
+		operations[interaction.OperationRetrieval] != 1 {
+		t.Fatalf("recorded operations = %v, want 4 tool calls and 1 retrieval", operations)
 	}
 }
 

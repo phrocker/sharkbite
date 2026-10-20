@@ -1,5 +1,5 @@
 requests: 0
-error: dispatch claim: refused_locally: reason code is required, at most 64 bytes, with no surrounding whitespace
+error: dispatch claim-prepared: refused_locally: reason code is required, at most 64 bytes, with no surrounding whitespace
 kind: refused_locally
 status: 0 code: "" failure: ""
 is ambiguity unrecorded: false
