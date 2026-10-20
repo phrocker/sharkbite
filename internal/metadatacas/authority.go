@@ -29,10 +29,11 @@ import (
 )
 
 var (
-	ErrInvalidConfig = errors.New("metadatacas: invalid configuration")
-	ErrStaleOwner    = errors.New("metadatacas: stale tablet owner")
-	ErrRejected      = errors.New("metadatacas: conditional mutation rejected")
-	ErrInconsistent  = errors.New("metadatacas: inconsistent authoritative metadata")
+	ErrInvalidConfig            = errors.New("metadatacas: invalid configuration")
+	ErrStaleOwner               = errors.New("metadatacas: stale tablet owner")
+	ErrRejected                 = errors.New("metadatacas: conditional mutation rejected")
+	ErrInconsistent             = errors.New("metadatacas: inconsistent authoritative metadata")
+	ErrEmbeddingSidecarRequired = errors.New("metadatacas: known embedding state requires an Accumulo-compatible sidecar")
 )
 
 const rootTabletPath = "root_tablet"
@@ -267,17 +268,21 @@ func (a *Authority) Commit(
 	if err != nil {
 		return mincauthority.CommitRejected, err
 	}
+	// Accumulo's TabletMetadata rejects unknown column families, including
+	// file.embedding, in both ZooKeeper root metadata and metadata-table
+	// rows. An absent Shoal annotation already means unknown; a known state
+	// cannot be committed until a separate compatible sidecar stores it.
+	embedding := normalizedEmbedding(request.File.Embedding)
+	if err := embedding.Validate(); err != nil {
+		return mincauthority.CommitRejected, err
+	}
+	if embedding.Known() {
+		return mincauthority.CommitRejected, ErrEmbeddingSidecarRequired
+	}
 	conditions := a.ownerConditions()
 	updates := []update{{
 		cf: []byte(metadata.CFFile), cq: fileQualifier, value: fileValue,
 	}}
-	fileEmbedding, err := encodeFileEmbedding(request.File.Embedding)
-	if err != nil {
-		return mincauthority.CommitRejected, err
-	}
-	updates = append(updates, update{
-		cf: []byte(metadata.CFFileEmbedding), cq: fileQualifier, value: fileEmbedding,
-	})
 	if request.TabletTime != "" {
 		info, readErr := a.readOwned(ctx)
 		if readErr != nil {
@@ -674,30 +679,18 @@ func encodeFile(file mincauthority.DataFile) ([]byte, []byte, error) {
 		strconv.FormatInt(file.Entries, 10)), nil
 }
 
-func encodeFileEmbedding(state embeddingspace.FileState) ([]byte, error) {
-	state = normalizedEmbedding(state)
-	return embeddingspace.Encode(state)
-}
-
 // normalizedEmbedding fills in the state for a commit that declared
 // none.
 //
-// The column this feeds is durable evidence about a file, so an
-// undeclared commit is recorded as unknown rather than as the positive
-// assertion no_embeddings. An operator who really does know a pipeline
-// emits no vectors declares that upstream — see
-// mincauthority.Config.DefaultEmbedding — instead of having it invented
-// here, where nothing has any basis for the claim.
+// Absence in Accumulo-authoritative metadata is an unknown state, never the
+// positive assertion no_embeddings. Known states need a compatible sidecar.
 func normalizedEmbedding(state embeddingspace.FileState) embeddingspace.FileState {
 	if state == (embeddingspace.FileState{}) {
 		return embeddingspace.Unknown()
 	}
 	// Anything else is returned untouched, including a malformed partial
 	// state. Only the exact zero value means "declared nothing";
-	// normalizing a partial state would both persist something other
-	// than what the caller supplied, by hiding it from Encode's
-	// validation, and make a malformed reconciliation request compare
-	// equal to a stored unknown.
+	// normalizing a partial state would hide it from Validate.
 	return state
 }
 

@@ -91,9 +91,10 @@ type ColumnWriter interface {
 	) (bool, error)
 }
 
-// CASColumns writes the file.embedding column through the metadata
-// compare-and-set authority, which is the same path a minor compaction
-// commit uses. Nothing about the backfill gets its own write route.
+// CASColumns forwards a planned write to its ColumnWriter. The
+// Accumulo-authoritative metadatacas writer currently refuses write mode
+// until a compatible sidecar exists; this seam also supports fake writers
+// in the dry-run planner's tests.
 type CASColumns struct {
 	Writer ColumnWriter
 }
