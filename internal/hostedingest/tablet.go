@@ -187,11 +187,17 @@ func (f *Factory) Open(
 	extent := ingestrouter.Extent{
 		TableID: spec.Extent.TableID, PrevEndRow: spec.Extent.PrevEndRow, EndRow: spec.Extent.EndRow,
 	}
+	flushCells := f.cfg.FlushCells
 	if extent.TableID == metadata.RootTableID || extent.TableID == metadata.MetadataTableID {
 		conditional, ok := f.cfg.Metadata.(systemTabletMetadataFactory)
 		if !ok || !conditional.SupportsSystemTablets() {
 			return nil, ErrSystemTabletConditionalUnsupported
 		}
+		// Assignment metadata must be visible to the next ordinary Accumulo
+		// scan. That path reads hosted RFiles, not the active memtable. Keep
+		// system-tablet writes immediately published even when user tablets
+		// retain unflushed WAL entries for recovery.
+		flushCells = 1
 	}
 	timeType, tabletTime, nextTimestamp, exhausted, err := initialTabletTime(spec.Time, f.cfg.Now())
 	if err != nil {
@@ -218,7 +224,7 @@ func (f *Factory) Open(
 		}
 	}()
 	tablet := &Tablet{
-		extent: extent, fence: fence, verifier: verifier, flushCells: f.cfg.FlushCells,
+		extent: extent, fence: fence, verifier: verifier, flushCells: flushCells,
 		metadata: metadata, flushID: f.cfg.FlushID,
 		snapshots: make(map[string]mincauthority.Snapshot),
 		applied:   make(map[string]struct{}), assigned: make(map[string][]ingestrouter.Mutation),

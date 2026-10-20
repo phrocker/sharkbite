@@ -200,6 +200,10 @@ func (m *fakeMetadata) Read(
 }
 
 func hostAssignment(t *testing.T) (*tserver.Host, tserver.Attempt) {
+	return hostAssignmentFor(t, tserver.Extent{TableID: "1", EndRow: []byte("z")})
+}
+
+func hostAssignmentFor(t *testing.T, extent tserver.Extent) (*tserver.Host, tserver.Attempt) {
 	t.Helper()
 	host := tserver.NewHost()
 	server := tserver.LockID{UUID: uuid.NewString(), Sequence: 1}
@@ -211,11 +215,40 @@ func hostAssignment(t *testing.T) (*tserver.Host, tserver.Attempt) {
 		t.Fatal(err)
 	}
 	attempt, err := host.Assign(tserver.Fence{Server: server, Manager: manager},
-		tserver.Extent{TableID: "1", EndRow: []byte("z")})
+		extent)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return host, attempt
+}
+
+func TestSystemTabletCommitPublishesWithUserWALThreshold(t *testing.T) {
+	for _, tableID := range []string{metadata.RootTableID, metadata.MetadataTableID} {
+		t.Run(tableID, func(t *testing.T) {
+			extent := tserver.Extent{TableID: tableID}
+			host, attempt := hostAssignmentFor(t, extent)
+			authority := &fakeMetadata{}
+			factory := testFactory(t, host, authority, 1000)
+			factory.cfg.Metadata = systemMetadataFactory{fakeMetadataFactory{metadata: authority}}
+			opened, err := factory.Open(context.Background(), tabletloader.Specification{Extent: extent}, attempt)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := host.LoadComplete(attempt); err != nil {
+				t.Fatal(err)
+			}
+			tablet := opened.(*Tablet)
+			request := testRequest(attempt)
+			request.Extent = ingestrouter.Extent{TableID: tableID}
+			request.Fence = tablet.Fence()
+			if err := tablet.Commit(context.Background(), request); err != nil {
+				t.Fatal(err)
+			}
+			if files := tablet.DataFiles(); len(files) != 1 {
+				t.Fatalf("published files = %d, want 1", len(files))
+			}
+		})
+	}
 }
 
 func testFactory(t *testing.T, host *tserver.Host, metadata *fakeMetadata, flushCells int) *Factory {
