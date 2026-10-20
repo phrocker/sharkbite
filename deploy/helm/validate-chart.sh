@@ -719,6 +719,39 @@ renders "fake embedding ignores provider URLs" "${embedding_base[@]}" --set expl
 renders "lexical embedding ignores provider URLs" "${embedding_base[@]}" --set explorer.embedding.provider=lexical,explorer.embedding.baseURL=https://
 renders "disabled providers ignore their URLs" "${explorer_base[@]}" --set explorer.chat.baseURL=https://,explorer.embedding.baseURL=https://
 
+note "== the student runtime sidecar is loopback-only and pinned by digest (#191, #192) =="
+student_digest=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+bundle_digest=fedcba9876543210fedcba9876543210fedcba9876543210fedcba9876543210
+student_base=("${explorer_base[@]}"
+  --set explorer.studentModel.enabled=true
+  --set explorer.studentModel.image.repository=ghcr.io/example/shoal-student-runtime
+  --set "explorer.studentModel.image.digest=$student_digest"
+  --set "explorer.studentModel.bundleDigest=$bundle_digest"
+  --set explorer.studentModel.releaseID=release-1
+  --set explorer.studentModel.modelAlias=student-v1)
+renders "a loopback student sidecar" "${student_base[@]}"
+assert_renders "the sidecar image is pinned by digest" "image: \"ghcr.io/example/shoal-student-runtime@$student_digest\"" "${student_base[@]}"
+assert_renders "the sidecar serves the imported bundle by digest" "--bundle-dir=/var/lib/shoal/releases/$bundle_digest" "${student_base[@]}"
+assert_renders "the sidecar probe is loopback" '^ +host: 127\.0\.0\.1$' "${student_base[@]}"
+assert_absent "no student model endpoint is rendered beyond loopback" 'student.*http://[^1]' "${student_base[@]}"
+assert_absent "a disabled student model renders no sidecar" 'student-runtime' "${explorer_base[@]}"
+refuses_citing "explorer.studentModel.image.digest must be an image digest" "a student image by tag" "${student_base[@]}" --set explorer.studentModel.image.digest=latest
+refuses_citing "explorer.studentModel.image.digest must be an image digest" "a student image with an empty digest" "${student_base[@]}" --set explorer.studentModel.image.digest=
+refuses_citing "explorer.studentModel.image.repository is required" "a student image with no repository" "${student_base[@]}" --set explorer.studentModel.image.repository=
+refuses_citing "explorer.studentModel.bundleDigest must be the 64-hex" "a short bundle digest" "${student_base[@]}" --set explorer.studentModel.bundleDigest=abc
+refuses_citing "explorer.studentModel.releaseID is required" "no release id" "${student_base[@]}" --set explorer.studentModel.releaseID=
+refuses_citing "explorer.studentModel.modelAlias is required" "no model alias" "${student_base[@]}" --set explorer.studentModel.modelAlias=
+# Plaintext to an off-host runtime is refused by the HTTPS rule before the
+# loopback rule is reached, so the loopback guard is pinned with https.
+for url in https://student.shoal.svc.cluster.local:8701 https://student.example.test; do
+  refuses_citing "explorer.studentModel.endpoint must be loopback" "an off-host student endpoint $url" "${student_base[@]}" --set "explorer.studentModel.endpoint=$url"
+done
+refuses_citing "explorer.studentModel.endpoint must use HTTPS unless the host is loopback" "plaintext to an off-host runtime even when acknowledged" "${student_base[@]}" --set explorer.studentModel.endpoint=http://student.shoal.svc.cluster.local:8701,explorer.studentModel.allowNonLoopback=true
+renders "an acknowledged off-host runtime over https" "${student_base[@]}" --set explorer.studentModel.endpoint=https://student.example.test,explorer.studentModel.allowNonLoopback=true
+refuses_citing "explorer.studentModel.allowNonLoopback must be a boolean" "a quoted acknowledgement" "${student_base[@]}" --set-string explorer.studentModel.allowNonLoopback=true,explorer.studentModel.endpoint=https://student.example.test
+refuses_citing "explorer.studentModel.allowNonLoopback is true but the endpoint is loopback" "an acknowledgement that covers nothing" "${student_base[@]}" --set explorer.studentModel.allowNonLoopback=true
+refuses_citing "explorer.studentModel.endpoint must be an absolute http(s) URL" "a malformed student endpoint" "${student_base[@]}" --set explorer.studentModel.endpoint=not-a-url
+
 note "== the approver mapping and the stable identity claim (#451, #526) =="
 # The mapping is a document the workspace reads from disk, so it is the one
 # setting the chart renders into a ConfigMap; the identity claim is an argument

@@ -299,6 +299,12 @@ deadlines, a concurrency gate, health, and readiness, and it reports the
 actual device: a runtime that reports a device other than the one the
 release was promoted for is a recorded fallback event and is not served.
 
+A promoted release travels to a cluster without model-hub access as an
+[offline release bundle](offline-release-bundle.md): plain files plus
+digests, exported with `shoalctl release export`, verified entry by entry
+before import, and rolled back on the disconnected side from what was
+already imported.
+
 `experiments/local-ml/serve_student.py` is the reference runtime: it
 verifies the bundle before it listens, binds to loopback only, needs no
 network or model hub, and answers `/health` and `/v1/predict` for the
