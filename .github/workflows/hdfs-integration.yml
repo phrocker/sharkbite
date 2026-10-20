@@ -6,6 +6,9 @@ on:
     paths:
       - ".github/workflows/hdfs-integration.yml"
       - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - "internal/qwal/**"
       - "internal/rfile/**"
       - "internal/storage/hdfs/**"
       - "test/hdfs/**"
@@ -14,6 +17,9 @@ on:
     paths:
       - ".github/workflows/hdfs-integration.yml"
       - "Makefile"
+      - "go.mod"
+      - "go.sum"
+      - "internal/qwal/**"
       - "internal/rfile/**"
       - "internal/storage/hdfs/**"
       - "test/hdfs/**"
