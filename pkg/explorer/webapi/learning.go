@@ -106,6 +106,8 @@ func learningWireError(w http.ResponseWriter, e error) {
 		code, status, message = shoal.ErrorConflict, http.StatusConflict, e.Error()
 	case shoal.IsErrorCode(e, shoal.ErrorUnavailable):
 		message = e.Error()
+	case shoal.IsErrorCode(e, shoal.ErrorInternal):
+		code, status, message = shoal.ErrorInternal, http.StatusInternalServerError, e.Error()
 	}
 	if se := new(shoal.Error); errors.As(e, &se) {
 		message = se.Message
@@ -116,19 +118,38 @@ func learningWireError(w http.ResponseWriter, e error) {
 	}{code, message})
 }
 
-func (h *learningHTTP) resolve(ctx context.Context) (auth.Fingerprint, error) {
+func (h *learningHTTP) resolve(ctx context.Context) (auth.Fingerprint, auth.Decision, error) {
 	if ctx.Err() != nil {
-		return auth.Fingerprint{}, authenticationDenied()
+		return auth.Fingerprint{}, auth.Decision{}, authenticationDenied()
 	}
 	d, e := h.resolver.Resolve(ctx)
 	if e != nil || ctx.Err() != nil || !time.Now().Before(d.AuthenticationExpires()) {
-		return auth.Fingerprint{}, authenticationDenied()
+		return auth.Fingerprint{}, auth.Decision{}, authenticationDenied()
 	}
 	fp, e := auth.AuthorizationFingerprint(d)
 	if e != nil {
-		return auth.Fingerprint{}, authenticationDenied()
+		return auth.Fingerprint{}, auth.Decision{}, authenticationDenied()
 	}
-	return fp, nil
+	return fp, d, nil
+}
+
+// learningWriteDenied is the answer to a write by a principal whose decision
+// does not carry learning_write. It is a refusal of the operation, not a
+// failure of authentication, so the status is 403.
+func learningWriteDenied(w http.ResponseWriter) {
+	writeResponse(w, http.StatusForbidden, struct {
+		Code    shoal.ErrorCode `json:"code"`
+		Message string          `json:"message"`
+	}{shoal.ErrorUnauthorized, "learning writes require the " + string(auth.OperationLearningWrite) + " operation"})
+}
+
+func allowsLearningWrite(d auth.Decision) bool {
+	for _, op := range d.AllowedOperations() {
+		if op == auth.OperationLearningWrite {
+			return true
+		}
+	}
+	return false
 }
 
 func invalidLearningRequest(detail string) error {
@@ -209,6 +230,13 @@ func (h *learningHTTP) dispatch(ctx context.Context, method string, segments []s
 	case len(segments) == 2 && segments[0] == "jobs" && get:
 		out, err := h.provider.Job(ctx, segments[1])
 		return out, err, true
+	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "predictions" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.SubmitPredictions(ctx, segments[1], raw)
+		return out, err, true
 	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "receipt" && post:
 		raw, err := body()
 		if err != nil {
@@ -283,7 +311,7 @@ func (h *learningHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, http.StatusText(status), status)
 		return
 	}
-	before, e := h.resolve(r.Context())
+	before, decision, e := h.resolve(r.Context())
 	if e != nil {
 		learningWireError(w, e)
 		return
@@ -296,6 +324,16 @@ func (h *learningHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}{"invalid_argument", "method not allowed"})
 		return
 	}
+	ctx := r.Context()
+	if r.Method == http.MethodPost {
+		// Every write needs the operation, and is bound to the actor the
+		// trusted decision names; a body's "owner" can only agree with it.
+		if !allowsLearningWrite(decision) {
+			learningWriteDenied(w)
+			return
+		}
+		ctx = decisionapi.WithLearningActor(ctx, decisionapi.LearningActor{Subject: string(decision.Subject()), Actor: string(decision.Actor())})
+	}
 	rest := strings.TrimPrefix(r.URL.Path, LearningRoute+"/")
 	segments := strings.Split(rest, "/")
 	for _, s := range segments {
@@ -304,12 +342,12 @@ func (h *learningHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	result, e, known := h.dispatch(r.Context(), r.Method, segments, func() (json.RawMessage, error) { return readLearningBody(r) })
+	result, e, known := h.dispatch(ctx, r.Method, segments, func() (json.RawMessage, error) { return readLearningBody(r) })
 	if !known {
 		learningWireError(w, shoal.NewError(shoal.ErrorNotFound, "no such learning route"))
 		return
 	}
-	after, authErr := h.resolve(r.Context())
+	after, _, authErr := h.resolve(r.Context())
 	if authErr != nil || after != before {
 		learningWireError(w, authenticationDenied())
 		return
@@ -318,8 +356,14 @@ func (h *learningHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		learningWireError(w, e)
 		return
 	}
-	if len(result) == 0 || !json.Valid(result) || uint64(len(result)) > responseLimitFor(w) {
-		learningWireError(w, errors.New("invalid or oversized learning response"))
+	if len(result) == 0 || !json.Valid(result) {
+		learningWireError(w, shoal.NewError(shoal.ErrorInternal, "the learning service produced an invalid response"))
+		return
+	}
+	if uint64(len(result)) > responseLimitFor(w) {
+		// A permanent size problem, not an outage: the console must not
+		// describe it as the service being unavailable.
+		learningWireError(w, shoal.NewError(shoal.ErrorInternal, "the learning response exceeds this host's response limit; narrow the listing"))
 		return
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

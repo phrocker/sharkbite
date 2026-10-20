@@ -51,6 +51,32 @@ class WeightsBundleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'missing model.json'):
             wb.verify(self.root / 'b')
 
+    @unittest.skipUnless(platform.system() == 'Linux', 'exclusive publication requires renameat2')
+    def test_verify_refuses_symlinks_and_foreign_manifests(self):
+        wb.stage(self.candidate('c'), self.root / 's')
+        outside = self.root / 'outside.json'
+        outside.write_bytes((self.root / 's' / 'model.json').read_bytes())
+        (self.root / 's' / 'model.json').unlink()
+        (self.root / 's' / 'model.json').symlink_to(outside)
+        with self.assertRaisesRegex(ValueError, 'not a regular file model.json'):
+            wb.verify(self.root / 's')
+        (self.root / 's' / 'model.json').unlink()
+        (self.root / 's' / 'model.json').write_bytes(outside.read_bytes())
+        wb.verify(self.root / 's')
+        (self.root / 's' / 'linked').symlink_to(self.root)
+        with self.assertRaisesRegex(ValueError, 'symlink linked'):
+            wb.verify(self.root / 's')
+        (self.root / 's' / 'linked').unlink()
+        link = self.root / 'link-to-s'
+        link.symlink_to(self.root / 's')
+        with self.assertRaisesRegex(ValueError, 'not a symlink'):
+            wb.verify(link)
+        manifest = json.loads((self.root / 's' / wb.MANIFEST).read_bytes())
+        for bad in (dict(manifest, kind='other'), dict(manifest, extra=1), dict(manifest, files=manifest['files'] + [dict(path='../x', role='tokenizer', size=0, sha256='0' * 64)]),
+                    dict(manifest, files=[dict(f, role='runtime') for f in manifest['files']])):
+            with self.assertRaises(ValueError):
+                wb.validate_manifest(bad)
+
     def test_compare_names_diverging_files(self):
         first = wb.manifest_for(self.candidate('a'), {'model.json': 'weights', 'runtime.json': 'runtime', 'recipe.json': 'preprocessing', 'training-receipt.json': 'calibration'})
         second = wb.manifest_for(self.candidate('b', intercept=1.0), {'model.json': 'weights', 'runtime.json': 'runtime', 'recipe.json': 'preprocessing', 'training-receipt.json': 'calibration'})

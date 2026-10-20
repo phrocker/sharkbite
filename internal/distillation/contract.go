@@ -4,6 +4,7 @@ package distillation
 import (
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/phrocker/shoal-oss/internal/weightsbundle"
 )
@@ -51,6 +52,9 @@ func AuthorizeExport(m Manifest, export ExportDescriptor) error {
 	}
 	if !contains(task.LabelPolicyIDs, export.LabelPolicyID) {
 		return refuse("label policy %q is not admitted for task %q", export.LabelPolicyID, export.TaskID)
+	}
+	if len(export.ExampleIDs) == 0 {
+		return refuse("export for cohort %q lists no example ids; the held-out check cannot run over an unknown slice", export.CohortID)
 	}
 	for _, id := range export.ExampleIDs {
 		if m.HeldOut(id) {
@@ -103,34 +107,106 @@ type Executor struct {
 	Host          string `json:"host"`
 }
 
+// Deviation is one recorded difference between what the manifest requested
+// and what the run did. It is structured so a receipt cannot carry prose in
+// place of the difference; the verifier recomputes the list and requires an
+// exact match.
+type Deviation struct {
+	Parameter string `json:"parameter"`
+	Requested any    `json:"requested"`
+	Actual    any    `json:"actual"`
+}
+
+// AuthorizedExport is what the trainer reports it consumed for one cohort:
+// the identities the authorized export manifest carried. The verifier checks
+// the admitted ones against the manifest; the rest are provenance it bounds.
+type AuthorizedExport struct {
+	CohortID            string `json:"cohort_id"`
+	TaskID              string `json:"task_id"`
+	LabelPolicyID       string `json:"label_policy_id"`
+	ManifestSHA256      string `json:"manifest_sha256"`
+	CohortSHA256        string `json:"cohort_sha256"`
+	AuthorityRevisionID string `json:"authority_revision_id"`
+	InventoryID         string `json:"inventory_id"`
+	TrainingPurposeID   string `json:"training_purpose_id"`
+	DatasetSHA256       string `json:"dataset_sha256"`
+	DatasetBytes        int64  `json:"dataset_bytes"`
+	ProvenanceMode      string `json:"provenance_mode"`
+	CheckpointOverlap   string `json:"checkpoint_overlap"`
+}
+
+// Receipt statuses. Anything else is refused.
+const (
+	StatusCompleted = "completed"
+	StatusFailed    = "failed"
+	StatusRefused   = "refused"
+)
+
+// Bounds on free-form receipt members, so a receipt cannot carry an essay.
+const (
+	MaxRuntimeIdentities = 64
+	MaxReceiptString     = 256
+)
+
 // Receipt is what a trainer emits. It names requested versus actual
 // parameters and selections, runtime identities, the executor, and the
 // bundle it produced. It carries no quality claim: completion is not
 // improvement, and evaluation is a separate record.
 type Receipt struct {
-	Schema                int               `json:"schema"`
-	Kind                  string            `json:"kind"`
-	ManifestPin           string            `json:"manifest_pin"`
-	RequestedParameters   map[string]any    `json:"requested_parameters"`
-	ActualParameters      map[string]any    `json:"actual_parameters"`
-	RequestedCohorts      []string          `json:"requested_cohorts"`
-	ActualCohorts         []string          `json:"actual_cohorts"`
-	RequestedTeacher      ModelIdentity     `json:"requested_teacher"`
-	ActualTeacher         ModelIdentity     `json:"actual_teacher"`
-	RequestedBase         ModelIdentity     `json:"requested_base"`
-	ActualBase            ModelIdentity     `json:"actual_base"`
-	RuntimeIdentities     map[string]string `json:"runtime_identities"`
-	Executor              Executor          `json:"executor"`
-	BundleDigest          string            `json:"bundle_digest"`
-	TeacherPredictionsID  string            `json:"teacher_predictions_id"`
-	HeldOutExcludedCount  int               `json:"held_out_excluded_count"`
-	TrainedExampleCount   int               `json:"trained_example_count"`
-	Status                string            `json:"status"`
-	Deviations            []string          `json:"deviations"`
-	CandidateOnly         bool              `json:"candidate_only"`
-	ImprovementClaimed    bool              `json:"improvement_claimed"`
-	EvaluationPerformedBy string            `json:"evaluation_performed_by"`
-	AuthorizedExports     []map[string]any  `json:"authorized_exports,omitempty"`
+	Schema                int                `json:"schema"`
+	Kind                  string             `json:"kind"`
+	ManifestPin           string             `json:"manifest_pin"`
+	RequestedParameters   map[string]any     `json:"requested_parameters"`
+	ActualParameters      map[string]any     `json:"actual_parameters"`
+	RequestedCohorts      []string           `json:"requested_cohorts"`
+	ActualCohorts         []string           `json:"actual_cohorts"`
+	RequestedTeacher      ModelIdentity      `json:"requested_teacher"`
+	ActualTeacher         ModelIdentity      `json:"actual_teacher"`
+	RequestedBase         ModelIdentity      `json:"requested_base"`
+	ActualBase            ModelIdentity      `json:"actual_base"`
+	RuntimeIdentities     map[string]string  `json:"runtime_identities"`
+	Executor              Executor           `json:"executor"`
+	BundleDigest          string             `json:"bundle_digest"`
+	TeacherPredictionsID  string             `json:"teacher_predictions_id"`
+	HeldOutExcludedCount  int                `json:"held_out_excluded_count"`
+	TrainedExampleCount   int                `json:"trained_example_count"`
+	Status                string             `json:"status"`
+	Deviations            []Deviation        `json:"deviations"`
+	CandidateOnly         bool               `json:"candidate_only"`
+	ImprovementClaimed    bool               `json:"improvement_claimed"`
+	EvaluationPerformedBy string             `json:"evaluation_performed_by"`
+	AuthorizedExports     []AuthorizedExport `json:"authorized_exports"`
+}
+
+func bounded(s string) bool { return utf8.ValidString(s) && len(s) <= MaxReceiptString }
+
+// ExpectedDeviations recomputes the deviation list a receipt must carry:
+// one entry per requested parameter whose actual value differs, plus one
+// for the cohort set when it differs. Parameters are listed in sorted order.
+func ExpectedDeviations(m Manifest, r Receipt) []Deviation {
+	keys := make([]string, 0, len(m.Data.GenerationParameters))
+	for k := range m.Data.GenerationParameters {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	out := []Deviation{}
+	for _, k := range keys {
+		want, _ := weightsbundle.Canonical(m.Data.GenerationParameters[k])
+		got, _ := weightsbundle.Canonical(r.ActualParameters[k])
+		if string(want) != string(got) {
+			out = append(out, Deviation{Parameter: k, Requested: m.Data.GenerationParameters[k], Actual: r.ActualParameters[k]})
+		}
+	}
+	requested := make([]string, 0, len(m.Exports))
+	for _, e := range m.Exports {
+		requested = append(requested, e.CohortID)
+	}
+	sort.Strings(requested)
+	actual := sortedCopy(r.ActualCohorts)
+	if strings.Join(requested, "\x00") != strings.Join(actual, "\x00") {
+		out = append(out, Deviation{Parameter: "cohorts", Requested: requested, Actual: actual})
+	}
+	return out
 }
 
 // VerifyReceipt checks a receipt against the manifest it claims. Any
@@ -155,11 +231,28 @@ func VerifyReceipt(m Manifest, r Receipt) error {
 	if r.EvaluationPerformedBy != "" {
 		return refuse("evaluation is a separate record, not part of the receipt")
 	}
+	if r.Status != StatusCompleted && r.Status != StatusFailed && r.Status != StatusRefused {
+		return refuse("receipt status %q is not completed, failed, or refused", r.Status)
+	}
 	if r.Executor.ID == "" {
 		return refuse("receipt names no executor")
 	}
+	if !bounded(r.Executor.ID) || !bounded(r.Executor.AttestationID) || !bounded(r.Executor.Host) {
+		return refuse("executor fields exceed %d bytes", MaxReceiptString)
+	}
 	if len(r.RuntimeIdentities) == 0 {
 		return refuse("receipt names no runtime identities")
+	}
+	if len(r.RuntimeIdentities) > MaxRuntimeIdentities {
+		return refuse("receipt names more than %d runtime identities", MaxRuntimeIdentities)
+	}
+	for k, v := range r.RuntimeIdentities {
+		if k == "" || !bounded(k) || !bounded(v) {
+			return refuse("runtime identity %q exceeds %d bytes or is empty", k, MaxReceiptString)
+		}
+	}
+	if r.HeldOutExcludedCount < 0 || r.TrainedExampleCount < 0 {
+		return refuse("negative example count")
 	}
 	wantParams, _ := weightsbundle.Canonical(m.Data.GenerationParameters)
 	gotParams, _ := weightsbundle.Canonical(r.RequestedParameters)
@@ -190,14 +283,39 @@ func VerifyReceipt(m Manifest, r Receipt) error {
 	if r.ActualBase != base.Identity {
 		return refuse("actual base %s/%s is not the chosen base", r.ActualBase.Provider, r.ActualBase.Model)
 	}
-	actualParams, _ := weightsbundle.Canonical(r.ActualParameters)
-	deviates := string(actualParams) != string(wantParams) || strings.Join(sortedCopy(r.ActualCohorts), "\x00") != strings.Join(requested, "\x00")
-	if deviates && len(r.Deviations) == 0 {
-		return refuse("actual run deviated from the request without a recorded deviation")
+	// Actual parameters are the requested ones, each possibly changed:
+	// a key the request never had is a claim, not a parameter.
+	for k := range r.ActualParameters {
+		if _, ok := m.Data.GenerationParameters[k]; !ok {
+			return refuse("actual parameter %q was never requested", k)
+		}
 	}
-	if r.Status != "completed" {
+	if len(r.ActualParameters) != len(m.Data.GenerationParameters) {
+		return refuse("actual parameters omit a requested parameter; every requested parameter has an actual value")
+	}
+	// Deviations are exactly the recomputed differences, no more, no less.
+	expected := ExpectedDeviations(m, r)
+	wantDev, _ := weightsbundle.Canonical(expected)
+	recorded := r.Deviations
+	if recorded == nil {
+		recorded = []Deviation{}
+	}
+	gotDev, _ := weightsbundle.Canonical(recorded)
+	if string(wantDev) != string(gotDev) {
+		if len(expected) > 0 && len(r.Deviations) == 0 {
+			return refuse("actual run deviated from the request without a recorded deviation")
+		}
+		return refuse("deviations must list exactly the differences between the request and the run: expected %s", wantDev)
+	}
+	if err := checkAuthorizedExports(m, r); err != nil {
+		return err
+	}
+	if r.Status != StatusCompleted {
 		if r.BundleDigest != "" {
 			return refuse("a %s run must not report a bundle", r.Status)
+		}
+		if r.TeacherPredictionsID != "" {
+			return refuse("a %s run must not report teacher predictions", r.Status)
 		}
 		return nil
 	}
@@ -207,8 +325,52 @@ func VerifyReceipt(m Manifest, r Receipt) error {
 	if r.TeacherPredictionsID == "" {
 		return refuse("completed run without recorded teacher predictions")
 	}
+	if !validDigest(r.TeacherPredictionsID) {
+		return refuse("teacher predictions id is not a content address")
+	}
 	if r.TrainedExampleCount <= 0 {
 		return refuse("completed run trained no examples")
+	}
+	return nil
+}
+
+// checkAuthorizedExports requires the receipt's export provenance to name
+// exactly the cohorts the run consumed, each at the manifest's pin and
+// inside the task and label-policy selection, with bounded identities.
+func checkAuthorizedExports(m Manifest, r Receipt) error {
+	seen := map[string]bool{}
+	for _, e := range r.AuthorizedExports {
+		pin, ok := m.Export(e.CohortID)
+		if !ok {
+			return refuse("authorized export names cohort %q, which the manifest does not admit", e.CohortID)
+		}
+		if pin.ManifestSHA256 != e.ManifestSHA256 {
+			return refuse("authorized export for cohort %q is at pin %s, not the manifest's %s", e.CohortID, e.ManifestSHA256, pin.ManifestSHA256)
+		}
+		task, ok := m.Task(e.TaskID)
+		if !ok || !contains(task.CohortIDs, e.CohortID) || !contains(task.LabelPolicyIDs, e.LabelPolicyID) {
+			return refuse("authorized export for cohort %q names task %q and label policy %q outside the selection", e.CohortID, e.TaskID, e.LabelPolicyID)
+		}
+		if seen[e.CohortID] {
+			return refuse("authorized export for cohort %q listed twice", e.CohortID)
+		}
+		seen[e.CohortID] = true
+		for _, s := range []string{e.CohortSHA256, e.AuthorityRevisionID, e.InventoryID, e.TrainingPurposeID, e.DatasetSHA256, e.ProvenanceMode, e.CheckpointOverlap} {
+			if !bounded(s) {
+				return refuse("authorized export for cohort %q carries an oversized identity", e.CohortID)
+			}
+		}
+		if e.DatasetBytes < 0 {
+			return refuse("authorized export for cohort %q reports negative dataset bytes", e.CohortID)
+		}
+	}
+	for _, c := range r.ActualCohorts {
+		if !seen[c] {
+			return refuse("run consumed cohort %q without an authorized export entry", c)
+		}
+	}
+	if len(seen) != len(r.ActualCohorts) {
+		return refuse("authorized exports name cohorts the run did not consume")
 	}
 	return nil
 }
@@ -240,13 +402,27 @@ type PredictionSet struct {
 	Predictions   []Prediction `json:"predictions"`
 }
 
-// NewPredictionSet validates teacher outputs against the manifest: the
-// teacher is the chosen one, its egress posture is the recorded one, every
-// output is a prediction, and no held-out example was shown to the teacher.
-func NewPredictionSet(m Manifest, predictions []Prediction) (PredictionSet, error) {
+// NewPredictionSet validates teacher outputs against the manifest and the
+// job's admitted exports: the teacher is the chosen one, its egress posture
+// is the recorded one, every output is a prediction, every example is in an
+// admitted export, no held-out example was shown to the teacher, and the set
+// is not empty.
+func NewPredictionSet(m Manifest, exports []ExportDescriptor, predictions []Prediction) (PredictionSet, error) {
 	pin, err := m.Pin()
 	if err != nil {
 		return PredictionSet{}, err
+	}
+	if len(predictions) == 0 {
+		return PredictionSet{}, refuse("teacher produced no predictions")
+	}
+	admitted := map[string]bool{}
+	for _, e := range exports {
+		if err := AuthorizeExport(m, e); err != nil {
+			return PredictionSet{}, err
+		}
+		for _, id := range e.ExampleIDs {
+			admitted[id] = true
+		}
 	}
 	teacher, _ := m.Teacher.chosen()
 	seen := map[string]bool{}
@@ -263,6 +439,9 @@ func NewPredictionSet(m Manifest, predictions []Prediction) (PredictionSet, erro
 		seen[p.ExampleID] = true
 		if m.HeldOut(p.ExampleID) {
 			return PredictionSet{}, refuse("held-out example %q was shown to the teacher", p.ExampleID)
+		}
+		if !admitted[p.ExampleID] {
+			return PredictionSet{}, refuse("example %q is in no admitted export", p.ExampleID)
 		}
 		if p.Output == nil {
 			return PredictionSet{}, refuse("prediction for %q has no output", p.ExampleID)
@@ -290,17 +469,25 @@ const (
 	EntryIncumbent = "incumbent"
 )
 
+// TeacherRef names a compared teacher by alias and by exact identity, so
+// two manifests that alias different models the same way are never
+// conflated.
+type TeacherRef struct {
+	Alias    string        `json:"alias"`
+	Identity ModelIdentity `json:"identity"`
+}
+
 // Comparison evaluates students, their teachers, and the incumbent on the
 // same picture, so an extraction change and a model change stay
 // distinguishable. Every entry shares the picture digest; every student
 // names its teacher.
 type Comparison struct {
-	Schema        int      `json:"schema"`
-	Kind          string   `json:"kind"`
-	PictureDigest string   `json:"picture_digest"`
-	EvaluationID  string   `json:"evaluation_id"`
-	Entries       []Entry  `json:"entries"`
-	Teachers      []string `json:"teachers"`
+	Schema        int          `json:"schema"`
+	Kind          string       `json:"kind"`
+	PictureDigest string       `json:"picture_digest"`
+	EvaluationID  string       `json:"evaluation_id"`
+	Entries       []Entry      `json:"entries"`
+	Teachers      []TeacherRef `json:"teachers"`
 }
 
 // NewComparison builds and validates a comparison record. Each student
@@ -314,7 +501,7 @@ func NewComparison(pictureDigest, evaluationID string, students []Manifest, entr
 		return Comparison{}, refuse("comparison needs at least one student")
 	}
 	pins := map[string]string{}
-	teachers := map[string]bool{}
+	teachers := map[string]ModelIdentity{}
 	for _, s := range students {
 		pin, err := s.Pin()
 		if err != nil {
@@ -322,7 +509,10 @@ func NewComparison(pictureDigest, evaluationID string, students []Manifest, entr
 		}
 		teacher, _ := s.Teacher.chosen()
 		pins[pin] = teacher.Alias
-		teachers[teacher.Alias] = true
+		if prior, ok := teachers[teacher.Alias]; ok && prior != teacher.Identity {
+			return Comparison{}, refuse("teacher alias %q names two identities (%s/%s and %s/%s); aliases must name one model", teacher.Alias, prior.Provider, prior.Model, teacher.Identity.Provider, teacher.Identity.Model)
+		}
+		teachers[teacher.Alias] = teacher.Identity
 	}
 	// Students on the same data selection are comparable; refuse mixed data.
 	first, _ := weightsbundle.Canonical(students[0].Data)
@@ -352,7 +542,7 @@ func NewComparison(pictureDigest, evaluationID string, students []Manifest, entr
 			}
 			seenStudents[e.ManifestPin] = true
 		case EntryTeacher:
-			if !teachers[e.Alias] {
+			if _, ok := teachers[e.Alias]; !ok {
 				return Comparison{}, refuse("teacher entry %q is not a teacher of any compared student", e.Alias)
 			}
 			seenTeachers[e.Alias] = true
@@ -377,11 +567,11 @@ func NewComparison(pictureDigest, evaluationID string, students []Manifest, entr
 			return Comparison{}, refuse("teacher %q has no entry on the picture", t)
 		}
 	}
-	names := make([]string, 0, len(teachers))
-	for t := range teachers {
-		names = append(names, t)
+	names := make([]TeacherRef, 0, len(teachers))
+	for alias, id := range teachers {
+		names = append(names, TeacherRef{Alias: alias, Identity: id})
 	}
-	sort.Strings(names)
+	sort.Slice(names, func(i, j int) bool { return names[i].Alias < names[j].Alias })
 	return Comparison{Schema: 1, Kind: KindComparison, PictureDigest: pictureDigest, EvaluationID: evaluationID, Entries: entries, Teachers: names}, nil
 }
 

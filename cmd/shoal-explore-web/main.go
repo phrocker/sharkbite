@@ -237,6 +237,15 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		"student-criteria-id", firstNonEmpty(os.Getenv("SHOAL_STUDENT_CRITERIA_ID"), "criteria:default"),
 		"Criteria identity pinned into the student serving identity",
 	)
+	learningModelEgress := flags.String(
+		"learning-model-egress", os.Getenv("SHOAL_LEARNING_MODEL_EGRESS"),
+		"Comma-separated provider=loopback|off_host statements resolving where "+
+			"each model provider a distillation manifest may name sends its "+
+			"calls. A manifest naming a provider absent here is refused.")
+	learningAllowOffHost := flags.Bool(
+		"learning-allow-off-host-teachers", os.Getenv("SHOAL_LEARNING_ALLOW_OFF_HOST_TEACHERS") == "true",
+		"Admit distillation jobs whose chosen teacher resolves off host "+
+			"(every training example then leaves this host). Default refuses.")
 	studentDevice := flags.String(
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+
@@ -876,7 +885,8 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 			servingRoot: firstNonEmpty(*learningServingRoot, filepath.Join(*stateDir, "releases")),
 			images:      *learningImages, studentEndpoint: *studentEndpoint,
 			studentModelAlias: *studentModelAlias, studentCriteriaID: *studentCriteriaID,
-			studentDevice: *studentDevice,
+			studentDevice: *studentDevice, modelEgress: *learningModelEgress,
+			allowOffHostTeachers: *learningAllowOffHost,
 		}, output); err != nil {
 			listener.Close()
 			return err

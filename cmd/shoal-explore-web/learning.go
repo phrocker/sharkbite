@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/phrocker/shoal-oss/internal/decisionlearning"
+	"github.com/phrocker/shoal-oss/internal/distillation"
 	"github.com/phrocker/shoal-oss/internal/releasebundle"
 	"github.com/phrocker/shoal-oss/internal/storage/local"
 	"github.com/phrocker/shoal-oss/internal/weightsbundle"
@@ -25,6 +26,45 @@ import (
 type learningHostConfig struct {
 	stateDir, evidenceDir, servingRoot, images                           string
 	studentEndpoint, studentModelAlias, studentCriteriaID, studentDevice string
+	// modelEgress lists provider=loopback|off_host pairs: the host's own
+	// statement of where each provider's calls go. The student provider is
+	// added from its endpoint. A manifest naming a provider absent here is
+	// refused, since its egress cannot be resolved.
+	modelEgress          string
+	allowOffHostTeachers bool
+}
+
+// hostEgressResolver resolves model egress from the operator's
+// configuration, never from the manifest author's declaration.
+type hostEgressResolver map[string]string
+
+func parseModelEgress(spec string) (hostEgressResolver, error) {
+	out := hostEgressResolver{}
+	for _, item := range strings.Split(spec, ",") {
+		item = strings.TrimSpace(item)
+		if item == "" {
+			continue
+		}
+		provider, posture, ok := strings.Cut(item, "=")
+		provider = strings.TrimSpace(provider)
+		posture = strings.TrimSpace(posture)
+		if !ok || provider == "" || (posture != "loopback" && posture != "off_host") {
+			return nil, fmt.Errorf("-learning-model-egress entry %q must be provider=loopback or provider=off_host", item)
+		}
+		if _, dup := out[provider]; dup {
+			return nil, fmt.Errorf("-learning-model-egress lists provider %q twice", provider)
+		}
+		out[provider] = posture
+	}
+	return out, nil
+}
+
+func (r hostEgressResolver) ResolveEgress(_ context.Context, id distillation.ModelIdentity) (string, error) {
+	posture, ok := r[id.Provider]
+	if !ok {
+		return "", fmt.Errorf("provider %q is not in this host's -learning-model-egress configuration", id.Provider)
+	}
+	return posture, nil
 }
 
 // studentServing adapts the student provider to the learning service's
@@ -40,9 +80,12 @@ func (s studentServing) ServingReport(ctx context.Context) (map[string]any, erro
 	out := map[string]any{
 		"release_id": s.predictor.Release().ID, "bundle_digest": s.predictor.Release().BundleDigest,
 		"model_alias": s.predictor.Identity().ModelAlias, "egresses_off_host": s.predictor.EgressesOffHost(),
-		"actual_device": report.ActualDevice, "ready": report.Ready, "fallback_events": report.FallbackEvents,
+		"actual_device": report.ActualDevice, "ready": err == nil && report.Ready, "fallback_events": report.FallbackEvents,
+		"recording_errors": report.RecordingErrors,
 	}
 	if err != nil {
+		// A runtime that answered with another release, bundle, or device
+		// is not ready to serve this one, whatever its own status says.
 		out["health_error"] = err.Error()
 	}
 	return out, nil
@@ -86,6 +129,10 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 	if err != nil {
 		return fmt.Errorf("learning registry: %w", err)
 	}
+	egress, err := parseModelEgress(cfg.modelEgress)
+	if err != nil {
+		return err
+	}
 	var serving decisionlearning.ServingReporter
 	if cfg.studentEndpoint != "" {
 		active, ok := registry.Active()
@@ -109,11 +156,14 @@ func mountLearning(ctx context.Context, handler *webapi.Handler, resolver auth.R
 			}
 			serving = studentServing{predictor}
 		}
+		if _, listed := egress[model.StudentProvider]; !listed {
+			egress[model.StudentProvider] = "loopback"
+		}
 	}
 	service, err := decisionlearning.New(decisionlearning.Config{
 		Registry: registry, Store: store, Prefix: cfg.stateDir, EvidenceDir: cfg.evidenceDir,
 		BundlesDir: filepath.Join(cfg.stateDir, "bundles"), ServingRoot: cfg.servingRoot,
-		Serving: serving, Images: images,
+		Serving: serving, Images: images, Egress: egress, AllowOffHostTeachers: cfg.allowOffHostTeachers, Log: output,
 	})
 	if err != nil {
 		return err

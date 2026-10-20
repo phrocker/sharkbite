@@ -142,13 +142,56 @@ func TestModelSelectionRefusals(t *testing.T) {
 	if got, err := m.Teacher.Apply(); err != nil || got != "teacher-a" {
 		t.Fatalf("rule applied: %s %v", got, err)
 	}
-	// A better-measuring rejected alternative is allowed only with a reason.
+	// The rule is advisory: departing from it means rejecting its preference
+	// with a recorded reason, which every unchosen model already needs, and
+	// Apply() exposes the departure to a reader.
 	m.Teacher.Eligible[1].Measurements[0].Value = 0.95
 	if _, err := m.Pin(); err != nil {
 		t.Fatalf("reasoned override refused: %v", err)
 	}
 	if got, _ := m.Teacher.Apply(); got != "teacher-b" {
 		t.Fatalf("rule now selects %s", got)
+	}
+	m.Teacher.Rejected = nil
+	if _, err := m.Pin(); !errors.Is(err, ErrInvalid) {
+		t.Fatalf("unreasoned override: %v", err)
+	}
+	// Contradictory duplicate measurements cannot be pinned.
+	dup := fixture()
+	dup.Teacher.Eligible[0].Measurements = append(dup.Teacher.Eligible[0].Measurements, measurement("dev_recall", 0.1))
+	if _, err := dup.Pin(); !errors.Is(err, ErrInvalid) || !strings.Contains(err.Error(), "measured twice") {
+		t.Fatalf("duplicate metric: %v", err)
+	}
+}
+
+// Bytes that decode to the same typed manifest but are not its canonical
+// form (an explicit empty optional member, a non-canonical number) must not
+// share its pin.
+func TestDecodeRefusesNonRoundTrippingBytes(t *testing.T) {
+	m := fixture()
+	encoded, err := m.Encode()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := Decode(encoded); err != nil {
+		t.Fatal(err)
+	}
+	reordered := strings.Replace(string(encoded), `"schema":1,`, ``, 1) + ""
+	reordered = strings.Replace(reordered, `{"base"`, `{"schema":1,"base"`, 1)
+	if _, err := Decode([]byte(reordered)); err != nil {
+		t.Fatalf("key order is not content: %v", err)
+	}
+	// A number spelled differently is the same value on both sides
+	// (Python's json.loads normalises it too), so it shares the pin.
+	if _, err := Decode([]byte(strings.Replace(string(encoded), `"temperature":0.0`, `"temperature":0.00`, 1))); err != nil {
+		t.Fatalf("float spelling: %v", err)
+	}
+	for name, raw := range map[string]string{
+		"explicit empty bundle digest": strings.Replace(string(encoded), `"cache_identity":"local:big-a:v1"`, `"bundle_digest":"","cache_identity":"local:big-a:v1"`, 1),
+	} {
+		if _, err := Decode([]byte(raw)); !errors.Is(err, ErrInvalid) || !strings.Contains(err.Error(), "round-trip") {
+			t.Errorf("%s: %v", name, err)
+		}
 	}
 }
 
@@ -168,6 +211,7 @@ func TestExportAuthorizationAndJob(t *testing.T) {
 		"other task":        {ExportDescriptor{CohortID: "cohort-1", TaskID: "task-v2", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("a", 64)}, "outside the selection"},
 		"other policy":      {ExportDescriptor{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:9", ManifestSHA256: strings.Repeat("a", 64)}, "not admitted for task"},
 		"held-out leak":     {ExportDescriptor{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("a", 64), ExampleIDs: []string{"ex-1", "ex-9"}}, "contains held-out example"},
+		"no example ids":    {ExportDescriptor{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("a", 64)}, "lists no example ids"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -199,7 +243,11 @@ func receipt(t *testing.T, m Manifest) Receipt {
 		RuntimeIdentities: map[string]string{"python": "3.12.3", "torch": "2.13.0"},
 		Executor:          Executor{ID: "worker-1", AttestationID: "attest:1", Host: "cpu-node"},
 		BundleDigest:      strings.Repeat("d", 64), TeacherPredictionsID: strings.Repeat("e", 64),
-		HeldOutExcludedCount: 2, TrainedExampleCount: 3, Status: "completed", Deviations: []string{}, CandidateOnly: true,
+		HeldOutExcludedCount: 2, TrainedExampleCount: 3, Status: StatusCompleted, Deviations: []Deviation{}, CandidateOnly: true,
+		AuthorizedExports: []AuthorizedExport{
+			{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("a", 64)},
+			{CohortID: "cohort-2", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("b", 64)},
+		},
 	}
 }
 
@@ -224,11 +272,40 @@ func TestReceiptVerification(t *testing.T) {
 			r.ActualTeacher = identity("hosted", "big-b", EgressOffHost)
 		}, "not the chosen teacher"},
 		"other base":                 {func(r *Receipt) { r.ActualBase.Version = "v2" }, "not the chosen base"},
-		"silent deviation":           {func(r *Receipt) { r.ActualParameters = map[string]any{"temperature": 0.2} }, "without a recorded deviation"},
+		"silent deviation":           {func(r *Receipt) { r.ActualParameters = map[string]any{"temperature": 0.2, "max_tokens": 64} }, "without a recorded deviation"},
+		"dropped parameter":          {func(r *Receipt) { r.ActualParameters = map[string]any{"temperature": 0.0} }, "omit a requested parameter"},
 		"completed without bundle":   {func(r *Receipt) { r.BundleDigest = "" }, "without a bundle digest"},
 		"completed without teacher":  {func(r *Receipt) { r.TeacherPredictionsID = "" }, "without recorded teacher predictions"},
 		"completed without examples": {func(r *Receipt) { r.TrainedExampleCount = 0 }, "trained no examples"},
-		"failed with bundle":         {func(r *Receipt) { r.Status = "failed" }, "must not report a bundle"},
+		"failed with bundle":         {func(r *Receipt) { r.Status = StatusFailed }, "must not report a bundle"},
+		"unknown status":             {func(r *Receipt) { r.Status = "completed_improved" }, "not completed, failed, or refused"},
+		"claim smuggled as a parameter": {func(r *Receipt) {
+			r.ActualParameters = map[string]any{"temperature": 0.0, "max_tokens": 64, "held_out_recall": 0.97}
+		}, "never requested"},
+		"claim smuggled as a deviation": {func(r *Receipt) {
+			r.Deviations = []Deviation{{Parameter: "held_out_recall", Requested: nil, Actual: "+12% over incumbent"}}
+		}, "exactly the differences"},
+		"deviation prose for a real change": {func(r *Receipt) {
+			r.ActualParameters = map[string]any{"temperature": 0.2, "max_tokens": 64}
+			r.Deviations = []Deviation{{Parameter: "temperature", Requested: 0.0, Actual: "0.2 (better)"}}
+		}, "exactly the differences"},
+		"narrowed cohorts without deviation": {func(r *Receipt) {
+			r.ActualCohorts = []string{"cohort-1"}
+			r.AuthorizedExports = r.AuthorizedExports[:1]
+		}, "without a recorded deviation"},
+		"predictions id not an address": {func(r *Receipt) { r.TeacherPredictionsID = "x" }, "not a content address"},
+		"failed with predictions": {func(r *Receipt) {
+			r.Status, r.BundleDigest = StatusFailed, ""
+		}, "must not report teacher predictions"},
+		"export provenance outside the selection": {func(r *Receipt) {
+			r.AuthorizedExports[0].LabelPolicyID = "labels:9"
+		}, "outside the selection"},
+		"export provenance at another pin": {func(r *Receipt) {
+			r.AuthorizedExports[0].ManifestSHA256 = strings.Repeat("c", 64)
+		}, "not the manifest's"},
+		"export provenance missing": {func(r *Receipt) { r.AuthorizedExports = nil }, "without an authorized export entry"},
+		"runtime identity essay":    {func(r *Receipt) { r.RuntimeIdentities = map[string]string{"note": strings.Repeat("x", 300)} }, "exceed"},
+		"executor host essay":       {func(r *Receipt) { r.Executor.Host = strings.Repeat("h", 300) }, "exceed"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -242,12 +319,22 @@ func TestReceiptVerification(t *testing.T) {
 	}
 	r := receipt(t, m)
 	r.ActualParameters = map[string]any{"temperature": 0.2, "max_tokens": 64}
-	r.Deviations = []string{"temperature raised to 0.2 by executor policy"}
+	r.Deviations = ExpectedDeviations(m, r)
+	if len(r.Deviations) != 1 || r.Deviations[0].Parameter != "temperature" {
+		t.Fatalf("%+v", r.Deviations)
+	}
 	if err := VerifyReceipt(m, r); err != nil {
 		t.Fatalf("recorded deviation refused: %v", err)
 	}
+	narrowed := receipt(t, m)
+	narrowed.ActualCohorts = []string{"cohort-1"}
+	narrowed.AuthorizedExports = narrowed.AuthorizedExports[:1]
+	narrowed.Deviations = ExpectedDeviations(m, narrowed)
+	if err := VerifyReceipt(m, narrowed); err != nil || narrowed.Deviations[0].Parameter != "cohorts" {
+		t.Fatalf("recorded cohort deviation refused: %v %+v", err, narrowed.Deviations)
+	}
 	failed := receipt(t, m)
-	failed.Status, failed.BundleDigest = "failed", ""
+	failed.Status, failed.BundleDigest, failed.TeacherPredictionsID = StatusFailed, "", ""
 	if err := VerifyReceipt(m, failed); err != nil {
 		t.Fatalf("failed receipt is a record, not a refusal: %v", err)
 	}
@@ -255,24 +342,32 @@ func TestReceiptVerification(t *testing.T) {
 
 func TestTeacherOutputsArePredictionsAndNeverHeldOut(t *testing.T) {
 	m := fixture()
+	exports := []ExportDescriptor{
+		{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("a", 64), ExampleIDs: []string{"ex-1", "ex-2"}},
+		{CohortID: "cohort-2", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: strings.Repeat("b", 64), ExampleIDs: []string{"ex-3"}},
+	}
 	good := []Prediction{{ExampleID: "ex-1", Kind: PredictionKind, Teacher: "teacher-a", Output: map[string]any{"label": "review", "p": 0.9}}}
-	set, err := NewPredictionSet(m, good)
+	set, err := NewPredictionSet(m, exports, good)
 	if err != nil || set.TeacherEgress != EgressLoopback || set.PromptVersion != "prompt:3" {
 		t.Fatalf("%+v %v", set, err)
+	}
+	if _, err := NewPredictionSet(m, exports, nil); !errors.Is(err, ErrRefused) || !strings.Contains(err.Error(), "no predictions") {
+		t.Fatalf("empty set: %v", err)
 	}
 	cases := map[string]struct {
 		p    Prediction
 		want string
 	}{
-		"as label":       {Prediction{ExampleID: "ex-1", Kind: "reviewer_assessment", Teacher: "teacher-a", Output: map[string]any{}}, "teacher outputs are predictions"},
-		"as observation": {Prediction{ExampleID: "ex-1", Kind: "observed_outcome", Teacher: "teacher-a", Output: map[string]any{}}, "teacher outputs are predictions"},
-		"other teacher":  {Prediction{ExampleID: "ex-1", Kind: PredictionKind, Teacher: "teacher-b", Output: map[string]any{}}, "not the chosen teacher"},
-		"held-out":       {Prediction{ExampleID: "ex-9", Kind: PredictionKind, Teacher: "teacher-a", Output: map[string]any{}}, "held-out example"},
-		"no output":      {Prediction{ExampleID: "ex-1", Kind: PredictionKind, Teacher: "teacher-a"}, "no output"},
+		"as label":        {Prediction{ExampleID: "ex-1", Kind: "reviewer_assessment", Teacher: "teacher-a", Output: map[string]any{}}, "teacher outputs are predictions"},
+		"as observation":  {Prediction{ExampleID: "ex-1", Kind: "observed_outcome", Teacher: "teacher-a", Output: map[string]any{}}, "teacher outputs are predictions"},
+		"other teacher":   {Prediction{ExampleID: "ex-1", Kind: PredictionKind, Teacher: "teacher-b", Output: map[string]any{}}, "not the chosen teacher"},
+		"held-out":        {Prediction{ExampleID: "ex-9", Kind: PredictionKind, Teacher: "teacher-a", Output: map[string]any{}}, "held-out example"},
+		"no output":       {Prediction{ExampleID: "ex-1", Kind: PredictionKind, Teacher: "teacher-a"}, "no output"},
+		"outside exports": {Prediction{ExampleID: "ex-77", Kind: PredictionKind, Teacher: "teacher-a", Output: map[string]any{}}, "in no admitted export"},
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			_, err := NewPredictionSet(m, []Prediction{tc.p})
+			_, err := NewPredictionSet(m, exports, []Prediction{tc.p})
 			if !errors.Is(err, ErrRefused) || !strings.Contains(err.Error(), tc.want) {
 				t.Fatalf("got %v, want %s", err, tc.want)
 			}
@@ -298,13 +393,21 @@ func TestComparisonNamesEveryTeacherOnOnePicture(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Join(c.Teachers, ",") != "teacher-a,teacher-b" {
-		t.Fatalf("teachers %v", c.Teachers)
+	if len(c.Teachers) != 2 || c.Teachers[0].Alias != "teacher-a" || c.Teachers[1].Alias != "teacher-b" || c.Teachers[1].Identity.Model != "big-b" {
+		t.Fatalf("teachers %+v", c.Teachers)
 	}
 	if _, err := NewComparison(picture, "evaluation:1", []Manifest{a, b}, entries[:4]); err == nil || !strings.Contains(err.Error(), "exactly one incumbent") {
 		t.Fatalf("%v", err)
 	}
-	if _, err := NewComparison(picture, "evaluation:1", []Manifest{a, b}, append(entries[:2], entries[2], entries[4])); err == nil || !strings.Contains(err.Error(), `teacher "teacher-b" has no entry`) {
+	withoutB := append(append([]Entry{}, entries[:3]...), entries[4])
+	if _, err := NewComparison(picture, "evaluation:1", []Manifest{a, b}, withoutB); err == nil || !strings.Contains(err.Error(), `teacher "teacher-b" has no entry`) {
+		t.Fatalf("%v", err)
+	}
+	// One alias naming two identities is not one teacher.
+	aliased := fixture()
+	aliased.Teacher.Eligible[0].Identity = identity("other-vendor", "different", EgressLoopback)
+	aliased.Teacher.Eligible[0].Identity.CacheIdentity = "other"
+	if _, err := NewComparison(picture, "evaluation:1", []Manifest{a, aliased}, entries); err == nil || !strings.Contains(err.Error(), "names two identities") {
 		t.Fatalf("%v", err)
 	}
 	narrow := fixture()

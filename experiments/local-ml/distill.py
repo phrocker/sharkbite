@@ -49,6 +49,31 @@ def digest(value):
     return hashlib.sha256(canonical(value).encode()).hexdigest()
 
 
+def _expect(condition, message):
+    if not condition:
+        raise Refused(message)
+
+
+def _shape(manifest):
+    """Refuse a manifest whose shape is not the contract's before any field is trusted."""
+    _expect(isinstance(manifest, dict), 'manifest is not an object')
+    for role in ('teacher', 'base'):
+        selection = manifest.get(role)
+        _expect(isinstance(selection, dict) and isinstance(selection.get('eligible'), list) and selection['eligible'], role + ' selection shape')
+        _expect(isinstance(selection.get('rule'), dict) and isinstance(selection.get('chosen'), str), role + ' selection shape')
+        for c in selection['eligible']:
+            _expect(isinstance(c, dict) and isinstance(c.get('identity'), dict) and isinstance(c.get('measurements'), list), role + ' candidate shape')
+            _expect(all(isinstance(m, dict) for m in c['measurements']), role + ' measurement shape')
+    data = manifest.get('data')
+    _expect(isinstance(data, dict) and isinstance(data.get('tasks'), list) and data['tasks'], 'data selection shape')
+    _expect(all(isinstance(t, dict) and isinstance(t.get('cohort_ids'), list) and isinstance(t.get('label_policy_ids'), list) for t in data['tasks']), 'task selection shape')
+    _expect(isinstance(data.get('generation_parameters'), dict), 'generation parameters must be an object')
+    _expect(isinstance(data.get('held_out_example_ids'), list), 'held-out ids must be a list')
+    _expect(isinstance(manifest.get('exports'), list) and all(isinstance(e, dict) for e in manifest['exports']), 'exports shape')
+    epochs = data['generation_parameters'].get('epochs', 1)
+    _expect(type(epochs) is int and epochs >= 1, 'epochs must be a positive integer')
+
+
 def load_manifest(path, expected_pin):
     """Read the manifest once and refuse it unless its raw bytes hash to the authorized pin."""
     raw = Path(path).read_bytes()
@@ -57,10 +82,11 @@ def load_manifest(path, expected_pin):
     if hashlib.sha256(raw).hexdigest() != expected_pin:
         raise Refused('manifest pin does not match the authorized pin')
     manifest = json.loads(raw)
-    if manifest.get('schema') != 1 or manifest.get('kind') != KIND:
+    if not isinstance(manifest, dict) or manifest.get('schema') != 1 or manifest.get('kind') != KIND:
         raise Refused('not a distillation manifest')
     if digest(manifest) != expected_pin:
         raise Refused('manifest is not in canonical form; its pin is not its content address')
+    _shape(manifest)
     for role in ('teacher', 'base'):
         selection = manifest[role]
         chosen = [c for c in selection['eligible'] if c['alias'] == selection['chosen']]
@@ -91,22 +117,23 @@ def authorize_export(manifest, cohort_id, dataset_path, manifest_path):
     pin = next((e for e in manifest['exports'] if e['cohort_id'] == cohort_id), None)
     if pin is None:
         raise Refused('cohort %r is not admitted by the manifest' % cohort_id)
+    # One verified read: every identity below comes from the pinned bytes
+    # authorized_manifest.load hashed, never from a second unverified read.
     data, authorization = authorized_manifest.load(dataset_path, manifest_path, pin['manifest_sha256'])
-    export_manifest = json.loads(Path(manifest_path).read_bytes())
-    if export_manifest['cohort_id'] != cohort_id:
-        raise Refused('export names cohort %r, not %r' % (export_manifest['cohort_id'], cohort_id))
-    task = task_selection(manifest, export_manifest['task_id'])
+    if authorization['cohort_id'] != cohort_id:
+        raise Refused('export names cohort %r, not %r' % (authorization['cohort_id'], cohort_id))
+    task = task_selection(manifest, authorization['task_id'])
     if task is None:
-        raise Refused('task %r is outside the selection' % export_manifest['task_id'])
+        raise Refused('task %r is outside the selection' % authorization['task_id'])
     if cohort_id not in task['cohort_ids']:
         raise Refused('cohort %r is not admitted for task %r' % (cohort_id, task['task_id']))
-    if export_manifest['label_policy_id'] not in task['label_policy_ids']:
-        raise Refused('label policy %r is not admitted for task %r' % (export_manifest['label_policy_id'], task['task_id']))
+    if authorization['label_policy_id'] not in task['label_policy_ids']:
+        raise Refused('label policy %r is not admitted for task %r' % (authorization['label_policy_id'], task['task_id']))
     held = set(manifest['data']['held_out_example_ids'])
     leaked = sorted(r['id'] for r in data['rows'] if r['id'] in held)
     if leaked:
         raise Refused('export for cohort %r contains held-out example %r' % (cohort_id, leaked[0]))
-    return data, dict(authorization, task_id=task['task_id'], label_policy_id=export_manifest['label_policy_id'])
+    return data, authorization
 
 
 def teacher_sign(rows, manifest):
@@ -142,6 +169,8 @@ def record_predictions(manifest, predictions):
             raise Refused('held-out example %r was shown to the teacher' % p['example_id'])
         if p['example_id'] in seen or not isinstance(p['output'], dict):
             raise Refused('duplicate or malformed prediction for %r' % p['example_id'])
+        if p['output'].get('label') not in manifest['_labels']:
+            raise Refused('teacher output for %r carries label %r outside the task labels' % (p['example_id'], p['output'].get('label')))
         seen.add(p['example_id'])
     return dict(schema=1, kind=PREDICTIONS_KIND, manifest_pin=manifest['_pin'], teacher=manifest['teacher']['chosen'],
                 teacher_egress=chosen_identity(manifest, 'teacher')['egress'],
@@ -153,7 +182,11 @@ def student_perceptron(rows, predictions, manifest, parameters):
     labels = manifest['_labels']
     by_id = {p['example_id']: p['output']['label'] for p in predictions}
     width = len(rows[0]['features'])
-    epochs = int(parameters.get('epochs', 10))
+    if width == 0 or any(len(r['features']) != width for r in rows):
+        raise Refused('rows disagree on feature width or have none')
+    epochs = parameters.get('epochs', 10)
+    if type(epochs) is not int or epochs < 1:
+        raise Refused('epochs must be a positive integer')
     weights, bias = [0.0] * width, 0.0
     total_w, total_b = [0.0] * width, 0.0
     steps = 0
@@ -213,9 +246,14 @@ def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teach
     if not rows:
         raise Refused('no training rows inside the selection')
     requested_parameters = manifest['data']['generation_parameters']
+    unrequested = sorted(set(parameters or {}) - set(requested_parameters))
+    if unrequested:
+        raise Refused('parameter %r was not requested by the manifest; a receipt carries no new keys' % unrequested[0])
     actual_parameters = dict(requested_parameters, **(parameters or {}))
-    deviations = sorted('%s: requested %r, actual %r' % (k, requested_parameters.get(k), v)
-                        for k, v in actual_parameters.items() if requested_parameters.get(k) != v)
+    # Deviations are the recomputed differences, in the structure the Go
+    # verifier recomputes: parameter, requested, actual. Never prose.
+    deviations = [dict(parameter=k, requested=requested_parameters[k], actual=actual_parameters[k])
+                  for k in sorted(requested_parameters) if canonical(requested_parameters[k]) != canonical(actual_parameters[k])]
     generate = teacher_command(teacher_cmd) if teacher_cmd else TEACHERS[teacher]
     predictions = record_predictions(manifest, generate(rows, manifest))
     if {p['example_id'] for p in predictions['predictions']} != {r['id'] for r in rows}:
@@ -239,7 +277,9 @@ def distill(manifest_path, manifest_pin, exports, output_dir, *, executor, teach
                        requested_teacher=chosen_identity(manifest, 'teacher'), actual_teacher=chosen_identity(manifest, 'teacher'),
                        requested_base=chosen_identity(manifest, 'base'), actual_base=chosen_identity(manifest, 'base'),
                        runtime_identities=runtime, executor=executor, bundle_digest=bundle_digest,
-                       teacher_predictions_id=predictions_id, held_out_excluded_count=len(manifest['data']['held_out_example_ids']),
+                       # Held-out rows never reach the trainer: an export containing one is
+                       # refused above, so nothing is excluded here and the count says so.
+                       teacher_predictions_id=predictions_id, held_out_excluded_count=0,
                        trained_example_count=len(rows), status='completed', deviations=deviations,
                        candidate_only=True, improvement_claimed=False, evaluation_performed_by='',
                        authorized_exports=authorizations)
@@ -279,7 +319,8 @@ def main(argv=None):
                           teacher=args.teacher, student=args.student, teacher_cmd=args.teacher_command, parameters=parameters)
     except Refused as error:
         parser.exit(3, 'distillation refused: %s\n' % error)
-    except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError, KeyError) as error:
+    except (ValueError, OSError, RuntimeError, subprocess.CalledProcessError, KeyError, TypeError, AttributeError,
+            IndexError, ZeroDivisionError, StopIteration) as error:
         parser.exit(1, 'distillation failed: %s\n' % error)
     print(json.dumps(dict(candidate_only=True, bundle_digest=receipt['bundle_digest'], status=receipt['status']), sort_keys=True))
 

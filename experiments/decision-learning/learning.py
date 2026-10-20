@@ -214,7 +214,7 @@ def bundle_manifest(files):
     for f in files:
         if set(f) != {'path', 'role', 'size', 'sha256'}:
             raise ValueError('bundle file needs path, role, size, sha256')
-        if not f['path'] or f['path'] == 'bundle.json' or f['path'].startswith('/') or '..' in f['path'].split('/') or f['path'] in paths:
+        if _bad_bundle_path(f['path']) or f['path'] in paths:
             raise ValueError('invalid bundle path ' + repr(f['path']))
         if f['role'] not in BUNDLE_ROLES or f['role'] in roles:
             raise ValueError('invalid or repeated bundle role ' + repr(f['role']))
@@ -256,8 +256,15 @@ def candidate_artifact(candidate, evaluation, manifest, runtime_digest):
                 bundle_digest=bundle_digest(manifest), bundle_files=[dict(f) for f in manifest['files']])
 
 
+def _bad_bundle_path(path):
+    """The same rule as Go's validatePath: relative, clean, forward slashes, not the manifest."""
+    if not isinstance(path, str) or not path or path == 'bundle.json' or path.startswith('/') or '\\' in path:
+        return True
+    return any(segment in ('', '.', '..') for segment in path.split('/'))
+
+
 def _task_ids(candidate):
-    tasks = set(candidate.get('task_ids') or [])
+    tasks = {t for t in (candidate.get('task_ids') or []) if isinstance(t, str) and t}
     if candidate.get('task_id'):
         tasks.add(candidate['task_id'])
     return sorted(tasks)

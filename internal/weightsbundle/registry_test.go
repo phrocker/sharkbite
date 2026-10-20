@@ -64,10 +64,13 @@ func TestRegistryPromoteRollbackAndReopen(t *testing.T) {
 	if *rollback.BundleDigest != *first.BundleDigest || rollback.ArtifactID != first.ArtifactID {
 		t.Fatal("rollback did not restore the prior bundle")
 	}
-	if _, err := r.Rollback(ctx, first.ID, approval); err == nil || !strings.Contains(err.Error(), "not bound") {
+	// The approval names a release that is no longer active: a stale
+	// pointer is a conflict the caller re-reads, not an unbound approval.
+	if _, err := r.Rollback(ctx, first.ID, approval); !errors.Is(err, ErrConflict) {
 		t.Fatalf("reused approval: %v", err)
 	}
-	if _, err := r.Rollback(ctx, "unknown", approval); !errors.Is(err, ErrRefused) {
+	fresh, _ := NewRollbackApproval(rollback.ID, "unknown", "owner")
+	if _, err := r.Rollback(ctx, "unknown", fresh); !errors.Is(err, ErrRefused) {
 		t.Fatalf("unknown prior: %v", err)
 	}
 	history := r.History()
@@ -240,6 +243,98 @@ func TestWithdrawSourceMarksReleasesIneligible(t *testing.T) {
 	}
 	if reopened.EligibilityOf(first.ID).Status != EligibilityWithdrawnSource || len(reopened.Events()) != 2 {
 		t.Fatal("events not replayed")
+	}
+}
+
+// A release record that was written but never pointed at (a lost pointer
+// race, a crash between record and pointer) is an orphan: rollback must not
+// make it active.
+func TestRollbackRefusesOrphanRelease(t *testing.T) {
+	ctx := context.Background()
+	c := loadChain(t)
+	store := memory.New()
+	r, _ := OpenRegistry(ctx, store, "o")
+	first, err := r.Promote(ctx, chainInput(c), chainLineage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	orphan := c.release(t, "second_release")
+	record, _ := orphan.Record()
+	encoded, _ := EncodeRecord(record)
+	w, err := store.CreateExclusive(ctx, "o/releases/"+orphan.ID+".json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	w.Write(encoded)
+	w.Close()
+	reopened, err := OpenRegistry(ctx, store, "o")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := reopened.Get(orphan.ID); !ok {
+		t.Fatal("orphan record not loaded")
+	}
+	approval, _ := NewRollbackApproval(first.ID, orphan.ID, "owner")
+	if _, err := reopened.Rollback(ctx, orphan.ID, approval); !errors.Is(err, ErrRefused) || !strings.Contains(err.Error(), "never active") {
+		t.Fatalf("orphan rollback: %v", err)
+	}
+	if active, _ := reopened.Active(); active.ID != first.ID {
+		t.Fatal("pointer moved")
+	}
+}
+
+// A gap in the event log is corruption, not a shorter history: reopening
+// refuses it rather than recording every later event against a stale
+// sequence.
+func TestReopenRefusesEventLogGap(t *testing.T) {
+	ctx := context.Background()
+	c := loadChain(t)
+	store := memory.New()
+	r, _ := OpenRegistry(ctx, store, "g")
+	first, err := r.Promote(ctx, chainInput(c), chainLineage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 2; i++ {
+		if err := r.RecordEvent(ctx, Event{Kind: EventLoadFailure, ReleaseID: first.ID, Detail: "x"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	store.Delete("g/events/" + sequenceName(1))
+	if _, err := OpenRegistry(ctx, store, "g"); err == nil || !strings.Contains(err.Error(), "out of sequence") {
+		t.Fatalf("gap accepted: %v", err)
+	}
+}
+
+// A withdrawal recorded before a release arrives still applies: promoting
+// or importing a release whose lineage includes the withdrawn source is
+// refused instead of born eligible.
+func TestWithdrawnSourceRefusesLaterReleases(t *testing.T) {
+	ctx := context.Background()
+	c := loadChain(t)
+	store := memory.New()
+	r, _ := OpenRegistry(ctx, store, "w2")
+	first, err := r.Promote(ctx, chainInput(c), chainLineage)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := r.WithdrawSource(ctx, "src-2", time.Now()); err != nil {
+		t.Fatal(err)
+	}
+	in := chainInput(c)
+	in.Predecessor = &first
+	if _, err := r.Promote(ctx, in, chainLineage); !errors.Is(err, ErrIneligible) {
+		t.Fatalf("promotion over a withdrawn source: %v", err)
+	}
+	imported := c.release(t, "second_release")
+	if _, err := r.ImportRelease(ctx, imported, DatasetLineage{DatasetManifestSHA256: *imported.DatasetManifestSHA256, SourceIDs: []string{"src-2"}}); !errors.Is(err, ErrIneligible) {
+		t.Fatalf("import over a withdrawn source: %v", err)
+	}
+	if _, err := r.ImportRelease(ctx, imported, DatasetLineage{DatasetManifestSHA256: strings.Repeat("f", 64)}); !errors.Is(err, ErrRefused) {
+		t.Fatalf("import with a lineage pin that is not the release's: %v", err)
+	}
+	if active, _ := r.Active(); active.ID != first.ID || len(r.History()) != 1 {
+		t.Fatal("registry advanced")
 	}
 }
 

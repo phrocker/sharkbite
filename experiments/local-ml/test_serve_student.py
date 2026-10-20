@@ -65,6 +65,30 @@ class ServeStudentTests(unittest.TestCase):
         self.assertEqual((status, body['status']), (200, 'abstained'))
         self.assertIn('outside the student task', body['reason'])
 
+    def test_malformed_requests_are_refused_not_crashed(self):
+        base = self.start()
+        good = dict(model='student-v1', release_id='release:7', bundle_digest=self.digest, state=dict(features=[2.0, 1.0]),
+                    questions=dict(risk=dict(type='choice', options=['no', 'yes'])))
+        for body in ([], dict(good, questions=[1]), dict(good, questions=dict(risk='x')), dict(good, questions=dict(risk=dict(type='choice', options=[[1], [2]])))):
+            self.assertEqual(self.call(base, '/v1/predict', body)[0], 400, body)
+        nan = b'{"model":"student-v1","release_id":"release:7","bundle_digest":"%s","state":{"features":[NaN,1.0]},"questions":{}}' % self.digest.encode()
+        for raw in (b'null', nan):
+            req = urllib.request.Request(base + '/v1/predict', data=raw, headers={'Content-Type': 'application/json'})
+            with self.assertRaises(urllib.error.HTTPError) as caught:
+                urllib.request.urlopen(req)
+            self.assertEqual(caught.exception.code, 400, raw)
+        for length in (b'abc', b'1e2'):
+            req = urllib.request.Request(base + '/v1/predict', data=b'{}', headers={'Content-Type': 'application/json', 'Content-Length': length})
+            try:
+                with self.assertRaises(urllib.error.HTTPError) as caught:
+                    urllib.request.urlopen(req)
+                self.assertEqual(caught.exception.code, 400)
+            except (ValueError, urllib.error.URLError):
+                pass  # the client library itself refuses to send a non-numeric length
+        self.assertEqual(self.call(base, '/health')[0], 200)
+        self.assertEqual(self.call(base, '/v1/predict', good)[0], 200)
+        self.assertEqual(serve_student.handler_for({}).timeout, serve_student.SOCKET_TIMEOUT_SECONDS)
+
     def test_bearer_token_when_configured(self):
         base = self.start(token='secret')
         self.assertEqual(self.call(base, '/health')[0], 401)

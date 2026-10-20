@@ -11,25 +11,42 @@ import (
 	"testing"
 	"time"
 
+	decisionapi "github.com/phrocker/shoal-oss/pkg/decision/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
 // learningStub records calls and answers with fixed JSON or an error.
 type learningStub struct {
-	calls atomic.Int32
-	last  string
-	body  string
-	err   error
+	calls  atomic.Int32
+	last   string
+	body   string
+	err    error
+	delay  time.Duration
+	actor  string
+	reply_ json.RawMessage
 }
 
 func (s *learningStub) reply(name string, body json.RawMessage) (json.RawMessage, error) {
 	s.calls.Add(1)
 	s.last, s.body = name, string(body)
+	if s.delay > 0 {
+		time.Sleep(s.delay)
+	}
 	if s.err != nil {
 		return nil, s.err
 	}
+	if s.reply_ != nil {
+		return s.reply_, nil
+	}
 	return json.RawMessage(`{"ok":"` + name + `"}`), nil
+}
+
+func (s *learningStub) SubmitPredictions(ctx context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
+	if actor, ok := decisionapi.LearningActorFrom(ctx); ok {
+		s.actor = actor.Actor
+	}
+	return s.reply("predictions:"+pin, r)
 }
 func (s *learningStub) Datasets(context.Context) (json.RawMessage, error) {
 	return s.reply("datasets", nil)
@@ -62,7 +79,11 @@ func (s *learningStub) SubmitEvaluation(_ context.Context, b json.RawMessage) (j
 func (s *learningStub) Releases(context.Context) (json.RawMessage, error) {
 	return s.reply("releases", nil)
 }
-func (s *learningStub) Promote(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
+func (s *learningStub) Promote(ctx context.Context, b json.RawMessage) (json.RawMessage, error) {
+	s.actor = ""
+	if actor, ok := decisionapi.LearningActorFrom(ctx); ok {
+		s.actor = actor.Actor
+	}
 	return s.reply("promote", b)
 }
 func (s *learningStub) Rollback(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
@@ -82,9 +103,13 @@ func (s *learningStub) ImportBundle(_ context.Context, b json.RawMessage) (json.
 }
 
 func learningFixture(t *testing.T) (*Handler, *learningStub, *auth.Authority, auth.Decision) {
+	return learningFixtureWith(t, []auth.Operation{auth.OperationRead, auth.OperationLearningWrite}, time.Hour)
+}
+
+func learningFixtureWith(t *testing.T, operations []auth.Operation, lifetime time.Duration) (*Handler, *learningStub, *auth.Authority, auth.Decision) {
 	t.Helper()
 	a := auth.NewAuthority()
-	d, e := auth.NewDecision(auth.DecisionConfig{Subject: "subject", Actor: "actor", AuthorizationDomain: []byte("domain"), AllowedOperations: []auth.Operation{auth.OperationRead}, PermittedSourceIDs: [][]byte{[]byte("source")}, PermittedPolicyIDs: [][]byte{[]byte("policy")}, PolicyGeneration: 1, AuthenticationExpires: time.Now().Add(time.Hour), RequestID: "request"})
+	d, e := auth.NewDecision(auth.DecisionConfig{Subject: "subject", Actor: "actor", AuthorizationDomain: []byte("domain"), AllowedOperations: operations, PermittedSourceIDs: [][]byte{[]byte("source")}, PermittedPolicyIDs: [][]byte{[]byte("policy")}, PolicyGeneration: 1, AuthenticationExpires: time.Now().Add(lifetime), RequestID: "request"})
 	if e != nil {
 		t.Fatal(e)
 	}
@@ -126,6 +151,7 @@ func TestLearningRoutesDispatchToTheProvider(t *testing.T) {
 		{"GET", "/api/v1/learning/jobs", "", "jobs"},
 		{"POST", "/api/v1/learning/jobs", `{"schema":1}`, "submit-job"},
 		{"GET", "/api/v1/learning/jobs/pin1", "", "job:pin1"},
+		{"POST", "/api/v1/learning/jobs/pin1/predictions", `{"schema":1}`, "predictions:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/receipt", `{"schema":1}`, "receipt:pin1"},
 		{"GET", "/api/v1/learning/candidates", "", "candidates"},
 		{"POST", "/api/v1/learning/candidates", `{"candidate":{}}`, "submit-candidate"},
@@ -152,6 +178,10 @@ func TestLearningRoutesDispatchToTheProvider(t *testing.T) {
 			t.Fatal("learning responses must not be cached")
 		}
 	}
+	// Every write carries the authenticated actor, never a name from the body.
+	if stub.actor != "actor" {
+		t.Fatalf("actor bound as %q", stub.actor)
+	}
 	var meta struct {
 		Capabilities map[string]bool `json:"capabilities"`
 	}
@@ -159,6 +189,53 @@ func TestLearningRoutesDispatchToTheProvider(t *testing.T) {
 	h.ServeHTTP(w, learningRequest("GET", "/api/v1/meta", ""))
 	if err := json.Unmarshal(w.Body.Bytes(), &meta); err != nil || !meta.Capabilities["decision_learning"] {
 		t.Fatalf("capability not advertised: %d %s", w.Code, w.Body.String())
+	}
+}
+
+// A principal without learning_write may read everything and write nothing;
+// the refusal is a 403 that names the operation, and the provider is never
+// reached.
+func TestLearningWritesRequireTheOperation(t *testing.T) {
+	h, stub, _, _ := learningFixtureWith(t, []auth.Operation{auth.OperationRead}, time.Hour)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, learningRequest("GET", "/api/v1/learning/releases", ""))
+	if w.Code != 200 {
+		t.Fatalf("read refused: %d %s", w.Code, w.Body.String())
+	}
+	before := stub.calls.Load()
+	for _, path := range []string{"/api/v1/learning/releases/promote", "/api/v1/learning/jobs", "/api/v1/learning/bundles/import", "/api/v1/learning/datasets/exports"} {
+		w := httptest.NewRecorder()
+		h.ServeHTTP(w, learningRequest("POST", path, `{"owner":"anyone"}`))
+		if w.Code != 403 || !strings.Contains(w.Body.String(), "learning_write") {
+			t.Fatalf("%s: %d %s", path, w.Code, w.Body.String())
+		}
+	}
+	if stub.calls.Load() != before {
+		t.Fatal("provider reached by an unauthorized write")
+	}
+}
+
+// A decision that expires while the provider works refuses the response:
+// the fingerprint after the call must be the fingerprint before it.
+func TestLearningRefusesResponseWhenAuthenticationExpiresMidCall(t *testing.T) {
+	h, stub, _, _ := learningFixtureWith(t, []auth.Operation{auth.OperationRead, auth.OperationLearningWrite}, 80*time.Millisecond)
+	stub.delay = 150 * time.Millisecond
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, learningRequest("GET", "/api/v1/learning/releases", ""))
+	if w.Code != 401 || strings.Contains(w.Body.String(), `"ok"`) {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+}
+
+// An oversized or invalid provider response is a permanent failure the
+// console must not describe as the service being unavailable.
+func TestLearningOversizedResponseIsNotAnOutage(t *testing.T) {
+	h, stub, _, _ := learningFixture(t)
+	stub.reply_ = json.RawMessage(`{"big":"` + strings.Repeat("x", 65<<20) + `"}`)
+	w := httptest.NewRecorder()
+	h.ServeHTTP(w, learningRequest("GET", "/api/v1/learning/jobs", ""))
+	if w.Code != 500 || !strings.Contains(w.Body.String(), "exceeds this host's response limit") || strings.Contains(w.Body.String(), "unavailable") {
+		t.Fatalf("%d %s", w.Code, w.Body.String()[:min(200, w.Body.Len())])
 	}
 }
 

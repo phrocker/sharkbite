@@ -211,10 +211,15 @@
               <label for="learning-job-parameters">Generation parameters JSON<textarea id="learning-job-parameters" required spellcheck="false" placeholder='{"temperature":0.0}'></textarea></label>
               <button type="submit">Submit manifest</button>
             </form>
+            <form id="learning-predictions-form" class="stack decision-secondary-form">
+              <label for="learning-predictions-pin">Manifest pin<input id="learning-predictions-pin" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-predictions-json">Teacher predictions JSON (the trainer's teacher-predictions.json)<textarea id="learning-predictions-json" required spellcheck="false"></textarea></label>
+              <button type="submit">Record teacher predictions</button>
+            </form>
             <form id="learning-receipt-form" class="stack decision-secondary-form">
               <label for="learning-receipt-pin">Manifest pin<input id="learning-receipt-pin" required autocomplete="off" spellcheck="false"></label>
               <label for="learning-receipt-json">Training receipt JSON<textarea id="learning-receipt-json" required spellcheck="false"></textarea></label>
-              <button type="submit">Submit receipt</button>
+              <button type="submit">Submit receipt (after its predictions)</button>
             </form>
           </section>
           <section class="decision-card" aria-labelledby="learning-candidates-heading">
@@ -239,12 +244,12 @@
             <form id="learning-promote-form" class="stack decision-secondary-form">
               <label for="learning-promote-candidate">Candidate ID<input id="learning-promote-candidate" required autocomplete="off" spellcheck="false"></label>
               <label for="learning-promote-evaluation">Evaluation ID<input id="learning-promote-evaluation" autocomplete="off" spellcheck="false" placeholder="required by the record; a promotion without it is refused"></label>
-              <label for="learning-promote-owner">Approval owner<input id="learning-promote-owner" required autocomplete="off" spellcheck="false"></label>
+              <p class="muted">The approval is sealed against your authenticated identity; no owner is typed here.</p>
               <button type="submit">Promote with bound approval</button>
             </form>
             <form id="learning-rollback-form" class="stack decision-secondary-form">
               <label for="learning-rollback-prior">Prior release ID<input id="learning-rollback-prior" required autocomplete="off" spellcheck="false"></label>
-              <label for="learning-rollback-owner">Approval owner<input id="learning-rollback-owner" required autocomplete="off" spellcheck="false"></label>
+              <p class="muted">The rollback approval is sealed against your authenticated identity.</p>
               <button type="submit">Roll back</button>
             </form>
           </section>
@@ -265,7 +270,8 @@
             </form>
             <form id="learning-bundle-import-form" class="stack decision-secondary-form">
               <label for="learning-bundle-import-name">Bundle name<input id="learning-bundle-import-name" required autocomplete="off" spellcheck="false"></label>
-              <label for="learning-bundle-import-importer">Importer identity<input id="learning-bundle-import-importer" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-bundle-import-index">Expected index digest (quoted from the exporting side; optional)<input id="learning-bundle-import-index" autocomplete="off" spellcheck="false" placeholder="64-hex index digest"></label>
+              <p class="muted">The import is recorded against your authenticated identity.</p>
               <button type="submit">Verify and import</button>
             </form>
           </section>

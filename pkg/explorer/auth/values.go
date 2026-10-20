@@ -127,6 +127,13 @@ const (
 	// It implies nothing either: an admin cannot enroll or submit as a
 	// collector, and cannot provision its own principal as one.
 	OperationCollectorAdmin Operation = "collector_admin"
+	// OperationLearningWrite is permission to change the learning loop's
+	// records: request exports, submit jobs, receipts, candidates and
+	// evaluations, promote or roll back a release, export or import an
+	// offline bundle. Every approval those writes seal is bound to the
+	// authenticated actor, never to a name typed into the request. Reads
+	// need only authentication.
+	OperationLearningWrite Operation = "learning_write"
 	// OperationApprovalSweep is permission to write down that a held
 	// approval request (#451) can no longer progress: to move a request
 	// whose window has closed to expired, and one whose target, policy
@@ -171,7 +178,8 @@ func (o Operation) Validate() error {
 		OperationAnalyticsRead, OperationTeamOverviewRead,
 		OperationWorkspaceSettingsRead,
 		OperationWorkspaceSettingsWrite,
-		OperationCollectorAdmin, OperationApprovalSweep:
+		OperationCollectorAdmin, OperationApprovalSweep,
+		OperationLearningWrite:
 		return nil
 	default:
 		return shoal.NewError(shoal.ErrorInvalidArgument, "unknown authorization operation")
@@ -212,6 +220,10 @@ const (
 	ServiceRoleTeamOverview           ServiceRole = "team_overview"
 	ServiceRoleWorkspaceSettingsRead  ServiceRole = "workspace_settings_read"
 	ServiceRoleWorkspaceSettingsWrite ServiceRole = "workspace_settings_write"
+	// ServiceRoleLearningWrite is the ceiling of a service that drives the
+	// learning loop's writes (a trainer submitting receipts, an importer).
+	// It grants learning_write and nothing else.
+	ServiceRoleLearningWrite ServiceRole = "learning_write"
 )
 
 // Validate rejects an empty or unknown service role.
@@ -226,7 +238,8 @@ func (r ServiceRole) Validate() error {
 		ServiceRoleSubscription, ServiceRoleEventPublication,
 		ServiceRoleAnalytics, ServiceRoleTeamOverview,
 		ServiceRoleWorkspaceSettingsRead,
-		ServiceRoleWorkspaceSettingsWrite:
+		ServiceRoleWorkspaceSettingsWrite,
+		ServiceRoleLearningWrite:
 		return nil
 	default:
 		return shoal.NewError(shoal.ErrorInvalidArgument, "unknown service role")
@@ -308,6 +321,9 @@ func (r ServiceRole) Allows(operation Operation) bool {
 			operation == OperationValidate
 	case ServiceRoleWorkspaceSettingsWrite:
 		return operation == OperationWorkspaceSettingsWrite ||
+			operation == OperationValidate
+	case ServiceRoleLearningWrite:
+		return operation == OperationLearningWrite ||
 			operation == OperationValidate
 	default:
 		return false

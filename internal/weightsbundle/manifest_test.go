@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -128,8 +129,10 @@ func TestDecodeManifestIsStrict(t *testing.T) {
 	}
 	for _, raw := range []string{
 		strings.Replace(string(encoded), `"files"`, `"files":[],"x"`, 1),
-		strings.Replace(string(encoded), `"path"`, `"path":"q","pathx"`, 1),
-		strings.Replace(string(encoded), `"size":`, `"size":1.5,"sizex":`, 1),
+		strings.Replace(string(encoded), `"path":"model.json"`, `"path":"model.json","path":"model.json"`, 1),
+		strings.Replace(string(encoded), `"size":`, `"size":1.5,"size":`, 1),
+		regexp.MustCompile(`"size":[0-9]+`).ReplaceAllString(string(encoded), `"size":1.5`),
+		regexp.MustCompile(`"size":[0-9]+`).ReplaceAllString(string(encoded), `"size":"5"`),
 		string(encoded) + "{}",
 	} {
 		if _, err := DecodeManifest([]byte(raw)); err == nil {
