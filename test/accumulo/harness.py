@@ -253,6 +253,18 @@ def run_compactor_smoke() -> None:
         ) from exc
 
 
+def run_tserver_smoke(mode: str) -> None:
+    timeout = int(os.environ.get("SHOAL_ACCUMULO_TSERVER_TIMEOUT", "600"))
+    command = client_command(mode)
+    print("+", subprocess.list2cmdline(command), flush=True)
+    try:
+        subprocess.run(command, text=True, check=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"tserver {mode} smoke did not complete within {timeout} seconds"
+        ) from exc
+
+
 def wait_ready() -> None:
     timeout = int(os.environ.get("SHOAL_ACCUMULO_READY_TIMEOUT", "300"))
     deadline = time.monotonic() + timeout
@@ -377,8 +389,8 @@ def _run_tserver_role() -> None:
     _start_role_base()
     run(compose_services(SHOAL_TSERVER))
     _wait_mode("shoal-ready")
-    run(client_command("tserver"))
-    run(client_command("recovery-prepare"))
+    run_tserver_smoke("tserver")
+    run_tserver_smoke("recovery-prepare")
     run(compose_command("kill", "--signal", "KILL", SHOAL_TSERVER))
     _wait_mode("shoal-absent")
     run(
@@ -392,7 +404,7 @@ def _run_tserver_role() -> None:
         )
     )
     _wait_mode("shoal-ready")
-    run(client_command("recovery-verify"))
+    run_tserver_smoke("recovery-verify")
     print(
         "SHOAL_EVIDENCE tserver=pass service-lock=verified assignment=verified "
         "java-ingest=verified continuation=verified minc=verified wal-recovery=verified "
