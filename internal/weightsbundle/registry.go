@@ -506,6 +506,9 @@ func (r *Registry) applyEvent(ev Event) {
 func strictDecode(raw []byte, v any) error {
 	dec := json.NewDecoder(bytes.NewReader(raw))
 	dec.DisallowUnknownFields()
+	// Free-form members keep their number literals so an integer never
+	// re-encodes as a float and changes a content address.
+	dec.UseNumber()
 	if err := dec.Decode(v); err != nil {
 		return err
 	}
@@ -560,4 +563,17 @@ func SourcesFromExportManifest(manifest []byte) (DatasetLineage, error) {
 // ParseSequence is exported for operators inspecting pointer files.
 func ParseSequence(name string) (int64, error) {
 	return strconv.ParseInt(strings.TrimSuffix(path.Base(name), ".json"), 10, 64)
+}
+
+// ResolveForTask resolves the active release for a request on task and
+// refuses a release whose recorded scope does not include it.
+func (r *Registry) ResolveForTask(task string) (Release, error) {
+	rel, err := r.Resolve()
+	if err != nil {
+		return Release{}, err
+	}
+	if !rel.ServesTask(task) {
+		return Release{}, fmt.Errorf("%w: release %s is scoped to %v, not task %q", ErrRefused, rel.ID, rel.TaskIDs, task)
+	}
+	return rel, nil
 }
