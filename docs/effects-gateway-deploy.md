@@ -1097,8 +1097,11 @@ those never see this refusal; `helm upgrade --dry-run=server` does.
 
 The target client reaches one host and one port. Each connection resolves the
 name once and dials the checked address as a literal, and a `Control` hook
-re-checks the socket's peer, so DNS rebinding cannot swap the address between
-check and connect. Every resolved address must pass, not merely one.
+re-checks that destination before connecting, so DNS rebinding cannot swap the
+address between check and connect. Every resolved address must pass, not merely one.
+For a target named `localhost` (with or without a trailing dot), every resolved
+address must also be loopback. Its routes declare no `egresses-content` effect,
+so a DNS or hosts-file change cannot turn that declaration into remote egress.
 
 Always refused: `0.0.0.0/8`, `169.254.0.0/16`, `fe80::/10`, `fd00:ec2::254`,
 `100.100.100.200`, `168.63.129.16`, `192.0.0.192`, multicast, reserved and
