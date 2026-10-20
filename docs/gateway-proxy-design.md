@@ -1881,10 +1881,11 @@ hour of work:
 - **Does the descriptor heartbeat or not?** The second blocker. Either the
   gateway registers once out-of-band with a long lease and its liveness signal
   means nothing, or the generation pin has to tolerate a heartbeated descriptor.
-- **How is cancellation expressed for an action with `EffectPossible` set?** The
-  current behaviour records "cancelled" for an effect that happened. The likely
-  answer is to refuse cancel outright there and add an abandon transition that
-  asserts nothing about whether the effect occurred.
+- **How should an operator abandon a claim with a possible external effect?**
+  `Cancel` now refuses a lapsed claimed action with `EffectPossible` set, so it
+  cannot record "cancelled" for an effect that may already have happened. A
+  distinct abandon transition is still needed to stop retries without asserting
+  whether the effect occurred.
 - **Is a replay transition needed that preserves the action ID?** Without one, a
   deliberate operator retry has no deduplication protection, at the moment it
   matters most.

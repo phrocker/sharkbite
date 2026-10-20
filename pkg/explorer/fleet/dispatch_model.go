@@ -128,6 +128,7 @@ var (
 	ErrClaimLost            = errors.New("fleet dispatch: claim lost")
 	ErrActionTerminal       = errors.New("fleet dispatch: action is terminal")
 	ErrExecutionAmbiguous   = errors.New("fleet dispatch: execution may have occurred")
+	ErrCancelClaimUncertain = errors.New("fleet dispatch: cancellation refused because a lapsed claim may have executed")
 	ErrActionCommitted      = errors.New("fleet dispatch: action state committed")
 	ErrRecordingUnavailable = errors.New("fleet dispatch: recording is unavailable")
 )

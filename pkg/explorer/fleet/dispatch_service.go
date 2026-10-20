@@ -1702,7 +1702,7 @@ func (s *DispatchService) Cancel(ctx context.Context, request CancelRequest) (Ac
 	// have happened outside the store.
 	if current.State == DispatchClaimed &&
 		(current.EffectPossible || len(current.ExecutionAttemptID) != 0) {
-		return ActionRecord{}, ErrExecutionAmbiguous
+		return ActionRecord{}, ErrCancelClaimUncertain
 	}
 	next := cloneActionRecord(current)
 	next.Version++

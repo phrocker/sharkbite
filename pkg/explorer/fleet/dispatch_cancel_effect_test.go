@@ -39,8 +39,8 @@ func TestCancelPreservesPossibleExternalEffectAfterLeaseExpiry(t *testing.T) {
 		ID: first.ID, ExpectedVersion: first.Version,
 		MutationKey: []byte("cancel-external"),
 		Context:     dispatchContext(fixture.now, "request"),
-	}); !errors.Is(err, ErrExecutionAmbiguous) {
-		t.Fatalf("cancel after possible external effect = %v, want ambiguity", err)
+	}); !errors.Is(err, ErrCancelClaimUncertain) {
+		t.Fatalf("cancel after possible external effect = %v, want refusal", err)
 	}
 	current, err := fixture.dispatchStore.GetAction(fixture.enqueuer, first.ID)
 	if err != nil || current.State != DispatchClaimed ||

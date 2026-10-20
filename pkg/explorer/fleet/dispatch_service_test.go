@@ -116,7 +116,7 @@ func TestDispatchInvokeFreshAuthorizationAndAmbiguousRecording(t *testing.T) {
 	if _, err := service.Cancel(retryCtx, CancelRequest{
 		ID: stored.ID, ExpectedVersion: stored.Version,
 		MutationKey: []byte("cancel"), Context: dispatchContext(now, "retry"),
-	}); !errors.Is(err, ErrExecutionAmbiguous) {
+	}); !errors.Is(err, ErrCancelClaimUncertain) {
 		t.Fatalf("cancel after lapsed admitted execution = %v", err)
 	}
 	page, err := service.Pull(retryCtx, PullActionsRequest{
