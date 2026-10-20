@@ -11,6 +11,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/phrocker/shoal-oss/internal/embeddingspace"
 	"github.com/phrocker/shoal-oss/internal/ingestrouter"
 	"github.com/phrocker/shoal-oss/internal/rfile"
 	"github.com/phrocker/shoal-oss/internal/walauthority"
@@ -119,6 +120,7 @@ type fakeMetadata struct {
 	outcome      CommitOutcome
 	err          error
 	beforeCommit func()
+	readOverride func(MetadataState) MetadataState
 }
 
 func (m *fakeMetadata) Commit(_ context.Context, req MetadataCommit) (CommitOutcome, error) {
@@ -153,7 +155,11 @@ func (m *fakeMetadata) Commit(_ context.Context, req MetadataCommit) (CommitOutc
 func (m *fakeMetadata) Read(context.Context, ingestrouter.Extent) (MetadataState, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return MetadataState{Files: append([]DataFile(nil), m.state.Files...), WALs: cloneRefs(m.state.WALs)}, nil
+	result := MetadataState{Files: append([]DataFile(nil), m.state.Files...), WALs: cloneRefs(m.state.WALs)}
+	if m.readOverride != nil {
+		result = m.readOverride(result)
+	}
+	return result, nil
 }
 
 type memoryStates struct {
@@ -227,6 +233,61 @@ func TestCoordinatorReconcilesAmbiguousPublishAndMetadata(t *testing.T) {
 	}
 	if fixture.metadata.calls != 1 {
 		t.Fatalf("commit calls = %d", fixture.metadata.calls)
+	}
+}
+
+func TestAmbiguousNativeCASWithoutKnownStateMarkerDoesNotComplete(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.snapshots.snapshot.Embedding = embeddingspace.Has("space-a")
+	fixture.metadata.outcome = CommitUnknown
+	fixture.metadata.err = errors.New("CAS response lost after native file publication")
+	fixture.metadata.readOverride = func(state MetadataState) MetadataState {
+		// Native path/size/entries are present and covered WALs are gone,
+		// but Authority.Read cannot prove a sidecar publication marker.
+		state.Files[0].Embedding = embeddingspace.Unknown()
+		return state
+	}
+	if _, err := fixture.coordinator.Run(context.Background(), "op-no-marker"); !errors.Is(err, ErrAmbiguous) {
+		t.Fatalf("native CAS without marker = %v, want ambiguous", err)
+	}
+	if fixture.snapshots.completeCalls != 0 {
+		t.Fatal("known-state flush completed without marker")
+	}
+}
+
+func TestAmbiguousNativeCASWithConflictingKnownStateDoesNotComplete(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.snapshots.snapshot.Embedding = embeddingspace.Has("space-a")
+	fixture.metadata.outcome = CommitUnknown
+	fixture.metadata.err = errors.New("CAS response lost after native file publication")
+	fixture.metadata.readOverride = func(state MetadataState) MetadataState {
+		state.Files[0].Embedding = embeddingspace.Has("other-space")
+		return state
+	}
+	if _, err := fixture.coordinator.Run(context.Background(), "op-conflicting-marker"); !errors.Is(err, ErrMetadataInconsistent) {
+		t.Fatalf("same path and stats with conflicting known state = %v, want inconsistency", err)
+	}
+	if fixture.snapshots.completeCalls != 0 {
+		t.Fatal("known-state flush completed with conflicting marker")
+	}
+}
+
+func TestAmbiguousNativeCASWithDuplicatePathDoesNotComplete(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.snapshots.snapshot.Embedding = embeddingspace.Has("space-a")
+	fixture.metadata.outcome = CommitUnknown
+	fixture.metadata.err = errors.New("CAS response lost")
+	fixture.metadata.readOverride = func(state MetadataState) MetadataState {
+		other := state.Files[0]
+		state.Files[0].Embedding = embeddingspace.Unknown()
+		state.Files = append(state.Files, other) // same path/stats, different unresolved entry
+		return state
+	}
+	if _, err := fixture.coordinator.Run(context.Background(), "op-duplicate-path"); !errors.Is(err, ErrMetadataInconsistent) {
+		t.Fatalf("duplicate path in known-state reconciliation = %v", err)
+	}
+	if fixture.snapshots.completeCalls != 0 {
+		t.Fatal("known-state flush completed with duplicate path")
 	}
 }
 

@@ -450,14 +450,32 @@ func (c *Coordinator) reconcileMetadata(state *State) (bool, error) {
 		return false, err
 	}
 	filePresent := false
+	knownStateUnverified := false
+	matchingPaths := 0
 	for _, file := range current.Files {
 		if file.Path == state.File.Path {
+			matchingPaths++
 			if !equalAuthoritativeFile(file, state.File) {
 				return false, fmt.Errorf("%w: output path has different metadata", ErrMetadataInconsistent)
+			}
+			// A native file CAS can succeed while the separate embedding
+			// publication marker is absent or its answer was lost. The
+			// MetadataAuthority.Read implementation must return a known state
+			// only after verifying that marker against the exact live file.
+			// Path/size/entries alone cannot turn such an ambiguous CAS into
+			// a completed known-state flush.
+			if state.File.Embedding.Known() {
+				if file.Embedding.Known() && file.Embedding != state.File.Embedding {
+					return false, fmt.Errorf("%w: conflicting embedding state for output path", ErrMetadataInconsistent)
+				}
+				knownStateUnverified = knownStateUnverified || !file.Embedding.Known()
 			}
 			filePresent = true
 		}
 
+	}
+	if state.File.Embedding.Known() && matchingPaths > 1 {
+		return false, fmt.Errorf("%w: multiple file entries share known-state output path", ErrMetadataInconsistent)
 	}
 	remaining := 0
 	for _, covered := range state.CoveredWALs {
@@ -470,6 +488,9 @@ func (c *Coordinator) reconcileMetadata(state *State) (bool, error) {
 	}
 	switch {
 	case filePresent && remaining == 0:
+		if knownStateUnverified {
+			return false, nil
+		}
 		if state.TabletTime != "" && current.Time != state.TabletTime {
 			return false, fmt.Errorf("%w: tablet time is %q, want %q",
 				ErrMetadataInconsistent, current.Time, state.TabletTime)
