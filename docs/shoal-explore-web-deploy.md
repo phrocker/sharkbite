@@ -799,7 +799,16 @@ receive a durable admission record before dispatch; if their post-effect
 outcome record fails, the response is explicitly indeterminate and directs the
 caller to inspect current state before considering a retry. The first-party command advertises `shoal.ask`,
 `shoal.provenance.{list,inspect,fold,unfold}`, and, when the embedded Fleet
-providers are available, `shoal.agent_dispatch` and `shoal.agent_invoke`.
+providers are available, `shoal.agent_dispatch`, `shoal.agent_invoke`, and
+`shoal.agent_status`. The status tool reads the durable action receipt by ID
+under the same originating-principal and dispatch authorization as the HTTP
+status route; a worker's claim alone does not grant status access.
+Fleet MCP action results now use the public HTTP action receipt shape for all
+three tools. Clients consuming the older Go-record JSON must switch to
+snake_case fields such as `action.id` and `action.state`; IDs use unpadded
+base64url. The dispatch and invoke results no longer echo execution input,
+idempotency keys, or internal authorization fields. Only a successful worker
+claim returns the input and executor key needed to perform the action.
 They use the same chat, interaction, registry, and dispatch providers as the
 HTTP API; no second reasoning or action pipeline is constructed.
 Ask observations preserve the exact complete evidence accepted with the durable

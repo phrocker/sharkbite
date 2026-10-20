@@ -223,6 +223,18 @@ func TestCoordinatorCommitsNativeRFileAndOnlyCoveredWALs(t *testing.T) {
 	}
 }
 
+func TestCoordinatorRejectsUncoveredSnapshotBeforePublishing(t *testing.T) {
+	fixture := newFixture(t)
+	fixture.snapshots.snapshot.CoveredWALs = nil
+	if _, err := fixture.coordinator.Run(context.Background(), "uncovered-op"); !errors.Is(err, ErrInvalidSnapshot) {
+		t.Fatalf("Run uncovered snapshot error = %v", err)
+	}
+	if fixture.outputs.publishCalls != 0 || fixture.metadata.calls != 0 || len(fixture.states.states) != 0 {
+		t.Fatalf("uncovered snapshot advanced: publishes=%d metadata commits=%d checkpoints=%d",
+			fixture.outputs.publishCalls, fixture.metadata.calls, len(fixture.states.states))
+	}
+}
+
 func TestCoordinatorReconcilesAmbiguousPublishAndMetadata(t *testing.T) {
 	fixture := newFixture(t)
 	fixture.outputs.publishAfterWriteErr = errors.New("lost publish response")

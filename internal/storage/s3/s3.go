@@ -156,6 +156,15 @@ func (b *Backend) Remove(ctx context.Context, path string) error {
 //   - "s3://bucket/key/path"
 //   - "bucket/key/path"  (no scheme — first segment is bucket)
 func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, false)
+}
+
+// OpenSnapshot binds every range read to the version or ETag observed by HEAD.
+func (b *Backend) OpenSnapshot(ctx context.Context, path string) (shstorage.File, error) {
+	return b.open(ctx, path, true)
+}
+
+func (b *Backend) open(ctx context.Context, path string, snapshot bool) (shstorage.File, error) {
 	bucket, key, err := ParsePath(path)
 	if err != nil {
 		return nil, err
@@ -176,12 +185,28 @@ func (b *Backend) Open(ctx context.Context, path string) (shstorage.File, error)
 	if out.ContentLength != nil {
 		size = *out.ContentLength
 	}
+	var versionID, etag string
+	if snapshot {
+		if out.ContentLength == nil || size < 0 {
+			return nil, fmt.Errorf("s3: snapshot s3://%s/%s has no valid size", bucket, key)
+		}
+		versionID = aws.ToString(out.VersionId)
+		if versionID == "null" { // suspended S3 versioning reuses the null version
+			versionID = ""
+		}
+		etag = aws.ToString(out.ETag)
+		if versionID == "" && etag == "" {
+			return nil, fmt.Errorf("s3: snapshot s3://%s/%s has no version ID or ETag", bucket, key)
+		}
+	}
 	return &file{
-		client: b.client,
-		bucket: bucket,
-		key:    key,
-		size:   size,
-		ctx:    ctx,
+		client:    b.client,
+		bucket:    bucket,
+		key:       key,
+		size:      size,
+		ctx:       ctx,
+		versionID: versionID,
+		etag:      etag,
 	}, nil
 }
 
@@ -500,11 +525,13 @@ func isLowerHex(value string) bool {
 // file is the S3 File implementation. Each ReadAt issues a fresh Range GET —
 // stateless per call so concurrent ReadAts don't share reader state.
 type file struct {
-	client *s3sdk.Client
-	bucket string
-	key    string
-	size   int64
-	ctx    context.Context //nolint:containedctx
+	client    *s3sdk.Client
+	bucket    string
+	key       string
+	size      int64
+	ctx       context.Context //nolint:containedctx
+	versionID string
+	etag      string
 }
 
 func (f *file) Size() int64 { return f.size }
@@ -529,15 +556,34 @@ func (f *file) ReadAt(p []byte, off int64) (int, error) {
 		want = f.size - off
 	}
 	rangeHeader := fmt.Sprintf("bytes=%d-%d", off, off+want-1)
-	out, err := f.client.GetObject(f.ctx, &s3sdk.GetObjectInput{
+	in := &s3sdk.GetObjectInput{
 		Bucket: aws.String(f.bucket),
 		Key:    aws.String(f.key),
 		Range:  aws.String(rangeHeader),
-	})
+	}
+	if f.versionID != "" {
+		in.VersionId = aws.String(f.versionID)
+	}
+	if f.etag != "" {
+		in.IfMatch = aws.String(f.etag)
+	}
+	out, err := f.client.GetObject(f.ctx, in)
 	if err != nil {
 		return 0, fmt.Errorf("s3: GetObject s3://%s/%s off=%d: %w", f.bucket, f.key, off, err)
 	}
 	defer out.Body.Close()
+	if f.versionID != "" && aws.ToString(out.VersionId) != f.versionID {
+		return 0, fmt.Errorf("s3: GetObject s3://%s/%s returned a different version", f.bucket, f.key)
+	}
+	if f.etag != "" && aws.ToString(out.ETag) != f.etag {
+		return 0, fmt.Errorf("s3: GetObject s3://%s/%s returned a different ETag", f.bucket, f.key)
+	}
+	if f.versionID != "" || f.etag != "" {
+		expected := fmt.Sprintf("bytes %d-%d/%d", off, off+want-1, f.size)
+		if aws.ToString(out.ContentRange) != expected {
+			return 0, fmt.Errorf("s3: GetObject s3://%s/%s returned a different range", f.bucket, f.key)
+		}
+	}
 
 	n, err := io.ReadFull(out.Body, p[:want])
 	if err != nil {

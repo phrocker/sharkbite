@@ -1645,6 +1645,72 @@ func newFakeBackend() (*Backend, *fakeBucket) {
 	}, bucket
 }
 
+func TestOpenSnapshotPinsGenerationAcrossReplacement(t *testing.T) {
+	backend, bucket := newFakeBackend()
+	bucket.putObject("file.rf", []byte("first"))
+
+	snapshot, err := backend.OpenSnapshot(context.Background(), "gs://bucket/file.rf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer snapshot.Close()
+	buf := make([]byte, 5)
+	if n, err := snapshot.ReadAt(buf, 0); n != 5 || err != nil || string(buf) != "first" {
+		t.Fatalf("snapshot read = %d, %q, %v", n, buf, err)
+	}
+
+	bucket.putObject("file.rf", []byte("later"))
+	clear(buf)
+	if n, err := snapshot.ReadAt(buf, 0); n != 0 || !errors.Is(err, cloudstorage.ErrObjectNotExist) || string(buf) != "\x00\x00\x00\x00\x00" {
+		t.Fatalf("replaced snapshot read = %d, %q, %v", n, buf, err)
+	}
+	ordinary, err := backend.Open(context.Background(), "gs://bucket/file.rf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ordinary.Close()
+	if n, err := ordinary.ReadAt(buf, 0); n != 5 || err != nil || string(buf) != "later" {
+		t.Fatalf("ordinary replacement read = %d, %q, %v", n, buf, err)
+	}
+}
+
+func TestOpenSnapshotRefusesMissingGeneration(t *testing.T) {
+	backend, bucket := newFakeBackend()
+	bucket.objects["file.rf"] = fakeObjectData{body: []byte("first")}
+	if _, err := backend.OpenSnapshot(context.Background(), "gs://bucket/file.rf"); err == nil || !strings.Contains(err.Error(), "no generation") {
+		t.Fatalf("OpenSnapshot error = %v, want missing generation", err)
+	}
+	if _, err := backend.Open(context.Background(), "gs://bucket/file.rf"); err != nil {
+		t.Fatalf("ordinary Open must keep accepting legacy object metadata: %v", err)
+	}
+}
+
+func TestOpenSnapshotRejectsSubstitutedRange(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		attrs cloudstorage.ReaderObjectAttrs
+	}{
+		{name: "offset", attrs: cloudstorage.ReaderObjectAttrs{StartOffset: 1, Size: 5, Generation: 1}},
+		{name: "size", attrs: cloudstorage.ReaderObjectAttrs{StartOffset: 0, Size: 6, Generation: 1}},
+		{name: "generation", attrs: cloudstorage.ReaderObjectAttrs{StartOffset: 0, Size: 5, Generation: 2}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			backend, bucket := newFakeBackend()
+			bucket.putObject("file.rf", []byte("first"))
+			f, err := backend.OpenSnapshot(context.Background(), "gs://bucket/file.rf")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			bucket.rangeAttrsOverride = &tc.attrs
+			buf := make([]byte, 5)
+			if n, err := f.ReadAt(buf, 0); n != 0 || err == nil || !strings.Contains(err.Error(), "different range") || string(buf) != "\x00\x00\x00\x00\x00" {
+				t.Fatalf("substituted range read = %d, %q, %v", n, buf, err)
+			}
+		})
+	}
+}
+
 var errFakePrecondition = errors.New("fake gcs: precondition failed")
 
 type cancelAfterWriteBackend struct {
@@ -1709,6 +1775,7 @@ type fakeBucket struct {
 	lastWriter         *fakeObjectWriter
 	copyCalls          []fakeCopyCall
 	deleteCalls        []fakeDeleteCall
+	rangeAttrsOverride *cloudstorage.ReaderObjectAttrs
 }
 
 type fakeObjectData struct {
@@ -1836,6 +1903,37 @@ func (o *fakeObject) Attrs(ctx context.Context) (*cloudstorage.ObjectAttrs, erro
 		Metadata:       cloneMetadata(data.metadata),
 	}, nil
 }
+
+func (o *fakeObject) NewRangeReader(ctx context.Context, off, length int64) (rangeReader, error) {
+	o.bucket.mu.Lock()
+	defer o.bucket.mu.Unlock()
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
+	data, ok := o.lookup()
+	if !ok {
+		return nil, cloudstorage.ErrObjectNotExist
+	}
+	if off < 0 || length < 0 || off > int64(len(data.body)) {
+		return nil, io.EOF
+	}
+	end := min(off+length, int64(len(data.body)))
+	attrs := cloudstorage.ReaderObjectAttrs{StartOffset: off, Size: int64(len(data.body)), Generation: data.generation}
+	if o.bucket.rangeAttrsOverride != nil {
+		attrs = *o.bucket.rangeAttrsOverride
+	}
+	return fakeRangeReader{
+		ReadCloser: io.NopCloser(bytes.NewReader(append([]byte(nil), data.body[off:end]...))),
+		attrs:      attrs,
+	}, nil
+}
+
+type fakeRangeReader struct {
+	io.ReadCloser
+	attrs cloudstorage.ReaderObjectAttrs
+}
+
+func (r fakeRangeReader) RangeAttrs() cloudstorage.ReaderObjectAttrs { return r.attrs }
 
 func (o *fakeObject) If(conditions cloudstorage.Conditions) objectHandle {
 	clone := *o

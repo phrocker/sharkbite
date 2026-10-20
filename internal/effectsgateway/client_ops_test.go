@@ -320,8 +320,10 @@ func TestCorrelationIsSentFromTheRecordAndCheckedFirst(t *testing.T) {
 
 	// The record's correlation, on every request about it.
 	terminal := committedUnder(t, 1, 3, dispatchapi.DispatchSucceeded, "", `{}`)
+	preparedClaim := strings.TrimSuffix(claimedRecord(t, 2, 1, now.Add(time.Minute), now.Add(time.Hour)), "}") +
+		`,"recovery_protocol_version":1}`
 	client, transport = opsClient(t,
-		reply(200, claimedRecord(t, 2, 1, now.Add(time.Minute), now.Add(time.Hour))),
+		reply(200, preparedClaim),
 		reply(200, claimedRecord(t, 3, 1, now.Add(2*time.Minute), now.Add(time.Hour))),
 		reply(200, claimedRecord(t, 4, 1, now.Add(2*time.Minute), now.Add(time.Hour),
 			ambiguityReportWire(1, dispatchapi.AmbiguityOutcomeUnknown, ""))),

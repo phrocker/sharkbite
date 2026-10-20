@@ -1,5 +1,5 @@
 requests: 0
-error: dispatch claim: refused_locally: correlation ID is required: take it from the action record
+error: dispatch claim-prepared: refused_locally: correlation ID is required: take it from the action record
 kind: refused_locally
 status: 0 code: "" failure: ""
 is ambiguity unrecorded: false

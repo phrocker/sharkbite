@@ -218,6 +218,70 @@ func TestTargetClientRefusesAMetadataAnswerEvenAmongGoodOnes(t *testing.T) {
 	}
 }
 
+func TestLoopbackEffectsCannotResolveToRemoteAddress(t *testing.T) {
+	var hits atomic.Int64
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hits.Add(1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+	_, port, err := net.SplitHostPort(server.Listener.Addr().String())
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, host := range []string{"localhost", "localhost."} {
+		t.Run(host, func(t *testing.T) {
+			base, err := url.Parse("http://" + host + ":" + port)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if effects := DerivedEffects(base); len(effects) != 1 || effects[0] != "external" {
+				t.Fatalf("localhost must declare only external effects: %v", effects)
+			}
+			policy, err := NewEgressPolicy(base, true, func(context.Context, string) ([]netip.Addr, error) {
+				// The first answer could be dialed locally; all answers must be
+				// checked before any connection is made.
+				return []netip.Addr{
+					netip.MustParseAddr("127.0.0.1"), netip.MustParseAddr("8.8.8.8"),
+				}, nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			client, err := NewTargetClient(policy, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if _, err := get(t, client, base.String()+"/effect"); !errors.Is(err, ErrEgressRefused) {
+				t.Fatalf("remote DNS answer under no-egress effects: %v", err)
+			}
+			if hits.Load() != 0 {
+				t.Fatal("a localhost request reached the target despite a remote DNS answer")
+			}
+		})
+	}
+	base, err := url.Parse("http://localhost:" + port)
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy, err := NewEgressPolicy(base, true, func(context.Context, string) ([]netip.Addr, error) {
+		return []netip.Addr{netip.MustParseAddr("127.0.0.1")}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client, err := NewTargetClient(policy, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response, err := get(t, client, base.String()+"/effect"); err != nil || response.StatusCode != http.StatusOK {
+		t.Fatalf("loopback resolution was refused: response=%v err=%v", response, err)
+	}
+	if hits.Load() != 1 {
+		t.Fatalf("loopback target received %d requests, want 1", hits.Load())
+	}
+}
+
 // TestTargetClientIsRebindingSafe: a name that answers with an allowed address
 // for one connection and a metadata address for the next is refused on the
 // next, because every connection resolves once and checks what it dials.

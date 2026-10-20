@@ -1,4 +1,4 @@
-POST /shoal/api/v1/fleet/actions/YQD_/claim
+POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
 header Accept: application/json
 header Accept-Encoding: gzip
 header Authorization: Bearer dispatch-token
