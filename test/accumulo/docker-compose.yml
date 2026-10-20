@@ -160,7 +160,8 @@ services:
           -accumulo-version 4.0.0-SNAPSHOT \
           -instance-secret shoal-test-instance-secret \
           -password secret -storage hdfs -enable-ingest \
-          -flush-cells 1000 -wal-root /var/lib/shoal/wal \
+          -flush-cells 1000 -native-wal \
+          -wal-root hdfs://namenode:8020/accumulo/wal \
           -state-root /var/lib/shoal/minc-state \
           -minc-root hdfs://namenode:8020/accumulo/tables
     depends_on:
@@ -236,7 +237,7 @@ services:
       ACCUMULO_JAVA_OPTS: -Xms64m -Xmx256m
       HADOOP_USER_NAME: accumulo
     ports:
-      - "127.0.0.1:9995:9995"
+      - "127.0.0.1:${SHOAL_ACCUMULO_MONITOR_PORT:-9995}:9995"
     volumes:
       - ./conf/accumulo.properties:/opt/accumulo/conf/accumulo.properties:ro
       - ./conf/accumulo-client.properties:/opt/accumulo/conf/accumulo-client.properties:ro

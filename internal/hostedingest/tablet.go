@@ -86,6 +86,7 @@ type Config struct {
 	MincRoot       string
 	StateRoot      string
 	WALStore       walauthority.Store
+	NativeWALStore walauthority.NativeStore
 	Outputs        storage.Backend
 	Metadata       MetadataFactory
 	FlushID        func(context.Context, string) (int64, error)
@@ -235,7 +236,8 @@ func (f *Factory) Open(
 	wal, report, err := walauthority.Open(ctx, walauthority.Config{
 		Root: f.cfg.WALRoot, ServerAddress: f.cfg.ServerAddress,
 		Extent: extent, Fence: fence, Metadata: metadata, Store: f.cfg.WALStore,
-		Verifier: verifier, RecoveryVerifier: recoveryVerifier, Sink: tablet,
+		NativeStore: f.cfg.NativeWALStore,
+		Verifier:    verifier, RecoveryVerifier: recoveryVerifier, Sink: tablet,
 	})
 	if err != nil {
 		return nil, err
