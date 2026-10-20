@@ -1120,7 +1120,7 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 	if len(claimed.CorrelationID) == 0 {
 		claimed.CorrelationID = append([]byte(nil), offered.CorrelationID...)
 	}
-	if err := validateClaimAnswer(offered, claimed, claimID, w.cfg.ClaimLease); err != nil {
+	if err := validateClaimAnswer(offered, claimed, claimID, w.cfg.ClaimLease, route); err != nil {
 		w.log.Log(LogRecord{Event: EventDispatch, ActionID: offered.ID, ClaimNonce: nonce,
 			Route: route, DispatchError: DispatchProtocol})
 		return nil, err
@@ -1149,8 +1149,22 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 // to the action offered by Pull and to this worker's fresh claim ID. A 2xx
 // response with another action or claim must never reach the target; even if
 // the explorer committed this claim, leaving it to lapse sends no effect.
-func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease time.Duration) error {
+func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease time.Duration, route *Route) error {
 	leaseDuration := claimed.ClaimLeaseUntil.Sub(claimed.UpdatedAt)
+	if route == nil {
+		return &DispatchError{Op: "claim", Kind: DispatchProtocol,
+			reason: "claim response has no selected route"}
+	}
+	// An external target may have been reached from the moment the claim was
+	// granted. The response cannot describe that action as effect-impossible,
+	// even if the offered record had not yet raised the flag. A previously
+	// raised flag is monotonic regardless of the current route.
+	requiresPossibleEffect := false
+	for _, effect := range route.effects {
+		if effect == dispatchapi.EffectMutatesExternal || effect == dispatchapi.EffectEgressesContent {
+			requiresPossibleEffect = true
+		}
+	}
 	if !bytes.Equal(claimed.ID, offered.ID) ||
 		!bytes.Equal(claimed.AgentID, offered.AgentID) ||
 		claimed.AgentGeneration != offered.AgentGeneration ||
@@ -1168,7 +1182,7 @@ func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease
 		claimed.ClaimFence != offered.ClaimFence+1 ||
 		claimed.UpdatedAt.Before(offered.UpdatedAt) ||
 		leaseDuration <= 0 || leaseDuration > requestedLease ||
-		!claimed.EffectPossible ||
+		((requiresPossibleEffect || offered.EffectPossible) && !claimed.EffectPossible) ||
 		len(claimed.Input) == 0 ||
 		!claimed.ExecutorKey.set {
 		return &DispatchError{Op: "claim", Kind: DispatchProtocol,
