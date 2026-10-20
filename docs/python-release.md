@@ -98,8 +98,10 @@ must be byte-identical before artifacts are retained.
 Every build performs archive validation, a clean wheel install/import/native
 ABI mutation smoke test, a preload-before-import test, and a clean source
 distribution build/install/native smoke test with the Go toolchain absent from
-the test environments. Non-pull-request runs also create GitHub artifact
-attestations. Run artifacts are retained for 30 days.
+the test environments. Non-pull-request runs also run the standalone execution
+fault campaign before artifact attestation and publication. The campaign checks
+durable crash, fence, and replay invariants plus a two-container claim race.
+Its machine-readable evidence and the build artifacts are retained for 30 days.
 
 To validate the current `main` revision without publishing:
 
@@ -111,9 +113,10 @@ To validate the current `main` revision without publishing:
    `gh attestation verify <artifact> --repo phrocker/sharkbite`.
 
 Publication is deliberately release-bound. Publishing a GitHub release for
-`vMAJOR.MINOR.PATCH` automatically builds and uploads the wheel, sdist,
-manifest, and checksums to the GitHub release, then publishes the exact
-previously built wheel and sdist to the **`sharkbite`** PyPI project.
+`vMAJOR.MINOR.PATCH` starts the release workflow. Once its gates pass, the
+workflow uploads the wheel, sdist, manifest, and checksums to that release,
+then publishes the exact previously built wheel and sdist to the **`sharkbite`**
+PyPI project. The GitHub release entry itself can exist before these gates pass.
 The tag must exactly match the version in `python/pyproject.toml`. Tag pushes
 alone build and validate but do not publish.
 
@@ -166,11 +169,11 @@ build job and can run without PyPI configuration.
 
 ### Release and chaos gate
 
-Use one new PEP 440 version. A release is publishable only after the controlled
-manylinux build, provenance checks, and container chaos matrix all pass:
+Use one new PEP 440 version. The wheel and source distribution are publishable
+only after the controlled manylinux build, provenance checks, container chaos
+matrix, and standalone execution fault campaign all pass:
 
-1. Build and attest the wheel and source distribution from the matching `vVERSION`
-   tag.
+1. Build the wheel and source distribution from the matching `vVERSION` tag.
 2. Run the release verification in clean containers for every supported Python
    version. Check import identity, ABI/capability discovery, checksums, and
    native mutation behavior.
@@ -182,8 +185,12 @@ manylinux build, provenance checks, and container chaos matrix all pass:
    exception fails the gate. Incompatible-library preloading, interrupted
    dependency resolution, and concurrent scanner/writer cleanup are not part
    of this gate.
-4. Publish the exact verified artifacts to PyPI through the protected `pypi`
-   environment. Never rebuild between verification and publication.
+4. Run the durable execution crash/fence/replay campaign and two-container
+   claim race against the release commit. Both jobs must pass before attestation.
+   This gate does not yet cover hybrid, Accumulo, or multi-server execution.
+5. Attest the verified artifacts, then publish the exact distributions through
+   the protected `pypi` environment. Never rebuild between verification and
+   publication.
 
 The `sharkbite` wheel owns all import roots and native artifacts. No second
 package may install overlapping `sharkbite/`, `pysharkbite/`, or `shoal/` paths.

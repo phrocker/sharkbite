@@ -17,6 +17,7 @@ ARG TARGETOS=linux
 ARG TARGETARCH
 ARG VERSION=dev
 ARG REVISION=unknown
+ARG SOURCE_DATE
 ENV CGO_ENABLED=0 \
     GOOS=${TARGETOS} \
     GOARCH=${TARGETARCH} \
@@ -24,7 +25,7 @@ ENV CGO_ENABLED=0 \
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     go build -trimpath \
-      -ldflags="-s -w -buildid= -X main.version=${VERSION}" \
+      -ldflags="-s -w -buildid= -X main.version=${VERSION} -X main.buildCommit=${REVISION} -X main.sourceDate=${SOURCE_DATE}" \
       -o /out/shoal-embed ./cmd/shoal-embed \
  && mkdir -p /out/data
 
@@ -38,8 +39,8 @@ ARG REVISION=unknown
 ARG CREATED
 LABEL org.opencontainers.image.title="shoal-embed" \
       org.opencontainers.image.description="Standalone Shoal embedded storage engine with a gRPC API" \
-      org.opencontainers.image.source="https://github.com/phrocker/shoal-oss" \
-      org.opencontainers.image.documentation="https://github.com/phrocker/shoal-oss/blob/main/docs/shoal-embed-container.md" \
+      org.opencontainers.image.source="https://github.com/phrocker/sharkbite" \
+      org.opencontainers.image.documentation="https://github.com/phrocker/sharkbite/blob/main/docs/shoal-embed-container.md" \
       org.opencontainers.image.licenses="Apache-2.0" \
       org.opencontainers.image.version="${VERSION}" \
       org.opencontainers.image.revision="${REVISION}" \

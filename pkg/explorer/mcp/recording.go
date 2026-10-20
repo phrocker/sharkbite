@@ -23,13 +23,14 @@ import (
 	"errors"
 	"reflect"
 	"sort"
-	"strconv"
 
 	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/webapi"
 	"github.com/phrocker/shoal-oss/pkg/graph"
+	"github.com/phrocker/shoal-oss/pkg/inference"
 	"github.com/phrocker/shoal-oss/pkg/interaction"
+	"github.com/phrocker/shoal-oss/pkg/ontology"
 	"github.com/phrocker/shoal-oss/pkg/retrieval"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
@@ -266,9 +267,9 @@ func observeToolResult(
 		for _, node := range response.Neighborhood.Nodes {
 			ids = appendPresentID(ids, node.ID)
 		}
-		evidence, err := graphEvidenceReference(
-			"mcp_neighborhood", response.Neighborhood.Nodes,
-			response.Neighborhood.Edges)
+		evidence, err := neighborhoodEvidenceReferences(
+			response.Neighborhood.Nodes, response.Neighborhood.Edges,
+			response.Neighborhood.Assertions)
 		if err != nil {
 			return ToolObservation{}, err
 		}
@@ -284,8 +285,8 @@ func observeToolResult(
 		for _, node := range response.Path.Nodes {
 			ids = appendPresentID(ids, node.ID)
 		}
-		evidence, err := graphEvidenceReference(
-			"mcp_path", response.Path.Nodes, response.Path.Edges)
+		evidence, err := pathEvidenceReference(
+			response.Path, response.Assertions)
 		if err != nil {
 			return ToolObservation{}, err
 		}
@@ -342,68 +343,41 @@ func observeRetrievalResponse(
 		EmbeddingSpaceIDs: append(
 			[]shoal.ID(nil), response.Retrieval.EmbeddingSpaceIDs...),
 	}
-	for resultIndex, result := range response.Retrieval.Results {
+	for _, result := range response.Retrieval.Results {
 		if len(result.Evidence) == 0 {
 			observation.RetrievedNodeIDs = appendPresentID(
 				observation.RetrievedNodeIDs, result.ID)
 		}
-		for evidenceIndex, evidence := range result.Evidence {
-			identityParts := []string{
-				string(result.ID),
-				strconv.Itoa(resultIndex),
-				strconv.Itoa(evidenceIndex),
+		for _, evidence := range result.Evidence {
+			// The anchor must be the one the Explorer's recorder recomputes
+			// from the cited bytes (#137). It refuses any other identity as
+			// not authoritative, and the tool result is then withheld.
+			anchor, err := inference.NewDocumentAnchor(
+				evidence.Citation, evidence.Quote)
+			if err != nil {
+				return ToolObservation{}, err
 			}
-			documentNodes := appendPresentID(
-				nil, evidence.Citation.DocumentID)
-			documentNodes = appendPresentID(
-				documentNodes, evidence.Citation.SectionID)
-			documentNodes = appendPresentID(
-				documentNodes, evidence.Citation.SpanID)
-			documentReference := interaction.EvidenceReference{
-				AnchorID: interaction.DerivedID(
-					"mcp_retrieval_document", identityParts...),
-				Kind:     interaction.EvidenceDocument,
-				Citation: evidence.Citation,
-				NodeIDs:  canonicalObservedIDs(documentNodes),
-			}
-			canonicalDocument, err := documentReference.Canonical()
+			documentReference, err := anchor.EvidenceReference()
 			if err != nil {
 				return ToolObservation{}, err
 			}
 			observation.RetrievedEvidence = append(
-				observation.RetrievedEvidence, canonicalDocument)
+				observation.RetrievedEvidence, documentReference)
 			observation.RetrievedNodeIDs = append(
-				observation.RetrievedNodeIDs, canonicalDocument.NodeIDs...)
+				observation.RetrievedNodeIDs, documentReference.NodeIDs...)
 
 			if len(evidence.Path.Nodes) == 0 &&
 				len(evidence.Path.Edges) == 0 {
 				continue
 			}
-			graphNodes := make([]shoal.ID, 0, len(evidence.Path.Nodes))
-			graphEdges := make([]shoal.ID, 0, len(evidence.Path.Edges))
-			for _, node := range evidence.Path.Nodes {
-				graphNodes = appendPresentID(graphNodes, node.ID)
-			}
-			for _, edge := range evidence.Path.Edges {
-				graphEdges = appendPresentID(graphEdges, edge.ID)
-				graphNodes = appendPresentID(graphNodes, edge.From)
-				graphNodes = appendPresentID(graphNodes, edge.To)
-			}
-			graphReference := interaction.EvidenceReference{
-				AnchorID: interaction.DerivedID(
-					"mcp_retrieval_path", identityParts...),
-				Kind:    interaction.EvidenceGraph,
-				NodeIDs: canonicalObservedIDs(graphNodes),
-				EdgeIDs: canonicalObservedIDs(graphEdges),
-			}
-			canonicalGraph, err := graphReference.Canonical()
+			graphReference, err := graphPathReference(evidence.Path, nil)
 			if err != nil {
 				return ToolObservation{}, err
 			}
 			observation.RetrievedEvidence = append(
-				observation.RetrievedEvidence, canonicalGraph)
+				observation.RetrievedEvidence, graphReference)
 			observation.RetrievedNodeIDs = append(
-				observation.RetrievedNodeIDs, canonicalGraph.NodeIDs...)
+				observation.RetrievedNodeIDs, graphReference.NodeIDs...)
 		}
 	}
 	observation.RetrievedNodeIDs = canonicalObservedIDs(
@@ -411,39 +385,100 @@ func observeRetrievalResponse(
 	return observation, nil
 }
 
-func graphEvidenceReference(
-	kind string,
-	nodes []graph.Node,
-	edges []graph.Edge,
+// graphPathReference records one directed path exactly as the Explorer's
+// recorder recomputes it: node order kept, and every edge an authoritative
+// assertion materialized cited through that assertion.
+func graphPathReference(
+	path graph.Path,
+	assertionsByEdge map[shoal.ID][]interaction.AssertionReference,
+) (interaction.EvidenceReference, error) {
+	var assertions []interaction.AssertionReference
+	for _, edge := range path.Edges {
+		assertions = append(assertions, assertionsByEdge[edge.ID]...)
+	}
+	anchor, err := inference.NewGraphAnchorWithAssertions(path, assertions)
+	if err != nil {
+		return interaction.EvidenceReference{}, err
+	}
+	return anchor.EvidenceReference()
+}
+
+// pathEvidenceReference records the path tool's result as one anchor.
+func pathEvidenceReference(
+	path graph.Path,
+	assertions []ontology.Assertion,
 ) ([]interaction.EvidenceReference, error) {
-	if len(nodes) == 0 && len(edges) == 0 {
+	if len(path.Nodes) == 0 && len(path.Edges) == 0 {
 		return nil, nil
 	}
-	nodeIDs := make([]shoal.ID, 0, len(nodes)+2*len(edges))
-	edgeIDs := make([]shoal.ID, 0, len(edges))
-	for _, node := range nodes {
-		nodeIDs = appendPresentID(nodeIDs, node.ID)
-	}
-	for _, edge := range edges {
-		edgeIDs = appendPresentID(edgeIDs, edge.ID)
-		nodeIDs = appendPresentID(nodeIDs, edge.From)
-		nodeIDs = appendPresentID(nodeIDs, edge.To)
-	}
-	reference := interaction.EvidenceReference{
-		AnchorID: interaction.DerivedID(
-			kind,
-			string(firstObservedID(nodeIDs)),
-			string(firstObservedID(edgeIDs)),
-		),
-		Kind:    interaction.EvidenceGraph,
-		NodeIDs: canonicalObservedIDs(nodeIDs),
-		EdgeIDs: canonicalObservedIDs(edgeIDs),
-	}
-	canonical, err := reference.Canonical()
+	byEdge, err := inference.AssertionReferencesByEdge(assertions, path.Edges)
 	if err != nil {
 		return nil, err
 	}
-	return []interaction.EvidenceReference{canonical}, nil
+	reference, err := graphPathReference(path, byEdge)
+	if err != nil {
+		return nil, err
+	}
+	return []interaction.EvidenceReference{reference}, nil
+}
+
+// neighborhoodEvidenceReferences records a neighborhood one edge at a time.
+// A neighborhood is not a path and an anchor is one, so each edge with its
+// two endpoints is its own anchor. A node no edge reaches, such as a second
+// seed with no neighbors, is a single-node anchor of its own, so the
+// evidence covers every node the tool retrieved. A neighborhood with no
+// edges is observed by node ID only. An edge whose endpoint the
+// neighborhood does not carry cannot be anchored exactly and is refused
+// rather than recorded loosely.
+func neighborhoodEvidenceReferences(
+	nodes []graph.Node,
+	edges []graph.Edge,
+	assertions []ontology.Assertion,
+) ([]interaction.EvidenceReference, error) {
+	if len(edges) == 0 {
+		return nil, nil
+	}
+	byID := make(map[shoal.ID]graph.Node, len(nodes))
+	for _, node := range nodes {
+		byID[node.ID] = node
+	}
+	byEdge, err := inference.AssertionReferencesByEdge(assertions, edges)
+	if err != nil {
+		return nil, err
+	}
+	references := make([]interaction.EvidenceReference, 0, len(edges))
+	reached := make(map[shoal.ID]struct{}, len(nodes))
+	for _, edge := range edges {
+		from, fromOK := byID[edge.From]
+		to, toOK := byID[edge.To]
+		if !fromOK || !toOK {
+			return nil, shoal.NewError(
+				shoal.ErrorInternal,
+				"neighborhood edge has a missing endpoint")
+		}
+		reference, err := graphPathReference(graph.Path{
+			Nodes: []graph.Node{from, to},
+			Edges: []graph.Edge{edge},
+		}, byEdge)
+		if err != nil {
+			return nil, err
+		}
+		references = append(references, reference)
+		reached[edge.From] = struct{}{}
+		reached[edge.To] = struct{}{}
+	}
+	for _, node := range nodes {
+		if _, ok := reached[node.ID]; ok {
+			continue
+		}
+		reference, err := graphPathReference(
+			graph.Path{Nodes: []graph.Node{node}}, nil)
+		if err != nil {
+			return nil, err
+		}
+		references = append(references, reference)
+	}
+	return references, nil
 }
 
 func firstObservedID(values []shoal.ID) shoal.ID {
@@ -587,31 +622,41 @@ func canonicalToolObservation(
 	return value, nil
 }
 
+// canonicalObservedEvidence sorts the evidence by anchor. An anchor's ID is
+// derived from its content, so the same anchor observed twice, as when two
+// evidence paths of one result cite the same bytes, is one reference and is
+// kept once, as the interaction recorder keeps it. Two references under one
+// anchor that disagree are refused.
 func canonicalObservedEvidence(
 	values []interaction.EvidenceReference,
 ) ([]interaction.EvidenceReference, error) {
 	if len(values) == 0 {
 		return nil, nil
 	}
-	result := make([]interaction.EvidenceReference, len(values))
-	for index, value := range values {
+	byAnchor := make(map[shoal.ID]interaction.EvidenceReference, len(values))
+	for _, value := range values {
 		canonical, err := value.Canonical()
 		if err != nil {
 			return nil, err
 		}
-		result[index] = canonical
+		if existing, duplicate := byAnchor[canonical.AnchorID]; duplicate {
+			if !reflect.DeepEqual(existing, canonical) {
+				return nil, shoal.NewError(
+					shoal.ErrorInvalidArgument,
+					"tool observation evidence anchor has conflicting references",
+				)
+			}
+			continue
+		}
+		byAnchor[canonical.AnchorID] = canonical
+	}
+	result := make([]interaction.EvidenceReference, 0, len(byAnchor))
+	for _, value := range byAnchor {
+		result = append(result, value)
 	}
 	sort.Slice(result, func(i, j int) bool {
 		return shoal.CompareID(result[i].AnchorID, result[j].AnchorID) < 0
 	})
-	for index := 1; index < len(result); index++ {
-		if result[index-1].AnchorID == result[index].AnchorID {
-			return nil, shoal.NewError(
-				shoal.ErrorInvalidArgument,
-				"tool observation contains duplicate evidence anchors",
-			)
-		}
-	}
 	return result, nil
 }
 

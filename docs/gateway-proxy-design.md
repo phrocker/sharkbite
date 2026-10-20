@@ -1053,27 +1053,28 @@ that a payment is going to the wrong account can kill the pod — which strands 
 effect, and may duplicate it on re-claim — or wait out the deadline, up to 24
 hours.
 
-Worse, the cancel window and the re-claim window open at the *same instant*, both
-gated on `!now.Before(ClaimLeaseUntil)`. So they race:
+Before the lapsed-claim guard, the cancel window and the re-claim window opened
+at the *same instant*, both gated on `!now.Before(ClaimLeaseUntil)`. They raced:
 
 1. Worker 1 claims, performs the effect, and is then paused by the node.
 2. The lease expires at `T`.
-3. At `T+1ms` the operator cancels. `Cancel` wins the compare-and-swap.
+3. At `T+1ms` the enqueuing agent cancels. `Cancel` wins the compare-and-swap.
 4. Worker 1 resumes and reports. `completeClaim`'s replay arm accepts only
    `Succeeded` or `Failed`, deliberately excluding `Canceled`
    (`pkg/explorer/fleet/dispatch_service.go`), so worker 1 gets
    `ErrClaimLost`.
 
-The durable record now says **`canceled`** — which elsewhere in this codebase
+The durable record then said **`canceled`** — which elsewhere in this codebase
 means "Shoal refused" — for a payment that was made, and the published
-`action.canceled` event says the same. If `Claim` wins the race instead, the
-operator's cancel returns `ErrActionConflict` and the second worker duplicates
-the effect the operator was trying to stop.
+`action.canceled` event said the same. If `Claim` won the race instead, the
+agent's cancel returned `ErrActionConflict` and the second worker could
+duplicate the effect the agent was trying to stop.
 
-The honest conclusion is that cancel should be **refused outright for any action
-with `EffectPossible` set**, and replaced by a distinct abandon transition that
-does not assert a refusal. A record that says "cancelled" about an effect that
-happened is worse than one that says "unknown".
+`Cancel` now refuses a lapsed claimed action with `EffectPossible` set. That
+keeps the claim and its possible effect visible for reconciliation instead of
+publishing `action.canceled` for work that may already have happened. A distinct
+abandon transition that does not assert a refusal is still needed if operators
+must deliberately stop retrying such an action.
 
 ## What an operator cannot do
 
@@ -1880,10 +1881,11 @@ hour of work:
 - **Does the descriptor heartbeat or not?** The second blocker. Either the
   gateway registers once out-of-band with a long lease and its liveness signal
   means nothing, or the generation pin has to tolerate a heartbeated descriptor.
-- **How is cancellation expressed for an action with `EffectPossible` set?** The
-  current behaviour records "cancelled" for an effect that happened. The likely
-  answer is to refuse cancel outright there and add an abandon transition that
-  asserts nothing about whether the effect occurred.
+- **How should an operator abandon a claim with a possible external effect?**
+  `Cancel` now refuses a lapsed claimed action with `EffectPossible` set, so it
+  cannot record "cancelled" for an effect that may already have happened. A
+  distinct abandon transition is still needed to stop retries without asserting
+  whether the effect occurred.
 - **Is a replay transition needed that preserves the action ID?** Without one, a
   deliberate operator retry has no deduplication protection, at the moment it
   matters most.

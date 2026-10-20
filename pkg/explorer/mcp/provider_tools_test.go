@@ -791,6 +791,7 @@ func TestRetrievalToolRecordsIndependentCompleteEvidence(t *testing.T) {
 					ID: "span",
 					Evidence: []retrieval.Evidence{{
 						Citation: citation,
+						Quote:    "text",
 						Path: graph.Path{
 							Nodes: []graph.Node{
 								{ID: "document"}, {ID: "section"}, {ID: "span"},

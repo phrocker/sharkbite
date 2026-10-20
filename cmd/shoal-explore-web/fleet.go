@@ -313,6 +313,28 @@ func (r *boundFleetDispatch) Claim(
 	return r.service.Claim(ctx, request)
 }
 
+func (r *boundFleetDispatch) ClaimMaterial(
+	ctx context.Context, request fleet.RecoveryClaimRequest,
+) (fleet.ActionRecord, error) {
+	bound, err := r.requestContext(ctx, request.Context)
+	if err != nil {
+		return fleet.ActionRecord{}, err
+	}
+	request.Context = bound
+	return r.service.ClaimMaterial(ctx, request)
+}
+
+func (r *boundFleetDispatch) PrepareClaim(
+	ctx context.Context, request fleet.PrepareClaimRequest,
+) (fleet.ActionRecord, error) {
+	bound, err := r.requestContext(ctx, request.Context)
+	if err != nil {
+		return fleet.ActionRecord{}, err
+	}
+	request.Context = bound
+	return r.service.PrepareClaim(ctx, request)
+}
+
 // CompleteClaim closes the loop for a worker that performed the effect out of
 // process. The bound request context is applied exactly as every other
 // dispatch call applies it, so a remote completion is authenticated as the

@@ -18,6 +18,8 @@
 package engine_test
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sort"
@@ -27,6 +29,38 @@ import (
 	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 )
+
+func TestLookupRowsStopsAfterContextCancellation(t *testing.T) {
+	eng, err := engine.Open(t.TempDir(), engine.Options{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer eng.Close()
+	if err := eng.CreateTable("g", engine.TableOptions{}); err != nil {
+		t.Fatal(err)
+	}
+	mutation, err := cclient.NewMutation([]byte("row"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := 0; i < 100; i++ {
+		mutation.Put([]byte("cf"), []byte(fmt.Sprintf("%03d", i)), nil, int64(i+1), []byte("v"))
+	}
+	if err := eng.Write("g", []*cclient.Mutation{mutation}); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	visited := 0
+	err = eng.LookupRows("g", [][]byte{[]byte("row")}, engine.ScanOptions{Context: ctx},
+		func(_ int, _ *iterrt.Key, _ []byte) {
+			visited++
+			cancel()
+		})
+	if !errors.Is(err, context.Canceled) || visited != 1 {
+		t.Fatalf("LookupRows cancellation = (%v, %d visits), want canceled after one cell", err, visited)
+	}
+}
 
 // cellKey is a string form of a cell's identity for set comparison.
 func cellKey(row, cf, cq string, val []byte) string {

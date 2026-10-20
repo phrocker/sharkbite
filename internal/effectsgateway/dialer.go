@@ -86,7 +86,7 @@ func embeddedIPv4(address netip.Addr) (netip.Addr, bool) {
 
 // CheckAddress decides whether the target client may connect to address.
 // It is applied to every address a name resolves to and again, through the
-// dialer's Control hook, to the address the socket actually connects to.
+// dialer's Control hook, to the literal destination before the socket connects.
 func CheckAddress(address netip.Addr, allowPrivate bool) error {
 	if !address.IsValid() {
 		return fmt.Errorf("%w: invalid address", ErrEgressRefused)
@@ -134,6 +134,9 @@ type EgressPolicy struct {
 	host         string
 	port         string
 	allowPrivate bool
+	// A loopback target declares no egress. DNS must not turn localhost into
+	// a remote destination while the action still carries that effect set.
+	loopbackOnly bool
 	resolve      Resolver
 	dialTimeout  time.Duration
 }
@@ -165,9 +168,20 @@ func NewEgressPolicy(target *url.URL, allowPrivate bool, resolve Resolver) (*Egr
 		host:         normalizeHost(target.Hostname()),
 		port:         port,
 		allowPrivate: allowPrivate,
+		loopbackOnly: isLoopbackHost(target.Hostname()),
 		resolve:      resolve,
 		dialTimeout:  10 * time.Second,
 	}, nil
+}
+
+func (p *EgressPolicy) checkAddress(address netip.Addr) error {
+	if err := CheckAddress(address, p.allowPrivate); err != nil {
+		return err
+	}
+	if p.loopbackOnly && !address.WithZone("").Unmap().IsLoopback() {
+		return fmt.Errorf("%w: a loopback target resolved outside loopback", ErrEgressRefused)
+	}
+	return nil
 }
 
 func normalizeHost(host string) string {
@@ -182,8 +196,8 @@ func normalizeHost(host string) string {
 // address that is connected to. That is what makes it safe against DNS
 // rebinding: a name that answers with a public address for a check and a
 // metadata address for the connect cannot do so here, because there is no
-// second lookup. The Control hook re-checks the socket's peer anyway, so a
-// future change that reintroduces a lookup cannot reopen it silently.
+// second lookup. The Control hook re-checks the literal destination before
+// connecting; it does not observe a post-connect peer.
 //
 // Every address a name resolves to must pass, not merely one. A name answering
 // with a public address and a metadata address is refused outright rather than
@@ -216,7 +230,7 @@ func (p *EgressPolicy) DialContext(ctx context.Context, network, address string)
 		}
 	}
 	for _, candidate := range candidates {
-		if err := CheckAddress(candidate, p.allowPrivate); err != nil {
+		if err := p.checkAddress(candidate); err != nil {
 			return nil, err
 		}
 	}
@@ -227,7 +241,7 @@ func (p *EgressPolicy) DialContext(ctx context.Context, network, address string)
 			if err != nil {
 				return fmt.Errorf("%w: malformed peer", ErrEgressRefused)
 			}
-			return CheckAddress(peer.Addr(), p.allowPrivate)
+			return p.checkAddress(peer.Addr())
 		},
 	}
 	var last error

@@ -60,7 +60,11 @@ survive restarts, and the service must remain a single writer.
 
 Copy the example without committing the populated copy:
 
-```console
+```bash
+cp deploy/shoal-explore-web/demo-scenario.json.example ./demo-scenario.json
+```
+
+```powershell
 Copy-Item deploy\shoal-explore-web\demo-scenario.json.example .\demo-scenario.json
 ```
 
@@ -74,6 +78,16 @@ so one shared workspace ID cannot be provisioned for two owners.
 
 Put short-lived access tokens in the named environment variables, never in the
 JSON file:
+
+```bash
+read -rs -p "First user's access token: " SHOAL_DEMO_TOKEN_ALEX; echo
+read -rs -p "Second user's access token: " SHOAL_DEMO_TOKEN_SAM; echo
+read -rs -p "First agent registration key: " SHOAL_DEMO_AGENT_KEY_ALEX; echo
+read -rs -p "Second agent registration key: " SHOAL_DEMO_AGENT_KEY_SAM; echo
+export SHOAL_DEMO_TOKEN_ALEX SHOAL_DEMO_TOKEN_SAM \
+  SHOAL_DEMO_AGENT_KEY_ALEX SHOAL_DEMO_AGENT_KEY_SAM
+go run ./cmd/shoal-demo-seed -config ./demo-scenario.json
+```
 
 ```powershell
 $env:SHOAL_DEMO_TOKEN_ALEX = [System.Net.NetworkCredential]::new(
@@ -113,7 +127,16 @@ https://shoal.example.test/mcp
 
 Copy `.vscode/mcp.json.example` to `.vscode/mcp.json`. The checked-in example
 contains no endpoint, subject, tenant, token, or workspace value. Each user
-starts VS Code with their own process environment:
+starts VS Code with their own process environment (bash, then PowerShell; the
+`read -rs` prompts keep the token out of shell history and the terminal):
+
+```bash
+export SHOAL_MCP_URL="https://shoal.example.test/mcp"
+read -rs -p "This user's access token: " SHOAL_MCP_BEARER_TOKEN; echo
+export SHOAL_MCP_BEARER_TOKEN
+export SHOAL_MCP_WORKSPACE_ID="<this user's workspace_header from the seed>"
+code .
+```
 
 ```powershell
 $env:SHOAL_MCP_URL = "https://shoal.example.test/mcp"

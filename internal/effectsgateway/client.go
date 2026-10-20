@@ -162,7 +162,8 @@ type DispatchError struct {
 	Kind   DispatchErrorKind
 	Status int
 	// Code is the explorer's error code, when it sent a well-formed one.
-	Code string
+	Code            string
+	RecoveryRefusal string
 	// Failure categorizes a transport failure.
 	Failure FailureKind
 	// reason is a fixed local explanation for refused_locally.
@@ -238,6 +239,7 @@ func fromAPIError(apiErr *dispatchapi.Error) *DispatchError {
 	result := &DispatchError{
 		Op: apiErr.Op, Kind: DispatchErrorKind(apiErr.Kind),
 		Status: apiErr.Status, Code: apiErr.Code, reason: apiErr.Reason,
+		RecoveryRefusal: apiErr.RecoveryRefusal,
 	}
 	switch apiErr.Kind {
 	case dispatchapi.KindTransport:
@@ -330,24 +332,25 @@ func NewClaimID(pod string, random io.Reader) ([]byte, ClaimNonce, error) {
 // and re-reading the action does not return them, so the worker keeps them
 // from the claim.
 type Action struct {
-	ID              []byte
-	Version         uint64
-	State           dispatchapi.DispatchState
-	AgentID         []byte
-	AgentGeneration int64
-	Capability      string
-	Action          string
-	Input           json.RawMessage
-	Output          json.RawMessage
-	ErrorCode       string
-	Deadline        time.Time
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	ExecutorKey     ExecutorKey
-	ClaimID         []byte
-	ClaimFence      uint64
-	ClaimLeaseUntil time.Time
-	EffectPossible  bool
+	ID                      []byte
+	Version                 uint64
+	State                   dispatchapi.DispatchState
+	AgentID                 []byte
+	AgentGeneration         int64
+	Capability              string
+	Action                  string
+	Input                   json.RawMessage
+	Output                  json.RawMessage
+	ErrorCode               string
+	Deadline                time.Time
+	CreatedAt               time.Time
+	UpdatedAt               time.Time
+	ExecutorKey             ExecutorKey
+	ClaimID                 []byte
+	ClaimFence              uint64
+	ClaimLeaseUntil         time.Time
+	EffectPossible          bool
+	RecoveryProtocolVersion uint8
 	// Effected is the volume a failed record says escaped before the failure
 	// (#427), zero when none was reported. Read back on a resend, never
 	// re-derived: the field is write-once and compared on replay.
@@ -391,7 +394,8 @@ func actionFrom(record dispatchapi.Record) Action {
 		Deadline: record.Deadline, CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
 		ClaimID: record.ClaimID, ClaimFence: record.ClaimFence,
 		ClaimLeaseUntil: record.ClaimLeaseUntil, EffectPossible: record.EffectPossible,
-		Effected: record.Effected, CorrelationID: record.CorrelationID,
+		RecoveryProtocolVersion: record.RecoveryProtocolVersion,
+		Effected:                record.Effected, CorrelationID: record.CorrelationID,
 		AmbiguityReports: record.AmbiguityReports,
 	}
 	if len(record.ExecutorKey) == ExecutorKeyBytes {
@@ -536,8 +540,26 @@ type ClaimRequest struct {
 	Lease           time.Duration
 }
 
-// Claim takes an action under a fence. The response is the only one that
-// carries the input and the executor key. Its ClaimFence is what every later
+type RecoveryClaimRequest struct {
+	Context    RequestContext
+	ClaimID    []byte
+	ClaimFence uint64
+}
+
+type RecoveryMaterial struct {
+	Input       json.RawMessage
+	ExecutorKey ExecutorKey
+}
+
+type RecoveryPrepareRequest struct {
+	RecoveryClaimRequest
+	Mode              IdempotencyMode
+	RequestDigest     [32]byte
+	TargetScopeDigest [32]byte
+}
+
+// Claim takes an action under a fence through the prepared protocol. Its
+// response carries no input or executor key. The ClaimFence is what every later
 // Extend, Complete and ReportAmbiguity for this claim sends. The request's
 // correlation is the pulled record's (Action.Correlate).
 //
@@ -555,7 +577,7 @@ type ClaimRequest struct {
 // header-less 503 is a clean pre-write refusal and narrows back to
 // DispatchUnavailable; the other cases stay.
 func (c *DispatchClient) Claim(ctx context.Context, actionID []byte, request ClaimRequest) (Action, error) {
-	record, err := c.api.Claim(ctx, actionID, dispatchapi.Claim{
+	record, err := c.api.ClaimPrepared(ctx, actionID, dispatchapi.Claim{
 		Context: request.Context.api(), ExpectedVersion: request.ExpectedVersion,
 		ClaimID: request.ClaimID, Lease: request.Lease,
 	})
@@ -563,6 +585,37 @@ func (c *DispatchClient) Claim(ctx context.Context, actionID []byte, request Cla
 		return Action{}, dispatchError(err)
 	}
 	return actionFrom(record), nil
+}
+
+// ClaimMaterial retrieves the input and executor key for a live, first-fence
+// prepared claim. This response alone never allows a target send.
+func (c *DispatchClient) ClaimMaterial(ctx context.Context, actionID []byte, request RecoveryClaimRequest) (RecoveryMaterial, error) {
+	material, err := c.api.ClaimMaterial(ctx, actionID, dispatchapi.RecoveryClaim{
+		Context: request.Context.api(), ClaimID: request.ClaimID,
+		ClaimFence: request.ClaimFence,
+	})
+	if err != nil {
+		return RecoveryMaterial{}, dispatchError(err)
+	}
+	var key ExecutorKey
+	copy(key.bytes[:], material.ExecutorKey)
+	key.set = true
+	return RecoveryMaterial{Input: material.Input, ExecutorKey: key}, nil
+}
+
+func (c *DispatchClient) Prepare(ctx context.Context, actionID []byte, request RecoveryPrepareRequest) (uint64, error) {
+	version, err := c.api.Prepare(ctx, actionID, dispatchapi.RecoveryPrepare{
+		RecoveryClaim: dispatchapi.RecoveryClaim{
+			Context: request.Context.api(), ClaimID: request.ClaimID,
+			ClaimFence: request.ClaimFence,
+		},
+		Mode: string(request.Mode), RequestDigest: request.RequestDigest,
+		TargetScopeDigest: request.TargetScopeDigest,
+	})
+	if err != nil {
+		return 0, dispatchError(err)
+	}
+	return version, nil
 }
 
 // Completion is a terminal report. Exactly one of Output and Failed+ErrorCode.
