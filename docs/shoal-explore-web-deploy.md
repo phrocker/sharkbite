@@ -21,6 +21,13 @@ prerequisites below land) in a shared instance, where the two deployments differ
 - [Shared / cloud instance: shape and open gaps](#shared--cloud-instance-shape-and-open-gaps)
 - [Azure hosting: App Service for Containers, single instance](#azure-hosting-app-service-for-containers-single-instance)
 
+## Student model sidecar
+
+A promoted student model is served by a loopback runtime sidecar configured
+under `explorer.studentModel`; the bundle it serves arrives through an
+[offline release bundle](offline-release-bundle.md). The image is pinned by
+digest and the endpoint must be loopback unless explicitly acknowledged.
+
 ## Image
 
 `Dockerfile.shoal-explore-web` is a multi-stage build:

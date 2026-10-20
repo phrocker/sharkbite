@@ -32,8 +32,10 @@ func run(args []string, stdout, stderr io.Writer) error {
 		return runEmbeddingBackfill(args[1:], stdout, stderr)
 	case "policy":
 		return runPolicy(args[1:], stdout, stderr)
+	case "release":
+		return runRelease(args[1:], stdout, stderr)
 	default:
-		return fmt.Errorf("unknown command %q; expected plan, status, transition, embedding-backfill, or policy", args[0])
+		return fmt.Errorf("unknown command %q; expected plan, status, transition, embedding-backfill, policy, or release", args[0])
 	}
 }
 

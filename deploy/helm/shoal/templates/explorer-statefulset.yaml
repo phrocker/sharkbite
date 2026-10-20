@@ -289,6 +289,40 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: ["ALL"]
+        {{- $student := $explorer.studentModel }}
+        {{- if $student.enabled }}
+        # The student runtime sidecar: the only model endpoint in this pod is
+        # loopback, and the only weights it can serve are the imported bundle
+        # named by digest. The image is pinned by digest, never a tag.
+        - name: student-runtime
+          image: {{ printf "%v@%v" $student.image.repository $student.image.digest | quote }}
+          imagePullPolicy: {{ $student.image.pullPolicy | quote }}
+          args:
+            - {{ printf "--bundle-dir=%v/releases/%v" $explorer.stateDir $student.bundleDigest | quote }}
+            - {{ printf "--release-id=%v" $student.releaseID | quote }}
+            - {{ printf "--bundle-digest=%v" $student.bundleDigest | quote }}
+            - {{ printf "--model-alias=%v" $student.modelAlias | quote }}
+            - {{ printf "--port=%v" $student.port | quote }}
+          volumeMounts:
+            - name: state
+              mountPath: {{ printf "%v/releases" $explorer.stateDir | quote }}
+              subPath: releases
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: {{ $student.port }}
+              host: 127.0.0.1
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          resources:
+            {{- toYaml $student.resources | nindent 12 }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+        {{- end }}
       volumes:
         - name: tmp
           emptyDir: {}
