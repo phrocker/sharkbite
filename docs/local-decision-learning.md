@@ -36,6 +36,37 @@ policy registration and rollback target. Live requests never mutate serving
 weights. The current gate can grant only shadow-candidate status; even a perfect
 run continues full review.
 
+## Weights bundles and release records
+
+A candidate artifact is a **weights bundle**: an ordered manifest
+(`bundle.json`) of files, each with a role (`weights`, `tokenizer`,
+`preprocessing`, `runtime`, `calibration`), size and SHA-256, plus a bundle
+digest over the canonical manifest. Order and roles are part of the identity.
+The one-file linear SVM from `experiments/local-ml` is the smallest bundle;
+`weights_bundle.py stage` derives it from an unchanged `train.py` output and
+`internal/decisionlinear.LoadBundle` serves it. A bundle with a missing,
+extra, or altered file fails verification before any load, and the error
+names the file. `compare` records whether two trainer runs on the same
+manifest agree; when they do not, the diverging files are named and the run
+is recorded as non-reproducible rather than as a success.
+
+Release records (`model_release`) bind the bundle digest, the training or
+distillation manifest pin, the dataset manifest pin, the evaluation record,
+the task scope, and the bound approval. `experiments/decision-learning/learning.py`
+and `internal/weightsbundle` seal records identically, so a promotion
+decided in either produces the same identity. Rollback appends a new active
+release that restores the exact prior bundle digest; the registry's single
+pointer advances only after every bound record is durable, so concurrent
+requests never observe two releases, and a promotion decided against a stale
+pointer is refused. Publication is no-replace on every backend: files first,
+manifest last through exclusive creation (or an atomic no-replace rename
+locally), so a partial bundle is never visible.
+
+Restricted-data lineage follows the bundle. Promotion records the sources a
+dataset manifest included; withdrawing a source marks every release that
+included it ineligible for new use, with an event that states no unlearning
+is claimed. Rollback to a withdrawn release is refused.
+
 Random audits and targeted labeling are complementary. Targeted cases include
 assessor disagreement, uncertain margins, novel relationships and consequential
 outcomes. The random sample covers confidently wrong decisions that uncertainty

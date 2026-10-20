@@ -31,6 +31,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"path"
 	"path/filepath"
 	"sort"
@@ -102,6 +103,16 @@ type Store interface {
 	Remove(context.Context, string) error
 }
 
+// NativeStore publishes a complete Accumulo-format WAL before its metadata
+// reference is installed. It must refuse replacement of an existing path.
+// Read is bounded by the native segment decoder and Remove is only called
+// after the metadata reference has been retired.
+type NativeStore interface {
+	Publish(context.Context, string, []byte) error
+	Read(context.Context, string) ([]byte, error)
+	Remove(context.Context, string) error
+}
+
 type Config struct {
 	Root             string
 	ServerAddress    string
@@ -109,6 +120,7 @@ type Config struct {
 	Fence            ingestrouter.Fence
 	Metadata         MetadataAuthority
 	Store            Store
+	NativeStore      NativeStore
 	Verifier         FenceVerifier
 	RecoveryVerifier FenceVerifier
 	Sink             MutationSink
@@ -232,6 +244,14 @@ func validateConfig(cfg Config) error {
 	case !cfg.Fence.Valid():
 		return fmt.Errorf("%w: invalid fence", ErrInvalidConfig)
 	}
+	if cfg.NativeStore != nil {
+		u, err := url.Parse(cfg.Root)
+		if err != nil || u.Scheme != "hdfs" || u.Host == "" ||
+			path.Base(u.Path) != "wal" || path.Clean(u.Path) != u.Path ||
+			u.RawQuery != "" || u.Fragment != "" || u.User != nil {
+			return fmt.Errorf("%w: native WAL root must be a clean hdfs:// URI ending in /wal", ErrInvalidConfig)
+		}
+	}
 	host, port, err := net.SplitHostPort(cfg.ServerAddress)
 	if err != nil || host == "" || port == "" ||
 		host == "." || host == ".." || strings.ContainsAny(host, `/\`+"\x00") {
@@ -290,6 +310,9 @@ func (t *Tablet) Commit(ctx context.Context, req ingestrouter.CommitRequest) err
 		}
 		return t.apply(ctx, prior)
 	}
+	if t.cfg.NativeStore != nil {
+		return t.commitNative(ctx, op)
+	}
 	if t.current == nil {
 		if err := t.createWAL(ctx); err != nil {
 			return err
@@ -322,6 +345,36 @@ func (t *Tablet) Commit(ctx context.Context, req ingestrouter.CommitRequest) err
 	if op.Sequence >= t.nextSeq {
 		t.nextSeq = op.Sequence + 1
 	}
+	reconcileCtx, cancel := t.reconcileContext()
+	err = t.verify(reconcileCtx)
+	cancel()
+	if err != nil {
+		return err
+	}
+	return t.apply(ctx, op)
+}
+
+func (t *Tablet) commitNative(ctx context.Context, op operation) error {
+	op.Sequence = t.nextSeq
+	data, err := encodeNativeOperation(op)
+	if err != nil {
+		return err
+	}
+	id := t.cfg.NewID()
+	if _, err := uuid.Parse(id); err != nil {
+		return fmt.Errorf("%w: WAL id is not a UUID: %q", ErrInvalidConfig, id)
+	}
+	hostPath := strings.ReplaceAll(t.cfg.ServerAddress, ":", "+")
+	walPath := joinPath(t.cfg.Root, hostPath, id)
+	ref := Reference{ID: id, Path: walPath, Qualifier: "-/" + walPath}
+	if err := t.cfg.NativeStore.Publish(ctx, walPath, data); err != nil {
+		return fmt.Errorf("walauthority: publish native WAL %s: %w", walPath, err)
+	}
+	if err := t.ensureReference(ctx, ref); err != nil {
+		return err
+	}
+	t.ops[op.OperationID] = op
+	t.nextSeq++
 	reconcileCtx, cancel := t.reconcileContext()
 	err = t.verify(reconcileCtx)
 	cancel()
@@ -476,6 +529,9 @@ func (t *Tablet) Retire(ctx context.Context, ref Reference) error {
 			return err
 		}
 	}
+	if t.cfg.NativeStore != nil {
+		return t.cfg.NativeStore.Remove(ctx, ref.Path)
+	}
 	return t.cfg.Store.Remove(ctx, ref.Path)
 }
 
@@ -496,6 +552,30 @@ func (t *Tablet) Close(ctx context.Context) error {
 
 func (t *Tablet) verify(ctx context.Context) error {
 	return verifyFence(ctx, t.cfg.Verifier, t.cfg.Fence)
+}
+
+// WithRecoveryVerifier permits the owner that is still loading a tablet to
+// complete replay maintenance, including the RFile publication and WAL
+// retirement that follow recovery. The caller must keep the tablet private
+// until fn returns; ordinary hosted writes retain the strict verifier.
+func (t *Tablet) WithRecoveryVerifier(fn func() error) error {
+	if fn == nil || t.cfg.RecoveryVerifier == nil {
+		return ErrInvalidConfig
+	}
+	t.mu.Lock()
+	if t.closed {
+		t.mu.Unlock()
+		return ErrClosed
+	}
+	strict := t.cfg.Verifier
+	t.cfg.Verifier = t.cfg.RecoveryVerifier
+	t.mu.Unlock()
+	defer func() {
+		t.mu.Lock()
+		t.cfg.Verifier = strict
+		t.mu.Unlock()
+	}()
+	return fn()
 }
 
 func verifyFence(ctx context.Context, verifier FenceVerifier, fence ingestrouter.Fence) error {
@@ -521,6 +601,18 @@ func (t *Tablet) recover(ctx context.Context) (RecoveryReport, error) {
 	report := RecoveryReport{References: len(refs)}
 	var all []operation
 	for _, ref := range refs {
+		if t.cfg.NativeStore != nil {
+			data, readErr := t.cfg.NativeStore.Read(ctx, ref.Path)
+			if readErr != nil {
+				return report, readErr
+			}
+			op, decodeErr := decodeNativeOperation(data, t.cfg.Extent)
+			if decodeErr != nil {
+				return report, fmt.Errorf("%w: native WAL %s: %v", ErrCorrupt, ref.Path, decodeErr)
+			}
+			all = append(all, op)
+			continue
+		}
 		ops, valid, truncated, err := t.readWAL(ctx, ref)
 		if err != nil {
 			return report, err

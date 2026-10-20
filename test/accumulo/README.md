@@ -89,6 +89,13 @@ bin/shoal-conformance -mode replay -output verdict.json
 Live mode builds the repository's `shoal-tserver` and `shoal-compactor`, starts
 them beside the exact pinned Accumulo manager, ZooKeeper, and HDFS services,
 and runs unmodified Accumulo Java API calls through the Shoal endpoints.
+The tserver gate enables native WAL publication on the instance's HDFS volume
+and starts a pinned Accumulo tablet server in the isolated `walsorter` resource
+group. That server consumes Accumulo's recovery sort queue; the default group
+keeps tablet assignments on Shoal. The harness creates the sorter group before
+starting either server and checks that the worker has registered. A deployment
+using native WAL mode needs an equivalent sorter worker; a WAL path alone does
+not satisfy Accumulo recovery.
 The tserver path verifies ServiceLock registration/manager assignment,
 write/flush/scan, one-cell stateful continuation, minor-compaction visibility,
 WAL recovery after `SIGKILL`, and lock fencing/re-registration. The compactor
