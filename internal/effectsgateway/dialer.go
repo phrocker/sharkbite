@@ -134,6 +134,9 @@ type EgressPolicy struct {
 	host         string
 	port         string
 	allowPrivate bool
+	// A loopback target declares no egress. DNS must not turn localhost into
+	// a remote destination while the action still carries that effect set.
+	loopbackOnly bool
 	resolve      Resolver
 	dialTimeout  time.Duration
 }
@@ -165,9 +168,20 @@ func NewEgressPolicy(target *url.URL, allowPrivate bool, resolve Resolver) (*Egr
 		host:         normalizeHost(target.Hostname()),
 		port:         port,
 		allowPrivate: allowPrivate,
+		loopbackOnly: isLoopbackHost(target.Hostname()),
 		resolve:      resolve,
 		dialTimeout:  10 * time.Second,
 	}, nil
+}
+
+func (p *EgressPolicy) checkAddress(address netip.Addr) error {
+	if err := CheckAddress(address, p.allowPrivate); err != nil {
+		return err
+	}
+	if p.loopbackOnly && !address.WithZone("").Unmap().IsLoopback() {
+		return fmt.Errorf("%w: a loopback target resolved outside loopback", ErrEgressRefused)
+	}
+	return nil
 }
 
 func normalizeHost(host string) string {
@@ -216,7 +230,7 @@ func (p *EgressPolicy) DialContext(ctx context.Context, network, address string)
 		}
 	}
 	for _, candidate := range candidates {
-		if err := CheckAddress(candidate, p.allowPrivate); err != nil {
+		if err := p.checkAddress(candidate); err != nil {
 			return nil, err
 		}
 	}
@@ -227,7 +241,7 @@ func (p *EgressPolicy) DialContext(ctx context.Context, network, address string)
 			if err != nil {
 				return fmt.Errorf("%w: malformed peer", ErrEgressRefused)
 			}
-			return CheckAddress(peer.Addr(), p.allowPrivate)
+			return p.checkAddress(peer.Addr())
 		},
 	}
 	var last error
