@@ -13,7 +13,8 @@ import (
 // the optional capabilities (WritableBackend, Lister, Remover,
 // ArtifactCleaner) that the inner backend has, so callers that probe for a
 // capability with a type assertion see the same answer they would get from
-// the inner backend.
+// the inner backend. SnapshotOpener is a runtime-checked exception: Rooted
+// always advertises it but returns ErrSnapshotUnsupported if inner lacks it.
 type RootedBackend interface {
 	Backend
 	InnerBackend() Backend
@@ -128,8 +129,18 @@ func (c *rootedCore) Open(ctx context.Context, p string) (File, error) {
 	return c.inner.Open(ctx, c.ToInner(p))
 }
 
-// Capability mixins. Each is embedded only when the inner backend has the
-// capability, so the assembled type's method set mirrors the inner's.
+// OpenSnapshot preserves path mapping without weakening a snapshot read to
+// ordinary Open. Rooted wrappers over unsupported backends fail closed.
+func (c *rootedCore) OpenSnapshot(ctx context.Context, p string) (File, error) {
+	opener, ok := c.inner.(SnapshotOpener)
+	if !ok {
+		return nil, fmt.Errorf("%w: rooted inner backend", ErrSnapshotUnsupported)
+	}
+	return opener.OpenSnapshot(ctx, c.ToInner(p))
+}
+
+// Capability mixins other than SnapshotOpener. Each is embedded only when the
+// inner backend has the capability, so the assembled type reflects that set.
 
 type rootedCreate struct{ c *rootedCore }
 

@@ -40,7 +40,7 @@ func (p *pathRecorder) sequence() []string {
 		switch {
 		case strings.Contains(path, "attestation"):
 			out = append(out, "attest")
-		case strings.HasSuffix(path, "/claim"):
+		case strings.HasSuffix(path, "/claim-prepared"):
 			out = append(out, "claim")
 		case strings.HasSuffix(path, "/complete"):
 			out = append(out, "complete")

@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -44,13 +45,14 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	registry, dispatch := composeIntegratedServices(t, runtime, authority, &integratedExecutor{}, now)
+	registry, dispatch := composeIntegratedServices(t, runtime, authority,
+		&integratedExecutor{maxEffects: fleet.Effects{fleet.EffectMutatesExternal}}, now)
 	decision := integratedDecision(t, now)
 	ctx, err := authority.Binder().Bind(context.Background(), decision)
 	if err != nil {
 		t.Fatal(err)
 	}
-	descriptor := registerIntegratedAgent(t, registry, ctx, now)
+	descriptor := registerIntegratedAgent(t, registry, ctx, now, fleet.EffectMutatesExternal)
 	queued, err := dispatch.Enqueue(ctx, integratedEnqueue(now, descriptor,
 		[]byte("process-race-action"), []byte("process-race-key")))
 	if err != nil {
@@ -66,8 +68,7 @@ func TestDispatchGatewayClaimAcrossProcesses(t *testing.T) {
 	arrived := 0
 	release := make(chan struct{})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost && len(r.URL.Path) >= len("/claim") &&
-			r.URL.Path[len(r.URL.Path)-len("/claim"):] == "/claim" {
+		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/claim-prepared") {
 			mu.Lock()
 			arrived++
 			if arrived == 2 {
@@ -206,10 +207,10 @@ func TestDispatchGatewayClaimChild(t *testing.T) {
 		Context: contextValue, ExpectedVersion: 1,
 		ClaimID: []byte(os.Getenv("SHOAL_TEST_GATEWAY_ID")), Lease: time.Minute,
 	}
-	record, err := client.Claim(context.Background(), actionID, claim)
+	record, err := client.ClaimPrepared(context.Background(), actionID, claim)
 	result := processClaimResult{Kind: api.Kind(err), Fence: record.ClaimFence, State: record.State}
 	if err == nil {
-		replayed, replayErr := client.Claim(context.Background(), actionID, claim)
+		replayed, replayErr := client.ClaimPrepared(context.Background(), actionID, claim)
 		if replayErr != nil || replayed.ClaimFence != record.ClaimFence ||
 			replayed.Version != record.Version {
 			t.Fatalf("claim replay = %+v, %v; first claim = %+v", replayed, replayErr, record)

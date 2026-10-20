@@ -76,15 +76,23 @@ func TestSDKDispatchWorksAnActionThroughTheRealComposition(t *testing.T) {
 	}
 
 	claimID := []byte("sdk|pod-0|claim-1")
-	claimed, err := client.Claim(ctx, offered.ID, dispatchapi.Claim{
+	claimed, err := client.ClaimPrepared(ctx, offered.ID, dispatchapi.Claim{
 		Context: offered.Correlate(g.sdkContext("sdk_claim")), ExpectedVersion: offered.Version,
 		ClaimID: claimID, Lease: time.Minute,
 	})
 	if err != nil {
 		t.Fatalf("claim: %v", err)
 	}
+	material, err := client.ClaimMaterial(ctx, claimed.ID, dispatchapi.RecoveryClaim{
+		Context: claimed.Correlate(g.sdkContext("sdk_material")), ClaimID: claimID,
+		ClaimFence: claimed.ClaimFence,
+	})
+	if err != nil {
+		t.Fatalf("material: %v", err)
+	}
 	if claimed.State != dispatchapi.DispatchClaimed || claimed.ClaimFence == 0 ||
-		len(claimed.ExecutorKey) != dispatchapi.ExecutorKeyBytes || string(claimed.Input) != `{}` {
+		len(claimed.ExecutorKey) != 0 || len(claimed.Input) != 0 ||
+		len(material.ExecutorKey) != dispatchapi.ExecutorKeyBytes || string(material.Input) != `{}` {
 		t.Fatalf("claimed = %+v", claimed)
 	}
 

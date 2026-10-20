@@ -358,7 +358,7 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 		t.Fatal("PRECHECK refused an action with an hour of deadline")
 	}
 
-	// CLAIM: the only response with the input and the key.
+	// CLAIM withholds executable material; Material is claimant-only.
 	claimID, nonce, err := effectsgateway.NewClaimID("pod-0", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -375,17 +375,22 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("claim: %v", err)
 	}
-	if string(claimed.Input) != input && !jsonEqual(t, claimed.Input, input) {
-		t.Fatalf("claimed input = %s", claimed.Input)
-	}
-	if !claimed.ExecutorKey.HasKey() || claimed.ClaimFence != 1 || !claimed.EffectPossible ||
+	if len(claimed.Input) != 0 || claimed.ExecutorKey.HasKey() ||
+		claimed.ClaimFence != 1 || !claimed.EffectPossible ||
 		claimed.Version != offered.Version+1 {
 		t.Fatalf("claimed = %#v", claimed)
+	}
+	material, err := client.ClaimMaterial(ctx, claimed.ID, effectsgateway.RecoveryClaimRequest{
+		Context: claimed.Correlate(requestContext(t, "gateway_material")),
+		ClaimID: claimID, ClaimFence: claimed.ClaimFence,
+	})
+	if err != nil || (!jsonEqual(t, material.Input, input)) || !material.ExecutorKey.HasKey() {
+		t.Fatalf("material = %+v, %v", material, err)
 	}
 	// A transport retry of the same claim is answered by the replay branch.
 	claimRequest.Context = offered.Correlate(requestContext(t, "gateway_claim"))
 	replayed, err := client.Claim(ctx, offered.ID, claimRequest)
-	if err != nil || replayed.Version != claimed.Version || !replayed.ExecutorKey.Equal(claimed.ExecutorKey) {
+	if err != nil || replayed.Version != claimed.Version || replayed.ExecutorKey.HasKey() {
 		t.Fatalf("claim replay = %#v, %v", replayed, err)
 	}
 	// A second claimant, with a fresh claim ID, is refused: not found or
@@ -410,9 +415,20 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 	}
 
 	// VALIDATE + SEND + CLASSIFY.
-	bound, err := binder.Bind(route, claimed.Input, claimed.ExecutorKey)
+	bound, err := binder.Bind(route, material.Input, material.ExecutorKey)
 	if err != nil {
 		t.Fatalf("bind: %v", err)
+	}
+	requestDigest, scopeDigest := effectsgateway.RecoveryDigests(bound, "test-account")
+	if _, err := client.Prepare(ctx, claimed.ID, effectsgateway.RecoveryPrepareRequest{
+		RecoveryClaimRequest: effectsgateway.RecoveryClaimRequest{
+			Context: claimed.Correlate(requestContext(t, "gateway_prepare")),
+			ClaimID: claimID, ClaimFence: claimed.ClaimFence,
+		},
+		Mode: route.Idempotency(), RequestDigest: requestDigest,
+		TargetScopeDigest: scopeDigest,
+	}); err != nil {
+		t.Fatalf("prepare: %v", err)
 	}
 	request, err := effectsgateway.NewTargetRequest(ctx, bound, "Authorization", "Bearer target-secret")
 	if err != nil {
@@ -433,7 +449,7 @@ func TestEffectsGatewayClientAgainstTheRealDispatchHandler(t *testing.T) {
 	if classified.Outcome != effectsgateway.OutcomeSucceeded {
 		t.Fatalf("classified = %#v", classified)
 	}
-	if seenKey.Load() != claimed.ExecutorKey.HeaderValue() || targetHits.Load() != 1 {
+	if seenKey.Load() != material.ExecutorKey.HeaderValue() || targetHits.Load() != 1 {
 		t.Fatalf("the target saw key %v in %d requests", seenKey.Load(), targetHits.Load())
 	}
 

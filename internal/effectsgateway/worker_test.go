@@ -96,6 +96,109 @@ func TestWorkerHappyPath(t *testing.T) {
 	}
 }
 
+type alteredClaimDispatcher struct {
+	Dispatcher
+	alter func(*Action)
+}
+
+func (d alteredClaimDispatcher) Claim(ctx context.Context, id []byte, request ClaimRequest) (Action, error) {
+	action, err := d.Dispatcher.Claim(ctx, id, request)
+	if err == nil {
+		d.alter(&action)
+	}
+	return action, err
+}
+
+// A successful HTTP status is not enough to authorize sending bytes. The
+// claimed record must still be the offered action under this worker's claim.
+func TestWorkerRefusesUnboundClaimAnswerBeforeTargetSend(t *testing.T) {
+	cases := map[string]func(*Action){
+		"different action ID":      func(a *Action) { a.ID = []byte("other") },
+		"different agent":          func(a *Action) { a.AgentID = []byte("other") },
+		"different generation":     func(a *Action) { a.AgentGeneration++ },
+		"different capability":     func(a *Action) { a.Capability = "other" },
+		"different action":         func(a *Action) { a.Action = "refund" },
+		"different creation time":  func(a *Action) { a.CreatedAt = a.CreatedAt.Add(time.Second) },
+		"different deadline":       func(a *Action) { a.Deadline = a.Deadline.Add(time.Second) },
+		"different correlation":    func(a *Action) { a.CorrelationID = []byte("other") },
+		"wrong state":              func(a *Action) { a.State = dispatchapi.DispatchSucceeded },
+		"unchanged version":        func(a *Action) { a.Version-- },
+		"advanced version twice":   func(a *Action) { a.Version++ },
+		"different claim ID":       func(a *Action) { a.ClaimID = []byte("other") },
+		"missing fence":            func(a *Action) { a.ClaimFence = 0 },
+		"jumped fence":             func(a *Action) { a.ClaimFence += 2 },
+		"backdated update":         func(a *Action) { a.UpdatedAt = a.UpdatedAt.Add(-time.Second) },
+		"lease beyond request":     func(a *Action) { a.ClaimLeaseUntil = a.ClaimLeaseUntil.Add(time.Second) },
+		"effect marked impossible": func(a *Action) { a.EffectPossible = false },
+		"unexpected input":         func(a *Action) { a.Input = json.RawMessage(`{"unexpected":true}`) },
+		"unexpected executor key":  func(a *Action) { a.ExecutorKey = ExecutorKey{set: true} },
+	}
+	for name, alter := range cases {
+		t.Run(name, func(t *testing.T) {
+			h := newWorkerHarness(t, nil)
+			h.worker.cfg.Dispatch = alteredClaimDispatcher{Dispatcher: h.explorer, alter: alter}
+			h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
+			h.start()
+			eventually(t, "the claim protocol refusal", func() bool {
+				for _, line := range h.logs.lines() {
+					if line["event"] == string(EventDispatch) &&
+						line["dispatch_error"] == string(DispatchProtocol) {
+						return true
+					}
+				}
+				return false
+			})
+			if effects, requests, _ := h.target.stats(); effects != 0 || requests != 0 {
+				t.Fatalf("unbound claim reached target: %d effects, %d requests", effects, requests)
+			}
+			if h.logs.has(string(EventClaimed)) {
+				t.Fatal("unbound claim was accepted as a worker run")
+			}
+		})
+	}
+}
+
+func TestWorkerUsesPulledCorrelationWhenOldClaimWireOmitsIt(t *testing.T) {
+	h := newWorkerHarness(t, nil)
+	h.worker.cfg.Dispatch = alteredClaimDispatcher{
+		Dispatcher: h.explorer,
+		alter:      func(a *Action) { a.CorrelationID = nil },
+	}
+	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
+	h.start()
+	eventually(t, "the old-wire action to succeed", func() bool {
+		return h.state("a1") == dispatchapi.DispatchSucceeded
+	})
+	if effects, requests, _ := h.target.stats(); effects != 1 || requests != 1 {
+		t.Fatalf("old claim wire saw %d effects, %d requests, want one", effects, requests)
+	}
+	if got := h.completion(1).Context.CorrelationID; string(got) != "trace-a1" {
+		t.Fatalf("completion correlation = %q, want Pull correlation", got)
+	}
+}
+
+func TestWorkerRefusesReusedFenceOnReclaim(t *testing.T) {
+	h := newWorkerHarness(t, nil)
+	h.worker.cfg.Dispatch = alteredClaimDispatcher{
+		Dispatcher: h.explorer,
+		alter:      func(a *Action) { a.ClaimFence = 1 },
+	}
+	lapsedPreparedCharge(t, h, "a1")
+	h.start()
+	eventually(t, "the stale-fence protocol refusal", func() bool {
+		for _, line := range h.logs.lines() {
+			if line["event"] == string(EventDispatch) &&
+				line["dispatch_error"] == string(DispatchProtocol) {
+				return true
+			}
+		}
+		return false
+	})
+	if effects, requests, _ := h.target.stats(); effects != 0 || requests != 0 {
+		t.Fatalf("reused claim fence reached target: %d effects, %d requests", effects, requests)
+	}
+}
+
 // TestWorkerFiltersAndPrechecksBeforeClaiming: another agent's, another
 // capability's and an unrouted action are never claimed; a key route whose
 // deadline outlives the retention, and an action whose deadline cannot hold

@@ -629,7 +629,7 @@ func TestClaimPossiblyCommittedIsARepullSignal(t *testing.T) {
 		}
 		var dispatchErr *DispatchError
 		if row.kind == DispatchRepull {
-			if !errors.As(err, &dispatchErr) || dispatchErr.Op != "claim" {
+			if !errors.As(err, &dispatchErr) || dispatchErr.Op != "claim-prepared" {
 				t.Fatalf("%s: %#v", row.name, err)
 			}
 			original := errors.Unwrap(err)
