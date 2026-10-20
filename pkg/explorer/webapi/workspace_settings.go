@@ -359,11 +359,14 @@ func workspaceOperationForRequest(
 			path == "/api/v1/fleet/actions/pull" ||
 			(strings.HasPrefix(path, "/api/v1/fleet/actions/") &&
 				(strings.HasSuffix(path, "/claim") ||
-					// The two routes a claim's holder uses between claiming
-					// and completing, under the same authority as the claim
+					strings.HasSuffix(path, "/claim-prepared") ||
+					strings.HasSuffix(path, "/material") ||
+					strings.HasSuffix(path, "/prepare") ||
+					// Claimant routes between claiming
+					// and completing use the same authority as the claim
 					// and the completion on either side of them.
 					//
-					// Unlisted, neither was a 404: applyWorkspaceSettings
+					// Unlisted, a route is not a 404: applyWorkspaceSettings
 					// consults this table before dispatching, so a caller
 					// sending a workspace ID was refused "workspace settings
 					// are not registered for this route" before the handler
@@ -727,6 +730,8 @@ func requestMayCommit(method, path string) bool {
 					strings.HasSuffix(path, "/revoke"))) ||
 			(strings.HasPrefix(path, "/api/v1/fleet/actions/") &&
 				(strings.HasSuffix(path, "/claim") ||
+					strings.HasSuffix(path, "/claim-prepared") ||
+					strings.HasSuffix(path, "/prepare") ||
 					strings.HasSuffix(path, "/complete") ||
 					// A lost-fence report writes to the record before its
 					// response is encoded. It does not transition the action,

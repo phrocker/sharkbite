@@ -160,6 +160,7 @@ spec:
             - {{ printf "-capability=%v" $gateway.capability | quote }}
             - {{ printf "-surface-name=%v" $gateway.surfaceName | quote }}
             - {{ printf "-executor-ref=%v" $gateway.executorRef | quote }}
+            - {{ printf "-target-scope=%v" $target.targetScope | quote }}
             - {{ printf "-target-base-url=%v" $target.baseURL | quote }}
             - {{ printf "-target-allow-private=%v" $target.allowPrivate | quote }}
             - {{ printf "-target-auth-header=%v" $target.authHeader | quote }}

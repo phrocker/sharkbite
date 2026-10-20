@@ -29,6 +29,8 @@ func TestTheGatewayRenewsOnTheFenceAfterAFormerHoldersReport(t *testing.T) {
 	client := g.gateway(testExecutorRef)
 
 	_, former, formerClaimID := g.pullAndClaim(client, "stripe-fence", "alice-trace-fence", time.Minute)
+	// Commit the first request before the later fence can be recovered.
+	g.prepareClaim(client, former, formerClaimID)
 	g.h.advance(time.Minute + time.Second)
 	client = g.gateway(testExecutorRef)
 	_, current, currentClaimID := g.pullAndClaim(client, "stripe-fence", "alice-trace-fence", time.Minute)

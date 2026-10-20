@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	dispatchapi "github.com/phrocker/shoal-oss/pkg/dispatch/api"
 	"github.com/phrocker/shoal-oss/pkg/explorer"
 	"github.com/phrocker/shoal-oss/pkg/explorer/auth"
 	"github.com/phrocker/shoal-oss/pkg/explorer/fleet"
@@ -138,7 +139,7 @@ func TestTwoUserHTTPMCPDemoAcceptance(t *testing.T) {
 			"cross-user session correlation was shared: %q",
 			aliceDispatch.Action.CorrelationID)
 	}
-	for _, action := range []fleet.ActionRecord{
+	for _, action := range []dispatchapi.Action{
 		aliceDispatch.Action, aliceInvoke.Action, bobDispatch.Action,
 	} {
 		if strings.HasPrefix(
@@ -147,7 +148,7 @@ func TestTwoUserHTTPMCPDemoAcceptance(t *testing.T) {
 				action.CorrelationID)
 		}
 	}
-	if aliceInvoke.Action.State != fleet.DispatchSucceeded {
+	if aliceInvoke.Action.State != dispatchapi.DispatchState(fleet.DispatchSucceeded) {
 		t.Fatalf("simulated invoke state = %q", aliceInvoke.Action.State)
 	}
 

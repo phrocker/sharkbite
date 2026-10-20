@@ -28,6 +28,7 @@ type fakeCluster struct {
 	ambiguous   bool
 	reject      bool
 	locateCalls int
+	writeCalls  int
 }
 
 func newFakeCluster() *fakeCluster {
@@ -136,6 +137,7 @@ func (f *fakeCluster) ConditionalWrite(
 	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	f.writeCalls++
 	if f.reject {
 		return ingestclient.ConditionalRejected, nil
 	}
@@ -339,12 +341,18 @@ func TestAuthorityConcurrentReferencesAndAmbiguousMincCommit(t *testing.T) {
 func TestAuthorityRejectsKnownEmbeddingWithoutMetadataSidecar(t *testing.T) {
 	cluster := newFakeCluster()
 	authority, fence := testAuthority(t, cluster)
+	ref := walauthority.Reference{ID: uuid.NewString()}
+	ref.Path = "file:///wal/shoal+9997/" + ref.ID
+	ref.Qualifier = "-/" + ref.Path
+	if err := authority.EnsureReference(context.Background(), authority.extent, fence, ref); err != nil {
+		t.Fatal(err)
+	}
 	file := mincauthority.DataFile{
 		Path: "file:///tables/5/t-1/F0001.rf", Format: "rfile",
 		Size: 42, Entries: 8, Embedding: embeddingspace.Has("space-a"),
 	}
 	outcome, err := authority.Commit(context.Background(), mincauthority.MetadataCommit{
-		Extent: authority.extent, Fence: fence, File: file,
+		Extent: authority.extent, Fence: fence, File: file, RemoveWALs: []walauthority.Reference{ref},
 	})
 	if outcome != mincauthority.CommitRejected || !errors.Is(err, ErrEmbeddingSidecarRequired) {
 		t.Fatalf("Commit = %v, %v, want sidecar rejection", outcome, err)
@@ -360,6 +368,36 @@ func TestAuthorityRejectsKnownEmbeddingWithoutMetadataSidecar(t *testing.T) {
 	}
 	if _, ok := cluster.cells[cell(metadata.CFFileEmbedding, string(fileQualifier))]; ok {
 		t.Fatal("rejected known embedding committed a custom family")
+	}
+}
+
+func TestAuthorityRejectsUncoveredFileBeforeMetadataMutation(t *testing.T) {
+	cluster := newFakeCluster()
+	authority, fence := testAuthority(t, cluster)
+	cluster.mu.Lock()
+	writesBefore := cluster.writeCalls
+	cluster.mu.Unlock()
+
+	file := mincauthority.DataFile{
+		Path: "file:///tables/5/t-1/uncovered.rf", Format: "rfile",
+		Size: 42, Entries: 1, Embedding: embeddingspace.Unknown(),
+	}
+	outcome, err := authority.Commit(context.Background(), mincauthority.MetadataCommit{
+		OperationID: "unlogged-op", Extent: authority.extent, Fence: fence,
+		File: file, TabletTime: "M42",
+	})
+	if outcome != mincauthority.CommitRejected || !errors.Is(err, ErrUncoveredFile) {
+		t.Fatalf("uncovered Commit = %v, %v", outcome, err)
+	}
+	cluster.mu.Lock()
+	writesAfter := cluster.writeCalls
+	cluster.mu.Unlock()
+	if writesAfter != writesBefore {
+		t.Fatalf("uncovered Commit made %d conditional writes", writesAfter-writesBefore)
+	}
+	state, err := authority.Read(context.Background(), authority.extent)
+	if err != nil || len(state.Files) != 0 || len(state.WALs) != 0 || state.Time != "M0" {
+		t.Fatalf("metadata changed after rejected uncovered Commit: %+v, %v", state, err)
 	}
 }
 

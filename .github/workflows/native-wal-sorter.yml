@@ -1,0 +1,53 @@
+name: Native WAL sorter proof
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/native-wal-sorter.yml"
+      - "internal/qwal/**"
+      - "internal/rfile/wire/**"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
+      - "internal/conformance/**"
+      - "cmd/shoal-conformance/**"
+      - "test/accumulo/docker-compose.yml"
+      - "test/accumulo/image/Dockerfile"
+      - "test/accumulo/harness.py"
+      - "test/accumulo/test_harness.py"
+      - "test/accumulo/native-wal-sorter/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/native-wal-sorter.yml"
+      - "internal/qwal/**"
+      - "internal/rfile/wire/**"
+      - "go.mod"
+      - "go.sum"
+      - "Makefile"
+      - "internal/conformance/**"
+      - "cmd/shoal-conformance/**"
+      - "test/accumulo/docker-compose.yml"
+      - "test/accumulo/image/Dockerfile"
+      - "test/accumulo/harness.py"
+      - "test/accumulo/test_harness.py"
+      - "test/accumulo/native-wal-sorter/**"
+
+permissions:
+  contents: read
+
+jobs:
+  native-wal-sorter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Verify pinned Accumulo harness configuration
+        run: make test-accumulo-static
+      - name: Sort and recover Go-native WAL with pinned Accumulo Java
+        run: bash test/accumulo/native-wal-sorter/run.sh

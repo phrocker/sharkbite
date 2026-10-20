@@ -1,6 +1,6 @@
 requests: 1
-request: POST /shoal/api/v1/fleet/actions/YQD_/claim
-error: dispatch claim: unexpected_status (HTTP 500, internal)
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: unexpected_status (HTTP 500, internal)
 kind: unexpected_status
 status: 500 code: "internal" failure: ""
 is ambiguity unrecorded: false

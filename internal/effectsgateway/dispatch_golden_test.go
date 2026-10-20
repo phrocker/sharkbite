@@ -134,9 +134,9 @@ func newCapturingExplorer(t *testing.T) *capturingExplorer {
 			switch {
 			case strings.HasSuffix(path, "/actions/pull"):
 				fmt.Fprint(writer, `{"actions":[`+goldenRecordJSON("queued", 1, 0, "")+`]}`)
-			case strings.HasSuffix(path, "/claim"):
+			case strings.HasSuffix(path, "/claim-prepared"):
 				fmt.Fprint(writer, goldenRecordJSON("claimed", 2, 1,
-					`,"input":{"account":"a1"},"executor_key":"`+goldenExecutorKey+`"`))
+					`,"recovery_protocol_version":1`))
 			case strings.HasSuffix(path, "/extend"):
 				fmt.Fprint(writer, goldenRecordJSON("claimed", 3, 1, ""))
 			case strings.HasSuffix(path, "/complete"):
@@ -510,8 +510,7 @@ func testDispatchClientGolden(t *testing.T) {
 		}
 	}
 
-	claimed := goldenRecordJSON("claimed", 2, 1,
-		`,"input":{"account":"a1"},"executor_key":"`+goldenExecutorKey+`"`)
+	claimed := goldenRecordJSON("claimed", 2, 1, `,"recovery_protocol_version":1`)
 	renewed := goldenRecordJSON("claimed", 5, 1, "")
 	succeeded := goldenRecordJSON("succeeded", 4, 1, `,"output":{"n":1,"reference":"ch_1"}`)
 	failed := goldenRecordJSON("failed", 4, 1, `,"error_code":"outcome_unknown"`)
@@ -556,13 +555,14 @@ func testDispatchClientGolden(t *testing.T) {
 	add("claim_ok", claim(), answer(200, claimed))
 	add("claim_ok_201", claim(), answer(201, claimed))
 	add("claim_ok_unknown_field", claim(), answer(200, strings.TrimSuffix(claimed, "}")+`,"future":{"x":[1]}}`))
-	add("claim_ok_padded_std_executor_key", claim(), answer(200, strings.Replace(claimed, goldenExecutorKey,
-		base64.StdEncoding.EncodeToString(mustDecodeRawURL(goldenExecutorKey)), 1)))
-	add("claim_ok_no_executor_key", claim(), answer(200, strings.Replace(claimed,
-		`,"executor_key":"`+goldenExecutorKey+`"`, "", 1)))
-	add("claim_bad_executor_key", claim(), answer(200, strings.Replace(claimed, goldenExecutorKey, "AAAA", 1)))
-	add("claim_executor_key_whitespace", claim(), answer(200, strings.Replace(claimed, goldenExecutorKey,
-		goldenExecutorKey[:20]+`\n`+goldenExecutorKey[20:], 1)))
+	add("claim_leaks_executor_key", claim(), answer(200, strings.TrimSuffix(claimed, "}")+
+		`,"executor_key":"`+goldenExecutorKey+`"}`))
+	add("claim_leaks_input", claim(), answer(200, strings.TrimSuffix(claimed, "}")+
+		`,"input":{"account":"a1"}}`))
+	add("claim_missing_marker", claim(), answer(200, strings.Replace(claimed,
+		`,"recovery_protocol_version":1`, "", 1)))
+	add("claim_unknown_marker", claim(), answer(200, strings.Replace(claimed,
+		`"recovery_protocol_version":1`, `"recovery_protocol_version":2`, 1)))
 	add("claim_other_claim_id", claim(), answer(200, strings.Replace(claimed, "Z3cxfHBvZHxjbGFpbQ", "b3RoZXI", 1)))
 	add("claim_other_action", claim(), answer(200, strings.Replace(claimed, `"id":"YQD_"`, `"id":"YWI"`, 1)))
 	add("claim_state_queued", claim(), answer(200, strings.Replace(claimed, `"claimed"`, `"queued"`, 1)))
