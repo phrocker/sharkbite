@@ -584,6 +584,11 @@ type ActionRecord struct {
 	EvidenceSnapshotAsOf time.Time
 	Evidence             []EvidenceRef
 	EffectPossible       bool
+	// RecoveryCommitment is a write-once statement of the exact request a
+	// trusted external gateway prepared before its first target send. Nil on
+	// legacy actions and on actions not yet prepared. A later claim may use it
+	// only after independently binding and comparing its candidate request.
+	RecoveryCommitment *RecoveryCommitment `json:"-"`
 	// AdmittedEffects is the effect set a pre-call admission declared it was
 	// about to perform. Empty on an action that was dispatched rather than
 	// admitted.
@@ -1460,6 +1465,20 @@ func (r ActionRecord) Validate() error {
 		(r.ExecutionPolicyGeneration <= 0 || r.ExecutionExpiresAt.IsZero()) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "action execution authorization is incomplete")
 	}
+	if r.RecoveryCommitment != nil {
+		if err := r.RecoveryCommitment.validate(); err != nil {
+			return err
+		}
+		if r.State == DispatchQueued || len(r.ClaimID) == 0 ||
+			r.ClaimFence < r.RecoveryCommitment.PreparedFence || !r.EffectPossible ||
+			r.RecoveryCommitment.PreparedAt.Before(r.CreatedAt) ||
+			r.RecoveryCommitment.PreparedAt.After(r.UpdatedAt) ||
+			!r.RecoveryCommitment.PreparedAt.Before(r.ClaimLeaseUntil) ||
+			!r.RecoveryCommitment.PreparedAt.Before(r.Deadline) {
+			return shoal.NewError(shoal.ErrorInvalidArgument,
+				"action recovery commitment is outside its claim bounds")
+		}
+	}
 	// EffectPossible is deliberately not required here. It was, and that
 	// requirement enforced a falsehood: it made every terminal record assert
 	// an effect may have happened, including an action declaring no external
@@ -1851,6 +1870,10 @@ func validateSchemaValue(schema map[string]any, value any, path string, depth in
 
 func cloneActionRecord(input ActionRecord) ActionRecord {
 	result := input
+	if input.RecoveryCommitment != nil {
+		commitment := *input.RecoveryCommitment
+		result.RecoveryCommitment = &commitment
+	}
 	result.ID = append([]byte(nil), input.ID...)
 	result.IdempotencyKey = append([]byte(nil), input.IdempotencyKey...)
 	result.SourceID = append([]byte(nil), input.SourceID...)

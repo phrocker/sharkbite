@@ -211,6 +211,10 @@ func (s *DispatchStore) ApplyAction(ctx context.Context, mutation fleet.Dispatch
 	if mutation.Record.Version != mutation.ExpectedVersion+1 {
 		return fleet.ActionRecord{}, shoal.NewError(shoal.ErrorInvalidArgument, "fleet action version transition is invalid")
 	}
+	if mutation.ExpectedVersion == 0 && mutation.Record.RecoveryCommitment != nil {
+		return fleet.ActionRecord{}, shoal.NewError(shoal.ErrorInternal,
+			"new fleet action cannot carry a recovery commitment")
+	}
 	value, err := encodeAction(mutation.Record)
 	if err != nil {
 		return fleet.ActionRecord{}, err
@@ -921,6 +925,27 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 		return shoal.NewError(
 			shoal.ErrorInternal,
 			"fleet action possible effect may not be withdrawn")
+	}
+	// Only the first claim that declared a possible effect may acquire a
+	// recovery commitment. Once written, every later transition carries the
+	// identical value. A lapsed legacy claim cannot gain a commitment
+	// retroactively and claim it was
+	// present before the earlier worker might have sent an effect.
+	if current.RecoveryCommitment != nil {
+		if next.RecoveryCommitment == nil ||
+			*current.RecoveryCommitment != *next.RecoveryCommitment {
+			return shoal.NewError(shoal.ErrorInternal,
+				"fleet action recovery commitment is written once")
+		}
+	} else if next.RecoveryCommitment != nil &&
+		(current.State != fleet.DispatchClaimed || next.State != fleet.DispatchClaimed ||
+			!current.EffectPossible ||
+			current.ClaimFence != 1 || next.ClaimFence != 1 ||
+			!bytes.Equal(current.ClaimID, next.ClaimID) ||
+			next.RecoveryCommitment.PreparedAt.Before(current.UpdatedAt) ||
+			!next.RecoveryCommitment.PreparedAt.Before(current.ClaimLeaseUntil)) {
+		return shoal.NewError(shoal.ErrorInternal,
+			"fleet action recovery commitment requires its first claim")
 	}
 	// An admitted in-process effect cannot be withdrawn or replaced. A lost
 	// response or expired claim does not establish that it never happened.
