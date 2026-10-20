@@ -120,11 +120,39 @@ reproducibility. The bundle digest matches `learning.bundle_digest` in
 `experiments/decision-learning` and `internal/weightsbundle` in Go, and
 `decisionlinear.LoadBundle` serves the bundle after verifying every digest.
 
+## Selective distillation worker
+
+`distill.py` is the external worker for a distillation job
+(`internal/distillation` holds the manifest and contract). It reads the
+manifest once and refuses it unless its raw bytes hash to the authorized
+pin and the pin is the canonical content address; admits each export only
+through `authorized_manifest.load` with the pinned export digest and only
+for an admitted task, cohort, and label policy; refuses any export that
+contains a held-out example; records the teacher's outputs as predictions
+with provenance; fits the reference student (a deterministic averaged
+perceptron on the teacher's labels); publishes `bundle/` as a weights
+bundle; and writes `distillation-receipt.json` naming requested versus
+actual parameters, cohorts, teacher, base, runtime identities, and the
+executor. The receipt never claims improvement and never evaluates.
+
+```sh
+"$PYTHON" distill.py --manifest manifest.json --manifest-pin "$PIN" \
+  --export cohort-1=dataset.json:export-manifest.json \
+  --output-dir student --executor-id worker-1
+```
+
+`--teacher-command` runs an external teacher (rows as JSON on stdin,
+predictions on stdout); `--parameter key=json` records an actual-parameter
+deviation. The Go fixtures in `internal/distillation/testdata` were produced
+by this worker. A checkpoint fine-tune student is a `STUDENTS` entry with the
+same inputs and outputs; the pinned CPU run of a small open checkpoint is
+tracked work, not shipped here.
+
 ## Validation and remaining work
 
 ```sh
 "$PYTHON" -m unittest discover -s experiments/local-ml -v
-go test -race ./internal/decisionlinear ./internal/weightsbundle ./cmd/shoal-local-ml-demo \
+go test -race ./internal/decisionlinear ./internal/weightsbundle ./internal/distillation ./cmd/shoal-local-ml-demo \
   ./internal/decisionartifacts ./internal/decisionservice ./internal/decisionstore ./pkg/decision
 go vet ./internal/decisionlinear ./cmd/shoal-local-ml-demo
 ```
