@@ -21,6 +21,100 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
+func TestDispatchDelayedActionSurvivesServiceRestartAndCannotBeClaimedEarly(t *testing.T) {
+	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
+	authority, _ := auth.NewAuthorityWithClock(func() time.Time { return now })
+	registryStore := newMemoryStore()
+	registryStore.records["agent"] = Stored{Descriptor: dispatchDescriptor(now)}
+	registry, err := NewService(Config{
+		Store: registryStore, Resolver: authority.Resolver(), Recorder: &memoryRecorder{},
+		Snapshots: fixedSnapshot{now}, Executors: executorMap{"exec": &dispatchExecutor{}},
+		Clock: func() time.Time { return now },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	store := newMemoryDispatchStore()
+	newService := func() *DispatchService {
+		t.Helper()
+		service, err := NewDispatchService(DispatchConfig{
+			Store: store, Registry: registry, Resolver: authority.Resolver(),
+			Recorder: silentDispatchRecorder{}, Events: dispatchEvents{},
+			Clock: func() time.Time { return now },
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return service
+	}
+	service := newService()
+	ctx := bindDecision(t, authority, dispatchDecision(
+		t, "owner", "actor", "request", auth.OperationDispatch, auth.OperationInvoke,
+	))
+	request := dispatchEnqueue(now, "request")
+	invalid := request
+	invalid.NotBefore = invalid.Context.Deadline
+	if _, err := service.Enqueue(ctx, invalid); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
+		t.Fatalf("schedule at deadline = %v, want invalid argument", err)
+	}
+	if _, err := store.GetAction(ctx, request.ID); !errors.Is(err, ErrActionNotFound) {
+		t.Fatalf("invalid schedule wrote a record: %v", err)
+	}
+	request.NotBefore = now.Add(10 * time.Minute)
+	if _, err := service.Invoke(ctx, InvokeRequest{Enqueue: request, ClaimID: []byte("claim"), Lease: time.Minute}); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
+		t.Fatalf("scheduled invoke = %v, want invalid argument", err)
+	}
+	if _, err := store.GetAction(ctx, request.ID); !errors.Is(err, ErrActionNotFound) {
+		t.Fatalf("scheduled invoke wrote a record: %v", err)
+	}
+	queued, err := service.Enqueue(ctx, request)
+	if err != nil || !queued.NotBefore.Equal(request.NotBefore) {
+		t.Fatalf("delayed enqueue = %#v, %v", queued, err)
+	}
+	if replay, err := service.Enqueue(ctx, request); err != nil || replay.Version != queued.Version {
+		t.Fatalf("identical retry = %#v, %v", replay, err)
+	}
+	changed := request
+	changed.NotBefore = changed.NotBefore.Add(time.Minute)
+	if _, err := service.Enqueue(ctx, changed); !errors.Is(err, ErrActionConflict) {
+		t.Fatalf("changed schedule replay = %v, want conflict", err)
+	}
+	if _, err := service.Claim(ctx, ClaimRequest{
+		ID: queued.ID, ExpectedVersion: queued.Version, ClaimID: []byte("claim"),
+		Lease: time.Minute, Context: request.Context,
+	}); !errors.Is(err, ErrActionConflict) {
+		t.Fatalf("direct early claim = %v, want conflict", err)
+	}
+	worker := bindDecision(t, authority, dispatchDecision(
+		t, "worker", "worker", "worker-request", auth.OperationExecute,
+	))
+	if _, err := service.Claim(worker, ClaimRequest{
+		ID: queued.ID, ExpectedVersion: queued.Version, ClaimID: []byte("worker-claim"),
+		Lease: time.Minute, Context: dispatchContext(now, "worker-request"),
+	}); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("hidden early claim = %v, want not found", err)
+	}
+	page, err := service.Pull(ctx, PullActionsRequest{Limit: 10, Context: request.Context})
+	if err != nil || len(page.Actions) != 0 {
+		t.Fatalf("early pull = %#v, %v", page, err)
+	}
+	// A second service sees the same persisted schedule. The record becomes
+	// claimable at the boundary, with no in-memory timer or owner process.
+	service = newService()
+	now = request.NotBefore
+	page, err = service.Pull(ctx, PullActionsRequest{Limit: 10, Context: request.Context})
+	if err != nil || len(page.Actions) != 1 {
+		t.Fatalf("due pull = %#v, %v", page, err)
+	}
+	claimed, err := service.Claim(ctx, ClaimRequest{
+		ID: queued.ID, ExpectedVersion: queued.Version, ClaimID: []byte("claim"),
+		Lease: time.Minute, Context: request.Context,
+	})
+	if err != nil || claimed.State != DispatchClaimed {
+		t.Fatalf("due claim = %#v, %v", claimed, err)
+	}
+}
+
 func TestValidateExecutionEvidenceRequiresCompletePinnedAnchors(t *testing.T) {
 	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
 	result := ExecutionResult{
@@ -116,7 +210,7 @@ func TestDispatchInvokeFreshAuthorizationAndAmbiguousRecording(t *testing.T) {
 	if _, err := service.Cancel(retryCtx, CancelRequest{
 		ID: stored.ID, ExpectedVersion: stored.Version,
 		MutationKey: []byte("cancel"), Context: dispatchContext(now, "retry"),
-	}); !errors.Is(err, ErrExecutionAmbiguous) {
+	}); !errors.Is(err, ErrCancelClaimUncertain) {
 		t.Fatalf("cancel after lapsed admitted execution = %v", err)
 	}
 	page, err := service.Pull(retryCtx, PullActionsRequest{

@@ -60,6 +60,14 @@ func (p *recordingDispatchProvider) Claim(_ context.Context, r fleet.ClaimReques
 	return p.answer(r)
 }
 
+func (p *recordingDispatchProvider) ClaimMaterial(_ context.Context, r fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	return p.answer(r)
+}
+
+func (p *recordingDispatchProvider) PrepareClaim(_ context.Context, r fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
+	return p.answer(r)
+}
+
 func (p *recordingDispatchProvider) Cancel(_ context.Context, r fleet.CancelRequest) (fleet.ActionRecord, error) {
 	return p.answer(r)
 }
@@ -282,7 +290,7 @@ const dispatchGoldenAction = "/api/v1/fleet/actions/YQD_/"
 func dispatchGoldenCases() []dispatchGoldenCase {
 	const (
 		pull      = "/api/v1/fleet/actions/pull"
-		claim     = dispatchGoldenAction + "claim"
+		claim     = dispatchGoldenAction + "claim-prepared"
 		extend    = dispatchGoldenAction + "extend"
 		complete  = dispatchGoldenAction + "complete"
 		ambiguity = dispatchGoldenAction + "ambiguity"
@@ -291,6 +299,12 @@ func dispatchGoldenCases() []dispatchGoldenCase {
 	)
 	claimed := recordingDispatchProvider{record: dispatchGoldenRecord(fleet.DispatchClaimed)}
 	minimal := recordingDispatchProvider{record: dispatchGoldenMinimalRecord()}
+	prepared := claimed
+	prepared.record.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
+	prepared.record.EffectPossible = true
+	minimalPrepared := minimal
+	minimalPrepared.record.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
+	minimalPrepared.record.EffectPossible = true
 	succeeded := recordingDispatchProvider{record: dispatchGoldenRecord(fleet.DispatchSucceeded)}
 	failed := recordingDispatchProvider{record: dispatchGoldenRecord(fleet.DispatchFailed)}
 	page := func(next []byte, records ...fleet.ActionRecord) recordingDispatchProvider {
@@ -309,7 +323,7 @@ func dispatchGoldenCases() []dispatchGoldenCase {
 	}
 	routes := []route{
 		{"pull", pull, dispatchGoldenPull, page([]byte{'n', 0, 255}, dispatchGoldenRecord(fleet.DispatchQueued))},
-		{"claim", claim, dispatchGoldenClaim, claimed},
+		{"claim", claim, dispatchGoldenClaim, prepared},
 		{"extend", extend, dispatchGoldenExtend, claimed},
 		{"complete", complete, dispatchGoldenComplete, succeeded},
 		{"ambiguity", ambiguity, dispatchGoldenAmbiguity, claimed},
@@ -317,9 +331,9 @@ func dispatchGoldenCases() []dispatchGoldenCase {
 	}
 
 	cases := []dispatchGoldenCase{
-		// Encodings: a claim is the one route that carries input and the
-		// executor key; every other route leaves both off.
-		{name: "claim_minimal_record", path: claim, body: dispatchGoldenClaim.String(), provider: minimal},
+		// Prepared Claim carries public metadata; the separate Material route
+		// carries executable fields only to the current live claimant.
+		{name: "claim_minimal_record", path: claim, body: dispatchGoldenClaim.String(), provider: minimalPrepared},
 		{name: "extend_minimal_record", path: extend, body: dispatchGoldenExtend.String(), provider: minimal},
 		{name: "extend_with_expected_version", path: extend,
 			body: dispatchGoldenExtend.plus("expected_version", `9`).String(), provider: claimed},

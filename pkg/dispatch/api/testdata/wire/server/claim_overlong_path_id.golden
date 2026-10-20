@@ -5,4 +5,4 @@ provider calls: 0
 status: 400
 content-type: application/json; charset=utf-8
 shoal-commit-outcome: 
-body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: action ID is invalid\"}\n"
+body: "{\"code\":\"invalid_argument\",\"message\":\"invalid_argument: remote claim requires the prepared gateway protocol\"}\n"

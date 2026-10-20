@@ -23,6 +23,21 @@ import (
 
 var testNow = time.Date(2026, 9, 6, 14, 0, 0, 0, time.FixedZone("CEST", 2*3600))
 
+func TestRecoveryRefusalHeaderUsesClosedVocabulary(t *testing.T) {
+	for _, row := range []struct{ header, want string }{
+		{"request_drift", "request_drift"},
+		{"scope_drift", "scope_drift"},
+		{"secret-tenant-value", ""},
+	} {
+		response := &http.Response{StatusCode: http.StatusConflict, Header: http.Header{}}
+		response.Header.Set("Shoal-Recovery-Refusal", row.header)
+		var got *Error
+		if !errors.As(statusError("prepare", response, nil), &got) || got.RecoveryRefusal != row.want {
+			t.Fatalf("header %q produced %#v, want %q", row.header, got, row.want)
+		}
+	}
+}
+
 func testContext() Context {
 	return Context{
 		RequestID: []byte("request"), CorrelationID: []byte("trace-527"),

@@ -164,6 +164,7 @@ func TestTheGatewayCommandPerformsAnActionEndToEnd(t *testing.T) {
 			"-dispatch-url=" + g.server.URL, "-dispatch-token-file=" + token,
 			"-agent-id=" + b64([]byte(commandAgent)), "-executor-ref=" + testExecutorRef,
 			"-surface-name=api.stripe.test",
+			"-target-scope=stripe-test-account",
 			"-target-base-url=" + target.server.URL, "-target-allow-private",
 			"-target-credential-file=" + credential,
 			"-routes=" + statusRoutes,

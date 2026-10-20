@@ -11,7 +11,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -129,7 +128,7 @@ func TestFleetDispatchMountRequiresAuthenticationAndPreservesOpaqueIDs(t *testin
 		AgentID:        encodeFleetID("agent"), AgentGeneration: 1,
 		Capability: "search", Action: "query", SourceID: []byte("source"),
 		PolicyID: []byte("policy"), ObjectID: encodeFleetID("object"),
-		Input: json.RawMessage(`{"value":1}`),
+		Input: json.RawMessage(`{"value":1}`), NotBefore: now.Add(30 * time.Second),
 	})
 	request := httptest.NewRequest(http.MethodPost, "http://example.test/api/v1/fleet/actions", bytes.NewReader(body))
 	request.Host = "example.test"
@@ -141,6 +140,12 @@ func TestFleetDispatchMountRequiresAuthenticationAndPreservesOpaqueIDs(t *testin
 	}
 	if !provider.enqueued || !bytes.Equal(provider.actionID, actionID) {
 		t.Fatalf("provider action=%x enqueued=%v", provider.actionID, provider.enqueued)
+	}
+	if !provider.notBefore.Equal(now.Add(30 * time.Second)) {
+		t.Fatalf("provider not-before time = %v", provider.notBefore)
+	}
+	if !strings.Contains(response.Body.String(), `"not_before":"2026-09-06T12:00:30Z"`) {
+		t.Fatalf("response omitted schedule: %s", response.Body.String())
 	}
 }
 
@@ -161,12 +166,17 @@ func TestNewFleetHandlerRequiresBothProviders(t *testing.T) {
 }
 
 type stubDispatchProvider struct {
-	ambiguity  fleet.AmbiguityRequest
-	completion fleet.CompletionRequest
-	extend     fleet.ExtendRequest
-	resolver   auth.Resolver
-	enqueued   bool
-	actionID   []byte
+	ambiguity      fleet.AmbiguityRequest
+	completion     fleet.CompletionRequest
+	extend         fleet.ExtendRequest
+	resolver       auth.Resolver
+	enqueued       bool
+	actionID       []byte
+	claimCount     int
+	claimRequest   fleet.ClaimRequest
+	preparedRecord *fleet.ActionRecord
+	materialRecord *fleet.ActionRecord
+	notBefore      time.Time
 }
 
 func (p *stubDispatchProvider) Enqueue(ctx context.Context, request fleet.EnqueueRequest) (fleet.ActionRecord, error) {
@@ -175,16 +185,32 @@ func (p *stubDispatchProvider) Enqueue(ctx context.Context, request fleet.Enqueu
 	}
 	p.enqueued = true
 	p.actionID = append([]byte(nil), request.ID...)
+	p.notBefore = request.NotBefore
 	return fleet.ActionRecord{
 		ID: request.ID, Version: 1, State: fleet.DispatchQueued,
 		AgentID: request.AgentID, AgentGeneration: request.AgentGeneration,
 		Capability: request.Capability, Action: request.Action,
 		RequestID: request.Context.RequestID, CorrelationID: request.Context.CorrelationID,
-		Deadline: request.Context.Deadline, CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
+		Deadline: request.Context.Deadline, NotBefore: request.NotBefore,
+		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
 	}, nil
 }
 
-func (*stubDispatchProvider) Claim(context.Context, fleet.ClaimRequest) (fleet.ActionRecord, error) {
+func (p *stubDispatchProvider) Claim(_ context.Context, request fleet.ClaimRequest) (fleet.ActionRecord, error) {
+	p.claimCount++
+	p.claimRequest = request
+	if p.preparedRecord != nil {
+		return *p.preparedRecord, nil
+	}
+	return fleet.ActionRecord{}, nil
+}
+func (p *stubDispatchProvider) ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error) {
+	if p.materialRecord != nil {
+		return *p.materialRecord, nil
+	}
+	return fleet.ActionRecord{}, nil
+}
+func (*stubDispatchProvider) PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error) {
 	return fleet.ActionRecord{}, nil
 }
 func (p *stubDispatchProvider) CompleteClaim(
@@ -220,155 +246,128 @@ func (p *stubDispatchProvider) ReportAmbiguity(
 	return fleet.ActionRecord{}, nil
 }
 
-// TestFleetActionWireCarriesTheWorkAndItsIdempotencyKey pins the two fields
-// whose absence made an out-of-process worker impossible (#435), and pins that
-// they ride the claim response alone.
-//
-// A worker could pull an action, claim it under a fence, and complete it
-// without ever receiving the parameters of the operation: Input was on the
-// enqueue wire, validated against the action's InputSchema, and stored on the
-// record, and this encoder dropped it. ExecutorKey was dropped the same way,
-// which forced each worker to invent its own idempotency key — and a
-// hand-written digest that omits length prefixes is non-injective, so two
-// surfaces can be made to collide and a collision makes a provider return a
-// cached success without performing the effect.
-//
-// Both are asserted byte-for-byte rather than for presence, because the whole
-// value of Input is that it is exactly what the enqueuer supplied, and the
-// whole value of ExecutorKey is that it equals the key an in-process executor
-// receives for the same action.
-func TestFleetActionWireCarriesTheWorkAndItsIdempotencyKey(t *testing.T) {
-	const input = `{"method":"POST","path":"/v1/messages","body":{"text":"ship it"}}`
-	// Chosen so the two base64 alphabets actually differ. An earlier version of
-	// this test used bytes that encode identically under StdEncoding and
-	// RawURLEncoding, so the alphabet assertion below could not fail and a
-	// mutation swapping the encoder survived. These bytes produce "+/++" in the
-	// standard alphabet and "-_--" in the URL one.
-	executorKey := []byte{0xfb, 0xff, 0xbe, 0xfb, 0xff, 0xbe}
-	record := fleet.ActionRecord{
-		ID:          []byte("action-id"),
-		Version:     3,
-		State:       fleet.DispatchClaimed,
-		Capability:  "effects.http",
-		Action:      "post",
-		Input:       json.RawMessage(input),
-		ExecutorKey: executorKey,
+// Prepared claims and ordinary action projections never expose executable
+// material. The claimant receives it only through the separate Material route.
+func TestFleetActionWireWithholdsExecutableMaterial(t *testing.T) {
+	preparedAt := time.Date(2026, 10, 20, 10, 0, 0, 0, time.UTC)
+	record := fleet.ActionRecord{ID: []byte("action-id"), Version: 3,
+		State: fleet.DispatchClaimed, Input: json.RawMessage(`{"secret":"value"}`),
+		ExecutorKey: []byte("private-key"), RecoveryCommitment: &fleet.RecoveryCommitment{
+			Version: 1, Mode: fleet.RecoveryKey, PreparedFence: 1, PreparedAt: preparedAt,
+			RequestDigest: [32]byte{1}, TargetScopeDigest: [32]byte{2},
+		}}
+	wire := encodeFleetAction(record)
+	if len(wire.Input) != 0 || wire.ExecutorKey != "" {
+		t.Fatalf("ordinary action projection exposed material: %+v", wire)
 	}
-
-	wire := encodeClaimedFleetAction(record)
-
-	if string(wire.Input) != input {
-		t.Fatalf("input = %s, want it unchanged: a worker that does not receive "+
-			"this has nothing to perform", wire.Input)
+	if wire.RecoveryCommitment == nil || wire.RecoveryCommitment.Version != 1 ||
+		wire.RecoveryCommitment.Mode != "key" || wire.RecoveryCommitment.PreparedFence != 1 ||
+		!wire.RecoveryCommitment.PreparedAt.Equal(preparedAt) {
+		t.Fatalf("commitment status missing: %+v", wire.RecoveryCommitment)
 	}
-	if want := base64.RawURLEncoding.EncodeToString(executorKey); wire.ExecutorKey != want {
-		t.Fatalf("executor_key = %q, want %q", wire.ExecutorKey, want)
-	}
-	// Unpadded base64url, like every other opaque identity on this wire. A
-	// padded or standard-alphabet spelling would be a second spelling of one
-	// identity, and this value is used as a deduplication key at a third party
-	// where two spellings are two keys. pkg/explorer/mcp returns the record
-	// whole and so emits the padded standard spelling; a worker must therefore
-	// compare decoded bytes and never one spelling against the other.
-	if strings.ContainsAny(wire.ExecutorKey, "=+/") {
-		t.Fatalf("executor_key %q is not unpadded base64url", wire.ExecutorKey)
-	}
-	// And positively: the URL alphabet's own characters are present, so this
-	// asserts the right encoding rather than merely the absence of the wrong
-	// one. A test that only checks for absent characters passes against an
-	// encoder that emits neither alphabet's distinctive bytes.
-	if !strings.ContainsAny(wire.ExecutorKey, "-_") {
-		t.Fatalf("executor_key %q does not use the URL alphabet", wire.ExecutorKey)
-	}
-
-	// The encoder copies rather than aliases, so a caller mutating the wire
-	// cannot reach back into the record it was built from.
-	if len(wire.Input) > 0 {
-		wire.Input[0] = 'X'
-		if record.Input[0] == 'X' {
-			t.Fatal("the wire aliases the record's input")
-		}
-	}
-
-	// The shared encoder carries neither, for the same record. This is the
-	// assertion that bounds both the disclosure and the response size: six of
-	// the seven routes encoding an action use it, five of those are
-	// commit-bearing, and an over-budget response on a commit-bearing route is
-	// reported as an indeterminate commit rather than a failure.
-	shared := encodeFleetAction(record)
-	if len(shared.Input) != 0 {
-		t.Fatalf("the shared encoder carries input %s, so every action response "+
-			"carries a payload bounded only by MaxActionPayloadBytes", shared.Input)
-	}
-	if shared.ExecutorKey != "" {
-		t.Fatalf("the shared encoder carries executor_key %q", shared.ExecutorKey)
-	}
-	// Everything else must survive the split, or the claim response would be
-	// the only one worth reading.
-	shared.Input, shared.ExecutorKey = wire.Input, wire.ExecutorKey
-	if !reflect.DeepEqual(shared, wire) {
-		t.Fatalf("the claim encoder differs from the shared one beyond the two "+
-			"claimant fields:\n claim  = %+v\n shared = %+v", wire, shared)
-	}
-
-	// An action with no input encodes nothing rather than a JSON null, because
-	// the field is omitempty and a literal null is not an absent value to a
-	// client distinguishing the two.
-	bare := encodeClaimedFleetAction(fleet.ActionRecord{ID: []byte("x"), Version: 1})
-	encoded, err := json.Marshal(bare)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, absent := range []string{`"input"`, `"executor_key"`} {
-		if strings.Contains(string(encoded), absent) {
-			t.Fatalf("%s is present for a record that has none: %s", absent, encoded)
-		}
+	encoded, _ := json.Marshal(wire)
+	if bytes.Contains(encoded, []byte("request_digest")) ||
+		bytes.Contains(encoded, []byte("target_scope_digest")) ||
+		bytes.Contains(encoded, []byte("secret")) {
+		t.Fatalf("public action exposed commitment material: %s", encoded)
 	}
 }
 
-// TestOnlyTheClaimRouteEncodesTheWork pins the call sites, because the bound on
-// both the disclosure and the response size is "one record on one route" and
-// nothing else in the type system enforces it.
-//
-// encodeClaimedFleetAction is one line away from being usable anywhere, and the
-// cost of using it on the wrong route is not a leak alone. requestMayCommit
-// reports enqueue, invoke, claim, complete and cancel as commit-bearing, so
-// writeResponse answers an over-budget response there with 503 and
-// X-Commit-Outcome: indeterminate. MaxActionPayloadBytes is a fixed 1 MiB and a
-// workspace's OutputBytes budget narrows to any non-zero value, so on the
-// enqueue echo that would be a successful enqueue reported as an unknown
-// outcome, repeatably, for as long as the record existed. On Pull it would be
-// up to MaxDispatchListResults — 256 — payloads in one page.
-func TestOnlyTheClaimRouteEncodesTheWork(t *testing.T) {
-	body, err := os.ReadFile("fleet_dispatch.go")
+func TestLegacyRemoteClaimRefusesBeforeProviderMutation(t *testing.T) {
+	provider := &stubDispatchProvider{}
+	handler, err := NewFleetDispatchHandler(provider)
 	if err != nil {
 		t.Fatal(err)
 	}
-	source := string(body)
-	// Count call sites, not definitions: the definition's own name and its one
-	// internal call to the shared encoder are excluded by requiring the "("
-	// and by subtracting the declaration.
-	claimed := strings.Count(source, "encodeClaimedFleetAction(") -
-		strings.Count(source, "func encodeClaimedFleetAction(")
-	if claimed != 1 {
-		t.Fatalf("encodeClaimedFleetAction has %d call sites, want exactly 1 "+
-			"(the claim route). Every added site is a route whose response "+
-			"carries a 1 MiB-bounded payload against a narrowable output "+
-			"budget, and five of the seven are commit-bearing", claimed)
+	request := httptest.NewRequest(http.MethodPost,
+		"/api/v1/fleet/actions/"+base64.RawURLEncoding.EncodeToString([]byte("action"))+"/claim",
+		strings.NewReader(`{}`))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("status=%d body=%s", response.Code, response.Body.String())
 	}
-	// And it is the claim route specifically. Ordering the handlers by
-	// position, the one containing the call must be the claim registration.
-	call := strings.Index(source, "writeResponse(w, http.StatusOK, encodeClaimedFleetAction(")
-	if call < 0 {
-		t.Fatal("no route writes a claimed action; the claimant now gets no input")
+	if got := response.Header().Get("Shoal-Recovery-Refusal"); got != "legacy_claim" {
+		t.Fatalf("legacy refusal code = %q", got)
 	}
-	handler := strings.LastIndex(source[:call], `mux.HandleFunc("`)
-	if handler < 0 {
-		t.Fatal("the claimed-action response is not inside a route registration")
+	if provider.claimCount != 0 {
+		t.Fatal("legacy route mutated a claim")
 	}
-	route := source[handler : handler+strings.Index(source[handler:], "\n")]
-	if !strings.Contains(route, "/claim") {
-		t.Fatalf("the claimed-action encoder is used by %s, not the claim route", route)
+}
+
+func TestRecoveryRefusalHeaderDoesNotPublishCommitmentBytes(t *testing.T) {
+	response := httptest.NewRecorder()
+	writeFleetRecoveryError(response, &fleet.RecoveryRefusalError{
+		Code: fleet.RecoveryScopeDrift, Cause: fleet.ErrActionConflict,
+	})
+	if response.Code != http.StatusConflict ||
+		response.Header().Get("Shoal-Recovery-Refusal") != "scope_drift" {
+		t.Fatalf("response = %d %v", response.Code, response.Header())
+	}
+	if bytes.Contains(response.Body.Bytes(), []byte("target_scope_digest")) ||
+		bytes.Contains(response.Body.Bytes(), []byte("request_digest")) {
+		t.Fatalf("refusal leaked digests: %s", response.Body.String())
+	}
+	forged := httptest.NewRecorder()
+	writeFleetRecoveryError(forged, &fleet.RecoveryRefusalError{
+		Code: fleet.RecoveryRefusal("secret-tenant"), Cause: fleet.ErrActionConflict,
+	})
+	if got := forged.Header().Get("Shoal-Recovery-Refusal"); got != "" {
+		t.Fatalf("arbitrary recovery code reached header: %q", got)
+	}
+}
+
+func TestPreparedClaimWithholdsMaterialAndMaterialOmitsCommitment(t *testing.T) {
+	id, claimID := []byte("action"), []byte("claim")
+	record := fleet.ActionRecord{ID: id, ClaimID: claimID, ClaimFence: 1,
+		RecoveryProtocolVersion: 1, State: fleet.DispatchClaimed, Version: 2,
+		Input: json.RawMessage(`{"secret":"value"}`), ExecutorKey: []byte("secret-key"),
+		RecoveryCommitment: &fleet.RecoveryCommitment{Version: 1, Mode: fleet.RecoveryKey,
+			RequestDigest: [32]byte{1}, TargetScopeDigest: [32]byte{2}}}
+	provider := &stubDispatchProvider{preparedRecord: &record, materialRecord: &record}
+	handler, err := NewFleetDispatchHandler(provider)
+	if err != nil {
+		t.Fatal(err)
+	}
+	contextValue := fleetRequestContextWire{RequestID: encodeFleetID("request"),
+		CorrelationID: encodeFleetID("correlation"), ReasonCode: "worker",
+		Deadline: time.Now().UTC().Add(time.Minute)}
+	call := func(verb string, body any) string {
+		t.Helper()
+		encoded, err := json.Marshal(body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		request := httptest.NewRequest(http.MethodPost,
+			"/api/v1/fleet/actions/"+base64.RawURLEncoding.EncodeToString(id)+"/"+verb,
+			bytes.NewReader(encoded))
+		request.Header.Set("Content-Type", "application/json")
+		response := httptest.NewRecorder()
+		handler.ServeHTTP(response, request)
+		if response.Code != http.StatusOK {
+			t.Fatalf("%s = %d %s", verb, response.Code, response.Body.String())
+		}
+		return response.Body.String()
+	}
+	claim := call("claim-prepared", fleetClaimWire{Context: contextValue,
+		ExpectedVersion: 1, ClaimID: base64.RawURLEncoding.EncodeToString(claimID), Lease: time.Minute})
+	if provider.claimCount != 1 || !provider.claimRequest.Prepared {
+		t.Fatal("prepared route did not select prepared Claim")
+	}
+	for _, forbidden := range []string{"secret", "input", "executor_key", "request_digest", "target_scope_digest"} {
+		if strings.Contains(claim, forbidden) {
+			t.Fatalf("prepared claim exposed %s: %s", forbidden, claim)
+		}
+	}
+	material := call("material", fleetRecoveryClaimWire{Context: contextValue,
+		ClaimID: base64.RawURLEncoding.EncodeToString(claimID), ClaimFence: 1})
+	if !strings.Contains(material, `"input"`) || !strings.Contains(material, `"executor_key"`) {
+		t.Fatalf("material lacks executable fields: %s", material)
+	}
+	for _, forbidden := range []string{"request_digest", "target_scope_digest", "recovery_commitment"} {
+		if strings.Contains(material, forbidden) {
+			t.Fatalf("material exposed %s: %s", forbidden, material)
+		}
 	}
 }
 
@@ -907,6 +906,8 @@ func TestFleetDispatchErrorMarksEveryIndeterminateJoin(t *testing.T) {
 			false, shoal.ErrorConflict},
 		{"a conflict alone", fleet.ErrActionConflict,
 			false, shoal.ErrorConflict},
+		{"cancel refused for uncertain prior claim", fleet.ErrCancelClaimUncertain,
+			false, shoal.ErrorConflict},
 		{"a terminal record alone", fleet.ErrActionTerminal,
 			false, shoal.ErrorConflict},
 		{"a missing record alone", fleet.ErrActionNotFound,
@@ -1011,5 +1012,19 @@ func TestFleetDispatchErrorMarksEveryIndeterminateJoin(t *testing.T) {
 				t.Fatalf("answered by another arm: %v", mapped)
 			}
 		})
+	}
+}
+
+func TestCancelPossibleEffectRefusalIsAnUnmarkedHTTPConflict(t *testing.T) {
+	response := serveDispatchGolden(t, dispatchGoldenCase{
+		path: dispatchGoldenAction + "cancel",
+		body: `{"context":` + dispatchGoldenContext.String() +
+			`,"expected_version":3,"mutation_key":"Y2FuY2Vs"}`,
+		provider: recordingDispatchProvider{err: fleet.ErrCancelClaimUncertain},
+	})
+	if !strings.Contains(response, "provider calls: 1\n") ||
+		!strings.Contains(response, "status: 409\n") ||
+		!strings.Contains(response, "shoal-commit-outcome: \n") {
+		t.Fatalf("cancel refusal transport contract:\n%s", response)
 	}
 }
