@@ -98,6 +98,9 @@ var validEvents = map[Event]bool{
 // FailureKind is a transport failure reduced to its category. Closed.
 type FailureKind string
 
+// RecoveryRefusal is a closed operator-visible gateway recovery reason.
+type RecoveryRefusal string
+
 const (
 	FailureNone          FailureKind = ""
 	FailureEgressRefused FailureKind = "egress_refused"
@@ -167,16 +170,17 @@ type ClaimNonce [ClaimNonceBytes]byte
 
 // LogRecord is everything a log line may carry. See the policy above.
 type LogRecord struct {
-	Event          Event
-	ActionID       []byte
-	Fence          uint64
-	ClaimNonce     ClaimNonce
-	Route          *Route
-	Status         int
-	Classification Kind
-	Failure        FailureKind
-	Gate           GateRefusal
-	DispatchError  DispatchErrorKind
+	Event           Event
+	ActionID        []byte
+	Fence           uint64
+	ClaimNonce      ClaimNonce
+	Route           *Route
+	Status          int
+	Classification  Kind
+	Failure         FailureKind
+	Gate            GateRefusal
+	DispatchError   DispatchErrorKind
+	RecoveryRefusal RecoveryRefusal
 	// Ambiguity is the outcome of a lost-fence report, closed.
 	Ambiguity dispatchapi.AmbiguityOutcome
 	// Unrecorded is the unrecorded log's entry count after this event; set
@@ -207,26 +211,27 @@ func NewLogger(out io.Writer, now Clock) *Logger {
 }
 
 type logLine struct {
-	Time           string `json:"time"`
-	Event          string `json:"event"`
-	ActionID       string `json:"action_id,omitempty"`
-	Fence          uint64 `json:"fence,omitempty"`
-	ClaimNonce     string `json:"claim_nonce,omitempty"`
-	Action         string `json:"route_action,omitempty"`
-	Method         string `json:"method,omitempty"`
-	PathTemplate   string `json:"path_template,omitempty"`
-	Status         int    `json:"status,omitempty"`
-	Classification string `json:"classification,omitempty"`
-	Failure        string `json:"failure,omitempty"`
-	Gate           string `json:"gate,omitempty"`
-	DispatchError  string `json:"dispatch_error,omitempty"`
-	Ambiguity      string `json:"ambiguity,omitempty"`
-	Unrecorded     *int   `json:"unrecorded_entries,omitempty"`
-	NotReady       string `json:"not_ready,omitempty"`
-	Abandoned      int    `json:"abandoned_runs,omitempty"`
-	RequestBytes   int64  `json:"request_bytes,omitempty"`
-	ResponseBytes  int64  `json:"response_bytes,omitempty"`
-	DurationMillis int64  `json:"duration_ms,omitempty"`
+	Time            string `json:"time"`
+	Event           string `json:"event"`
+	ActionID        string `json:"action_id,omitempty"`
+	Fence           uint64 `json:"fence,omitempty"`
+	ClaimNonce      string `json:"claim_nonce,omitempty"`
+	Action          string `json:"route_action,omitempty"`
+	Method          string `json:"method,omitempty"`
+	PathTemplate    string `json:"path_template,omitempty"`
+	Status          int    `json:"status,omitempty"`
+	Classification  string `json:"classification,omitempty"`
+	Failure         string `json:"failure,omitempty"`
+	Gate            string `json:"gate,omitempty"`
+	DispatchError   string `json:"dispatch_error,omitempty"`
+	RecoveryRefusal string `json:"recovery_refusal,omitempty"`
+	Ambiguity       string `json:"ambiguity,omitempty"`
+	Unrecorded      *int   `json:"unrecorded_entries,omitempty"`
+	NotReady        string `json:"not_ready,omitempty"`
+	Abandoned       int    `json:"abandoned_runs,omitempty"`
+	RequestBytes    int64  `json:"request_bytes,omitempty"`
+	ResponseBytes   int64  `json:"response_bytes,omitempty"`
+	DurationMillis  int64  `json:"duration_ms,omitempty"`
 }
 
 // Log writes one record. A value outside a closed set — reachable only by
@@ -273,6 +278,16 @@ func (l *Logger) Log(record LogRecord) {
 	if record.DispatchError != "" {
 		line.DispatchError = closed(string(record.DispatchError),
 			validDispatchErrors[record.DispatchError])
+	}
+	if record.RecoveryRefusal != "" {
+		switch record.RecoveryRefusal {
+		case "legacy_claim", "missing_commitment", "unprotected_replay",
+			"mode_drift", "request_drift", "scope_drift", "bind_failed", "no_new_send",
+			"replacement_unresolved":
+			line.RecoveryRefusal = string(record.RecoveryRefusal)
+		default:
+			line.RecoveryRefusal = "invalid"
+		}
 	}
 	if record.Ambiguity != "" {
 		line.Ambiguity = closed(string(record.Ambiguity), validAmbiguity[record.Ambiguity])

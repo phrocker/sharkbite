@@ -70,6 +70,8 @@ import (
 type Dispatcher interface {
 	Pull(ctx context.Context, request RequestContext, after string, limit int) (PullPage, error)
 	Claim(ctx context.Context, actionID []byte, request ClaimRequest) (Action, error)
+	ClaimMaterial(ctx context.Context, actionID []byte, request RecoveryClaimRequest) (RecoveryMaterial, error)
+	Prepare(ctx context.Context, actionID []byte, request RecoveryPrepareRequest) (uint64, error)
 	Extend(ctx context.Context, actionID []byte, request ExtendRequest) (Action, error)
 	Complete(ctx context.Context, actionID []byte, completion Completion) (Action, error)
 	ReportAmbiguity(ctx context.Context, actionID []byte, report AmbiguityReport) (Action, error)
@@ -130,6 +132,9 @@ type WorkerConfig struct {
 	AgentID     []byte
 	Capability  string
 	SurfaceName string
+	// TargetScope is a stable nonsecret account/tenant scope for target-side
+	// deduplication. It must stay the same across gateway restarts.
+	TargetScope string
 	// Pod names this replica in its claim IDs.
 	Pod string
 
@@ -257,6 +262,8 @@ func NewWorker(cfg WorkerConfig) (*Worker, error) {
 		return nil, errors.New("worker requires an agent ID, a capability and a pod name")
 	case len(cfg.SurfaceName) > dispatchapi.MaxAmbiguityTargetBytes || !printableAmbiguityText(cfg.SurfaceName):
 		return nil, errors.New("surface name must be printable and fit an ambiguity report's target")
+	case cfg.TargetScope == "" || !printableAmbiguityText(cfg.TargetScope) || len(cfg.TargetScope) > 256:
+		return nil, errors.New("worker requires a stable printable target scope of at most 256 bytes")
 	case cfg.ClaimLease <= 0 || cfg.ClaimLease > dispatchapi.MaxActionClaimTTL:
 		return nil, errors.New("claim lease must be positive and at most " + dispatchapi.MaxActionClaimTTL.String())
 	case cfg.OperationTimeout <= 0 || cfg.PlaneTimeout <= 0:
@@ -836,6 +843,18 @@ func (w *Worker) pullOnce(ctx context.Context, held *ticket, cursor string) (boo
 		if !ok {
 			continue
 		}
+		// A lapsed legacy claim has no durable request identity and might
+		// already have sent. A prepared claim is checked by the server again
+		// before Material and Prepare can authorize a replay.
+		if offered.ClaimFence != 0 &&
+			(offered.RecoveryProtocolVersion != 1 || route.Idempotency() == IdempotencyUnprotected) {
+			reason := RecoveryRefusal("legacy_claim")
+			if offered.RecoveryProtocolVersion == 1 {
+				reason = RecoveryRefusal("unprotected_replay")
+			}
+			w.logRecoverySkip(offered, route, reason)
+			continue
+		}
 		if refusal := w.precheck(offered, route); refusal != GateOpen {
 			w.logSkip(offered, route, refusal)
 			continue
@@ -928,6 +947,24 @@ func (w *Worker) logSkip(offered Action, route *Route, refusal GateRefusal) {
 	w.skipMu.Unlock()
 	if !ok || seen != offered.Version {
 		w.log.Log(LogRecord{Event: EventSkipped, ActionID: offered.ID, Route: route, Gate: refusal})
+	}
+}
+
+// logRecoverySkip emits only a closed refusal reason once per pulled version.
+func (w *Worker) logRecoverySkip(offered Action, route *Route, reason RecoveryRefusal) {
+	w.skipMu.Lock()
+	key := string(offered.ID)
+	seen, ok := w.skipped[key]
+	if !ok || seen != offered.Version {
+		if len(w.skipped) >= 4096 {
+			w.skipped = map[string]uint64{}
+		}
+		w.skipped[key] = offered.Version
+	}
+	w.skipMu.Unlock()
+	if !ok || seen != offered.Version {
+		w.log.Log(LogRecord{Event: EventSkipped, ActionID: offered.ID,
+			Route: route, RecoveryRefusal: reason})
 	}
 }
 
@@ -1110,17 +1147,21 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 			// The attestation gate answers 409 too; present afresh next time.
 			w.forgetAttestation()
 		}
-		w.log.Log(LogRecord{Event: EventDispatch, ActionID: offered.ID, ClaimNonce: nonce,
-			Route: route, DispatchError: DispatchKind(err)})
+		record := LogRecord{Event: EventDispatch, ActionID: offered.ID, ClaimNonce: nonce,
+			Route: route, DispatchError: DispatchKind(err)}
+		var dispatchErr *DispatchError
+		if errors.As(err, &dispatchErr) {
+			record.RecoveryRefusal = RecoveryRefusal(dispatchErr.RecoveryRefusal)
+		}
+		w.log.Log(record)
 		return nil, err
 	}
-	// Older claim wires omitted correlation_id even when Pull supplied it.
-	// The claim request carried Pull's correlation, so retaining that value
-	// is safe once the action and issued claim are checked below.
+	// A mixed-version claim wire may omit correlation, but Pull supplied it
+	// and the request just sent carried that exact value.
 	if len(claimed.CorrelationID) == 0 {
 		claimed.CorrelationID = append([]byte(nil), offered.CorrelationID...)
 	}
-	if err := validateClaimAnswer(offered, claimed, claimID, w.cfg.ClaimLease, route); err != nil {
+	if err := validatePreparedClaimAnswer(offered, claimed, claimID, w.cfg.ClaimLease, route); err != nil {
 		w.log.Log(LogRecord{Event: EventDispatch, ActionID: offered.ID, ClaimNonce: nonce,
 			Route: route, DispatchError: DispatchProtocol})
 		return nil, err
@@ -1145,26 +1186,19 @@ func (w *Worker) claim(ctx context.Context, offered Action, route *Route) (*clai
 	return run, nil
 }
 
-// validateClaimAnswer binds the only response that carries executable input
-// to the action offered by Pull and to this worker's fresh claim ID. A 2xx
-// response with another action or claim must never reach the target; even if
-// the explorer committed this claim, leaving it to lapse sends no effect.
-func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease time.Duration, route *Route) error {
+// validatePreparedClaimAnswer binds the claim response's public metadata to
+// the Pull offer and fresh claim. Material is retrieved separately only after
+// this succeeds. This checks mismatches; it is not a cryptographic proof of
+// server payload integrity.
+func validatePreparedClaimAnswer(offered, claimed Action, claimID []byte, requestedLease time.Duration, route *Route) error {
+	if route == nil || offered.Version == 0 || offered.Version == ^uint64(0) ||
+		offered.ClaimFence == ^uint64(0) ||
+		(offered.ClaimFence == 0 && offered.EffectPossible) ||
+		(offered.ClaimFence > 0 && offered.RecoveryProtocolVersion != 1) ||
+		len(offered.CorrelationID) == 0 {
+		return refusedLocally("claim-prepared", "pull offer is ineligible for a first prepared claim")
+	}
 	leaseDuration := claimed.ClaimLeaseUntil.Sub(claimed.UpdatedAt)
-	if route == nil {
-		return &DispatchError{Op: "claim", Kind: DispatchProtocol,
-			reason: "claim response has no selected route"}
-	}
-	// An external target may have been reached from the moment the claim was
-	// granted. The response cannot describe that action as effect-impossible,
-	// even if the offered record had not yet raised the flag. A previously
-	// raised flag is monotonic regardless of the current route.
-	requiresPossibleEffect := false
-	for _, effect := range route.effects {
-		if effect == dispatchapi.EffectMutatesExternal || effect == dispatchapi.EffectEgressesContent {
-			requiresPossibleEffect = true
-		}
-	}
 	if !bytes.Equal(claimed.ID, offered.ID) ||
 		!bytes.Equal(claimed.AgentID, offered.AgentID) ||
 		claimed.AgentGeneration != offered.AgentGeneration ||
@@ -1172,21 +1206,17 @@ func validateClaimAnswer(offered, claimed Action, claimID []byte, requestedLease
 		claimed.Action != offered.Action ||
 		!claimed.CreatedAt.Equal(offered.CreatedAt) ||
 		!claimed.Deadline.Equal(offered.Deadline) ||
-		len(offered.CorrelationID) == 0 ||
 		!bytes.Equal(claimed.CorrelationID, offered.CorrelationID) ||
 		claimed.State != dispatchapi.DispatchClaimed ||
-		claimed.Version <= offered.Version ||
 		claimed.Version != offered.Version+1 ||
 		!bytes.Equal(claimed.ClaimID, claimID) ||
-		claimed.ClaimFence <= offered.ClaimFence ||
 		claimed.ClaimFence != offered.ClaimFence+1 ||
 		claimed.UpdatedAt.Before(offered.UpdatedAt) ||
 		leaseDuration <= 0 || leaseDuration > requestedLease ||
-		((requiresPossibleEffect || offered.EffectPossible) && !claimed.EffectPossible) ||
-		len(claimed.Input) == 0 ||
-		!claimed.ExecutorKey.set {
-		return &DispatchError{Op: "claim", Kind: DispatchProtocol,
-			reason: "claim response is not bound to the offered action and issued claim"}
+		!claimed.EffectPossible || claimed.RecoveryProtocolVersion != 1 ||
+		len(claimed.Input) != 0 || claimed.ExecutorKey.HasKey() {
+		return &DispatchError{Op: "claim-prepared", Kind: DispatchProtocol,
+			reason: "claim response is not bound to the offered action and issued first claim"}
 	}
 	return nil
 }
@@ -1372,9 +1402,43 @@ func (w *Worker) handle(run *claimRun) {
 	}
 	defer stopRenewal()
 
-	bound, err := w.cfg.Binder.Bind(run.route, run.action.Input, run.action.ExecutorKey)
+	materialRequest, err := w.requestContext("gateway_material")
 	if err != nil {
-		// Nothing was sent. The record says so, then fails the action.
+		return
+	}
+	claim := RecoveryClaimRequest{Context: run.action.Correlate(materialRequest),
+		ClaimID: run.claimID, ClaimFence: run.action.ClaimFence}
+	materialCtx, materialCancel := w.withTimeout(run.renewCtx, w.cfg.PlaneTimeout)
+	material, err := w.cfg.Dispatch.ClaimMaterial(materialCtx, run.action.ID, claim)
+	materialCancel()
+	if err != nil || run.isLost() {
+		// A failed material call grants no target send and can be retried only
+		// while this claim remains live.
+		if err != nil {
+			record := w.record(run, EventDispatch)
+			record.DispatchError = DispatchKind(err)
+			var dispatchErr *DispatchError
+			if errors.As(err, &dispatchErr) {
+				record.RecoveryRefusal = RecoveryRefusal(dispatchErr.RecoveryRefusal)
+			}
+			w.log.Log(record)
+		}
+		w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
+		return
+	}
+	bound, err := w.cfg.Binder.Bind(run.route, material.Input, material.ExecutorKey)
+	if err != nil {
+		// A replacement claim might follow a real first send whose answer
+		// was lost. New route/schema drift must not turn that unresolved
+		// effect into a terminal input failure.
+		if run.action.ClaimFence > 1 {
+			record := w.record(run, EventRefused)
+			record.RecoveryRefusal = RecoveryRefusal("bind_failed")
+			w.log.Log(record)
+			w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
+			return
+		}
+		// Nothing was sent under the first claim. Record and fail it.
 		w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
 		if !run.isLost() {
 			w.complete(run, Classification{Outcome: OutcomeFailed, Kind: KindNotSent,
@@ -1382,8 +1446,59 @@ func (w *Worker) handle(run *claimRun) {
 		}
 		return
 	}
+	prepareRequest, err := w.requestContext("gateway_prepare")
+	if err != nil {
+		return
+	}
+	prepare := RecoveryPrepareRequest{
+		RecoveryClaimRequest: RecoveryClaimRequest{
+			Context: run.action.Correlate(prepareRequest), ClaimID: run.claimID,
+			ClaimFence: run.action.ClaimFence,
+		},
+		Mode: run.route.Idempotency(), RequestDigest: boundRequestDigest(bound),
+		TargetScopeDigest: targetScopeDigest(w.cfg.TargetScope),
+	}
+	prepareCtx, prepareCancel := w.withTimeout(run.renewCtx, w.cfg.PlaneTimeout)
+	_, err = w.cfg.Dispatch.Prepare(prepareCtx, run.action.ID, prepare)
+	prepareCancel()
+	if err != nil || run.isLost() {
+		// An uncertain Prepare answer is never a send grant. A caller may
+		// retry the identical Prepare while this claim is still live.
+		if err != nil {
+			record := w.record(run, EventDispatch)
+			record.DispatchError = DispatchKind(err)
+			var dispatchErr *DispatchError
+			if errors.As(err, &dispatchErr) {
+				record.RecoveryRefusal = RecoveryRefusal(dispatchErr.RecoveryRefusal)
+			}
+			w.log.Log(record)
+		}
+		w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
+		return
+	}
 	result := w.send(run, bound)
 	if w.killed.Load() {
+		return
+	}
+	if run.action.ClaimFence > 1 && !result.sent {
+		// This claim sent nothing, but an earlier prepared claim may have
+		// reached the target. No current-attempt failure can turn that
+		// unresolved earlier effect into a terminal action outcome.
+		record := w.record(run, EventRefused)
+		record.RecoveryRefusal = RecoveryRefusal("no_new_send")
+		w.log.Log(record)
+		w.report(run, dispatchapi.AmbiguityRequestNotSent, "")
+		return
+	}
+	if run.action.ClaimFence > 1 &&
+		(!result.final || result.class.Outcome != OutcomeSucceeded) {
+		// A replacement's 401/403, exhausted retry, or unknown response says
+		// nothing about the first claimant's possible effect. Only a target
+		// success under the same durable key/natural commitment resolves it.
+		record := w.record(run, EventRefused)
+		record.RecoveryRefusal = RecoveryRefusal("replacement_unresolved")
+		w.log.Log(record)
+		w.report(run, dispatchapi.AmbiguityOutcomeUnknown, "")
 		return
 	}
 	switch {
@@ -1462,6 +1577,16 @@ func (w *Worker) send(run *claimRun, bound BoundRequest) sendResult {
 		if run.isLost() || w.draining.Load() {
 			result.lost = run.isLost()
 			result.stopped = GateDraining
+			if result.sent {
+				result.class, result.final = Exhausted(true), true
+			}
+			return result
+		}
+		// Credential retrieval may block. Recheck the local monotonic lease
+		// before handing any bytes to the target client.
+		anchored, _ = run.anchor()
+		if refusal := w.gate.Check(anchored, w.clock.Now(), false); refusal != GateOpen {
+			result.stopped = refusal
 			if result.sent {
 				result.class, result.final = Exhausted(true), true
 			}

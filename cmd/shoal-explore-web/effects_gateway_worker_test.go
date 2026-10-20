@@ -316,7 +316,8 @@ func startWorkerWith(
 			return "Authorization", "Bearer sk_test_integration", nil
 		},
 		AgentID: []byte(agent), Capability: capability, SurfaceName: "api.stripe.test",
-		Pod: "gw-0", IdempotencyRetention: 48 * time.Hour,
+		TargetScope: "stripe-test-account",
+		Pod:         "gw-0", IdempotencyRetention: 48 * time.Hour,
 		ClaimLease: 60 * time.Second, OperationTimeout: 64 * time.Second, Renew: true,
 		PlaneTimeout: 5 * time.Second, MaxResponseBytes: 64 << 10, PullLimit: 64,
 		PullInterval: time.Second, MaxInFlight: options.maxInFlight,

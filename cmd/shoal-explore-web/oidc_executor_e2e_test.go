@@ -206,7 +206,7 @@ func (w *executorWorld) pull(caller call) []actionWire {
 
 func (w *executorWorld) claim(caller call, id string, version uint64, claimID string) (answer, actionWire) {
 	w.t.Helper()
-	return w.send(caller, "/api/v1/fleet/actions/"+b64([]byte(id))+"/claim", map[string]any{
+	return w.send(caller, "/api/v1/fleet/actions/"+b64([]byte(id))+"/claim-prepared", map[string]any{
 		"context":          w.contextWire(w.h.now().Add(time.Minute)),
 		"expected_version": version,
 		"claim_id":         b64([]byte(claimID)),
@@ -286,7 +286,7 @@ func assertUnauthenticated(t *testing.T, name string, got answer) {
 // on every route, including work it can name exactly.
 func TestAMappedServiceAccountWorksItsOwnReference(t *testing.T) {
 	t.Parallel()
-	w := newExecutorWorld(t)
+	w := newExecutorWorldWithExternalEffects(t, true)
 	alice := call{token: w.fleetToken("alice", nil)}
 	w.enqueue(alice, "stripe-1", "stripe-agent")
 	w.enqueue(alice, "ledger-1", "ledger-agent")
@@ -433,7 +433,7 @@ func TestNonExecutorTokensAreRefusedOnTheExecutorRoutes(t *testing.T) {
 // on the same agent, after the executor has worked it, still succeeds.
 func TestApprovalOfExecutorTouchedWorkIsUnaffected(t *testing.T) {
 	t.Parallel()
-	w := newExecutorWorld(t)
+	w := newExecutorWorldWithExternalEffects(t, true)
 	h := w.h
 	alice := call{token: w.fleetToken("alice", nil)}
 	bob := call{token: w.approverToken("bob")}

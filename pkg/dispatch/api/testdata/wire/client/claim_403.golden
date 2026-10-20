@@ -1,6 +1,6 @@
 requests: 1
-request: POST /shoal/api/v1/fleet/actions/YQD_/claim
-error: dispatch claim: unauthorized (HTTP 403)
+request: POST /shoal/api/v1/fleet/actions/YQD_/claim-prepared
+error: dispatch claim-prepared: unauthorized (HTTP 403)
 kind: unauthorized
 status: 403 code: "" failure: ""
 is ambiguity unrecorded: false

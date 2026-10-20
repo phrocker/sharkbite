@@ -114,6 +114,7 @@ effectsGateways:
       url: http://127.0.0.1:1
       tokenAudience: shoal-executors
     target:
+      targetScope: stripe-live-account
       baseURL: https://api.example.test
       credentialSecretName: stripe-api-key
       idempotencyHeader: Idempotency-Key
@@ -139,7 +140,7 @@ effectsGateways:
     surfaceName: stripe
     executorRef: stripe
     dispatch: {url: "http://127.0.0.1:1", tokenAudience: shoal-executors}
-    target: {baseURL: "https://api.example.test", credentialSecretName: stripe-api-key}
+    target: {targetScope: stripe-live-account, baseURL: "https://api.example.test", credentialSecretName: stripe-api-key}
     routes:
       - {action: charge, method: POST, path: /v1/charges, effects: [external, egresses-content], idempotency: natural}
   - name: ledger
@@ -148,7 +149,7 @@ effectsGateways:
     surfaceName: ledger
     executorRef: ledger
     dispatch: {url: "http://127.0.0.1:1", tokenAudience: shoal-executors}
-    target: {baseURL: "https://ledger.example.test", credentialSecretName: ledger-api-key}
+    target: {targetScope: ledger-live-account, baseURL: "https://ledger.example.test", credentialSecretName: ledger-api-key}
     routes:
       - {action: post, method: PUT, path: "/v1/entries/{id}", effects: [external, egresses-content], idempotency: natural}
 GATEWAYS
@@ -200,6 +201,7 @@ effectsGateways:
       url: http://127.0.0.1:1
       tokenAudience: shoal-executors
     target:
+      targetScope: web-fleet-live-account
       baseURL: https://shoal-ssh-web.default.svc:8443
       allowPrivate: true
       credentialSecretName: effects-ssh-web-authorization
@@ -2968,6 +2970,8 @@ elif check == "wiring":
     args = container["args"]
     if args[0] != "run":
         problems.append(f"the first argument is {args[0]!r}, not run")
+    if [a for a in args if a.startswith("-target-scope=")] != ["-target-scope=stripe-live-account"]:
+        problems.append("-target-scope does not name the fixture's stable target account")
     for name, flag in (("dispatch-token", "-dispatch-token-file"), ("target-credential", "-target-credential-file"),
                        ("attestation", "-attestation-statement-file"), ("attestation", "-attestation-key-file")):
         values = [a.split("=", 1)[1] for a in args if a.startswith(flag + "=")]
@@ -3227,6 +3231,13 @@ accepted "the largest response bound" "${effects_gateway_base[@]}" --set 'effect
 accepted "an acknowledged plaintext explorer" "${effects_gateway_base[@]}" --set 'effectsGateways[0].dispatch.url=http://127.0.0.2:1,effectsGateways[0].dispatch.allowPlaintext=true'
 
 note "== effects gateway guards refuse =="
+refuses_citing "target.targetScope must be" "a missing target scope" "${effects_gateway_base[@]}" --set 'effectsGateways[0].target.targetScope='
+refuses_citing "target.targetScope must be" "a non-string target scope" "${effects_gateway_base[@]}" --set-json 'effectsGateways[0].target.targetScope=123'
+refuses_citing "target.targetScope must be" "a padded target scope" "${effects_gateway_base[@]}" --set-string 'effectsGateways[0].target.targetScope= stripe-live-account'
+refuses_citing "target.targetScope must be" "a control in target scope" "${effects_gateway_base[@]}" --set-string $'effectsGateways[0].target.targetScope=account\tname'
+refuses_citing "target.targetScope must be" "a non-ASCII space in target scope" "${effects_gateway_base[@]}" --set-string $'effectsGateways[0].target.targetScope=account\u00a0name'
+refuses_citing "target.targetScope must be" "a format character in target scope" "${effects_gateway_base[@]}" --set-string $'effectsGateways[0].target.targetScope=account\u200bname'
+refuses_citing "target.targetScope must be" "an overlong target scope" "${effects_gateway_base[@]}" --set-string "effectsGateways[0].target.targetScope=$(printf 'a%.0s' {1..257})"
 refuses_citing "is plaintext to a remote explorer" "a remote http:// explorer" "${effects_gateway_base[@]}" --set 'effectsGateways[0].dispatch.url=http://shoal-explorer:8098'
 refuses_citing "is plaintext to a remote surface" "a remote http:// target" "${effects_gateway_base[@]}" --set 'effectsGateways[0].target.baseURL=http://api.example.test'
 refuses_citing "addresses loopback" "a loopback target without allowPrivate" "${effects_gateway_base[@]}" --set 'effectsGateways[0].target.baseURL=http://127.0.0.1:9000,effectsGateways[0].target.credentialSecretName='
@@ -3636,7 +3647,7 @@ refuses_citing "32 lower-case hex digits" "a journal ID one digit short" "${ssh_
 refuses_citing "share the journal claim" "two entries on one existing claim" "${ssh_base[@]}" \
   --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=j' \
   --set-json 'effectsSsh[1]={"name":"web2","enabled":true,"gateway":"other","journal":{"storage":"existingClaim","existingClaim":"j"}}' \
-  --set-json 'effectsGateways[1]={"name":"other","enabled":true,"agentID":"b3RoZXI","surfaceName":"other","executorRef":"other","dispatch":{"url":"http://127.0.0.1:1","tokenAudience":"a"},"target":{"baseURL":"https://shoal-ssh-web2.default.svc:8443","allowPrivate":true,"credentialSecretName":"c","caSecretName":"ca","idempotencyHeader":"Idempotency-Key","idempotencyRetention":"24h"},"routes":[{"action":"restart-web","method":"POST","path":"/v1/commands/restart-web","effects":["external","egresses-content"],"idempotency":"key"}]}' \
+  --set-json 'effectsGateways[1]={"name":"other","enabled":true,"agentID":"b3RoZXI","surfaceName":"other","executorRef":"other","dispatch":{"url":"http://127.0.0.1:1","tokenAudience":"a"},"target":{"targetScope":"other-live-account","baseURL":"https://shoal-ssh-web2.default.svc:8443","allowPrivate":true,"credentialSecretName":"c","caSecretName":"ca","idempotencyHeader":"Idempotency-Key","idempotencyRetention":"24h"},"routes":[{"action":"restart-web","method":"POST","path":"/v1/commands/restart-web","effects":["external","egresses-content"],"idempotency":"key"}]}' \
   --set 'effectsSsh[1].tls.secretName=t,effectsSsh[1].callerToken.secretName=t,effectsSsh[1].sshKeys.secretName=k,effectsSsh[1].journal.id=0123456789abcdef0123456789abcdef' \
   --set-json 'effectsSsh[1].commands={"restart-web":{"address":"10.0.4.17:22","hostKeys":["ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIRh5PXk+0rm7CbKyH/ViV5hPII8CP+XNiZ58vWMgteW"],"user":"u","privateKeyKey":"k","command":"c","runTimeout":"1m"}}'
 refuses_citing "is effectsGateways[0]'s unrecorded log claim" "the journal on the gateway's unrecorded claim" "${ssh_base[@]}" --set 'effectsSsh[0].journal.storage=existingClaim,effectsSsh[0].journal.existingClaim=log,effectsGateways[0].unrecorded.storage=existingClaim,effectsGateways[0].unrecorded.existingClaim=log'

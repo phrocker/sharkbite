@@ -130,8 +130,8 @@ func TestWorkerRefusesUnboundClaimAnswerBeforeTargetSend(t *testing.T) {
 		"backdated update":         func(a *Action) { a.UpdatedAt = a.UpdatedAt.Add(-time.Second) },
 		"lease beyond request":     func(a *Action) { a.ClaimLeaseUntil = a.ClaimLeaseUntil.Add(time.Second) },
 		"effect marked impossible": func(a *Action) { a.EffectPossible = false },
-		"missing input":            func(a *Action) { a.Input = nil },
-		"missing executor key":     func(a *Action) { a.ExecutorKey = ExecutorKey{} },
+		"unexpected input":         func(a *Action) { a.Input = json.RawMessage(`{"unexpected":true}`) },
+		"unexpected executor key":  func(a *Action) { a.ExecutorKey = ExecutorKey{set: true} },
 	}
 	for name, alter := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -183,17 +183,7 @@ func TestWorkerRefusesReusedFenceOnReclaim(t *testing.T) {
 		Dispatcher: h.explorer,
 		alter:      func(a *Action) { a.ClaimFence = 1 },
 	}
-	h.explorer.enqueue("a1", "charge", chargeInput, workerEpoch.Add(time.Hour))
-	h.explorer.mu.Lock()
-	prior := h.explorer.records["a1"]
-	prior.action.State = dispatchapi.DispatchClaimed
-	prior.action.Version = 2
-	prior.action.ClaimFence = 1
-	prior.action.ClaimID = []byte("former-claim")
-	prior.action.EffectPossible = true
-	prior.leaseUntil = workerEpoch.Add(-time.Second)
-	prior.action.ClaimLeaseUntil = prior.leaseUntil
-	h.explorer.mu.Unlock()
+	lapsedPreparedCharge(t, h, "a1")
 	h.start()
 	eventually(t, "the stale-fence protocol refusal", func() bool {
 		for _, line := range h.logs.lines() {

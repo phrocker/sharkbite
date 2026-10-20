@@ -211,7 +211,8 @@ func (s *DispatchStore) ApplyAction(ctx context.Context, mutation fleet.Dispatch
 	if mutation.Record.Version != mutation.ExpectedVersion+1 {
 		return fleet.ActionRecord{}, shoal.NewError(shoal.ErrorInvalidArgument, "fleet action version transition is invalid")
 	}
-	if mutation.ExpectedVersion == 0 && mutation.Record.RecoveryCommitment != nil {
+	if mutation.ExpectedVersion == 0 &&
+		(mutation.Record.RecoveryCommitment != nil || mutation.Record.RecoveryProtocolVersion != 0) {
 		return fleet.ActionRecord{}, shoal.NewError(shoal.ErrorInternal,
 			"new fleet action cannot carry a recovery commitment")
 	}
@@ -926,6 +927,15 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 			shoal.ErrorInternal,
 			"fleet action possible effect may not be withdrawn")
 	}
+	if current.RecoveryProtocolVersion != next.RecoveryProtocolVersion &&
+		!(current.RecoveryProtocolVersion == 0 &&
+			current.State == fleet.DispatchQueued && current.ClaimFence == 0 &&
+			next.RecoveryProtocolVersion == fleet.RecoveryCommitmentVersion &&
+			next.State == fleet.DispatchClaimed && next.ClaimFence == 1 &&
+			next.EffectPossible) {
+		return shoal.NewError(shoal.ErrorInternal,
+			"fleet action recovery protocol is set only on its first claim")
+	}
 	// Only the first claim that declared a possible effect may acquire a
 	// recovery commitment. Once written, every later transition carries the
 	// identical value. A lapsed legacy claim cannot gain a commitment
@@ -940,6 +950,7 @@ func refuseRewrittenIdentity(current, next fleet.ActionRecord) error {
 	} else if next.RecoveryCommitment != nil &&
 		(current.State != fleet.DispatchClaimed || next.State != fleet.DispatchClaimed ||
 			!current.EffectPossible ||
+			current.RecoveryProtocolVersion != fleet.RecoveryCommitmentVersion ||
 			current.ClaimFence != 1 || next.ClaimFence != 1 ||
 			!bytes.Equal(current.ClaimID, next.ClaimID) ||
 			next.RecoveryCommitment.PreparedAt.Before(current.UpdatedAt) ||

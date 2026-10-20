@@ -584,6 +584,10 @@ type ActionRecord struct {
 	EvidenceSnapshotAsOf time.Time
 	Evidence             []EvidenceRef
 	EffectPossible       bool
+	// RecoveryProtocolVersion is set atomically with a first remote claim
+	// taken through the prepared gateway protocol. Zero is a legacy or
+	// in-process claim and can never be upgraded after that first claim.
+	RecoveryProtocolVersion uint8
 	// RecoveryCommitment is a write-once statement of the exact request a
 	// trusted external gateway prepared before its first target send. Nil on
 	// legacy actions and on actions not yet prepared. A later claim may use it
@@ -842,7 +846,11 @@ type ClaimRequest struct {
 	// caller-supplied idempotency key.
 	ClaimID []byte
 	Lease   time.Duration
-	Context RequestContext
+	// Prepared selects the versioned remote-gateway protocol. Only a first
+	// claim may enter it; the marker is committed with the claim itself.
+	// Internal in-process claims leave this false.
+	Prepared bool
+	Context  RequestContext
 }
 
 type CancelRequest struct {
@@ -1469,7 +1477,8 @@ func (r ActionRecord) Validate() error {
 		if err := r.RecoveryCommitment.validate(); err != nil {
 			return err
 		}
-		if r.State == DispatchQueued || len(r.ClaimID) == 0 ||
+		if r.RecoveryProtocolVersion != RecoveryCommitmentVersion ||
+			r.State == DispatchQueued || len(r.ClaimID) == 0 ||
 			r.ClaimFence < r.RecoveryCommitment.PreparedFence || !r.EffectPossible ||
 			r.RecoveryCommitment.PreparedAt.Before(r.CreatedAt) ||
 			r.RecoveryCommitment.PreparedAt.After(r.UpdatedAt) ||
@@ -1478,6 +1487,12 @@ func (r ActionRecord) Validate() error {
 			return shoal.NewError(shoal.ErrorInvalidArgument,
 				"action recovery commitment is outside its claim bounds")
 		}
+	}
+	if r.RecoveryProtocolVersion != 0 &&
+		(r.RecoveryProtocolVersion != RecoveryCommitmentVersion ||
+			r.State == DispatchQueued || r.ClaimFence == 0) {
+		return shoal.NewError(shoal.ErrorInvalidArgument,
+			"action recovery protocol origin is invalid")
 	}
 	// EffectPossible is deliberately not required here. It was, and that
 	// requirement enforced a falsehood: it made every terminal record assert

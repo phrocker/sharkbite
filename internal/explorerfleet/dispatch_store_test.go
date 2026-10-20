@@ -226,6 +226,7 @@ func TestDispatchRecoveryCommitmentIsDurableAndWriteOnce(t *testing.T) {
 	forged.ExecutionPolicyGeneration = 1
 	forged.ExecutionExpiresAt = forged.Deadline
 	forged.EffectPossible = true
+	forged.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
 	forged.RecoveryCommitment = &fleet.RecoveryCommitment{
 		Version: fleet.RecoveryCommitmentVersion, Mode: fleet.RecoveryKey,
 		RequestDigest:     sha256.Sum256([]byte("forged-request")),
@@ -250,6 +251,7 @@ func TestDispatchRecoveryCommitmentIsDurableAndWriteOnce(t *testing.T) {
 	claim.ExecutionPolicyGeneration = 1
 	claim.ExecutionExpiresAt = queued.Deadline
 	claim.EffectPossible = true
+	claim.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
 	claim.UpdatedAt = queued.UpdatedAt.Add(time.Second)
 	claim.TransitionRequestID = "claim-request"
 	claim.TransitionCorrelationID = "claim-correlation"
@@ -401,6 +403,7 @@ func TestDispatchRecoveryCommitmentCannotBeAddedAfterFirstClaim(t *testing.T) {
 	record.ExecutionPolicyGeneration = 1
 	record.ExecutionExpiresAt = record.Deadline
 	record.EffectPossible = true
+	record.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
 	next := record
 	next.Version++
 	next.RecoveryCommitment = &fleet.RecoveryCommitment{
@@ -427,6 +430,7 @@ func TestDispatchRecoveryCommitmentCannotRecastEvidenceOnlyClaim(t *testing.T) {
 	record.ClaimLeaseUntil = record.UpdatedAt.Add(time.Minute)
 	record.ExecutionPolicyGeneration = 1
 	record.ExecutionExpiresAt = record.Deadline
+	record.RecoveryProtocolVersion = fleet.RecoveryCommitmentVersion
 	next := record
 	next.Version++
 	next.EffectPossible = true
@@ -994,10 +998,15 @@ func (e integratedExecutors) ResolveExecutor(ref string) (fleet.Executor, bool) 
 }
 
 type integratedExecutor struct {
-	mu      sync.Mutex
-	calls   int
-	keys    [][]byte
-	effects map[string]struct{}
+	mu         sync.Mutex
+	calls      int
+	keys       [][]byte
+	effects    map[string]struct{}
+	maxEffects fleet.Effects
+}
+
+func (e *integratedExecutor) MaxEffects() fleet.Effects {
+	return e.maxEffects
 }
 
 func (e *integratedExecutor) Execute(
@@ -1031,6 +1040,7 @@ func registerIntegratedAgent(
 	registry *fleet.Service,
 	ctx context.Context,
 	now time.Time,
+	effects ...fleet.Effect,
 ) fleet.Descriptor {
 	t.Helper()
 	descriptor, err := registry.Register(ctx, fleet.RegisterRequest{
@@ -1043,7 +1053,8 @@ func registerIntegratedAgent(
 			ExecutorRef: "exec", LeaseExpiresAt: now.Add(time.Hour),
 			Capabilities: []fleet.Capability{{
 				Name: "search", Actions: []fleet.Action{{
-					Name: "query",
+					Name:    "query",
+					Effects: append(fleet.Effects(nil), effects...),
 					InputSchema: json.RawMessage(
 						`{"type":"object","properties":{"value":{"type":"integer"}},"required":["value"],"additionalProperties":false}`,
 					),

@@ -23,6 +23,8 @@ import (
 type FleetDispatchProvider interface {
 	Enqueue(context.Context, fleet.EnqueueRequest) (fleet.ActionRecord, error)
 	Claim(context.Context, fleet.ClaimRequest) (fleet.ActionRecord, error)
+	ClaimMaterial(context.Context, fleet.RecoveryClaimRequest) (fleet.ActionRecord, error)
+	PrepareClaim(context.Context, fleet.PrepareClaimRequest) (fleet.ActionRecord, error)
 	Cancel(context.Context, fleet.CancelRequest) (fleet.ActionRecord, error)
 	Status(context.Context, fleet.StatusRequest) (fleet.ActionRecord, error)
 	Pull(context.Context, fleet.PullActionsRequest) (fleet.ActionPage, error)
@@ -129,6 +131,13 @@ func mountFleetDispatch(mux *http.ServeMux, provider FleetDispatchProvider) {
 		})
 	})
 	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/claim", func(w http.ResponseWriter, r *http.Request) {
+		// The legacy remote route returned executable Input and ExecutorKey
+		// without a durable Prepare. Reject it before any Claim mutation.
+		w.Header().Set("Shoal-Recovery-Refusal", string(fleet.RecoveryLegacyClaim))
+		writeError(w, shoal.NewError(shoal.ErrorInvalidArgument,
+			"remote claim requires the prepared gateway protocol"))
+	})
+	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/claim-prepared", func(w http.ResponseWriter, r *http.Request) {
 		actionID, err := decodeWireBytes("action ID", r.PathValue("action"), false)
 		if err != nil {
 			writeError(w, fleetDispatchError(err))
@@ -149,12 +158,89 @@ func mountFleetDispatch(mux *http.ServeMux, provider FleetDispatchProvider) {
 			writeError(w, fleetDispatchError(err))
 			return
 		}
-		result, err := provider.Claim(r.Context(), fleet.ClaimRequest{ID: actionID, ExpectedVersion: wire.ExpectedVersion, ClaimID: claimID, Lease: wire.Lease, Context: contextValue})
+		result, err := provider.Claim(r.Context(), fleet.ClaimRequest{ID: actionID, ExpectedVersion: wire.ExpectedVersion, ClaimID: claimID, Lease: wire.Lease, Prepared: true, Context: contextValue})
+		if err != nil {
+			writeFleetRecoveryError(w, err)
+			return
+		}
+		writeResponse(w, http.StatusOK, encodeFleetAction(result))
+	})
+	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/material", func(w http.ResponseWriter, r *http.Request) {
+		actionID, request, err := decodeFleetRecoveryClaim(w, r)
 		if err != nil {
 			writeError(w, fleetDispatchError(err))
 			return
 		}
-		writeResponse(w, http.StatusOK, encodeClaimedFleetAction(result))
+		request.ID = actionID
+		result, err := provider.ClaimMaterial(r.Context(), request)
+		if err != nil {
+			writeFleetRecoveryError(w, err)
+			return
+		}
+		writeResponse(w, http.StatusOK, dispatchapi.ClaimMaterial{
+			ID:          base64.RawURLEncoding.EncodeToString(result.ID),
+			ClaimID:     base64.RawURLEncoding.EncodeToString(result.ClaimID),
+			ClaimFence:  result.ClaimFence,
+			Input:       append(json.RawMessage(nil), result.Input...),
+			ExecutorKey: base64.RawURLEncoding.EncodeToString(result.ExecutorKey),
+		})
+	})
+	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/prepare", func(w http.ResponseWriter, r *http.Request) {
+		actionID, err := decodeWireBytes("action ID", r.PathValue("action"), false)
+		if err != nil {
+			writeError(w, fleetDispatchError(err))
+			return
+		}
+		var wire dispatchapi.PrepareRequest
+		if err := decodeRequest(w, r, &wire); err != nil {
+			writeError(w, shoal.NewError(shoal.ErrorInvalidArgument, err.Error()))
+			return
+		}
+		contextValue, err := fleetRequestContextWire(wire.Context).decode()
+		if err != nil {
+			writeError(w, fleetDispatchError(err))
+			return
+		}
+		claimID, err := decodeWireBytes("claim ID", wire.ClaimID, false)
+		if err != nil {
+			writeError(w, fleetDispatchError(err))
+			return
+		}
+		requestDigest, err := decodeRecoveryDigest("request digest", wire.RequestDigest)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		scopeDigest, err := decodeRecoveryDigest("target scope digest", wire.TargetScopeDigest)
+		if err != nil {
+			writeError(w, err)
+			return
+		}
+		result, err := provider.PrepareClaim(r.Context(), fleet.PrepareClaimRequest{
+			RecoveryClaimRequest: fleet.RecoveryClaimRequest{
+				ID: actionID, ClaimID: claimID, ClaimFence: wire.ClaimFence,
+				Context: contextValue,
+			},
+			Mode:          fleet.RecoveryMode(wire.Mode),
+			RequestDigest: requestDigest, TargetScopeDigest: scopeDigest,
+		})
+		if err != nil {
+			writeFleetRecoveryError(w, err)
+			return
+		}
+		if result.RecoveryCommitment == nil {
+			writeError(w, shoal.NewError(shoal.ErrorInternal, "prepare returned no commitment"))
+			return
+		}
+		writeResponse(w, http.StatusOK, dispatchapi.PrepareReceipt{
+			ID:         base64.RawURLEncoding.EncodeToString(result.ID),
+			ClaimID:    base64.RawURLEncoding.EncodeToString(result.ClaimID),
+			ClaimFence: result.ClaimFence, Version: result.Version,
+			Committed:         result.RecoveryCommitment != nil,
+			Mode:              string(result.RecoveryCommitment.Mode),
+			RequestDigest:     base64.RawURLEncoding.EncodeToString(result.RecoveryCommitment.RequestDigest[:]),
+			TargetScopeDigest: base64.RawURLEncoding.EncodeToString(result.RecoveryCommitment.TargetScopeDigest[:]),
+		})
 	})
 	mux.HandleFunc("POST /api/v1/fleet/actions/{action}/complete", func(w http.ResponseWriter, r *http.Request) {
 		actionID, err := decodeWireBytes("action ID", r.PathValue("action"), false)
@@ -329,6 +415,14 @@ func mountFleetDispatch(mux *http.ServeMux, provider FleetDispatchProvider) {
 	})
 }
 
+func writeFleetRecoveryError(w http.ResponseWriter, err error) {
+	var refusal *fleet.RecoveryRefusalError
+	if errors.As(err, &refusal) && refusal.Code.Valid() {
+		w.Header().Set("Shoal-Recovery-Refusal", string(refusal.Code))
+	}
+	writeError(w, fleetDispatchError(err))
+}
+
 func fleetDispatchError(err error) error {
 	switch {
 	case err == nil:
@@ -495,6 +589,46 @@ type fleetClaimWire struct {
 	Lease           time.Duration           `json:"lease"`
 }
 
+type fleetRecoveryClaimWire struct {
+	Context    fleetRequestContextWire `json:"context"`
+	ClaimID    string                  `json:"claim_id"`
+	ClaimFence uint64                  `json:"claim_fence"`
+}
+
+func decodeFleetRecoveryClaim(
+	w http.ResponseWriter, r *http.Request,
+) ([]byte, fleet.RecoveryClaimRequest, error) {
+	actionID, err := decodeWireBytes("action ID", r.PathValue("action"), false)
+	if err != nil {
+		return nil, fleet.RecoveryClaimRequest{}, err
+	}
+	var wire fleetRecoveryClaimWire
+	if err := decodeRequest(w, r, &wire); err != nil {
+		return nil, fleet.RecoveryClaimRequest{}, shoal.NewError(shoal.ErrorInvalidArgument, err.Error())
+	}
+	contextValue, err := wire.Context.decode()
+	if err != nil {
+		return nil, fleet.RecoveryClaimRequest{}, err
+	}
+	claimID, err := decodeWireBytes("claim ID", wire.ClaimID, false)
+	if err != nil {
+		return nil, fleet.RecoveryClaimRequest{}, err
+	}
+	return actionID, fleet.RecoveryClaimRequest{
+		ClaimID: claimID, ClaimFence: wire.ClaimFence, Context: contextValue,
+	}, nil
+}
+
+func decodeRecoveryDigest(name, encoded string) ([32]byte, error) {
+	var digest [32]byte
+	value, err := base64.RawURLEncoding.DecodeString(encoded)
+	if err != nil || len(value) != len(digest) {
+		return digest, shoal.NewError(shoal.ErrorInvalidArgument, name+" is invalid")
+	}
+	copy(digest[:], value)
+	return digest, nil
+}
+
 type fleetPullWire struct {
 	Context fleetRequestContextWire `json:"context"`
 	After   string                  `json:"after,omitempty"`
@@ -619,95 +753,12 @@ type fleetAssertionWire struct {
 	Origin      ontology.AssertionOrigin `json:"origin"`
 }
 
-// fleetActionWire is the record every dispatch route returns: the public
-// dispatchapi.Action. What its fields carry, and why:
-//
-// Input is what the work actually is, and without it an out-of-process
-// worker can pull an action, claim it under a fence and complete it without
-// ever receiving the operation's parameters. It was absent from this wire
-// while being present on the enqueue wire, validated against the action's
-// InputSchema at enqueue, and stored on the record — so the data was
-// correct and simply never read back out (#435).
-//
-// Nothing on a worker's side recovers this. A worker reconstructing a
-// plausible request from the capability name would be fabricating the
-// parameters of an effect Shoal cannot undo, which is why the gap had to be
-// closed here rather than worked around there.
-//
-// Populated on the claim response alone — see encodeClaimedFleetAction, the
-// one caller that sets it. Every other route uses encodeFleetAction and
-// leaves it empty, which is both an exposure bound and a size bound.
-//
-// The exposure bound: a claim is the point at which a principal takes
-// responsibility for performing the work, so it is the one transition whose
-// caller must have the parameters. An earlier version of this field was
-// emitted unconditionally on the argument that every consumer of this wire
-// is scoped to the action's own principal, since Pull filtered on
-// sameActionPrincipal. That was true when written and false as of #437,
-// which lets a principal granted OperationExecute on the descriptor pull
-// work it did not enqueue. Verified by composing the two branches and
-// reading the input back as a non-enqueuing executor.
-//
-// The size bound is the reason it is not merely narrowed to Pull as well.
-// MaxActionPayloadBytes is a fixed 1 MiB and a workspace's OutputBytes
-// budget narrows to any non-zero value (workspace.ValidateBudgets rejects
-// only zero), so a response carrying an input can exceed the budget that
-// governs it. Pull returns up to MaxDispatchListResults — 256 — records,
-// which would have put a quarter-gigabyte page against a 64 MiB default
-// ceiling; and unlike Output, an Input is populated from enqueue onward, so
-// it would have been present on every record of every page rather than only
-// on completed ones. writeResponse answers an overflow on a route
-// requestMayCommit reports as commit-bearing with 503 and
-// X-Commit-Outcome: indeterminate, which on the enqueue echo would have
-// meant a successful enqueue reported as an unknown outcome, repeatably,
-// for as long as the record existed. One record on one route is the bound
-// that keeps the page size independent of the payload ceiling.
-//
-// ErrorCodeOrigin says whether the service or the executor decided
-// ErrorCode, which the code alone cannot tell a reader (#508). Omitted on
-// a record written before the field existed, which a reader must treat as
-// "either" rather than as "executor".
-//
-// Effected accompanies a failure that followed a partial irreversible
-// egress (#427). Returned as well as accepted, so a worker that lost its
-// response reads back what was recorded rather than re-deriving it —
-// which it cannot, since the record is write-once and its own retry would
-// be compared against it.
-//
-// ExecutorKey is the idempotency key an in-process executor already
-// receives (dispatch_service.go hands it over as IdempotencyKey), derived
-// at enqueue as a length-prefixed digest over a domain tag, the action ID
-// and the caller's idempotency key. An out-of-process worker performing an
-// irreversible effect needs exactly that value for exactly that purpose: it
-// is the stable identity that lets a target deduplicate a re-claim after a
-// lease lapse.
-//
-// Exposing it is strictly better than having each worker invent a key. A
-// hand-written digest over the same inputs is easy to get subtly wrong —
-// omitting the length prefixes makes it non-injective, so a caller able to
-// enqueue against two surfaces can make one key collide with another's, and
-// a collision makes a provider return a cached success without performing
-// the effect. That is worse than a duplicate, because nothing records it.
-//
-// Set on the claim response alone, for the same reason as Input: it is the
-// claimant that performs the effect and therefore needs the key. It is not
-// a new disclosure — pkg/explorer/mcp returns fleet.ActionRecord whole, and
-// that type carries no JSON tags, so the MCP enqueue and invoke tools
-// already emit this value to their caller as "ExecutorKey" in padded
-// standard base64. This wire spells it raw-URL like every other byte field
-// here. Both decode to the same key, so a worker must compare decoded bytes
-// and never the two spellings against each other.
-//
-// AmbiguityReports accompany EffectPossible wherever it appears, because
-// the flag says an effect may have happened and these say what was
-// attempted. An operator reading one without the other has the question
-// and not the evidence.
-//
-// The claim history is deliberately *not* on this wire. It exists so the
-// service can recognise a lapsed claimant, and publishing it would hand
-// every execute-holder in the scope a list of which principals have held a
-// record and under which fences — an identity disclosure the route does
-// not need to make.
+// fleetActionWire is the public action projection. Input, ExecutorKey and
+// recovery commitment digests are deliberately absent on every ordinary
+// route, including Pull, Status and the prepared Claim response. Executable
+// material is returned only by the authenticated claimant-only Material route;
+// its answer is not a send grant. Prepare must durably confirm the exact bound
+// request before the gateway may contact the target.
 type fleetActionWire = dispatchapi.Action
 
 func (w fleetEnqueueWire) decode(pathID []byte) (fleet.EnqueueRequest, error) {
@@ -818,6 +869,13 @@ func decodeEvidence(values []fleetEvidenceWire) ([]fleet.EvidenceRef, error) {
 }
 
 func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
+	var recovery *dispatchapi.RecoveryStatus
+	if committed := record.RecoveryCommitment; committed != nil {
+		recovery = &dispatchapi.RecoveryStatus{
+			Version: committed.Version, Mode: string(committed.Mode),
+			PreparedFence: committed.PreparedFence, PreparedAt: committed.PreparedAt,
+		}
+	}
 	evidence := make([]dispatchapi.Evidence, len(record.Evidence))
 	for i, item := range record.Evidence {
 		evidence[i] = dispatchapi.Evidence{
@@ -860,9 +918,11 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 		CreatedAt: record.CreatedAt, UpdatedAt: record.UpdatedAt,
 		ClaimID: base64.RawURLEncoding.EncodeToString(record.ClaimID), ClaimFence: record.ClaimFence,
 		ClaimLeaseUntil: record.ClaimLeaseUntil, EffectPossible: record.EffectPossible,
-		AmbiguityReports:     encodeFleetAmbiguityReports(record.AmbiguityReports),
-		EvidenceSnapshotID:   encodeFleetID(record.EvidenceSnapshotID),
-		EvidenceSnapshotAsOf: record.EvidenceSnapshotAsOf, Evidence: evidence,
+		RecoveryProtocolVersion: record.RecoveryProtocolVersion,
+		RecoveryCommitment:      recovery,
+		AmbiguityReports:        encodeFleetAmbiguityReports(record.AmbiguityReports),
+		EvidenceSnapshotID:      encodeFleetID(record.EvidenceSnapshotID),
+		EvidenceSnapshotAsOf:    record.EvidenceSnapshotAsOf, Evidence: evidence,
 	}
 }
 
@@ -873,26 +933,6 @@ func encodeFleetAction(record fleet.ActionRecord) fleetActionWire {
 func EncodeFleetAction(record fleet.ActionRecord) dispatchapi.Action {
 	return encodeFleetAction(record)
 }
-
-// encodeClaimedFleetAction is encodeFleetAction plus the two fields a claimant
-// needs in order to perform the work: the operation's parameters and the
-// idempotency key to present to the target. Only the claim route calls it.
-//
-// Keeping these off encodeFleetAction is deliberate rather than tidy. Six of
-// the seven routes that encode an action — enqueue, invoke, pull, complete,
-// cancel and status — hand the record back to a caller that either supplied
-// the input already or has no business performing the effect, and five of
-// those are commit-bearing under requestMayCommit, where an over-budget
-// response is reported as an indeterminate commit rather than a failure. So
-// the default has to be the encoder that cannot carry a payload, and the
-// exposure has to be one visible call site.
-func encodeClaimedFleetAction(record fleet.ActionRecord) fleetActionWire {
-	wire := encodeFleetAction(record)
-	wire.Input = append(json.RawMessage(nil), record.Input...)
-	wire.ExecutorKey = base64.RawURLEncoding.EncodeToString(record.ExecutorKey)
-	return wire
-}
-
 func encodeFleetAmbiguityReports(
 	reports []fleet.AmbiguityReport,
 ) []fleetAmbiguityReportWire {

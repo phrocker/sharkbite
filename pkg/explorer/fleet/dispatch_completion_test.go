@@ -34,6 +34,10 @@ func newCompletionFixture(t *testing.T, effects Effects) *completionFixture {
 }
 
 func newCompletionFixtureWithExecutor(t *testing.T, effects Effects, executor any) *completionFixture {
+	return newCompletionFixtureWithPrepared(t, effects, executor, false)
+}
+
+func newCompletionFixtureWithPrepared(t *testing.T, effects Effects, executor any, prepared bool) *completionFixture {
 	t.Helper()
 	now := time.Date(2026, 9, 6, 12, 0, 0, 0, time.UTC)
 	clock := now
@@ -79,7 +83,7 @@ func newCompletionFixtureWithExecutor(t *testing.T, effects Effects, executor an
 	}
 	claimed, err := service.Claim(ctx, ClaimRequest{
 		ID: queued.ID, ExpectedVersion: queued.Version, ClaimID: []byte("claim"),
-		Lease: time.Minute, Context: dispatchContext(now, "request"),
+		Lease: time.Minute, Context: dispatchContext(now, "request"), Prepared: prepared,
 	})
 	if err != nil {
 		t.Fatal(err)

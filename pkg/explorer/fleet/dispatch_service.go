@@ -461,6 +461,47 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 	if current.isAdmission() {
 		return ActionRecord{}, auth.ObjectNotFound()
 	}
+	// A live claim is withheld from Pull. Check visibility before the
+	// prepared-protocol refusal branches so their specific recovery reason
+	// cannot turn a guessed action ID into an existence oracle.
+	if concealFrom(decision, current, now) {
+		return ActionRecord{}, auth.ObjectNotFound()
+	}
+	if request.Prepared {
+		if !claimedAction.Effects.contains(EffectMutatesExternal) &&
+			!claimedAction.Effects.contains(EffectEgressesContent) {
+			return ActionRecord{}, shoal.NewError(shoal.ErrorInvalidArgument,
+				"prepared claim requires a declared external effect")
+		}
+		// A fresh prepared claim is either the first ever claim, or a replay
+		// under the original durable key/natural commitment. A legacy claim,
+		// an unprepared first claim, and an unprotected commitment can never
+		// be upgraded after a possible effect.
+		if current.ClaimFence != 0 {
+			retry := current.RecoveryProtocolVersion == RecoveryCommitmentVersion &&
+				current.State == DispatchClaimed &&
+				current.Version == request.ExpectedVersion+1 &&
+				bytes.Equal(current.ClaimID, request.ClaimID)
+			replay := current.RecoveryProtocolVersion == RecoveryCommitmentVersion &&
+				current.RecoveryCommitment != nil &&
+				(current.RecoveryCommitment.Mode == RecoveryKey ||
+					current.RecoveryCommitment.Mode == RecoveryNatural)
+			if !retry && !replay {
+				reason := RecoveryLegacyClaim
+				if current.RecoveryProtocolVersion == RecoveryCommitmentVersion {
+					reason = RecoveryMissingCommitment
+					if current.RecoveryCommitment != nil && current.RecoveryCommitment.Mode == RecoveryUnprotected {
+						reason = RecoveryUnprotectedReplay
+					}
+				}
+				return ActionRecord{}, &RecoveryRefusalError{reason, ErrClaimLost}
+			}
+		}
+	} else if current.RecoveryProtocolVersion != 0 {
+		// Even an in-process claimant must not re-run an action that entered
+		// the prepared remote protocol. This slice refuses all reclaims.
+		return ActionRecord{}, ErrClaimLost
+	}
 	if current.State == DispatchClaimed && len(current.ExecutionAttemptID) != 0 {
 		if concealFrom(decision, current, now) {
 			return ActionRecord{}, auth.ObjectNotFound()
@@ -485,6 +526,10 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 			bytes.Equal(current.ClaimID, request.ClaimID) &&
 			current.ClaimLease == request.Lease &&
 			holdsClaimOn(decision, current) {
+			if request.Prepared && (!now.Before(current.ClaimLeaseUntil) ||
+				!now.Before(current.Deadline)) {
+				return ActionRecord{}, ErrClaimLost
+			}
 			if err := s.publishTransition(
 				context.WithoutCancel(ctx), "action.claimed", current,
 			); err != nil {
@@ -572,6 +617,9 @@ func (s *DispatchService) Claim(ctx context.Context, request ClaimRequest) (Acti
 			s.auditAttestationRefusal(ctx, current, authorizing, decision)
 		}
 		return ActionRecord{}, err
+	}
+	if request.Prepared {
+		next.RecoveryProtocolVersion = RecoveryCommitmentVersion
 	}
 	if err := s.recorder.RecordAction(ctx, ActionAudit{Phase: "claim_admission", Operation: authorizing, Record: next}); err != nil {
 		return ActionRecord{}, errors.Join(ErrRecordingUnavailable, err)

@@ -70,7 +70,7 @@ func TestTheShippedAuthenticatorReachesTheAttestationGate(t *testing.T) {
 	if err := json.Unmarshal([]byte(body), &queued); err != nil || queued.Version == 0 {
 		t.Fatalf("enqueue response %s: %v", body, err)
 	}
-	status, body = post("/api/v1/fleet/actions/"+encode("dev-deploy")+"/claim", map[string]any{
+	status, body = post("/api/v1/fleet/actions/"+encode("dev-deploy")+"/claim-prepared", map[string]any{
 		"context": requestContext, "expected_version": queued.Version,
 		"claim_id": encode("dev-claim"), "lease": int64(time.Minute),
 	})

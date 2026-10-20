@@ -96,6 +96,7 @@ while the gateway is already pulling; and
 | `-agent-id` | | required; the descriptor ID as unpadded base64url, not a display name |
 | `-capability` | `effects.http` | fleet name grammar |
 | `-surface-name` | | required; the ambiguity report's `target` |
+| `-target-scope` | | required stable, nonsecret account or tenant boundary (1–256 printable bytes); keep it across credential rotation |
 | `-target-base-url` | | required; https, or http to loopback; **no plaintext opt-out**; no userinfo, query or fragment |
 | `-target-credential-env` / `-target-credential-file` | `SHOAL_TARGET_CREDENTIAL` / | exactly one; sent verbatim as the value of `-target-auth-header` |
 | `-target-auth-header` | `Authorization` | must not be a header the gateway writes itself |
@@ -970,6 +971,7 @@ Every key, with its default, is in `effectsGatewayDefaults` in
 | `dispatch.tokenAudience` | | projected token | required with `projected` |
 | `dispatch.tokenExpirationSeconds` | 3600 | projected token | at least 600 |
 | `dispatch.credentialSecretName`, `.credentialSecretKey` | , `token` | Secret token | required with `secret`, refused with `projected` |
+| `target.targetScope` | | `-target-scope` | required stable, nonsecret account or tenant boundary (1–256 printable bytes); no default |
 | `target.baseURL` | | `-target-base-url` | required. https, or http to loopback; no userinfo, query or fragment |
 | `target.allowPrivate` | false | `-target-allow-private` | required for loopback |
 | `target.authHeader` | `Authorization` | `-target-auth-header` | |
@@ -998,6 +1000,11 @@ Durations are Go literals built from whole numbers and `ms`, `s`, `m` or `h`
 (`90s`, `1m30s`). Every value is rendered as a quoted scalar or as JSON, and a
 line break anywhere in an entry is refused (#468).
 
+Set `target.targetScope` to the target's stable account or tenant boundary,
+not a credential or a route name. Keep it unchanged across gateway replicas
+and credential rotation. Change it when the target's deduplication namespace
+changes; prepared recovery refuses an old commitment under a new scope.
+
 ### A complete entry
 
 The executor mapping must map this gateway's ServiceAccount
@@ -1019,6 +1026,7 @@ effectsGateways:
       url: https://shoal-explorer.shoal.svc:8098
       tokenAudience: shoal-executors
     target:
+      targetScope: stripe-live-account
       baseURL: https://api.stripe.com
       credentialSecretName: stripe-api-key
       idempotencyHeader: Idempotency-Key
