@@ -457,6 +457,7 @@ shoal-effects-ssh serve -config /etc/effects-ssh/commands.json \
     -journal-dir /var/lib/effects-ssh -journal-id <identity> -journal-retention 48h
 
 shoal-gateway run -capability effects.ssh -surface-name web-fleet \
+    -target-scope web-fleet-live-account \
     -target-base-url http://127.0.0.1:8443 -target-allow-private \
     -target-credential-file /run/secrets/effects-ssh/authorization \
     -idempotency-header Idempotency-Key -idempotency-retention 24h \
@@ -513,7 +514,8 @@ shoal-effects-ssh serve ... -listen 0.0.0.0:8443 \
     -client-identity uri:spiffe://cluster.local/ns/shoal/sa/shoal-gw-ssh \
     -caller-token-file /run/secrets/effects-ssh/token
 
-shoal-gateway run ... -target-base-url https://effects-ssh.shoal.svc:8443 \
+shoal-gateway run ... -target-scope web-fleet-live-account \
+    -target-base-url https://effects-ssh.shoal.svc:8443 \
     -target-ca-file /var/run/shoal/target-ca/ca.crt \
     -target-client-cert-file /var/run/shoal/target-client/tls.crt \
     -target-client-key-file /var/run/shoal/target-client/tls.key \
