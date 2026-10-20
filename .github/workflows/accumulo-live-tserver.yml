@@ -1,0 +1,61 @@
+name: Accumulo 4 live tserver evidence
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/accumulo-live-tserver.yml"
+      - "go.mod"
+      - "go.sum"
+      - "wal-quorum-sidecar/**"
+      - "cmd/shoal-conformance/**"
+      - "cmd/shoal-tserver/**"
+      - "internal/**"
+      - "test/accumulo/**"
+      - "test/conformance/**"
+
+permissions:
+  contents: read
+
+jobs:
+  live-tserver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      GOWORK: off
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Prepare evidence directory
+        run: mkdir -p evidence
+      - name: Validate pinned harness and verdict logic
+        run: |
+          set -euo pipefail
+          make test-accumulo-static 2>&1 | tee evidence/static.log
+      - name: Build conformance CLI
+        run: |
+          set -euo pipefail
+          go build -o "$RUNNER_TEMP/shoal-conformance" ./cmd/shoal-conformance 2>&1 | tee evidence/build.log
+      - name: Run pinned live tserver gate
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/shoal-conformance" \
+            -mode live -required tserver -live-timeout 45m \
+            -live-log-dir evidence -output evidence/verdict.json \
+            2>&1 | tee evidence/runner.log
+      - name: Upload verdict and live evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: accumulo-live-tserver-${{ github.run_id }}
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 14

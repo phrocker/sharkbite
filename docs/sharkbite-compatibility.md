@@ -4479,6 +4479,14 @@ Minimum harness: an ephemeral single-node Accumulo 4 plus ZooKeeper (the role
 Sharkbite's `test/19x/st` SMAC project played), driven from CI, with the ported
 `test/python/*.py` suite as the acceptance gate.
 
+The dedicated `accumulo-live-tserver.yml` workflow now runs the pinned
+`shoal-conformance -mode live -required tserver` role on relevant pull requests
+and manual dispatch. It retains a machine-readable verdict and raw harness
+output even when that role fails. This is a narrow tserver process gate: the
+unselected scanserver, client, compactor, and promotion roles are skipped, and
+the ported Python live-client suite above remains outstanding. It does not by
+itself close SB-XCUT-015 or any live-client row in this matrix.
+
 <a id="sec-25"></a>
 
 ## 25. Counts by status and category

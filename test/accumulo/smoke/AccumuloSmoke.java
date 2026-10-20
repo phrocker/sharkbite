@@ -17,6 +17,7 @@ import org.apache.accumulo.core.client.admin.servers.ServerId;
 import org.apache.accumulo.core.conf.SiteConfiguration;
 import org.apache.accumulo.core.data.Key;
 import org.apache.accumulo.core.data.Mutation;
+import org.apache.accumulo.core.data.ResourceGroupId;
 import org.apache.accumulo.core.data.Value;
 import org.apache.accumulo.core.security.Authorizations;
 import org.apache.accumulo.server.ServerContext;
@@ -53,12 +54,24 @@ public final class AccumuloSmoke {
         requireServer(client, SHOAL_TSERVER, true);
       } else if ("shoal-absent".equals(args[0])) {
         requireServer(client, SHOAL_TSERVER, false);
+      } else if ("wal-sorter-group".equals(args[0])) {
+        ResourceGroupId group = ResourceGroupId.of("walsorter");
+        if (!client.resourceGroupOperations().exists("walsorter")) {
+          client.resourceGroupOperations().create(group);
+        }
+        System.out.println("SHOAL_EVIDENCE wal-sorter-group=ready");
+      } else if ("wal-sorter-ready".equals(args[0])) {
+        boolean found = client.instanceOperations().getServers(ServerId.Type.TABLET_SERVER).stream()
+            .anyMatch(server -> "walsorter".equals(server.getResourceGroup().canonical()));
+        if (!found) throw new IllegalStateException("isolated WAL sorter is unavailable");
+        System.out.println("SHOAL_EVIDENCE wal-sorter=ready group=walsorter");
       } else if ("tserver".equals(args[0])) {
         tserver(client);
       } else if ("recovery-prepare".equals(args[0])) {
         recoveryPrepare(client);
       } else if ("recovery-verify".equals(args[0])) {
-        verifyRows(client, RECOVERY_TABLE, 64);
+        System.out.println("SHOAL_EVIDENCE wal=recovered rows=64 digest="
+            + verifyRows(client, RECOVERY_TABLE, 64));
       } else if ("compactor".equals(args[0])) {
         compactor(client);
       } else {
@@ -89,6 +102,8 @@ public final class AccumuloSmoke {
     private static void recoveryPrepare(AccumuloClient client) throws Exception {
       recreate(client.tableOperations(), RECOVERY_TABLE);
       writeRows(client, RECOVERY_TABLE, 64);
+      // Keep the acknowledged writes below the flush threshold. A pre-kill
+      // scan sees only published files and would turn this into an RFile test.
       System.out.println("SHOAL_EVIDENCE wal=prepared rows=64");
     }
 
@@ -167,9 +182,23 @@ public final class AccumuloSmoke {
     private static String verifyRows(AccumuloClient client, String table, int expected)
         throws Exception {
       List<String> cells = new ArrayList<>();
+      boolean baseRows = TABLE.equals(table) || RECOVERY_TABLE.equals(table);
       try (Scanner scanner = client.createScanner(table, Authorizations.EMPTY)) {
         scanner.setBatchSize(1);
         for (Map.Entry<Key,Value> entry : scanner) {
+          if (baseRows) {
+            int row = cells.size();
+            String expectedRow = String.format("row-%04d", row);
+            Key key = entry.getKey();
+            if (row >= expected || !expectedRow.equals(key.getRow().toString())
+                || !"cf".equals(key.getColumnFamily().toString())
+                || !"cq".equals(key.getColumnQualifier().toString())
+                || !key.getColumnVisibility().toString().isEmpty()
+                || !("value-" + row).equals(entry.getValue().toString())) {
+              throw new IllegalStateException("unexpected base cell at index " + row
+                  + ": " + key.toStringNoTime() + "=" + entry.getValue());
+            }
+          }
           cells.add(entry.getKey().toStringNoTime() + "=" + entry.getValue());
         }
       }

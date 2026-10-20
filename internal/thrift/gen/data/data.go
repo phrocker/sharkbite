@@ -2454,6 +2454,8 @@ func (p *MultiScanResult_) writeField3(ctx context.Context, oprot thrift.TProtoc
 }
 
 func (p *MultiScanResult_) writeField4(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  // PATCH (shoal): absent multi-scan partScan must stay absent on wire.
+  if p.PartScan == nil { return nil }
 	if err := oprot.WriteFieldBegin(ctx, "partScan", thrift.STRUCT, 4); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 4:partScan: ", p), err)
 	}
@@ -2467,6 +2469,8 @@ func (p *MultiScanResult_) writeField4(ctx context.Context, oprot thrift.TProtoc
 }
 
 func (p *MultiScanResult_) writeField5(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  // PATCH (shoal): absent multi-scan partNextKey must stay absent on wire.
+  if p.PartNextKey == nil { return nil }
 	if err := oprot.WriteFieldBegin(ctx, "partNextKey", thrift.STRUCT, 5); err != nil {
 		return thrift.PrependError(fmt.Sprintf("%T write field begin error 5:partNextKey: ", p), err)
 	}

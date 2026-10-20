@@ -18,9 +18,10 @@ with the pinned Accumulo source, avoiding the moving `1.0.0-SNAPSHOT`
 artifact. The build requires network access to Maven Central, Docker Hub, and
 GitHub.
 
-The local harness pulls the resulting public GHCR image by immutable digest,
-so normal test runs do not rebuild Accumulo or download Hadoop from the Apache
-archive server.
+The local harness pulls the resulting public GHCR image by immutable digest.
+Its Compose Hadoop and ZooKeeper services also use the same immutable image
+digests as the image build, so normal test runs do not rebuild Accumulo or
+download Hadoop from the Apache archive server.
 
 ## Commands
 
@@ -88,6 +89,13 @@ bin/shoal-conformance -mode replay -output verdict.json
 Live mode builds the repository's `shoal-tserver` and `shoal-compactor`, starts
 them beside the exact pinned Accumulo manager, ZooKeeper, and HDFS services,
 and runs unmodified Accumulo Java API calls through the Shoal endpoints.
+The tserver gate enables native WAL publication on the instance's HDFS volume
+and starts a pinned Accumulo tablet server in the isolated `walsorter` resource
+group. That server consumes Accumulo's recovery sort queue; the default group
+keeps tablet assignments on Shoal. The harness creates the sorter group before
+starting either server and checks that the worker has registered. A deployment
+using native WAL mode needs an equivalent sorter worker; a WAL path alone does
+not satisfy Accumulo recovery.
 The tserver path verifies ServiceLock registration/manager assignment,
 write/flush/scan, one-cell stateful continuation, minor-compaction visibility,
 WAL recovery after `SIGKILL`, and lock fencing/re-registration. The compactor
@@ -95,11 +103,18 @@ path verifies coordinator publication/completion, Java readability and
 canonical before/after equivalence, cancellation, durable completion replay,
 and restart.
 
+The tserver's 1,000-cell automatic flush threshold exceeds the 64-row recovery
+batch. `recovery-prepare` does not request a table flush, and the process is
+stopped with `SIGKILL` rather than a graceful close. The post-restart scan
+checks every expected row, column, and value, so this path requires replay of
+acknowledged data left in the WAL. The separate 32-row tserver path requests
+an explicit flush to check published file readability.
+
 On a Docker host, run the exact independent gates:
 
 ```bash
-python test/accumulo/harness.py validate
-python -m unittest -v test/accumulo/test_harness.py
+python3 test/accumulo/harness.py validate
+python3 -m unittest -v test/accumulo/test_harness.py
 go test ./internal/conformance ./cmd/shoal-conformance
 go build -o bin/shoal-conformance ./cmd/shoal-conformance
 bin/shoal-conformance -mode replay -output replay-verdict.json
@@ -108,6 +123,25 @@ bin/shoal-conformance -mode live -required tserver,scanserver,client \
 bin/shoal-conformance -mode live -required compactor,promotion \
   -output compactor-live-verdict.json
 ```
+
+The dedicated [live tserver CI workflow](../../.github/workflows/accumulo-live-tserver.yml)
+runs on relevant pull requests and by manual dispatch. It selects only
+`-required tserver` with a 45-minute internal deadline, writes
+`evidence/verdict.json`, and passes
+`-live-log-dir evidence` to stream the raw `evidence/tserver.log` output,
+including Compose service logs, before the harness removes its containers and
+volumes. Static validation, build and
+CLI diagnostics are retained alongside the verdict. The artifact upload runs
+even if a check or the live gate fails. Exit 1 (`fail`) and exit 2
+(`unsupported`, including absent Docker) both fail the workflow. A preflight
+or build failure can prevent the CLI from producing a verdict; its step log
+remains in the artifact.
+
+This CI slice establishes the pinned tserver role only. The `scanserver`,
+`client`, `compactor`, and `promotion` gates are explicitly `skipped` in its
+JSON and need their own required live runs before a full release-conformance
+claim. The tserver result does not establish Python client behavior or every
+live-cluster row in the compatibility matrix.
 
 Keep the JSON verdicts and complete Compose logs. A live pass must contain
 `SHOAL_EVIDENCE` lines for ServiceLock/assignment, Java ingest, continuation,
@@ -128,7 +162,8 @@ Each selected gate is `required` and has exactly one state:
 
 Exit status is `0` only when every required gate passes, `1` when any required
 gate or its exact evidence fails, and `2` when no required gate failed but at
-least one is unsupported or skipped. Consequently a successful replay,
+least one required gate is unsupported. Nonrequired skipped roles do not affect
+the exit status. Consequently a successful replay,
 Docker absence, and unwired live roles cannot authorize a release. To
 evaluate a slice independently, pass a
 comma-separated list such as `-required scanserver,client`; all gates remain

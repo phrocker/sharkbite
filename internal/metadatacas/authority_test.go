@@ -306,7 +306,7 @@ func TestAuthorityConcurrentReferencesAndAmbiguousMincCommit(t *testing.T) {
 	file := mincauthority.DataFile{
 		Path: "file:///tables/5/t-1/F0001.rf", Format: "rfile",
 		Size: 42, Entries: 8, StartRow: []byte("a"), EndRow: []byte("z"),
-		Embedding: embeddingspace.Has("space-a"),
+		Embedding: embeddingspace.Unknown(),
 	}
 	outcome, err := authority.Commit(context.Background(), mincauthority.MetadataCommit{
 		Extent: authority.extent, Fence: fence, File: file, RemoveWALs: refs,
@@ -322,7 +322,7 @@ func TestAuthorityConcurrentReferencesAndAmbiguousMincCommit(t *testing.T) {
 	if len(state.Files[0].StartRow) != 0 || len(state.Files[0].EndRow) != 0 {
 		t.Fatalf("minor compaction installed a fenced file reference: %#v", state.Files[0])
 	}
-	if state.Files[0].Embedding != embeddingspace.Has("space-a") {
+	if state.Files[0].Embedding != embeddingspace.Unknown() {
 		t.Fatalf("embedding metadata = %+v", state.Files[0].Embedding)
 	}
 	fileQualifier, _, err := encodeFile(file)
@@ -331,10 +331,43 @@ func TestAuthorityConcurrentReferencesAndAmbiguousMincCommit(t *testing.T) {
 	}
 	cluster.mu.Lock()
 	_, fileColumn := cluster.cells[cell(metadata.CFFile, string(fileQualifier))]
-	embeddingColumn := cluster.cells[cell(metadata.CFFileEmbedding, string(fileQualifier))]
+	_, embeddingColumn := cluster.cells[cell(metadata.CFFileEmbedding, string(fileQualifier))]
 	cluster.mu.Unlock()
-	if !fileColumn || len(embeddingColumn) == 0 {
-		t.Fatalf("file and embedding columns were not committed atomically: file=%t embedding=%q", fileColumn, embeddingColumn)
+	if !fileColumn || embeddingColumn {
+		t.Fatalf("Accumulo-compatible metadata: file=%t custom embedding family=%t", fileColumn, embeddingColumn)
+	}
+}
+
+func TestAuthorityRejectsKnownEmbeddingWithoutMetadataSidecar(t *testing.T) {
+	cluster := newFakeCluster()
+	authority, fence := testAuthority(t, cluster)
+	ref := walauthority.Reference{ID: uuid.NewString()}
+	ref.Path = "file:///wal/shoal+9997/" + ref.ID
+	ref.Qualifier = "-/" + ref.Path
+	if err := authority.EnsureReference(context.Background(), authority.extent, fence, ref); err != nil {
+		t.Fatal(err)
+	}
+	file := mincauthority.DataFile{
+		Path: "file:///tables/5/t-1/F0001.rf", Format: "rfile",
+		Size: 42, Entries: 8, Embedding: embeddingspace.Has("space-a"),
+	}
+	outcome, err := authority.Commit(context.Background(), mincauthority.MetadataCommit{
+		Extent: authority.extent, Fence: fence, File: file, RemoveWALs: []walauthority.Reference{ref},
+	})
+	if outcome != mincauthority.CommitRejected || !errors.Is(err, ErrEmbeddingSidecarRequired) {
+		t.Fatalf("Commit = %v, %v, want sidecar rejection", outcome, err)
+	}
+	fileQualifier, _, err := encodeFile(file)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cluster.mu.Lock()
+	defer cluster.mu.Unlock()
+	if _, ok := cluster.cells[cell(metadata.CFFile, string(fileQualifier))]; ok {
+		t.Fatal("rejected known embedding committed a file entry")
+	}
+	if _, ok := cluster.cells[cell(metadata.CFFileEmbedding, string(fileQualifier))]; ok {
+		t.Fatal("rejected known embedding committed a custom family")
 	}
 }
 
