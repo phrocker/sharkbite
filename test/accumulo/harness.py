@@ -20,6 +20,7 @@ PROJECT = "shoal-accumulo4-test"
 SHOAL_TSERVER = "shoal-tserver"
 SHOAL_COMPACTOR = "shoal-compactor"
 NATIVE_TSERVER = "tserver"
+WAL_SORTER = "wal-sorter"
 LIVE_DIR = HARNESS / ".live"
 SYSTEM_TOKEN_FILE = LIVE_DIR / "system-token"
 ACCUMULO_REVISION = "1a716b2c1bb5762ead4b46d2bc4f53e13873b314"
@@ -152,6 +153,8 @@ def validate(root: Path = ROOT) -> list[str]:
         ),
         "Shoal tserver ingest": (compose, "-enable-ingest"),
         "Shoal tserver WAL recovery window": (compose, "-flush-cells 1000"),
+        "Shoal tserver native WAL publication": (compose, "-native-wal"),
+        "native WAL sorter isolation": (compose, "tserver.group=walsorter"),
         "Shoal compactor group": (compose, "-group shoal_default"),
     }
     for description, (text, expected) in required_text.items():
@@ -387,8 +390,10 @@ def _start_role_base() -> None:
 
 def _run_tserver_role() -> None:
     _start_role_base()
-    run(compose_services(SHOAL_TSERVER))
+    run(client_command("wal-sorter-group"))
+    run(compose_services(SHOAL_TSERVER, WAL_SORTER))
     _wait_mode("shoal-ready")
+    _wait_mode("wal-sorter-ready")
     run_tserver_smoke("tserver")
     run_tserver_smoke("recovery-prepare")
     run(compose_command("kill", "--signal", "KILL", SHOAL_TSERVER))

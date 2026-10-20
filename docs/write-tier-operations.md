@@ -41,7 +41,13 @@ perform the bounded rolling restart below.
 Tserver shutdown closes ingest and scan admission before withdrawing the
 ServiceLock. Retained scans drain until `-drain-timeout`; the Thrift and
 operations accept loops are then stopped and joined under bounded deadlines.
-WAL and minc state live on the StatefulSet PVC and are reconciled on restart.
+In native WAL mode, set `-storage=hdfs`, `-native-wal`, and `-wal-root` to the
+instance volume's qualified `hdfs://.../wal` path. The WAL is published to
+HDFS before its metadata reference is installed and before ingest is
+acknowledged. A native Accumulo tablet server in a dedicated resource group
+must run its WAL sorter; keep the data tables assigned to Shoal's group. The
+local WAL mode retains WAL files on the StatefulSet PVC. Minor-compaction
+checkpoints remain on that PVC and are reconciled on restart.
 
 Compactor cancellation closes job admission and bounds coordinator hand-back
 with `-release-timeout`; transport RPCs remain bounded by `-rpc-timeout`.
