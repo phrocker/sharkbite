@@ -76,7 +76,8 @@ func main() {
 	lockVerify := flag.Duration("lock-verify", 5*time.Second, "ServiceLock verification interval")
 	drainTimeout := flag.Duration("drain-timeout", 30*time.Second, "scan drain deadline")
 	metricsAddress := flag.String("metrics-address", ":9998", "health/readiness/metrics address; empty disables")
-	walRoot := flag.String("wal-root", "/var/lib/shoal/wal", "durable local WAL directory")
+	walRoot := flag.String("wal-root", "/var/lib/shoal/wal", "WAL root; hdfs:// URI in native WAL mode")
+	nativeWAL := flag.Bool("native-wal", false, "publish Accumulo-format WAL files on HDFS before acknowledging ingest")
 	mincRoot := flag.String("minc-root", "shoal/minc", "minor-compaction object prefix")
 	stateRoot := flag.String("state-root", "/var/lib/shoal/minc-state", "durable minor-compaction state directory")
 	flushCells := flag.Int("flush-cells", 1, "memtable cells that trigger minor compaction")
@@ -171,6 +172,14 @@ func main() {
 		die("storage: %v", err)
 	}
 	defer closeStorage()
+	var nativeWALStore walauthority.NativeStore
+	if *nativeWAL {
+		hdfsBackend, ok := files.(*hdfs.Backend)
+		if !ok {
+			die("-native-wal requires -storage hdfs")
+		}
+		nativeWALStore = walauthority.HDFSNativeStore{Backend: hdfsBackend}
+	}
 	metadataFactory, err := metadatacas.NewFactory(metadatacas.Config{
 		Reader: walker, RootLocator: loc, Conditional: conditionalAPI,
 		RootStore: session, Host: host, InstancePath: loc.InstancePath(),
@@ -199,7 +208,7 @@ func main() {
 	tabletFactory, err := hostedingest.NewFactory(hostedingest.Config{
 		Host: host, ServerAddress: *advertise,
 		WALRoot: *walRoot, MincRoot: *mincRoot, StateRoot: *stateRoot,
-		WALStore: walauthority.NewLocalStore(), Outputs: files,
+		WALStore: walauthority.NewLocalStore(), NativeWALStore: nativeWALStore, Outputs: files,
 		Metadata: metadataFactory, FlushCells: *flushCells,
 		DefaultEmbedding: mincDefaultEmbedding,
 		FlushID: func(ctx context.Context, tableID string) (int64, error) {

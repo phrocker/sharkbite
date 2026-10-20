@@ -2,8 +2,9 @@ package metadata
 
 // System table IDs. From core/.../metadata/SystemTables.java.
 const (
-	RootTableID     = "+r" // SystemTables.ROOT
-	MetadataTableID = "!0" // SystemTables.METADATA
+	RootTableID     = "+r"    // SystemTables.ROOT
+	MetadataTableID = "!0"    // SystemTables.METADATA
+	FateTableID     = "+fate" // SystemTables.FATE
 )
 
 // Column-family + qualifier names from core/.../metadata/schema/MetadataSchema.java.

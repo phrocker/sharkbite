@@ -25,12 +25,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
+	"time"
 )
 
 const (
@@ -83,6 +85,7 @@ type Gate struct {
 	Evidence             []Evidence `json:"evidence"`
 	ReplayFixture        string     `json:"replay_fixture"`
 	FixtureSHA256        string     `json:"fixture_sha256"`
+	LiveLog              string     `json:"live_log,omitempty"`
 }
 
 type Verdict struct {
@@ -150,17 +153,37 @@ type Executor interface {
 	Run(context.Context, string, []string) CommandResult
 }
 
-type OSExecutor struct{}
+type OSExecutor struct {
+	// WaitDelay bounds waits on output pipes inherited by child processes after
+	// the direct command exits or its context is cancelled. Zero uses 30 seconds.
+	WaitDelay time.Duration
+}
 
-func (OSExecutor) Run(ctx context.Context, root string, command []string) CommandResult {
+func (executor OSExecutor) Run(ctx context.Context, root string, command []string) CommandResult {
+	return executor.RunTo(ctx, root, command, nil)
+}
+
+// RunTo writes command output as it arrives so a timed-out live run retains
+// diagnostics even when the child never reaches its final evidence marker.
+func (executor OSExecutor) RunTo(ctx context.Context, root string, command []string, stream io.Writer) CommandResult {
 	if len(command) == 0 {
 		return CommandResult{ExitCode: 1, Output: "empty replay command"}
 	}
 	cmd := exec.CommandContext(ctx, command[0], command[1:]...)
 	cmd.Dir = root
+	// CommandContext kills the direct child. A grandchild can still hold the
+	// output pipe open, so bound the wait for those inherited descriptors.
+	cmd.WaitDelay = executor.WaitDelay
+	if cmd.WaitDelay <= 0 {
+		cmd.WaitDelay = 30 * time.Second
+	}
 	var output bytes.Buffer
-	cmd.Stdout = &output
-	cmd.Stderr = &output
+	var writer io.Writer = &output
+	if stream != nil {
+		writer = io.MultiWriter(stream, &output)
+	}
+	cmd.Stdout = writer
+	cmd.Stderr = writer
 	err := cmd.Run()
 	if err == nil {
 		return CommandResult{Output: output.String()}
@@ -173,11 +196,12 @@ func (OSExecutor) Run(ctx context.Context, root string, command []string) Comman
 }
 
 type Options struct {
-	Root     string
-	Mode     string
-	Required []string
-	Commit   string
-	Executor Executor
+	Root       string
+	Mode       string
+	Required   []string
+	Commit     string
+	Executor   Executor
+	LiveLogDir string
 }
 
 func Run(ctx context.Context, opts Options) (Verdict, int, error) {
@@ -375,14 +399,48 @@ func missingGates(required []string, covered map[string]bool) []string {
 }
 
 func runLive(ctx context.Context, opts Options, spec adapterSpec, verdict *Verdict, gate *Gate) {
-	command := []string{"python", "test/accumulo/harness.py", "role", gate.Role}
+	command := []string{"python3", "test/accumulo/harness.py", "role", gate.Role}
 	harnessSHA, err := sourceSHA256(opts.Root, "test/accumulo/harness.py")
 	if err != nil {
 		gate.State = Fail
 		gate.Summary = err.Error()
 		return
 	}
-	result := opts.Executor.Run(ctx, opts.Root, command)
+	var result CommandResult
+	if opts.LiveLogDir != "" {
+		if err := os.MkdirAll(opts.LiveLogDir, 0o755); err != nil {
+			gate.State = Fail
+			gate.Summary = fmt.Sprintf("create live log directory: %v", err)
+			return
+		}
+		gate.LiveLog = filepath.ToSlash(filepath.Join(opts.LiveLogDir, gate.Role+".log"))
+		log, err := os.Create(gate.LiveLog)
+		if err != nil {
+			gate.State = Fail
+			gate.Summary = fmt.Sprintf("create live log %s: %v", gate.LiveLog, err)
+			return
+		}
+		if streaming, ok := opts.Executor.(interface {
+			RunTo(context.Context, string, []string, io.Writer) CommandResult
+		}); ok {
+			result = streaming.RunTo(ctx, opts.Root, command, log)
+		} else {
+			result = opts.Executor.Run(ctx, opts.Root, command)
+			if _, err := io.WriteString(log, result.Output); err != nil {
+				gate.State = Fail
+				gate.Summary = fmt.Sprintf("write live log %s: %v", gate.LiveLog, err)
+				_ = log.Close()
+				return
+			}
+		}
+		if err := log.Close(); err != nil {
+			gate.State = Fail
+			gate.Summary = fmt.Sprintf("close live log %s: %v", gate.LiveLog, err)
+			return
+		}
+	} else {
+		result = opts.Executor.Run(ctx, opts.Root, command)
+	}
 	switch result.ExitCode {
 	case 0:
 		marker := "SHOAL_EVIDENCE role=" + gate.Role + " status=pass"

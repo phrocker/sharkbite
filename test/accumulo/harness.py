@@ -20,6 +20,7 @@ PROJECT = "shoal-accumulo4-test"
 SHOAL_TSERVER = "shoal-tserver"
 SHOAL_COMPACTOR = "shoal-compactor"
 NATIVE_TSERVER = "tserver"
+WAL_SORTER = "wal-sorter"
 LIVE_DIR = HARNESS / ".live"
 SYSTEM_TOKEN_FILE = LIVE_DIR / "system-token"
 ACCUMULO_REVISION = "1a716b2c1bb5762ead4b46d2bc4f53e13873b314"
@@ -112,8 +113,8 @@ def validate(root: Path = ROOT) -> list[str]:
             compose,
             ACCUMULO_IMAGE,
         ),
-        "compose Hadoop image": (compose, f"apache/hadoop:{HADOOP_VERSION}"),
-        "compose ZooKeeper image": (compose, f"zookeeper:{ZOOKEEPER_VERSION}"),
+        "compose Hadoop image": (compose, f"apache/hadoop@{HADOOP_IMAGE_DIGEST}"),
+        "compose ZooKeeper image": (compose, f"zookeeper@{ZOOKEEPER_IMAGE_DIGEST}"),
         "Dockerfile Accumulo revision": (
             dockerfile,
             f"ARG ACCUMULO_REVISION={ACCUMULO_REVISION}",
@@ -151,11 +152,21 @@ def validate(root: Path = ROOT) -> list[str]:
             "-accumulo-version 4.0.0-SNAPSHOT",
         ),
         "Shoal tserver ingest": (compose, "-enable-ingest"),
+        "Shoal tserver WAL recovery window": (compose, "-flush-cells 1000"),
+        "Shoal tserver native WAL publication": (compose, "-native-wal"),
+        "native WAL sorter isolation": (compose, "tserver.group=walsorter"),
         "Shoal compactor group": (compose, "-group shoal_default"),
     }
     for description, (text, expected) in required_text.items():
         if expected not in text:
             errors.append(f"{description} is not pinned to {expected!r}")
+
+    if compose.count(f"image: apache/hadoop@{HADOOP_IMAGE_DIGEST}") != 3:
+        errors.append("all three Hadoop Compose services must use the pinned digest")
+    if compose.count(f"image: zookeeper@{ZOOKEEPER_IMAGE_DIGEST}") != 1:
+        errors.append("ZooKeeper Compose service must use the pinned digest")
+    if "image: apache/hadoop:" in compose or "image: zookeeper:" in compose:
+        errors.append("Compose Hadoop and ZooKeeper images must not use mutable tags")
 
     if "2.1.6" in compose or "2.1.6" in dockerfile:
         errors.append("legacy Accumulo 2.1.6 reference remains")
@@ -242,6 +253,18 @@ def run_compactor_smoke() -> None:
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError(
             f"compactor smoke did not complete within {timeout} seconds"
+        ) from exc
+
+
+def run_tserver_smoke(mode: str) -> None:
+    timeout = int(os.environ.get("SHOAL_ACCUMULO_TSERVER_TIMEOUT", "600"))
+    command = client_command(mode)
+    print("+", subprocess.list2cmdline(command), flush=True)
+    try:
+        subprocess.run(command, text=True, check=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"tserver {mode} smoke did not complete within {timeout} seconds"
         ) from exc
 
 
@@ -367,10 +390,12 @@ def _start_role_base() -> None:
 
 def _run_tserver_role() -> None:
     _start_role_base()
-    run(compose_services(SHOAL_TSERVER))
+    run(client_command("wal-sorter-group"))
+    run(compose_services(SHOAL_TSERVER, WAL_SORTER))
     _wait_mode("shoal-ready")
-    run(client_command("tserver"))
-    run(client_command("recovery-prepare"))
+    _wait_mode("wal-sorter-ready")
+    run_tserver_smoke("tserver")
+    run_tserver_smoke("recovery-prepare")
     run(compose_command("kill", "--signal", "KILL", SHOAL_TSERVER))
     _wait_mode("shoal-absent")
     run(
@@ -384,7 +409,7 @@ def _run_tserver_role() -> None:
         )
     )
     _wait_mode("shoal-ready")
-    run(client_command("recovery-verify"))
+    run_tserver_smoke("recovery-verify")
     print(
         "SHOAL_EVIDENCE tserver=pass service-lock=verified assignment=verified "
         "java-ingest=verified continuation=verified minc=verified wal-recovery=verified "
@@ -422,12 +447,13 @@ def role_run(role: str) -> None:
         print(f"SHOAL_EVIDENCE role={role} status=pass")
         succeeded = True
     finally:
-        if not succeeded:
+        try:
             run(
                 compose_command("--profile", "shoal", "logs", "--no-color"),
-                check=False,
+                check=succeeded,
             )
-        down()
+        finally:
+            down()
 
 
 def main() -> int:

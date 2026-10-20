@@ -86,6 +86,7 @@ type Config struct {
 	MincRoot       string
 	StateRoot      string
 	WALStore       walauthority.Store
+	NativeWALStore walauthority.NativeStore
 	Outputs        storage.Backend
 	Metadata       MetadataFactory
 	FlushID        func(context.Context, string) (int64, error)
@@ -187,11 +188,17 @@ func (f *Factory) Open(
 	extent := ingestrouter.Extent{
 		TableID: spec.Extent.TableID, PrevEndRow: spec.Extent.PrevEndRow, EndRow: spec.Extent.EndRow,
 	}
-	if extent.TableID == metadata.RootTableID || extent.TableID == metadata.MetadataTableID {
+	flushCells := f.cfg.FlushCells
+	if extent.TableID == metadata.RootTableID || extent.TableID == metadata.MetadataTableID || extent.TableID == metadata.FateTableID {
 		conditional, ok := f.cfg.Metadata.(systemTabletMetadataFactory)
 		if !ok || !conditional.SupportsSystemTablets() {
 			return nil, ErrSystemTabletConditionalUnsupported
 		}
+		// Accumulo reads root, metadata, and FATE through ordinary scans.
+		// Those scans read hosted RFiles, not the active memtable. Publish
+		// system-tablet writes before acknowledging them while user tablets
+		// retain unflushed WAL entries for recovery.
+		flushCells = 1
 	}
 	timeType, tabletTime, nextTimestamp, exhausted, err := initialTabletTime(spec.Time, f.cfg.Now())
 	if err != nil {
@@ -218,7 +225,7 @@ func (f *Factory) Open(
 		}
 	}()
 	tablet := &Tablet{
-		extent: extent, fence: fence, verifier: verifier, flushCells: f.cfg.FlushCells,
+		extent: extent, fence: fence, verifier: verifier, flushCells: flushCells,
 		metadata: metadata, flushID: f.cfg.FlushID,
 		snapshots: make(map[string]mincauthority.Snapshot),
 		applied:   make(map[string]struct{}), assigned: make(map[string][]ingestrouter.Mutation),
@@ -229,7 +236,8 @@ func (f *Factory) Open(
 	wal, report, err := walauthority.Open(ctx, walauthority.Config{
 		Root: f.cfg.WALRoot, ServerAddress: f.cfg.ServerAddress,
 		Extent: extent, Fence: fence, Metadata: metadata, Store: f.cfg.WALStore,
-		Verifier: verifier, RecoveryVerifier: recoveryVerifier, Sink: tablet,
+		NativeStore: f.cfg.NativeWALStore,
+		Verifier:    verifier, RecoveryVerifier: recoveryVerifier, Sink: tablet,
 	})
 	if err != nil {
 		return nil, err
@@ -282,7 +290,7 @@ func (f *Factory) Open(
 	recovered := len(tablet.active) > 0
 	tablet.mu.Unlock()
 	if recovered {
-		if err := tablet.flush(ctx); err != nil {
+		if err := wal.WithRecoveryVerifier(func() error { return tablet.flush(ctx) }); err != nil {
 			_ = wal.Close(context.Background())
 			return nil, err
 		}

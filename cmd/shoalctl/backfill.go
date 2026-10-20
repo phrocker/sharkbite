@@ -33,15 +33,12 @@ import (
 // runEmbeddingBackfill is the operator-facing half of issue #274.
 //
 // Since a missing file.embedding column reads as unknown rather than as
-// the fabricated no_embeddings, existing files need their real state
-// recorded once. This command establishes that state from each file's
-// own footer and writes the column, and reports — file by file — the
-// ones whose footer is absent too, because those cannot be established
-// from metadata and must not be guessed at.
+// the fabricated no_embeddings, this command reports the state a future
+// migration would need to establish from each file's footer. Write mode
+// fails closed until an Accumulo-compatible metadata sidecar exists.
 //
 // It defaults to --dry-run, matching shoal-offline-compact: an operator
-// gets the size and the shape of the migration before anything is
-// written.
+// gets the size and shape of the outstanding migration without writing.
 func runEmbeddingBackfill(args []string, stdout, stderr io.Writer) error {
 	flags := flag.NewFlagSet("embedding-backfill", flag.ContinueOnError)
 	flags.SetOutput(stderr)

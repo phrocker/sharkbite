@@ -21,12 +21,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 type fakeExecutor struct {
@@ -100,7 +103,7 @@ func TestReplayFailureMakesRequiredGateFail(t *testing.T) {
 }
 
 func TestUnavailableLiveEnvironmentIsUnsupportedNotPass(t *testing.T) {
-	command := []string{"python", "test/accumulo/harness.py", "role", "client"}
+	command := []string{"python3", "test/accumulo/harness.py", "role", "client"}
 	verdict, code, err := Run(context.Background(), Options{
 		Root:     repositoryRoot(t),
 		Mode:     "live",
@@ -126,7 +129,7 @@ func TestUnavailableLiveEnvironmentIsUnsupportedNotPass(t *testing.T) {
 func TestLiveRoleCommandsPromoteOnlyTheirCompletedProductionGate(t *testing.T) {
 	for _, role := range Roles {
 		t.Run(role, func(t *testing.T) {
-			command := []string{"python", "test/accumulo/harness.py", "role", role}
+			command := []string{"python3", "test/accumulo/harness.py", "role", role}
 			verdict, code, err := Run(context.Background(), Options{
 				Root:     repositoryRoot(t),
 				Mode:     "live",
@@ -156,7 +159,7 @@ func TestLiveRoleCommandsPromoteOnlyTheirCompletedProductionGate(t *testing.T) {
 }
 
 func TestLiveRoleZeroExitWithoutEvidenceMarkerFailsClosed(t *testing.T) {
-	command := []string{"python", "test/accumulo/harness.py", "role", "tserver"}
+	command := []string{"python3", "test/accumulo/harness.py", "role", "tserver"}
 	verdict, code, err := Run(context.Background(), Options{
 		Root:     repositoryRoot(t),
 		Mode:     "live",
@@ -172,6 +175,125 @@ func TestLiveRoleZeroExitWithoutEvidenceMarkerFailsClosed(t *testing.T) {
 	if code != 1 || verdict.Gates[0].State != Fail ||
 		!strings.Contains(verdict.Gates[0].Summary, "without required evidence marker") {
 		t.Fatalf("code=%d gate=%#v", code, verdict.Gates[0])
+	}
+}
+
+func TestFailedLiveRolePreservesRawLogAndFailingVerdict(t *testing.T) {
+	command := []string{"python3", "test/accumulo/harness.py", "role", "tserver"}
+	logDir := t.TempDir()
+	verdict, code, err := Run(context.Background(), Options{
+		Root:       repositoryRoot(t),
+		Mode:       "live",
+		Required:   []string{"tserver"},
+		Commit:     strings.Repeat("e", 40),
+		LiveLogDir: logDir,
+		Executor: fakeExecutor{results: map[string]CommandResult{
+			strings.Join(command, "\x00"): {ExitCode: 1, Output: "cluster broke\ncompose diagnostics\n"},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gate := verdict.Gates[0]
+	if code != 1 || gate.State != Fail || gate.LiveLog != filepath.ToSlash(filepath.Join(logDir, "tserver.log")) {
+		t.Fatalf("code=%d gate=%#v", code, gate)
+	}
+	data, err := os.ReadFile(gate.LiveLog)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "cluster broke\ncompose diagnostics\n" {
+		t.Fatalf("raw live log = %q", data)
+	}
+}
+
+func TestOSExecutorStreamsLiveOutputBeforeChildReturns(t *testing.T) {
+	t.Setenv("SHOAL_CONFORMANCE_STREAM_CHILD", "1")
+	logPath := filepath.Join(t.TempDir(), "live.log")
+	log, err := os.Create(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer log.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	root := repositoryRoot(t)
+	done := make(chan CommandResult, 1)
+	go func() {
+		done <- (OSExecutor{}).RunTo(ctx, root,
+			[]string{os.Args[0], "-test.run=^TestOSExecutorStreamHelper$"}, log)
+	}()
+	deadline := time.After(5 * time.Second)
+	for {
+		data, _ := os.ReadFile(logPath)
+		if strings.Contains(string(data), "live-output-before-exit") {
+			break
+		}
+		select {
+		case result := <-done:
+			t.Fatalf("child returned before output was observed: %+v", result)
+		case <-deadline:
+			t.Fatal("live output was not streamed before child exit")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	cancel()
+	if result := <-done; result.ExitCode == 0 {
+		t.Fatalf("cancelled child succeeded: %+v", result)
+	}
+}
+
+func TestOSExecutorStreamHelper(t *testing.T) {
+	if os.Getenv("SHOAL_CONFORMANCE_STREAM_CHILD") != "1" {
+		return
+	}
+	fmt.Fprintln(os.Stdout, "live-output-before-exit")
+	time.Sleep(30 * time.Second)
+}
+
+func TestOSExecutorCancellationBoundsInheritedOutputPipe(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell process behavior")
+	}
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("bash unavailable")
+	}
+	logPath := filepath.Join(t.TempDir(), "inherited-pipe.log")
+	log, err := os.Create(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer log.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan CommandResult, 1)
+	root := repositoryRoot(t)
+	go func() {
+		done <- (OSExecutor{WaitDelay: 100 * time.Millisecond}).RunTo(ctx,
+			root, []string{"bash", "-c", "sleep 3 & echo descendant-open-pipe; wait"}, log)
+	}()
+	deadline := time.After(2 * time.Second)
+	for {
+		data, _ := os.ReadFile(logPath)
+		if strings.Contains(string(data), "descendant-open-pipe") {
+			break
+		}
+		select {
+		case result := <-done:
+			t.Fatalf("command returned before cancellation: %+v", result)
+		case <-deadline:
+			t.Fatal("child did not open its inherited output pipe")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	cancel()
+	select {
+	case result := <-done:
+		if result.ExitCode == 0 {
+			t.Fatalf("cancelled command succeeded: %+v", result)
+		}
+	case <-time.After(1500 * time.Millisecond):
+		t.Fatal("inherited output pipe blocked cancellation beyond WaitDelay")
 	}
 }
 

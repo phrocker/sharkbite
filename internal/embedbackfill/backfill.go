@@ -14,9 +14,10 @@
 // It is also, for an existing cluster, a large number of files that used
 // to carry a (false) definite label and now carry none.
 //
-// The backfill is the migration path. It walks the files, establishes
-// each one's real state, and writes the explicit column so unknown
-// resolves to something definite.
+// The dry-run planner walks files and reports which states a future
+// migration could establish. Its Accumulo-authoritative writer is disabled
+// until a compatible sidecar can hold the explicit state without adding
+// an unknown family to Accumulo tablet metadata.
 //
 // # What counts as truth
 //
@@ -37,14 +38,10 @@
 //
 // # Safety
 //
-// Every write is conditional on the file entry still being present and
-// unchanged, and on the embedding column still holding exactly what it
-// held when the file was examined — absent, or an explicit unknown. A
-// file that was compacted away mid-run is reported as raced, not
-// written. A file that already carries a definite column is left alone.
-// Re-running the backfill over an already-backfilled table therefore
-// writes nothing and reports every file as already labelled, which is
-// what makes it safe to run repeatedly and safe to interrupt.
+// The planner makes no mutation. An Accumulo-backed write request returns
+// ErrEmbeddingSidecarRequired before applying any metadata change. A
+// future writer must condition on the file entry and sidecar generation so
+// a replaced or split tablet cannot inherit a stale embedding claim.
 package embedbackfill
 
 import (
