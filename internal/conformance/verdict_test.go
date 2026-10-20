@@ -21,12 +21,15 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
 	"testing"
+	"time"
 )
 
 type fakeExecutor struct {
@@ -201,6 +204,96 @@ func TestFailedLiveRolePreservesRawLogAndFailingVerdict(t *testing.T) {
 	}
 	if string(data) != "cluster broke\ncompose diagnostics\n" {
 		t.Fatalf("raw live log = %q", data)
+	}
+}
+
+func TestOSExecutorStreamsLiveOutputBeforeChildReturns(t *testing.T) {
+	t.Setenv("SHOAL_CONFORMANCE_STREAM_CHILD", "1")
+	logPath := filepath.Join(t.TempDir(), "live.log")
+	log, err := os.Create(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer log.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	root := repositoryRoot(t)
+	done := make(chan CommandResult, 1)
+	go func() {
+		done <- (OSExecutor{}).RunTo(ctx, root,
+			[]string{os.Args[0], "-test.run=^TestOSExecutorStreamHelper$"}, log)
+	}()
+	deadline := time.After(5 * time.Second)
+	for {
+		data, _ := os.ReadFile(logPath)
+		if strings.Contains(string(data), "live-output-before-exit") {
+			break
+		}
+		select {
+		case result := <-done:
+			t.Fatalf("child returned before output was observed: %+v", result)
+		case <-deadline:
+			t.Fatal("live output was not streamed before child exit")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	cancel()
+	if result := <-done; result.ExitCode == 0 {
+		t.Fatalf("cancelled child succeeded: %+v", result)
+	}
+}
+
+func TestOSExecutorStreamHelper(t *testing.T) {
+	if os.Getenv("SHOAL_CONFORMANCE_STREAM_CHILD") != "1" {
+		return
+	}
+	fmt.Fprintln(os.Stdout, "live-output-before-exit")
+	time.Sleep(30 * time.Second)
+}
+
+func TestOSExecutorCancellationBoundsInheritedOutputPipe(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("requires Unix shell process behavior")
+	}
+	if _, err := exec.LookPath("bash"); err != nil {
+		t.Skip("bash unavailable")
+	}
+	logPath := filepath.Join(t.TempDir(), "inherited-pipe.log")
+	log, err := os.Create(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer log.Close()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan CommandResult, 1)
+	root := repositoryRoot(t)
+	go func() {
+		done <- (OSExecutor{WaitDelay: 100 * time.Millisecond}).RunTo(ctx,
+			root, []string{"bash", "-c", "sleep 3 & echo descendant-open-pipe; wait"}, log)
+	}()
+	deadline := time.After(2 * time.Second)
+	for {
+		data, _ := os.ReadFile(logPath)
+		if strings.Contains(string(data), "descendant-open-pipe") {
+			break
+		}
+		select {
+		case result := <-done:
+			t.Fatalf("command returned before cancellation: %+v", result)
+		case <-deadline:
+			t.Fatal("child did not open its inherited output pipe")
+		case <-time.After(10 * time.Millisecond):
+		}
+	}
+	cancel()
+	select {
+	case result := <-done:
+		if result.ExitCode == 0 {
+			t.Fatalf("cancelled command succeeded: %+v", result)
+		}
+	case <-time.After(1500 * time.Millisecond):
+		t.Fatal("inherited output pipe blocked cancellation beyond WaitDelay")
 	}
 }
 

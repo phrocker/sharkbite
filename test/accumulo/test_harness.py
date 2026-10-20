@@ -114,6 +114,20 @@ class HarnessTest(unittest.TestCase):
         )
         down.assert_called_once()
 
+    @mock.patch.object(harness, "_run_tserver_role")
+    @mock.patch.object(harness, "down")
+    @mock.patch.object(harness, "run")
+    @mock.patch.object(harness, "require_docker")
+    def test_role_success_requires_profiled_logs_before_cleanup(
+        self, _require_docker, run, down, _role
+    ):
+        harness.role_run("tserver")
+        run.assert_called_once_with(
+            harness.compose_command("--profile", "shoal", "logs", "--no-color"),
+            check=True,
+        )
+        down.assert_called_once()
+
     def test_static_configuration_wires_production_role_scenarios(self):
         compose = harness.COMPOSE_FILE.read_text(encoding="utf-8")
         java = (harness.HARNESS / "smoke" / "AccumuloSmoke.java").read_text(

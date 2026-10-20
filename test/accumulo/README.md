@@ -96,6 +96,13 @@ path verifies coordinator publication/completion, Java readability and
 canonical before/after equivalence, cancellation, durable completion replay,
 and restart.
 
+The tserver's 1,000-cell automatic flush threshold exceeds the 64-row recovery
+batch. `recovery-prepare` does not request a table flush, and the process is
+stopped with `SIGKILL` rather than a graceful close. The post-restart scan
+checks every expected row, column, and value, so this path requires replay of
+acknowledged data left in the WAL. The separate 32-row tserver path requests
+an explicit flush to check published file readability.
+
 On a Docker host, run the exact independent gates:
 
 ```bash
@@ -112,9 +119,11 @@ bin/shoal-conformance -mode live -required compactor,promotion \
 
 The dedicated [live tserver CI workflow](../../.github/workflows/accumulo-live-tserver.yml)
 runs on relevant pull requests and by manual dispatch. It selects only
-`-required tserver`, writes `evidence/verdict.json`, and passes
-`-live-log-dir evidence` to retain the raw `evidence/tserver.log` output before
-the harness removes its containers and volumes. Static validation, build and
+`-required tserver` with a 45-minute internal deadline, writes
+`evidence/verdict.json`, and passes
+`-live-log-dir evidence` to stream the raw `evidence/tserver.log` output,
+including Compose service logs, before the harness removes its containers and
+volumes. Static validation, build and
 CLI diagnostics are retained alongside the verdict. The artifact upload runs
 even if a check or the live gate fails. Exit 1 (`fail`) and exit 2
 (`unsupported`, including absent Docker) both fail the workflow. A preflight

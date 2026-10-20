@@ -151,6 +151,7 @@ def validate(root: Path = ROOT) -> list[str]:
             "-accumulo-version 4.0.0-SNAPSHOT",
         ),
         "Shoal tserver ingest": (compose, "-enable-ingest"),
+        "Shoal tserver WAL recovery window": (compose, "-flush-cells 1000"),
         "Shoal compactor group": (compose, "-group shoal_default"),
     }
     for description, (text, expected) in required_text.items():
@@ -429,12 +430,13 @@ def role_run(role: str) -> None:
         print(f"SHOAL_EVIDENCE role={role} status=pass")
         succeeded = True
     finally:
-        if not succeeded:
+        try:
             run(
                 compose_command("--profile", "shoal", "logs", "--no-color"),
-                check=False,
+                check=succeeded,
             )
-        down()
+        finally:
+            down()
 
 
 def main() -> int:

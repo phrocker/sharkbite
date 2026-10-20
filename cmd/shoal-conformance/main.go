@@ -34,13 +34,18 @@ func main() {
 
 func run() int {
 	var (
-		mode       = flag.String("mode", "replay", "verdict mode: replay or live")
-		root       = flag.String("repo-root", "", "repository root (default: current directory)")
-		required   = flag.String("required", strings.Join(conformance.Roles, ","), "comma-separated required gates")
-		output     = flag.String("output", "-", "JSON output path, or - for stdout")
-		liveLogDir = flag.String("live-log-dir", "", "directory for raw live role output (optional)")
+		mode        = flag.String("mode", "replay", "verdict mode: replay or live")
+		root        = flag.String("repo-root", "", "repository root (default: current directory)")
+		required    = flag.String("required", strings.Join(conformance.Roles, ","), "comma-separated required gates")
+		output      = flag.String("output", "-", "JSON output path, or - for stdout")
+		liveLogDir  = flag.String("live-log-dir", "", "directory for raw live role output (optional)")
+		liveTimeout = flag.Duration("live-timeout", 0, "maximum duration for a live verdict (0 means no limit)")
 	)
 	flag.Parse()
+	if *liveTimeout < 0 {
+		fmt.Fprintln(os.Stderr, "live-timeout must be nonnegative")
+		return 1
+	}
 
 	if *root == "" {
 		cwd, err := os.Getwd()
@@ -61,7 +66,13 @@ func run() int {
 			requiredRoles = append(requiredRoles, role)
 		}
 	}
-	verdict, exitCode, err := conformance.Run(context.Background(), conformance.Options{
+	ctx := context.Background()
+	if *liveTimeout > 0 {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, *liveTimeout)
+		defer cancel()
+	}
+	verdict, exitCode, err := conformance.Run(ctx, conformance.Options{
 		Root:       absoluteRoot,
 		Mode:       *mode,
 		Required:   requiredRoles,
