@@ -216,8 +216,9 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 	)
 	learningServingRoot := flags.String(
 		"learning-serving-root", os.Getenv("SHOAL_LEARNING_SERVING_ROOT"),
-		"Directory holding imported weights bundles by digest; defaults to "+
-			"<state-dir>/releases",
+		"Directory holding published weights bundles by digest, <root>/<digest>; "+
+			"defaults to <state-dir>/releases under the workspace -state-dir. "+
+			"Not -learning-state-dir/releases, which is the release registry",
 	)
 	learningImages := flags.String(
 		"learning-images", os.Getenv("SHOAL_LEARNING_IMAGES"),

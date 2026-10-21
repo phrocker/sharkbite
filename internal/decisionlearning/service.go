@@ -10,6 +10,7 @@
 package decisionlearning
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -44,12 +45,16 @@ var EvidenceKinds = []string{"quality", "poisoning", "calibration", "influence",
 const (
 	kindPredictions = distillation.KindPredictions
 	kindExport      = "dataset-export"
-	kindManifest    = "distillation-manifest"
-	kindJob         = "distillation-job"
-	kindReceipt     = "distillation-receipt"
-	kindCandidate   = weightsbundle.KindCandidate
-	kindArtifact    = weightsbundle.KindArtifact
-	kindEvaluation  = weightsbundle.KindEvaluation
+	// kindExportManifest holds the authorized manifest bytes verbatim under
+	// their pin, so an offline bundle export never depends on the authority
+	// reproducing them.
+	kindExportManifest = "dataset-export-manifest"
+	kindManifest       = "distillation-manifest"
+	kindJob            = "distillation-job"
+	kindReceipt        = "distillation-receipt"
+	kindCandidate      = weightsbundle.KindCandidate
+	kindArtifact       = weightsbundle.KindArtifact
+	kindEvaluation     = weightsbundle.KindEvaluation
 )
 
 // Cohort is what a cohort authority lists.
@@ -257,13 +262,69 @@ func (s *Service) put(ctx context.Context, kind, id string, value any) error {
 	if err != nil {
 		return err
 	}
-	if _, err := w.Write(raw); err != nil {
+	if n, err := w.Write(raw); err != nil || n != len(raw) {
 		if a, ok := w.(storage.Aborter); ok {
-			a.Abort()
+			_ = a.Abort()
+		}
+		if err == nil {
+			err = io.ErrShortWrite
 		}
 		return err
 	}
 	return w.Close()
+}
+
+// putRaw stores bytes verbatim under a kind and content address. Unlike put
+// it does not canonicalize: the bytes are the sealed thing, and their digest
+// must stay the key that names them.
+func (s *Service) putRaw(ctx context.Context, kind, id string, raw []byte) error {
+	if err := checkRecordID(id); err != nil {
+		return err
+	}
+	if int64(len(raw)) > weightsbundle.MaxRecordBytes {
+		return fmt.Errorf("%s %s exceeds %d bytes", kind, id, weightsbundle.MaxRecordBytes)
+	}
+	w, err := s.cfg.Store.CreateExclusive(ctx, s.recordPath(kind, id))
+	if err != nil {
+		return err
+	}
+	if n, err := w.Write(raw); err != nil || n != len(raw) {
+		if a, ok := w.(storage.Aborter); ok {
+			_ = a.Abort()
+		}
+		if err == nil {
+			err = io.ErrShortWrite
+		}
+		return err
+	}
+	return w.Close()
+}
+
+// getRaw reads bytes stored by putRaw and verifies they are the bytes the
+// key names: a file under the key whose digest is not the key is not them.
+func (s *Service) getRaw(ctx context.Context, kind, id string) ([]byte, error) {
+	if err := checkRecordID(id); err != nil {
+		return nil, err
+	}
+	f, err := s.cfg.Store.Open(ctx, s.recordPath(kind, id))
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, notFound(kind + " " + id + " is not recorded")
+		}
+		return nil, err
+	}
+	defer f.Close()
+	if f.Size() < 0 || f.Size() > weightsbundle.MaxRecordBytes {
+		return nil, fmt.Errorf("%s %s exceeds %d bytes", kind, id, weightsbundle.MaxRecordBytes)
+	}
+	raw := make([]byte, f.Size())
+	if _, err := f.ReadAt(raw, 0); err != nil && f.Size() != 0 {
+		return nil, err
+	}
+	if weightsbundle.SHA256Hex(raw) != id {
+		return nil, refused(fmt.Errorf("%s %s does not hash to its key", kind, id))
+	}
+	return raw, nil
 }
 
 func (s *Service) get(ctx context.Context, kind, id string) (weightsbundle.Record, error) {
@@ -411,6 +472,22 @@ func (s *Service) RequestExport(ctx context.Context, cohortID string) (json.RawM
 		"quarantine": quarantine, "source_ids": lineage.SourceIDs, "exported_at": s.cfg.Now().UTC().Format(time.RFC3339Nano),
 	}
 	id := lineage.DatasetManifestSHA256
+	// The manifest bytes are kept verbatim under their pin: an authority
+	// that regenerates (a fixture under a fresh identity, a cutoff that
+	// moves) cannot reproduce them, and the offline bundle needs exactly
+	// these bytes to carry the release's lineage.
+	if err := s.putRaw(ctx, kindExportManifest, id, export.Manifest); err != nil && !errors.Is(err, storage.ErrExists) {
+		return nil, s.classified(err)
+	}
+	// An existing object or an ambiguous write is only usable if readback
+	// proves that this pin names the manifest we just authorized.
+	stored, err := s.getRaw(ctx, kindExportManifest, id)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	if !bytes.Equal(stored, export.Manifest) {
+		return nil, refused(errors.New("stored export manifest differs from the authorized bytes"))
+	}
 	if err := s.put(ctx, kindExport, id, record); err != nil && !errors.Is(err, storage.ErrExists) {
 		return nil, s.classified(err)
 	}
@@ -712,7 +789,7 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 	}
 	digest, _ := manifest.Digest()
 	if _, got, err := weightsbundle.Load(filepath.Join(s.cfg.ServingRoot, digest)); err != nil {
-		return nil, refused(fmt.Errorf("bundle %s is not published on the serving root: %v", digest, err))
+		return nil, refused(fmt.Errorf("bundle %s is not published on the serving root: %s", digest, s.redactErr("candidate", err)))
 	} else if got != digest {
 		return nil, refused(fmt.Errorf("published bundle digest %s differs from artifact %s", got, digest))
 	}
@@ -1105,12 +1182,21 @@ func (s *Service) ExportBundle(ctx context.Context, raw json.RawMessage) (json.R
 	return marshal(view)
 }
 
-// exportManifestBytes re-obtains the authorized manifest bytes for a recorded
-// export through the exporter, verifying the pin, since the service records
-// pins and counts rather than copies of exports.
+// exportManifestBytes returns the authorized manifest bytes for a recorded
+// export: the copy recorded under the pin when the export was requested, or,
+// for an export recorded before copies were kept, the exporter's current
+// bytes when they still hash to the pin.
 func (s *Service) exportManifestBytes(ctx context.Context, export weightsbundle.Record) ([]byte, error) {
+	pin := str(export, "manifest_sha256")
+	recorded, err := s.getRaw(ctx, kindExportManifest, pin)
+	if err == nil {
+		return recorded, nil
+	}
+	if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
 	if s.cfg.Exporter == nil {
-		return nil, unavailable("no dataset exporter is mounted on this host; the dataset manifest cannot be re-obtained for export")
+		return nil, unavailable("the export's manifest bytes were not recorded and no dataset exporter is mounted on this host to re-obtain them")
 	}
 	result, err := s.cfg.Exporter.Export(ctx, shoal.ID(str(export, "cohort_id")))
 	if err != nil {

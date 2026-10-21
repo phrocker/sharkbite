@@ -97,6 +97,26 @@ func newHarness(t *testing.T) *harness {
 	return &harness{t: t, svc: svc, ctx: actorCtx(ctx), serving: filepath.Join(base, "serving"), pin: weightsbundle.SHA256Hex([]byte(exportManifest))}
 }
 
+func TestRequestExportRejectsCorruptManifestAtPin(t *testing.T) {
+	h := newHarness(t)
+	w, err := h.svc.cfg.Store.Create(h.ctx, h.svc.recordPath(kindExportManifest, h.pin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write([]byte(`{"corrupt":true}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.svc.RequestExport(h.ctx, "cohort-1"); !shoal.IsErrorCode(err, shoal.ErrorConflict) {
+		t.Fatalf("corrupt manifest acknowledged: %v", err)
+	}
+	if _, err := h.svc.get(h.ctx, kindExport, h.pin); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("export recorded after corrupt manifest: %v", err)
+	}
+}
+
 // predictions records the chosen teacher's outputs for the fixture job.
 func (h *harness) predictions(m distillation.Manifest, pin string) string {
 	h.t.Helper()
@@ -369,12 +389,22 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 		t.Fatalf("%v", releases)
 	}
 
+	// The offline bundle carries the manifest bytes recorded when the export
+	// was requested. An authority that has since regenerated its cohorts, or
+	// is no longer mounted, does not block the export of a recorded release.
+	exporter := h.svc.cfg.Exporter
+	h.svc.cfg.Exporter = fakeAuthority{err: shoal.NewError(shoal.ErrorNotFound, "cohort regenerated under a new identity")}
 	bundles := h.decode(h.svc.ExportBundle(ctx, []byte(`{"release_id":"`+pure.ID+`","name":"offline-1"}`)))
 	if bundles["verified"] != true {
 		t.Fatalf("%v", bundles)
 	}
+	h.svc.cfg.Exporter = nil
+	if second := h.decode(h.svc.ExportBundle(ctx, []byte(`{"release_id":"`+pure.ID+`","name":"offline-2"}`))); second["verified"] != true {
+		t.Fatalf("export without a mounted exporter: %v", second)
+	}
+	h.svc.cfg.Exporter = exporter
 	listed := h.decode(h.svc.Bundles(ctx))
-	if len(listed["bundles"].([]any)) != 1 {
+	if len(listed["bundles"].([]any)) != 2 {
 		t.Fatalf("%v", listed)
 	}
 	if _, err := h.svc.ExportBundle(ctx, []byte(`{"release_id":"x","name":"../escape"}`)); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
@@ -525,6 +555,26 @@ func TestRecordIDsNeverReachTheFilesystemUnvalidated(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "<bundles>") {
 		t.Fatalf("import error not redacted by role: %v", err)
+	}
+	// A candidate whose bundle is absent from the serving root is refused by
+	// role, never by the host path the registry failed to open.
+	staging := t.TempDir()
+	os.WriteFile(filepath.Join(staging, "model.json"), []byte(`{"w":1}`), 0o600)
+	m, err := weightsbundle.Build(staging, map[string]string{"model.json": weightsbundle.RoleWeights})
+	if err != nil {
+		t.Fatal(err)
+	}
+	weights, _ := m.File(weightsbundle.RoleWeights)
+	candidate := mustSeal(t, weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": "p", "training_ids": []string{"x"}, "model_digest": weights.SHA256, "policy_predeclared": true, "task_ids": []string{"t"}})
+	evaluation = mustSeal(t, weightsbundle.KindEvaluation, map[string]any{"candidate_id": candidate["id"]})
+	artifact, err := weightsbundle.NewArtifact(candidate["id"].(string), evaluation["id"].(string), "d", m, "runtime")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ = json.Marshal(map[string]any{"candidate": candidate, "artifact": artifact})
+	_, err = svc.SubmitCandidate(ctx, body)
+	if err == nil || !shoal.IsErrorCode(err, shoal.ErrorConflict) || strings.Contains(err.Error(), base) || !strings.Contains(err.Error(), "<serving>") {
+		t.Fatalf("unpublished-bundle refusal leaked a path or lost its role: %v", err)
 	}
 	if err := classify(errors.New("open /var/lib/secret: permission denied")); !strings.HasSuffix(err.Error(), GenericUnavailable) || !shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
 		t.Fatalf("internal cause leaked: %v", err)
