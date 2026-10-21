@@ -25,6 +25,11 @@ agent knowledge graph on top of shoal's generic `row -> (cf,cq,cv,ts) -> value`
 cells. It is a consumer library only: the engine and `internal/iterrt` remain
 schema-agnostic.
 
+A store can also carry a descriptor of a table's layout so a reader does not
+have to be told these conventions out of band; see
+[Describing a table in the store](#describing-a-table-in-the-store). The
+engine stores the descriptor and never interprets it.
+
 ## Cell layout
 
 | Purpose | Row | Column family | Column qualifier | Value |
@@ -79,3 +84,80 @@ Event row keys are `evt:<id>`, and event ids are expected to be lexically and
 temporally sortable, such as ULIDs. That makes the primary event rowspace itself
 a coarse temporal index: range scans over `evt:` return events in time order
 while `edge.temp:` cells add explicit local jumps across the temporal graph.
+
+## Describing a table in the store
+
+`proto/schema.proto` (`shoal.schema.v1.TableSchema`, generated into
+`internal/schemapb`) is the well-known, versioned descriptor of how one
+table's cells lay out a graph: node row namespaces (prefix, how the kind is
+cut out of the row, attribute family, qualifier role, value encoding), edge
+families, embedding families, and term posting namespaces. The edge, vector,
+and posting entries carry the `EdgeExpand`, `VectorSearch`, and `TermFilter`
+parameters of `proto/embed.proto` under the same names, so a reader builds a
+scan request straight from the descriptor and the descriptor cannot say
+something the engine cannot do. `internal/tableschema` validates, encodes,
+records, and reads descriptors; `tableschema.ForGraphSchema` is the
+descriptor of the layout in this document.
+
+Where it lives:
+
+- The reserved table `_shoal_schema`, created by the first write and never by
+  `init`: row = the described table's name, column family `schema`, column
+  qualifier = the version zero-padded to 20 digits (so versions sort), value
+  = the `TableSchema` in proto3 JSON with proto field names, compact. The
+  JSON is the wire form and reads back with `shoal-embed scan --table
+  _shoal_schema`; the proto is the contract. Writes are append-only and
+  versions are monotonic: a put must carry a version greater than the newest
+  recorded one, or the same version with a byte-identical document (a no-op
+  that only repairs the pointer). Any other reuse of a version is refused.
+- The described table's manifest (`table.json`) gains an optional
+  `"schema": {"id": "...", "version": N}` pointer to the newest version, so
+  `shoal-embed status` reports described tables without a scan. The manifest
+  version is unchanged: older binaries ignore the field and keep opening newer
+  stores. The pointer is an index; the reserved table holds the document.
+
+The descriptor is kept in a table rather than in the RFiles because RFiles
+are immutable and per tablet (a schema per file is a schema per flush, and
+readers would have to reconcile several), the `rfile` package has no
+metadata-block API, a table reads over the existing `Scan` RPC from Go and
+Python alike, and a schema change is one row write rather than a compaction.
+
+CLI:
+
+```
+shoal-embed schema put  --data ~/.shoal/data --table graph --file graph-schema.json
+shoal-embed schema get  --data ~/.shoal/data --table graph [--version N]
+shoal-embed schema list --data ~/.shoal/data
+shoal-embed status      --data ~/.shoal/data      # SCHEMA column: id@version or -
+```
+
+A descriptor of a table laid out as `ent:<kind>|<id>` and `evt:<kind>|<id>`
+rows, `cf = <record type>`, `cq = <field>`, text values, and edges as
+`cf = edge`, `cq = <relationship>\0<target row>`:
+
+```json
+{
+  "table": "graph",
+  "schema_id": "foreman.graph",
+  "version": 1,
+  "nodes": [
+    {"name": "entity", "row_prefix": "ent:", "kind_sep": "|", "kind_index": 0,
+     "attribute_qualifier": "QUALIFIER_ROLE_FIELD", "attribute_encoding": "VALUE_ENCODING_TEXT"},
+    {"name": "event", "row_prefix": "evt:", "kind_sep": "|", "kind_index": 0,
+     "attribute_qualifier": "QUALIFIER_ROLE_FIELD", "attribute_encoding": "VALUE_ENCODING_TEXT"}
+  ],
+  "edges": [
+    {"name": "edge", "edge_cf": "edge", "edge_field": "qualifier", "field_sep": "\u0000",
+     "id_index": 1, "id_index_set": true, "rel_index": 0}
+  ]
+}
+```
+
+An empty `attribute_cf` means every column family not claimed by an edge,
+vector, or posting entry holds attributes and names the record type.
+Validation refuses a descriptor whose node or posting row prefixes overlap,
+whose entries claim the same column family twice, or whose pushdown
+parameters the engine would not accept (an unknown `edge_field`, `id_source`,
+or `metric`; `id_index`, `rel_index`, or `relationships` without a
+`field_sep`). A reader that serves a described table through the Explorer
+is a separate change; this descriptor is what it will read.

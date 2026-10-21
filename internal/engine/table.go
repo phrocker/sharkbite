@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -135,7 +136,29 @@ type table struct {
 	targetEmbeddingSpace string
 	defaultEmbedding     embeddingspace.FileState
 	backendRoot          string
+	schema               *SchemaPointer
 	formatMu             sync.RWMutex
+}
+
+// SchemaPointer names the table schema descriptor recorded for a table in
+// the reserved `_shoal_schema` table: the descriptor's stable id and the
+// version current when the pointer was written. The manifest carries the
+// pointer so a status listing can report described tables without a scan;
+// the reserved table holds the document.
+type SchemaPointer struct {
+	ID      string `json:"id"`
+	Version int64  `json:"version"`
+}
+
+// Validate refuses a pointer that names nothing.
+func (p SchemaPointer) Validate() error {
+	if p.ID == "" {
+		return errors.New("table: schema pointer has an empty id")
+	}
+	if p.Version < 1 {
+		return fmt.Errorf("table: schema pointer version %d is not positive", p.Version)
+	}
+	return nil
 }
 
 const tableManifestVersion = 1
@@ -151,6 +174,25 @@ type tableManifest struct {
 	// directory's own path. Opening with a different root is refused:
 	// discovery would otherwise find nothing and silently fork the table.
 	BackendRoot string `json:"backend_root,omitempty"`
+	// Schema points at the descriptor recorded for this table, when one is.
+	// Readers of a manifest written before descriptors existed see nil;
+	// the manifest version is unchanged so older binaries keep opening
+	// newer manifests.
+	Schema *SchemaPointer `json:"schema,omitempty"`
+}
+
+// manifestLocked assembles the manifest from the table's current state so
+// every rewrite carries every field. Callers hold formatMu.
+func (t *table) manifestLocked() tableManifest {
+	return tableManifest{
+		Version:              tableManifestVersion,
+		Splits:               t.splits,
+		FileFormat:           t.format,
+		TargetEmbeddingSpace: t.targetEmbeddingSpace,
+		DefaultEmbedding:     t.defaultEmbedding,
+		BackendRoot:          t.backendRoot,
+		Schema:               t.schema,
+	}
 }
 
 // createTable creates a new table on disk with the configured splits. notify,
@@ -292,18 +334,38 @@ func (t *table) targetEmbedding() string {
 func (t *table) setTargetEmbedding(identity string) error {
 	t.formatMu.Lock()
 	defer t.formatMu.Unlock()
-	manifest := tableManifest{
-		Version:              tableManifestVersion,
-		Splits:               t.splits,
-		FileFormat:           t.format,
-		TargetEmbeddingSpace: identity,
-		DefaultEmbedding:     t.defaultEmbedding,
-		BackendRoot:          t.backendRoot,
-	}
+	manifest := t.manifestLocked()
+	manifest.TargetEmbeddingSpace = identity
 	if err := writeTableManifest(t.dir, manifest); err != nil {
 		return err
 	}
 	t.targetEmbeddingSpace = identity
+	return nil
+}
+
+func (t *table) schemaPointer() (SchemaPointer, bool) {
+	t.formatMu.RLock()
+	defer t.formatMu.RUnlock()
+	if t.schema == nil {
+		return SchemaPointer{}, false
+	}
+	return *t.schema, true
+}
+
+// setSchemaPointer records which descriptor describes this table. The
+// pointer is an index into the reserved schema table, not the document.
+func (t *table) setSchemaPointer(pointer SchemaPointer) error {
+	if err := pointer.Validate(); err != nil {
+		return err
+	}
+	t.formatMu.Lock()
+	defer t.formatMu.Unlock()
+	manifest := t.manifestLocked()
+	manifest.Schema = &pointer
+	if err := writeTableManifest(t.dir, manifest); err != nil {
+		return err
+	}
+	t.schema = &pointer
 	return nil
 }
 
@@ -377,6 +439,7 @@ func openTable(dir, name string, logger *slog.Logger, rfCache *tablet.Cache, wal
 		targetEmbeddingSpace: manifest.TargetEmbeddingSpace,
 		defaultEmbedding:     manifest.DefaultEmbedding,
 		backendRoot:          manifest.BackendRoot,
+		schema:               manifest.Schema,
 	}, nil
 }
 
@@ -401,6 +464,11 @@ func readTableManifest(dir string) (tableManifest, error) {
 		return tableManifest{}, err
 	}
 	manifest.FileFormat = format
+	if manifest.Schema != nil {
+		if err := manifest.Schema.Validate(); err != nil {
+			return tableManifest{}, fmt.Errorf("table: invalid manifest %s: %w", path, err)
+		}
+	}
 	if manifest.DefaultEmbedding != (embeddingspace.FileState{}) {
 		if err := manifest.DefaultEmbedding.Validate(); err != nil {
 			return tableManifest{}, fmt.Errorf(
@@ -461,13 +529,9 @@ func (t *table) setFileFormatLocked(format tablet.FileFormat) error {
 	if err != nil {
 		return err
 	}
-	if err := writeTableManifest(t.dir, tableManifest{
-		Version:              tableManifestVersion,
-		Splits:               t.splits,
-		FileFormat:           parsed,
-		TargetEmbeddingSpace: t.targetEmbeddingSpace,
-		DefaultEmbedding:     t.defaultEmbedding,
-	}); err != nil {
+	manifest := t.manifestLocked()
+	manifest.FileFormat = parsed
+	if err := writeTableManifest(t.dir, manifest); err != nil {
 		return err
 	}
 	for _, tb := range t.tablets {
@@ -494,13 +558,9 @@ func (t *table) setDefaultEmbedding(state embeddingspace.FileState) error {
 				ErrEmbeddingStateChangeWithUnflushedData, t.name, cells)
 		}
 	}
-	if err := writeTableManifest(t.dir, tableManifest{
-		Version:              tableManifestVersion,
-		Splits:               t.splits,
-		FileFormat:           t.format,
-		TargetEmbeddingSpace: t.targetEmbeddingSpace,
-		DefaultEmbedding:     state,
-	}); err != nil {
+	manifest := t.manifestLocked()
+	manifest.DefaultEmbedding = state
+	if err := writeTableManifest(t.dir, manifest); err != nil {
 		return err
 	}
 	for _, tb := range t.tablets {

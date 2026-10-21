@@ -368,6 +368,32 @@ func (e *Engine) SetTableTargetEmbeddingSpace(tableName, identity string) error 
 	return tbl.setTargetEmbedding(identity)
 }
 
+// SetTableSchema records in the table's manifest which descriptor in the
+// reserved schema table describes it. The engine stores the pointer; it does
+// not read or interpret the descriptor.
+func (e *Engine) SetTableSchema(tableName string, pointer SchemaPointer) error {
+	e.mu.RLock()
+	tbl, ok := e.tables[tableName]
+	e.mu.RUnlock()
+	if !ok {
+		return fmt.Errorf("engine: table %q not found", tableName)
+	}
+	return tbl.setSchemaPointer(pointer)
+}
+
+// TableSchema reports the table's recorded descriptor pointer; ok is false
+// when the table is not described.
+func (e *Engine) TableSchema(tableName string) (pointer SchemaPointer, ok bool, err error) {
+	e.mu.RLock()
+	tbl, found := e.tables[tableName]
+	e.mu.RUnlock()
+	if !found {
+		return SchemaPointer{}, false, fmt.Errorf("engine: table %q not found", tableName)
+	}
+	pointer, ok = tbl.schemaPointer()
+	return pointer, ok, nil
+}
+
 func (e *Engine) TableTargetEmbeddingSpace(tableName string) (string, error) {
 	e.mu.RLock()
 	tbl, ok := e.tables[tableName]
@@ -644,11 +670,13 @@ func (e *Engine) TableNames() []string {
 	return names
 }
 
-// TableStat summarizes one table's physical footprint.
+// TableStat summarizes one table's physical footprint and, when the table
+// is described by a recorded schema descriptor, the manifest's pointer to it.
 type TableStat struct {
 	Name    string
 	Tablets int
 	RFiles  int
+	Schema  *SchemaPointer
 }
 
 // Stats returns a per-table snapshot of tablet and RFile counts, ordered by
@@ -663,7 +691,11 @@ func (e *Engine) Stats() []TableStat {
 		for _, tb := range tbl.tablets {
 			rfiles += len(tb.RFiles())
 		}
-		out = append(out, TableStat{Name: name, Tablets: len(tbl.tablets), RFiles: rfiles})
+		stat := TableStat{Name: name, Tablets: len(tbl.tablets), RFiles: rfiles}
+		if pointer, ok := tbl.schemaPointer(); ok {
+			stat.Schema = &pointer
+		}
+		out = append(out, stat)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out
