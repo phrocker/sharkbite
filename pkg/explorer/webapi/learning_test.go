@@ -76,6 +76,12 @@ func (s *learningStub) Evaluations(_ context.Context, id string) (json.RawMessag
 func (s *learningStub) SubmitEvaluation(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
 	return s.reply("submit-evaluation", b)
 }
+func (s *learningStub) SealCandidate(ctx context.Context, b json.RawMessage) (json.RawMessage, error) {
+	return s.SubmitEvaluation(ctx, b)
+}
+func (s *learningStub) Predict(ctx context.Context, b json.RawMessage) (json.RawMessage, error) {
+	return s.SubmitEvaluation(ctx, b)
+}
 func (s *learningStub) Releases(context.Context) (json.RawMessage, error) {
 	return s.reply("releases", nil)
 }

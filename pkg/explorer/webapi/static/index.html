@@ -229,8 +229,21 @@
               <label for="learning-evaluations-candidate">Candidate ID<input id="learning-evaluations-candidate" required autocomplete="off" spellcheck="false"></label>
               <button type="submit">Show verdicts per assessor</button>
             </form>
+            <form id="learning-seal-form" class="stack decision-secondary-form">
+              <p class="muted">Seal a completed run: the host rebuilds the candidate, evaluation, and artifact from the manifest, receipt, prediction set, and export it already recorded, publishes the bundle on the serving root, and measures the student on the export's reserved split under the policy declared here. The disposition is shadow_candidate or hold, never an authorization.</p>
+              <label for="learning-seal-pin">Manifest pin<input id="learning-seal-pin" required autocomplete="off" spellcheck="false" placeholder="64-hex pin the job was recorded under"></label>
+              <label for="learning-seal-cohort">Cohort ID<input id="learning-seal-cohort" autocomplete="off" spellcheck="false" placeholder="optional when the job admits one cohort"></label>
+              <label for="learning-seal-bundle">Bundle files (bundle.json, model.json, runtime.json)<input id="learning-seal-bundle" type="file" multiple required></label>
+              <label for="learning-seal-policy-id">Evaluation policy ID<input id="learning-seal-policy-id" required autocomplete="off" spellcheck="false" placeholder="declared before the run's outputs are looked at"></label>
+              <label for="learning-seal-split">Reserved split<input id="learning-seal-split" required autocomplete="off" spellcheck="false" value="test"></label>
+              <label for="learning-seal-positive">Positive label<input id="learning-seal-positive" required autocomplete="off" spellcheck="false" placeholder="the dataset label counted as a positive"></label>
+              <label for="learning-seal-recall">Minimum recall (0, 1]<input id="learning-seal-recall" required inputmode="decimal" value="0.5"></label>
+              <label for="learning-seal-positives">Minimum positives<input id="learning-seal-positives" required inputmode="numeric" value="1"></label>
+              <label for="learning-seal-families">Minimum independent families<input id="learning-seal-families" required inputmode="numeric" value="1"></label>
+              <button type="submit">Seal run as candidate</button>
+            </form>
             <form id="learning-candidate-form" class="stack decision-secondary-form">
-              <label for="learning-candidate-json">Sealed candidate and artifact JSON<textarea id="learning-candidate-json" required spellcheck="false" placeholder='{"candidate":{...},"artifact":{...}}'></textarea></label>
+              <label for="learning-candidate-json">Sealed candidate and artifact JSON (from shoalctl learning candidate or seal_candidate.py)<textarea id="learning-candidate-json" required spellcheck="false" placeholder='{"candidate":{...},"artifact":{...}}'></textarea></label>
               <button type="submit">Record candidate</button>
             </form>
             <form id="learning-evaluation-form" class="stack decision-secondary-form">
@@ -246,6 +259,11 @@
               <label for="learning-promote-evaluation">Evaluation ID<input id="learning-promote-evaluation" autocomplete="off" spellcheck="false" placeholder="required by the record; a promotion without it is refused"></label>
               <p class="muted">The approval is sealed against your authenticated identity; no owner is typed here.</p>
               <button type="submit">Promote with bound approval</button>
+            </form>
+            <form id="learning-predict-form" class="stack decision-secondary-form">
+              <label for="learning-predict-features">Ask the served student: feature vector<input id="learning-predict-features" required autocomplete="off" spellcheck="false" placeholder="comma-separated numbers, the student's feature width"></label>
+              <p class="muted">Only the student runtime answers; the host computes nothing itself and refuses when no runtime is configured.</p>
+              <button type="submit">Predict with the active release</button>
             </form>
             <form id="learning-rollback-form" class="stack decision-secondary-form">
               <label for="learning-rollback-prior">Prior release ID<input id="learning-rollback-prior" required autocomplete="off" spellcheck="false"></label>

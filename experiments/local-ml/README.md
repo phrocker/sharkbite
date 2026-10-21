@@ -158,6 +158,34 @@ Both students are linear; a transformer checkpoint student would implement
 the same `STUDENTS` entry with a torch runtime, which this CPU-only
 reference does not ship.
 
+## Sealing a run as a candidate
+
+`seal_candidate.py` turns a completed run into the three records the host
+needs before the bundle can be a candidate, exactly as `shoalctl learning
+candidate` and the host's own seal route (`POST /api/v1/learning/candidates/seal`)
+do: the same inputs seal to byte-identical records in all three, which the Go
+contract test checks against `python-candidate-set.json`.
+
+```sh
+"$PYTHON" seal_candidate.py --manifest manifest.json --manifest-pin "$PIN" \
+  --receipt student/distillation-receipt.json --predictions student/teacher-predictions.json \
+  --bundle-dir student/bundle --export-manifest export-manifest.json --dataset dataset.json \
+  --policy policy.json --output-dir sealed [--serving-root /var/lib/shoal/releases]
+```
+
+The policy is declared before the outputs are looked at:
+`{"id","split","positive_label","minimum_recall","minimum_positives","minimum_families"}`.
+The evaluation measures the student on the rows the export reserved for the
+split against the adjudicated labels, compares it with the recorded teacher
+on the rows the teacher labelled, and records every unmet gate and every
+leak between training and evaluation membership as a reason. The outputs are
+`candidate.json` (`{candidate, artifact}`) and `evaluation.json` for the
+candidate and evaluation routes or the console's forms, `promote.json` for
+the promotion route, and `candidate-set.json`. With `--serving-root` the
+verified bundle is published at `<root>/<digest>` without replacing an
+occupant. Completion is not improvement: the disposition is `shadow_candidate`
+or `hold`, and the record permits full review only.
+
 ## Student runtime
 
 `serve_student.py --bundle-dir student/bundle --release-id R --bundle-digest D --model-alias A`

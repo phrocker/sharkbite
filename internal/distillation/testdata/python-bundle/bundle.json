@@ -1,0 +1,1 @@
+{"files":[{"path":"model.json","role":"weights","sha256":"56c5c79614e2e4f6ebd0f943c8f7b0e6c61e24c64422f21fe83230d84781e3a2","size":325},{"path":"runtime.json","role":"runtime","sha256":"5f033189af512edcd67744b06b4a77b43caad06966aed5324b3ca80a428c1978","size":327}],"kind":"weights-bundle","schema":1}

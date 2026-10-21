@@ -17,7 +17,8 @@ import weights_bundle
 
 def export_fixture(cohort='cohort-1', task='synthetic-task', policy='policy'):
     rows = []
-    for i, (split, label, x) in enumerate([("train", "no", -2), ("train", "yes", 2), ("train", "no", -3), ("calibration", "no", 100)]):
+    for i, (split, label, x) in enumerate([("train", "no", -2), ("train", "yes", 2), ("train", "no", -3), ("calibration", "no", 100),
+                                            ("test", "yes", 5), ("test", "no", -5)]):
         rows.append({"id": f"row-{i}", "family": f"family-{i}", "content_sha256": hashlib.sha256(str(i).encode()).hexdigest(),
                      "source_revision": "synthetic-v1", "observed_at": "2026-01-01T00:00:00Z", "received_at": "2026-01-01T00:00:00Z",
                      "label_received_at": "2026-01-01T00:00:00Z", "label_status": "verified", "training_allowed": True,

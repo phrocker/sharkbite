@@ -120,7 +120,18 @@ cohort outside the selection, an improvement claim, or an evaluation inside
 the receipt is refused. Completion is not improvement. The reference worker is
 `experiments/local-ml/distill.py`: a deterministic CPU student with no
 model-hub access; a checkpoint fine-tune student plugs into the same
-contract. Evaluation compares students against their teachers and the
+contract. A completed run becomes a candidate through one sealing step
+(`internal/distillation.BuildCandidateSet`, reached from the console's
+"seal run" form, `shoalctl learning candidate`, or
+`experiments/local-ml/seal_candidate.py`): the candidate, evaluation, and
+artifact are built from the recorded manifest, receipt, prediction set, and
+export plus the bundle and an evaluation policy declared before the outputs
+are looked at, so the three paths seal byte-identical records. The
+evaluation measures the student on the export's reserved split against the
+adjudicated labels, names the teacher it is compared with on the rows the
+teacher labelled, and records every gate and every leak between training
+and evaluation membership as a reason; its disposition is shadow_candidate
+or hold. Evaluation compares students against their teachers and the
 incumbent on the same picture, and the comparison names each teacher, so an
 extraction change and a model change stay distinguishable. A release records
 the selection's task scope; a request for a task outside it is refused.

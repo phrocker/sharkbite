@@ -7,10 +7,12 @@ requires. Usage: distill_fixture.py OUTPUT_DIR
 """
 import hashlib
 import json
+import shutil
 import sys
 from pathlib import Path
 
 import distill
+import seal_candidate
 from test_distill import export_fixture, manifest_fixture
 
 
@@ -34,7 +36,22 @@ def main(argv):
     descriptor = dict(cohort_id='cohort-1', task_id='synthetic-task', label_policy_id='policy', manifest_sha256=export_sha,
                       example_ids=sorted(r['id'] for r in rows if r['split'] == 'train'))
     (out / 'python-export.json').write_bytes(distill.canonical(descriptor).encode())
-    print(json.dumps(dict(pin=pin, bundle_digest=receipt['bundle_digest']), sort_keys=True))
+    # The sealing contract: the same run's outputs plus a predeclared policy
+    # must seal to the same candidate, evaluation, and artifact in Go.
+    (out / 'python-dataset.json').write_bytes(data)
+    (out / 'python-export-manifest.json').write_bytes(export_manifest)
+    bundle_out = out / 'python-bundle'
+    if bundle_out.exists():
+        shutil.rmtree(bundle_out)
+    shutil.copytree(out / 'job' / 'bundle', bundle_out)
+    policy = dict(id='fixture-evaluation-policy', split='test', positive_label='yes', minimum_recall=0.5,
+                  minimum_positives=1, minimum_families=1)
+    (out / 'python-policy.json').write_bytes(distill.canonical(policy).encode())
+    records, _ = seal_candidate.build_candidate_set(manifest, pin, receipt, json.loads((out / 'python-predictions.json').read_bytes()),
+                                                    bundle_out, export_manifest, data, policy)
+    (out / 'python-candidate-set.json').write_bytes(distill.canonical(records).encode())
+    shutil.rmtree(out / 'job')
+    print(json.dumps(dict(pin=pin, bundle_digest=receipt['bundle_digest'], disposition=records['evaluation']['disposition']), sort_keys=True))
 
 
 if __name__ == '__main__':

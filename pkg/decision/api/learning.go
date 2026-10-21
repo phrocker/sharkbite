@@ -53,9 +53,15 @@ type LearningProvider interface {
 	SubmitReceipt(ctx context.Context, manifestPin string, receipt json.RawMessage) (json.RawMessage, error)
 	Candidates(ctx context.Context) (json.RawMessage, error)
 	SubmitCandidate(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
+	// SealCandidate records candidate, evaluation, and artifact for a completed
+	// run from its bundle and a predeclared evaluation policy.
+	SealCandidate(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
 	Evaluations(ctx context.Context, candidateID string) (json.RawMessage, error)
 	SubmitEvaluation(ctx context.Context, evaluation json.RawMessage) (json.RawMessage, error)
 	Releases(ctx context.Context) (json.RawMessage, error)
+	// Predict asks the configured student runtime to answer for one feature
+	// vector; a host without a runtime refuses.
+	Predict(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
 	Promote(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
 	Rollback(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
 	Evidence(ctx context.Context, kind string) (json.RawMessage, error)

@@ -78,6 +78,46 @@ func verifyPythonRecords(t *testing.T, dir string) {
 	if receipt.Status != StatusCompleted || len(receipt.Deviations) != 0 || receipt.HeldOutExcludedCount != 0 {
 		t.Fatalf("%+v", receipt)
 	}
+	// The sealing contract: from the same run outputs and the same
+	// predeclared policy, Go and Python seal byte-identical candidate,
+	// evaluation, and artifact records.
+	var predictions PredictionSet
+	if err := weightsbundle.StrictUnmarshal(read("python-predictions.json"), &predictions); err != nil {
+		t.Fatal(err)
+	}
+	bundle, _, err := weightsbundle.Load(filepath.Join(dir, "python-bundle"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	policy, err := DecodeEvaluationPolicy(read("python-policy.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	weightsFile, _ := bundle.File(weightsbundle.RoleWeights)
+	sealed, err := BuildCandidateSet(CandidateInput{
+		Manifest: manifest, Pin: pin, Receipt: receipt, Predictions: predictions, Bundle: bundle,
+		Weights: read(filepath.Join("python-bundle", weightsFile.Path)), ExportManifest: read("python-export-manifest.json"),
+		Dataset: read("python-dataset.json"), Policy: policy,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var python CandidateSet
+	if err := weightsbundle.StrictUnmarshal(read("python-candidate-set.json"), &python); err != nil {
+		t.Fatal(err)
+	}
+	for name, pair := range map[string][2]weightsbundle.Record{
+		"candidate": {sealed.Candidate, python.Candidate}, "evaluation": {sealed.Evaluation, python.Evaluation}, "artifact": {sealed.Artifact, python.Artifact},
+	} {
+		goBytes, _ := weightsbundle.EncodeRecord(pair[0])
+		pyBytes, _ := weightsbundle.EncodeRecord(pair[1])
+		if string(goBytes) != string(pyBytes) {
+			t.Fatalf("%s differs\ngo:     %s\npython: %s", name, goBytes, pyBytes)
+		}
+	}
+	if sealed.Evaluation["disposition"] != "shadow_candidate" {
+		t.Fatalf("fixture evaluation: %v", sealed.Evaluation)
+	}
 	var set PredictionSet
 	if err := weightsbundle.StrictUnmarshal(read("python-predictions.json"), &set); err != nil {
 		t.Fatal(err)
