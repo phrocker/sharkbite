@@ -41,6 +41,19 @@ type Client interface {
 	Close() error
 }
 
+type hdfsFileIdentity interface{ GetFileId() uint64 }
+
+func fileIdentity(info os.FileInfo) (uint64, bool) {
+	if info == nil {
+		return 0, false
+	}
+	status, ok := info.Sys().(hdfsFileIdentity)
+	if !ok || status.GetFileId() == 0 {
+		return 0, false
+	}
+	return status.GetFileId(), true
+}
+
 type chownClient interface {
 	Chown(name, user, group string) error
 }
@@ -303,6 +316,7 @@ func (b *Backend) Open(ctx context.Context, objectPath string) (storage.File, er
 	}
 	f := &file{
 		reader:  reader,
+		client:  lease.client,
 		info:    reader.Stat(),
 		size:    reader.Stat().Size(),
 		release: lease.release,
@@ -313,6 +327,83 @@ func (b *Backend) Open(ctx context.Context, objectPath string) (storage.File, er
 		return nil, err
 	}
 	return f, nil
+}
+
+// OpenSnapshot pins colinmarc/hdfs's block list before returning. That client
+// normally fetches blocks lazily by path on its first read, which could mix an
+// old open-time file status with a replacement's blocks. An eager byte read
+// forces the block lookup, and an HDFS file-ID check rejects that race. Each
+// subsequent range read checks the path identity before and after reading;
+// rename, replacement, append, or removal fails closed. Custom Client/Reader
+// adapters do not inherit this claim without the exact pinned-block behavior.
+func (b *Backend) OpenSnapshot(ctx context.Context, objectPath string) (storage.File, error) {
+	opened, err := b.Open(ctx, objectPath)
+	if err != nil {
+		return nil, err
+	}
+	f := opened.(*file)
+	adapter, clientOK := f.client.(clientAdapter)
+	_, readerOK := f.reader.(*hdfsclient.FileReader)
+	id, idOK := fileIdentity(f.info)
+	if !clientOK || !readerOK || !idOK || f.size < 1 {
+		_ = f.Close()
+		return nil, storage.ErrSnapshotUnsupported
+	}
+	resolved, _, err := b.resolve(objectPath)
+	if err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	var first [1]byte
+	if _, err := f.ReadAt(first[:], 0); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	snapshot := &snapshotFile{
+		File: f, ctx: contextOrBackground(ctx), client: adapter.Client, path: resolved,
+		id: id, size: f.size, modified: f.info.ModTime(),
+	}
+	if err := snapshot.check(); err != nil {
+		_ = f.Close()
+		return nil, err
+	}
+	return snapshot, nil
+}
+
+type snapshotFile struct {
+	storage.File
+	ctx      context.Context
+	client   *hdfsclient.Client
+	path     string
+	id       uint64
+	size     int64
+	modified time.Time
+}
+
+func (f *snapshotFile) check() error {
+	if err := f.ctx.Err(); err != nil {
+		return err
+	}
+	info, err := f.client.Stat(f.path)
+	if err != nil {
+		return fmt.Errorf("hdfs: verify snapshot %s: %w", f.path, err)
+	}
+	id, ok := fileIdentity(info)
+	if !ok || id != f.id || info.Size() != f.size || !info.ModTime().Equal(f.modified) {
+		return storage.ErrSnapshotUnsupported
+	}
+	return f.ctx.Err()
+}
+
+func (f *snapshotFile) ReadAt(p []byte, off int64) (int, error) {
+	if err := f.check(); err != nil {
+		return 0, err
+	}
+	n, err := f.File.ReadAt(p, off)
+	if verifyErr := f.check(); verifyErr != nil {
+		return n, errors.Join(err, verifyErr)
+	}
+	return n, err
 }
 
 // Create creates or replaces path. Parent directories are created as needed.
@@ -1328,6 +1419,7 @@ func isExpectedOperationCloseError(err error) bool {
 type file struct {
 	mu       sync.Mutex
 	reader   Reader
+	client   Client
 	release  func() error
 	info     os.FileInfo
 	size     int64

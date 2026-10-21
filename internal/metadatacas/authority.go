@@ -5,22 +5,28 @@ package metadatacas
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"path"
 	"sort"
 	"strconv"
+	"strings"
 	"sync/atomic"
+	"unicode/utf8"
 
 	gozk "github.com/go-zookeeper/zk"
 
 	"github.com/phrocker/shoal-oss/internal/cclient"
+	"github.com/phrocker/shoal-oss/internal/embeddingsidecar"
 	"github.com/phrocker/shoal-oss/internal/embeddingspace"
 	"github.com/phrocker/shoal-oss/internal/hostedingest"
 	"github.com/phrocker/shoal-oss/internal/ingestclient"
 	"github.com/phrocker/shoal-oss/internal/ingestrouter"
 	"github.com/phrocker/shoal-oss/internal/metadata"
 	"github.com/phrocker/shoal-oss/internal/mincauthority"
+	"github.com/phrocker/shoal-oss/internal/storage"
 	"github.com/phrocker/shoal-oss/internal/tabletloader"
 	"github.com/phrocker/shoal-oss/internal/thrift/gen/data"
 	"github.com/phrocker/shoal-oss/internal/tserver"
@@ -66,6 +72,18 @@ type Config struct {
 	Address      string
 	Group        string
 	Session      string
+	Sidecar      *SidecarConfig
+}
+
+// SidecarConfig enables publication of has_embeddings for hosted RFiles.
+// The backend must make exclusive creates durable and provide pinned source
+// snapshots. A no_embeddings result still requires scan and operator proof.
+type SidecarConfig struct {
+	Backend       storage.ExclusiveCreator
+	Source        storage.SnapshotOpener
+	Prefix        string
+	Namespace     string
+	Authenticator embeddingsidecar.MarkerAuthenticator
 }
 
 type Factory struct {
@@ -83,6 +101,14 @@ func NewFactory(cfg Config) (*Factory, error) {
 	}
 	if cfg.Group == "" {
 		cfg.Group = tserver.DefaultResourceGroup
+	}
+	if cfg.Sidecar != nil && (cfg.Sidecar.Backend == nil || cfg.Sidecar.Source == nil ||
+		cfg.Sidecar.Prefix == "" || path.Clean(cfg.Sidecar.Prefix) != cfg.Sidecar.Prefix ||
+		cfg.Sidecar.Prefix == "." || cfg.Sidecar.Prefix == ".." ||
+		strings.HasPrefix(cfg.Sidecar.Prefix, "../") ||
+		cfg.Sidecar.Namespace == "" || len(cfg.Sidecar.Namespace) > 128 ||
+		!utf8.ValidString(cfg.Sidecar.Namespace) || cfg.Sidecar.Authenticator == nil) {
+		return nil, ErrInvalidConfig
 	}
 	f := &Factory{cfg: cfg}
 	f.next.Store(1)
@@ -284,10 +310,34 @@ func (a *Authority) Commit(
 	if err := embedding.Validate(); err != nil {
 		return mincauthority.CommitRejected, err
 	}
-	if embedding.Known() {
+	if embedding.Known() && (a.factory.cfg.Sidecar == nil || !embedding.HasEmbeddings()) {
 		return mincauthority.CommitRejected, ErrEmbeddingSidecarRequired
 	}
+	var footerDigest, fileDigest string
+	var fileSize int64
+	if embedding.Known() {
+		if request.OperationID == "" || len(request.OperationID) > 256 ||
+			!utf8.ValidString(request.OperationID) {
+			return mincauthority.CommitRejected, ErrInconsistent
+		}
+		operationHash := sha256.Sum256([]byte(request.OperationID))
+		if path.Base(request.File.Path) != hex.EncodeToString(operationHash[:])+".rf" {
+			return mincauthority.CommitRejected, ErrInconsistent
+		}
+		_, _, source := a.sidecarStores()
+		var footerState embeddingspace.FileState
+		footerDigest, footerState, fileDigest, fileSize, err = source.ReadEvidence(ctx, request.File.Path)
+		if err != nil {
+			return mincauthority.CommitRejected, err
+		}
+		if footerState != embedding || fileDigest != request.File.Checksum || fileSize != request.File.Size {
+			return mincauthority.CommitRejected, ErrInconsistent
+		}
+	}
 	conditions := a.ownerConditions()
+	if embedding.Known() {
+		conditions = append(conditions, condition{cf: []byte(metadata.CFFile), cq: fileQualifier})
+	}
 	updates := []update{{
 		cf: []byte(metadata.CFFile), cq: fileQualifier, value: fileValue,
 	}}
@@ -323,6 +373,10 @@ func (a *Authority) Commit(
 		})
 	}
 	status, commitErr := a.mutate(ctx, conditions, updates)
+	if embedding.Known() {
+		return a.commitWithSidecar(ctx, request, fileQualifier, fileValue,
+			footerDigest, fileDigest, fileSize, status, commitErr)
+	}
 	switch status {
 	case ingestclient.ConditionalAccepted:
 		return mincauthority.CommitApplied, commitErr
@@ -335,6 +389,87 @@ func (a *Authority) Commit(
 		return mincauthority.CommitRejected, errors.Join(commitErr, readErr)
 	}
 	return mincauthority.CommitUnknown, errors.Join(commitErr, readErr)
+}
+
+// commitWithSidecar acknowledges a known state only after the native file
+// entry is visible and its authenticated marker survives readback. If the
+// native answer was lost, an exact owner-fenced reread decides whether it is
+// safe to publish; the coordinator can retry this same operation after a
+// marker failure without adding a second file or deleting another WAL.
+func (a *Authority) commitWithSidecar(
+	ctx context.Context, request mincauthority.MetadataCommit, qualifier, value []byte,
+	footerDigest, fileDigest string, fileSize int64,
+	status ingestclient.ConditionalStatus, commitErr error,
+) (mincauthority.CommitOutcome, error) {
+	live, err := a.ReadOwned(ctx, request.Extent, request.Fence)
+	if err != nil {
+		return mincauthority.CommitUnknown, errors.Join(commitErr, err)
+	}
+	if !nativeCommitMatches(live, request, qualifier, value) {
+		if status == ingestclient.ConditionalRejected {
+			return mincauthority.CommitRejected, errors.Join(ErrRejected, commitErr)
+		}
+		return mincauthority.CommitUnknown, errors.Join(ErrInconsistent, commitErr)
+	}
+	store, publisher, _ := a.sidecarStores()
+	record := embeddingsidecar.Record{
+		Version:    embeddingsidecar.Version,
+		FileSHA256: fileDigest, FileSize: fileSize,
+		Identity: embeddingsidecar.Identity{
+			Extent: request.Extent, FilePath: request.File.Path,
+			Qualifier: append([]byte(nil), qualifier...), Value: append([]byte(nil), value...),
+			FooterSHA256: footerDigest,
+		},
+		Fence: request.Fence, State: normalizedEmbedding(request.File.Embedding), Evidence: embeddingsidecar.FooterVerified,
+	}
+	if err := store.Put(ctx, record); err != nil {
+		return mincauthority.CommitUnknown, errors.Join(commitErr, err)
+	}
+	if err := publisher.Publish(ctx, record, request.OperationID); err != nil {
+		return mincauthority.CommitUnknown, errors.Join(commitErr, err)
+	}
+	return mincauthority.CommitApplied, commitErr
+}
+
+func nativeCommitMatches(
+	live metadata.TabletInfo, request mincauthority.MetadataCommit, qualifier, value []byte,
+) bool {
+	matches := 0
+	for _, file := range live.Files {
+		if bytes.Equal(file.RawQualifier, qualifier) && bytes.Equal(file.RawValue, value) &&
+			file.Path == request.File.Path {
+			matches++
+		} else if file.Path == request.File.Path {
+			return false
+		}
+	}
+	if matches != 1 || request.TabletTime != "" && live.Time != request.TabletTime {
+		return false
+	}
+	for _, removed := range request.RemoveWALs {
+		for _, entry := range live.Logs {
+			if string(entry.RawQualifier) == removed.Qualifier {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func (a *Authority) sidecarStores() (
+	embeddingsidecar.Store, embeddingsidecar.PublicationStore, embeddingsidecar.RFileEvidenceReader,
+) {
+	cfg := a.factory.cfg.Sidecar
+	source := embeddingsidecar.RFileEvidenceReader{Backend: cfg.Source}
+	candidates := embeddingsidecar.Store{
+		Backend: cfg.Backend, Prefix: cfg.Prefix, Verifier: a,
+	}
+	publication := embeddingsidecar.PublicationStore{
+		Candidates: candidates, Namespace: cfg.Namespace,
+		Owned: a, Footer: source, Authenticator: cfg.Authenticator,
+	}
+	candidates.Publication = publication
+	return candidates, publication, source
 }
 
 func (a *Authority) UpdateFlushID(ctx context.Context, flushID int64) error {
@@ -399,12 +534,40 @@ func (a *Authority) Read(
 	if err != nil {
 		return mincauthority.MetadataState{}, err
 	}
+	var sidecar embeddingsidecar.Store
+	var source embeddingsidecar.RFileEvidenceReader
+	if a.factory.cfg.Sidecar != nil {
+		if info, err = a.ReadOwned(ctx, extent, a.fence); err != nil {
+			return mincauthority.MetadataState{}, err
+		}
+		sidecar, _, source = a.sidecarStores()
+	}
 	state := mincauthority.MetadataState{
 		Files: make([]mincauthority.DataFile, 0, len(info.Files)),
 		WALs:  make([]walauthority.Reference, 0, len(info.Logs)),
 		Time:  info.Time,
 	}
 	for _, file := range info.Files {
+		if a.factory.cfg.Sidecar != nil {
+			digest, footerState, readErr := source.ReadFooter(ctx, file.Path)
+			if readErr != nil {
+				if ctx.Err() != nil {
+					return mincauthority.MetadataState{}, ctx.Err()
+				}
+				file.Embedding = embeddingspace.Unknown()
+			} else {
+				file.Embedding, err = sidecar.Resolve(ctx, info, embeddingsidecar.Identity{
+					Extent: extent, FilePath: file.Path, Qualifier: file.RawQualifier,
+					Value: file.RawValue, FooterSHA256: digest,
+				}, digest, footerState)
+				if err != nil {
+					if ctx.Err() != nil {
+						return mincauthority.MetadataState{}, ctx.Err()
+					}
+					file.Embedding = embeddingspace.Unknown()
+				}
+			}
+		}
 		state.Files = append(state.Files, mincauthority.DataFile{
 			Path: file.Path, Format: "rfile", Size: file.Size, Entries: file.NumEntries,
 			StartRow: []byte(file.StartRow), EndRow: []byte(file.EndRow),

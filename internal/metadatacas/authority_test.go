@@ -25,6 +25,8 @@ import (
 type fakeCluster struct {
 	mu          sync.Mutex
 	cells       map[string][]byte
+	prevRow     []byte
+	endRow      []byte
 	ambiguous   bool
 	reject      bool
 	locateCalls int
@@ -58,6 +60,7 @@ func (f *fakeCluster) LocateTable(_ context.Context, tableID string) ([]metadata
 	}
 	info := metadata.TabletInfo{
 		TableID: "5", PrevRowSet: true, Directory: "t-1",
+		PrevRow: append([]byte(nil), f.prevRow...), EndRow: append([]byte(nil), f.endRow...),
 		Time:       string(f.cells[cell(metadata.CFServer, metadata.CQTime)]),
 		ServerLock: string(f.cells[cell(metadata.CFServer, metadata.CQLock)]),
 	}
@@ -88,6 +91,7 @@ func (f *fakeCluster) LocateTable(_ context.Context, tableID string) ([]metadata
 			info.Files = append(info.Files, metadata.FileEntry{
 				Path: file.Path, StartRow: file.StartRow, EndRow: file.EndRow,
 				Size: size, NumEntries: entries, Time: tm, RawQualifier: []byte(cq),
+				RawValue: append([]byte(nil), value...),
 				// Mirrors metadata.AggregateRows: a file entry with no
 				// file.embedding column is unknown until the column loop
 				// below decodes one for it (issue #274).

@@ -32,6 +32,12 @@ type FooterReader interface {
 	ReadFooter(context.Context, string) (string, embeddingspace.FileState, error)
 }
 
+// FullSourceReader binds hosted publication to the entire RFile snapshot.
+// A same-path replacement can preserve a footer while changing cell bytes.
+type FullSourceReader interface {
+	ReadEvidence(context.Context, string) (string, embeddingspace.FileState, string, int64, error)
+}
+
 // ScanAttestationVerifier must read and verify the durable attestation bytes,
 // including their exact file identity, scan result and trust provenance. A
 // digest string in Record is not proof. No production implementation exists.
@@ -161,14 +167,28 @@ func (p PublicationStore) verifiedSource(
 	if p.Footer == nil {
 		return false, ErrInvalid
 	}
-	digest, footerState, err := p.Footer.ReadFooter(ctx, record.Identity.FilePath)
+	var digest, fileDigest string
+	var fileSize int64
+	var footerState embeddingspace.FileState
+	var err error
+	if record.FileSHA256 != "" {
+		reader, ok := p.Footer.(FullSourceReader)
+		if !ok {
+			return false, nil
+		}
+		digest, footerState, fileDigest, fileSize, err = reader.ReadEvidence(ctx, record.Identity.FilePath)
+	} else {
+		digest, footerState, err = p.Footer.ReadFooter(ctx, record.Identity.FilePath)
+	}
 	if err != nil {
 		return false, err
 	}
 	if err := ctx.Err(); err != nil {
 		return false, err
 	}
-	if digest != record.Identity.FooterSHA256 || footerState.Validate() != nil ||
+	if digest != record.Identity.FooterSHA256 ||
+		(record.FileSHA256 != "" && (fileDigest != record.FileSHA256 || fileSize != record.FileSize)) ||
+		footerState.Validate() != nil ||
 		(record.State != footerState &&
 			(record.Evidence == FooterVerified || footerState.Known())) {
 		return false, nil

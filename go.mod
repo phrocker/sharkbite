@@ -4,7 +4,7 @@ go 1.25.0
 
 require github.com/apache/thrift v0.24.0
 
-replace github.com/colinmarc/hdfs/v2 => github.com/phrocker/hdfs/v2 v2.4.1-0.20260818235907-f64187ce688a
+replace github.com/colinmarc/hdfs/v2 => github.com/phrocker/hdfs/v2 v2.4.1-0.20261021144125-20da42dea33e
 
 require (
 	cloud.google.com/go/storage v1.62.1

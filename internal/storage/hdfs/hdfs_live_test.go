@@ -29,18 +29,6 @@ func TestLiveExclusiveCreator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// TODO: remove once github.com/phrocker/hdfs/v2 gains
-		// RenameNoOverwriteContext (rename2 with OverwriteDest=false) and
-		// go.mod picks it up. Until then HDFS reports exclusive creation as
-		// unsupported rather than failing the integration workflow.
-		probe := "/tmp/shoal-integration/" + uuid.NewString() + "/probe"
-		if w, err := backend.CreateExclusive(context.Background(), probe); errors.Is(err, errors.ErrUnsupported) {
-			_ = backend.Close()
-			t.Skip("hdfs: exclusive creation unsupported by the pinned client: " + err.Error())
-		} else if err == nil {
-			_ = w.Close()
-			_ = backend.Remove(context.Background(), probe)
-		}
 		t.Cleanup(func() {
 			if err := backend.Close(); err != nil {
 				t.Errorf("Close backend: %v", err)
@@ -75,6 +63,46 @@ func TestLivePublishUnreferenced(t *testing.T) {
 	got := make([]byte, len("complete native wal"))
 	if _, err := file.ReadAt(got, 0); err != nil || string(got) != "complete native wal" {
 		t.Fatalf("immutable bytes = %q, %v", got, err)
+	}
+}
+
+func TestLiveSnapshotDetectsSamePathReplacement(t *testing.T) {
+	if os.Getenv("SHOAL_HDFS_INTEGRATION") == "" {
+		t.Skip("set SHOAL_HDFS_INTEGRATION=1 to run live HDFS tests")
+	}
+	backend, err := hdfsstorage.New("127.0.0.1:8020")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = backend.Close() })
+	filePath := "/tmp/shoal-integration/" + uuid.NewString() + "/snapshot.rf"
+	t.Cleanup(func() { _ = backend.Remove(context.Background(), filePath) })
+	write := func(value string) {
+		t.Helper()
+		writer, err := backend.Create(context.Background(), filePath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := writer.Write([]byte(value)); err != nil {
+			t.Fatal(err)
+		}
+		if err := writer.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write("first snapshot")
+	snapshot, err := backend.OpenSnapshot(context.Background(), filePath)
+	if err != nil {
+		t.Fatalf("pin HDFS snapshot: %v", err)
+	}
+	defer snapshot.Close()
+	buf := make([]byte, len("first snapshot"))
+	if _, err := snapshot.ReadAt(buf, 0); err != nil || string(buf) != "first snapshot" {
+		t.Fatalf("initial snapshot read = %q, %v", buf, err)
+	}
+	write("other snapshot")
+	if _, err := snapshot.ReadAt(buf, 0); !errors.Is(err, storage.ErrSnapshotUnsupported) {
+		t.Fatalf("replacement read = %v, want snapshot mismatch", err)
 	}
 }
 

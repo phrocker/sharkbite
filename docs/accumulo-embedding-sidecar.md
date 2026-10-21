@@ -1,15 +1,18 @@
 # Accumulo embedding sidecar boundary
 
 Accumulo 4 rejects `file.embedding` in both root and metadata-table tablet
-metadata. The known-state guard in `metadatacas.Authority.Commit` and the
-write-mode backfill refusal remain active. This package establishes an
-immutable sidecar record format and an inert publication-marker protocol; it
-does **not** yet authorize hosted known-state publication or backfill.
+metadata. The metadata authority now has a tested, injectable hosted
+publication path for `has_embeddings`, but the tserver does not configure it.
+All production known-state commits and write-mode backfill retain their
+fail-closed guards until pinned live Accumulo evidence is green. This is an
+incremental #171 path, not its full acceptance.
 
 A v1 sidecar object is addressed by a SHA-256 hash of the exact table ID,
 tablet extent, raw `file` qualifier and value, decoded file path, and SHA-256
 digest of the RFile embedding footer. Its record carries the publishing owner
-fence, embedding state, and source-evidence kind. `CreateExclusive` prevents a
+fence, embedding state, and source-evidence kind. Hosted records additionally
+bind the full RFile SHA-256 and size: a replacement that preserves the native
+file value and footer cannot inherit the old state. `CreateExclusive` prevents a
 second writer from replacing different bytes at that address. A lost create
 answer is accepted only when a fresh read finds the exact expected bytes.
 The record may outlive the publishing owner: after reassignment, the same live
@@ -25,10 +28,11 @@ digest. A footer assertion alone is insufficient because the old write path
 could fabricate `no_embeddings` in both metadata and footer. The sidecar's
 `scan_verified` value and digest are only claims until a production
 `PublicationVerifier` checks the attestation bytes, exact footer, live file,
-and operator's `--trust-no-embeddings` provenance. No verifier is installed in
-the hosted authority, so `Resolve` currently returns unknown by default. Once that
-verifier exists, a validated scan may classify a historic file whose footer
-is unknown. Any contradictory known footer refuses promotion, and a
+and operator's `--trust-no-embeddings` provenance. The injectable hosted path
+only installs a footer/full-file verifier for `has_embeddings`; negative
+records still resolve unknown. Once a complete scan verifier exists, a
+validated scan may classify a historic file whose footer is unknown. Any
+contradictory known footer refuses promotion, and a
 footer-only record always requires exact state agreement.
 
 The RFile evidence reader hashes the exact compressed embedding meta-block
@@ -54,14 +58,17 @@ digest for that protocol; the current write and resolve paths refuse negative
 attestations. Full-file hashing costs one streamed read per verification until
 an immutable-object digest cache is introduced with equivalent provenance.
 
-**Hosted activation also requires source snapshot stability.** GCS snapshot
+**Hosted activation requires source snapshot stability.** GCS snapshot
 reads pin an object generation; S3 and Azure pin a version or enforce the ETag
 seen at open on every range request. A missing token or unsupported backend,
 including the path-keyed disk cache, fails closed. Rooted storage forwards
 snapshot reads only when its inner backend supports them. An ETag is a
 consistency token, not a content digest; the attestation still hashes the
-complete RFile. These reads need deployment-specific replacement testing,
-and the present slice remains inert without a hosted publisher or scanner.
+complete RFile. These reads need deployment-specific replacement testing.
+The native HDFS client now pins block locations before accepting an open and
+checks the namenode file ID, size, and modification time around each range
+read. Custom HDFS client adapters and unsupported metadata fail closed. The
+pinned Accumulo live harness must still exercise this path before activation.
 
 The bounded publication-marker protocol requires a candidate record, an
 owner-fenced read of the exact native `file` entry, verified RFile footer, and
@@ -86,7 +93,7 @@ They require exact byte-level tablet bounds, the current Accumulo location
 and ServiceLock, and the original process-local assignment generation. They
 check that generation before and after the native read, so an unload and
 reassignment under the same ServiceLock cannot authorize an old publisher.
-This reader is not yet connected to hosted publication.
+The hosted publisher uses this reader before and after marker creation.
 
 `LoadHMACKeyring` supplies a file-backed, namespace-scoped MAC for markers and
 attestations. The secret file must be a regular owner-only file (mode 0400 or
@@ -107,24 +114,40 @@ The active key signs new records; retained older keys verify existing records.
 Rotate by installing a new owner-only file and restarting, retaining old keys
 until their records have been retired. The namespace is part of the MAC input,
 so copying a key file to another authority cannot validate its signatures.
-The hosted tserver and operator CLI do not yet load this file; configuring it
-alone does not enable publication or backfill.
+The tserver and CLI do not load it yet. A future deployment configuration
+must use the Accumulo instance ID as namespace and retain old keys during
+rotation.
 
 The marker's operation ID is asserted by the trusted caller. Native Accumulo
-`file` metadata has no operation ID to compare with it, so the marker alone
-cannot prove which CAS installed the file. Production `Commit` remains guarded
-until the hosted authority orders native CAS before marker creation, returns
-`CommitApplied` only after marker readback, and its ambiguous-response path
-reconciles exact known embedding equality. A native file entry with no valid
-marker remains unknown; an orphan candidate or marker without the exact live
-file grants nothing. The two durable stores do not share an atomic transaction,
-so the ordering and hard-kill replay need pinned live evidence before the
-guard can be removed. Backfill must verify a live file and source evidence,
+`file` metadata has no operation ID to compare with it, so the hosted path
+requires the output file name to contain the SHA-256 of the durable operation
+ID. It verifies the complete source checksum and footer before native CAS,
+requires an absent native file entry, then rereads the exact file and retired
+WAL references before publishing. It returns `CommitApplied` only after marker
+readback; a lost native response or marker failure can be retried with the same
+operation ID. A native file entry with no valid marker remains unknown; an
+orphan candidate or marker without the exact live file grants nothing. The
+two durable stores do not share an atomic transaction, so hard-kill replay,
+split and GC still need pinned live evidence before #171 is complete. Backfill
+must verify a live file and source evidence,
 create the sidecar, and re-read the exact live metadata entry; split and
 replacement races may only produce unknown. The CLI backfill path also needs
 an authorization protocol distinct from a hosted tablet's owner fence; this
-foundation does not grant a CLI writer that authority.
+hosted path does not grant a CLI writer that authority.
 
 The pinned Accumulo live gate must then exercise known-state minor compaction,
 write-mode backfill, reassignment, split, and GC, and separately remain red
 for its unresolved Shoal WAL recovery gap until hard-kill replay passes.
+
+## Customer UI path
+
+The explorer web UI does not yet read Accumulo sidecar evidence. Before a
+customer-facing rollout, its operator view needs a table and file inventory
+that distinguishes verified `has_embeddings`, verified `no_embeddings`, and
+unknown, shows why a file is unknown, and presents a dry-run backfill report.
+It must obtain those statuses from the same verified resolver used by hosted
+reads; the browser must not infer state from a footer or sidecar object alone.
+Write controls can appear only after the CLI backfill authority and its
+authorization protocol are complete, with progress and ambiguous outcomes
+visible to the operator. The present tserver flags are an operator deployment
+setting, not a customer UI switch.
