@@ -10,6 +10,7 @@
 package decisionlearning
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -261,9 +262,12 @@ func (s *Service) put(ctx context.Context, kind, id string, value any) error {
 	if err != nil {
 		return err
 	}
-	if _, err := w.Write(raw); err != nil {
+	if n, err := w.Write(raw); err != nil || n != len(raw) {
 		if a, ok := w.(storage.Aborter); ok {
-			a.Abort()
+			_ = a.Abort()
+		}
+		if err == nil {
+			err = io.ErrShortWrite
 		}
 		return err
 	}
@@ -284,9 +288,12 @@ func (s *Service) putRaw(ctx context.Context, kind, id string, raw []byte) error
 	if err != nil {
 		return err
 	}
-	if _, err := w.Write(raw); err != nil {
+	if n, err := w.Write(raw); err != nil || n != len(raw) {
 		if a, ok := w.(storage.Aborter); ok {
-			a.Abort()
+			_ = a.Abort()
+		}
+		if err == nil {
+			err = io.ErrShortWrite
 		}
 		return err
 	}
@@ -307,7 +314,7 @@ func (s *Service) getRaw(ctx context.Context, kind, id string) ([]byte, error) {
 		return nil, err
 	}
 	defer f.Close()
-	if f.Size() > weightsbundle.MaxRecordBytes {
+	if f.Size() < 0 || f.Size() > weightsbundle.MaxRecordBytes {
 		return nil, fmt.Errorf("%s %s exceeds %d bytes", kind, id, weightsbundle.MaxRecordBytes)
 	}
 	raw := make([]byte, f.Size())
@@ -471,6 +478,15 @@ func (s *Service) RequestExport(ctx context.Context, cohortID string) (json.RawM
 	// these bytes to carry the release's lineage.
 	if err := s.putRaw(ctx, kindExportManifest, id, export.Manifest); err != nil && !errors.Is(err, storage.ErrExists) {
 		return nil, s.classified(err)
+	}
+	// An existing object or an ambiguous write is only usable if readback
+	// proves that this pin names the manifest we just authorized.
+	stored, err := s.getRaw(ctx, kindExportManifest, id)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	if !bytes.Equal(stored, export.Manifest) {
+		return nil, refused(errors.New("stored export manifest differs from the authorized bytes"))
 	}
 	if err := s.put(ctx, kindExport, id, record); err != nil && !errors.Is(err, storage.ErrExists) {
 		return nil, s.classified(err)

@@ -97,6 +97,26 @@ func newHarness(t *testing.T) *harness {
 	return &harness{t: t, svc: svc, ctx: actorCtx(ctx), serving: filepath.Join(base, "serving"), pin: weightsbundle.SHA256Hex([]byte(exportManifest))}
 }
 
+func TestRequestExportRejectsCorruptManifestAtPin(t *testing.T) {
+	h := newHarness(t)
+	w, err := h.svc.cfg.Store.Create(h.ctx, h.svc.recordPath(kindExportManifest, h.pin))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := w.Write([]byte(`{"corrupt":true}`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := w.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.svc.RequestExport(h.ctx, "cohort-1"); !shoal.IsErrorCode(err, shoal.ErrorConflict) {
+		t.Fatalf("corrupt manifest acknowledged: %v", err)
+	}
+	if _, err := h.svc.get(h.ctx, kindExport, h.pin); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("export recorded after corrupt manifest: %v", err)
+	}
+}
+
 // predictions records the chosen teacher's outputs for the fixture job.
 func (h *harness) predictions(m distillation.Manifest, pin string) string {
 	h.t.Helper()
