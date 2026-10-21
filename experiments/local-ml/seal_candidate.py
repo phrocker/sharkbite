@@ -14,10 +14,18 @@ shadow_candidate or hold, never an authorization.
 
 Usage:
   seal_candidate.py --manifest M --manifest-pin PIN --receipt R --predictions P \
-    --bundle-dir student/bundle --export-manifest export-manifest.json \
-    --dataset dataset.json --policy policy.json --output-dir sealed [--serving-root DIR]
+    --bundle-dir student/bundle --export-manifest export-manifest.json --dataset dataset.json \
+    [--export-manifest E2 --dataset D2 ...] [--evaluation-cohort COHORT] \
+    --policy evaluation-policy.json --output-dir sealed [--serving-root DIR]
 
-The policy is {"id","split","positive_label","minimum_recall","minimum_positives","minimum_families"}.
+The policy is the sealed evaluation_policy record the host declared for the
+job before its receipt (GET /api/v1/learning/jobs/{pin} returns it): {"name",
+"split", "positive_label", "minimum_recall", "minimum_specificity",
+"minimum_positives", "minimum_families", "schema", "kind", "id"}. It is
+addressed by its gates alone; the host records that it was declared for the
+job, and accepts the sealed candidate only under that policy. Every export
+the run trained on is given, paired with its dataset in order; the evaluation
+cohort may be omitted when there is one.
 """
 import argparse
 import hashlib
@@ -25,6 +33,7 @@ import json
 import math
 import shutil
 import sys
+import tempfile
 from pathlib import Path
 
 import weights_bundle
@@ -108,51 +117,93 @@ def predict(model, features):
     return model['labels'][1] if margin >= model['threshold'] else model['labels'][0]
 
 
+POLICY_FIELDS = {'name', 'split', 'positive_label', 'minimum_recall', 'minimum_specificity', 'minimum_positives',
+                 'minimum_families'}
+
+
 def validate_policy(policy):
-    if not isinstance(policy, dict) or set(policy) != {'id', 'split', 'positive_label', 'minimum_recall', 'minimum_positives', 'minimum_families'}:
-        raise Refused('evaluation policy must carry exactly id, split, positive_label, minimum_recall, minimum_positives, minimum_families')
-    if not isinstance(policy['id'], str) or not policy['id'].strip() or len(policy['id']) > 256:
-        raise Refused('evaluation policy needs an identity')
+    if not isinstance(policy, dict) or set(policy) != POLICY_FIELDS:
+        raise Refused('evaluation policy must carry exactly ' + ', '.join(sorted(POLICY_FIELDS)))
+    if not isinstance(policy['name'], str) or not policy['name'].strip() or len(policy['name']) > 256:
+        raise Refused('evaluation policy needs a name')
     if not isinstance(policy['split'], str) or not policy['split'].strip() or any(c in policy['split'] for c in ': \t\n'):
         raise Refused('evaluation policy must name one reserved split')
     if not isinstance(policy['positive_label'], str) or not policy['positive_label']:
         raise Refused('evaluation policy must name the positive label')
-    recall = policy['minimum_recall']
-    if type(recall) not in (int, float) or isinstance(recall, bool) or not math.isfinite(recall) or not 0 < recall <= 1:
-        raise Refused('minimum_recall must be in (0, 1]')
+    for key in ('minimum_recall', 'minimum_specificity'):
+        value = policy[key]
+        if type(value) not in (int, float) or isinstance(value, bool) or not math.isfinite(value) or not 0 < value <= 1:
+            raise Refused('%s must be in (0, 1]' % key)
     for key in ('minimum_positives', 'minimum_families'):
         if type(policy[key]) is not int or policy[key] < 1:
             raise Refused('minimum_positives and minimum_families must be at least 1')
     return policy
 
 
-def evaluate(model, dataset_raw, export_raw, training_ids, predictions, policy):
-    """Measure the student on the export's reserved split; mirror internal/distillation.Evaluate exactly."""
-    validate_policy(policy)
+def seal_policy(policy):
+    """Seal a validated policy as the host does (evaluation_policy record)."""
+    return seal('evaluation_policy', validate_policy(policy))
+
+
+def decode_policy_record(record):
+    """Verify a sealed evaluation_policy record; return (policy fields, id)."""
+    if not isinstance(record, dict) or record.get('kind') != 'evaluation_policy' or record.get('schema') != 1:
+        raise Refused('invalid evaluation_policy identity')
+    body = {k: v for k, v in record.items() if k != 'id'}
+    if record.get('id') != sha256(canonical(body).encode()):
+        raise Refused('invalid evaluation_policy identity')
+    fields = {k: v for k, v in body.items() if k not in ('kind', 'schema')}
+    return validate_policy(fields), record['id']
+
+
+def _decode_export(export_raw, dataset_raw):
     data = _loads(dataset_raw, 'dataset')
     export = _loads(export_raw, 'export manifest')
     if data.get('schema') != 1 or export.get('schema') != 1 or not data.get('rows'):
         raise Refused('dataset and export manifest must be schema 1 with rows')
     if sha256(dataset_raw) != export.get('dataset_sha256'):
         raise Refused("dataset bytes do not hash to the export manifest's dataset_sha256")
-    if data['task_id'] != export['task_id'] or model['task_id'] != data['task_id']:
-        raise Refused('student, dataset, and export tasks must agree')
-    if data['labels'] != model['labels']:
-        raise Refused('student labels %r are not the dataset\'s %r' % (model['labels'], data['labels']))
-    if policy['positive_label'] not in data['labels']:
+    if data['task_id'] != export['task_id']:
+        raise Refused('dataset and export tasks must agree')
+    if not export.get('cohort_id'):
+        raise Refused('export manifest names no cohort')
+    return export, data, sha256(export_raw)
+
+
+def evaluate(model, exports, evaluation_cohort, training_ids, predictions, policy):
+    """Measure the student on the evaluation cohort's reserved split; mirror internal/distillation.Evaluate exactly.
+
+    exports is a list of (export_manifest_bytes, dataset_bytes), one per cohort the run trained on."""
+    validate_policy(policy)
+    if not exports:
+        raise Refused('no export to evaluate on')
+    rows, family_of, content_of, evaluation = {}, {}, {}, None
+    for export_raw, dataset_raw in exports:
+        export, data, _ = _decode_export(export_raw, dataset_raw)
+        if model['task_id'] != data['task_id']:
+            raise Refused('student and export tasks must agree')
+        if data['labels'] != model['labels']:
+            raise Refused('student labels %r are not the dataset\'s %r' % (model['labels'], data['labels']))
+        for row in data['rows']:
+            if not row.get('id') or row['id'] in rows:
+                raise Refused('dataset rows must carry unique ids')
+            rows[row['id']] = row
+        # Content identity is the source digest behind a row, never its feature
+        # vector: a coarse feature space maps distinct content to the same point.
+        for row in export['rows']:
+            family_of[row['id']] = row.get('family_ids') or []
+            content_of[row['id']] = [s['Digest'] for s in (row.get('sources') or []) if s.get('Digest')]
+        if export['cohort_id'] == evaluation_cohort:
+            if evaluation is not None:
+                raise Refused('cohort %r is presented twice' % evaluation_cohort)
+            evaluation = export
+    if evaluation is None:
+        raise Refused('no export presented is for evaluation cohort %r' % evaluation_cohort)
+    if policy['positive_label'] not in model['labels']:
         raise Refused('policy positive label %r is not a dataset label' % policy['positive_label'])
-    rows = {}
-    for row in data['rows']:
-        if not row.get('id') or row['id'] in rows:
-            raise Refused('dataset rows must carry unique ids')
-        rows[row['id']] = row
     marker = 'split:' + policy['split']
-    # Content identity is the source digest behind a row, never its feature
-    # vector: a coarse feature space maps distinct content to the same point.
-    test_ids, families, family_of, content_of = [], set(), {}, {}
-    for row in export['rows']:
-        family_of[row['id']] = row.get('family_ids') or []
-        content_of[row['id']] = [s['Digest'] for s in (row.get('sources') or []) if s.get('Digest')]
+    test_ids, families = [], set()
+    for row in evaluation['rows']:
         if marker in (row.get('exclusion_reasons') or []):
             test_ids.append(row['id'])
             families.update(row.get('family_ids') or [])
@@ -172,8 +223,8 @@ def evaluate(model, dataset_raw, export_raw, training_ids, predictions, policy):
         reasons.append('training/evaluation family overlap: ' + ','.join(leaked_families))
     if leaked_content:
         reasons.append('training/evaluation content overlap: ' + ','.join(leaked_content))
-    assessor = export.get('label_policy_id') or 'labels'
-    positives, missed, unknown_lowered = 0, [], []
+    assessor = evaluation.get('label_policy_id') or 'labels'
+    positives, negatives, missed, false_positives, unknown_lowered = 0, 0, [], [], []
     for i in test_ids:
         if i not in rows:
             raise Refused('reserved row %r is not in the dataset' % i)
@@ -187,13 +238,20 @@ def evaluate(model, dataset_raw, export_raw, training_ids, predictions, policy):
             positives += 1
             if lowered:
                 missed.append(i)
+        else:
+            negatives += 1
+            if not lowered:
+                false_positives.append(i)
     recall = (positives - len(missed)) / positives if positives > 0 else None
-    metric = dict(assessor=assessor, positives=positives, missed_ids=missed, unknown_lowered_ids=unknown_lowered,
-                  evaluated_ids=test_ids, recall=recall)
+    specificity = (negatives - len(false_positives)) / negatives if negatives > 0 else None
+    metric = dict(assessor=assessor, positives=positives, negatives=negatives, missed_ids=missed, false_positive_ids=false_positives,
+                  unknown_lowered_ids=unknown_lowered, evaluated_ids=test_ids, recall=recall, specificity=specificity)
     if positives < policy['minimum_positives']:
         reasons.append('%s: sample gate failed: %d positives, %d required' % (assessor, positives, policy['minimum_positives']))
     if recall is None or recall < policy['minimum_recall']:
         reasons.append('%s: quality gate failed: recall below %s' % (assessor, _go_float(policy['minimum_recall'])))
+    if specificity is None or specificity < policy['minimum_specificity']:
+        reasons.append('%s: quality gate failed: specificity below %s' % (assessor, _go_float(policy['minimum_specificity'])))
     if unknown_lowered:
         reasons.append('%s: unresolved examples lowered: %s' % (assessor, ','.join(unknown_lowered)))
     if len(families) < policy['minimum_families']:
@@ -225,7 +283,10 @@ def _go_float(value):
     return text[:-2] if text.endswith('.0') else text
 
 
-def build_candidate_set(manifest, pin, receipt, predictions, bundle_dir, export_raw, dataset_raw, policy):
+def build_candidate_set(manifest, pin, receipt, predictions, bundle_dir, exports, policy_record, evaluation_cohort=None):
+    """Seal candidate, evaluation, and artifact. exports is [(export_manifest_bytes, dataset_bytes), ...], one per
+    cohort the run trained on; policy_record is the sealed evaluation_policy record the host declared."""
+    policy, policy_id = decode_policy_record(policy_record)
     if receipt.get('manifest_pin') != pin or receipt.get('status') != 'completed':
         raise Refused('the receipt is not a completed run under manifest %s' % pin)
     bundle, bundle_digest = weights_bundle.verify(bundle_dir)
@@ -246,46 +307,83 @@ def build_candidate_set(manifest, pin, receipt, predictions, bundle_dir, export_
     task_ids = sorted(t['task_id'] for t in manifest['data']['tasks'])
     if model['task_id'] not in task_ids:
         raise Refused('student task %r is outside the selection %r' % (model['task_id'], task_ids))
-    export = _loads(export_raw, 'export manifest')
-    export_pin = sha256(export_raw)
+    # Every cohort the run trained on must be presented, as the export the
+    # manifest pinned, so no training row is invisible to the leak checks.
     pinned = {e['cohort_id']: e['manifest_sha256'] for e in manifest['exports']}
-    if pinned.get(export['cohort_id']) != export_pin:
-        raise Refused('export %s for cohort %r is not the one the manifest pinned' % (export_pin, export['cohort_id']))
-    if export['cohort_id'] not in receipt.get('actual_cohorts', []):
-        raise Refused('the run did not train on cohort %r' % export['cohort_id'])
+    actual = receipt.get('actual_cohorts') or []
+    presented = {}
+    for export_raw, _ in exports:
+        export = _loads(export_raw, 'export manifest')
+        export_pin = sha256(export_raw)
+        if pinned.get(export['cohort_id']) != export_pin:
+            raise Refused('export %s for cohort %r is not the one the manifest pinned' % (export_pin, export['cohort_id']))
+        if export['cohort_id'] not in actual:
+            raise Refused('the run did not train on cohort %r' % export['cohort_id'])
+        if export['cohort_id'] in presented:
+            raise Refused('cohort %r is presented twice' % export['cohort_id'])
+        presented[export['cohort_id']] = export_pin
+    for cohort in actual:
+        if cohort not in presented:
+            raise Refused('the run trained on cohort %r but its export was not presented' % cohort)
+    training_exports = [dict(cohort_id=c, manifest_sha256=presented[c]) for c in sorted(presented)]
+    if not evaluation_cohort:
+        if len(presented) != 1:
+            raise Refused('the run trained on %d cohorts; name the one to evaluate on' % len(presented))
+        evaluation_cohort = next(iter(presented))
+    if evaluation_cohort not in presented:
+        raise Refused('the run did not train on cohort %r' % evaluation_cohort)
+    export_pin = presented[evaluation_cohort]
     training_ids = sorted(p['example_id'] for p in predictions['predictions'])
-    evaluation = evaluate(model, dataset_raw, export_raw, training_ids, predictions, policy)
-    candidate = seal('candidate', dict(dataset_id=export['cohort_id'], evaluation_policy_id=policy['id'], training_ids=training_ids,
+    evaluation = evaluate(model, exports, evaluation_cohort, training_ids, predictions, policy)
+    candidate = seal('candidate', dict(dataset_id=evaluation_cohort, evaluation_policy_id=policy_id, training_ids=training_ids,
                                        model_digest=files['weights']['sha256'], policy_predeclared=True, task_ids=task_ids,
-                                       dataset_manifest_sha256=export_pin, training_manifest_sha256=pin,
+                                       dataset_manifest_sha256=export_pin, training_manifest_sha256=pin, training_exports=training_exports,
                                        teacher_predictions_id=predictions_id, student_kind=model['kind']))
     sealed_evaluation = seal('promotion_record', dict(
-        candidate_id=candidate['id'], dataset_id=export['cohort_id'], evaluation_policy_id=policy['id'],
+        candidate_id=candidate['id'], dataset_id=evaluation_cohort, evaluation_policy_id=policy_id, policy=dict(policy),
         dataset_manifest_sha256=export_pin, predictions_id=predictions_id, split=evaluation['split'],
         evaluated_ids=evaluation['evaluated_ids'], metrics=evaluation['metrics'], comparisons=evaluation['comparisons'],
         families=evaluation['families'], reasons=evaluation['reasons'], disposition=evaluation['disposition'],
         permitted_action=PERMITTED_ACTION, optimization_enabled=False, limitation=EVALUATION_LIMITATION))
     artifact = seal('candidate_artifact', dict(
-        candidate_id=candidate['id'], evaluation_id=sealed_evaluation['id'], dataset_id=export['cohort_id'],
+        candidate_id=candidate['id'], evaluation_id=sealed_evaluation['id'], dataset_id=evaluation_cohort,
         model_digest=files['weights']['sha256'], runtime_digest=files['runtime']['sha256'], bundle_digest=bundle_digest,
         bundle_files=[dict(path=f['path'], role=f['role'], size=f['size'], sha256=f['sha256']) for f in bundle['files']]))
     return dict(candidate=candidate, evaluation=sealed_evaluation, artifact=artifact), bundle_digest
 
 
 def publish(bundle_dir, serving_root, digest):
-    """Publish the verified bundle at <serving-root>/<digest>, never replacing an occupant."""
+    """Publish the verified bundle at <serving-root>/<digest>, never replacing an occupant.
+
+    Staging is a directory this process created and nobody else can name, so
+    two publishers of one digest cannot interleave their copies; whichever
+    renames first wins and the other finds the same bundle present."""
     dest = Path(serving_root) / digest
     if dest.exists():
         _, existing = weights_bundle.verify(dest)
         if existing != digest:
             raise Refused('serving root already holds a different bundle under %s' % digest)
         return 'present'
-    staging = Path(serving_root) / ('.staging-' + digest)
-    if staging.exists():
-        shutil.rmtree(staging)
-    shutil.copytree(bundle_dir, staging)
-    weights_bundle.publish_exclusive(staging, dest)
-    return 'published'
+    Path(serving_root).mkdir(parents=True, exist_ok=True)
+    staging = Path(tempfile.mkdtemp(dir=serving_root, prefix='.staging-'))
+    try:
+        for entry in sorted(Path(bundle_dir).iterdir()):
+            if not entry.is_file() or entry.is_symlink():
+                raise Refused('bundle entry %s is not a regular file' % entry.name)
+            shutil.copyfile(entry, staging / entry.name)
+        _, staged = weights_bundle.verify(staging)
+        if staged != digest:
+            raise Refused('staged bundle hashes to %s, not %s' % (staged, digest))
+        try:
+            weights_bundle.publish_exclusive(staging, dest)
+        except FileExistsError:
+            _, existing = weights_bundle.verify(dest)
+            if existing != digest:
+                raise Refused('serving root already holds a different bundle under %s' % digest)
+            return 'present'
+        return 'published'
+    finally:
+        shutil.rmtree(staging, ignore_errors=True)
 
 
 def main(argv=None):
@@ -295,9 +393,10 @@ def main(argv=None):
     parser.add_argument('--receipt', required=True)
     parser.add_argument('--predictions', required=True)
     parser.add_argument('--bundle-dir', required=True)
-    parser.add_argument('--export-manifest', required=True)
-    parser.add_argument('--dataset', required=True)
-    parser.add_argument('--policy', required=True)
+    parser.add_argument('--export-manifest', required=True, action='append', help='repeat per cohort the run trained on')
+    parser.add_argument('--dataset', required=True, action='append', help='one per --export-manifest, in order')
+    parser.add_argument('--evaluation-cohort', help='the cohort whose reserved split is measured (required with several exports)')
+    parser.add_argument('--policy', required=True, help='the sealed evaluation_policy record the host declared for the job')
     parser.add_argument('--output-dir', required=True)
     parser.add_argument('--serving-root', help='publish the bundle at <serving-root>/<digest> before sealing')
     args = parser.parse_args(argv)
@@ -307,10 +406,12 @@ def main(argv=None):
             raise Refused('manifest bytes do not hash to the declared pin')
         receipt, _ = load_json(args.receipt)
         predictions, _ = load_json(args.predictions)
-        export_raw = Path(args.export_manifest).read_bytes()
-        dataset_raw = Path(args.dataset).read_bytes()
-        policy, _ = load_json(args.policy)
-        records, digest = build_candidate_set(manifest, args.manifest_pin, receipt, predictions, args.bundle_dir, export_raw, dataset_raw, policy)
+        if len(args.export_manifest) != len(args.dataset):
+            parser.error('one --dataset per --export-manifest')
+        exports = [(Path(e).read_bytes(), Path(d).read_bytes()) for e, d in zip(args.export_manifest, args.dataset)]
+        policy_record, _ = load_json(args.policy)
+        records, digest = build_candidate_set(manifest, args.manifest_pin, receipt, predictions, args.bundle_dir, exports, policy_record,
+                                              args.evaluation_cohort)
         placement = publish(args.bundle_dir, args.serving_root, digest) if args.serving_root else 'not published'
     except Refused as error:
         parser.exit(3, 'sealing refused: %s\n' % error)

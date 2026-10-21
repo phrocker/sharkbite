@@ -37,13 +37,29 @@ func fixtureInput(t *testing.T) CandidateInput {
 	if err != nil {
 		t.Fatal(err)
 	}
-	policy, err := DecodeEvaluationPolicy(read("python-policy.json"))
+	policy, err := weightsbundle.DecodeRecord(read("python-policy.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	return CandidateInput{Manifest: manifest, Pin: pin, Receipt: receipt, Predictions: predictions, Bundle: bundle,
-		Weights: read(filepath.Join("python-bundle", "model.json")), ExportManifest: read("python-export-manifest.json"),
-		Dataset: read("python-dataset.json"), Policy: policy}
+		Weights: read(filepath.Join("python-bundle", "model.json")),
+		Exports: []ExportInput{{Manifest: read("python-export-manifest.json"), Dataset: read("python-dataset.json")}}, Policy: policy}
+}
+
+// resealed returns the fixture policy with one change, sealed again, so the
+// record verifies but says something else.
+func resealed(t *testing.T, in CandidateInput, mutate func(*EvaluationPolicy)) weightsbundle.Record {
+	t.Helper()
+	policy, _, err := DecodePolicyRecord(in.Policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mutate(&policy)
+	record, err := weightsbundle.Seal(weightsbundle.KindEvaluationPolicy, policy.Fields())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return record
 }
 
 // Every input the set is sealed from is bound to the others: a bundle the
@@ -58,13 +74,35 @@ func TestCandidateSetRefusesInputsThatDoNotBelongTogether(t *testing.T) {
 		"predictions of another": func(in *CandidateInput) { in.Predictions.Predictions = in.Predictions.Predictions[:1] },
 		"weights swapped":        func(in *CandidateInput) { in.Weights = []byte(`{"schema":1,"kind":"linear-student"}`) },
 		"export not pinned": func(in *CandidateInput) {
-			in.ExportManifest = append([]byte(nil), in.ExportManifest[:len(in.ExportManifest)-1]...)
+			m := in.Exports[0].Manifest
+			in.Exports[0].Manifest = append([]byte(nil), m[:len(m)-1]...)
 		},
-		"dataset altered":        func(in *CandidateInput) { in.Dataset = append(append([]byte(nil), in.Dataset...), ' ') },
-		"policy without split":   func(in *CandidateInput) { in.Policy.Split = "" },
-		"policy recall over one": func(in *CandidateInput) { in.Policy.MinimumRecall = 1.5 },
-		"policy label unknown":   func(in *CandidateInput) { in.Policy.PositiveLabel = "maybe" },
-		"split not reserved":     func(in *CandidateInput) { in.Policy.Split = "nope" },
+		"dataset altered": func(in *CandidateInput) {
+			in.Exports[0].Dataset = append(append([]byte(nil), in.Exports[0].Dataset...), ' ')
+		},
+		"export missing":            func(in *CandidateInput) { in.Exports = nil },
+		"export presented twice":    func(in *CandidateInput) { in.Exports = append(in.Exports, in.Exports[0]) },
+		"evaluation cohort foreign": func(in *CandidateInput) { in.EvaluationCohort = "cohort-9" },
+		"policy tampered": func(in *CandidateInput) {
+			in.Policy = cloneRecord(in.Policy)
+			in.Policy["minimum_positives"] = 1
+			in.Policy["name"] = "edited after sealing"
+		},
+		"policy without split": func(in *CandidateInput) {
+			in.Policy = resealed(t, *in, func(p *EvaluationPolicy) { p.Split = "" })
+		},
+		"policy recall over one": func(in *CandidateInput) {
+			in.Policy = resealed(t, *in, func(p *EvaluationPolicy) { p.MinimumRecall = 1.5 })
+		},
+		"policy specificity zero": func(in *CandidateInput) {
+			in.Policy = resealed(t, *in, func(p *EvaluationPolicy) { p.MinimumSpecificity = 0 })
+		},
+		"policy label unknown": func(in *CandidateInput) {
+			in.Policy = resealed(t, *in, func(p *EvaluationPolicy) { p.PositiveLabel = "maybe" })
+		},
+		"split not reserved": func(in *CandidateInput) {
+			in.Policy = resealed(t, *in, func(p *EvaluationPolicy) { p.Split = "nope" })
+		},
 	} {
 		in := fixtureInput(t)
 		mutate(&in)
@@ -77,12 +115,30 @@ func TestCandidateSetRefusesInputsThatDoNotBelongTogether(t *testing.T) {
 	}
 }
 
+func cloneRecord(r weightsbundle.Record) weightsbundle.Record {
+	out := make(weightsbundle.Record, len(r))
+	for k, v := range r {
+		out[k] = v
+	}
+	return out
+}
+
+func fixturePolicy(t *testing.T, in CandidateInput) EvaluationPolicy {
+	t.Helper()
+	policy, _, err := DecodePolicyRecord(in.Policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return policy
+}
+
 // A gate the policy declares that the student does not clear, or a leak
 // between training and evaluation membership, is a reason and a hold; the
-// evaluation never authorizes anything beyond full review.
+// evaluation never authorizes anything beyond full review, and it records
+// the policy it was held to.
 func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 	in := fixtureInput(t)
-	in.Policy.MinimumPositives = 5
+	in.Policy = resealed(t, in, func(p *EvaluationPolicy) { p.MinimumPositives = 5 })
 	set, err := BuildCandidateSet(in)
 	if err != nil {
 		t.Fatal(err)
@@ -94,11 +150,16 @@ func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 	if set.Evaluation["permitted_action"] != PermittedAction || set.Evaluation["optimization_enabled"] != false {
 		t.Fatalf("%v", set.Evaluation)
 	}
+	recorded, _ := set.Evaluation["policy"].(map[string]any)
+	if recorded["minimum_positives"] != json.Number("5") || set.Evaluation["evaluation_policy_id"] != in.Policy["id"] || set.Candidate["evaluation_policy_id"] != in.Policy["id"] {
+		t.Fatalf("policy not recorded on the evaluation: %v", set.Evaluation)
+	}
 	student, err := DecodeLinearStudent(in.Weights)
 	if err != nil {
 		t.Fatal(err)
 	}
-	leaked, err := Evaluate(student, in.Dataset, in.ExportManifest, []string{"row-4", "row-0"}, nil, in.Policy)
+	policy := fixturePolicy(t, fixtureInput(t))
+	leaked, err := Evaluate(student, in.Exports, "cohort-1", []string{"row-4", "row-0"}, nil, policy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +173,7 @@ func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 	// reserved row whose source is also behind a training row is a leak,
 	// while two rows that merely share a feature vector are not.
 	var export map[string]any
-	if err := json.Unmarshal(in.ExportManifest, &export); err != nil {
+	if err := json.Unmarshal(in.Exports[0].Manifest, &export); err != nil {
 		t.Fatal(err)
 	}
 	rows := export["rows"].([]any)
@@ -122,9 +183,9 @@ func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 		byID[row["id"].(string)] = row
 	}
 	byID["row-4"]["sources"] = byID["row-0"]["sources"]
-	policy := fixtureInput(t).Policy
 	shared, _ := json.Marshal(export)
-	content, err := Evaluate(student, in.Dataset, shared, []string{"row-0", "row-1", "row-2"}, nil, policy)
+	withShared := []ExportInput{{Manifest: shared, Dataset: in.Exports[0].Dataset}}
+	content, err := Evaluate(student, withShared, "cohort-1", []string{"row-0", "row-1", "row-2"}, nil, policy)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,11 +195,11 @@ func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 	byID["row-4"]["sources"] = []any{map[string]any{"Digest": "elsewhere"}}
 	byID["row-4"]["feature_sha256"] = byID["row-0"]["feature_sha256"]
 	shared, _ = json.Marshal(export)
-	if same, err := Evaluate(student, in.Dataset, shared, []string{"row-0", "row-1", "row-2"}, nil, policy); err != nil || same.Disposition != "shadow_candidate" {
+	withShared = []ExportInput{{Manifest: shared, Dataset: in.Exports[0].Dataset}}
+	if same, err := Evaluate(student, withShared, "cohort-1", []string{"row-0", "row-1", "row-2"}, nil, policy); err != nil || same.Disposition != "shadow_candidate" {
 		t.Fatalf("feature equality treated as a leak: %+v %v", same, err)
 	}
-	in.Policy.MinimumPositives = 1
-	in.Policy.MinimumRecall = 1
+	in.Policy = resealed(t, fixtureInput(t), func(p *EvaluationPolicy) { p.MinimumRecall, p.MinimumSpecificity = 1, 1 })
 	passed, err := BuildCandidateSet(in)
 	if err != nil {
 		t.Fatal(err)
@@ -151,6 +212,122 @@ func TestEvaluationHoldsOnGatesAndLeaks(t *testing.T) {
 	again, _ := BuildCandidateSet(in)
 	if again.Evaluation["id"] != passed.Evaluation["id"] || again.Candidate["id"] != passed.Candidate["id"] || again.Artifact["id"] != passed.Artifact["id"] {
 		t.Fatal("sealing is not deterministic")
+	}
+}
+
+// A student that answers the same label for every row clears the recall
+// gate or the specificity gate, never both; the metrics record which rows
+// it got wrong on each side.
+func TestConstantStudentCannotPassBothQualityGates(t *testing.T) {
+	in := fixtureInput(t)
+	policy := fixturePolicy(t, in)
+	student, err := DecodeLinearStudent(in.Weights)
+	if err != nil {
+		t.Fatal(err)
+	}
+	alwaysYes := student
+	alwaysYes.Coefficients = make([]float64, len(student.Coefficients))
+	alwaysYes.Intercept, alwaysYes.Threshold = 100, 0
+	yes, err := Evaluate(alwaysYes, in.Exports, "cohort-1", nil, nil, policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if yes.Disposition != "hold" || !strings.Contains(strings.Join(yes.Reasons, ";"), "specificity below") || yes.Metrics[0]["recall"] != 1.0 || yes.Metrics[0]["specificity"] != 0.0 {
+		t.Fatalf("always-positive student passed: %+v", yes)
+	}
+	if fp, _ := yes.Metrics[0]["false_positive_ids"].([]string); len(fp) != 1 || fp[0] != "row-5" {
+		t.Fatalf("false positives not recorded: %+v", yes.Metrics[0])
+	}
+	alwaysNo := alwaysYes
+	alwaysNo.Intercept = -100
+	no, err := Evaluate(alwaysNo, in.Exports, "cohort-1", nil, nil, policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if no.Disposition != "hold" || !strings.Contains(strings.Join(no.Reasons, ";"), "recall below") || no.Metrics[0]["specificity"] != 1.0 {
+		t.Fatalf("always-negative student passed: %+v", no)
+	}
+	// Flipping the positive label does not help: the constant answer is
+	// then the negative class and fails the specificity gate instead.
+	flipped := policy
+	flipped.PositiveLabel = "no"
+	if out, err := Evaluate(alwaysNo, in.Exports, "cohort-1", nil, nil, flipped); err != nil || out.Disposition != "hold" || !strings.Contains(strings.Join(out.Reasons, ";"), "specificity below") {
+		t.Fatalf("flipped label let a constant student through: %+v %v", out, err)
+	}
+}
+
+// A run that trained on several cohorts is checked for leaks against every
+// one of them: a reserved row of the evaluation cohort whose source content
+// is behind a training row of another cohort is a leak. (A training cohort
+// whose export is not presented refuses the seal; the receipt verifier
+// already binds the actual cohorts to the manifest, so that refusal is
+// exercised through the export-missing case above.)
+func TestLeaksAreCheckedAcrossEveryTrainingCohort(t *testing.T) {
+	in := fixtureInput(t)
+	policy := fixturePolicy(t, in)
+	student, err := DecodeLinearStudent(in.Weights)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// A second cohort whose only row carries the source content of the
+	// evaluation cohort's reserved row-4, under an id the first export
+	// never saw.
+	var export map[string]any
+	if err := json.Unmarshal(in.Exports[0].Manifest, &export); err != nil {
+		t.Fatal(err)
+	}
+	var dataset map[string]any
+	if err := json.Unmarshal(in.Exports[0].Dataset, &dataset); err != nil {
+		t.Fatal(err)
+	}
+	rows := export["rows"].([]any)
+	var row4 map[string]any
+	for _, r := range rows {
+		if r.(map[string]any)["id"] == "row-4" {
+			row4 = r.(map[string]any)
+		}
+	}
+	otherRow := map[string]any{}
+	for k, v := range row4 {
+		otherRow[k] = v
+	}
+	otherRow["id"] = "b-row-9"
+	otherRow["family_ids"] = []any{"family-b"}
+	otherRow["exclusion_reasons"] = []any{}
+	dataRows := dataset["rows"].([]any)
+	var dataRow4 map[string]any
+	for _, r := range dataRows {
+		if r.(map[string]any)["id"] == "row-4" {
+			dataRow4 = r.(map[string]any)
+		}
+	}
+	otherData := map[string]any{}
+	for k, v := range dataRow4 {
+		otherData[k] = v
+	}
+	otherData["id"] = "b-row-9"
+	otherData["split"] = "train"
+	dataset["rows"] = []any{otherData}
+	otherDataset, _ := json.Marshal(dataset)
+	export["rows"] = []any{otherRow}
+	export["cohort_id"] = "cohort-2"
+	export["dataset_sha256"] = sha256Hex(otherDataset)
+	otherExport, _ := json.Marshal(export)
+	exports := append(in.Exports, ExportInput{Manifest: otherExport, Dataset: otherDataset})
+	// Without the second export the leak is invisible; with it, it is a hold.
+	blind, err := Evaluate(student, in.Exports, "cohort-1", []string{"row-0", "row-1", "row-2", "b-row-9"}, nil, policy)
+	if err != nil || blind.Disposition != "shadow_candidate" {
+		t.Fatalf("baseline: %+v %v", blind, err)
+	}
+	seen, err := Evaluate(student, exports, "cohort-1", []string{"row-0", "row-1", "row-2", "b-row-9"}, nil, policy)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if seen.Disposition != "hold" || !strings.Contains(strings.Join(seen.Reasons, ";"), "content overlap: row-4") {
+		t.Fatalf("cross-cohort content leak missed: %+v", seen)
+	}
+	if _, err := Evaluate(student, exports, "", nil, nil, policy); err == nil {
+		t.Fatal("no evaluation cohort named among several")
 	}
 }
 

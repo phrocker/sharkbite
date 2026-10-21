@@ -333,6 +333,15 @@
     return post(`${ROOT}/jobs`, manifest);
   });
   onSubmit("learning-predictions-form", "Teacher predictions", "predictions", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-predictions-pin"))}/predictions`, jsonValue("learning-predictions-json")));
+  onSubmit("learning-policy-form", "Evaluation policy", "policy", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-policy-pin"))}/policy`, {
+    name: required("learning-policy-name"),
+    split: required("learning-policy-split"),
+    positive_label: required("learning-policy-positive"),
+    minimum_recall: number("learning-policy-recall"),
+    minimum_specificity: number("learning-policy-specificity"),
+    minimum_positives: integer("learning-policy-positives"),
+    minimum_families: integer("learning-policy-families"),
+  }));
   onSubmit("learning-receipt-form", "Receipt submission", "receipt", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-receipt-pin"))}/receipt`, jsonValue("learning-receipt-json")));
   onSubmit("learning-evaluations-form", "Evaluations", "evaluations", () => requestJSON(`${ROOT}/candidates/${encodeURIComponent(required("learning-evaluations-candidate"))}/evaluations`));
   onSubmit("learning-candidate-form", "Candidate record", "candidate", () => post(`${ROOT}/candidates`, jsonValue("learning-candidate-json")));
@@ -342,18 +351,7 @@
     if (!files.length) throw new Error("learning-seal-bundle requires the bundle's files");
     const bundle = {};
     for (const file of files) bundle[file.name] = await fileBase64(file);
-    const body = {
-      manifest_pin: required("learning-seal-pin"),
-      bundle,
-      evaluation_policy: {
-        id: required("learning-seal-policy-id"),
-        split: required("learning-seal-split"),
-        positive_label: required("learning-seal-positive"),
-        minimum_recall: number("learning-seal-recall"),
-        minimum_positives: integer("learning-seal-positives"),
-        minimum_families: integer("learning-seal-families"),
-      },
-    };
+    const body = {manifest_pin: required("learning-seal-pin"), bundle};
     const cohort = optional("learning-seal-cohort");
     if (cohort) body.cohort_id = cohort;
     return post(`${ROOT}/candidates/seal`, body);

@@ -170,15 +170,21 @@ contract test checks against `python-candidate-set.json`.
 "$PYTHON" seal_candidate.py --manifest manifest.json --manifest-pin "$PIN" \
   --receipt student/distillation-receipt.json --predictions student/teacher-predictions.json \
   --bundle-dir student/bundle --export-manifest export-manifest.json --dataset dataset.json \
-  --policy policy.json --output-dir sealed [--serving-root /var/lib/shoal/releases]
+  --policy evaluation-policy.json --output-dir sealed [--serving-root /var/lib/shoal/releases]
 ```
 
-The policy is declared before the outputs are looked at:
-`{"id","split","positive_label","minimum_recall","minimum_positives","minimum_families"}`.
-The evaluation measures the student on the rows the export reserved for the
-split against the adjudicated labels, compares it with the recorded teacher
-on the rows the teacher labelled, and records every unmet gate and every
-leak between training and evaluation membership as a reason. The outputs are
+`--policy` is the sealed `evaluation_policy` record the host declared for the
+job before its receipt (`POST /api/v1/learning/jobs/{pin}/policy`; `GET
+/api/v1/learning/jobs/{pin}` returns it). A policy written by hand seals
+records the host refuses, because the candidate's policy must be the one
+declared there. `--export-manifest` and `--dataset` are repeated, paired in
+order, for every cohort the run trained on; `--evaluation-cohort` names the
+one whose reserved split is measured when there are several. The evaluation
+measures the student against the adjudicated labels (recall over verified
+positives, specificity over verified negatives), compares it with the
+recorded teacher on the rows the teacher labelled, and records every unmet
+gate and every leak between the reserved rows and any training row of any
+cohort as a reason. The outputs are
 `candidate.json` (`{candidate, artifact}`) and `evaluation.json` for the
 candidate and evaluation routes or the console's forms, `promote.json` for
 the promotion route, and `candidate-set.json`. With `--serving-root` the

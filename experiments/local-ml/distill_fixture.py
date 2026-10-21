@@ -44,11 +44,13 @@ def main(argv):
     if bundle_out.exists():
         shutil.rmtree(bundle_out)
     shutil.copytree(out / 'job' / 'bundle', bundle_out)
-    policy = dict(id='fixture-evaluation-policy', split='test', positive_label='yes', minimum_recall=0.5,
-                  minimum_positives=1, minimum_families=1)
+    # The policy is the sealed record the host declares for the job before
+    # its receipt; the fixture seals it the same way.
+    policy = seal_candidate.seal_policy(dict(name='fixture-evaluation-policy', split='test', positive_label='yes',
+                                             minimum_recall=0.5, minimum_specificity=0.5, minimum_positives=1, minimum_families=1))
     (out / 'python-policy.json').write_bytes(distill.canonical(policy).encode())
     records, _ = seal_candidate.build_candidate_set(manifest, pin, receipt, json.loads((out / 'python-predictions.json').read_bytes()),
-                                                    bundle_out, export_manifest, data, policy)
+                                                    bundle_out, [(export_manifest, data)], policy)
     (out / 'python-candidate-set.json').write_bytes(distill.canonical(records).encode())
     shutil.rmtree(out / 'job')
     print(json.dumps(dict(pin=pin, bundle_digest=receipt['bundle_digest'], disposition=records['evaluation']['disposition']), sort_keys=True))

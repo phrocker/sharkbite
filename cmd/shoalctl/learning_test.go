@@ -63,10 +63,27 @@ func TestLearningCandidateSealsTheFixtureIdentically(t *testing.T) {
 	if !strings.Contains(stdout.String(), `"bundle":"present"`) {
 		t.Fatalf("second run: %s", stdout.String())
 	}
-	// A policy declared after the fact cannot be slipped in: a missing policy
-	// is a usage error, and a foreign pin is refused before anything is sealed.
+	// A policy written by hand is not the host's sealed record and is
+	// refused; a missing policy is a usage error; one -dataset per
+	// -export-manifest; and a foreign pin is refused before anything is sealed.
+	handWritten := filepath.Join(t.TempDir(), "policy.json")
+	if err := os.WriteFile(handWritten, []byte(`{"name":"mine","split":"test","positive_label":"yes","minimum_recall":0.5,"minimum_specificity":0.5,"minimum_positives":1,"minimum_families":1}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	unsealed := append([]string(nil), args...)
+	for i, a := range unsealed {
+		if a == "-policy" {
+			unsealed[i+1] = handWritten
+		}
+	}
+	if err := run(unsealed, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "evaluation_policy identity") {
+		t.Fatalf("hand-written policy: %v", err)
+	}
 	if err := run([]string{"learning", "candidate", "-manifest", filepath.Join(fixture, "python-manifest.json")}, &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "requires") {
 		t.Fatalf("missing flags: %v", err)
+	}
+	if err := run(append(append([]string(nil), args...), "-dataset", filepath.Join(fixture, "python-dataset.json")), &stdout, &stderr); err == nil || !strings.Contains(err.Error(), "one -dataset per -export-manifest") {
+		t.Fatalf("unpaired dataset: %v", err)
 	}
 	wrong := append([]string(nil), args...)
 	wrong[5] = strings.Repeat("0", 64)

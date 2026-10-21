@@ -211,6 +211,18 @@
               <label for="learning-job-parameters">Generation parameters JSON<textarea id="learning-job-parameters" required spellcheck="false" placeholder='{"temperature":0.0}'></textarea></label>
               <button type="submit">Submit manifest</button>
             </form>
+            <form id="learning-policy-form" class="stack decision-secondary-form">
+              <p class="muted">Declare how the run will be judged before its outputs exist. The policy is sealed against the manifest; a completed receipt is refused until one is declared, and a declaration after the receipt is refused.</p>
+              <label for="learning-policy-pin">Manifest pin<input id="learning-policy-pin" required autocomplete="off" spellcheck="false"></label>
+              <label for="learning-policy-name">Policy name<input id="learning-policy-name" required autocomplete="off" spellcheck="false" placeholder="a name for this policy"></label>
+              <label for="learning-policy-split">Reserved split<input id="learning-policy-split" required autocomplete="off" spellcheck="false" value="test"></label>
+              <label for="learning-policy-positive">Positive label<input id="learning-policy-positive" required autocomplete="off" spellcheck="false" placeholder="the dataset label counted as a positive"></label>
+              <label for="learning-policy-recall">Minimum recall (0, 1]<input id="learning-policy-recall" required inputmode="decimal" value="0.5"></label>
+              <label for="learning-policy-specificity">Minimum specificity (0, 1]<input id="learning-policy-specificity" required inputmode="decimal" value="0.5"></label>
+              <label for="learning-policy-positives">Minimum positives<input id="learning-policy-positives" required inputmode="numeric" value="1"></label>
+              <label for="learning-policy-families">Minimum independent families<input id="learning-policy-families" required inputmode="numeric" value="1"></label>
+              <button type="submit">Declare evaluation policy (before the receipt)</button>
+            </form>
             <form id="learning-predictions-form" class="stack decision-secondary-form">
               <label for="learning-predictions-pin">Manifest pin<input id="learning-predictions-pin" required autocomplete="off" spellcheck="false"></label>
               <label for="learning-predictions-json">Teacher predictions JSON (the trainer's teacher-predictions.json)<textarea id="learning-predictions-json" required spellcheck="false"></textarea></label>
@@ -230,16 +242,10 @@
               <button type="submit">Show verdicts per assessor</button>
             </form>
             <form id="learning-seal-form" class="stack decision-secondary-form">
-              <p class="muted">Seal a completed run: the host rebuilds the candidate, evaluation, and artifact from the manifest, receipt, prediction set, and export it already recorded, publishes the bundle on the serving root, and measures the student on the export's reserved split under the policy declared here. The disposition is shadow_candidate or hold, never an authorization.</p>
+              <p class="muted">Seal a completed run: the host rebuilds the candidate, evaluation, and artifact from the manifest, receipt, prediction set, the policy declared before the receipt, and every export the run consumed, publishes the bundle on the serving root, and measures the student on the reserved split. The disposition is shadow_candidate or hold, never an authorization.</p>
               <label for="learning-seal-pin">Manifest pin<input id="learning-seal-pin" required autocomplete="off" spellcheck="false" placeholder="64-hex pin the job was recorded under"></label>
-              <label for="learning-seal-cohort">Cohort ID<input id="learning-seal-cohort" autocomplete="off" spellcheck="false" placeholder="optional when the job admits one cohort"></label>
+              <label for="learning-seal-cohort">Evaluation cohort ID<input id="learning-seal-cohort" autocomplete="off" spellcheck="false" placeholder="optional when the run trained on one cohort"></label>
               <label for="learning-seal-bundle">Bundle files (bundle.json, model.json, runtime.json)<input id="learning-seal-bundle" type="file" multiple required></label>
-              <label for="learning-seal-policy-id">Evaluation policy ID<input id="learning-seal-policy-id" required autocomplete="off" spellcheck="false" placeholder="declared before the run's outputs are looked at"></label>
-              <label for="learning-seal-split">Reserved split<input id="learning-seal-split" required autocomplete="off" spellcheck="false" value="test"></label>
-              <label for="learning-seal-positive">Positive label<input id="learning-seal-positive" required autocomplete="off" spellcheck="false" placeholder="the dataset label counted as a positive"></label>
-              <label for="learning-seal-recall">Minimum recall (0, 1]<input id="learning-seal-recall" required inputmode="decimal" value="0.5"></label>
-              <label for="learning-seal-positives">Minimum positives<input id="learning-seal-positives" required inputmode="numeric" value="1"></label>
-              <label for="learning-seal-families">Minimum independent families<input id="learning-seal-families" required inputmode="numeric" value="1"></label>
               <button type="submit">Seal run as candidate</button>
             </form>
             <form id="learning-candidate-form" class="stack decision-secondary-form">

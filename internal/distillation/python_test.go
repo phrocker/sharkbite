@@ -89,15 +89,18 @@ func verifyPythonRecords(t *testing.T, dir string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	policy, err := DecodeEvaluationPolicy(read("python-policy.json"))
+	policy, err := weightsbundle.DecodeRecord(read("python-policy.json"))
 	if err != nil {
 		t.Fatal(err)
+	}
+	if decoded, _, err := DecodePolicyRecord(policy); err != nil || decoded.MinimumSpecificity != 0.5 {
+		t.Fatalf("python policy record: %+v %v", decoded, err)
 	}
 	weightsFile, _ := bundle.File(weightsbundle.RoleWeights)
 	sealed, err := BuildCandidateSet(CandidateInput{
 		Manifest: manifest, Pin: pin, Receipt: receipt, Predictions: predictions, Bundle: bundle,
-		Weights: read(filepath.Join("python-bundle", weightsFile.Path)), ExportManifest: read("python-export-manifest.json"),
-		Dataset: read("python-dataset.json"), Policy: policy,
+		Weights: read(filepath.Join("python-bundle", weightsFile.Path)),
+		Exports: []ExportInput{{Manifest: read("python-export-manifest.json"), Dataset: read("python-dataset.json")}}, Policy: policy,
 	})
 	if err != nil {
 		t.Fatal(err)

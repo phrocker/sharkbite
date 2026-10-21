@@ -15,6 +15,10 @@ const (
 	KindPromotionApproval = "promotion_approval"
 	KindRollbackApproval  = "rollback_approval"
 	KindRelease           = "model_release"
+	// KindEvaluationPolicy is the policy a run's evaluation is measured
+	// under, sealed and bound to the run's manifest before its receipt
+	// exists.
+	KindEvaluationPolicy = "evaluation_policy"
 )
 
 // Release states.

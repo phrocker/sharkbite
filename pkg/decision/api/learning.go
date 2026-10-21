@@ -50,6 +50,9 @@ type LearningProvider interface {
 	Job(ctx context.Context, manifestPin string) (json.RawMessage, error)
 	SubmitJob(ctx context.Context, manifest json.RawMessage) (json.RawMessage, error)
 	SubmitPredictions(ctx context.Context, manifestPin string, predictions json.RawMessage) (json.RawMessage, error)
+	// DeclarePolicy seals the evaluation policy a run will be judged under,
+	// bound to the manifest, while no receipt is recorded for the job.
+	DeclarePolicy(ctx context.Context, manifestPin string, policy json.RawMessage) (json.RawMessage, error)
 	SubmitReceipt(ctx context.Context, manifestPin string, receipt json.RawMessage) (json.RawMessage, error)
 	Candidates(ctx context.Context) (json.RawMessage, error)
 	SubmitCandidate(ctx context.Context, body json.RawMessage) (json.RawMessage, error)

@@ -33,24 +33,25 @@ type ServingPredictor interface {
 
 // SealCandidate turns a completed run into recorded candidate, evaluation,
 // and artifact records in one step. The body carries the manifest pin, the
-// bundle's files, and the evaluation policy declared for the run:
+// bundle's files, and, when the run trained on several cohorts, the one to
+// evaluate on:
 //
-//	{"manifest_pin": "<64 hex>", "cohort_id": "<optional when the job has one>",
-//	 "bundle": {"bundle.json": "<base64>", "model.json": "<base64>", "runtime.json": "<base64>"},
-//	 "evaluation_policy": {"id","split","positive_label","minimum_recall","minimum_positives","minimum_families"}}
+//	{"manifest_pin": "<64 hex>", "cohort_id": "<optional when the run trained on one>",
+//	 "bundle": {"bundle.json": "<base64>", "model.json": "<base64>", "runtime.json": "<base64>"}}
 //
-// The bundle must be the one the recorded receipt produced; it is verified
-// in staging, published on the serving root without replacing anything, and
-// the records are sealed from the recorded manifest, receipt, prediction set,
-// and export, so a body cannot smuggle a claim the run did not make. The
-// evaluation measures the student on the export's reserved split; its
-// disposition is shadow_candidate or hold, never an authorization.
+// The bundle must be the one the recorded receipt produced, and is checked
+// before anything else is fetched; it is verified in staging, published on
+// the serving root without replacing anything, and the records are sealed
+// from the recorded manifest, receipt, prediction set, the policy declared
+// before the receipt, and every export the run consumed, so a body cannot
+// smuggle a claim the run did not make. The evaluation measures the student
+// on the chosen export's reserved split; its disposition is shadow_candidate
+// or hold, never an authorization.
 func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.RawMessage, error) {
 	var body struct {
-		ManifestPin      string            `json:"manifest_pin"`
-		CohortID         string            `json:"cohort_id"`
-		Bundle           map[string]string `json:"bundle"`
-		EvaluationPolicy json.RawMessage   `json:"evaluation_policy"`
+		ManifestPin string            `json:"manifest_pin"`
+		CohortID    string            `json:"cohort_id"`
+		Bundle      map[string]string `json:"bundle"`
 	}
 	if err := weightsbundle.StrictUnmarshal(raw, &body); err != nil {
 		return nil, invalid("body: " + err.Error())
@@ -60,13 +61,6 @@ func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.
 	}
 	if len(body.Bundle) == 0 || len(body.Bundle) > MaxSealBundleFiles {
 		return nil, invalid(fmt.Sprintf("bundle must carry 1..%d files", MaxSealBundleFiles))
-	}
-	if len(body.EvaluationPolicy) == 0 {
-		return nil, invalid("evaluation_policy is required: the policy is declared before the run's outputs are looked at")
-	}
-	policy, err := distillation.DecodeEvaluationPolicy(body.EvaluationPolicy)
-	if err != nil {
-		return nil, s.classified(err)
 	}
 	files := make(map[string][]byte, len(body.Bundle))
 	total := 0
@@ -96,7 +90,10 @@ func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.
 	}
 	receiptRecord, err := s.get(ctx, kindReceipt, pin)
 	if err != nil {
-		return nil, refused(fmt.Errorf("manifest %s has no recorded receipt; submit the run's receipt first", pin))
+		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			return nil, refused(fmt.Errorf("manifest %s has no recorded receipt; submit the run's receipt first", pin))
+		}
+		return nil, s.classified(err)
 	}
 	var receipt distillation.Receipt
 	if err := decodeInto(receiptRecord, &receipt); err != nil {
@@ -104,37 +101,25 @@ func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.
 	}
 	predictionsRecord, err := s.get(ctx, kindPredictions, pin)
 	if err != nil {
-		return nil, refused(fmt.Errorf("manifest %s has no recorded prediction set; submit the teacher's predictions first", pin))
+		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			return nil, refused(fmt.Errorf("manifest %s has no recorded prediction set; submit the teacher's predictions first", pin))
+		}
+		return nil, s.classified(err)
 	}
 	var predictions distillation.PredictionSet
 	if err := decodeInto(predictionsRecord, &predictions); err != nil {
 		return nil, s.classified(err)
 	}
-	cohortID := body.CohortID
-	if cohortID == "" {
-		if len(manifest.Exports) != 1 {
-			return nil, invalid("cohort_id is required when the job admits more than one cohort")
-		}
-		cohortID = manifest.Exports[0].CohortID
-	}
-	exportPin, ok := manifest.Export(cohortID)
-	if !ok {
-		return nil, refused(fmt.Errorf("cohort %q is not admitted by manifest %s", cohortID, pin))
-	}
-	exportManifest, err := s.getRaw(ctx, kindExportManifest, exportPin.ManifestSHA256)
+	policy, err := s.policyFor(ctx, pin)
 	if err != nil {
 		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-			return nil, refused(fmt.Errorf("the export %s was recorded before manifest copies were kept; request it again before sealing", exportPin.ManifestSHA256))
+			return nil, refused(fmt.Errorf("manifest %s has no declared evaluation policy; the run cannot be judged under a policy chosen after its outputs exist", pin))
 		}
 		return nil, s.classified(err)
 	}
-	if s.cfg.Exporter == nil {
-		return nil, unavailable("no dataset exporter is mounted on this host; the dataset rows cannot be obtained for evaluation")
-	}
-	export, err := s.cfg.Exporter.Export(ctx, shoal.ID(cohortID))
-	if err != nil {
-		return nil, s.classified(err)
-	}
+	// The bundle is verified and matched to the receipt before any export is
+	// fetched, so a body that is not the run's bundle costs the host nothing
+	// beyond the staging write.
 	if err := os.MkdirAll(s.cfg.ServingRoot, 0o700); err != nil {
 		return nil, s.classifyLogged("seal", err)
 	}
@@ -152,13 +137,53 @@ func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.
 	if err != nil {
 		return nil, refused(fmt.Errorf("bundle does not verify: %s", s.redactErr("seal", err)))
 	}
+	if digest != receipt.BundleDigest {
+		return nil, refused(fmt.Errorf("the recorded receipt for manifest %s produced bundle %s, not the bundle presented %s", pin, receipt.BundleDigest, digest))
+	}
 	weightsFile, ok := bundle.File(weightsbundle.RoleWeights)
 	if !ok {
 		return nil, refused(errors.New("bundle has no weights file"))
 	}
+	if len(receipt.ActualCohorts) == 0 {
+		return nil, refused(fmt.Errorf("the recorded receipt for manifest %s names no cohorts", pin))
+	}
+	cohortID := body.CohortID
+	if cohortID == "" {
+		if len(receipt.ActualCohorts) != 1 {
+			return nil, invalid("cohort_id is required when the run trained on more than one cohort")
+		}
+		cohortID = receipt.ActualCohorts[0]
+	}
+	if !contains(receipt.ActualCohorts, cohortID) {
+		return nil, refused(fmt.Errorf("the run under manifest %s did not train on cohort %q", pin, cohortID))
+	}
+	if s.cfg.Exporter == nil {
+		return nil, unavailable("no dataset exporter is mounted on this host; the dataset rows cannot be obtained for evaluation")
+	}
+	// Every export the run consumed is presented, so a reserved row whose
+	// family or content is behind a training row of another cohort is seen.
+	var exports []distillation.ExportInput
+	for _, cohort := range receipt.ActualCohorts {
+		exportPin, ok := manifest.Export(cohort)
+		if !ok {
+			return nil, refused(fmt.Errorf("cohort %q is not admitted by manifest %s", cohort, pin))
+		}
+		exportManifest, err := s.getRaw(ctx, kindExportManifest, exportPin.ManifestSHA256)
+		if err != nil {
+			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+				return nil, refused(fmt.Errorf("the export %s was recorded before manifest copies were kept; request it again before sealing", exportPin.ManifestSHA256))
+			}
+			return nil, s.classified(err)
+		}
+		export, err := s.cfg.Exporter.Export(ctx, shoal.ID(cohort))
+		if err != nil {
+			return nil, s.classified(err)
+		}
+		exports = append(exports, distillation.ExportInput{Manifest: exportManifest, Dataset: export.Dataset})
+	}
 	sealed, err := distillation.BuildCandidateSet(distillation.CandidateInput{
 		Manifest: manifest, Pin: pin, Receipt: receipt, Predictions: predictions, Bundle: bundle,
-		Weights: files[weightsFile.Path], ExportManifest: exportManifest, Dataset: export.Dataset, Policy: policy,
+		Weights: files[weightsFile.Path], Exports: exports, EvaluationCohort: cohortID, Policy: policy,
 	})
 	if err != nil {
 		return nil, s.classified(err)
@@ -182,6 +207,15 @@ func (s *Service) SealCandidate(ctx context.Context, raw json.RawMessage) (json.
 		"bundle_digest": digest, "disposition": sealed.Evaluation["disposition"], "reasons": sealed.Evaluation["reasons"],
 		"disclaimer": Disclaimer,
 	})
+}
+
+func contains(values []string, want string) bool {
+	for _, v := range values {
+		if v == want {
+			return true
+		}
+	}
+	return false
 }
 
 // decodeInto takes the typed view of a stored record, ignoring the identity
