@@ -57,6 +57,8 @@ type Identity struct {
 type Record struct {
 	Version           int                      `json:"version"`
 	Identity          Identity                 `json:"identity"`
+	FileSHA256        string                   `json:"file_sha256,omitempty"`
+	FileSize          int64                    `json:"file_size,omitempty"`
 	Fence             ingestrouter.Fence       `json:"fence"`
 	State             embeddingspace.FileState `json:"state"`
 	Evidence          Evidence                 `json:"evidence"`
@@ -94,6 +96,10 @@ func (r Record) validate() error {
 		return ErrInvalid
 	}
 	if r.Evidence != FooterVerified && r.Evidence != ScanVerified {
+		return ErrInvalid
+	}
+	if (r.FileSHA256 == "") != (r.FileSize == 0) ||
+		(r.FileSHA256 != "" && (!validDigest(r.FileSHA256) || r.FileSize < 1)) {
 		return ErrInvalid
 	}
 	if r.State.State == embeddingspace.StateNoEmbeddings && r.Evidence != ScanVerified {
