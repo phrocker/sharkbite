@@ -29,18 +29,6 @@ func TestLiveExclusiveCreator(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// TODO: remove once github.com/phrocker/hdfs/v2 gains
-		// RenameNoOverwriteContext (rename2 with OverwriteDest=false) and
-		// go.mod picks it up. Until then HDFS reports exclusive creation as
-		// unsupported rather than failing the integration workflow.
-		probe := "/tmp/shoal-integration/" + uuid.NewString() + "/probe"
-		if w, err := backend.CreateExclusive(context.Background(), probe); errors.Is(err, errors.ErrUnsupported) {
-			_ = backend.Close()
-			t.Skip("hdfs: exclusive creation unsupported by the pinned client: " + err.Error())
-		} else if err == nil {
-			_ = w.Close()
-			_ = backend.Remove(context.Background(), probe)
-		}
 		t.Cleanup(func() {
 			if err := backend.Close(); err != nil {
 				t.Errorf("Close backend: %v", err)
