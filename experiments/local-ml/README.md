@@ -174,7 +174,7 @@ contract test checks against `python-candidate-set.json`.
 ```
 
 `--policy` is the sealed `evaluation_policy` record the host declared for the
-job before its receipt (`POST /api/v1/learning/jobs/{pin}/policy`; `GET
+job before its teacher predictions and receipt (`POST /api/v1/learning/jobs/{pin}/policy`; `GET
 /api/v1/learning/jobs/{pin}` returns it). A policy written by hand seals
 records the host refuses, because the candidate's policy must be the one
 declared there. `--export-manifest` and `--dataset` are repeated, paired in

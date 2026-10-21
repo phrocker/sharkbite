@@ -19,7 +19,7 @@ Usage:
     --policy evaluation-policy.json --output-dir sealed [--serving-root DIR]
 
 The policy is the sealed evaluation_policy record the host declared for the
-job before its receipt (GET /api/v1/learning/jobs/{pin} returns it): {"name",
+job before its teacher predictions and receipt (GET /api/v1/learning/jobs/{pin} returns it): {"name",
 "split", "positive_label", "minimum_recall", "minimum_specificity",
 "minimum_positives", "minimum_families", "schema", "kind", "id"}. It is
 addressed by its gates alone; the host records that it was declared for the

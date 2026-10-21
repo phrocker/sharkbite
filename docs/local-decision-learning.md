@@ -122,11 +122,11 @@ the receipt is refused. Completion is not improvement. The reference worker is
 model-hub access; a checkpoint fine-tune student plugs into the same
 contract. The evaluation policy a run will be judged under (reserved split, positive
 label, minimum recall, minimum specificity, minimum positives, minimum
-families) is declared on the job before the receipt: the host seals it,
+families) is declared on the job before teacher predictions or a receipt: the host seals it,
 records the declaration against the manifest pin, refuses a completed
-receipt until one is declared, and
-refuses a declaration once a receipt exists, so the gates cannot be chosen
-after the result is known. A completed run becomes a candidate through one
+receipt or teacher predictions until one is declared, and
+refuses a declaration once either is recorded, so the host's accepted outputs
+cannot be used to choose the gates. A completed run becomes a candidate through one
 sealing step (`internal/distillation.BuildCandidateSet`, reached from the
 console's "seal run" form, `shoalctl learning candidate`, or
 `experiments/local-ml/seal_candidate.py`): the candidate, evaluation, and

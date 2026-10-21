@@ -125,7 +125,9 @@ func TestSealCandidateRecordsARunFromItsOutputs(t *testing.T) {
 	if _, err := svc.SealCandidate(ctx, body(nil)); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "no recorded receipt") {
 		t.Fatalf("without receipt: %v", err)
 	}
-	decode(svc.SubmitPredictions(ctx, pin, fixtureFile(t, "python-predictions.json")))
+	if _, err := svc.SubmitPredictions(ctx, pin, fixtureFile(t, "python-predictions.json")); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "declare an evaluation policy") {
+		t.Fatalf("predictions before policy: %v", err)
+	}
 	// A completed receipt is refused until the policy is declared.
 	if _, err := svc.SubmitReceipt(ctx, pin, fixtureFile(t, "python-receipt.json")); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "no evaluation policy") {
 		t.Fatalf("receipt before policy: %v", err)
@@ -151,6 +153,10 @@ func TestSealCandidateRecordsARunFromItsOutputs(t *testing.T) {
 	job := decode(svc.Job(ctx, pin))
 	if policy, _ := job["evaluation_policy"].(map[string]any); policy["id"] != fixturePolicy["id"] {
 		t.Fatalf("job view lacks the policy: %v", job["evaluation_policy"])
+	}
+	decode(svc.SubmitPredictions(ctx, pin, fixtureFile(t, "python-predictions.json")))
+	if _, err := svc.DeclarePolicy(ctx, pin, rawDeclaration); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not predeclared") {
+		t.Fatalf("policy after predictions: %v", err)
 	}
 	decode(svc.SubmitReceipt(ctx, pin, fixtureFile(t, "python-receipt.json")))
 	// Once the outputs exist, no policy can be declared, not even the same one.

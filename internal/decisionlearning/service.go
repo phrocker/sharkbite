@@ -726,6 +726,12 @@ func (s *Service) SubmitPredictions(ctx context.Context, pin string, raw json.Ra
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if _, err := s.policyFor(ctx, pin); err != nil {
+		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			return nil, refused(fmt.Errorf("declare an evaluation policy for manifest %s before recording teacher predictions", pin))
+		}
+		return nil, s.classified(err)
+	}
 	if err := s.put(ctx, kindPredictions, pin, generic); err != nil {
 		if errors.Is(err, storage.ErrExists) {
 			return nil, refused(fmt.Errorf("teacher predictions for manifest %s are already recorded", pin))
@@ -758,8 +764,9 @@ func (s *Service) policyFor(ctx context.Context, pin string) (weightsbundle.Reco
 
 // DeclarePolicy seals the evaluation policy a run will be judged under and
 // records, under the manifest pin, that it was declared for this job. It is
-// accepted only while no receipt is recorded for the job, so the gates are
-// fixed before the outputs exist; a second declaration must be identical.
+// accepted only while no predictions or receipt are recorded for the job,
+// so the gates are fixed before the host accepts any run output; a second
+// declaration must be identical.
 // The policy itself is addressed by its gates, so runs judged the same way
 // share it and a release can name its predecessor's policy.
 func (s *Service) DeclarePolicy(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
@@ -778,6 +785,11 @@ func (s *Service) DeclarePolicy(ctx context.Context, pin string, raw json.RawMes
 	defer s.mu.Unlock()
 	if _, err := s.get(ctx, kindReceipt, pin); err == nil {
 		return nil, refused(fmt.Errorf("a receipt is already recorded for manifest %s; a policy declared after the run's outputs exist is not predeclared", pin))
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
+	if _, err := s.get(ctx, kindPredictions, pin); err == nil {
+		return nil, refused(fmt.Errorf("teacher predictions are already recorded for manifest %s; a policy declared after the run's outputs exist is not predeclared", pin))
 	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		return nil, s.classified(err)
 	}
@@ -817,8 +829,8 @@ func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMes
 		return nil, s.classified(err)
 	}
 	if receipt.Status == distillation.StatusCompleted {
-		// The policy the run will be judged under is sealed before its
-		// outputs exist. A completed run without one is refused here, while
+		// The policy the run will be judged under is sealed before the host
+		// accepts outputs. A completed run without one is refused here, while
 		// the omission is still recoverable, rather than at sealing time.
 		if _, err := s.policyFor(ctx, pin); err != nil {
 			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
