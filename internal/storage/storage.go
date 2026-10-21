@@ -67,8 +67,9 @@ type Backend interface {
 //
 // A version or ETag condition is a consistency token, not a content digest.
 // Callers that attest file contents must still validate the format/footer.
-// The cloud backends and memory implement this capability. Rooted forwards it
-// when its inner backend does; diskcache, local and HDFS do not claim it.
+// The cloud backends, memory, and the native HDFS client implement this
+// capability. Rooted forwards it when its inner backend does; diskcache and
+// local do not claim it. HDFS custom client adapters fail closed.
 type SnapshotOpener interface {
 	OpenSnapshot(ctx context.Context, path string) (File, error)
 }

@@ -65,8 +65,10 @@ including the path-keyed disk cache, fails closed. Rooted storage forwards
 snapshot reads only when its inner backend supports them. An ETag is a
 consistency token, not a content digest; the attestation still hashes the
 complete RFile. These reads need deployment-specific replacement testing.
-The pinned Accumulo live harness uses HDFS, which does not yet provide
-`SnapshotOpener`; activation must wait for a sound HDFS implementation.
+The native HDFS client now pins block locations before accepting an open and
+checks the namenode file ID, size, and modification time around each range
+read. Custom HDFS client adapters and unsupported metadata fail closed. The
+pinned Accumulo live harness must still exercise this path before activation.
 
 The bounded publication-marker protocol requires a candidate record, an
 owner-fenced read of the exact native `file` entry, verified RFile footer, and
