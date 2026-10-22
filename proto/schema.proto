@@ -1,0 +1,173 @@
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
+
+syntax = "proto3";
+
+package shoal.schema.v1;
+
+option go_package = "github.com/phrocker/shoal-oss/internal/schemapb";
+
+// TableSchema is the well-known descriptor of how one table's cells lay out
+// a graph: which row namespaces hold nodes, which column families hold
+// edges, embeddings, and term postings, and how each is encoded.
+//
+// The engine stores a descriptor; it never interprets one. A reader builds
+// its scan requests from the descriptor using the same parameter names the
+// pushdowns in embed.proto take (EdgeExpand, VectorSearch, TermFilter), so
+// a descriptor cannot say something the engine cannot do.
+//
+// Descriptors are recorded in the reserved `_shoal_schema` table, one row
+// per described table, column family `schema`, one qualifier per version
+// (zero-padded so versions sort), value = this message in proto3 JSON with
+// proto field names. Writes are append-only; the highest version is current.
+// The described table's manifest (`table.json`) carries a pointer
+// `{"schema": {"id", "version"}}` so `status` can report described tables
+// without scanning; the table holds the document.
+//
+// Prefixes, separators, and column families are strings rather than bytes
+// so the recorded JSON stays readable; a NUL separator is written as the
+// JSON escape "\u0000". A reader converts them to bytes for the request.
+message TableSchema {
+  // The described table's name.
+  string table = 1;
+  // Stable identity of this layout, chosen by the consumer that writes the
+  // table (for example "foreman.graph"). It does not change when the layout
+  // is revised; the version does.
+  string schema_id = 2;
+  // Monotonic revision of the layout, starting at 1. A write must carry a
+  // version greater than the newest recorded one, or equal to it with an
+  // identical document. (int32 so the JSON wire form carries a number; the
+  // proto3 JSON mapping renders 64-bit integers as strings.)
+  int32 version = 3;
+  // Free text for readers; not interpreted.
+  string description = 4;
+  // Row namespaces holding nodes. At least one.
+  repeated NodeSchema nodes = 5;
+  // Edge families, one per column family holding edge cells.
+  repeated EdgeSchema edges = 6;
+  // Embedding families.
+  repeated VectorSchema vectors = 7;
+  // Term posting namespaces.
+  repeated PostingSchema postings = 8;
+}
+
+// ValueEncoding says how a cell value is encoded.
+enum ValueEncoding {
+  VALUE_ENCODING_UNSPECIFIED = 0;
+  // UTF-8 text.
+  VALUE_ENCODING_TEXT = 1;
+  // A JSON document.
+  VALUE_ENCODING_JSON = 2;
+  // Packed big-endian float32 values (a vector, or a single weight).
+  VALUE_ENCODING_FLOAT32_BE = 3;
+  // Opaque bytes.
+  VALUE_ENCODING_BYTES = 4;
+}
+
+// QualifierRole says what an attribute cell's column qualifier means.
+enum QualifierRole {
+  QUALIFIER_ROLE_UNSPECIFIED = 0;
+  // The qualifier is the attribute (field) name.
+  QUALIFIER_ROLE_FIELD = 1;
+  // The qualifier is consumer-defined and carries no field name.
+  QUALIFIER_ROLE_OPAQUE = 2;
+}
+
+// NodeSchema describes one row namespace holding nodes.
+message NodeSchema {
+  // Name of the namespace, unique within the descriptor (for example
+  // "entity", "event").
+  string name = 1;
+  // Row prefix every node row in this namespace starts with (for example
+  // "ent:"). Required; no namespace prefix may be a prefix of another's.
+  string row_prefix = 2;
+  // Separator splitting the rest of the row (after row_prefix) into fields,
+  // of which one is the node kind. Empty = rows carry no kind.
+  string kind_sep = 3;
+  // When kind_sep is set, the split-field index holding the node kind.
+  int32 kind_index = 4;
+  // Closed vocabulary of node kinds. Empty = open.
+  repeated string kinds = 5;
+  // Column families holding attribute cells on rows of this namespace. Empty
+  // = every column family not claimed by an edge, vector, or posting entry
+  // holds attributes, and the family name is the record type. Namespaces may
+  // share attribute families.
+  repeated string attribute_cfs = 6;
+  // What the attribute cell's qualifier means.
+  QualifierRole attribute_qualifier = 7;
+  // How attribute values are encoded.
+  ValueEncoding attribute_encoding = 8;
+}
+
+// EdgeSchema describes one edge family. Its fields are the EdgeExpand
+// pushdown's parameters of the same name; a reader copies them into the
+// request verbatim.
+message EdgeSchema {
+  // Name of the family, unique within the descriptor (for example "edge",
+  // "temporal").
+  string name = 1;
+  // Column family marking edge cells on a node row. Required.
+  string edge_cf = 2;
+  // Where the edge token lives: "qualifier" (default when empty) or "value".
+  string edge_field = 3;
+  // Separator splitting the edge token into fields. Empty = the whole token
+  // is the neighbor id.
+  string field_sep = 4;
+  // When field_sep is set, the split-field index holding the neighbor id;
+  // -1 (the default when id_index_set is false) = the last field.
+  int32 id_index = 5;
+  // Distinguishes "id_index deliberately 0" from "id_index unset".
+  bool id_index_set = 6;
+  // When field_sep is set, the split-field index holding the relationship.
+  int32 rel_index = 7;
+  // Closed vocabulary of relationships. Empty = open. Requires field_sep.
+  repeated string relationships = 8;
+  // Prepended to each neighbor id to form the neighbor row key.
+  string primary_prefix = 9;
+  // How the edge cell's value is encoded (for example a float32 weight).
+  // Unspecified = the value carries nothing.
+  ValueEncoding value_encoding = 10;
+}
+
+// VectorSchema describes one embedding family, matching VectorSearch.
+message VectorSchema {
+  // Name of the family, unique within the descriptor.
+  string name = 1;
+  // Column family holding embedding cells. Required.
+  string embedding_cf = 2;
+  // Full stable identity of the embedding space that produced the vectors.
+  // Required.
+  string embedding_space = 3;
+  // Similarity metric: "cosine" (default when empty), "dot", or "l2".
+  string metric = 4;
+}
+
+// PostingSchema describes one term posting namespace, matching TermFilter.
+message PostingSchema {
+  // Name of the namespace, unique within the descriptor.
+  string name = 1;
+  // Row prefix every posting row starts with (for example "idx:"). Required;
+  // it may not overlap a node namespace prefix.
+  string term_row_prefix = 2;
+  // Where the primary id lives in a posting cell: "qualifier" (default when
+  // empty) or "value".
+  string id_source = 3;
+  // Prepended to each resolved id to form the primary row key.
+  string primary_prefix = 4;
+  // Column family restriction for posting cells. Empty = every cell.
+  string posting_cf = 5;
+}

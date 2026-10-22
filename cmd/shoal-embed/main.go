@@ -31,6 +31,7 @@
 //	shoal-embed export  — flush and copy a table's RFiles plus manifest
 //	shoal-embed import  — verify a manifest and register/open the table
 //	shoal-embed status  — print table/tablet statistics
+//	shoal-embed schema  — record or read a table's schema descriptor
 //
 // Example:
 //
@@ -57,6 +58,7 @@ import (
 	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
+	"github.com/phrocker/shoal-oss/internal/tableschema"
 )
 
 var version = "dev"
@@ -84,6 +86,8 @@ func main() {
 		cmdSync(os.Args[2:])
 	case "status":
 		cmdStatus(os.Args[2:])
+	case "schema":
+		cmdSchema(os.Args[2:])
 	case "serve":
 		cmdServe(os.Args[2:])
 	case "up":
@@ -111,6 +115,7 @@ Commands:
   import     Verify a manifest and register/open the table
   sync       Continuously ship newly flushed/compacted RFiles to object storage
   status     Print table and tablet statistics
+  schema     Record or read a table's schema descriptor (put | get | list)
   serve      Start gRPC server for embedded storage
   up         Bring up the local profile (gRPC + observability) in one command
   version    Print version
@@ -131,6 +136,9 @@ func cmdInit(args []string) {
 
 	if *tableName == "" {
 		die("init: --table is required")
+	}
+	if *tableName == tableschema.Table {
+		die("init: %s is reserved for schema descriptors and is created by the first `schema put`", tableschema.Table)
 	}
 
 	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{})
@@ -354,10 +362,10 @@ func cmdStatus(args []string) {
 		fmt.Println("no tables")
 		return
 	}
-	fmt.Printf("%-24s %8s %8s\n", "TABLE", "TABLETS", "RFILES")
+	fmt.Printf("%-24s %8s %8s  %s\n", "TABLE", "TABLETS", "RFILES", "SCHEMA")
 	var totTablets, totRFiles int
 	for _, st := range stats {
-		fmt.Printf("%-24s %8d %8d\n", st.Name, st.Tablets, st.RFiles)
+		fmt.Printf("%-24s %8d %8d  %s\n", st.Name, st.Tablets, st.RFiles, schemaColumn(st.Schema))
 		totTablets += st.Tablets
 		totRFiles += st.RFiles
 	}
