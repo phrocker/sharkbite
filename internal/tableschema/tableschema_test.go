@@ -26,6 +26,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
+	"github.com/phrocker/shoal-oss/internal/cclient"
 	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 	"github.com/phrocker/shoal-oss/internal/schemapb"
@@ -162,7 +163,7 @@ func TestValidate(t *testing.T) {
 			s.Edges[0].IdIndex = 0
 		}), "without field_sep"},
 		{"id and rel index collide", mutate(func(s *schemapb.TableSchema) { s.Edges[0].IdIndex = 0 }), "both 0"},
-		{"edge cf claimed twice", mutate(func(s *schemapb.TableSchema) { s.Nodes[0].AttributeCf = "edge" }), "both claim column family"},
+		{"edge cf claimed twice", mutate(func(s *schemapb.TableSchema) { s.Nodes[0].AttributeCfs = []string{"edge"} }), "both claim column family"},
 		{"vector without space", mutate(func(s *schemapb.TableSchema) {
 			s.Vectors = []*schemapb.VectorSchema{{Name: "vec", EmbeddingCf: "vec"}}
 		}), "no embedding_space"},
@@ -378,5 +379,152 @@ func TestQualifierRoundTrip(t *testing.T) {
 		if _, err := tableschema.ParseQualifier([]byte(bad)); err == nil {
 			t.Fatalf("qualifier %q accepted", bad)
 		}
+	}
+}
+
+// Only the newest cell of a version counts, and a version whose newest cell
+// is a delete marker is gone: a tombstone or a duplicate timestamp written
+// behind the Store's back neither wedges reads nor lets a stale document pass
+// as the recorded one.
+func TestReadsSeeOnlyTheNewestCellAndHonourDeletes(t *testing.T) {
+	eng := open(t)
+	store := tableschema.New(eng)
+	if _, err := store.Put(foreman(1)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Put(foreman(2)); err != nil {
+		t.Fatal(err)
+	}
+	// A raw second cell for version 2 with a newer timestamp and other bytes.
+	revised := foreman(2)
+	revised.Description = "written behind the store's back"
+	revisedBytes, err := tableschema.Encode(revised)
+	if err != nil {
+		t.Fatal(err)
+	}
+	m, _ := cclient.NewMutation([]byte("graph"))
+	m.Put([]byte(tableschema.SchemaCF), tableschema.Qualifier(2), nil, cclient.MutationLatestTimestamp, revisedBytes)
+	if err := eng.Write(tableschema.Table, []*cclient.Mutation{m}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Get("graph")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(got.Bytes, revisedBytes) {
+		t.Fatalf("get returned the older cell: %s", got.Bytes)
+	}
+	if versions, err := store.Versions("graph"); err != nil || len(versions) != 2 {
+		t.Fatalf("versions = %v, %v", versions, err)
+	}
+	// The stale document is no longer "identical" to the recorded version.
+	if _, err := store.Put(foreman(2)); !errors.Is(err, tableschema.ErrConflict) {
+		t.Fatalf("stale re-put accepted: %v", err)
+	}
+	// Deleting version 2 leaves version 1 current, and a later put is again
+	// possible; nothing is wedged.
+	d, _ := cclient.NewMutation([]byte("graph"))
+	d.DeleteLatest([]byte(tableschema.SchemaCF), tableschema.Qualifier(2), nil)
+	if err := eng.Write(tableschema.Table, []*cclient.Mutation{d}); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := store.Get("graph"); err != nil || got.Version != 1 {
+		t.Fatalf("after delete: %+v, %v", got, err)
+	}
+	if described, err := store.Described(); err != nil || len(described) != 1 || described[0].Version != 1 {
+		t.Fatalf("described after delete = %v, %v", described, err)
+	}
+	if _, err := store.Put(foreman(3)); err != nil {
+		t.Fatal(err)
+	}
+	if got, err := store.Get("graph"); err != nil || got.Version != 3 {
+		t.Fatalf("after re-put: %+v, %v", got, err)
+	}
+}
+
+// Recording a version is a conditional write: a cell that appeared between
+// the Store's read and its write is detected, and the put is refused unless
+// that cell carries the same document.
+func TestPutIsConditionalOnTheVersionBeingAbsent(t *testing.T) {
+	eng := open(t)
+	store := tableschema.New(eng)
+	if _, err := store.Put(foreman(1)); err != nil {
+		t.Fatal(err)
+	}
+	other := foreman(2)
+	other.Description = "recorded by another process"
+	otherBytes, _ := tableschema.Encode(other)
+	m, _ := cclient.NewMutation([]byte("graph"))
+	m.Put([]byte(tableschema.SchemaCF), tableschema.Qualifier(2), nil, cclient.MutationLatestTimestamp, otherBytes)
+	if err := eng.Write(tableschema.Table, []*cclient.Mutation{m}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Put(foreman(2)); !errors.Is(err, tableschema.ErrConflict) {
+		t.Fatalf("conflicting concurrent version accepted: %v", err)
+	}
+	if _, err := store.Put(other); err != nil {
+		t.Fatalf("identical concurrent version refused: %v", err)
+	}
+	if versions, _ := store.Versions("graph"); len(versions) != 2 {
+		t.Fatalf("versions = %v", versions)
+	}
+}
+
+func TestValidateRefusesTheQuietHoles(t *testing.T) {
+	mutate := func(f func(s *schemapb.TableSchema)) *schemapb.TableSchema {
+		s := foreman(1)
+		f(s)
+		return s
+	}
+	for name, tc := range map[string]struct {
+		schema *schemapb.TableSchema
+		want   string
+	}{
+		"edge token in value plus payload": {mutate(func(s *schemapb.TableSchema) {
+			s.Edges[0].EdgeField = "value"
+			s.Edges[0].ValueEncoding = schemapb.ValueEncoding_VALUE_ENCODING_FLOAT32_BE
+		}), "cannot also carry"},
+		"id_index without id_index_set": {mutate(func(s *schemapb.TableSchema) { s.Edges[0].IdIndexSet = false; s.Edges[0].IdIndex = 3 }), "without id_index_set"},
+		"blank schema_id":               {mutate(func(s *schemapb.TableSchema) { s.SchemaId = "  " }), "schema_id"},
+		"blank name":                    {mutate(func(s *schemapb.TableSchema) { s.Nodes[0].Name = "\t" }), "name is required"},
+		"table with newline":            {mutate(func(s *schemapb.TableSchema) { s.Table = "gra\nph" }), "invalid table name"},
+		"attribute family is an edge family": {mutate(func(s *schemapb.TableSchema) {
+			s.Nodes[0].AttributeCfs = []string{"edge"}
+		}), "both claim column family"},
+	} {
+		if err := tableschema.Validate(tc.schema); err == nil || !strings.Contains(err.Error(), tc.want) {
+			t.Errorf("%s: error = %v, want %q", name, err, tc.want)
+		}
+	}
+	// Two namespaces may share an attribute family.
+	shared := mutate(func(s *schemapb.TableSchema) {
+		s.Nodes[0].AttributeCfs = []string{"attr:"}
+		s.Nodes[1].AttributeCfs = []string{"attr:", "content:"}
+	})
+	if err := tableschema.Validate(shared); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The graphschema descriptor says what docs/graph-schema.md says: attr: on
+// every node row, content: on events, vec: on both namespaces, four edge
+// views, term postings.
+func TestForGraphSchemaMatchesTheDocumentedLayout(t *testing.T) {
+	s := tableschema.ForGraphSchema("graph", "space:v1", 1)
+	if err := tableschema.Validate(s); err != nil {
+		t.Fatal(err)
+	}
+	byName := map[string]*schemapb.NodeSchema{}
+	for _, n := range s.Nodes {
+		byName[n.Name] = n
+	}
+	if got := byName["event"].AttributeCfs; len(got) != 2 || got[0] != "content:" || got[1] != "attr:" {
+		t.Fatalf("event attribute families = %v", got)
+	}
+	if got := byName["entity"].AttributeCfs; len(got) != 1 || got[0] != "attr:" {
+		t.Fatalf("entity attribute families = %v", got)
+	}
+	if len(s.Edges) != 4 || len(s.Vectors) != 1 || len(s.Postings) != 1 {
+		t.Fatalf("%v", s)
 	}
 }

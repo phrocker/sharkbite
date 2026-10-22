@@ -27,9 +27,10 @@ import (
 const GraphSchemaID = "shoal.graphschema"
 
 // ForGraphSchema returns the descriptor of the internal/graphschema layout
-// for a table: event and entity rows, the attribute family, the four edge
-// views with the neighbor id in the qualifier and an optional float32
-// weight, the embedding family, and term postings. It is the descriptor a
+// for a table: event rows with their content and attribute families, entity
+// rows with the attribute family, the four edge views with the neighbor id
+// in the qualifier and an optional float32 weight, the embedding family on
+// both node namespaces, and term postings. It is the descriptor a
 // reader needs to traverse a graphschema table without the Go library, and
 // the basis for checking that both readings agree.
 func ForGraphSchema(table, embeddingSpace string, version int32) *schemapb.TableSchema {
@@ -50,13 +51,14 @@ func ForGraphSchema(table, embeddingSpace string, version int32) *schemapb.Table
 			{
 				Name:               "event",
 				RowPrefix:          graphschema.EventRowPrefix,
-				AttributeCf:        graphschema.AttributeCFName,
+				AttributeCfs:       []string{graphschema.ContentCFName, graphschema.AttributeCFName},
 				AttributeQualifier: schemapb.QualifierRole_QUALIFIER_ROLE_FIELD,
 				AttributeEncoding:  schemapb.ValueEncoding_VALUE_ENCODING_TEXT,
 			},
 			{
 				Name:               "entity",
 				RowPrefix:          graphschema.EntityRowPrefix,
+				AttributeCfs:       []string{graphschema.AttributeCFName},
 				AttributeQualifier: schemapb.QualifierRole_QUALIFIER_ROLE_FIELD,
 				AttributeEncoding:  schemapb.ValueEncoding_VALUE_ENCODING_TEXT,
 			},

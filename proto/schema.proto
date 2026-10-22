@@ -102,10 +102,11 @@ message NodeSchema {
   int32 kind_index = 4;
   // Closed vocabulary of node kinds. Empty = open.
   repeated string kinds = 5;
-  // Column family holding attribute cells. Empty = every column family not
-  // claimed by an edge, vector, or posting entry holds attributes, and the
-  // family name is the record type.
-  string attribute_cf = 6;
+  // Column families holding attribute cells on rows of this namespace. Empty
+  // = every column family not claimed by an edge, vector, or posting entry
+  // holds attributes, and the family name is the record type. Namespaces may
+  // share attribute families.
+  repeated string attribute_cfs = 6;
   // What the attribute cell's qualifier means.
   QualifierRole attribute_qualifier = 7;
   // How attribute values are encoded.

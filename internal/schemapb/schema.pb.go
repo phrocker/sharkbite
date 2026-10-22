@@ -299,10 +299,11 @@ type NodeSchema struct {
 	KindIndex int32 `protobuf:"varint,4,opt,name=kind_index,json=kindIndex,proto3" json:"kind_index,omitempty"`
 	// Closed vocabulary of node kinds. Empty = open.
 	Kinds []string `protobuf:"bytes,5,rep,name=kinds,proto3" json:"kinds,omitempty"`
-	// Column family holding attribute cells. Empty = every column family not
-	// claimed by an edge, vector, or posting entry holds attributes, and the
-	// family name is the record type.
-	AttributeCf string `protobuf:"bytes,6,opt,name=attribute_cf,json=attributeCf,proto3" json:"attribute_cf,omitempty"`
+	// Column families holding attribute cells on rows of this namespace. Empty
+	// = every column family not claimed by an edge, vector, or posting entry
+	// holds attributes, and the family name is the record type. Namespaces may
+	// share attribute families.
+	AttributeCfs []string `protobuf:"bytes,6,rep,name=attribute_cfs,json=attributeCfs,proto3" json:"attribute_cfs,omitempty"`
 	// What the attribute cell's qualifier means.
 	AttributeQualifier QualifierRole `protobuf:"varint,7,opt,name=attribute_qualifier,json=attributeQualifier,proto3,enum=shoal.schema.v1.QualifierRole" json:"attribute_qualifier,omitempty"`
 	// How attribute values are encoded.
@@ -376,11 +377,11 @@ func (x *NodeSchema) GetKinds() []string {
 	return nil
 }
 
-func (x *NodeSchema) GetAttributeCf() string {
+func (x *NodeSchema) GetAttributeCfs() []string {
 	if x != nil {
-		return x.AttributeCf
+		return x.AttributeCfs
 	}
-	return ""
+	return nil
 }
 
 func (x *NodeSchema) GetAttributeQualifier() QualifierRole {
@@ -701,7 +702,7 @@ const file_proto_schema_proto_rawDesc = "" +
 	"\x05nodes\x18\x05 \x03(\v2\x1b.shoal.schema.v1.NodeSchemaR\x05nodes\x121\n" +
 	"\x05edges\x18\x06 \x03(\v2\x1b.shoal.schema.v1.EdgeSchemaR\x05edges\x127\n" +
 	"\avectors\x18\a \x03(\v2\x1d.shoal.schema.v1.VectorSchemaR\avectors\x12:\n" +
-	"\bpostings\x18\b \x03(\v2\x1e.shoal.schema.v1.PostingSchemaR\bpostings\"\xd2\x02\n" +
+	"\bpostings\x18\b \x03(\v2\x1e.shoal.schema.v1.PostingSchemaR\bpostings\"\xd4\x02\n" +
 	"\n" +
 	"NodeSchema\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1d\n" +
@@ -710,8 +711,8 @@ const file_proto_schema_proto_rawDesc = "" +
 	"\bkind_sep\x18\x03 \x01(\tR\akindSep\x12\x1d\n" +
 	"\n" +
 	"kind_index\x18\x04 \x01(\x05R\tkindIndex\x12\x14\n" +
-	"\x05kinds\x18\x05 \x03(\tR\x05kinds\x12!\n" +
-	"\fattribute_cf\x18\x06 \x01(\tR\vattributeCf\x12O\n" +
+	"\x05kinds\x18\x05 \x03(\tR\x05kinds\x12#\n" +
+	"\rattribute_cfs\x18\x06 \x03(\tR\fattributeCfs\x12O\n" +
 	"\x13attribute_qualifier\x18\a \x01(\x0e2\x1e.shoal.schema.v1.QualifierRoleR\x12attributeQualifier\x12M\n" +
 	"\x12attribute_encoding\x18\b \x01(\x0e2\x1e.shoal.schema.v1.ValueEncodingR\x11attributeEncoding\"\xe3\x02\n" +
 	"\n" +

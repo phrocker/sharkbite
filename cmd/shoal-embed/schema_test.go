@@ -123,3 +123,27 @@ func TestSchemaCommands(t *testing.T) {
 		t.Fatalf("list after reopen:\n%s", out)
 	}
 }
+
+// A usage error creates no store: the engine is opened only after the
+// command's inputs are validated.
+func TestSchemaPutValidatesBeforeOpeningTheStore(t *testing.T) {
+	t.Setenv("SHOAL_BACKEND", "")
+	t.Setenv("SHOAL_BACKEND_ROOT", "")
+	dir := filepath.Join(t.TempDir(), "unopened")
+	if out, err := backendCommand(t, "schema", "put", "-data", dir).CombinedOutput(); err == nil || !strings.Contains(string(out), "--table is required") {
+		t.Fatalf("missing table: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("store created by a usage error: %v", err)
+	}
+	bad := filepath.Join(t.TempDir(), "bad.json")
+	if err := os.WriteFile(bad, []byte(`{"table":"graph"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := backendCommand(t, "schema", "put", "-data", dir, "-table", "graph", "-file", bad).CombinedOutput(); err == nil || !strings.Contains(string(out), "schema_id") {
+		t.Fatalf("invalid descriptor: %v\n%s", err, out)
+	}
+	if _, err := os.Stat(dir); !os.IsNotExist(err) {
+		t.Fatalf("store created by an invalid descriptor: %v", err)
+	}
+}

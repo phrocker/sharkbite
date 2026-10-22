@@ -133,7 +133,8 @@ shoal-embed status      --data ~/.shoal/data      # SCHEMA column: id@version or
 
 A descriptor of a table laid out as `ent:<kind>|<id>` and `evt:<kind>|<id>`
 rows, `cf = <record type>`, `cq = <field>`, text values, and edges as
-`cf = edge`, `cq = <relationship>\0<target row>`:
+`cf = edge`, `cq = <relationship>\0<target row>` (the empty `attribute_cfs`
+means every family not claimed by the edge entry holds attributes):
 
 ```json
 {
@@ -153,8 +154,13 @@ rows, `cf = <record type>`, `cq = <field>`, text values, and edges as
 }
 ```
 
-An empty `attribute_cf` means every column family not claimed by an edge,
-vector, or posting entry holds attributes and names the record type.
+Empty `attribute_cfs` means every column family not claimed by an edge,
+vector, or posting entry holds attributes and names the record type; node
+namespaces may share attribute families (this document's layout puts
+`attr:` on every node row). Descriptors are read through the newest cell of
+each version only, a deleted version is absent, and a version is recorded
+with a conditional write that requires it absent, so two writers cannot
+both record one version.
 Validation refuses a descriptor whose node or posting row prefixes overlap,
 whose entries claim the same column family twice, or whose pushdown
 parameters the engine would not accept (an unknown `edge_field`, `id_source`,

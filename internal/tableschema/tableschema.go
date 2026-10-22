@@ -55,6 +55,7 @@ import (
 	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/iterrt"
 	"github.com/phrocker/shoal-oss/internal/schemapb"
+	"github.com/phrocker/shoal-oss/internal/tablet"
 )
 
 const (
@@ -157,8 +158,11 @@ func Validate(schema *schemapb.TableSchema) error {
 		return errors.New("tableschema: at least one node namespace is required")
 	}
 	names := map[string]string{}
+	if strings.TrimSpace(schema.GetSchemaId()) == "" || hasControl(schema.GetSchemaId()) {
+		return errors.New("tableschema: schema_id must be text")
+	}
 	claim := func(kind, name string) error {
-		if name == "" {
+		if strings.TrimSpace(name) == "" || hasControl(name) {
 			return fmt.Errorf("tableschema: %s name is required", kind)
 		}
 		if prior, dup := names[name]; dup {
@@ -169,6 +173,7 @@ func Validate(schema *schemapb.TableSchema) error {
 	}
 	var rowPrefixes []namedPrefix
 	families := map[string]string{}
+	attributeFamilies := map[string][]string{}
 	claimFamily := func(owner, cf string) error {
 		if prior, dup := families[cf]; dup {
 			return fmt.Errorf("tableschema: %s and %s both claim column family %q", prior, owner, cf)
@@ -197,10 +202,15 @@ func Validate(schema *schemapb.TableSchema) error {
 		if err := distinct("node "+node.GetName()+" kinds", node.GetKinds()); err != nil {
 			return err
 		}
-		if cf := node.GetAttributeCf(); cf != "" {
-			if err := claimFamily("node "+node.GetName(), cf); err != nil {
-				return err
-			}
+		// Attribute families are claimed per namespace: two namespaces may
+		// share one (the graphschema layout puts attr: on every node row),
+		// but no attribute family may also be an edge, vector, or posting
+		// family.
+		if err := distinct("node "+node.GetName()+" attribute_cfs", node.GetAttributeCfs()); err != nil {
+			return err
+		}
+		for _, cf := range node.GetAttributeCfs() {
+			attributeFamilies[cf] = append(attributeFamilies[cf], "node "+node.GetName())
 		}
 		if _, ok := schemapb.QualifierRole_name[int32(node.GetAttributeQualifier())]; !ok {
 			return fmt.Errorf("tableschema: node %q has unknown attribute_qualifier %d", node.GetName(), node.GetAttributeQualifier())
@@ -221,9 +231,16 @@ func Validate(schema *schemapb.TableSchema) error {
 			return err
 		}
 		switch edge.GetEdgeField() {
-		case "", "qualifier", "value":
+		case "", "qualifier":
+		case "value":
+			if edge.GetValueEncoding() != schemapb.ValueEncoding_VALUE_ENCODING_UNSPECIFIED {
+				return fmt.Errorf("tableschema: %s reads the edge token from the value, so the value cannot also carry an encoded payload", owner)
+			}
 		default:
 			return fmt.Errorf("tableschema: %s edge_field %q is not \"qualifier\" or \"value\"", owner, edge.GetEdgeField())
+		}
+		if !edge.GetIdIndexSet() && edge.GetIdIndex() != 0 {
+			return fmt.Errorf("tableschema: %s sets id_index %d without id_index_set; a reader would ignore it", owner, edge.GetIdIndex())
 		}
 		if edge.GetFieldSep() == "" {
 			switch {
@@ -235,7 +252,7 @@ func Validate(schema *schemapb.TableSchema) error {
 				return fmt.Errorf("tableschema: %s lists relationships without field_sep", owner)
 			}
 		} else {
-			if edge.GetIdIndex() < -1 || (edge.GetIdIndexSet() && edge.GetIdIndex() < 0) {
+			if edge.GetIdIndexSet() && edge.GetIdIndex() < 0 {
 				return fmt.Errorf("tableschema: %s id_index %d is invalid", owner, edge.GetIdIndex())
 			}
 			if edge.GetRelIndex() < 0 {
@@ -287,6 +304,11 @@ func Validate(schema *schemapb.TableSchema) error {
 			return fmt.Errorf("tableschema: %s id_source %q is not \"qualifier\" or \"value\"", owner, posting.GetIdSource())
 		}
 	}
+	for cf, owners := range attributeFamilies {
+		if prior, dup := families[cf]; dup {
+			return fmt.Errorf("tableschema: %s and %s both claim column family %q", prior, owners[0], cf)
+		}
+	}
 	for i, a := range rowPrefixes {
 		for _, b := range rowPrefixes[i+1:] {
 			if strings.HasPrefix(a.prefix, b.prefix) || strings.HasPrefix(b.prefix, a.prefix) {
@@ -313,8 +335,17 @@ func distinct(what string, values []string) error {
 	return nil
 }
 
+func hasControl(s string) bool {
+	for _, r := range s {
+		if r < 0x20 || r == 0x7f {
+			return true
+		}
+	}
+	return false
+}
+
 func validateTableName(name string) error {
-	if name == "" || strings.HasPrefix(name, ".") || strings.ContainsAny(name, `/\`) {
+	if strings.TrimSpace(name) == "" || name != strings.TrimSpace(name) || hasControl(name) || strings.HasPrefix(name, ".") || strings.ContainsAny(name, `/\`) {
 		return fmt.Errorf("tableschema: invalid table name %q", name)
 	}
 	if name == Table {
@@ -332,9 +363,11 @@ type Entry struct {
 	Bytes []byte
 }
 
-// Store records and reads descriptors in one engine. Puts are serialized per
-// Store; two Stores over the same engine, or two processes, do not
-// coordinate beyond the engine's own locking.
+// Store records and reads descriptors in one engine. The version cell is
+// written with a conditional mutation that requires it absent, so two
+// Stores, or two processes, racing to record one version cannot both land a
+// cell: the loser re-reads and is refused unless its document is the one
+// already recorded.
 type Store struct {
 	eng *engine.Engine
 	mu  sync.Mutex
@@ -379,8 +412,23 @@ func (s *Store) Put(schema *schemapb.TableSchema) (Entry, error) {
 			return Entry{}, fmt.Errorf("tableschema: %w", err)
 		}
 		mutation.Put([]byte(SchemaCF), Qualifier(version), nil, cclient.MutationLatestTimestamp, data)
-		if err := s.eng.Write(Table, []*cclient.Mutation{mutation}); err != nil {
+		accepted, err := s.eng.ConditionalWrite(Table, []engine.ConditionalMutation{{
+			Mutation:   mutation,
+			Conditions: []tablet.Condition{{ColumnFamily: []byte(SchemaCF), ColumnQualifier: Qualifier(version), Kind: engine.ConditionAbsent}},
+		}})
+		if err != nil {
 			return Entry{}, fmt.Errorf("tableschema: record %q version %d: %w", table, version, err)
+		}
+		if len(accepted) != 1 || !accepted[0] {
+			// Someone else recorded this version between our read and our
+			// write. It is ours only if it carries our bytes.
+			recorded, err := s.versionEntry(table, version)
+			if err != nil {
+				return Entry{}, err
+			}
+			if !bytes.Equal(recorded.Bytes, data) {
+				return Entry{}, fmt.Errorf("%w: table %q version %d was recorded concurrently", ErrConflict, table, version)
+			}
 		}
 	}
 	pointer := engine.SchemaPointer{ID: schema.GetSchemaId(), Version: version}
@@ -494,6 +542,19 @@ func (s *Store) ensureReserved() error {
 	return nil
 }
 
+func (s *Store) versionEntry(table string, version int64) (Entry, error) {
+	entries, err := s.versions(table)
+	if err != nil {
+		return Entry{}, err
+	}
+	for _, entry := range entries {
+		if entry.Version == version {
+			return entry, nil
+		}
+	}
+	return Entry{}, fmt.Errorf("tableschema: table %q version %d vanished after a conditional write was refused", table, version)
+}
+
 func (s *Store) latest(table string) (Entry, error) {
 	entries, err := s.versions(table)
 	if err != nil {
@@ -517,7 +578,12 @@ func (s *Store) versions(table string) ([]Entry, error) {
 	})
 }
 
-// scan reads descriptor cells in key order: by table, then by version.
+// scan reads descriptor cells in key order: by table, then by version. The
+// engine delivers every timestamp of a key and every delete marker; only the
+// newest cell of each qualifier counts, and a newest cell that is a delete
+// marker means the version is gone. A cell that is not a descriptor of the
+// row's table at the qualifier's version is an error, not skipped: the
+// reserved table is the record, and a stray cell in it is a fault to surface.
 func (s *Store) scan(r iterrt.Range) ([]Entry, error) {
 	sc, err := s.eng.Scan(Table, r, engine.ScanOptions{
 		ColumnFamilies:          [][]byte{[]byte(SchemaCF)},
@@ -528,12 +594,23 @@ func (s *Store) scan(r iterrt.Range) ([]Entry, error) {
 	}
 	defer sc.Close()
 	var out []Entry
-	for sc.Next() {
+	var lastRow, lastQualifier []byte
+	seen := false
+	for ; sc.Next(); func() {
+		if err := sc.Advance(); err != nil {
+			out, err = nil, fmt.Errorf("tableschema: scan %s: %w", Table, err)
+		}
+	}() {
 		key := sc.Key()
 		if !bytes.Equal(key.ColumnFamily, []byte(SchemaCF)) {
-			if err := sc.Advance(); err != nil {
-				return nil, fmt.Errorf("tableschema: scan %s: %w", Table, err)
-			}
+			continue
+		}
+		if seen && bytes.Equal(key.Row, lastRow) && bytes.Equal(key.ColumnQualifier, lastQualifier) {
+			// An older timestamp of a qualifier already decided.
+			continue
+		}
+		seen, lastRow, lastQualifier = true, append([]byte(nil), key.Row...), append([]byte(nil), key.ColumnQualifier...)
+		if key.Deleted {
 			continue
 		}
 		version, err := ParseQualifier(key.ColumnQualifier)
@@ -552,9 +629,6 @@ func (s *Store) scan(r iterrt.Range) ([]Entry, error) {
 			return nil, fmt.Errorf("tableschema: %s row %q version %d carries version %d", Table, key.Row, version, schema.GetVersion())
 		}
 		out = append(out, Entry{Table: string(key.Row), Version: version, Schema: schema, Bytes: data})
-		if err := sc.Advance(); err != nil {
-			return nil, fmt.Errorf("tableschema: scan %s: %w", Table, err)
-		}
 	}
 	return out, nil
 }

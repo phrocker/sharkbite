@@ -66,11 +66,21 @@ func schemaUsage() {
 `, tableschema.Table)
 }
 
-func openSchemaEngine(fs *flag.FlagSet, args []string, command string) (*engine.Engine, func() error) {
-	backend := registerBackendFlags(fs)
-	dataDir := fs.String("data", defaultDataDir(), "data directory")
-	fs.Parse(args)
-	eng, closeEngine, err := backend.openEngine(context.Background(), *dataDir, engine.Options{
+// schemaFlags registers the store flags; the engine is opened only after the
+// command's own inputs are validated and read, so a usage error creates no
+// store and a put from a terminal does not hold the engine open while it
+// waits for stdin.
+type schemaFlags struct {
+	backend *backendConfig
+	dataDir *string
+}
+
+func registerSchemaFlags(fs *flag.FlagSet) schemaFlags {
+	return schemaFlags{backend: registerBackendFlags(fs), dataDir: fs.String("data", defaultDataDir(), "data directory")}
+}
+
+func (f schemaFlags) open(command string) (*engine.Engine, func() error) {
+	eng, closeEngine, err := f.backend.openEngine(context.Background(), *f.dataDir, engine.Options{
 		Logger: slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn})),
 	})
 	if err != nil {
@@ -81,11 +91,10 @@ func openSchemaEngine(fs *flag.FlagSet, args []string, command string) (*engine.
 
 func cmdSchemaPut(args []string) {
 	fs := flag.NewFlagSet("schema put", flag.ExitOnError)
+	store := registerSchemaFlags(fs)
 	tableName := fs.String("table", "", "table the descriptor must describe (required)")
 	file := fs.String("file", "", "descriptor JSON file (default: stdin)")
-	eng, closeEngine := openSchemaEngine(fs, args, "put")
-	defer closeEngine()
-
+	fs.Parse(args)
 	if *tableName == "" {
 		die("schema put: --table is required")
 	}
@@ -108,6 +117,8 @@ func cmdSchemaPut(args []string) {
 	if schema.GetTable() != *tableName {
 		die("schema put: descriptor describes table %q, --table names %q", schema.GetTable(), *tableName)
 	}
+	eng, closeEngine := store.open("put")
+	defer closeEngine()
 	entry, err := tableschema.New(eng).Put(schema)
 	if err != nil {
 		die("schema put: %v", err)
@@ -118,23 +129,24 @@ func cmdSchemaPut(args []string) {
 
 func cmdSchemaGet(args []string) {
 	fs := flag.NewFlagSet("schema get", flag.ExitOnError)
+	store := registerSchemaFlags(fs)
 	tableName := fs.String("table", "", "described table (required)")
 	version := fs.Int64("version", 0, "a recorded version (default: the newest)")
-	eng, closeEngine := openSchemaEngine(fs, args, "get")
-	defer closeEngine()
-
+	fs.Parse(args)
 	if *tableName == "" {
 		die("schema get: --table is required")
 	}
-	store := tableschema.New(eng)
+	eng, closeEngine := store.open("get")
+	defer closeEngine()
+	s := tableschema.New(eng)
 	var (
 		entry tableschema.Entry
 		err   error
 	)
 	if *version == 0 {
-		entry, err = store.Get(*tableName)
+		entry, err = s.Get(*tableName)
 	} else {
-		entry, err = store.GetVersion(*tableName, *version)
+		entry, err = s.GetVersion(*tableName, *version)
 	}
 	if err != nil {
 		die("schema get: %v", err)
@@ -149,7 +161,9 @@ func cmdSchemaGet(args []string) {
 
 func cmdSchemaList(args []string) {
 	fs := flag.NewFlagSet("schema list", flag.ExitOnError)
-	eng, closeEngine := openSchemaEngine(fs, args, "list")
+	store := registerSchemaFlags(fs)
+	fs.Parse(args)
+	eng, closeEngine := store.open("list")
 	defer closeEngine()
 
 	entries, err := tableschema.New(eng).Described()
