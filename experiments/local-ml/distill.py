@@ -181,10 +181,14 @@ def authorize_export(manifest, cohort_id, dataset_path, manifest_path):
 
 
 def teacher_sign(rows, manifest):
-    """Deterministic reference teacher: the sign of the first feature chooses the label."""
+    """Deterministic reference teacher: the sign of the first feature chooses the label.
+
+    Zero has no sign and is the negative label: a census whose negative rows
+    carry a zero first feature (the explorer's fixture cohorts do) is then
+    separable by this teacher rather than labelled positive throughout."""
     labels = manifest['_labels']
     return [dict(example_id=r['id'], kind='prediction', teacher=manifest['teacher']['chosen'],
-                 output=dict(label=labels[1] if r['features'][0] >= 0 else labels[0], margin=float(r['features'][0])))
+                 output=dict(label=labels[1] if r['features'][0] > 0 else labels[0], margin=float(r['features'][0])))
             for r in rows]
 
 

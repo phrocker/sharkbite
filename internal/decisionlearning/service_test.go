@@ -185,11 +185,19 @@ func (h *harness) manifest() distillation.Manifest {
 	}
 }
 
-func (h *harness) candidate(m weightsbundle.Manifest, pin string) (weightsbundle.Record, weightsbundle.Record, weightsbundle.Record) {
+// declarePolicy declares the evaluation policy for a job and returns the
+// sealed record's id, which every candidate for that job must name.
+func (h *harness) declarePolicy(pin string) string {
+	h.t.Helper()
+	out := h.decode(h.svc.DeclarePolicy(h.ctx, pin, json.RawMessage(`{"name":"loop","split":"test","positive_label":"yes","minimum_recall":0.5,"minimum_specificity":0.5,"minimum_positives":1,"minimum_families":1}`)))
+	return out["policy_id"].(string)
+}
+
+func (h *harness) candidate(m weightsbundle.Manifest, pin, policyID string) (weightsbundle.Record, weightsbundle.Record, weightsbundle.Record) {
 	h.t.Helper()
 	weights, _ := m.File(weightsbundle.RoleWeights)
-	candidate, _ := weightsbundle.Seal(weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": "p", "training_ids": []string{"ex-1"}, "model_digest": weights.SHA256, "policy_predeclared": true, "task_ids": []string{"task-v1"}, "dataset_manifest_sha256": h.pin, "training_manifest_sha256": pin})
-	evaluation, _ := weightsbundle.Seal(weightsbundle.KindEvaluation, map[string]any{"candidate_id": candidate["id"], "dataset_id": "d", "evaluation_policy_id": "p", "ledger_id": "l", "disposition": "shadow_candidate", "reasons": []string{}, "metrics": []any{map[string]any{"assessor": "r", "positives": 2, "recall": 1.0, "missed_ids": []string{}, "unknown_lowered_ids": []string{}}}, "families": 2, "permitted_action": "full_review"})
+	candidate, _ := weightsbundle.Seal(weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": policyID, "training_ids": []string{"ex-1"}, "model_digest": weights.SHA256, "policy_predeclared": true, "task_ids": []string{"task-v1"}, "dataset_manifest_sha256": h.pin, "training_manifest_sha256": pin})
+	evaluation, _ := weightsbundle.Seal(weightsbundle.KindEvaluation, map[string]any{"candidate_id": candidate["id"], "dataset_id": "d", "evaluation_policy_id": policyID, "ledger_id": "l", "disposition": "shadow_candidate", "reasons": []string{}, "metrics": []any{map[string]any{"assessor": "r", "positives": 2, "recall": 1.0, "missed_ids": []string{}, "unknown_lowered_ids": []string{}}}, "families": 2, "permitted_action": "full_review"})
 	artifact, _ := weightsbundle.NewArtifact(candidate["id"].(string), evaluation["id"].(string), "d", m, "runtime")
 	return candidate, evaluation, artifact
 }
@@ -279,8 +287,12 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	receipt := distillation.Receipt{Schema: 1, Kind: distillation.KindReceipt, ManifestPin: pin, RequestedParameters: manifest.Data.GenerationParameters, ActualParameters: manifest.Data.GenerationParameters, RequestedCohorts: []string{"cohort-1"}, ActualCohorts: []string{"cohort-1"}, RequestedTeacher: teacher, ActualTeacher: teacher, RequestedBase: base, ActualBase: base, RuntimeIdentities: map[string]string{"python": "3.12"}, Executor: distillation.Executor{ID: "worker"}, BundleDigest: digest, TeacherPredictionsID: strings.Repeat("e", 64), TrainedExampleCount: 2, Status: "completed", Deviations: []distillation.Deviation{}, CandidateOnly: true,
 		AuthorizedExports: []distillation.AuthorizedExport{{CohortID: "cohort-1", TaskID: "task-v1", LabelPolicyID: "labels:1", ManifestSHA256: h.pin}}}
 	raw, _ = json.Marshal(receipt)
-	// A completed receipt needs its prediction set recorded first, and the
-	// id it names must be that set's.
+	// A completed receipt needs the evaluation policy declared and its
+	// prediction set recorded first, and the id it names must be that set's.
+	if _, err := h.svc.SubmitReceipt(ctx, pin, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "no evaluation policy") {
+		t.Fatalf("receipt before policy: %v", err)
+	}
+	policyID := h.declarePolicy(pin)
 	if _, err := h.svc.SubmitReceipt(ctx, pin, raw); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "submit the predictions first") {
 		t.Fatalf("receipt before predictions: %v", err)
 	}
@@ -289,7 +301,7 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 		t.Fatalf("receipt naming another set: %v", err)
 	}
 	// A candidate naming this manifest before a receipt exists is refused.
-	early, _, earlyArtifact := h.candidate(m, pin)
+	early, _, earlyArtifact := h.candidate(m, pin, policyID)
 	body, _ := json.Marshal(map[string]any{"candidate": early, "artifact": earlyArtifact})
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "no recorded receipt") {
 		t.Fatalf("candidate before receipt: %v", err)
@@ -317,19 +329,26 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 		t.Fatalf("%v", view)
 	}
 
-	candidate, evaluation, artifact := h.candidate(m, pin)
+	// A candidate under a policy the host did not declare for this job is
+	// refused; the declared one is recorded.
+	undeclared, _, undeclaredArtifact := h.candidate(m, pin, strings.Repeat("p", 64))
+	body, _ = json.Marshal(map[string]any{"candidate": undeclared, "artifact": undeclaredArtifact})
+	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not the policy") {
+		t.Fatalf("undeclared policy: %v", err)
+	}
+	candidate, evaluation, artifact := h.candidate(m, pin, policyID)
 	body, _ = json.Marshal(map[string]any{"candidate": candidate, "artifact": artifact})
 	recorded := h.decode(h.svc.SubmitCandidate(ctx, body))
 	if recorded["bundle_digest"] != digest {
 		t.Fatalf("%v", recorded)
 	}
 	// Naming an unrecorded manifest pin is not a way around the scope check.
-	unbound, _, unboundArtifact := h.candidate(m, strings.Repeat("9", 64))
+	unbound, _, unboundArtifact := h.candidate(m, strings.Repeat("9", 64), policyID)
 	body, _ = json.Marshal(map[string]any{"candidate": unbound, "artifact": unboundArtifact})
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not recorded on this host") {
 		t.Fatalf("unrecorded pin: %v", err)
 	}
-	outside, _ := weightsbundle.Seal(weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": "p", "training_ids": []string{"ex-1"}, "model_digest": str(candidate, "model_digest"), "policy_predeclared": true, "task_ids": []string{"task-v2"}, "training_manifest_sha256": pin})
+	outside, _ := weightsbundle.Seal(weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": policyID, "training_ids": []string{"ex-1"}, "model_digest": str(candidate, "model_digest"), "policy_predeclared": true, "task_ids": []string{"task-v2"}, "training_manifest_sha256": pin})
 	outsideArtifact, _ := weightsbundle.NewArtifact(outside["id"].(string), evaluation["id"].(string), "d", m, "runtime")
 	body, _ = json.Marshal(map[string]any{"candidate": outside, "artifact": outsideArtifact})
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "outside the selection") {
@@ -455,12 +474,13 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	raw, _ = manifest2.Encode()
 	h.decode(h.svc.SubmitJob(ctx, raw))
 	pin2, _ := manifest2.Pin()
+	policyID2 := h.declarePolicy(pin2)
 	predictions2 := h.predictions(manifest2, pin2)
 	receipt2 := receipt
 	receipt2.ManifestPin, receipt2.BundleDigest, receipt2.TeacherPredictionsID = pin2, digest2, predictions2
 	raw, _ = json.Marshal(receipt2)
 	h.decode(h.svc.SubmitReceipt(ctx, pin2, raw))
-	candidate2, evaluation2, artifact2 := h.candidate(m2, pin2)
+	candidate2, evaluation2, artifact2 := h.candidate(m2, pin2, policyID2)
 	body, _ = json.Marshal(map[string]any{"candidate": candidate2, "artifact": artifact2})
 	h.decode(h.svc.SubmitCandidate(ctx, body))
 	raw2, _ := weightsbundle.EncodeRecord(evaluation2)

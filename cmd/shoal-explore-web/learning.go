@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -74,8 +75,40 @@ func (r hostEgressResolver) ResolveEgress(_ context.Context, id distillation.Mod
 // studentServing adapts the student provider to the learning service's
 // serving report: what the runtime serves right now, its device, and any
 // fallback events, so the console shows the exact bundle digest served.
+// The student's task is one proposition over a feature vector; the host
+// asks it under a fixed question set so every prediction is comparable.
+const (
+	studentQuestionSet = "student-features:v1"
+	studentQuestionID  = "property"
+)
+
 type studentServing struct {
 	predictor *model.StudentPredictor
+}
+
+// PredictFeatures asks the runtime the student's task for one feature
+// vector. The question set is fixed: one proposition, answered as p_true.
+func (s studentServing) PredictFeatures(ctx context.Context, features []float64) (map[string]any, error) {
+	state, err := json.Marshal(map[string]any{"features": features})
+	if err != nil {
+		return nil, err
+	}
+	result, err := s.predictor.Predict(ctx, model.TypedRequest{
+		ModelAlias: s.predictor.Identity().ModelAlias, QuestionSetID: studentQuestionSet, State: state,
+		Questions: []model.TypedQuestion{{ID: studentQuestionID, Kind: model.TypedPropositionProbability, Instructions: "Does the student's task proposition hold for this feature vector?"}},
+	})
+	if err != nil {
+		return nil, err
+	}
+	answers := make([]map[string]any, 0, len(result.Answers))
+	for _, a := range result.Answers {
+		answers = append(answers, map[string]any{"question_id": a.QuestionID, "p_true": a.PTrue, "confidence": a.Confidence})
+	}
+	return map[string]any{
+		"status": string(result.Status), "reason": result.Reason, "answers": answers,
+		"release_id": s.predictor.Release().ID, "bundle_digest": s.predictor.Release().BundleDigest,
+		"model_alias": result.Identity.ModelAlias, "device": result.Identity.Device, "question_id": studentQuestionID,
+	}, nil
 }
 
 func (s studentServing) ServingReport(ctx context.Context) (map[string]any, error) {

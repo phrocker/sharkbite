@@ -120,7 +120,26 @@ cohort outside the selection, an improvement claim, or an evaluation inside
 the receipt is refused. Completion is not improvement. The reference worker is
 `experiments/local-ml/distill.py`: a deterministic CPU student with no
 model-hub access; a checkpoint fine-tune student plugs into the same
-contract. Evaluation compares students against their teachers and the
+contract. The evaluation policy a run will be judged under (reserved split, positive
+label, minimum recall, minimum specificity, minimum positives, minimum
+families) is declared on the job before teacher predictions or a receipt: the host seals it,
+records the declaration against the manifest pin, refuses a completed
+receipt or teacher predictions until one is declared, and
+refuses a declaration once either is recorded, so the host's accepted outputs
+cannot be used to choose the gates. A completed run becomes a candidate through one
+sealing step (`internal/distillation.BuildCandidateSet`, reached from the
+console's "seal run" form, `shoalctl learning candidate`, or
+`experiments/local-ml/seal_candidate.py`): the candidate, evaluation, and
+artifact are built from the recorded manifest, receipt, prediction set, the
+declared policy, and every export the run consumed plus the bundle, so the
+three paths seal byte-identical records and the host accepts a candidate
+only under the policy it declared. The evaluation measures the student on
+the evaluation cohort's reserved split against the adjudicated labels (recall
+over verified positives and specificity over verified negatives, so a
+constant answer clears at most one gate), names the teacher it is compared
+with on the rows the teacher labelled, and records every unmet gate and
+every leak between the reserved rows and any training row of any cohort as
+a reason; its disposition is shadow_candidate or hold. Evaluation compares students against their teachers and the
 incumbent on the same picture, and the comparison names each teacher, so an
 extraction change and a model change stay distinguishable. A release records
 the selection's task scope; a request for a task outside it is refused.

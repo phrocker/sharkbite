@@ -55,6 +55,12 @@ const (
 	kindCandidate      = weightsbundle.KindCandidate
 	kindArtifact       = weightsbundle.KindArtifact
 	kindEvaluation     = weightsbundle.KindEvaluation
+	kindPolicy         = weightsbundle.KindEvaluationPolicy
+	// kindPolicyPointer records, under the manifest pin, which sealed policy
+	// was declared for the job and when; the sealed policy lives under its
+	// own identity, as every sealed record does, shared by every job judged
+	// under the same gates.
+	kindPolicyPointer = "evaluation-policy-pointer"
 )
 
 // Cohort is what a cohort authority lists.
@@ -641,7 +647,12 @@ func (s *Service) Job(ctx context.Context, pin string) (json.RawMessage, error) 
 }
 
 func (s *Service) jobView(ctx context.Context, job weightsbundle.Record) (map[string]any, error) {
-	view := map[string]any{"job": job, "receipt": nil, "requested": job["requested"], "actual": nil, "executor": nil, "deviations": nil, "predictions_id": nil}
+	view := map[string]any{"job": job, "receipt": nil, "requested": job["requested"], "actual": nil, "executor": nil, "deviations": nil, "predictions_id": nil, "evaluation_policy": nil}
+	if policy, err := s.policyFor(ctx, str(job, "manifest_pin")); err == nil {
+		view["evaluation_policy"] = policy
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
 	if set, err := s.get(ctx, kindPredictions, str(job, "manifest_pin")); err == nil {
 		if id, err := weightsbundle.Digest(set); err == nil {
 			view["predictions_id"] = id
@@ -715,6 +726,12 @@ func (s *Service) SubmitPredictions(ctx context.Context, pin string, raw json.Ra
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if _, err := s.policyFor(ctx, pin); err != nil {
+		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+			return nil, refused(fmt.Errorf("declare an evaluation policy for manifest %s before recording teacher predictions", pin))
+		}
+		return nil, s.classified(err)
+	}
 	if err := s.put(ctx, kindPredictions, pin, generic); err != nil {
 		if errors.Is(err, storage.ErrExists) {
 			return nil, refused(fmt.Errorf("teacher predictions for manifest %s are already recorded", pin))
@@ -722,6 +739,80 @@ func (s *Service) SubmitPredictions(ctx context.Context, pin string, raw json.Ra
 		return nil, s.classifyLogged("record predictions", err)
 	}
 	return marshal(map[string]any{"manifest_pin": pin, "predictions_id": gotID, "count": len(set.Predictions), "teacher": set.Teacher, "teacher_egress": set.TeacherEgress})
+}
+
+// policyFor returns the sealed evaluation policy declared for a manifest,
+// or a not-found error when none is.
+func (s *Service) policyFor(ctx context.Context, pin string) (weightsbundle.Record, error) {
+	pointer, err := s.get(ctx, kindPolicyPointer, pin)
+	if err != nil {
+		return nil, err
+	}
+	id := str(pointer, "policy_id")
+	if !recordID.MatchString(id) {
+		return nil, refused(fmt.Errorf("evaluation policy pointer for manifest %s names no record", pin))
+	}
+	policy, err := s.get(ctx, kindPolicy, id)
+	if err != nil {
+		return nil, err
+	}
+	if err := weightsbundle.VerifyRecord(policy, kindPolicy); err != nil {
+		return nil, refused(fmt.Errorf("evaluation policy %s recorded for manifest %s does not verify", id, pin))
+	}
+	return policy, nil
+}
+
+// DeclarePolicy seals the evaluation policy a run will be judged under and
+// records, under the manifest pin, that it was declared for this job. It is
+// accepted only while no predictions or receipt are recorded for the job,
+// so the gates are fixed before the host accepts any run output; a second
+// declaration must be identical.
+// The policy itself is addressed by its gates, so runs judged the same way
+// share it and a release can name its predecessor's policy.
+func (s *Service) DeclarePolicy(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
+	if _, _, err := s.recordedJob(ctx, pin); err != nil {
+		return nil, err
+	}
+	policy, err := distillation.DecodeEvaluationPolicy(raw)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	record, err := distillation.SealPolicy(policy)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if _, err := s.get(ctx, kindReceipt, pin); err == nil {
+		return nil, refused(fmt.Errorf("a receipt is already recorded for manifest %s; a policy declared after the run's outputs exist is not predeclared", pin))
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
+	if _, err := s.get(ctx, kindPredictions, pin); err == nil {
+		return nil, refused(fmt.Errorf("teacher predictions are already recorded for manifest %s; a policy declared after the run's outputs exist is not predeclared", pin))
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
+	if existing, err := s.policyFor(ctx, pin); err == nil {
+		if str(existing, "id") != str(record, "id") {
+			return nil, refused(fmt.Errorf("evaluation policy %s is already declared for manifest %s; a run is judged under one policy", str(existing, "id"), pin))
+		}
+		return marshal(map[string]any{"manifest_pin": pin, "evaluation_policy": existing, "policy_id": str(existing, "id")})
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return nil, s.classified(err)
+	}
+	id := str(record, "id")
+	if err := s.put(ctx, kindPolicy, id, record); err != nil && !errors.Is(err, storage.ErrExists) {
+		return nil, s.classified(err)
+	}
+	pointer := map[string]any{"schema": 1, "kind": kindPolicyPointer, "manifest_pin": pin, "policy_id": id, "declared_at": s.cfg.Now().UTC().Format(time.RFC3339Nano)}
+	if err := s.put(ctx, kindPolicyPointer, pin, pointer); err != nil {
+		if errors.Is(err, storage.ErrExists) {
+			return nil, refused(fmt.Errorf("an evaluation policy is already declared for manifest %s", pin))
+		}
+		return nil, s.classified(err)
+	}
+	return marshal(map[string]any{"manifest_pin": pin, "evaluation_policy": record, "policy_id": str(record, "id")})
 }
 
 // SubmitReceipt verifies a trainer receipt against the recorded manifest.
@@ -738,9 +829,21 @@ func (s *Service) SubmitReceipt(ctx context.Context, pin string, raw json.RawMes
 		return nil, s.classified(err)
 	}
 	if receipt.Status == distillation.StatusCompleted {
+		// The policy the run will be judged under is sealed before the host
+		// accepts outputs. A completed run without one is refused here, while
+		// the omission is still recoverable, rather than at sealing time.
+		if _, err := s.policyFor(ctx, pin); err != nil {
+			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+				return nil, refused(fmt.Errorf("no evaluation policy is declared for manifest %s; declare it before submitting the run's receipt", pin))
+			}
+			return nil, s.classified(err)
+		}
 		set, err := s.get(ctx, kindPredictions, pin)
 		if err != nil {
-			return nil, refused(fmt.Errorf("receipt names teacher predictions %s, but no prediction set is recorded for manifest %s; submit the predictions first", receipt.TeacherPredictionsID, pin))
+			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+				return nil, refused(fmt.Errorf("receipt names teacher predictions %s, but no prediction set is recorded for manifest %s; submit the predictions first", receipt.TeacherPredictionsID, pin))
+			}
+			return nil, s.classified(err)
 		}
 		if id, _ := weightsbundle.Digest(set); id != receipt.TeacherPredictionsID {
 			return nil, refused(fmt.Errorf("receipt names teacher predictions %s; the recorded set for this manifest is %s", receipt.TeacherPredictionsID, id))
@@ -823,6 +926,15 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 		if str(receipt, "bundle_digest") != digest {
 			return nil, refused(fmt.Errorf("the recorded receipt for manifest %s produced bundle %s, not the artifact's %s", pin, str(receipt, "bundle_digest"), digest))
 		}
+		// The candidate's policy must be the one declared here before the
+		// receipt; a policy sealed elsewhere, after the fact, is not it.
+		policy, err := s.policyFor(ctx, pin)
+		if err != nil {
+			return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no declared evaluation policy", pin))
+		}
+		if str(body.Candidate, "evaluation_policy_id") != str(policy, "id") {
+			return nil, refused(fmt.Errorf("candidate's evaluation policy %s is not the policy %s declared for manifest %s before its receipt", str(body.Candidate, "evaluation_policy_id"), str(policy, "id"), pin))
+		}
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -881,8 +993,12 @@ func (s *Service) SubmitEvaluation(ctx context.Context, raw json.RawMessage) (js
 	if err := weightsbundle.VerifyRecord(record, kindEvaluation); err != nil {
 		return nil, invalid(err.Error())
 	}
-	if _, err := s.get(ctx, kindCandidate, str(record, "candidate_id")); err != nil {
+	candidate, err := s.get(ctx, kindCandidate, str(record, "candidate_id"))
+	if err != nil {
 		return nil, s.classified(err)
+	}
+	if str(record, "evaluation_policy_id") != str(candidate, "evaluation_policy_id") {
+		return nil, refused(fmt.Errorf("evaluation is under policy %s; the candidate was sealed under %s", str(record, "evaluation_policy_id"), str(candidate, "evaluation_policy_id")))
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

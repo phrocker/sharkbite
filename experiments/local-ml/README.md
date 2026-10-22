@@ -158,6 +158,40 @@ Both students are linear; a transformer checkpoint student would implement
 the same `STUDENTS` entry with a torch runtime, which this CPU-only
 reference does not ship.
 
+## Sealing a run as a candidate
+
+`seal_candidate.py` turns a completed run into the three records the host
+needs before the bundle can be a candidate, exactly as `shoalctl learning
+candidate` and the host's own seal route (`POST /api/v1/learning/candidates/seal`)
+do: the same inputs seal to byte-identical records in all three, which the Go
+contract test checks against `python-candidate-set.json`.
+
+```sh
+"$PYTHON" seal_candidate.py --manifest manifest.json --manifest-pin "$PIN" \
+  --receipt student/distillation-receipt.json --predictions student/teacher-predictions.json \
+  --bundle-dir student/bundle --export-manifest export-manifest.json --dataset dataset.json \
+  --policy evaluation-policy.json --output-dir sealed [--serving-root /var/lib/shoal/releases]
+```
+
+`--policy` is the sealed `evaluation_policy` record the host declared for the
+job before its teacher predictions and receipt (`POST /api/v1/learning/jobs/{pin}/policy`; `GET
+/api/v1/learning/jobs/{pin}` returns it). A policy written by hand seals
+records the host refuses, because the candidate's policy must be the one
+declared there. `--export-manifest` and `--dataset` are repeated, paired in
+order, for every cohort the run trained on; `--evaluation-cohort` names the
+one whose reserved split is measured when there are several. The evaluation
+measures the student against the adjudicated labels (recall over verified
+positives, specificity over verified negatives), compares it with the
+recorded teacher on the rows the teacher labelled, and records every unmet
+gate and every leak between the reserved rows and any training row of any
+cohort as a reason. The outputs are
+`candidate.json` (`{candidate, artifact}`) and `evaluation.json` for the
+candidate and evaluation routes or the console's forms, `promote.json` for
+the promotion route, and `candidate-set.json`. With `--serving-root` the
+verified bundle is published at `<root>/<digest>` without replacing an
+occupant. Completion is not improvement: the disposition is `shadow_candidate`
+or `hold`, and the record permits full review only.
+
 ## Student runtime
 
 `serve_student.py --bundle-dir student/bundle --release-id R --bundle-digest D --model-alias A`

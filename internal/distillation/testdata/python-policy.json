@@ -1,0 +1,1 @@
+{"id":"f64b9b23b406fce7518d9c95faca3c882032c201bb546f536a60c03e0a288754","kind":"evaluation_policy","minimum_families":1,"minimum_positives":1,"minimum_recall":0.5,"minimum_specificity":0.5,"name":"fixture-evaluation-policy","positive_label":"yes","schema":1,"split":"test"}

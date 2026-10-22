@@ -237,6 +237,13 @@ func (h *learningHTTP) dispatch(ctx context.Context, method string, segments []s
 		}
 		out, err := h.provider.SubmitPredictions(ctx, segments[1], raw)
 		return out, err, true
+	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "policy" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.DeclarePolicy(ctx, segments[1], raw)
+		return out, err, true
 	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "receipt" && post:
 		raw, err := body()
 		if err != nil {
@@ -253,6 +260,20 @@ func (h *learningHTTP) dispatch(ctx context.Context, method string, segments []s
 			return nil, err, true
 		}
 		out, err := h.provider.SubmitCandidate(ctx, raw)
+		return out, err, true
+	case len(segments) == 2 && segments[0] == "candidates" && segments[1] == "seal" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.SealCandidate(ctx, raw)
+		return out, err, true
+	case len(segments) == 2 && segments[0] == "serving" && segments[1] == "predict" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.Predict(ctx, raw)
 		return out, err, true
 	case len(segments) == 3 && segments[0] == "candidates" && segments[2] == "evaluations" && get:
 		out, err := h.provider.Evaluations(ctx, segments[1])

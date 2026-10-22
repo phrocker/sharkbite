@@ -229,6 +229,31 @@
     return raw ? raw.split(",").map((s) => s.trim()).filter(Boolean) : [];
   }
 
+  function number(id) {
+    const n = Number(required(id));
+    if (!Number.isFinite(n)) throw new Error(`${id} must be a finite number`);
+    return n;
+  }
+
+  function integer(id) {
+    const n = number(id);
+    if (!Number.isInteger(n)) throw new Error(`${id} must be an integer`);
+    return n;
+  }
+
+  function fileBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error(`${file.name} could not be read`));
+      reader.onload = () => {
+        const url = String(reader.result || "");
+        const comma = url.indexOf(",");
+        resolve(comma >= 0 ? url.slice(comma + 1) : url);
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function jsonValue(id) {
     const raw = required(id);
     try {
@@ -308,9 +333,36 @@
     return post(`${ROOT}/jobs`, manifest);
   });
   onSubmit("learning-predictions-form", "Teacher predictions", "predictions", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-predictions-pin"))}/predictions`, jsonValue("learning-predictions-json")));
+  onSubmit("learning-policy-form", "Evaluation policy", "policy", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-policy-pin"))}/policy`, {
+    name: required("learning-policy-name"),
+    split: required("learning-policy-split"),
+    positive_label: required("learning-policy-positive"),
+    minimum_recall: number("learning-policy-recall"),
+    minimum_specificity: number("learning-policy-specificity"),
+    minimum_positives: integer("learning-policy-positives"),
+    minimum_families: integer("learning-policy-families"),
+  }));
   onSubmit("learning-receipt-form", "Receipt submission", "receipt", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-receipt-pin"))}/receipt`, jsonValue("learning-receipt-json")));
   onSubmit("learning-evaluations-form", "Evaluations", "evaluations", () => requestJSON(`${ROOT}/candidates/${encodeURIComponent(required("learning-evaluations-candidate"))}/evaluations`));
   onSubmit("learning-candidate-form", "Candidate record", "candidate", () => post(`${ROOT}/candidates`, jsonValue("learning-candidate-json")));
+  onSubmit("learning-seal-form", "Seal run", "seal", async () => {
+    const input = $("learning-seal-bundle");
+    const files = input && input.files ? Array.from(input.files) : [];
+    if (!files.length) throw new Error("learning-seal-bundle requires the bundle's files");
+    const bundle = {};
+    for (const file of files) bundle[file.name] = await fileBase64(file);
+    const body = {manifest_pin: required("learning-seal-pin"), bundle};
+    const cohort = optional("learning-seal-cohort");
+    if (cohort) body.cohort_id = cohort;
+    return post(`${ROOT}/candidates/seal`, body);
+  });
+  onSubmit("learning-predict-form", "Prediction", "predict", () => post(`${ROOT}/serving/predict`, {
+    features: list("learning-predict-features").map((value) => {
+      const n = Number(value);
+      if (!Number.isFinite(n)) throw new Error(`feature ${JSON.stringify(value)} is not a finite number`);
+      return n;
+    }),
+  }));
   onSubmit("learning-evaluation-form", "Evaluation record", "evaluation", () => post(`${ROOT}/evaluations`, jsonValue("learning-evaluation-json")));
   onSubmit("learning-promote-form", "Promotion", "promote", () => post(`${ROOT}/releases/promote`, {
     candidate_id: required("learning-promote-candidate"),

@@ -61,6 +61,9 @@ func (s *learningStub) Job(_ context.Context, pin string) (json.RawMessage, erro
 func (s *learningStub) SubmitJob(_ context.Context, m json.RawMessage) (json.RawMessage, error) {
 	return s.reply("submit-job", m)
 }
+func (s *learningStub) DeclarePolicy(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
+	return s.reply("policy:"+pin, r)
+}
 func (s *learningStub) SubmitReceipt(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
 	return s.reply("receipt:"+pin, r)
 }
@@ -75,6 +78,12 @@ func (s *learningStub) Evaluations(_ context.Context, id string) (json.RawMessag
 }
 func (s *learningStub) SubmitEvaluation(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
 	return s.reply("submit-evaluation", b)
+}
+func (s *learningStub) SealCandidate(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
+	return s.reply("seal", b)
+}
+func (s *learningStub) Predict(_ context.Context, b json.RawMessage) (json.RawMessage, error) {
+	return s.reply("predict", b)
 }
 func (s *learningStub) Releases(context.Context) (json.RawMessage, error) {
 	return s.reply("releases", nil)
@@ -152,7 +161,10 @@ func TestLearningRoutesDispatchToTheProvider(t *testing.T) {
 		{"POST", "/api/v1/learning/jobs", `{"schema":1}`, "submit-job"},
 		{"GET", "/api/v1/learning/jobs/pin1", "", "job:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/predictions", `{"schema":1}`, "predictions:pin1"},
+		{"POST", "/api/v1/learning/jobs/pin1/policy", `{"name":"p"}`, "policy:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/receipt", `{"schema":1}`, "receipt:pin1"},
+		{"POST", "/api/v1/learning/candidates/seal", `{"manifest_pin":"p","bundle":{}}`, "seal"},
+		{"POST", "/api/v1/learning/serving/predict", `{"features":[1]}`, "predict"},
 		{"GET", "/api/v1/learning/candidates", "", "candidates"},
 		{"POST", "/api/v1/learning/candidates", `{"candidate":{}}`, "submit-candidate"},
 		{"GET", "/api/v1/learning/candidates/c1/evaluations", "", "evaluations:c1"},

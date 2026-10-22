@@ -1,0 +1,1 @@
+{"base":"base-small","coefficients":[2.0,-1.0],"distillation_manifest_pin":"6440aa9567d6bf359bca417b4d94538a3f783df5f640f7911d3adc08825ae11f","epochs":3,"feature_schema_id":"numeric-v1","intercept":-1.0,"kind":"linear-student","labels":["no","yes"],"schema":1,"task_id":"synthetic-task","teacher":"teacher-a","threshold":0.0}
