@@ -53,7 +53,28 @@ def main(argv):
                                                     bundle_out, [(export_manifest, data)], policy)
     (out / 'python-candidate-set.json').write_bytes(distill.canonical(records).encode())
     shutil.rmtree(out / 'job')
-    print(json.dumps(dict(pin=pin, bundle_digest=receipt['bundle_digest'], disposition=records['evaluation']['disposition']), sort_keys=True))
+    # A second completed run under a second manifest (another prompt
+    # version) on the same export, for tests that need two releases: the
+    # host rebuilds every candidate from its own records, so a second release
+    # needs a second real run.
+    run2 = out / 'python-run2'
+    if run2.exists():
+        shutil.rmtree(run2)
+    run2.mkdir()
+    manifest2 = manifest_fixture(export_sha, held_out=['row-99'])
+    manifest2['data']['prompt_version'] = 'prompt:2'
+    raw2 = distill.canonical(manifest2).encode()
+    pin2 = hashlib.sha256(raw2).hexdigest()
+    (run2 / 'manifest.json').write_bytes(raw2)
+    receipt2 = distill.distill(str(run2 / 'manifest.json'), pin2,
+                               {'cohort-1': (str(out / 'python-dataset.json'), str(out / 'python-export-manifest.json'))},
+                               run2 / 'job', executor=dict(id='worker-1', attestation_id='attest:1', host='fixture-host'))
+    (run2 / 'receipt.json').write_bytes(distill.canonical(receipt2).encode())
+    (run2 / 'predictions.json').write_bytes((run2 / 'job' / 'teacher-predictions.json').read_bytes())
+    shutil.copytree(run2 / 'job' / 'bundle', run2 / 'bundle')
+    shutil.rmtree(run2 / 'job')
+    print(json.dumps(dict(pin=pin, bundle_digest=receipt['bundle_digest'], disposition=records['evaluation']['disposition'],
+                          pin2=pin2, bundle_digest2=receipt2['bundle_digest']), sort_keys=True))
 
 
 if __name__ == '__main__':

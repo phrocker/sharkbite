@@ -132,8 +132,10 @@ console's "seal run" form, `shoalctl learning candidate`, or
 `experiments/local-ml/seal_candidate.py`): the candidate, evaluation, and
 artifact are built from the recorded manifest, receipt, prediction set, the
 declared policy, and every export the run consumed plus the bundle, so the
-three paths seal byte-identical records and the host accepts a candidate
-only under the policy it declared. The evaluation measures the student on
+three paths seal byte-identical records, and the host accepts a submitted
+candidate or evaluation only after sealing the run again from its own
+records and the published bundle and finding the same record; a held run's
+bundle is not placed on the serving root. The evaluation measures the student on
 the evaluation cohort's reserved split against the adjudicated labels (recall
 over verified positives and specificity over verified negatives, so a
 constant answer clears at most one gate), names the teacher it is compared

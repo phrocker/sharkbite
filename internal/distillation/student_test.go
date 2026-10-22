@@ -80,8 +80,17 @@ func TestCandidateSetRefusesInputsThatDoNotBelongTogether(t *testing.T) {
 		"dataset altered": func(in *CandidateInput) {
 			in.Exports[0].Dataset = append(append([]byte(nil), in.Exports[0].Dataset...), ' ')
 		},
-		"export missing":            func(in *CandidateInput) { in.Exports = nil },
-		"export presented twice":    func(in *CandidateInput) { in.Exports = append(in.Exports, in.Exports[0]) },
+		"export missing":         func(in *CandidateInput) { in.Exports = nil },
+		"export presented twice": func(in *CandidateInput) { in.Exports = append(in.Exports, in.Exports[0]) },
+		"reserved row listed twice": func(in *CandidateInput) {
+			var export map[string]any
+			if err := json.Unmarshal(in.Exports[0].Manifest, &export); err != nil {
+				t.Fatal(err)
+			}
+			rows := export["rows"].([]any)
+			export["rows"] = append(rows, rows[len(rows)-1])
+			in.Exports[0].Manifest, _ = json.Marshal(export)
+		},
 		"evaluation cohort foreign": func(in *CandidateInput) { in.EvaluationCohort = "cohort-9" },
 		"policy tampered": func(in *CandidateInput) {
 			in.Policy = cloneRecord(in.Policy)

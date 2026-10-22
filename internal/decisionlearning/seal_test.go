@@ -163,16 +163,39 @@ func TestSealCandidateRecordsARunFromItsOutputs(t *testing.T) {
 	if _, err := svc.DeclarePolicy(ctx, pin, rawDeclaration); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not predeclared") {
 		t.Fatalf("policy after receipt: %v", err)
 	}
-	// A bundle that is not the receipt's is refused before any export is
-	// fetched, and the serving root stays empty.
-	foreign := map[string]string{}
-	for k, v := range bundle {
-		foreign[k] = v
+	// A bundle that verifies but is not the receipt's is refused before any
+	// export is fetched, and the serving root stays empty.
+	foreignDir := t.TempDir()
+	for _, name := range []string{"model.json", "runtime.json"} {
+		content := fixtureFile(t, filepath.Join("python-bundle", name))
+		if name == "model.json" {
+			content = []byte(strings.Replace(string(content), `"intercept":`, `"intercept":1`, 1))
+		}
+		if err := os.WriteFile(filepath.Join(foreignDir, name), content, 0o600); err != nil {
+			t.Fatal(err)
+		}
 	}
-	foreign["model.json"] = base64.StdEncoding.EncodeToString(append([]byte(nil), fixtureFile(t, filepath.Join("python-bundle", "model.json"))...))
-	foreignBundle := fixtureFile(t, filepath.Join("python-bundle", "bundle.json"))
-	foreign["bundle.json"] = base64.StdEncoding.EncodeToString([]byte(strings.Replace(string(foreignBundle), `"name"`, `"name "`, 1)))
-	_ = foreign
+	foreignManifest, err := weightsbundle.Build(foreignDir, map[string]string{"model.json": weightsbundle.RoleWeights, "runtime.json": weightsbundle.RoleRuntime})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := weightsbundle.Stage(foreignDir, foreignManifest); err != nil {
+		t.Fatal(err)
+	}
+	foreign := map[string]string{}
+	for _, name := range []string{"bundle.json", "model.json", "runtime.json"} {
+		raw, err := os.ReadFile(filepath.Join(foreignDir, name))
+		if err != nil {
+			t.Fatal(err)
+		}
+		foreign[name] = base64.StdEncoding.EncodeToString(raw)
+	}
+	if _, err := svc.SealCandidate(ctx, body(func(m map[string]any) { m["bundle"] = foreign })); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not the bundle presented") {
+		t.Fatalf("bundle the receipt did not produce: %v", err)
+	}
+	if entries, _ := os.ReadDir(filepath.Join(base, "serving")); len(entries) != 0 {
+		t.Fatalf("a refused bundle left something on the serving root: %v", entries)
+	}
 	if _, err := svc.SealCandidate(ctx, body(func(m map[string]any) { m["cohort_id"] = "cohort-9" })); !shoal.IsErrorCode(err, shoal.ErrorConflict) {
 		t.Fatalf("cohort not trained on: %v", err)
 	}
