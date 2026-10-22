@@ -896,45 +896,60 @@ func (s *Service) SubmitCandidate(ctx context.Context, raw json.RawMessage) (jso
 	} else if got != digest {
 		return nil, refused(fmt.Errorf("published bundle digest %s differs from artifact %s", got, digest))
 	}
-	// A candidate that names a distillation manifest is bound to it: the
-	// manifest and a completed receipt for exactly this bundle must be
-	// recorded here, and the candidate's task scope must be the selection's.
-	// Naming an unrecorded pin is not a way out of the check.
-	if pin := str(body.Candidate, "training_manifest_sha256"); pin != "" {
-		if !recordID.MatchString(pin) {
-			return nil, invalid("candidate training_manifest_sha256 must be a 64-hex content address")
-		}
-		record, err := s.get(ctx, kindManifest, pin)
-		if err != nil {
-			return nil, refused(fmt.Errorf("candidate names training manifest %s, which is not recorded on this host", pin))
-		}
-		encoded, _ := weightsbundle.Canonical(record)
-		m, err := distillation.Decode(encoded)
-		if err != nil {
-			return nil, s.classified(err)
-		}
-		if err := distillation.CheckCandidateScope(m, body.Candidate); err != nil {
-			return nil, s.classified(err)
-		}
-		receipt, err := s.get(ctx, kindReceipt, pin)
-		if err != nil {
-			return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no recorded receipt", pin))
-		}
-		if str(receipt, "status") != distillation.StatusCompleted {
-			return nil, refused(fmt.Errorf("the recorded run for manifest %s is %q, not completed", pin, str(receipt, "status")))
-		}
-		if str(receipt, "bundle_digest") != digest {
-			return nil, refused(fmt.Errorf("the recorded receipt for manifest %s produced bundle %s, not the artifact's %s", pin, str(receipt, "bundle_digest"), digest))
-		}
-		// The candidate's policy must be the one declared here before the
-		// receipt; a policy sealed elsewhere, after the fact, is not it.
-		policy, err := s.policyFor(ctx, pin)
-		if err != nil {
-			return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no declared evaluation policy", pin))
-		}
-		if str(body.Candidate, "evaluation_policy_id") != str(policy, "id") {
-			return nil, refused(fmt.Errorf("candidate's evaluation policy %s is not the policy %s declared for manifest %s before its receipt", str(body.Candidate, "evaluation_policy_id"), str(policy, "id"), pin))
-		}
+	// A candidate is bound to the run that produced it: the manifest and a
+	// completed receipt for exactly this bundle must be recorded here, the
+	// candidate's task scope must be the selection's, its policy must be the
+	// one declared before the receipt, and the record itself must be the one
+	// this host seals from its own records and the published bundle. A
+	// candidate naming no manifest, or an unrecorded one, is refused: nothing
+	// about a run is taken on the caller's word.
+	pin := str(body.Candidate, "training_manifest_sha256")
+	if pin == "" {
+		return nil, invalid("candidate must name the training manifest of the run that produced it")
+	}
+	if !recordID.MatchString(pin) {
+		return nil, invalid("candidate training_manifest_sha256 must be a 64-hex content address")
+	}
+	record, err := s.get(ctx, kindManifest, pin)
+	if err != nil {
+		return nil, refused(fmt.Errorf("candidate names training manifest %s, which is not recorded on this host", pin))
+	}
+	encoded, _ := weightsbundle.Canonical(record)
+	m, err := distillation.Decode(encoded)
+	if err != nil {
+		return nil, s.classified(err)
+	}
+	if err := distillation.CheckCandidateScope(m, body.Candidate); err != nil {
+		return nil, s.classified(err)
+	}
+	receipt, err := s.get(ctx, kindReceipt, pin)
+	if err != nil {
+		return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no recorded receipt", pin))
+	}
+	if str(receipt, "status") != distillation.StatusCompleted {
+		return nil, refused(fmt.Errorf("the recorded run for manifest %s is %q, not completed", pin, str(receipt, "status")))
+	}
+	if str(receipt, "bundle_digest") != digest {
+		return nil, refused(fmt.Errorf("the recorded receipt for manifest %s produced bundle %s, not the artifact's %s", pin, str(receipt, "bundle_digest"), digest))
+	}
+	// The candidate's policy must be the one declared here before the
+	// receipt; a policy sealed elsewhere, after the fact, is not it.
+	policy, err := s.policyFor(ctx, pin)
+	if err != nil {
+		return nil, refused(fmt.Errorf("candidate names training manifest %s, which has no declared evaluation policy", pin))
+	}
+	if str(body.Candidate, "evaluation_policy_id") != str(policy, "id") {
+		return nil, refused(fmt.Errorf("candidate's evaluation policy %s is not the policy %s declared for manifest %s before its receipt", str(body.Candidate, "evaluation_policy_id"), str(policy, "id"), pin))
+	}
+	sealed, _, err := s.rebuildFromServingRoot(ctx, pin, str(body.Candidate, "dataset_id"))
+	if err != nil {
+		return nil, err
+	}
+	if str(sealed.Candidate, "id") != str(body.Candidate, "id") {
+		return nil, refused(fmt.Errorf("candidate %s is not the candidate this host seals for manifest %s from its own records (%s)", str(body.Candidate, "id"), pin, str(sealed.Candidate, "id")))
+	}
+	if str(sealed.Artifact, "id") != str(body.Artifact, "id") {
+		return nil, refused(fmt.Errorf("artifact %s is not the artifact this host seals for manifest %s (%s); it must bind the host's evaluation", str(body.Artifact, "id"), pin, str(sealed.Artifact, "id")))
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -999,6 +1014,17 @@ func (s *Service) SubmitEvaluation(ctx context.Context, raw json.RawMessage) (js
 	}
 	if str(record, "evaluation_policy_id") != str(candidate, "evaluation_policy_id") {
 		return nil, refused(fmt.Errorf("evaluation is under policy %s; the candidate was sealed under %s", str(record, "evaluation_policy_id"), str(candidate, "evaluation_policy_id")))
+	}
+	// An evaluation's content (disposition, reasons, metrics, the policy it
+	// was held to) is never taken on the caller's word: the host measures
+	// the run again from its own records and the published bundle, and
+	// accepts only the record that measurement seals.
+	sealed, _, err := s.rebuildFromServingRoot(ctx, str(candidate, "training_manifest_sha256"), str(candidate, "dataset_id"))
+	if err != nil {
+		return nil, err
+	}
+	if str(sealed.Evaluation, "id") != str(record, "id") {
+		return nil, refused(fmt.Errorf("evaluation %s is not the evaluation this host seals for candidate %s from its own records (%s)", str(record, "id"), str(candidate, "id"), str(sealed.Evaluation, "id")))
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()

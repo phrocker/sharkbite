@@ -351,6 +351,12 @@ func Evaluate(student LinearStudent, exports []ExportInput, evaluationCohort str
 			rows[r.ID] = r
 		}
 		for _, r := range decoded.manifest.Rows {
+			if r.ID == "" {
+				return Evaluation{}, refuse("export row without an id")
+			}
+			if _, dup := familyOf[r.ID]; dup {
+				return Evaluation{}, refuse("export row %q appears twice", r.ID)
+			}
 			familyOf[r.ID] = r.FamilyIDs
 			contentOf[r.ID] = r.contentDigests()
 		}

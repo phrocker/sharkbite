@@ -336,13 +336,23 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not the policy") {
 		t.Fatalf("undeclared policy: %v", err)
 	}
+	// A candidate the host cannot seal itself from its records is refused
+	// even when every binding above holds: this run's bundle is not a
+	// student and its export has no rows, so the rebuild refuses, and the
+	// caller's record is not taken on its word. Real runs are exercised in
+	// TestReleasesAreBuiltOnlyFromRunsTheHostCanRebuild.
 	candidate, evaluation, artifact := h.candidate(m, pin, policyID)
 	body, _ = json.Marshal(map[string]any{"candidate": candidate, "artifact": artifact})
-	recorded := h.decode(h.svc.SubmitCandidate(ctx, body))
-	if recorded["bundle_digest"] != digest {
-		t.Fatalf("%v", recorded)
+	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) {
+		t.Fatalf("unrebuildable candidate accepted: %v", err)
 	}
-	// Naming an unrecorded manifest pin is not a way around the scope check.
+	// Naming no manifest, or an unrecorded one, is not a way around the checks.
+	pinless, _ := weightsbundle.Seal(weightsbundle.KindCandidate, map[string]any{"dataset_id": "d", "evaluation_policy_id": policyID, "training_ids": []string{"ex-1"}, "model_digest": str(candidate, "model_digest"), "policy_predeclared": true, "task_ids": []string{"task-v1"}})
+	pinlessArtifact, _ := weightsbundle.NewArtifact(pinless["id"].(string), evaluation["id"].(string), "d", m, "runtime")
+	body, _ = json.Marshal(map[string]any{"candidate": pinless, "artifact": pinlessArtifact})
+	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) || !strings.Contains(err.Error(), "must name the training manifest") {
+		t.Fatalf("candidate without a manifest: %v", err)
+	}
 	unbound, _, unboundArtifact := h.candidate(m, strings.Repeat("9", 64), policyID)
 	body, _ = json.Marshal(map[string]any{"candidate": unbound, "artifact": unboundArtifact})
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not recorded on this host") {
@@ -354,109 +364,28 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	if _, err := h.svc.SubmitCandidate(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "outside the selection") {
 		t.Fatalf("scope: %v", err)
 	}
-
-	// Promotion without its evaluation is refused with the reason verbatim.
-	body, _ = json.Marshal(map[string]any{"candidate_id": candidate["id"], "owner": "owner"})
-	_, err := h.svc.Promote(ctx, body)
-	if !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "promotion requires its evaluation") {
-		t.Fatalf("%v", err)
-	}
+	// An evaluation for a candidate the host never recorded is refused, and
+	// writes without an actor are refused before anything is read.
 	evaluationRaw, _ := weightsbundle.EncodeRecord(evaluation)
-	h.decode(h.svc.SubmitEvaluation(ctx, evaluationRaw))
-	evaluations := h.decode(h.svc.Evaluations(ctx, candidate["id"].(string)))
-	if len(evaluations["evaluations"].([]any)) != 1 || evaluations["disclaimer"] != Disclaimer {
-		t.Fatalf("%v", evaluations)
+	if _, err := h.svc.SubmitEvaluation(ctx, evaluationRaw); !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		t.Fatalf("evaluation of an unrecorded candidate: %v", err)
 	}
-	candidates := h.decode(h.svc.Candidates(ctx))
-	if len(candidates["candidates"].([]any)) != 1 {
-		t.Fatalf("%v", candidates)
-	}
-	body, _ = json.Marshal(map[string]any{"candidate_id": candidate["id"], "evaluation_id": evaluation["id"], "owner": "owner"})
-	promoted := h.decode(h.svc.Promote(ctx, body))
-	release := promoted["release"].(map[string]any)
-	if release["bundle_digest"] != digest || release["approval_id"] == "" {
-		t.Fatalf("%v", promoted)
-	}
-	// The route and the pure record constructor agree.
-	approval, _ := weightsbundle.NewPromotionApproval(candidate["id"].(string), evaluation["id"].(string), "owner")
-	pure, _ := weightsbundle.Promote(weightsbundle.PromotionInput{Candidate: candidate, Evaluation: evaluation, Artifact: artifact, Approval: approval})
-	if release["id"] != pure.ID {
-		t.Fatalf("service release %v differs from record %s", release["id"], pure.ID)
-	}
-	if release["approval_id"] == "" {
-		t.Fatal("approval not sealed")
-	}
-	// The approval's owner is the authenticated actor: a body may agree with
-	// it, never choose another, and no actor means no write.
-	body, _ = json.Marshal(map[string]any{"candidate_id": candidate["id"], "evaluation_id": evaluation["id"], "owner": "someone-else"})
-	if _, err := h.svc.Promote(ctx, body); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) || !strings.Contains(err.Error(), "must be the authenticated actor") {
-		t.Fatalf("owner not the actor: %v", err)
-	}
-	body, _ = json.Marshal(map[string]any{"candidate_id": candidate["id"], "evaluation_id": evaluation["id"]})
-	if _, err := h.svc.Promote(context.Background(), body); !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
-		t.Fatalf("write without an actor: %v", err)
-	}
-	if _, err := h.svc.Rollback(context.Background(), []byte(`{"prior_release_id":"x"}`)); !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
-		t.Fatalf("rollback without an actor: %v", err)
-	}
-	if _, err := h.svc.ImportBundle(context.Background(), []byte(`{"name":"x"}`)); !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
-		t.Fatalf("import without an actor: %v", err)
+	for name, err := range map[string]error{
+		"promote":  second(h.svc.Promote(context.Background(), []byte(`{"candidate_id":"`+candidate["id"].(string)+`","evaluation_id":"`+evaluation["id"].(string)+`"}`))),
+		"rollback": second(h.svc.Rollback(context.Background(), []byte(`{"prior_release_id":"x"}`))),
+		"import":   second(h.svc.ImportBundle(context.Background(), []byte(`{"name":"x"}`))),
+	} {
+		if !shoal.IsErrorCode(err, shoal.ErrorUnauthorized) {
+			t.Fatalf("%s without an actor: %v", name, err)
+		}
 	}
 	releases := h.decode(h.svc.Releases(ctx))
-	active := releases["active"].(map[string]any)
-	if active["bundle_digest"] != digest || releases["disclaimer"] != Disclaimer || releases["serving_note"] == nil {
+	if releases["active"] != nil || releases["disclaimer"] != Disclaimer || releases["serving_note"] == nil {
 		t.Fatalf("%v", releases)
-	}
-
-	// The offline bundle carries the manifest bytes recorded when the export
-	// was requested. An authority that has since regenerated its cohorts, or
-	// is no longer mounted, does not block the export of a recorded release.
-	exporter := h.svc.cfg.Exporter
-	h.svc.cfg.Exporter = fakeAuthority{err: shoal.NewError(shoal.ErrorNotFound, "cohort regenerated under a new identity")}
-	bundles := h.decode(h.svc.ExportBundle(ctx, []byte(`{"release_id":"`+pure.ID+`","name":"offline-1"}`)))
-	if bundles["verified"] != true {
-		t.Fatalf("%v", bundles)
-	}
-	h.svc.cfg.Exporter = nil
-	if second := h.decode(h.svc.ExportBundle(ctx, []byte(`{"release_id":"`+pure.ID+`","name":"offline-2"}`))); second["verified"] != true {
-		t.Fatalf("export without a mounted exporter: %v", second)
-	}
-	h.svc.cfg.Exporter = exporter
-	listed := h.decode(h.svc.Bundles(ctx))
-	if len(listed["bundles"].([]any)) != 2 {
-		t.Fatalf("%v", listed)
 	}
 	if _, err := h.svc.ExportBundle(ctx, []byte(`{"release_id":"x","name":"../escape"}`)); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
 		t.Fatalf("%v", err)
 	}
-
-	// Importing into a second, disconnected service from the same bundle dir.
-	imported := h.decode(h.svc.ImportBundle(ctx, []byte(`{"name":"offline-1"}`)))
-	if imported["already_present"] != true || imported["activated"] != false || imported["importer"] != "owner" || imported["serving_path"] != nil {
-		t.Fatalf("re-import of the active release: %v", imported)
-	}
-	if _, err := h.svc.ImportBundle(ctx, []byte(`{"name":"offline-1","expected_index_digest":"`+strings.Repeat("0", 64)+`"}`)); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "index digest") {
-		t.Fatalf("pinned index: %v", err)
-	}
-	// Alter a byte: the entry is named and nothing is activated.
-	target := filepath.Join(h.svc.cfg.BundlesDir, "offline-1", "bundle", "model.json")
-	b, _ := os.ReadFile(target)
-	b[0] = ' '
-	os.WriteFile(target, b, 0o600)
-	raw, err = h.svc.ImportBundle(ctx, []byte(`{"name":"offline-1"}`))
-	if !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), `"bundle/model.json"`) {
-		t.Fatalf("%v", err)
-	}
-	var failed map[string]any
-	json.Unmarshal(raw, &failed)
-	if failed["error"] == nil {
-		t.Fatal("verification result not reported")
-	}
-	listed = h.decode(h.svc.Bundles(ctx))
-	if listed["bundles"].([]any)[0].(map[string]any)["verified"] != false {
-		t.Fatal("altered bundle still listed as verified")
-	}
-
 	evidence := h.decode(h.svc.Evidence(ctx, "quality"))
 	reports := evidence["reports"].([]any)
 	if len(reports) != 2 || evidence["read_only"] != true {
@@ -465,48 +394,13 @@ func TestLearningLoopThroughTheService(t *testing.T) {
 	if _, err := h.svc.Evidence(ctx, "secrets"); !shoal.IsErrorCode(err, shoal.ErrorInvalidArgument) {
 		t.Fatal(err)
 	}
-
-	// Rollback with a second release: the second bundle comes from its own
-	// completed run under a second manifest.
-	m2, digest2 := h.publishBundle(`{"kind":"linear-student","v":2}`)
-	manifest2 := h.manifest()
-	manifest2.Data.PromptVersion = "p2"
-	raw, _ = manifest2.Encode()
-	h.decode(h.svc.SubmitJob(ctx, raw))
-	pin2, _ := manifest2.Pin()
-	policyID2 := h.declarePolicy(pin2)
-	predictions2 := h.predictions(manifest2, pin2)
-	receipt2 := receipt
-	receipt2.ManifestPin, receipt2.BundleDigest, receipt2.TeacherPredictionsID = pin2, digest2, predictions2
-	raw, _ = json.Marshal(receipt2)
-	h.decode(h.svc.SubmitReceipt(ctx, pin2, raw))
-	candidate2, evaluation2, artifact2 := h.candidate(m2, pin2, policyID2)
-	body, _ = json.Marshal(map[string]any{"candidate": candidate2, "artifact": artifact2})
-	h.decode(h.svc.SubmitCandidate(ctx, body))
-	raw2, _ := weightsbundle.EncodeRecord(evaluation2)
-	h.decode(h.svc.SubmitEvaluation(ctx, raw2))
-	body, _ = json.Marshal(map[string]any{"candidate_id": candidate2["id"], "evaluation_id": evaluation2["id"], "owner": "owner"})
-	second := h.decode(h.svc.Promote(ctx, body))
-	if second["release"].(map[string]any)["bundle_digest"] != digest2 {
-		t.Fatal("second promotion")
-	}
-	// A prior release whose bundle left the serving root cannot be rolled
-	// back to: the runtime would have nothing to load.
-	if err := os.Rename(filepath.Join(h.serving, digest), filepath.Join(h.serving, "parked")); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := h.svc.Rollback(ctx, []byte(`{"prior_release_id":"`+pure.ID+`"}`)); !shoal.IsErrorCode(err, shoal.ErrorConflict) || !strings.Contains(err.Error(), "not on the serving root") {
-		t.Fatalf("rollback to a pruned bundle: %v", err)
-	}
-	os.Rename(filepath.Join(h.serving, "parked"), filepath.Join(h.serving, digest))
-	rolled := h.decode(h.svc.Rollback(ctx, []byte(`{"prior_release_id":"`+pure.ID+`","owner":"owner"}`)))
-	if rolled["release"].(map[string]any)["bundle_digest"] != digest {
-		t.Fatalf("%v", rolled)
-	}
 	if _, err := h.svc.Rollback(ctx, []byte(`{"prior_release_id":"nope"}`)); !shoal.IsErrorCode(err, shoal.ErrorConflict) {
 		t.Fatalf("%v", err)
 	}
+	_ = artifact
 }
+
+func second(_ json.RawMessage, err error) error { return err }
 
 // Record ids arriving in bodies are used as store keys. Against the
 // on-disk store the host actually wires, a traversal-shaped id must be

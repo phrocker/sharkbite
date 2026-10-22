@@ -176,8 +176,10 @@ contract test checks against `python-candidate-set.json`.
 `--policy` is the sealed `evaluation_policy` record the host declared for the
 job before its teacher predictions and receipt (`POST /api/v1/learning/jobs/{pin}/policy`; `GET
 /api/v1/learning/jobs/{pin}` returns it). A policy written by hand seals
-records the host refuses, because the candidate's policy must be the one
-declared there. `--export-manifest` and `--dataset` are repeated, paired in
+records the host refuses: the host accepts a submitted candidate or
+evaluation only after sealing the run again from its own records and the
+published bundle and finding the same record, which is why the three paths
+must be byte-identical. `--export-manifest` and `--dataset` are repeated, paired in
 order, for every cohort the run trained on; `--evaluation-cohort` names the
 one whose reserved split is measured when there are several. The evaluation
 measures the student against the adjudicated labels (recall over verified
