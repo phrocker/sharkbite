@@ -71,6 +71,15 @@ func TestSchemaPointerPersistsWithoutAManifestVersionBump(t *testing.T) {
 	if err := eng.SetTableSchema("graph", want); err != nil {
 		t.Fatal(err)
 	}
+	if err := eng.SetTableSchema("graph", engine.SchemaPointer{ID: want.ID, Version: 6}); err == nil || !strings.Contains(err.Error(), "older") {
+		t.Fatalf("older schema pointer accepted: %v", err)
+	}
+	if err := eng.SetTableSchema("graph", engine.SchemaPointer{ID: "other.graph", Version: 7}); err == nil || !strings.Contains(err.Error(), "already names") {
+		t.Fatalf("conflicting schema pointer accepted: %v", err)
+	}
+	if err := eng.SetTableSchema("graph", want); err != nil {
+		t.Fatalf("identical schema pointer refused: %v", err)
+	}
 	manifest := readManifest(t, dir)
 	if manifest["version"] != float64(1) {
 		t.Fatalf("manifest version changed: %v", manifest["version"])

@@ -360,6 +360,14 @@ func (t *table) setSchemaPointer(pointer SchemaPointer) error {
 	}
 	t.formatMu.Lock()
 	defer t.formatMu.Unlock()
+	if t.schema != nil {
+		if pointer.Version < t.schema.Version {
+			return fmt.Errorf("table: schema pointer version %d is older than current version %d", pointer.Version, t.schema.Version)
+		}
+		if pointer.Version == t.schema.Version && pointer.ID != t.schema.ID {
+			return fmt.Errorf("table: schema pointer version %d already names id %q", pointer.Version, t.schema.ID)
+		}
+	}
 	manifest := t.manifestLocked()
 	manifest.Schema = &pointer
 	if err := writeTableManifest(t.dir, manifest); err != nil {
