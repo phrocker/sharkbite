@@ -76,6 +76,10 @@ class SealCandidateTests(unittest.TestCase):
             self.build(exports=[(self.export_manifest, self.data)] * 2)
         with self.assertRaises(distill.Refused):
             self.build(evaluation_cohort='cohort-9')
+        doubled = json.loads(self.export_manifest)
+        doubled['rows'].append(doubled['rows'][-1])
+        with self.assertRaises(distill.Refused):
+            self.build(exports=[(json.dumps(doubled, sort_keys=True, separators=(',', ':')).encode(), self.data)])
         for changes in (dict(split=''), dict(minimum_recall=1.5), dict(minimum_specificity=0), dict(positive_label='maybe'),
                         dict(split='nope'), dict(minimum_positives=0)):
             with self.assertRaises(distill.Refused):

@@ -191,6 +191,8 @@ def evaluate(model, exports, evaluation_cohort, training_ids, predictions, polic
         # Content identity is the source digest behind a row, never its feature
         # vector: a coarse feature space maps distinct content to the same point.
         for row in export['rows']:
+            if not row.get('id') or row['id'] in family_of:
+                raise Refused('export rows must carry unique ids')
             family_of[row['id']] = row.get('family_ids') or []
             content_of[row['id']] = [s['Digest'] for s in (row.get('sources') or []) if s.get('Digest')]
         if export['cohort_id'] == evaluation_cohort:
