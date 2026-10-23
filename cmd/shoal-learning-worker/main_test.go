@@ -115,20 +115,23 @@ func fakeTrainer(t *testing.T, dir string) string {
 	script := filepath.Join(dir, "trainer.sh")
 	body := `#!/bin/sh
 set -e
-out=""; pin=""; manifest=""; exports=0; executor=""
+out=""; pin=""; manifest=""; exports=""; executor=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --output-dir) out="$2"; shift 2;;
     --manifest-pin) pin="$2"; shift 2;;
     --manifest) manifest="$2"; shift 2;;
-    --export) exports=$((exports+1)); case "$2" in cohort-1=*) ;; *) echo "bad export $2" >&2; exit 1;; esac; shift 2;;
+    --export=*) exports="${1#--export=}"; shift;;
     --executor-id) executor="$2"; shift 2;;
     --executor-attestation) shift 2;;
     --student=*) echo "student $1"; shift;;
+    --leak-env) echo "env token=$SHOAL_LEARNING_TOKEN other=$OTHER_SECRET plain=$PLAIN_VALUE"; exit 1;;
     *) echo "unexpected $1" >&2; exit 1;;
   esac
 done
-[ -n "$out" ] && [ -n "$pin" ] && [ -f "$manifest" ] && [ "$exports" = 1 ] && [ -n "$executor" ] || { echo "missing inputs" >&2; exit 1; }
+[ -n "$out" ] && [ -n "$pin" ] && [ -f "$manifest" ] && [ -n "$exports" ] && [ -n "$executor" ] || { echo "missing inputs" >&2; exit 1; }
+cohort="${exports%%=*}"; paths="${exports#*=}"; dataset="${paths%%:*}"; emanifest="${paths#*:}"
+[ "$cohort" = "$WANT_COHORT" ] && [ -f "$dataset" ] && [ -f "$emanifest" ] || { echo "bad export $exports" >&2; exit 1; }
 printf '%s' "$(sha256sum "$manifest" | cut -d' ' -f1)" | grep -q "^$pin$" || { echo "manifest does not hash to the pin" >&2; exit 1; }
 mkdir -p "$out/bundle"
 echo '{"files":[]}' > "$out/bundle/bundle.json"
@@ -147,9 +150,13 @@ echo '{"candidate_only":true,"status":"completed"}'
 func TestWorkerCarriesARequestedJobFromClaimToSeal(t *testing.T) {
 	host := newFakeHost(t)
 	host.token = "secret"
+	// A cohort id with a leading "-" and a ":" reaches the trainer intact
+	// through the --export= form.
+	host.cohort = "-team:alpha:1"
 	server := httptest.NewServer(host)
 	defer server.Close()
 	t.Setenv("SHOAL_LEARNING_TOKEN", "secret")
+	t.Setenv("WANT_COHORT", host.cohort)
 	work := t.TempDir()
 	var output bytes.Buffer
 	code := run(context.Background(), []string{
@@ -212,15 +219,19 @@ func TestWorkerCarriesARequestedJobFromClaimToSeal(t *testing.T) {
 	if !strings.Contains(output.String(), "sealed as shadow_candidate") {
 		t.Fatalf("output: %s", output.String())
 	}
-	// The inputs the trainer saw are on disk under the claim's attempt.
-	if _, err := os.Stat(filepath.Join(work, "w", host.pin, "1", "export-manifest-1.json")); err != nil {
-		t.Fatal(err)
+	// The inputs the trainer saw are on disk under the claim's attempt,
+	// with its output.
+	for _, name := range []string{"export-manifest-1.json", "trainer.log"} {
+		if _, err := os.Stat(filepath.Join(work, "w", host.pin, "1", name)); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 
 func TestWorkerReportsFailuresUnderTheClaim(t *testing.T) {
 	work := t.TempDir()
 	trainer := fakeTrainer(t, work)
+	t.Setenv("WANT_COHORT", "cohort-1")
 
 	// A trainer failure is reported as failed progress with its output.
 	host := newFakeHost(t)
@@ -235,7 +246,7 @@ func TestWorkerReportsFailuresUnderTheClaim(t *testing.T) {
 		Phase, Message string
 	}
 	json.Unmarshal(host.bodies["POST /api/v1/learning/jobs/"+host.pin+"/progress"], &progress)
-	if progress.Phase != "failed" || !strings.Contains(progress.Message, "unexpected --bogus") {
+	if progress.Phase != "failed" || !strings.Contains(progress.Message, "unexpected --bogus") || !strings.Contains(progress.Message, "trainer.log") {
 		t.Fatalf("failure progress = %+v", progress)
 	}
 	for _, call := range host.calls {
@@ -281,6 +292,103 @@ func TestWorkerReportsFailuresUnderTheClaim(t *testing.T) {
 	if code := run(context.Background(), []string{"-host", server4.URL, "-work-dir", work, "-trainer", trainer, "-once"}, &output); code != 3 || len(host.calls) != 1 {
 		t.Fatalf("exit %d calls %v: %s", code, host.calls, output.String())
 	}
+
+	// A cohort id the trainer's --export cannot carry fails before the
+	// trainer runs, naming the reason.
+	host = newFakeHost(t)
+	host.cohort = "team=alpha"
+	server7 := httptest.NewServer(host)
+	defer server7.Close()
+	output.Reset()
+	if code := run(context.Background(), []string{"-host", server7.URL, "-work-dir", work, "-trainer", trainer, "-once"}, &output); code != 2 {
+		t.Fatalf("exit %d: %s", code, output.String())
+	}
+	json.Unmarshal(host.bodies["POST /api/v1/learning/jobs/"+host.pin+"/progress"], &progress)
+	if progress.Phase != "failed" || !strings.Contains(progress.Message, `contains "="`) {
+		t.Fatalf("cohort with = progress = %+v", progress)
+	}
+
+	// A claim another worker won is nothing to run (3), not a failure.
+	host = newFakeHost(t)
+	host.refuseAt = "/claim"
+	server5 := httptest.NewServer(host)
+	defer server5.Close()
+	output.Reset()
+	if code := run(context.Background(), []string{"-host", server5.URL, "-work-dir", work, "-trainer", trainer, "-once"}, &output); code != 3 {
+		t.Fatalf("lost claim exit %d: %s", code, output.String())
+	}
+
+	// A host that cannot be listed ends a -once run with 2 instead of
+	// polling forever.
+	host = newFakeHost(t)
+	host.token = "needed"
+	server6 := httptest.NewServer(host)
+	defer server6.Close()
+	output.Reset()
+	if code := run(context.Background(), []string{"-host", server6.URL, "-work-dir", work, "-trainer", trainer, "-once", "-poll", "50ms"}, &output); code != 2 || len(host.calls) != 1 {
+		t.Fatalf("unlistable host exit %d calls %v: %s", code, host.calls, output.String())
+	}
+}
+
+// The trainer runs without the worker's credential, and the host receives
+// the trainer's outcome and last line rather than its output.
+func TestTrainerSeesNoCredentialAndTheHostSeesNoOutput(t *testing.T) {
+	work := t.TempDir()
+	trainer := fakeTrainer(t, work)
+	t.Setenv("WANT_COHORT", "cohort-1")
+	t.Setenv("SHOAL_LEARNING_TOKEN", "s3cr3t-token")
+	t.Setenv("OTHER_SECRET", "also-hidden")
+	t.Setenv("PLAIN_VALUE", "visible")
+	host := newFakeHost(t)
+	server := httptest.NewServer(host)
+	defer server.Close()
+	// The worker refuses to send a token to a plaintext non-loopback host,
+	// and httptest listens on loopback, so the token is accepted here.
+	var output bytes.Buffer
+	if code := run(context.Background(), []string{"-host", server.URL, "-work-dir", work, "-trainer", trainer, "-trainer-arg", "--leak-env", "-once"}, &output); code != 2 {
+		t.Fatalf("exit %d: %s", code, output.String())
+	}
+	var progress struct{ Phase, Message string }
+	json.Unmarshal(host.bodies["POST /api/v1/learning/jobs/"+host.pin+"/progress"], &progress)
+	if progress.Phase != "failed" || strings.Contains(progress.Message, "s3cr3t") || strings.Contains(progress.Message, "also-hidden") {
+		t.Fatalf("the host saw a credential: %+v", progress)
+	}
+	if !strings.Contains(progress.Message, "token= other= plain=visible") {
+		t.Fatalf("expected the trainer's last line without credentials in the message: %+v", progress)
+	}
+	logged, err := os.ReadFile(filepath.Join(work, host.pin, "1", "trainer.log"))
+	if err != nil || !strings.Contains(string(logged), "plain=visible") {
+		t.Fatalf("trainer.log = %q, %v", logged, err)
+	}
+	env := trainerEnvironment([]string{"PATH=/bin", "SHOAL_LEARNING_TOKEN=x", "MY_API_KEY_SECRET=y", "DB_PASSWORD=z", "AWS_CREDENTIALS=w", "HOME=/h"}, "SHOAL_LEARNING_TOKEN")
+	if strings.Join(env, " ") != "PATH=/bin HOME=/h" {
+		t.Fatalf("trainer environment = %v", env)
+	}
+}
+
+// A listed pin that is not a content address is skipped rather than used
+// as a path or a URL segment.
+func TestWorkerSkipsAJobWhosePinIsNotAContentAddress(t *testing.T) {
+	work := t.TempDir()
+	trainer := fakeTrainer(t, work)
+	base := filepath.Join(work, "a", "b", "work")
+	hostPin := "../../escaped"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/api/v1/learning/jobs" {
+			json.NewEncoder(w).Encode(map[string]any{"jobs": []any{map[string]any{"job": map[string]any{"manifest_pin": hostPin}, "receipt": nil, "run": map[string]any{"requested": true, "runnable": true}}}})
+			return
+		}
+		t.Errorf("unexpected call %s %s", r.Method, r.URL.Path)
+		http.Error(w, "nope", http.StatusNotFound)
+	}))
+	defer server.Close()
+	var output bytes.Buffer
+	if code := run(context.Background(), []string{"-host", server.URL, "-work-dir", base, "-trainer", trainer, "-once"}, &output); code != 3 || !strings.Contains(output.String(), "not a content address") {
+		t.Fatalf("exit %d: %s", code, output.String())
+	}
+	if _, err := os.Stat(filepath.Join(work, "a", "escaped")); err == nil {
+		t.Fatal("the worker created a directory outside its work dir")
+	}
 }
 
 // mismatchedExport serves export bytes that differ from the pin the claim
@@ -300,6 +408,10 @@ func TestWorkerRefusesUnsafeConfiguration(t *testing.T) {
 	var output bytes.Buffer
 	if code := run(context.Background(), []string{"-host", "http://127.0.0.1:1"}, &output); code != 2 || !strings.Contains(output.String(), "-trainer is required") {
 		t.Fatalf("no trainer: %d %s", code, output.String())
+	}
+	output.Reset()
+	if code := run(context.Background(), []string{"-host", "http://127.0.0.1:1", "-trainer", "true", "-work-dir", "/tmp/a:b"}, &output); code != 2 || !strings.Contains(output.String(), "-work-dir") {
+		t.Fatalf("work dir with a colon: %d %s", code, output.String())
 	}
 	t.Setenv("SHOAL_LEARNING_TOKEN", "secret")
 	output.Reset()

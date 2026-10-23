@@ -269,12 +269,21 @@ go run ./cmd/shoal-learning-worker -host http://127.0.0.1:8080 \
 The worker fetches the recorded manifest (re-encoded and checked against
 the pin) and every authorized export the job consumed (checked against the
 recorded export pin) from the host, runs the trainer with `--manifest`,
-`--manifest-pin`, one `--export COHORT=DATASET:MANIFEST` per cohort,
-`--output-dir`, `--executor-id` (its `-worker-id`), and
-`--executor-attestation`, then posts `teacher-predictions.json`, the
+`--manifest-pin`, one `--export=COHORT=DATASET:MANIFEST` per cohort (the
+`=` form so a cohort id may start with `-`; a cohort id containing `=`
+cannot be carried by this argument and the run fails saying so, and the
+`-work-dir` may hold neither `:` nor `=`), `--output-dir`, `--executor-id`
+(its `-worker-id`), and `--executor-attestation`, then posts `teacher-predictions.json`, the
 receipt, and the bundle files to the host's predictions, receipt, and seal
 routes, reporting each phase as progress on its claim. The host verifies
-every record as it does for any caller. A bearer token comes from
-`-token-env` (default `SHOAL_LEARNING_TOKEN`) and is sent only to a
-loopback or https host; a `-dev-auth` host needs none. `-once` runs one
-job and exits, which is what the end-to-end walk uses.
+every record as it does for any caller. The trainer's output goes to
+`trainer.log` under the attempt's work directory and to the worker's own
+output; the host receives only the exit status and the last line. The
+trainer runs without the worker's token in its environment (the
+`-token-env` variable and any variable whose name contains TOKEN, SECRET,
+PASSWORD, or CREDENTIAL are withheld). A bearer token comes from
+`-token-env` (default `SHOAL_LEARNING_TOKEN`), must carry the
+`learning_write` operation, and is sent only to a loopback or https host;
+a `-dev-auth` host needs none. `-once` runs one job and exits: 0 when it
+sealed, 2 when it failed or the host could not be listed, 3 when nothing
+was runnable or another worker claimed it first.

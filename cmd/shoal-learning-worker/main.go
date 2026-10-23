@@ -28,6 +28,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -45,7 +46,18 @@ const (
 	maxTrainerOutput = 16 << 10
 	// maxBundleFileBytes bounds one bundle file the worker uploads.
 	maxBundleFileBytes = 8 << 20
+	// terminalReportTimeout bounds the final progress report sent after
+	// the worker's own context was canceled.
+	terminalReportTimeout = 10 * time.Second
 )
+
+// recordID is a 64-hex content address: the only shape of a manifest pin
+// or claim id the worker will put in a path or a URL.
+var recordID = regexp.MustCompile(`^[0-9a-f]{64}$`)
+
+// errNothingToRun reports that the job the worker picked could not be
+// claimed: another worker took it, or it stopped being runnable.
+var errNothingToRun = errors.New("nothing to run")
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -93,8 +105,14 @@ func run(ctx context.Context, args []string, output io.Writer) int {
 		fmt.Fprintln(output, "shoal-learning-worker: -trainer is required")
 		return 2
 	}
-	if cfg.poll <= 0 || cfg.lease < time.Second {
-		fmt.Fprintln(output, "shoal-learning-worker: -poll must be positive and -lease at least one second")
+	if cfg.poll <= 0 || cfg.lease < 30*time.Second {
+		fmt.Fprintln(output, "shoal-learning-worker: -poll must be positive and -lease at least 30 seconds")
+		return 2
+	}
+	if strings.ContainsAny(cfg.workDir, ":=") {
+		// The trainer's --export cuts DATASET:MANIFEST at ":" after the
+		// first "=", so the paths given to it may hold neither.
+		fmt.Fprintln(output, "shoal-learning-worker: -work-dir may not contain ':' or '='")
 		return 2
 	}
 	client, err := newClient(cfg.host, os.Getenv(cfg.tokenEnv))
@@ -108,10 +126,16 @@ func run(ctx context.Context, args []string, output io.Writer) int {
 		pin, err := w.pick(ctx)
 		if err != nil {
 			fmt.Fprintf(output, "listing jobs: %v\n", err)
+			if cfg.once {
+				return 2
+			}
 		} else if pin != "" {
 			result := w.execute(ctx, pin)
 			if cfg.once {
-				if result != nil {
+				switch {
+				case errors.Is(result, errNothingToRun):
+					return 3
+				case result != nil:
 					return 2
 				}
 				return 0
@@ -270,9 +294,16 @@ func (w *worker) pick(ctx context.Context) (string, error) {
 		return "", err
 	}
 	for _, job := range listing.Jobs {
-		if job.Run.Requested && job.Run.Runnable && (len(job.Receipt) == 0 || string(job.Receipt) == "null") && job.Job.ManifestPin != "" {
-			return job.Job.ManifestPin, nil
+		if !job.Run.Requested || !job.Run.Runnable || (len(job.Receipt) != 0 && string(job.Receipt) != "null") {
+			continue
 		}
+		// The pin becomes a path and a URL segment; only a content address
+		// is accepted, whatever the host listed.
+		if !recordID.MatchString(job.Job.ManifestPin) {
+			fmt.Fprintf(w.output, "skipping a listed job whose manifest pin %q is not a content address\n", job.Job.ManifestPin)
+			continue
+		}
+		return job.Job.ManifestPin, nil
 	}
 	return "", nil
 }
@@ -319,7 +350,14 @@ func (w *worker) execute(ctx context.Context, pin string) error {
 	var claimed claimResponse
 	if err := w.client.post(ctx, learningRoute+"/jobs/"+pin+"/claim", map[string]any{"worker_id": w.cfg.workerID, "lease_seconds": int(w.cfg.lease / time.Second)}, &claimed); err != nil {
 		fmt.Fprintf(w.output, "job %s: claim refused: %v\n", short(pin), err)
+		var refusal *hostError
+		if errors.As(err, &refusal) && refusal.Status == http.StatusConflict {
+			return fmt.Errorf("%w: %v", errNothingToRun, err)
+		}
 		return err
+	}
+	if !recordID.MatchString(claimed.Claim.ID) || claimed.Claim.Attempt <= 0 {
+		return fmt.Errorf("host answered the claim with id %q attempt %d; not a claim this worker reports under", claimed.Claim.ID, claimed.Claim.Attempt)
 	}
 	claim := claimed.Claim.ID
 	fmt.Fprintf(w.output, "job %s: claimed (attempt %d)\n", short(pin), claimed.Claim.Attempt)
@@ -328,15 +366,23 @@ func (w *worker) execute(ctx context.Context, pin string) error {
 		if detail != nil {
 			body["detail"] = detail
 		}
-		if err := w.client.post(ctx, learningRoute+"/jobs/"+pin+"/progress", body, nil); err != nil {
+		reportCtx := ctx
+		if phase == "done" || phase == "failed" {
+			// A terminal report is sent even after the worker was told to
+			// stop, so the claim is released rather than left to expire.
+			var cancel context.CancelFunc
+			reportCtx, cancel = context.WithTimeout(context.WithoutCancel(ctx), terminalReportTimeout)
+			defer cancel()
+		}
+		if err := w.client.post(reportCtx, learningRoute+"/jobs/"+pin+"/progress", body, nil); err != nil {
 			fmt.Fprintf(w.output, "job %s: progress %s not recorded: %v\n", short(pin), phase, err)
 		}
 	}
 	err := w.carry(ctx, pin, claimed, progress)
 	if err != nil {
 		message := err.Error()
-		if len(message) > 1900 {
-			message = message[:1900]
+		if len(message) > 900 {
+			message = message[:900]
 		}
 		fmt.Fprintf(w.output, "job %s: failed: %s\n", short(pin), message)
 		progress("failed", message, nil)
@@ -363,6 +409,7 @@ func (w *worker) carry(ctx context.Context, pin string, claimed claimResponse, p
 		return err
 	}
 	var exportArgs []string
+	seen := map[string]bool{}
 	for i, export := range claimed.Exports {
 		if export.CohortID == "" || export.ManifestSHA256 == "" {
 			return fmt.Errorf("export %d of the claim names no cohort or pin", i)
@@ -391,7 +438,17 @@ func (w *worker) carry(ctx context.Context, pin string, claimed claimResponse, p
 		if err := os.WriteFile(exportPath, manifestBytes, 0o600); err != nil {
 			return err
 		}
-		exportArgs = append(exportArgs, "--export", export.CohortID+"="+datasetPath+":"+exportPath)
+		if seen[export.CohortID] {
+			return fmt.Errorf("the claim names cohort %s twice", export.CohortID)
+		}
+		seen[export.CohortID] = true
+		// The trainer's --export takes COHORT=DATASET:MANIFEST and cuts
+		// at the first "=", so a cohort id holding one cannot be passed;
+		// the "--export=" form keeps a leading "-" out of argparse's way.
+		if strings.Contains(export.CohortID, "=") {
+			return fmt.Errorf("cohort id %q contains \"=\", which the trainer's --export cannot carry", export.CohortID)
+		}
+		exportArgs = append(exportArgs, "--export="+export.CohortID+"="+datasetPath+":"+exportPath)
 	}
 	if len(exportArgs) == 0 {
 		return errors.New("the claim names no exports")
@@ -412,13 +469,26 @@ func (w *worker) carry(ctx context.Context, pin string, claimed claimResponse, p
 	args = append(args, w.cfg.trainerArgs...)
 	cmd := exec.CommandContext(ctx, w.cfg.trainer[0], args...)
 	cmd.Dir = dir
-	var captured bytes.Buffer
-	cmd.Stdout = &boundedWriter{limit: maxTrainerOutput, buf: &captured}
-	cmd.Stderr = cmd.Stdout
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("trainer failed: %v; output: %s", err, strings.TrimSpace(captured.String()))
+	cmd.Env = trainerEnvironment(os.Environ(), w.cfg.tokenEnv)
+	cmd.WaitDelay = 5 * time.Second
+	setProcessGroup(cmd)
+	logPath := filepath.Join(dir, "trainer.log")
+	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o600)
+	if err != nil {
+		return err
 	}
-	fmt.Fprintf(w.output, "job %s: trainer finished: %s\n", short(pin), strings.TrimSpace(lastLine(captured.String())))
+	var captured bytes.Buffer
+	cmd.Stdout = io.MultiWriter(logFile, &boundedWriter{limit: maxTrainerOutput, buf: &captured})
+	cmd.Stderr = cmd.Stdout
+	runErr := cmd.Run()
+	logFile.Close()
+	fmt.Fprintf(w.output, "job %s: trainer output in %s\n%s", short(pin), logPath, indent(captured.String()))
+	if runErr != nil {
+		// The host receives the outcome and the last line, never the
+		// whole output: a trainer may print what it was given.
+		return fmt.Errorf("trainer failed (%v); last line: %s; full output in the worker's %s", runErr, clip(lastLine(captured.String()), 300), filepath.Base(logPath))
+	}
+	fmt.Fprintf(w.output, "job %s: trainer finished: %s\n", short(pin), clip(lastLine(captured.String()), 300))
 
 	predictions, err := os.ReadFile(filepath.Join(outDir, "teacher-predictions.json"))
 	if err != nil {
@@ -520,7 +590,39 @@ func short(id string) string {
 
 func lastLine(s string) string {
 	lines := strings.Split(strings.TrimRight(s, "\n"), "\n")
-	return lines[len(lines)-1]
+	return strings.TrimSpace(lines[len(lines)-1])
+}
+
+func clip(s string, n int) string {
+	if len(s) > n {
+		return s[:n] + "…"
+	}
+	return s
+}
+
+func indent(s string) string {
+	s = strings.TrimRight(s, "\n")
+	if s == "" {
+		return ""
+	}
+	return "  " + strings.ReplaceAll(s, "\n", "\n  ") + "\n"
+}
+
+// trainerEnvironment is the worker's environment without its credential:
+// the token variable itself and any variable whose name says it holds a
+// secret. The trainer is a separate program whose output may be shown or
+// recorded, and the token is the worker's, not the trainer's.
+func trainerEnvironment(environ []string, tokenEnv string) []string {
+	out := make([]string, 0, len(environ))
+	for _, entry := range environ {
+		name, _, _ := strings.Cut(entry, "=")
+		upper := strings.ToUpper(name)
+		if name == tokenEnv || strings.Contains(upper, "TOKEN") || strings.Contains(upper, "SECRET") || strings.Contains(upper, "PASSWORD") || strings.Contains(upper, "CREDENTIAL") {
+			continue
+		}
+		out = append(out, entry)
+	}
+	return out
 }
 
 // boundedWriter keeps the first limit bytes and drops the rest.

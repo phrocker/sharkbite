@@ -115,7 +115,7 @@ func TestClaimsAreLeasedOneAtATimeAndReleasedByTerminalProgress(t *testing.T) {
 	expectCode(t, err, shoal.ErrorConflict, "claim without a request")
 	f.decode(f.svc.RequestRun(f.ctx, first.pin, nil))
 
-	for _, bad := range []string{`{}`, `{"worker_id":"bad id"}`, `{"worker_id":"w1","lease_seconds":-1}`, `{"worker_id":"w1","lease_seconds":99999}`, `{"worker_id":"w1","other":1}`} {
+	for _, bad := range []string{`{}`, `{"worker_id":"bad id"}`, `{"worker_id":"w1","lease_seconds":-1}`, `{"worker_id":"w1","lease_seconds":10}`, `{"worker_id":"w1","lease_seconds":99999}`, `{"worker_id":"w1","other":1}`} {
 		_, err := f.svc.ClaimRun(f.ctx, first.pin, json.RawMessage(bad))
 		expectCode(t, err, shoal.ErrorInvalidArgument, "claim body "+bad)
 	}
@@ -181,11 +181,87 @@ func TestClaimsAreLeasedOneAtATimeAndReleasedByTerminalProgress(t *testing.T) {
 	_, err = f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+secondClaim["id"].(string)+`","phase":"training"}`))
 	expectCode(t, err, shoal.ErrorConflict, "progress under an expired claim")
 
-	// Done releases too, and the jobs list carries the run.
-	f.decode(f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+third["claim"].(map[string]any)["id"].(string)+`","phase":"done"}`)))
+	// The expired claim's holder cannot report under it even before a new
+	// claim exists (second claim expired, third not yet made in the next
+	// fixture); here the third claim is live, so an expired-claim report
+	// is refused as foreign. The dedicated case follows below.
+
+	// Done needs the receipt: a claim cannot end as done without the run
+	// having been recorded.
+	thirdID := third["claim"].(map[string]any)["id"].(string)
+	_, err = f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+thirdID+`","phase":"done"}`))
+	expectCode(t, err, shoal.ErrorConflict, "done without a receipt")
+	f.decode(f.svc.SubmitPredictions(f.ctx, first.pin, first.predictions))
+	f.decode(f.svc.SubmitReceipt(f.ctx, first.pin, first.receipt))
+	f.decode(f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+thirdID+`","phase":"done"}`)))
 	jobs := f.decode(f.svc.Jobs(f.ctx))
 	listed := jobs["jobs"].([]any)[0].(map[string]any)["run"].(map[string]any)
-	if listed["attempts"] != float64(3) || listed["progress"].(map[string]any)["phase"] != "done" {
+	if listed["attempts"] != float64(3) || listed["progress"].(map[string]any)["phase"] != "done" || listed["runnable"] != false {
 		t.Fatalf("jobs list run = %v", listed)
 	}
+}
+
+func TestAnExpiredClaimAcceptsNoProgressAndAttemptsAreBounded(t *testing.T) {
+	f := newRunFixture(t)
+	first, _ := fixtureRuns(t)
+	f.decode(f.svc.SubmitJob(f.ctx, first.manifest))
+	f.decode(f.svc.DeclarePolicy(f.ctx, first.pin, json.RawMessage(fixturePolicyBody)))
+	f.decode(f.svc.RequestRun(f.ctx, first.pin, nil))
+
+	claimed := f.decode(f.svc.ClaimRun(f.ctx, first.pin, json.RawMessage(`{"worker_id":"w1","lease_seconds":60}`)))
+	claimID := claimed["claim"].(map[string]any)["id"].(string)
+	f.now = f.now.Add(time.Hour)
+	for _, phase := range []string{"training", "failed", "done"} {
+		_, err := f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+claimID+`","phase":"`+phase+`"}`))
+		expectCode(t, err, shoal.ErrorConflict, "progress "+phase+" under an expired claim")
+	}
+	if run := f.run(first.pin); run["progress"] != nil || run["runnable"] != true {
+		t.Fatalf("expired claim view = %v", run)
+	}
+
+	// Cheap claim-and-fail cycles exhaust the job rather than wedging it
+	// while it still advertises itself as runnable; a progress record
+	// bound stops a claim from growing without end.
+	for attempt := 2; attempt <= 100; attempt++ {
+		c := f.decode(f.svc.ClaimRun(f.ctx, first.pin, json.RawMessage(`{"worker_id":"w1","lease_seconds":60}`)))
+		id := c["claim"].(map[string]any)["id"].(string)
+		f.decode(f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+id+`","phase":"failed"}`)))
+	}
+	_, err := f.svc.ClaimRun(f.ctx, first.pin, json.RawMessage(`{"worker_id":"w9","lease_seconds":60}`))
+	expectCode(t, err, shoal.ErrorConflict, "claim past the attempt bound")
+	if !strings.Contains(err.Error(), "exhausted") {
+		t.Fatalf("refusal = %v", err)
+	}
+	run := f.run(first.pin)
+	if run["runnable"] != false || run["exhausted"] != true || run["attempts"] != float64(100) {
+		t.Fatalf("exhausted view = %v", run)
+	}
+	// A fresh service over the same store rebuilds the index from the
+	// records and sees the same state.
+	fresh, err := New(f.svc.cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	view := f.decode(fresh.Job(f.ctx, first.pin))
+	if view["run"].(map[string]any)["attempts"] != float64(100) {
+		t.Fatalf("rebuilt index = %v", view["run"])
+	}
+}
+
+func TestProgressReportsAreBoundedPerClaim(t *testing.T) {
+	f := newRunFixture(t)
+	first, _ := fixtureRuns(t)
+	f.decode(f.svc.SubmitJob(f.ctx, first.manifest))
+	f.decode(f.svc.DeclarePolicy(f.ctx, first.pin, json.RawMessage(fixturePolicyBody)))
+	f.decode(f.svc.RequestRun(f.ctx, first.pin, nil))
+	claimed := f.decode(f.svc.ClaimRun(f.ctx, first.pin, json.RawMessage(`{"worker_id":"w1","lease_seconds":3600}`)))
+	claimID := claimed["claim"].(map[string]any)["id"].(string)
+	for i := 0; i < 64; i++ {
+		f.decode(f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+claimID+`","phase":"training"}`)))
+	}
+	_, err := f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+claimID+`","phase":"training"}`))
+	expectCode(t, err, shoal.ErrorConflict, "progress past the bound")
+	big := strings.Repeat("x", 2049)
+	_, err = f.svc.ReportProgress(f.ctx, first.pin, json.RawMessage(`{"claim_id":"`+claimID+`","phase":"training","detail":{"x":"`+big+`"}}`))
+	expectCode(t, err, shoal.ErrorInvalidArgument, "oversize detail")
 }

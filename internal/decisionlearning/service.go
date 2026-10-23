@@ -128,6 +128,8 @@ type Config struct {
 type Service struct {
 	cfg Config
 	mu  sync.Mutex
+	// runs indexes the run records (run.go).
+	runs runIndex
 }
 
 // New validates the composition. Registry, store, and bundles directory are

@@ -4,10 +4,13 @@ package decisionlearning
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
+	"github.com/phrocker/shoal-oss/internal/storage"
 	"github.com/phrocker/shoal-oss/internal/weightsbundle"
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
@@ -26,20 +29,28 @@ import (
 // Nothing here moves a job forward by itself: predictions, the receipt,
 // and the sealed candidate still arrive through their own routes and are
 // verified there. The run records say who is doing the work and how far
-// it got, so the console can show it and a worker can find it.
+// it got, so the console can show it and a worker can find it. The newest
+// attempt of each job and the newest sequence of each claim are kept in an
+// in-memory index built from the store once and maintained on every
+// append, so a read costs at most two record reads and an append one
+// exclusive write, however many attempts a job has seen.
 const (
 	kindRunRequest  = "distillation-run-request"
 	kindRunClaim    = "distillation-run-claim"
 	kindRunProgress = "distillation-run-progress"
 
-	// maxRunAttempts bounds the claims probed for one job.
-	maxRunAttempts = 1000
-	// maxRunProgress bounds the progress records probed for one claim.
-	maxRunProgress = 10000
+	// maxRunAttempts bounds the claims recorded for one job. A job past it
+	// is exhausted: no worker can claim it again and the view says so.
+	maxRunAttempts = 100
+	// maxRunProgress bounds the progress records of one claim; a worker
+	// reports a handful of phases.
+	maxRunProgress = 64
 
 	defaultLeaseSeconds = 600
+	minLeaseSeconds     = 30
 	maxLeaseSeconds     = 6 * 3600
-	maxProgressMessage  = 2000
+	maxProgressMessage  = 1000
+	maxProgressDetail   = 2 << 10
 )
 
 // RunPhases are the phases a worker may report, in the order a run takes
@@ -63,6 +74,92 @@ func claimID(pin string, attempt int) string {
 
 func progressID(claim string, seq int) string {
 	return weightsbundle.SHA256Hex([]byte(claim + ":progress:" + strconv.Itoa(seq)))
+}
+
+// runIndex is the newest attempt per job and the newest sequence per
+// claim, built from the store once and maintained on every append. A
+// write the store refuses as already present means another writer got
+// there first; the index is then rebuilt before the next use.
+type runIndex struct {
+	mu       sync.Mutex
+	built    bool
+	attempts map[string]int
+	seqs     map[string]int
+}
+
+func recordInt(r weightsbundle.Record, key string) int {
+	n, _ := strconv.Atoi(fmt.Sprint(r[key]))
+	return n
+}
+
+// ensureRunIndex builds the index when it is absent or was invalidated.
+// The caller holds idx.mu.
+func (s *Service) ensureRunIndex(ctx context.Context) error {
+	if s.runs.built {
+		return nil
+	}
+	attempts, seqs := map[string]int{}, map[string]int{}
+	claims, err := s.list(ctx, kindRunClaim)
+	if err != nil {
+		return s.classifyLogged("run index", err)
+	}
+	for _, claim := range claims {
+		pin, attempt := str(claim, "manifest_pin"), recordInt(claim, "attempt")
+		if attempt > attempts[pin] {
+			attempts[pin] = attempt
+		}
+	}
+	progress, err := s.list(ctx, kindRunProgress)
+	if err != nil {
+		return s.classifyLogged("run index", err)
+	}
+	for _, p := range progress {
+		claim, seq := str(p, "claim_id"), recordInt(p, "seq")
+		if seq > seqs[claim] {
+			seqs[claim] = seq
+		}
+	}
+	s.runs.attempts, s.runs.seqs, s.runs.built = attempts, seqs, true
+	return nil
+}
+
+// latestAttempt returns the newest attempt number of a job (0 when none).
+func (s *Service) latestAttempt(ctx context.Context, pin string) (int, error) {
+	s.runs.mu.Lock()
+	defer s.runs.mu.Unlock()
+	if err := s.ensureRunIndex(ctx); err != nil {
+		return 0, err
+	}
+	return s.runs.attempts[pin], nil
+}
+
+// latestSeq returns the newest progress sequence of a claim (0 when none).
+func (s *Service) latestSeq(ctx context.Context, claim string) (int, error) {
+	s.runs.mu.Lock()
+	defer s.runs.mu.Unlock()
+	if err := s.ensureRunIndex(ctx); err != nil {
+		return 0, err
+	}
+	return s.runs.seqs[claim], nil
+}
+
+// appendRun writes a run record exclusively and advances the index, or
+// invalidates the index when the store already holds the record.
+func (s *Service) appendRun(ctx context.Context, kind, id string, record map[string]any, advance func()) error {
+	err := s.put(ctx, kind, id, record)
+	s.runs.mu.Lock()
+	defer s.runs.mu.Unlock()
+	if err != nil {
+		if errors.Is(err, storage.ErrExists) || errors.Is(err, weightsbundle.ErrExists) {
+			s.runs.built = false
+			return refused(fmt.Errorf("%s %s was recorded by another writer; retry", kind, id))
+		}
+		return s.classified(err)
+	}
+	if s.runs.built {
+		advance()
+	}
+	return nil
 }
 
 // RequestRun records that the console asked for the job to be trained by a
@@ -91,10 +188,8 @@ func (s *Service) RequestRun(ctx context.Context, pin string, raw json.RawMessag
 		}
 		return nil, s.classified(err)
 	}
-	if _, err := s.get(ctx, kindReceipt, pin); err == nil {
-		return nil, refused(fmt.Errorf("job %s already has a receipt; nothing is left to run", pin))
-	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-		return nil, s.classified(err)
+	if err := s.noReceipt(ctx, pin); err != nil {
+		return nil, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -104,16 +199,26 @@ func (s *Service) RequestRun(ctx context.Context, pin string, raw json.RawMessag
 		return nil, s.classified(err)
 	}
 	record := map[string]any{"schema": 1, "kind": kindRunRequest, "manifest_pin": pin, "requested_at": s.cfg.Now().UTC().Format(time.RFC3339Nano), "requested_by": actor}
-	if err := s.put(ctx, kindRunRequest, pin, record); err != nil {
-		return nil, s.classified(err)
+	if err := s.appendRun(ctx, kindRunRequest, pin, record, func() {}); err != nil {
+		return nil, err
 	}
 	return marshal(record)
 }
 
+func (s *Service) noReceipt(ctx context.Context, pin string) error {
+	if _, err := s.get(ctx, kindReceipt, pin); err == nil {
+		return refused(fmt.Errorf("job %s already has a receipt; nothing is left to run", pin))
+	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+		return s.classified(err)
+	}
+	return nil
+}
+
 // ClaimRun lets a worker take a requested job under a lease. It is refused
-// while another claim is live, when no run was requested, and once a
-// receipt exists. The response carries the claim and the job's exports so
-// the worker knows which cohorts to fetch.
+// while another claim is live, when no run was requested, once a receipt
+// exists, and once the job's attempts are exhausted. The response carries
+// the claim and the job's exports so the worker knows which cohorts to
+// fetch.
 func (s *Service) ClaimRun(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
 	if _, err := actorFor(ctx, ""); err != nil {
 		return nil, err
@@ -134,8 +239,8 @@ func (s *Service) ClaimRun(ctx context.Context, pin string, raw json.RawMessage)
 	if body.LeaseSeconds == 0 {
 		body.LeaseSeconds = defaultLeaseSeconds
 	}
-	if body.LeaseSeconds < 1 || body.LeaseSeconds > maxLeaseSeconds {
-		return nil, invalid(fmt.Sprintf("claim: lease_seconds must be between 1 and %d", maxLeaseSeconds))
+	if body.LeaseSeconds < minLeaseSeconds || body.LeaseSeconds > maxLeaseSeconds {
+		return nil, invalid(fmt.Sprintf("claim: lease_seconds must be between %d and %d", minLeaseSeconds, maxLeaseSeconds))
 	}
 	job, err := s.get(ctx, kindJob, pin)
 	if err != nil {
@@ -147,10 +252,8 @@ func (s *Service) ClaimRun(ctx context.Context, pin string, raw json.RawMessage)
 		}
 		return nil, s.classified(err)
 	}
-	if _, err := s.get(ctx, kindReceipt, pin); err == nil {
-		return nil, refused(fmt.Errorf("job %s already has a receipt; nothing is left to run", pin))
-	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-		return nil, s.classified(err)
+	if err := s.noReceipt(ctx, pin); err != nil {
+		return nil, err
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -169,7 +272,7 @@ func (s *Service) ClaimRun(ctx context.Context, pin string, raw json.RawMessage)
 		}
 	}
 	if attempt >= maxRunAttempts {
-		return nil, refused(fmt.Errorf("job %s has been claimed %d times; no further attempt is recorded", pin, attempt))
+		return nil, refused(fmt.Errorf("job %s is exhausted: it has been claimed %d times and no further attempt is recorded", pin, attempt))
 	}
 	attempt++
 	id := claimID(pin, attempt)
@@ -178,15 +281,17 @@ func (s *Service) ClaimRun(ctx context.Context, pin string, raw json.RawMessage)
 		"claimed_at": now.Format(time.RFC3339Nano), "expires_at": now.Add(time.Duration(body.LeaseSeconds) * time.Second).Format(time.RFC3339Nano),
 		"lease_seconds": body.LeaseSeconds,
 	}
-	if err := s.put(ctx, kindRunClaim, id, record); err != nil {
-		return nil, s.classified(err)
+	if err := s.appendRun(ctx, kindRunClaim, id, record, func() { s.runs.attempts[pin] = attempt }); err != nil {
+		return nil, err
 	}
 	return marshal(map[string]any{"claim": record, "exports": job["exports"]})
 }
 
-// ReportProgress records a worker's phase under its live claim. A terminal
-// phase (done, failed) releases the claim; a later report under it is
-// refused.
+// ReportProgress records a worker's phase under its live claim: the
+// newest claim of the job, unexpired, with no terminal progress. A
+// terminal phase (done, failed) releases the claim; done is accepted only
+// once the job's receipt is recorded, so a claim cannot end as done
+// without the run having been recorded.
 func (s *Service) ReportProgress(ctx context.Context, pin string, raw json.RawMessage) (json.RawMessage, error) {
 	if _, err := actorFor(ctx, ""); err != nil {
 		return nil, err
@@ -214,8 +319,8 @@ func (s *Service) ReportProgress(ctx context.Context, pin string, raw json.RawMe
 	}
 	var detail any
 	if len(body.Detail) > 0 {
-		if len(body.Detail) > 8<<10 {
-			return nil, invalid("progress: detail exceeds 8 KiB")
+		if len(body.Detail) > maxProgressDetail {
+			return nil, invalid(fmt.Sprintf("progress: detail exceeds %d bytes", maxProgressDetail))
 		}
 		var object map[string]any
 		if err := json.Unmarshal(body.Detail, &object); err != nil {
@@ -223,14 +328,26 @@ func (s *Service) ReportProgress(ctx context.Context, pin string, raw json.RawMe
 		}
 		detail = object
 	}
+	if body.Phase == "done" {
+		if _, err := s.get(ctx, kindReceipt, pin); err != nil {
+			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
+				return nil, refused(fmt.Errorf("job %s has no receipt; a run is not done until its receipt is recorded", pin))
+			}
+			return nil, s.classified(err)
+		}
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	now := s.cfg.Now().UTC()
 	latest, _, err := s.latestClaim(ctx, pin)
 	if err != nil {
 		return nil, err
 	}
 	if latest == nil || str(latest, "id") != body.ClaimID {
 		return nil, refused(fmt.Errorf("claim %s is not the current claim of job %s", body.ClaimID, pin))
+	}
+	if expires, err := time.Parse(time.RFC3339Nano, str(latest, "expires_at")); err != nil || !now.Before(expires) {
+		return nil, refused(fmt.Errorf("claim %s expired at %s; the job may be claimed again", body.ClaimID, str(latest, "expires_at")))
 	}
 	last, seq, err := s.latestProgress(ctx, body.ClaimID)
 	if err != nil {
@@ -239,55 +356,51 @@ func (s *Service) ReportProgress(ctx context.Context, pin string, raw json.RawMe
 	if last != nil && runTerminal(str(last, "phase")) {
 		return nil, refused(fmt.Errorf("claim %s already ended with %s", body.ClaimID, str(last, "phase")))
 	}
+	if seq >= maxRunProgress {
+		return nil, refused(fmt.Errorf("claim %s has %d progress records; no further report is recorded", body.ClaimID, seq))
+	}
 	seq++
 	id := progressID(body.ClaimID, seq)
 	record := map[string]any{
 		"schema": 1, "kind": kindRunProgress, "id": id, "manifest_pin": pin, "claim_id": body.ClaimID, "seq": seq,
-		"phase": body.Phase, "message": body.Message, "at": s.cfg.Now().UTC().Format(time.RFC3339Nano),
+		"phase": body.Phase, "message": body.Message, "at": now.Format(time.RFC3339Nano),
 	}
 	if detail != nil {
 		record["detail"] = detail
 	}
-	if err := s.put(ctx, kindRunProgress, id, record); err != nil {
-		return nil, s.classified(err)
+	claim := body.ClaimID
+	if err := s.appendRun(ctx, kindRunProgress, id, record, func() { s.runs.seqs[claim] = seq }); err != nil {
+		return nil, err
 	}
 	return marshal(record)
 }
 
-// latestClaim probes the attempts recorded for a job and returns the
-// newest claim and its attempt number (0 when none).
+// latestClaim returns the newest claim of a job and its attempt number
+// (nil and 0 when none), through the index.
 func (s *Service) latestClaim(ctx context.Context, pin string) (weightsbundle.Record, int, error) {
-	var latest weightsbundle.Record
-	attempt := 0
-	for n := 1; n <= maxRunAttempts; n++ {
-		record, err := s.get(ctx, kindRunClaim, claimID(pin, n))
-		if err != nil {
-			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-				break
-			}
-			return nil, 0, s.classified(err)
-		}
-		latest, attempt = record, n
+	attempt, err := s.latestAttempt(ctx, pin)
+	if err != nil || attempt == 0 {
+		return nil, 0, err
 	}
-	return latest, attempt, nil
+	record, err := s.get(ctx, kindRunClaim, claimID(pin, attempt))
+	if err != nil {
+		return nil, 0, s.classified(err)
+	}
+	return record, attempt, nil
 }
 
 // latestProgress returns the newest progress record of a claim and its
-// sequence number (0 when none).
+// sequence number (nil and 0 when none), through the index.
 func (s *Service) latestProgress(ctx context.Context, claim string) (weightsbundle.Record, int, error) {
-	var latest weightsbundle.Record
-	seq := 0
-	for n := 1; n <= maxRunProgress; n++ {
-		record, err := s.get(ctx, kindRunProgress, progressID(claim, n))
-		if err != nil {
-			if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
-				break
-			}
-			return nil, 0, s.classified(err)
-		}
-		latest, seq = record, n
+	seq, err := s.latestSeq(ctx, claim)
+	if err != nil || seq == 0 {
+		return nil, 0, err
 	}
-	return latest, seq, nil
+	record, err := s.get(ctx, kindRunProgress, progressID(claim, seq))
+	if err != nil {
+		return nil, 0, s.classified(err)
+	}
+	return record, seq, nil
 }
 
 // claimLive reports whether a claim still holds the job: its lease has not
@@ -305,9 +418,10 @@ func (s *Service) claimLive(ctx context.Context, claim weightsbundle.Record, now
 }
 
 // runView is the job view's "run" member: whether a run was requested,
-// the current claim and whether it is live, and the latest progress.
+// the current claim and whether it is live, the latest progress, and
+// whether a worker may claim the job now.
 func (s *Service) runView(ctx context.Context, pin string) (map[string]any, error) {
-	view := map[string]any{"requested": false, "claim": nil, "progress": nil, "attempts": 0, "runnable": false}
+	view := map[string]any{"requested": false, "claim": nil, "progress": nil, "attempts": 0, "runnable": false, "exhausted": false}
 	request, err := s.get(ctx, kindRunRequest, pin)
 	if err != nil {
 		if shoal.IsErrorCode(err, shoal.ErrorNotFound) {
@@ -323,21 +437,23 @@ func (s *Service) runView(ctx context.Context, pin string) (map[string]any, erro
 		return nil, err
 	}
 	view["attempts"] = attempt
+	exhausted := attempt >= maxRunAttempts
+	view["exhausted"] = exhausted
 	live := false
 	if claim != nil {
-		live, err = s.claimLive(ctx, claim, s.cfg.Now().UTC())
+		progress, _, err := s.latestProgress(ctx, str(claim, "id"))
 		if err != nil {
 			return nil, err
 		}
+		expires, parseErr := time.Parse(time.RFC3339Nano, str(claim, "expires_at"))
+		live = parseErr == nil && s.cfg.Now().UTC().Before(expires) && (progress == nil || !runTerminal(str(progress, "phase")))
 		claimView := map[string]any{}
 		for k, v := range claim {
 			claimView[k] = v
 		}
 		claimView["live"] = live
 		view["claim"] = claimView
-		if progress, _, err := s.latestProgress(ctx, str(claim, "id")); err != nil {
-			return nil, err
-		} else if progress != nil {
+		if progress != nil {
 			view["progress"] = progress
 		}
 	}
@@ -347,6 +463,6 @@ func (s *Service) runView(ctx context.Context, pin string) (map[string]any, erro
 	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		return nil, s.classified(err)
 	}
-	view["runnable"] = !live && !receipt
+	view["runnable"] = !live && !receipt && !exhausted
 	return view, nil
 }
