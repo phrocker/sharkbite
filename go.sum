@@ -170,8 +170,8 @@ github.com/parquet-go/jsonlite v1.0.0 h1:87QNdi56wOfsE5bdgas0vRzHPxfJgzrXGml1zZd
 github.com/parquet-go/jsonlite v1.0.0/go.mod h1:nDjpkpL4EOtqs6NQugUsi0Rleq9sW/OtC1NnZEnxzF0=
 github.com/parquet-go/parquet-go v0.32.0 h1:NWDqTUHfrCS4cJP/Fj2HlxvqsrVedWG3sayMkf+znzM=
 github.com/parquet-go/parquet-go v0.32.0/go.mod h1:navtkAYr2LGoJVp141oXPlO/sxLvaOe3la2JEoD8+rg=
-github.com/phrocker/hdfs/v2 v2.4.1-0.20261021144125-20da42dea33e h1:74Vcob89g7M2oi1qimC8AuqxaIu3Q2nUg5qbyEQQKcc=
-github.com/phrocker/hdfs/v2 v2.4.1-0.20261021144125-20da42dea33e/go.mod h1:0NAO+/3knbMx6+5pCv+Hcbaz4xn/Zzbn9+WIib2rKVI=
+github.com/phrocker/hdfs/v2 v2.4.1-0.20261023105033-5bfede86db8d h1:Y9HJGIoHqCW57nIfRwyU+zT9B0LaGTeGbexWNumZMH4=
+github.com/phrocker/hdfs/v2 v2.4.1-0.20261023105033-5bfede86db8d/go.mod h1:iML3RxE7+aXzdZLL3H/kqlIS4QIxSsejCEEClQnRNEk=
 github.com/pierrec/lz4/v4 v4.1.21 h1:yOVMLb6qSIDP67pl/5F7RepeKYu/VmTyEXvuMI5d9mQ=
 github.com/pierrec/lz4/v4 v4.1.21/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c h1:+mdjkGKdHQG3305AYmdv1U2eRNDiU2ErMBj1gwrq8eQ=
