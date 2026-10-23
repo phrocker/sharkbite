@@ -25,8 +25,10 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -685,5 +687,146 @@ func TestRemoteStoresServeTheSameWalk(t *testing.T) {
 	bounded.MaxCells = 2
 	if _, err := bounded.Scan(context.Background(), &embedpb.ScanRequest{Table: "graph", RowPrefix: "ent:"}); err == nil {
 		t.Fatal("remote cell bound not enforced")
+	}
+}
+
+// foremanPushdownNodes is the engine's own answer for the Foreman layout:
+// EdgeExpand with the descriptor's parameters, N hops, returning the rows
+// it reached that exist.
+func foremanPushdownNodes(t *testing.T, eng *engine.Engine, anchor string, hops int) []string {
+	t.Helper()
+	cells, err := embedstore.New(eng).Scan(context.Background(), "graph", &embedpb.ScanRequest{
+		Table: "graph",
+		EdgeExpand: &embedpb.EdgeExpand{
+			AnchorRows: [][]byte{[]byte(anchor)}, EdgeCf: []byte("edge"), EdgeField: "qualifier",
+			FieldSep: []byte("\x00"), IdIndex: 1, IdIndexSet: true, MaxHops: int32(hops),
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	seen := map[string]bool{}
+	var rows []string
+	for _, c := range cells {
+		if row := string(c.GetRow()); !seen[row] {
+			seen[row] = true
+			rows = append(rows, row)
+		}
+	}
+	sort.Strings(rows)
+	if rows == nil {
+		rows = []string{}
+	}
+	return rows
+}
+
+func TestForemanWalkAgreesWithEdgeExpandAndReportsWhatItDrops(t *testing.T) {
+	eng := openEngine(t, "graph")
+	describe(t, eng, foremanSchema(1))
+	cells := foremanCells()
+	// One edge names a target row that is not UTF-8, one a posting row
+	// outside every node namespace, and one a key past the row bound. The
+	// engine follows all three; the reader names none and says so.
+	cells = append(cells,
+		cell{"ent:host|h2", "edge", edgeCQ("binary", "ent:host|\xff"), nil},
+		cell{"ent:host|\xff", "host", "name", []byte("binary")},
+		cell{"ent:host|h2", "edge", edgeCQ("posted", "idx:host"), nil},
+		cell{"ent:host|h2", "edge", edgeCQ("long", "ent:host|"+strings.Repeat("L", graphtable.MaxRowBytes)), nil},
+	)
+	write(t, eng, "graph", cells)
+	reader := openReader(t, graphtable.NewEngineStore(eng), "graph")
+
+	for _, anchor := range []string{"ent:service|api", "ent:host|h2", "evt:alert|e1"} {
+		for hops := 1; hops <= 3; hops++ {
+			engineRows := foremanPushdownNodes(t, eng, anchor, hops)
+			got, err := reader.Neighborhood(context.Background(), graphtable.NeighborhoodRequest{Seeds: []string{anchor}, Depth: hops})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var readerRows []string
+			for _, n := range got.Nodes[1:] {
+				if n.Found {
+					readerRows = append(readerRows, n.ID)
+				}
+			}
+			sort.Strings(readerRows)
+			// The engine reaches the binary row and the posting row; the
+			// reader cannot name either and reports the dropped edges.
+			var expected []string
+			for _, row := range engineRows {
+				nameable := utf8.ValidString(row) && len(row) <= graphtable.MaxRowBytes && (strings.HasPrefix(row, "ent:") || strings.HasPrefix(row, "evt:"))
+				if nameable {
+					expected = append(expected, row)
+				}
+			}
+			if expected == nil {
+				expected = []string{}
+			}
+			if readerRows == nil {
+				readerRows = []string{}
+			}
+			if !reflect.DeepEqual(readerRows, expected) {
+				t.Fatalf("%s %d hops: reader %v, engine %v", anchor, hops, readerRows, engineRows)
+			}
+			// h2's edges are read when h2 is the seed, or from the service
+			// at two hops or more; the alert never reaches h2.
+			reachesH2 := anchor == "ent:host|h2" || (anchor == "ent:service|api" && hops >= 2)
+			if reachesH2 && got.DroppedEdges != 3 {
+				t.Fatalf("%s %d hops: dropped %d edges, want the binary, posting, and long targets", anchor, hops, got.DroppedEdges)
+			}
+			for _, n := range got.Nodes {
+				if n.Namespace == "" || !utf8.ValidString(n.ID) || len(n.ID) > graphtable.MaxRowBytes {
+					t.Fatalf("%s %d hops: walk produced an unnameable node %+v", anchor, hops, n)
+				}
+			}
+		}
+	}
+	path, found, err := reader.Path(context.Background(), "ent:service|api", "evt:alert|e2", 0, 0, 0)
+	if err != nil || !found || path.DroppedEdges != 3 {
+		t.Fatalf("path dropped %d (found %v, err %v)", path.DroppedEdges, found, err)
+	}
+}
+
+// hubStore serves one row with more cells than the reader's row bound and
+// records the limit of every scan it was asked for.
+type hubStore struct {
+	inner  graphtable.Store
+	mu     sync.Mutex
+	limits []int32
+}
+
+func (h *hubStore) Scan(ctx context.Context, req *embedpb.ScanRequest) ([]*embedpb.Cell, error) {
+	h.mu.Lock()
+	h.limits = append(h.limits, req.GetLimit())
+	h.mu.Unlock()
+	return h.inner.Scan(ctx, req)
+}
+
+func TestARowPastTheCellBoundIsReadUpToItAndReportedTruncated(t *testing.T) {
+	eng := openEngine(t, "graph")
+	describe(t, eng, foremanSchema(1))
+	var cells []cell
+	for i := 0; i < graphtable.MaxRowCells+50; i++ {
+		cells = append(cells, cell{"ent:service|hub", "edge", edgeCQ("owns", fmt.Sprintf("ent:host|%06d", i)), nil})
+	}
+	cells = append(cells, cell{"ent:host|000000", "host", "name", []byte("first")})
+	write(t, eng, "graph", cells)
+	hub := &hubStore{inner: graphtable.NewEngineStore(eng)}
+	reader := openReader(t, hub, "graph")
+	got, err := reader.Neighborhood(context.Background(), graphtable.NeighborhoodRequest{Seeds: []string{"ent:service|hub"}, Fanout: 2, MaxNodes: 10})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Truncated || len(got.Edges) != 2 || len(got.Nodes) != 3 {
+		t.Fatalf("hub expansion = truncated %v, %d edges, %d nodes", got.Truncated, len(got.Edges), len(got.Nodes))
+	}
+	for _, limit := range hub.limits[1:] { // the first scan read the descriptor
+		if limit != graphtable.MaxRowCells+1 {
+			t.Fatalf("a row scan carried limit %d, want %d", limit, graphtable.MaxRowCells+1)
+		}
+	}
+	remote := graphtable.NewRemoteStore(nil)
+	if remote.MaxCells != graphtable.DefaultMaxRemoteCells {
+		t.Fatalf("remote store default bound = %d", remote.MaxCells)
 	}
 }

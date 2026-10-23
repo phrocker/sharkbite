@@ -4,6 +4,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -119,7 +120,9 @@ func TestDescribedTableIsServedUnderItsLabel(t *testing.T) {
 		t.Fatalf("described = %s (%v)", body, err)
 	}
 	status, body = graphTableCall(t, address, http.MethodPost, "/api/v1/graph-table/neighborhood", `{"node_ids":["ent:service|api"]}`)
-	if status != http.StatusOK || !strings.Contains(body, `"to":"ent:host|h1"`) || !strings.Contains(body, `"key":"service/name","value":"api"`) {
+	// Properties travel base64url-encoded, as the workspace graph's do.
+	encoded := func(v string) string { return base64.RawURLEncoding.EncodeToString([]byte(v)) }
+	if status != http.StatusOK || !strings.Contains(body, `"to":"ent:host|h1"`) || !strings.Contains(body, `"key":"`+encoded("service/name")+`","value":"`+encoded("api")+`"`) {
 		t.Fatalf("neighborhood = %d %s", status, body)
 	}
 	status, body = graphTableCall(t, address, http.MethodGet, "/api/v1/meta", "")
@@ -145,6 +148,7 @@ func TestDescribedTableMountRefusesIncompleteConfiguration(t *testing.T) {
 		"undescribed table":   {"-graph-table", "other", "-graph-table-label", "graph"},
 		"label without table": {"-graph-table-label", "graph"},
 		"bad store spec":      {"-graph-table", "graph", "-graph-table-label", "graph", "-graph-stores", "a:1,b:2"},
+		"lone ranged store":   {"-graph-table", "graph", "-graph-table-label", "graph", "-graph-stores", "127.0.0.1:1=ent:..evt:"},
 		"unreachable store":   {"-graph-table", "graph", "-graph-table-label", "graph", "-graph-stores", "127.0.0.1:1"},
 	} {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)

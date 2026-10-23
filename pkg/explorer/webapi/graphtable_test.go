@@ -19,6 +19,7 @@ package webapi
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -139,6 +140,7 @@ func TestGraphTableRoutesServeTheDescribedTable(t *testing.T) {
 			Edges []struct {
 				ID, From, To, Type string
 				Weight             float64
+				Properties         []struct{ Key, Value string }
 			} `json:"edges"`
 		} `json:"neighborhood"`
 	}
@@ -148,10 +150,19 @@ func TestGraphTableRoutesServeTheDescribedTable(t *testing.T) {
 	if neighborhood.Table != "graph" || !neighborhood.Truncated || len(neighborhood.Neighborhood.Nodes) != 2 || len(neighborhood.Neighborhood.Edges) != 1 {
 		t.Fatalf("neighborhood body = %s", w.Body)
 	}
-	if node := neighborhood.Neighborhood.Nodes[0]; node.Kind != "service" || len(node.Labels) != 2 || node.Labels[0] != "service|api" || node.Labels[1] != "entity" || node.Properties[0].Key != "found" || node.Properties[0].Value != "true" {
+	decoded := func(entries []struct{ Key, Value string }) map[string]string {
+		out := map[string]string{}
+		for _, e := range entries {
+			k, _ := base64.RawURLEncoding.DecodeString(e.Key)
+			v, _ := base64.RawURLEncoding.DecodeString(e.Value)
+			out[string(k)] = string(v)
+		}
+		return out
+	}
+	if node := neighborhood.Neighborhood.Nodes[0]; node.Kind != "service" || len(node.Labels) != 2 || node.Labels[0] != "service|api" || node.Labels[1] != "entity" || decoded(node.Properties)["found"] != "true" {
 		t.Fatalf("node = %+v", node)
 	}
-	if edge := neighborhood.Neighborhood.Edges[0]; edge.Type != "owns" || edge.From != "ent:service|api" || edge.To != "ent:host|h1" || edge.Weight != 1 || edge.ID == "" {
+	if edge := neighborhood.Neighborhood.Edges[0]; edge.Type != "owns" || edge.From != "ent:service|api" || edge.To != "ent:host|h1" || edge.Weight != 1 || edge.ID == "" || decoded(edge.Properties)["relationship"] != "owns" || decoded(edge.Properties)["family"] != "edge" {
 		t.Fatalf("edge = %+v", edge)
 	}
 
@@ -221,6 +232,14 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 	noRead.ServeHTTP(w, graphTableRequest(http.MethodGet, "/api/v1/graph-table/", ""))
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("no neighborhood operation = %d %s", w.Code, w.Body)
+	}
+	// Without the label, the operation is not even considered: the mount
+	// stays concealed.
+	neither, _ := graphTableFixture(t, []auth.Operation{auth.OperationRead}, [][]byte{[]byte("policy")})
+	w = httptest.NewRecorder()
+	neither.ServeHTTP(w, graphTableRequest(http.MethodGet, "/api/v1/graph-table/", ""))
+	if w.Code != http.StatusNotFound {
+		t.Fatalf("neither label nor operation = %d %s, want the unmounted route's 404", w.Code, w.Body)
 	}
 
 	// A decision without the label's policy is told nothing is mounted,

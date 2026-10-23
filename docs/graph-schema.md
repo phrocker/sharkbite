@@ -221,4 +221,12 @@ documents, and citations are out of scope: a described table has nodes
 and edges.
 
 Bounds: at most 64 seeds, 8 hops, 256 edges per node, 2048 nodes per
-expansion, and 16 terms per lookup; a request past them is refused.
+expansion, and 16 terms per lookup; a request past them is refused. One
+row is read up to 8192 cells; a row past that (a hub, or one carrying
+large embedding cells) is cut there and the expansion reports
+`truncated`, as it does for a fanout or node-budget cut. Node ids are
+JSON strings, so the reader names only row keys that are UTF-8, at most
+4096 bytes, and inside a described namespace; an edge cell whose target
+is none of those is not followed and is counted in `dropped_edges`. The
+engine's `EdgeExpand` follows any byte string, which is the one place the
+two readings differ, and the reader says when it happened.

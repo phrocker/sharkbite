@@ -65,17 +65,22 @@ func (s *EngineStore) Scan(ctx context.Context, req *embedpb.ScanRequest) ([]*em
 	return s.store.Scan(ctx, req.GetTable(), req)
 }
 
+// DefaultMaxRemoteCells bounds one remote scan's result unless the caller
+// sets another bound: a store that ignores a request's limit cannot make
+// the reader hold an unbounded result.
+const DefaultMaxRemoteCells = 1 << 16
+
 // RemoteStore serves scans from a shoal-embed process over its gRPC service.
 type RemoteStore struct {
 	client embedpb.ShoalEmbedClient
-	// MaxCells bounds one scan's result; zero means no bound beyond the
-	// request's own limit.
+	// MaxCells bounds one scan's result; NewRemoteStore sets
+	// DefaultMaxRemoteCells, and a negative value removes the bound.
 	MaxCells int
 }
 
 // NewRemoteStore wraps a connected client.
 func NewRemoteStore(client embedpb.ShoalEmbedClient) *RemoteStore {
-	return &RemoteStore{client: client}
+	return &RemoteStore{client: client, MaxCells: DefaultMaxRemoteCells}
 }
 
 // Scan streams the request's cells from the remote store. ScanV2 is used

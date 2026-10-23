@@ -106,15 +106,16 @@ func (g *graphTableHTTP) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		writeError(w, err)
 		return
 	}
-	if !graphTableReadAllowed(decision) {
-		writeError(w, shoal.NewError(shoal.ErrorUnauthorized, "graph reads are not permitted"))
+	// The label gate comes first and conceals the mount, as an
+	// unregistered node is concealed by the workspace: a reader without
+	// the label gets the response an unmounted route gives, whatever else
+	// the decision allows.
+	if !graphTableLabelHeld(decision, g.surface.LabelPolicyID) {
+		writeError(w, shoal.NewError(shoal.ErrorNotFound, "no such graph table route"))
 		return
 	}
-	if !graphTableLabelHeld(decision, g.surface.LabelPolicyID) {
-		// The label gate conceals the mount, as an unregistered node is
-		// concealed by the workspace: the response is the one an
-		// unmounted route gives.
-		writeError(w, shoal.NewError(shoal.ErrorNotFound, "no such graph table route"))
+	if !graphTableReadAllowed(decision) {
+		writeError(w, shoal.NewError(shoal.ErrorUnauthorized, "graph reads are not permitted"))
 		return
 	}
 	rest := strings.TrimPrefix(r.URL.Path, GraphTableRoute+"/")
@@ -213,6 +214,12 @@ func graphTableError(err error) error {
 	if errors.Is(err, graphtable.ErrInvalid) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, err.Error())
 	}
+	if errors.Is(err, context.Canceled) {
+		return shoal.NewError(shoal.ErrorCanceled, "graph table request canceled")
+	}
+	if errors.Is(err, context.DeadlineExceeded) {
+		return shoal.NewError(shoal.ErrorDeadline, "graph table request deadline exceeded")
+	}
 	var typed *shoal.Error
 	if errors.As(err, &typed) {
 		return err
@@ -283,6 +290,7 @@ type wireGraphTableNeighborhood struct {
 	Table        string           `json:"table"`
 	Neighborhood wireNeighborhood `json:"neighborhood"`
 	Truncated    bool             `json:"truncated"`
+	DroppedEdges int              `json:"dropped_edges"`
 }
 
 type wireGraphTablePath struct {
@@ -326,7 +334,7 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 		if err != nil {
 			return nil, err
 		}
-		return wireGraphTableNeighborhood{Table: table, Neighborhood: wireNeighborhood{Nodes: wireGraphTableNodeList(got.Nodes), Edges: wireGraphTableEdgeList(got.Edges)}, Truncated: got.Truncated}, nil
+		return wireGraphTableNeighborhood{Table: table, Neighborhood: wireNeighborhood{Nodes: wireGraphTableNodeList(got.Nodes), Edges: wireGraphTableEdgeList(got.Edges)}, Truncated: got.Truncated, DroppedEdges: got.DroppedEdges}, nil
 	case "path":
 		var req graphTablePathRequest
 		if err := decodeGraphTableBody(raw, &req); err != nil {
@@ -356,7 +364,9 @@ func (g *graphTableHTTP) dispatch(ctx context.Context, route string, raw []byte)
 
 // wireGraphTableNodeList renders nodes in the shape the workspace graph
 // uses: the key within the namespace and the namespace as labels, the kind
-// as the kind, the attributes as properties.
+// as the kind, the attributes as properties. Properties are encoded as
+// every workspace node's and edge's are (wireMetadataValue), so the UI's
+// one decoder reads them.
 func wireGraphTableNodeList(nodes []graphtable.Node) []wireNode {
 	out := make([]wireNode, 0, len(nodes))
 	for _, n := range nodes {
@@ -364,14 +374,15 @@ func wireGraphTableNodeList(nodes []graphtable.Node) []wireNode {
 		if n.Key == "" {
 			node.Labels = node.Labels[1:]
 		}
-		node.Properties = wireMetadata{{Key: "found", Value: strconv.FormatBool(n.Found)}}
+		properties := shoal.Metadata{"found": strconv.FormatBool(n.Found)}
 		for _, a := range n.Attributes {
 			key := a.Family
 			if a.Field != "" {
 				key = a.Family + "/" + a.Field
 			}
-			node.Properties = append(node.Properties, wireMetadataEntry{Key: key, Value: a.Value})
+			properties[key] = a.Value
 		}
+		node.Properties = wireMetadataValue(properties)
 		out = append(out, node)
 	}
 	return out
@@ -385,13 +396,14 @@ func wireGraphTableEdgeList(edges []graphtable.Edge) []wireEdge {
 			kind = e.Relationship
 		}
 		edge := wireEdge{ID: e.ID(), From: e.From, To: e.To, Type: kind, Weight: shoal.Score(e.Weight)}
-		edge.Properties = wireMetadata{{Key: "family", Value: e.Family}}
+		properties := shoal.Metadata{"family": e.Family}
 		if e.Relationship != "" {
-			edge.Properties = append(edge.Properties, wireMetadataEntry{Key: "relationship", Value: e.Relationship})
+			properties["relationship"] = e.Relationship
 		}
 		if e.Weighted {
-			edge.Properties = append(edge.Properties, wireMetadataEntry{Key: "weighted", Value: "true"})
+			properties["weighted"] = "true"
 		}
+		edge.Properties = wireMetadataValue(properties)
 		out = append(out, edge)
 	}
 	return out

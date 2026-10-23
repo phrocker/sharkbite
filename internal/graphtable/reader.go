@@ -44,6 +44,11 @@ const (
 	MaxSeeds    = 64
 	MaxTerms    = 16
 	MaxRowBytes = 4096
+	// MaxRowCells bounds the cells read of one row. A row past it is read
+	// up to the bound and the expansion reports truncation, so a hub row or
+	// one carrying large embedding cells cannot make a reader materialize
+	// it whole.
+	MaxRowCells = 8192
 
 	DefaultDepth       = 1
 	DefaultFanout      = 32
@@ -105,11 +110,17 @@ type NeighborhoodRequest struct {
 }
 
 // Neighborhood is an expansion's result. Nodes are in discovery order with
-// the seeds first; Edges in the order they were followed.
+// the seeds first; Edges in the order they were followed. Truncated reports
+// a fanout, node budget, or row cell bound that cut the walk short;
+// DroppedEdges counts edge cells whose target the reader cannot name: a
+// row key that is not UTF-8, longer than MaxRowBytes, or in no node
+// namespace. The engine's EdgeExpand follows any byte string; this reader
+// serves JSON node ids and says what it left out.
 type Neighborhood struct {
-	Nodes     []Node `json:"nodes"`
-	Edges     []Edge `json:"edges"`
-	Truncated bool   `json:"truncated"`
+	Nodes        []Node `json:"nodes"`
+	Edges        []Edge `json:"edges"`
+	Truncated    bool   `json:"truncated"`
+	DroppedEdges int    `json:"dropped_edges"`
 }
 
 // TermHit is the nodes a posting row names.
@@ -378,7 +389,7 @@ func (r *Reader) Nodes(ctx context.Context, ids []string) ([]Node, error) {
 	}
 	out := make([]Node, 0, len(ids))
 	for _, id := range ids {
-		node, _ := r.parseRow(id, rows[id], nil)
+		node, _, _ := r.parseRow(id, rows[id], nil)
 		out = append(out, node)
 	}
 	return out, nil
@@ -544,9 +555,9 @@ func (r *Reader) Path(ctx context.Context, from, to string, maxDepth, fanout, ma
 	if err != nil {
 		return Neighborhood{}, false, err
 	}
-	out := Neighborhood{Edges: chain}
+	out := Neighborhood{Edges: chain, Truncated: walk.truncated, DroppedEdges: walk.dropped}
 	for _, id := range ids {
-		node, _ := r.parseRow(id, rows[id], nil)
+		node, _, _ := r.parseRow(id, rows[id], nil)
 		out.Nodes = append(out.Nodes, node)
 	}
 	return out, true, nil
@@ -643,7 +654,7 @@ func (r *Reader) rows(ctx context.Context, ids []string) (map[string][]*embedpb.
 			}
 			cells, err := r.store.Scan(ctx, &embedpb.ScanRequest{
 				Table: r.Table(), StartRow: []byte(id), StartInclusive: true,
-				EndRow: []byte(id), EndInclusive: true,
+				EndRow: []byte(id), EndInclusive: true, Limit: MaxRowCells + 1,
 			})
 			mu.Lock()
 			defer mu.Unlock()
@@ -664,9 +675,21 @@ func (r *Reader) rows(ctx context.Context, ids []string) (map[string][]*embedpb.
 	return out, nil
 }
 
+// rowStats is what parseRow left out of a row.
+type rowStats struct {
+	// oversized reports a row read up to MaxRowCells and cut there.
+	oversized bool
+	// dropped counts edge cells whose target the reader cannot name.
+	dropped int
+}
+
 // parseRow turns a row's cells into its node and out-edges. Cells of a
 // family an edge, vector, or posting entry claims are never attributes.
-func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) (Node, []Edge) {
+func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) (Node, []Edge, rowStats) {
+	var stats rowStats
+	if len(cells) > MaxRowCells {
+		cells, stats.oversized = cells[:MaxRowCells], true
+	}
 	ns, _ := r.namespaceOf(id)
 	node := Node{ID: id, Key: id[len(ns.spec.GetRowPrefix()):], Namespace: ns.spec.GetName(), Kind: ns.kindOf(id), Found: len(cells) > 0}
 	var edges []Edge
@@ -680,7 +703,15 @@ func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) 
 		}
 		cf := string(cell.GetColumnFamily())
 		if family, ok := r.edges[cf]; ok {
-			if edge, ok := family.parse(id, cell); ok && filter.allows(edge) {
+			edge, ok := family.parse(id, cell)
+			if !ok {
+				continue
+			}
+			if r.validateRow("edge target", edge.To) != nil {
+				stats.dropped++
+				continue
+			}
+			if filter.allows(edge) {
 				edges = append(edges, edge)
 			}
 			continue
@@ -712,7 +743,7 @@ func (r *Reader) parseRow(id string, cells []*embedpb.Cell, filter *edgeFilter) 
 		}
 		return edges[i].To < edges[j].To
 	})
-	return node, edges
+	return node, edges, stats
 }
 
 // parse reads one edge cell exactly as the engine's EdgeExpand iterator
@@ -749,9 +780,6 @@ func (f *edgeFamily) parse(from string, cell *embedpb.Cell) (Edge, bool) {
 		return Edge{}, false
 	}
 	edge.To = f.spec.GetPrimaryPrefix() + string(id)
-	if !utf8.ValidString(edge.To) {
-		return Edge{}, false
-	}
 	if f.spec.GetValueEncoding() == schemapb.ValueEncoding_VALUE_ENCODING_FLOAT32_BE && f.spec.GetEdgeField() != "value" {
 		if raw := cell.GetValue(); len(raw) == 4 {
 			edge.Weight, edge.Weighted = math.Float32frombits(binary.BigEndian.Uint32(raw)), true
@@ -798,6 +826,7 @@ type walk struct {
 	edges     []Edge
 	parent    map[string]Edge
 	truncated bool
+	dropped   int
 }
 
 func newWalk(reader *Reader, fanout, maxNodes int, filter *edgeFilter) *walk {
@@ -829,8 +858,12 @@ func (w *walk) expand(ctx context.Context) error {
 		return err
 	}
 	for _, id := range frontier {
-		node, edges := w.reader.parseRow(id, rows[id], w.filter)
+		node, edges, stats := w.reader.parseRow(id, rows[id], w.filter)
 		w.nodes[id] = node
+		w.dropped += stats.dropped
+		if stats.oversized {
+			w.truncated = true
+		}
 		if len(edges) > w.fanout {
 			edges = edges[:w.fanout]
 			w.truncated = true
@@ -858,14 +891,17 @@ func (w *walk) materializeFrontier(ctx context.Context) error {
 		return err
 	}
 	for _, id := range frontier {
-		node, _ := w.reader.parseRow(id, rows[id], nil)
+		node, _, stats := w.reader.parseRow(id, rows[id], nil)
 		w.nodes[id] = node
+		if stats.oversized {
+			w.truncated = true
+		}
 	}
 	return nil
 }
 
 func (w *walk) result() Neighborhood {
-	out := Neighborhood{Nodes: make([]Node, 0, len(w.order)), Edges: w.edges, Truncated: w.truncated}
+	out := Neighborhood{Nodes: make([]Node, 0, len(w.order)), Edges: w.edges, Truncated: w.truncated, DroppedEdges: w.dropped}
 	if out.Edges == nil {
 		out.Edges = []Edge{}
 	}

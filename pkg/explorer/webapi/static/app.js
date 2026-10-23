@@ -2913,6 +2913,20 @@ const GRAPH_DERIVED_ORIGIN = "derived";
 // key/value pairs — into a decoded string map. It memoizes on the edge so the
 // per-frame draw loop never re-decodes, and a fresh expansion replaces the edge
 // object and so refreshes the cache.
+// decodedNodeProperties reads a node's wire metadata (base64url key/value
+// entries, as every node and edge carries them) as a plain object.
+function decodedNodeProperties(node) {
+  if (!node) return {};
+  if (node._decodedProperties) return node._decodedProperties;
+  const decoded = {};
+  for (const entry of node.properties || []) {
+    if (!entry) continue;
+    decoded[base64UrlDecode(entry.key)] = base64UrlDecode(entry.value);
+  }
+  node._decodedProperties = decoded;
+  return decoded;
+}
+
 function decodedEdgeProperties(edge) {
   if (!edge) return {};
   if (edge._decodedProperties) return edge._decodedProperties;
@@ -3130,7 +3144,7 @@ function selectNode(id) {
       ["Node", id],
       ["Kind", node.kind],
       ["Labels", (node.labels || []).join(", ")],
-      ["Properties", JSON.stringify(node.properties || {})],
+      ["Properties", JSON.stringify(decodedNodeProperties(node))],
     ]);
     $("path-from").value = id;
   } else {

@@ -80,16 +80,14 @@ func mountGraphTable(ctx context.Context, handler *webapi.Handler, resolver auth
 			shards = append(shards, graphtable.Shard{Name: name, Start: spec.Start, End: spec.End, Store: graphtable.NewRemoteStore(embedpb.NewShoalEmbedClient(conn))})
 			described = append(described, webapi.GraphTableStore{Name: name, Address: spec.Address, Start: string(spec.Start), End: string(spec.End)})
 		}
-		if len(shards) == 1 {
-			store = shards[0].Store
-		} else {
-			sharded, err := graphtable.NewSharded(shards)
-			if err != nil {
-				closer.Close()
-				return nil, fmt.Errorf("-graph-stores: %w", err)
-			}
-			store = sharded
+		// One entry or many, the tiling is validated: a lone entry with a
+		// range would leave rows outside it with no owner.
+		sharded, err := graphtable.NewSharded(shards)
+		if err != nil {
+			closer.Close()
+			return nil, fmt.Errorf("-graph-stores: %w", err)
 		}
+		store = sharded
 	}
 	reader, err := graphtable.Open(ctx, store, cfg.table)
 	if err != nil {

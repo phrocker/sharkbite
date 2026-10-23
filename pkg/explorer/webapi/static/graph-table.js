@@ -6,7 +6,7 @@
 // table's postings, and the table's ontology. Results render on the same
 // canvas and lists as the workspace graph. Loaded after app.js and relies on
 // its state, $, authHeaders, apiError, mergeGraph, draw, activate,
-// selectNode and capability.
+// selectNode, decodedNodeProperties, graphGeneration and capability.
 const graphTable = (() => {
   const ROOT = "/api/v1/graph-table";
   let description = null;
@@ -119,24 +119,33 @@ const graphTable = (() => {
     return Number.isInteger(value) && value > 0 ? value : 1;
   }
 
+  // A table read is discarded when the workspace graph was cleared or
+  // another read superseded it: both app.js's graphGeneration and this
+  // module's own generation must still match.
+  function stale(mine, graphMine) {
+    return mine !== generation || graphMine !== graphGeneration;
+  }
+
   async function expand(ids) {
     if (!description) return;
     const mine = ++generation;
+    const graphMine = graphGeneration;
     status(`Expanding ${ids.length} node(s) ${depth()} hop(s) through the table…`);
     try {
       const response = await request("neighborhood", {
         node_ids: ids, depth: depth(), fanout: 18, max_nodes: 120,
       });
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       mergeGraph(response.neighborhood);
-      $("graph-status").textContent = response.truncated
-        ? `Table ${response.table}: expansion truncated by fanout or node budget.`
-        : `Table ${response.table}: complete expansion.`;
+      const dropped = response.dropped_edges ? ` ${response.dropped_edges} edge(s) point at rows the reader cannot name and were dropped.` : "";
+      $("graph-status").textContent = (response.truncated
+        ? `Table ${response.table}: expansion truncated by fanout, node budget, or a row's cell bound.`
+        : `Table ${response.table}: complete expansion.`) + dropped;
       status(`${response.neighborhood.nodes.length} node(s), ${response.neighborhood.edges.length} edge(s) from ${response.table}.`);
       activate("graph");
       draw();
     } catch (error) {
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       status(`Expansion failed: ${error.message || String(error)}`, true);
     }
   }
@@ -144,10 +153,11 @@ const graphTable = (() => {
   async function path(from, to) {
     if (!description) return;
     const mine = ++generation;
+    const graphMine = graphGeneration;
     status(`Finding a directed path in the table…`);
     try {
       const response = await request("path", {from, to, max_depth: 4, fanout: 25});
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       if (!response.found) {
         $("graph-status").textContent = `Table ${response.table}: no directed path within 4 hops.`;
         status("No path found.");
@@ -158,7 +168,7 @@ const graphTable = (() => {
       status(`Path of ${response.path.edges.length} edge(s).`);
       draw();
     } catch (error) {
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       status(`Path finding failed: ${error.message || String(error)}`, true);
     }
   }
@@ -168,18 +178,19 @@ const graphTable = (() => {
     if (!id || !description) return;
     el("graph-table-active").checked = true;
     const mine = ++generation;
+    const graphMine = graphGeneration;
     status(`Loading ${id}…`);
     try {
       const response = await request("nodes", {ids: [id]});
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       mergeGraph({nodes: response.nodes, edges: []});
       const node = response.nodes[0];
-      const found = node && node.properties && node.properties.some((p) => p.key === "found" && p.value === "true");
+      const found = node && decodedNodeProperties(node).found === "true";
       status(found ? `Loaded ${id}; expand it to follow its edges.` : `${id} is in the namespace but the table holds no cell for it.`);
       activate("graph");
       selectNode(id);
     } catch (error) {
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       status(`Load failed: ${error.message || String(error)}`, true);
     }
   }
@@ -189,23 +200,24 @@ const graphTable = (() => {
     if (!term || !description) return;
     el("graph-table-active").checked = true;
     const mine = ++generation;
+    const graphMine = graphGeneration;
     status(`Looking up "${term}" in the table's postings…`);
     try {
       const response = await request("terms", {terms: [term]});
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       const ids = (response.hits[0] && response.hits[0].node_ids) || [];
       if (ids.length === 0) {
         status(`No node is posted under "${term}".`);
         return;
       }
       const nodes = await request("nodes", {ids: ids.slice(0, 64)});
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       mergeGraph({nodes: nodes.nodes, edges: []});
       status(`${ids.length} node(s) posted under "${term}".`);
       activate("graph");
       selectNode(ids[0]);
     } catch (error) {
-      if (mine !== generation) return;
+      if (stale(mine, graphMine)) return;
       status(`Term lookup failed: ${error.message || String(error)}`, true);
     }
   }
