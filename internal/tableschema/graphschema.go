@@ -33,12 +33,18 @@ const GraphSchemaID = "shoal.graphschema"
 // both node namespaces, and term postings. It is the descriptor a
 // reader needs to traverse a graphschema table without the Go library, and
 // the basis for checking that both readings agree.
+//
+// The edge qualifier holds the neighbor's id, not its row, so each edge
+// entry carries the primary prefix the documented EdgeExpand mapping sets:
+// the temporal, causal, and semantic views join events, and the entity view
+// points at entity rows.
 func ForGraphSchema(table, embeddingSpace string, version int32) *schemapb.TableSchema {
-	edge := func(name string, cf []byte) *schemapb.EdgeSchema {
+	edge := func(name string, cf []byte, primaryPrefix string) *schemapb.EdgeSchema {
 		return &schemapb.EdgeSchema{
 			Name:          name,
 			EdgeCf:        string(cf),
 			EdgeField:     "qualifier",
+			PrimaryPrefix: primaryPrefix,
 			ValueEncoding: schemapb.ValueEncoding_VALUE_ENCODING_FLOAT32_BE,
 		}
 	}
@@ -64,10 +70,10 @@ func ForGraphSchema(table, embeddingSpace string, version int32) *schemapb.Table
 			},
 		},
 		Edges: []*schemapb.EdgeSchema{
-			edge("temporal", graphschema.TemporalEdgeCF()),
-			edge("causal", graphschema.CausalEdgeCF()),
-			edge("semantic", graphschema.SemanticEdgeCF()),
-			edge("entity_edge", graphschema.EntityEdgeCF()),
+			edge("temporal", graphschema.TemporalEdgeCF(), graphschema.EventRowPrefix),
+			edge("causal", graphschema.CausalEdgeCF(), graphschema.EventRowPrefix),
+			edge("semantic", graphschema.SemanticEdgeCF(), graphschema.EventRowPrefix),
+			edge("entity_edge", graphschema.EntityEdgeCF(), graphschema.EntityRowPrefix),
 		},
 		Postings: []*schemapb.PostingSchema{{
 			Name:          "term",

@@ -77,6 +77,7 @@ const (
 	CapabilityOutcomes      Capability = "decision_outcomes"
 	CapabilityAdjudications Capability = "decision_adjudications"
 	CapabilityLearning      Capability = "decision_learning"
+	CapabilityGraphTable    Capability = "graph_table"
 )
 
 // Capabilities advertises only stable logical features supported by a backend.
@@ -97,6 +98,9 @@ type Capabilities struct {
 	Outcomes      bool `json:"decision_outcomes"`
 	Adjudications bool `json:"decision_adjudications"`
 	Learning      bool `json:"decision_learning"`
+	// GraphTable reports a described engine table mounted at
+	// GraphTableRoute, read through its recorded descriptor.
+	GraphTable bool `json:"graph_table"`
 }
 
 // AllCapabilities returns the complete feature set implemented by the embedded
@@ -142,6 +146,10 @@ func (c Capabilities) Supports(capability Capability) bool {
 		return c.Outcomes
 	case CapabilityAdjudications:
 		return c.Adjudications
+	case CapabilityLearning:
+		return c.Learning
+	case CapabilityGraphTable:
+		return c.GraphTable
 	default:
 		return false
 	}

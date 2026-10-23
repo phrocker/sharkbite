@@ -335,6 +335,35 @@ Neither the browser upload route nor the MCP ingest tool lets a caller attach
 a visibility label today; labelled content arrives through programmatic
 ingest (`authorized.Client.Ingest`) or is already in the corpus.
 
+### Serving a described engine table as a graph
+
+A table any consumer wrote into a shoal store, described by a recorded
+`shoal.schema.v1.TableSchema` descriptor (`shoal-embed schema put`), is
+served at `/api/v1/graph-table` and in the Graph panel's "Described table"
+toolbar with:
+
+```
+shoal-explore-web -dev-auth -state-dir /srv/shoal \
+  -graph-table graph -graph-table-label graph \
+  -dev-auth-labels shoal-explore-web/workspace=graph
+```
+
+`-graph-table` names the table and `-graph-table-label` the one label every
+cell is exposed under; a reader holds the label's grant or is told nothing
+is mounted. Without `-graph-stores` the table is read from this workspace's
+own engine. With `-graph-stores`, the rows are read from `shoal-embed serve`
+processes over gRPC, each owning the half-open row range it names; the
+ranges must tile the keyspace and every store must carry the same newest
+descriptor:
+
+```
+  -graph-stores "10.0.0.1:9876=..evt:,10.0.0.2:9876=evt:.."
+```
+
+The Explorer holds only each walk's frontier; cell reads run in the stores.
+See `docs/graph-schema.md`, "Serving a described table through the
+Explorer", for what is served and how a walk executes.
+
 ### Upgrading: labelled documents are tightened at startup
 
 Before this release a label was stored on the document's nodes

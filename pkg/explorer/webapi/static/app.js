@@ -36,6 +36,7 @@ const state = {
     decision_outcomes: false,
     decision_adjudications: false,
     decision_learning: false,
+    graph_table: false,
   },
   uploadLimits: {
     max_upload_files: 0,
@@ -1868,6 +1869,7 @@ function vectorRetrievalCapability() {
 }
 
 function applyCapabilities() {
+  if (typeof graphTable !== "undefined") graphTable.apply();
   const canRetrieve = capability("retrieve");
   $("query").disabled = !canRetrieve;
   $("search-button").disabled = !canRetrieve;
@@ -2911,6 +2913,20 @@ const GRAPH_DERIVED_ORIGIN = "derived";
 // key/value pairs — into a decoded string map. It memoizes on the edge so the
 // per-frame draw loop never re-decodes, and a fresh expansion replaces the edge
 // object and so refreshes the cache.
+// decodedNodeProperties reads a node's wire metadata (base64url key/value
+// entries, as every node and edge carries them) as a plain object.
+function decodedNodeProperties(node) {
+  if (!node) return {};
+  if (node._decodedProperties) return node._decodedProperties;
+  const decoded = {};
+  for (const entry of node.properties || []) {
+    if (!entry) continue;
+    decoded[base64UrlDecode(entry.key)] = base64UrlDecode(entry.value);
+  }
+  node._decodedProperties = decoded;
+  return decoded;
+}
+
 function decodedEdgeProperties(edge) {
   if (!edge) return {};
   if (edge._decodedProperties) return edge._decodedProperties;
@@ -2950,6 +2966,12 @@ function mergeGraph(graph) {
 }
 
 async function expandIDs(ids, cursor = "") {
+  // A mounted described table, when the reader chose it, answers
+  // expansions in place of the workspace graph.
+  if (typeof graphTable !== "undefined" && graphTable.active()) {
+    await graphTable.expand(ids);
+    return;
+  }
   if (!capability("neighborhood")) return;
   const generation = graphGeneration;
   $("graph-status").textContent = cursor ? "Loading more neighbors…" : "Expanding graph…";
@@ -2996,6 +3018,10 @@ $("continue-expansion").onclick = () => {
 };
 $("more").onclick = () => loadDocuments(false);
 $("find-path").onclick = async () => {
+  if (typeof graphTable !== "undefined" && graphTable.active()) {
+    await graphTable.path($("path-from").value, $("path-to").value);
+    return;
+  }
   if (!capability("path")) return;
   const generation = graphGeneration;
   $("graph-status").textContent = "Finding directed path…";
@@ -3118,7 +3144,7 @@ function selectNode(id) {
       ["Node", id],
       ["Kind", node.kind],
       ["Labels", (node.labels || []).join(", ")],
-      ["Properties", JSON.stringify(node.properties || {})],
+      ["Properties", JSON.stringify(decodedNodeProperties(node))],
     ]);
     $("path-from").value = id;
   } else {

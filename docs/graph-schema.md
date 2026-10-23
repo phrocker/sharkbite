@@ -165,5 +165,68 @@ Validation refuses a descriptor whose node or posting row prefixes overlap,
 whose entries claim the same column family twice, or whose pushdown
 parameters the engine would not accept (an unknown `edge_field`, `id_source`,
 or `metric`; `id_index`, `rel_index`, or `relationships` without a
-`field_sep`). A reader that serves a described table through the Explorer
-is a separate change; this descriptor is what it will read.
+`field_sep`).
+
+## Serving a described table through the Explorer
+
+`internal/graphtable` reads a described table as a graph, and
+`shoal-explore-web -graph-table <name>` serves it at `/api/v1/graph-table`
+beside the workspace's own graph: nodes by row key, neighborhoods, directed
+paths, and term lookups over the table's postings, plus the descriptor
+projected as the table's ontology (namespaces and their kinds, edge
+families and their relationships, postings, embedding spaces). The Graph
+panel gains a "Described table" toolbar: a switch that makes expansion and
+path finding read the table, a node loader by row key, a term lookup, and
+the hop count; results draw on the same canvas.
+
+The reader never opens the table. Every read is the `ScanRequest` of
+`proto/embed.proto`, so the rows are served by whichever process hosts
+them:
+
+- With no `-graph-stores`, the table is read from the workspace's own
+  engine (the `-data` or `-state-dir/corpus` directory), which is where a
+  consumer that shares the store with the Explorer wrote it.
+- With `-graph-stores address[=start..end],...`, the rows are read from
+  those `shoal-embed serve` processes over gRPC, each owning the half-open
+  row range it names. The ranges must tile the keyspace with no gap or
+  overlap (one address with no range owns every row). Every store must
+  carry the same newest descriptor of the table, read from its own
+  `_shoal_schema`; a disagreement refuses to start.
+
+A neighborhood is expanded hop by hop. Each hop reads the frontier's rows
+through the store (concurrently, each row routed to the shard that owns
+it), parses the edge cells by the descriptor exactly as `EdgeExpand`
+would (qualifier or value, split by `field_sep`, id at `id_index` or the
+last field, relationship at `rel_index`, neighbor row `primary_prefix` +
+id, a `float32_be` value as the weight), follows up to `fanout` edges per
+node in (family, relationship, target) order, and stops adding nodes at
+`max_nodes`. The rows the last hop reached are read for their kinds and
+attributes. The Explorer therefore holds only the walk's frontier; the
+cell reads, merges, and versioning run in the store processes, and a
+table split across several stores is walked without any one process
+holding it. Edges are followed outward only: the layout records no
+reverse index, and none is invented. Pushdowns (`EdgeExpand`,
+`TermFilter`, `VectorSearch`) are not used for the walk, because a
+pushdown resolves rows inside one store and the rows it resolves to may
+be owned by another; `internal/graphtable`'s parity test checks that the
+descriptor reading of a `graphschema` table returns the neighbor rows the
+engine's `EdgeExpand` returns under the mapping above.
+
+A described table is trusted ingest exposed under one label,
+`-graph-table-label`: a reader must hold that label's grant (for
+`-dev-auth`, `-dev-auth-labels shoal-explore-web/workspace=<label>`), and a
+reader who does not is told no such route exists. Per-cell visibility from
+`cv` is not applied. Writes through the workspace to a described table,
+documents, and citations are out of scope: a described table has nodes
+and edges.
+
+Bounds: at most 64 seeds, 8 hops, 256 edges per node, 2048 nodes per
+expansion, and 16 terms per lookup; a request past them is refused. One
+row is read up to 8192 cells; a row past that (a hub, or one carrying
+large embedding cells) is cut there and the expansion reports
+`truncated`, as it does for a fanout or node-budget cut. Node ids are
+JSON strings, so the reader names only row keys that are UTF-8, at most
+4096 bytes, and inside a described namespace; an edge cell whose target
+is none of those is not followed and is counted in `dropped_edges`. The
+engine's `EdgeExpand` follows any byte string, which is the one place the
+two readings differ, and the reader says when it happened.
