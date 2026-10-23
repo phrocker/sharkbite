@@ -108,3 +108,39 @@ func TestStaticWorkspaceMountsLearningConsole(t *testing.T) {
 		}
 	}
 }
+
+func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
+	index := readStaticAsset(t, "static/index.html")
+	for _, id := range []string{
+		`id="graph-table"`,
+		`id="graph-table-active"`,
+		`id="graph-table-seed"`,
+		`id="graph-table-load"`,
+		`id="graph-table-term"`,
+		`id="graph-table-find"`,
+		`id="graph-table-depth"`,
+		`id="graph-table-ontology"`,
+		`/assets/graph-table.js`,
+	} {
+		if !strings.Contains(index, id) {
+			t.Fatalf("graph table HTML missing %s", id)
+		}
+	}
+	script := readStaticAsset(t, "static/graph-table.js")
+	for _, required := range []string{
+		`/api/v1/graph-table`,
+		`"neighborhood"`, `"path"`, `"nodes"`, `"terms"`,
+		`capability("graph_table")`,
+		`not among your grants`,
+	} {
+		if !strings.Contains(script, required) {
+			t.Fatalf("graph table script missing %q", required)
+		}
+	}
+	app := readStaticAsset(t, "static/app.js")
+	for _, required := range []string{`graphTable.active()`, `graphTable.expand(ids)`, `graphTable.path(`, `graphTable.apply()`, `graph_table: false`} {
+		if !strings.Contains(app, required) {
+			t.Fatalf("app.js does not route to the described table: missing %q", required)
+		}
+	}
+}

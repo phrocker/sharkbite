@@ -36,6 +36,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/phrocker/shoal-oss/internal/engine"
 	"github.com/phrocker/shoal-oss/internal/executorattest"
 	"github.com/phrocker/shoal-oss/internal/explorercoord"
 	"github.com/phrocker/shoal-oss/internal/explorerfleet"
@@ -257,6 +258,27 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		"student-device", firstNonEmpty(os.Getenv("SHOAL_STUDENT_DEVICE"), "cpu"),
 		"Device the active release was promoted for; a runtime reporting "+
 			"another device is a recorded fallback and is not served",
+	)
+	graphTable := flags.String(
+		"graph-table", os.Getenv("SHOAL_GRAPH_TABLE"),
+		"Optional engine table described by a recorded shoal.schema.v1 "+
+			"descriptor to serve as a graph at /api/v1/graph-table. Read from "+
+			"this workspace's data directory unless -graph-stores names the "+
+			"store processes that host it. A table with no descriptor is refused",
+	)
+	graphTableLabel := flags.String(
+		"graph-table-label", os.Getenv("SHOAL_GRAPH_TABLE_LABEL"),
+		"Label every cell of -graph-table is exposed under; a reader must "+
+			"hold the label grant (for -dev-auth, through -dev-auth-labels). "+
+			"Required with -graph-table",
+	)
+	graphStores := flags.String(
+		"graph-stores", os.Getenv("SHOAL_GRAPH_STORES"),
+		"Comma-separated shoal-embed gRPC addresses hosting -graph-table, "+
+			"each as address[=start..end] with the half-open row range it "+
+			"owns; the ranges must tile the keyspace. One address with no "+
+			"range hosts every row. Empty reads the table from this "+
+			"workspace's own engine",
 	)
 	fleetExecutorRefs := flags.String(
 		"fleet-executor-refs", os.Getenv("SHOAL_FLEET_EXECUTOR_REFS"),
@@ -901,6 +923,16 @@ func run(ctx context.Context, args []string, output io.Writer) error {
 		}
 		defer learningCloser.Close()
 	}
+	if *graphTable != "" || *graphTableLabel != "" || *graphStores != "" {
+		graphCloser, err := mountGraphTable(ctx, handler, authority.Resolver(), graphTableHostConfig{
+			table: *graphTable, label: *graphTableLabel, stores: *graphStores,
+		}, opened.engine, output)
+		if err != nil {
+			listener.Close()
+			return err
+		}
+		defer graphCloser.Close()
+	}
 	var chat webapi.AskProvider
 	var provenance webapi.InteractionProvider
 	if opened.settings != nil {
@@ -1403,6 +1435,9 @@ type openedService struct {
 	attestation    webapi.FleetAttestationProvider
 	teamOverview   webapi.TeamOverviewProvider
 	client         *authorized.Client
+	// engine is the workspace's own engine, from which a described table
+	// in the same data directory is read when -graph-stores is empty.
+	engine *engine.Engine
 	// policyStore is the durable policy catalog, held so the host can
 	// signal when it diverges and fails closed (#665).
 	policyStore *authorized.DurablePolicyStore
@@ -1851,6 +1886,7 @@ func openService(
 			attestation:     optionalAttestation(attestationService),
 			teamOverview:    teamOverview,
 			client:          client,
+			engine:          embedded.Runtime.EmbeddedEngine(),
 			policyStore:     store,
 			backfilled:      backfilled,
 			labelMigration:  labelMigration,

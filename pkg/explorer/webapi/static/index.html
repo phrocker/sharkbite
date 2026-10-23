@@ -314,6 +314,23 @@
           <input id="path-to" placeholder="Path to node ID">
           <button id="find-path" type="button">Find path</button>
         </div>
+        <section id="graph-table" class="graph-table" hidden aria-labelledby="graph-table-heading">
+          <h3 id="graph-table-heading">Described table</h3>
+          <p id="graph-table-summary" class="muted">No described table is mounted.</p>
+          <div class="graph-tools">
+            <label class="mode-option"><input id="graph-table-active" type="checkbox"> Read the graph from the described table</label>
+            <label class="sr-only" for="graph-table-seed">Node row key</label>
+            <input id="graph-table-seed" placeholder="Node row key, e.g. ent:service|api">
+            <button id="graph-table-load" type="button">Load node</button>
+            <label class="sr-only" for="graph-table-term">Term</label>
+            <input id="graph-table-term" placeholder="Term in the table's postings">
+            <button id="graph-table-find" type="button">Find by term</button>
+            <label class="sr-only" for="graph-table-depth">Hops</label>
+            <input id="graph-table-depth" type="number" min="1" max="8" value="1" title="Hops per expansion">
+          </div>
+          <p id="graph-table-status" class="muted" aria-live="polite"></p>
+          <details id="graph-table-ontology"><summary>Table ontology</summary><div id="graph-table-ontology-body"></div></details>
+        </section>
         <p id="graph-status" class="muted" aria-live="polite">No graph expansion yet.</p>
         <canvas id="canvas" aria-hidden="true"></canvas>
         <div id="graph-list">
@@ -387,5 +404,6 @@
   <script src="/assets/team-overview.js"></script>
   <script src="/assets/decision-console.js"></script>
   <script src="/assets/learning-console.js"></script>
+  <script src="/assets/graph-table.js"></script>
 </body>
 </html>
