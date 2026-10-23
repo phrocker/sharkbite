@@ -252,3 +252,38 @@ measurement-only report. `verify_comparison.py` independently checks the
 report digest, disjoint predeclared splits, candidate set, metric bounds,
 pinned threshold, and measurement-only disposition before a downstream
 evaluator consumes it.
+
+## Running jobs from the console: `shoal-learning-worker`
+
+The console does not run `distill.py` itself. It records a run request on a
+job (`POST /learning/jobs/{pin}/run`, the "Run with a learning worker"
+form), and a `shoal-learning-worker` process running against the host
+claims the job and carries it from fetch to seal:
+
+```
+go run ./cmd/shoal-learning-worker -host http://127.0.0.1:8080 \
+  -trainer "python3 experiments/local-ml/distill.py" \
+  -trainer-arg --student=averaged-perceptron -work-dir /tmp/learning-worker
+```
+
+The worker fetches the recorded manifest (re-encoded and checked against
+the pin) and every authorized export the job consumed (checked against the
+recorded export pin) from the host, runs the trainer with `--manifest`,
+`--manifest-pin`, one `--export=COHORT=DATASET:MANIFEST` per cohort (the
+`=` form so a cohort id may start with `-`; a cohort id containing `=`
+cannot be carried by this argument and the run fails saying so, and the
+`-work-dir` may hold neither `:` nor `=`), `--output-dir`, `--executor-id`
+(its `-worker-id`), and `--executor-attestation`, then posts `teacher-predictions.json`, the
+receipt, and the bundle files to the host's predictions, receipt, and seal
+routes, reporting each phase as progress on its claim. The host verifies
+every record as it does for any caller. The trainer's output goes to
+`trainer.log` under the attempt's work directory and to the worker's own
+output; the host receives only the exit status and the last line. The
+trainer runs without the worker's token in its environment (the
+`-token-env` variable and any variable whose name contains TOKEN, SECRET,
+PASSWORD, or CREDENTIAL are withheld). A bearer token comes from
+`-token-env` (default `SHOAL_LEARNING_TOKEN`), must carry the
+`learning_write` operation, and is sent only to a loopback or https host;
+a `-dev-auth` host needs none. `-once` runs one job and exits: 0 when it
+sealed, 2 when it failed or the host could not be listed, 3 when nothing
+was runnable or another worker claimed it first.

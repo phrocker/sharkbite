@@ -128,6 +128,8 @@ type Config struct {
 type Service struct {
 	cfg Config
 	mu  sync.Mutex
+	// runs indexes the run records (run.go).
+	runs runIndex
 }
 
 // New validates the composition. Registry, store, and bundles directory are
@@ -668,6 +670,11 @@ func (s *Service) jobView(ctx context.Context, job weightsbundle.Record) (map[st
 	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		return nil, s.classified(err)
 	}
+	run, err := s.runView(ctx, str(job, "manifest_pin"))
+	if err != nil {
+		return nil, err
+	}
+	view["run"] = run
 	return view, nil
 }
 

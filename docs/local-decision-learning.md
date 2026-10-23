@@ -113,7 +113,16 @@ exactly the recorded set.
 The trainer contract is provider-neutral. A job consumes the manifest pin
 and the exports and emits a weights bundle plus a receipt naming requested
 versus actual parameters, cohorts, teacher, and base; runtime identities;
-and the executor. Deviations are structured differences (parameter,
+and the executor. Training is dispatched from the console and executed by
+`shoal-learning-worker`, a separate process that speaks only the learning
+HTTP API: the console records a run request on the job (after the policy,
+before any receipt), a worker claims it under a lease, fetches the recorded
+manifest and the authorized exports from the host, runs the trainer
+command, records the predictions and the receipt, seals the run through
+the host's seal route, and reports each phase as progress on its claim.
+The host verifies what the worker submits exactly as it verifies any other
+caller's records; the run records only say who is doing the work and how
+far it got, and the console shows it on the job. Deviations are structured differences (parameter,
 requested, actual) that the verifier recomputes and requires to match
 exactly; a prose deviation, a parameter the manifest never requested, a
 cohort outside the selection, an improvement claim, or an evaluation inside
