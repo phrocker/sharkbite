@@ -251,6 +251,27 @@ func (h *learningHTTP) dispatch(ctx context.Context, method string, segments []s
 		}
 		out, err := h.provider.SubmitReceipt(ctx, segments[1], raw)
 		return out, err, true
+	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "run" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.RequestRun(ctx, segments[1], raw)
+		return out, err, true
+	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "claim" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.ClaimRun(ctx, segments[1], raw)
+		return out, err, true
+	case len(segments) == 3 && segments[0] == "jobs" && segments[2] == "progress" && post:
+		raw, err := body()
+		if err != nil {
+			return nil, err, true
+		}
+		out, err := h.provider.ReportProgress(ctx, segments[1], raw)
+		return out, err, true
 	case len(segments) == 1 && segments[0] == "candidates" && get:
 		out, err := h.provider.Candidates(ctx)
 		return out, err, true

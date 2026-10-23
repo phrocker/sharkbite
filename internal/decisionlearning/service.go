@@ -668,6 +668,11 @@ func (s *Service) jobView(ctx context.Context, job weightsbundle.Record) (map[st
 	} else if !shoal.IsErrorCode(err, shoal.ErrorNotFound) {
 		return nil, s.classified(err)
 	}
+	run, err := s.runView(ctx, str(job, "manifest_pin"))
+	if err != nil {
+		return nil, err
+	}
+	view["run"] = run
 	return view, nil
 }
 

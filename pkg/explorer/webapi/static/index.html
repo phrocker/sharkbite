@@ -223,6 +223,11 @@
               <label for="learning-policy-families">Minimum independent families<input id="learning-policy-families" required inputmode="numeric" value="1"></label>
               <button type="submit">Declare evaluation policy (before the receipt)</button>
             </form>
+            <form id="learning-run-form" class="stack decision-secondary-form">
+              <p class="muted">Ask a learning worker to train this job: it fetches the recorded manifest and the authorized exports from this host, runs the trainer, records the teacher predictions and the receipt, and seals the run. A <code>shoal-learning-worker</code> must be running against this host; the job list shows who claimed the job and how far it got.</p>
+              <label for="learning-run-pin">Manifest pin<input id="learning-run-pin" required autocomplete="off" spellcheck="false"></label>
+              <button type="submit">Run with a learning worker (after the policy)</button>
+            </form>
             <form id="learning-predictions-form" class="stack decision-secondary-form">
               <label for="learning-predictions-pin">Manifest pin<input id="learning-predictions-pin" required autocomplete="off" spellcheck="false"></label>
               <label for="learning-predictions-json">Teacher predictions JSON (the trainer's teacher-predictions.json)<textarea id="learning-predictions-json" required spellcheck="false"></textarea></label>

@@ -252,3 +252,29 @@ measurement-only report. `verify_comparison.py` independently checks the
 report digest, disjoint predeclared splits, candidate set, metric bounds,
 pinned threshold, and measurement-only disposition before a downstream
 evaluator consumes it.
+
+## Running jobs from the console: `shoal-learning-worker`
+
+The console does not run `distill.py` itself. It records a run request on a
+job (`POST /learning/jobs/{pin}/run`, the "Run with a learning worker"
+form), and a `shoal-learning-worker` process running against the host
+claims the job and carries it from fetch to seal:
+
+```
+go run ./cmd/shoal-learning-worker -host http://127.0.0.1:8080 \
+  -trainer "python3 experiments/local-ml/distill.py" \
+  -trainer-arg --student=averaged-perceptron -work-dir /tmp/learning-worker
+```
+
+The worker fetches the recorded manifest (re-encoded and checked against
+the pin) and every authorized export the job consumed (checked against the
+recorded export pin) from the host, runs the trainer with `--manifest`,
+`--manifest-pin`, one `--export COHORT=DATASET:MANIFEST` per cohort,
+`--output-dir`, `--executor-id` (its `-worker-id`), and
+`--executor-attestation`, then posts `teacher-predictions.json`, the
+receipt, and the bundle files to the host's predictions, receipt, and seal
+routes, reporting each phase as progress on its claim. The host verifies
+every record as it does for any caller. A bearer token comes from
+`-token-env` (default `SHOAL_LEARNING_TOKEN`) and is sent only to a
+loopback or https host; a `-dev-auth` host needs none. `-once` runs one
+job and exits, which is what the end-to-end walk uses.

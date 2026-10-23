@@ -54,6 +54,15 @@ type LearningProvider interface {
 	// bound to the manifest, while no receipt is recorded for the job.
 	DeclarePolicy(ctx context.Context, manifestPin string, policy json.RawMessage) (json.RawMessage, error)
 	SubmitReceipt(ctx context.Context, manifestPin string, receipt json.RawMessage) (json.RawMessage, error)
+	// RequestRun records that the console asked for the job to be trained
+	// by a learning worker; ClaimRun lets a worker take it under a lease;
+	// ReportProgress records the worker's phase under its claim. The run
+	// records describe the work; predictions, the receipt, and the sealed
+	// candidate still arrive through their own routes and are verified
+	// there.
+	RequestRun(ctx context.Context, manifestPin string, body json.RawMessage) (json.RawMessage, error)
+	ClaimRun(ctx context.Context, manifestPin string, body json.RawMessage) (json.RawMessage, error)
+	ReportProgress(ctx context.Context, manifestPin string, body json.RawMessage) (json.RawMessage, error)
 	Candidates(ctx context.Context) (json.RawMessage, error)
 	SubmitCandidate(ctx context.Context, body json.RawMessage) (json.RawMessage, error)
 	// SealCandidate records candidate, evaluation, and artifact for a completed

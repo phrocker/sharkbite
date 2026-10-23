@@ -64,6 +64,15 @@ func (s *learningStub) SubmitJob(_ context.Context, m json.RawMessage) (json.Raw
 func (s *learningStub) DeclarePolicy(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
 	return s.reply("policy:"+pin, r)
 }
+func (s *learningStub) RequestRun(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
+	return s.reply("run:"+pin, r)
+}
+func (s *learningStub) ClaimRun(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
+	return s.reply("claim:"+pin, r)
+}
+func (s *learningStub) ReportProgress(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
+	return s.reply("progress:"+pin, r)
+}
 func (s *learningStub) SubmitReceipt(_ context.Context, pin string, r json.RawMessage) (json.RawMessage, error) {
 	return s.reply("receipt:"+pin, r)
 }
@@ -162,6 +171,9 @@ func TestLearningRoutesDispatchToTheProvider(t *testing.T) {
 		{"GET", "/api/v1/learning/jobs/pin1", "", "job:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/predictions", `{"schema":1}`, "predictions:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/policy", `{"name":"p"}`, "policy:pin1"},
+		{"POST", "/api/v1/learning/jobs/pin1/run", `{}`, "run:pin1"},
+		{"POST", "/api/v1/learning/jobs/pin1/claim", `{"worker_id":"w"}`, "claim:pin1"},
+		{"POST", "/api/v1/learning/jobs/pin1/progress", `{"claim_id":"c","phase":"training"}`, "progress:pin1"},
 		{"POST", "/api/v1/learning/jobs/pin1/receipt", `{"schema":1}`, "receipt:pin1"},
 		{"POST", "/api/v1/learning/candidates/seal", `{"manifest_pin":"p","bundle":{}}`, "seal"},
 		{"POST", "/api/v1/learning/serving/predict", `{"features":[1]}`, "predict"},

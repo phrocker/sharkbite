@@ -62,6 +62,21 @@
     return span;
   }
 
+  // runState renders a job's worker run in one phrase: not requested, waiting
+  // for a worker, claimed by whom and in which phase, or how it ended.
+  function runState(run) {
+    if (!run || !run.requested) return "not requested";
+    const claim = run.claim;
+    const progress = run.progress;
+    if (!claim) return "requested, waiting for a worker";
+    const who = `${claim.worker_id} (attempt ${claim.attempt})`;
+    if (progress && (progress.phase === "done" || progress.phase === "failed")) {
+      return `${progress.phase} by ${who}${progress.message ? `: ${progress.message}` : ""}`;
+    }
+    if (claim.live) return `${progress ? progress.phase : "claimed"} by ${who}${progress && progress.message ? `: ${progress.message}` : ""}`;
+    return `lease of ${who} expired; waiting for a worker`;
+  }
+
   function summarize(kind, value) {
     const summary = $("learning-console-summary");
     if (!summary) return;
@@ -95,9 +110,16 @@
         const rows = (value.jobs || []).map((j) => {
           const job = j.job || {};
           const actual = j.actual || {};
-          return [job.manifest_pin, job.status, j.receipt ? actual.status : "(no receipt)", j.executor ? j.executor.id : "", actual.bundle_digest || "", (j.deviations || []).length];
+          return [job.manifest_pin, job.status, runState(j.run), j.receipt ? actual.status : "(no receipt)", j.executor ? j.executor.id : "", actual.bundle_digest || "", (j.deviations || []).length];
         });
-        summary.appendChild(table(["manifest pin", "job", "run status", "executor", "bundle digest", "deviations"], rows));
+        summary.appendChild(table(["manifest pin", "job", "worker run", "run status", "executor", "bundle digest", "deviations"], rows));
+        if ((value.jobs || []).some((j) => j.run && j.run.requested && j.run.runnable && !j.receipt)) {
+          note("A requested job is waiting for a learning worker: start shoal-learning-worker against this host.");
+        }
+        break;
+      }
+      case "run": {
+        note(`Run requested at ${value.requested_at || "?"} by ${value.requested_by || "?"}. A learning worker will claim it; list jobs to follow its progress.`);
         break;
       }
       case "job": {
@@ -111,6 +133,8 @@
           ["executor", "", value.executor ? `${value.executor.id} (${value.executor.attestation_id || "no attestation"})` : "(no receipt)"],
           ["deviations", "", JSON.stringify(value.deviations || [])],
         ]));
+        note(`Worker run: ${runState(value.run)}`);
+        if (value.run && value.run.progress && value.run.progress.detail) note(`Result: ${JSON.stringify(value.run.progress.detail)}`);
         break;
       }
       case "candidates": {
@@ -332,6 +356,7 @@
     };
     return post(`${ROOT}/jobs`, manifest);
   });
+  onSubmit("learning-run-form", "Run request", "run", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-run-pin"))}/run`, {}));
   onSubmit("learning-predictions-form", "Teacher predictions", "predictions", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-predictions-pin"))}/predictions`, jsonValue("learning-predictions-json")));
   onSubmit("learning-policy-form", "Evaluation policy", "policy", () => post(`${ROOT}/jobs/${encodeURIComponent(required("learning-policy-pin"))}/policy`, {
     name: required("learning-policy-name"),
