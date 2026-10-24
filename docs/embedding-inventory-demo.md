@@ -41,3 +41,5 @@ to investigate. It does not apply changes. Write-mode sidecar backfill and
 production verification of `no_embeddings` need the remaining #171 backend
 gates; the page therefore offers no apply action. An unreadable file or
 unverifiable marker stays unknown even if its footer suggests a state.
+The hosted sidecar publisher is not yet wired into the production tserver;
+until it is, a real cluster can legitimately show all files as unknown.
