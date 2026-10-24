@@ -33,6 +33,9 @@ This specification is grounded in the following public Shoal material:
 - `FEATURES.md` for capabilities described as shipped primitives;
 - `docs/platform-product-plan.md` for the accepted evidence-first,
   local-to-remote product direction;
+- `docs/promotable-decision-bundle.md` for the accepted consumption modes,
+  the operator inbox as the primary screen, and the other views as
+  inspectors;
 - `docs/distributed-vector-index.md` for freshness, explicit fallback,
   cancellation, deterministic ranking, and recall-claim behavior;
 - `docs/explorer-public-contract.md` for adopted storage-neutral identity,

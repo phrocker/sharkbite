@@ -321,6 +321,12 @@ document revision and source coordinates.
 The explorer consumes the public graph/document API. It must not issue raw
 cell scans or know physical column-family conventions.
 
+The explorer's primary user is the operator who turns decisions into
+automation, and its primary screen is an inbox of items awaiting a person,
+each expanding into its evidence chain. The views above are inspectors reached
+from an item, not top-level destinations. See
+[Promotable decision bundle](promotable-decision-bundle.md).
+
 ## Capability placement
 
 Place capabilities according to their abstraction level:
@@ -528,7 +534,9 @@ contracts.
 1. Ship document tree and source views.
 2. Add graph neighborhood and evidence-path views.
 3. Add query traces and revision/provenance inspection.
-4. Add administrative views only after the retrieval workflow is coherent.
+4. Ship the operator inbox over the existing approval and decision records;
+   graph, ontology, provenance, and learning open from an item.
+5. Add administrative views only after the retrieval workflow is coherent.
 
 ## Success criteria
 

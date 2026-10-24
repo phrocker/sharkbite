@@ -48,6 +48,7 @@ to be an agent runtime or a model vendor.
 | Perform approved actions at most once | [Effects gateway](docs/effects-gateway-deploy.md) |
 | Serve an authorized corpus to an agent | [MCP over stdio](docs/mcp-stdio.md) |
 | Understand the product direction | [Platform product plan](docs/platform-product-plan.md) |
+| Turn decisions into automation | [Promotable decision bundle](docs/promotable-decision-bundle.md) |
 
 Capability status and validation evidence are tracked in
 [`FEATURES.md`](FEATURES.md). Proposed or shadow-only workflows are labeled as
