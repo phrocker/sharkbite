@@ -2733,7 +2733,25 @@ func (s *DispatchService) publishTransition(
 	}
 	// The caller's own transition is named, so a refusal on *it* is still an
 	// error while another principal's stranded row is not (#480 item 3).
-	return s.reconcileActionTransitions(ctx, record.ID, kind, record.Version)
+	// The outbox token is durable and publication is idempotent. A read lag or
+	// transient store refusal while publishing this committed transition can
+	// therefore be retried with the same row and token. Keep the retry bounded:
+	// a persistent failure must still be reported as ErrActionCommitted by the
+	// caller, never turned into a successful write response.
+	for attempt := 0; ; attempt++ {
+		err := s.reconcileActionTransitions(ctx, record.ID, kind, record.Version)
+		if err == nil || attempt == 4 || ctx.Err() != nil ||
+			!shoal.IsErrorCode(err, shoal.ErrorUnavailable) {
+			return err
+		}
+		timer := time.NewTimer(time.Duration(10<<attempt) * time.Millisecond)
+		select {
+		case <-timer.C:
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		}
+	}
 }
 
 // beginClaimant admits a caller holding either of the operations that
