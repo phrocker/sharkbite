@@ -126,17 +126,106 @@ The pieces:
   evidence ids, the snapshot pin, and when it was observed. Collectors assert
   observations and admission verifies them, as outcomes are handled today. A
   model's output is never an observation.
-- **Observation schema.** Declares paths, types, and which are required.
-  Content-addressed; a predicate's identity includes the schema id, so it
-  cannot be evaluated against fields it was not written for.
+- **Observation schema.** An ontology version from `pkg/ontology`: paths are
+  property definitions, subject kinds are concepts, and the version identity
+  is content-addressed. A predicate's identity includes the version, so it
+  cannot be evaluated against fields it was not written for; see
+  [Cases, phases, and the evolving ontology](#cases-phases-and-the-evolving-ontology)
+  for evaluation under a later version.
 - **Predicate.** Comparisons and boolean connectives over paths and literals,
   parsed to a canonical tree, content-addressed from that form, with a
   deterministic evaluator that returns true, false, or undetermined when a
   path is absent. Undetermined never fires the action. Arithmetic, functions,
   quantifiers, and time windows are deliberately absent until real classes
   show the need.
-- **Executable decision.** Predicate id, schema id, action, declared effects,
-  and the class it implements, as one record.
+- **Executable decision.** Predicate id, ontology version, action, declared
+  effects, and the class it implements, as one record.
+
+## Cases, phases, and the evolving ontology
+
+A production problem does not always reduce to one decision. Often the first
+decision is "look closer": add a log line, a metric, a trace, a sampled dump.
+That decision has its own action, its own declared effects (a code or config
+change), its own approval, and its own outcome, which is new evidence arriving.
+Only then can the next decision be made. A **case** is the chain that links
+those phases, and each phase is a decision instance in its own class.
+
+The predicate form gives the investigation phase a precise trigger. A
+predicate is *undetermined* when a path it needs is not observed. That is the
+moment an investigation is warranted: the model proposes the change that would
+make the path observable, a person approves it, the change ships, and the
+outcome of the phase is that the path is now observed. The next phase is the
+same predicate, now determinable. An investigation is not a separate workflow;
+it is the decision layer closing its own evidence gap.
+
+### The observation schema is the ontology
+
+An observation path that did not exist yesterday is a new property. The
+repository already has the machinery for that and it must not be duplicated:
+`pkg/ontology` has property and concept definitions, immutable ontology
+versions, governed proposals (draft, submitted, approved, published), and
+typed morphisms with a safety classification that let a read under one
+version be interpreted under another
+([read-time dynamic ontology](read-dynamic-ontology.md)). So:
+
+- The observation schema in #220 **is** an ontology version. An observation
+  path is a property definition; a subject kind is a concept; an observation
+  record pins the schema and version identity exactly as an assertion does.
+- A predicate binds to an ontology version. Evaluating it under a later
+  version goes through the published morphisms: an identity or safe-addition
+  morphism keeps the predicate determinable; a rename or split maps through;
+  anything else makes the predicate undetermined and raises an inbox item to
+  re-approve it under the new version. A predicate is never silently
+  reinterpreted, just as an unknown ontology identity reads as unresolved
+  today.
+- An investigation phase's output is a governed proposal to add the property,
+  opened as a draft by the phase's decision, approved in the inbox, and
+  published when the change that emits it ships. Usage-driven discovery
+  (#211) is the same proposal pipeline entered from the other side: retrieval
+  gaps and traversal patterns instead of an undetermined predicate.
+
+### Cases as records
+
+- A **case** identity that each phase's decision request references, so a
+  chain is a query rather than a convention. The fleet action record already
+  carries a correlation id and the picture manifest already carries incident
+  references; the case is the record that names the thread.
+- Each phase holds: the decision request pinned to the picture at that
+  moment, the approval, the change the action produced, and the outcome. For
+  an investigation phase the outcome is "the path is now observed" and the
+  published ontology version that says so, not "the problem is resolved".
+- Phases are joined by edges the graph already has: temporal and causal edge
+  families join events, so the Explorer's graph inspector renders a case as a
+  path with no new rendering.
+
+### What phases change
+
+- **The inbox.** An item is not only awaiting a person. A case can be
+  awaiting evidence: the instrumentation shipped, the observation window is
+  open, and nothing is due from anyone until it closes or times out. The
+  inbox carries three waiting states, awaiting decision, awaiting evidence,
+  awaiting outcome, and a case row shows its phase and what it waits for. An
+  expanded row shows the whole chain.
+- **Classes and graduation.** Phases graduate independently. "Add structured
+  logging around a failing call" is a low-effect class whose measured record
+  is whether the next phase became determinable; it can reach unattended
+  early. "Roll back the deploy" stays human-approved far longer. One case can
+  mix an unattended phase and an approved phase. An investigation class whose
+  instrumentation never changes the next decision is demoted like any other.
+- **Bundles.** A recurring case can be bundled as a staged decision: if P is
+  undetermined, apply observation change C and wait window W; once P is
+  determinable, if P then action A. Still deterministic, still model-free.
+  The bundle pins the ontology versions it was written against and the
+  morphisms it accepts. The constraint to hold: a bundle is a chain of
+  executable decisions with explicit dependencies and windows, not a workflow
+  language. Branching beyond undetermined, true, and false means the case has
+  stopped being a decision and goes back to a person or stays on the
+  enforcement plane.
+- **The model.** It proposes the investigation change itself, which is the
+  creative part: reading the failing path and drafting the log line or metric
+  that discriminates the hypotheses. Then, once evidence arrives, it drafts
+  the next phase. Both are proposals with provenance; neither is a decision
+  until recorded through the gate.
 
 ## Where the model stays
 
@@ -187,6 +276,9 @@ and the one screen it lacks is the one the operator needs.
    pinning canonical form and identity.
 4. #221 Bundle format, graduation record, executor, and replay, with promote,
    demote, and export in the inbox.
+5. #225 Cases and phases: the case record, the three waiting states, the
+   undetermined-to-investigation rule, and predicates under ontology
+   morphisms. Lands across #219 to #221 and is tracked separately.
 
 The weights-path follow-ups (#222) and the described-table follow-ups (#223)
 sit behind these four.
