@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Embedding inventory · Shoal</title>
+  <style>
+    :root { color-scheme: light; font: 16px/1.45 system-ui, sans-serif; background: #f4f7f8; color: #142330; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    header { background: #102b39; color: white; padding: 1.5rem max(1rem, calc((100vw - 76rem)/2)); }
+    header p { margin: .3rem 0 0; color: #c6d9df; }
+    main { max-width: 76rem; margin: auto; padding: 1.5rem 1rem 4rem; }
+    h1, h2 { line-height: 1.2; }
+    h1 { margin: 0; font-size: 1.6rem; }
+    h2 { margin: 0 0 .8rem; font-size: 1.2rem; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.2rem; }
+    .toolbar p { margin: 0; color: #526270; }
+    a { color: #07577a; }
+    .button { display: inline-block; border: 1px solid #07577a; border-radius: .5rem; padding: .45rem .8rem; text-decoration: none; font-weight: 650; }
+    .button:hover, .button:focus { background: #e1f2f8; }
+    .notice { padding: .8rem 1rem; border-radius: .55rem; margin-bottom: 1.25rem; border: 1px solid #c3d5db; background: #e8f3f6; }
+    .demo { background: #fff4d8; border-color: #e9c66e; }
+    .counts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: .8rem; margin-bottom: 1.25rem; }
+    .count { background: white; border: 1px solid #d5e0e4; border-radius: .65rem; padding: 1rem; }
+    .count strong { display: block; font-size: 2rem; line-height: 1.1; }
+    .count span { color: #485c68; }
+    section { background: white; border: 1px solid #d5e0e4; border-radius: .65rem; padding: 1rem; margin-bottom: 1.25rem; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 55rem; }
+    th { text-align: left; background: #eef4f6; }
+    th, td { padding: .75rem; border-bottom: 1px solid #dce5e8; vertical-align: top; }
+    tr:last-child td { border-bottom: 0; }
+    code { overflow-wrap: anywhere; white-space: normal; font-size: .87rem; }
+    .state { display: inline-block; border-radius: 99px; padding: .2rem .55rem; font-weight: 650; background: #e9eef0; }
+    .state.has_embeddings { color: #075333; background: #d9f3e4; }
+    .state.no_embeddings { color: #314d75; background: #e3edfc; }
+    .state.unknown { color: #704710; background: #fff1d7; }
+    .muted { color: #526270; }
+    @media (max-width: 38rem) { .counts { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header><h1>Shoal · Embedding inventory</h1><p>Read-only status and backfill planning for table <strong>{{.TableID}}</strong></p></header>
+  <main>
+    {{if .Demo}}<div class="notice demo" role="status"><strong>Sample data.</strong> This view is a UI demo and is not connected to a cluster.</div>{{end}}
+    <div class="toolbar"><p>Checked {{.At.Format "2006-01-02 15:04:05 UTC"}}. A refresh rechecks live file entries and sidecar evidence.</p><div><a class="button" href="/">Refresh inventory</a> <a class="button" href="/api/inventory">JSON</a></div></div>
+    <div class="counts" aria-label="Verified file counts">
+      <div class="count"><strong>{{.Counts.HasEmbeddings}}</strong><span>Verified with embeddings</span></div>
+      <div class="count"><strong>{{.Counts.NoEmbeddings}}</strong><span>Verified without embeddings</span></div>
+      <div class="count"><strong>{{.Counts.Unknown}}</strong><span>Unknown or unverified</span></div>
+    </div>
+    <div class="notice"><strong>Backfill is read-only here.</strong> {{.ApplyPrerequisite}} Footer hints below help plan the work; they do not change the verified counts.</div>
+    <section aria-labelledby="files-heading">
+      <h2 id="files-heading">Files and read-only backfill assessment</h2>
+      {{if .Files}}
+      <div class="table-wrap"><table>
+        <thead><tr><th scope="col">File</th><th scope="col">Verified state</th><th scope="col">Why unknown</th><th scope="col">Backfill assessment</th></tr></thead>
+        <tbody>{{range .Files}}<tr>
+          <td><strong>{{.Entry}}</strong><br><code>{{.Path}}</code><br><span class="muted">{{.Extent}}</span></td>
+          <td><span class="state {{.State.State}}">{{.State.String}}</span></td>
+          <td>{{if .UnknownReason}}{{.UnknownReason}}{{else}}<span class="muted">Verified</span>{{end}}</td>
+          <td>{{.DryRun}}{{if .UnknownReason}}<br><span class="muted">Footer hint: {{.FooterHint.String}} (unverified)</span>{{end}}</td>
+        </tr>{{end}}</tbody>
+      </table></div>
+      {{else}}<p>No files are present in this table.</p>{{end}}
+    </section>
+    <section><h2>Operator path</h2><p>Resolve unknown files before vector search or compaction. Check the file’s footer and the sidecar publication, then rerun inventory. A no-embeddings claim needs a complete scan and operator approval. The write action will appear only after the backend can safely publish and reconcile it.</p></section>
+  </main>
+</body>
+</html>
