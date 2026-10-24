@@ -19,9 +19,10 @@ import (
 	"github.com/phrocker/shoal-oss/pkg/shoal"
 )
 
-// droppingPublisher fails one publication of a chosen kind and then behaves
-// normally, which is the fault the outbox exists for: a transient event
-// backend error, or a crash between the durable write and the publish.
+// droppingPublisher fails one publication of a chosen kind with an
+// unclassified backend error and then behaves normally. Unlike typed
+// unavailable errors, this is not retried inline: it models a crash between
+// the durable write and publication, leaving a row for later reconciliation.
 type droppingPublisher struct {
 	inner   *ActionEventPublisher
 	kind    string
@@ -46,8 +47,7 @@ func (p *droppingPublisher) PublishActionEvent(
 ) error {
 	if !p.dropped && kind == p.kind {
 		p.dropped = true
-		return shoal.NewError(
-			shoal.ErrorUnavailable, "transient event backend fault")
+		return errors.New("unclassified event backend fault")
 	}
 	if err := p.inner.PublishActionEvent(ctx, kind, record); err != nil {
 		return err
