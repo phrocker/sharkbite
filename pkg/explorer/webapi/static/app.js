@@ -3358,7 +3358,7 @@ const canvas = $("canvas");
 const context = canvas.getContext("2d");
 const positions = new Map();
 const graphColors = ["#74e4c0", "#ffb86b", "#8bb5ff", "#e7a5c7", "#c2b0ff", "#e8d17b", "#82d4d4", "#e4a88b"];
-let graphKindColors = new Map();
+const graphKindColors = new Map();
 const graphView = {scale: 1, x: 0, y: 0};
 let graphDrag = null;
 let graphSize = {width: 0, height: 0};
@@ -3374,7 +3374,11 @@ function graphKindColor(kind) {
 function renderGraphLegend(nodes) {
   const legend = $("graph-legend");
   const kinds = [...new Set(nodes.map(graphKind))].sort();
-  graphKindColors = new Map(kinds.map((kind, index) => [kind, graphColors[index % graphColors.length]]));
+  for (const kind of kinds) {
+    if (!graphKindColors.has(kind)) {
+      graphKindColors.set(kind, graphColors[graphKindColors.size % graphColors.length]);
+    }
+  }
   if (!legend) return;
   legend.replaceChildren();
   for (const kind of kinds) {
