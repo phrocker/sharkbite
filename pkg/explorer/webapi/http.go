@@ -70,6 +70,7 @@ type Handler struct {
 	chatProvider             AskProvider
 	interactionProvider      InteractionProvider
 	decisionCapabilities     Capabilities
+	graphTable               *graphTableHTTP
 	decisionRouteMounted     bool
 	preAuth                  map[string]preAuthenticationValidator
 	authenticatedMounts      map[string]http.Handler
@@ -213,6 +214,12 @@ func (h *Handler) routes() {
 		}
 		metadata.Capabilities = mergeDecisionCapabilities(
 			metadata.Capabilities, h.decisionCapabilities)
+		if metadata.Capabilities.GraphTable && h.graphTable != nil {
+			decision, err := h.graphTable.resolve(request.Context())
+			metadata.Capabilities.GraphTable = err == nil &&
+				graphTableLabelHeld(decision, h.graphTable.surface.LabelPolicyID) &&
+				graphTableReadAllowed(decision)
+		}
 		metadata = applyWorkspaceMetadataLimits(request.Context(), metadata)
 		writeResponse(writer, http.StatusOK, metadata)
 	})

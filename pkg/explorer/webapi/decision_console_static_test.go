@@ -132,11 +132,14 @@ func TestStaticWorkspaceMountsGraphTableSource(t *testing.T) {
 		`/api/v1/graph-table`,
 		`"neighborhood"`, `"path"`, `"nodes"`, `"terms"`,
 		`capability("graph_table")`,
-		`not among your grants`,
+		`section.hidden = true`,
 	} {
 		if !strings.Contains(script, required) {
 			t.Fatalf("graph table script missing %q", required)
 		}
+	}
+	if strings.Contains(script, `not among your grants`) {
+		t.Fatal("graph table UI must not reveal a concealed mount")
 	}
 	app := readStaticAsset(t, "static/app.js")
 	for _, required := range []string{`graphTable.active()`, `graphTable.expand(ids)`, `graphTable.path(`, `graphTable.apply()`, `graph_table: false`} {

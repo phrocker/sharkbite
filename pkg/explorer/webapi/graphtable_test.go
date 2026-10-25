@@ -233,6 +233,11 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 	if w.Code != http.StatusUnauthorized {
 		t.Fatalf("no neighborhood operation = %d %s", w.Code, w.Body)
 	}
+	w = httptest.NewRecorder()
+	noRead.ServeHTTP(w, graphTableRequest(http.MethodGet, "/api/v1/meta", ""))
+	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), `"graph_table":true`) {
+		t.Fatalf("no-read meta = %d %s", w.Code, w.Body)
+	}
 	// Without the label, the operation is not even considered: the mount
 	// stays concealed.
 	neither, _ := graphTableFixture(t, []auth.Operation{auth.OperationRead}, [][]byte{[]byte("policy")})
@@ -243,7 +248,7 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 	}
 
 	// A decision without the label's policy is told nothing is mounted,
-	// while meta still advertises the capability to everyone.
+	// including in the metadata capability list.
 	noLabel, _ := graphTableFixture(t, []auth.Operation{auth.OperationRead, auth.OperationNeighborhood}, [][]byte{[]byte("policy")})
 	for _, path := range []string{"/api/v1/graph-table/", "/api/v1/graph-table/neighborhood"} {
 		w = httptest.NewRecorder()
@@ -255,6 +260,11 @@ func TestGraphTableRoutesRefuseWhatTheyShould(t *testing.T) {
 		if w.Code != http.StatusNotFound {
 			t.Fatalf("without label %s = %d %s", path, w.Code, w.Body)
 		}
+	}
+	w = httptest.NewRecorder()
+	noLabel.ServeHTTP(w, graphTableRequest(http.MethodGet, "/api/v1/meta", ""))
+	if w.Code != http.StatusOK || strings.Contains(w.Body.String(), `"graph_table":true`) {
+		t.Fatalf("unlabeled meta = %d %s", w.Code, w.Body)
 	}
 }
 

@@ -98,8 +98,8 @@ type Capabilities struct {
 	Outcomes      bool `json:"decision_outcomes"`
 	Adjudications bool `json:"decision_adjudications"`
 	Learning      bool `json:"decision_learning"`
-	// GraphTable reports a described engine table mounted at
-	// GraphTableRoute, read through its recorded descriptor.
+	// GraphTable reports a described engine table visible to this decision
+	// at GraphTableRoute, read through its recorded descriptor.
 	GraphTable bool `json:"graph_table"`
 }
 

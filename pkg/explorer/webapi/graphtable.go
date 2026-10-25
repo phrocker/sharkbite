@@ -81,7 +81,8 @@ func (s GraphTableSurface) validate() error {
 }
 
 // MountGraphTable mounts the described-table routes behind the host's
-// authentication gate and advertises the graph_table capability.
+// authentication gate and advertises the graph_table capability only to
+// decisions that hold the label and may read neighborhoods.
 func (h *Handler) MountGraphTable(surface GraphTableSurface) error {
 	if h == nil || h.mux == nil || isAbsentInterface(h.authenticator) || isAbsentInterface(h.binder) {
 		return shoal.NewError(shoal.ErrorInvalidArgument, "graph table surface requires authenticated transport")
@@ -94,6 +95,7 @@ func (h *Handler) MountGraphTable(surface GraphTableSurface) error {
 		return err
 	}
 	h.decisionCapabilities.GraphTable = true
+	h.graphTable = handler
 	return nil
 }
 
