@@ -1033,6 +1033,7 @@ const app = fs.readFileSync("static/app.js", "utf8") +
   "\nthis.exchangeAuthorizationCode = exchangeAuthorizationCode;" +
   "\nthis.base64UrlDecode = base64UrlDecode;" +
   "\nthis.mergeGraph = mergeGraph;" +
+  "\nthis.setGraphSource = setGraphSource;" +
   "\nthis.selectEdge = selectEdge;" +
   "\nthis.edgeIsDerived = edgeIsDerived;" +
   "\nthis.edgeDerivationScore = edgeDerivationScore;" +
@@ -1383,10 +1384,15 @@ scenario.ctx.mergeGraph({
   edges: [{id: "workspace-edge", from: "workspace-node", to: "workspace-node"}],
   assertions: [{id: "workspace-assertion"}],
 });
+scenario.ctx.setGraphSource("table");
 scenario.ctx.mergeGraph({nodes: [{id: "table-node", labels: ["Table"]}], edges: []}, "table");
 assert.deepStrictEqual([...scenario.ctx.state.nodes.keys()], ["table-node"]);
 assert.strictEqual(scenario.ctx.state.edges.size, 0);
 assert.strictEqual(scenario.ctx.state.assertions.size, 0);
+scenario.ctx.mergeGraph({nodes: [{id: "new-workspace-node", labels: ["Workspace"]}], edges: []});
+assert.deepStrictEqual([...scenario.ctx.state.nodes.keys()], ["table-node"],
+  "a late workspace response must not replace the chosen table source");
+scenario.ctx.setGraphSource("workspace");
 scenario.ctx.mergeGraph({nodes: [{id: "new-workspace-node", labels: ["Workspace"]}], edges: []});
 assert.deepStrictEqual([...scenario.ctx.state.nodes.keys()], ["new-workspace-node"]);
 `)

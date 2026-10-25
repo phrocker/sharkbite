@@ -2985,7 +2985,9 @@ function setGraphSource(source) {
 }
 
 function mergeGraph(graph, source = "workspace") {
-  setGraphSource(source);
+  // Document and search reads can finish after the user changes the Graph
+  // source. Their results must not silently switch it back.
+  if (source !== graphSource) return;
   const previousNodeCount = state.nodes.size;
   const previousEdgeCount = state.edges.size;
   for (const node of graph.nodes || []) state.nodes.set(node.id, node);
